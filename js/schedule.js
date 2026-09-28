@@ -1,19 +1,23 @@
 // 한눈육아 통합 일정 엔진.
 // Phase 3부터는 건강검진·예방접종·성장발달(및 이유식/구강/수면/안전/생활/보육)을
-// js/todo-engine.js + data/todo-definitions.v2.json(73개 TodoDefinition) 기준으로 계산하고,
+// js/todo-engine.js + data/todo-definitions.v3.json(75개 TodoDefinition) 기준으로 계산하고,
 // 지자체(지역) 지원금만 기존 data/subsidies.json 로직(buildSubsidyEvents)을 그대로 유지한다.
 // 완료 여부는 여기서 다루지 않는다 (app.js가 localStorage/Firestore와 함께 처리).
 
 // 필터칩·달력 범례·체크리스트가 전부 이 6개 카테고리 하나로 통일된다(예전엔 필터칩이 4개,
-// 달력 범례가 6개로 서로 달라 불일치했다). 각 TodoDefinition의 categoryGroup 필드값과
-// 정확히 같은 문자열을 키로 쓴다(data/todo-definitions.v2.json의 _meta.categoryGroupMap 참고).
+// 달력 범례가 6개로 서로 달라 불일치했다). 키는 각 TodoDefinition의 categoryGroup 필드값과
+// 정확히 같은 문자열이라야 한다(data/todo-definitions.v3.json의 _meta.categoryGroupMap 참고).
+// label은 필터칩 등 좁은 칩 안에 한 줄로 들어가야 해서 3글자 이하로 줄여서 표시한다.
+// color는 6개가 서로 뚜렷이 구분되도록 색상환에서 고르게 떨어뜨렸다 — 예전엔 생활·수유(#eab308)와
+// 행정·지원금(#f59e0b)이 둘 다 노랑·주황 계열로 너무 비슷해서(색상환상 8도 차이) 구분이 안 됐던
+// 문제를, 행정·지원금을 핑크·마젠타 계열로 바꿔서 해결했다.
 const CATEGORY_META = {
-  "발달관찰": { label: "발달관찰", color: "#22c55e" },
-  "예방접종": { label: "예방접종", color: "#3b82f6" },
-  "영유아검진": { label: "영유아검진", color: "#a855f7" },
-  "생활·수유": { label: "생활·수유", color: "#eab308" },
-  "안전·돌봄": { label: "안전·돌봄", color: "#ef4444" },
-  "행정·지원금": { label: "행정·지원금", color: "#f59e0b" },
+  "발달관찰": { label: "발달", color: "#22c55e" }, // 초록
+  "예방접종": { label: "접종", color: "#3b82f6" }, // 파랑
+  "영유아검진": { label: "검진", color: "#a855f7" }, // 보라
+  "생활·수유": { label: "생활", color: "#f59e0b" }, // 주황
+  "안전·돌봄": { label: "안전", color: "#ef4444" }, // 빨강
+  "행정·지원금": { label: "지원금", color: "#ec4899" }, // 핑크
 };
 
 // TodoDefinition의 10개 세부 카테고리 코드 → 위 6개 그룹 중 하나. td.categoryGroup이 있으면
@@ -151,7 +155,7 @@ function subsidyDeadlineText(s) {
 }
 
 // data/subsidies.json에는 원래 "전국공통(ALL)"으로 표시된 항목도 몇 개 섞여 있었는데,
-// 그중 아래 4개는 이제 todo-definitions.v2.json의 SB-01/02/03/05로 새 엔진이 계산한다.
+// 그중 아래 4개는 이제 todo-definitions.v3.json의 SB-01/02/03/05로 새 엔진이 계산한다.
 // 두 경로가 같은 제도를 각자 다른 문구로 중복 표시하는 걸 막기 위해 여기서 제외한다.
 // (NAT-004 산모·신생아 건강관리처럼 아직 엔진에 없는 항목은 그대로 지역 지원금 경로로 유지)
 const SUBSIDIES_SUPERSEDED_BY_ENGINE = ["NAT-001", "NAT-002", "NAT-003", "NAT-005"];

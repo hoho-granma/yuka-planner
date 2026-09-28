@@ -22,30 +22,10 @@
   let selectedCalendarDate = new Date(); // 달력 탭에서 선택된 날짜(기본값: 오늘)
   let calendarDisplayDayMap = new Map(); // 이번에 그려진 달의 todo_id__occ → "달력에 표시할 날짜"(분산배치 결과)
 
-  // 달력 탭 전용 6색 그룹(10개 세부카테고리를 시각적으로만 6개로 묶는다 — 계산 로직과는 무관).
-  const CAL_GROUP_BY_LABEL = {
-    "성장발달": { label: "발달관찰", color: "#22c55e" },
-    "지원금·제도": { label: "행정/지원금", color: "#f59e0b" },
-    "예방접종": { label: "예방접종", color: "#3b82f6" },
-    "건강검진": { label: "영유아검진", color: "#a855f7" },
-    "이유식·영양": { label: "생활/수유", color: "#eab308" },
-    "구강": { label: "생활/수유", color: "#eab308" },
-    "수면": { label: "생활/수유", color: "#eab308" },
-    "생활": { label: "생활/수유", color: "#eab308" },
-    "안전": { label: "안전/돌봄", color: "#ef4444" },
-    "보육": { label: "안전/돌봄", color: "#ef4444" },
-  };
-  const CAL_LEGEND = [
-    { label: "발달관찰", color: "#22c55e" },
-    { label: "행정/지원금", color: "#f59e0b" },
-    { label: "예방접종", color: "#3b82f6" },
-    { label: "영유아검진", color: "#a855f7" },
-    { label: "생활/수유", color: "#eab308" },
-    { label: "안전/돌봄", color: "#ef4444" },
-  ];
+  // e.category는 이제 필터칩·체크리스트와 동일한 6개 카테고리(CATEGORY_META) 문자열이라,
+  // 달력 전용으로 따로 매핑표를 둘 필요 없이 그대로 조회하면 된다.
   function calGroupFor(e) {
-    if (e.isLegacySubsidy) return { label: "행정/지원금", color: "#f59e0b" };
-    return CAL_GROUP_BY_LABEL[e.subcategoryLabel] || { label: e.subcategoryLabel || "기타", color: "#9ca3af" };
+    return CATEGORY_META[e.category] || { label: e.category || "기타", color: "#9ca3af" };
   }
   function isImportantEvent(e) {
     const pr = e.isEngineEvent && e.detail.definition ? e.detail.definition.priority : 2;
@@ -61,11 +41,11 @@
     const [regions, subsidy, todoDefsFile] = await Promise.all([
       loadJson("data/regions.json"),
       loadJson("data/subsidies.json"),
-      loadJson("data/todo-definitions.v2.json"),
+      loadJson("data/todo-definitions.v3.json"),
     ]);
     regionsData = regions;
     // 건강검진·예방접종·성장발달(및 이유식/구강/수면/안전/생활/보육)은 이제
-    // data/todo-definitions.v2.json(73개 TodoDefinition) + js/todo-engine.js로 계산한다.
+    // data/todo-definitions.v3.json(75개 TodoDefinition) + js/todo-engine.js로 계산한다.
     // 지자체 지원금만 기존 subsidies.json 로직을 그대로 쓴다(js/schedule.js buildSubsidyEvents).
     dataset = { subsidy, todoDefinitions: todoDefsFile.todos };
   }
@@ -438,9 +418,9 @@
   }
 
   function renderCalLegend() {
-    el("cal-legend").innerHTML = CAL_LEGEND.map(
-      (g) => `<span class="cal-legend-item"><span class="dot" style="background:${g.color}"></span>${g.label}</span>`
-    ).join("");
+    el("cal-legend").innerHTML = Object.values(CATEGORY_META)
+      .map((g) => `<span class="cal-legend-item"><span class="dot" style="background:${g.color}"></span>${g.label}</span>`)
+      .join("");
   }
 
   /** 진행현황 카드 — "달력에 보이는 달" 기준(오늘 탭의 상태 기반 집계와는 다른, 순수 날짜 집계). */
@@ -983,7 +963,11 @@
     completed = loadCompleted();
     try {
       const savedCats = JSON.parse(localStorage.getItem(ACTIVE_CATS_KEY));
-      if (Array.isArray(savedCats) && savedCats.length) activeCats = new Set(savedCats);
+      // 예전 4개 카테고리 체계("health"/"growth" 등)로 저장된 값은 새 6개 카테고리 키와
+      // 하나도 안 맞아서 전부 걸러지면 화면에 아무것도 안 보이게 된다 — 그런 경우 기본값(전체
+      // 선택)으로 되돌린다.
+      const validSaved = Array.isArray(savedCats) ? savedCats.filter((c) => c in CATEGORY_META) : [];
+      if (validSaved.length) activeCats = new Set(validSaved);
     } catch (e) {}
 
     el("province").addEventListener("change", (e) => populateDistricts(e.target.value));

@@ -5,7 +5,7 @@
     "verifiedAt": "2026-09-28",
     "count": 75,
     "displayMonthPolicy": "displayMonth는 부모가 해당 행동을 준비·실행하기 좋은 대표 월령이다. 원래 trigger/occurrences/variants는 보존했다. 발달 신호·상대 일정·참고 항목은 월령을 임의로 고정하지 않고 displayMonth=null로 두었다. displayMonth는 실제 적용 기간을 대체하지 않는다.",
-    "displayMonthRevision": "대표 월령 검토본",
+    "displayMonthRevision": "대표 월령 2차 개선본 — 0개월 일괄노출 완화, 지속관리/필요시확인 라벨 정리 (todo-definitions.v2.json 기준, 원본 보존)",
     "categoryGroupPolicy": "달력·체크리스트 화면에 쓰는 6개 상위 카테고리(발달관찰/예방접종/영유아검진/생활·수유/안전·돌봄/행정·지원금)를 각 Todo의 10개 세부 category 코드(HC/VX/DV/FD/OR/SL/LF/SF/CR/SB)에서 categoryGroup 필드로 매핑해 추가했다. 기존에는 화면 표시용 4개 그룹(건강·접종/발달·생활/보육/지원금·제도)과 달력 범례용 6개 그룹이 서로 달라 불일치했던 것을 이 categoryGroup 하나로 통일한다.",
     "categoryGroupMap": {
       "HC": "영유아검진",
@@ -19,7 +19,22 @@
       "CR": "안전·돌봄",
       "SB": "행정·지원금"
     },
-    "cardnewsCrossCheck": "10-workspaces/14-육아지기/01-카드뉴스/03-제작의 CN-040(0~3개월)/CN-042(3~6개월)/CN-043(6~9개월)/CN-044(9~12개월) 체크리스트 카드뉴스 원고를 73개 기존 Todo와 대조했다. 대부분 항목(검진·접종·발달관찰·이유식 단계·치아·안전·수면)은 이미 기존 Todo로 커버됐고, 명확히 빠져 있던 2개만 추가했다: FD-13(핑거푸드/자기주도이유식 연습, CN-043·CN-044에 반복 등장하나 기존 FD 항목엔 없었음), FD-14(수유량·소변·체중·활력 관찰, CN-040에서 강조하나 기존 발달관찰(DV) 항목과 별개로 다뤄지지 않았음). 두 항목 모두 카드뉴스 원고 인용이라 1차 공식 문서 대조 전까지 준검증 상태로 표시했다."
+    "cardnewsCrossCheck": "10-workspaces/14-육아지기/01-카드뉴스/03-제작의 CN-040(0~3개월)/CN-042(3~6개월)/CN-043(6~9개월)/CN-044(9~12개월) 체크리스트 카드뉴스 원고를 73개 기존 Todo와 대조했다. 대부분 항목(검진·접종·발달관찰·이유식 단계·치아·안전·수면)은 이미 기존 Todo로 커버됐고, 명확히 빠져 있던 2개만 추가했다: FD-13(핑거푸드/자기주도이유식 연습, CN-043·CN-044에 반복 등장하나 기존 FD 항목엔 없었음), FD-14(수유량·소변·체중·활력 관찰, CN-040에서 강조하나 기존 발달관찰(DV) 항목과 별개로 다뤄지지 않았음). 두 항목 모두 카드뉴스 원고 인용이라 1차 공식 문서 대조 전까지 준검증 상태로 표시했다.",
+    "displayMonthRevisionLog": {
+      "basedOn": "todo-definitions.v2.json",
+      "principle": "docs 지침(예방접종·검진=실제일정 유지 / 발달관찰=관찰적기 / 준비행동=준비시점 / 지속안전수칙=대표월령·적용기간 분리 / 신청제도=신청가능시점과 기한 구분)",
+      "changedCount": 7,
+      "changedIds": [
+        "DV-01",
+        "CR-01",
+        "CR-04",
+        "SB-09",
+        "FD-14",
+        "OR-02",
+        "SB-10"
+      ],
+      "note": "위 7개 항목 외 68개 항목은 검토 결과 이미 각 원칙에 부합해(예방접종·검진은 실제 회차 일정, 이유식·구강 단계는 단계 시작월, 안전수칙은 발달 마일스톤 이벤트 또는 광범위 지속기간의 시작월) 변경하지 않음."
+    }
   },
   "todos": [
     {
@@ -733,9 +748,9 @@
       "leadDays": 14,
       "source": "CDC(K-DST 대상 아님)",
       "verificationStatus": "확인됨",
-      "displayMonth": 0,
-      "displayMonthLabel": "0개월",
-      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "displayMonth": 2,
+      "displayMonthLabel": "2개월",
+      "displayMonthBasis": "0~3개월 전체 구간을 0개월에 뭉쳐 노출하지 않고, 사회적 미소가 나타나기 시작하는 시점(약 생후 6~8주)을 대표 월령으로 설정",
       "categoryGroup": "발달관찰"
     },
     {
@@ -1212,7 +1227,7 @@
       "source": "국내외 상충 자료(재검증 완료)",
       "verificationStatus": "상충/공식기준불명확",
       "displayMonth": null,
-      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthLabel": "필요할 때 확인",
       "displayMonthBasis": "참고 정보; 월령 고정 일정 아님",
       "categoryGroup": "생활·수유"
     },
@@ -1858,9 +1873,9 @@
       "regionCondition": null,
       "source": "복지로·korea.kr",
       "verificationStatus": "확인됨(소득기준 확대)/세부요금 미검증",
-      "displayMonth": 0,
-      "displayMonthLabel": "0개월",
-      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "displayMonth": null,
+      "displayMonthLabel": "필요할 때 확인",
+      "displayMonthBasis": "소득기준 충족 여부와 실제 돌봄 필요 발생 여부에 따라 달라지는 저우선순위(priority 3) 항목이라 0개월 일괄 노출 대상에서 제외",
       "categoryGroup": "행정·지원금"
     },
     {
@@ -1878,7 +1893,7 @@
       "source": "지원금조회 서비스 데이터 재사용",
       "verificationStatus": "기존 유지",
       "displayMonth": null,
-      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthLabel": "필요할 때 확인",
       "displayMonthBasis": "거주 지자체 및 자격에 따라 확인",
       "categoryGroup": "행정·지원금"
     },
@@ -1899,9 +1914,9 @@
       "leadDays": 30,
       "source": "임신육아종합포털 아이사랑",
       "verificationStatus": "확인됨",
-      "displayMonth": 0,
-      "displayMonthLabel": "0개월",
-      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "displayMonth": null,
+      "displayMonthLabel": "필요할 때 확인",
+      "displayMonthBasis": "어린이집 이용 계획이 있는 가정만 해당하며 계획 시점에 따라 준비 시점이 크게 달라짐(국공립 대기가 긴 경우 조기 신청이 유리하나 전 가정 공통 사항 아님) — 0개월 일괄 노출 대상에서 제외",
       "categoryGroup": "안전·돌봄"
     },
     {
@@ -1965,9 +1980,9 @@
       "leadDays": 14,
       "source": "서울대 어린이보육지원센터 등",
       "verificationStatus": "미검증(표준보육과정 원문 대조 필요)",
-      "displayMonth": 0,
-      "displayMonthLabel": "0개월",
-      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "displayMonth": null,
+      "displayMonthLabel": "필요할 때 확인",
+      "displayMonthBasis": "실제 어린이집 입소가 확정된 시점에 확인하는 항목으로, 부모의 입소 계획에 따라 달라져 0개월 일괄 노출 대상에서 제외",
       "categoryGroup": "안전·돌봄"
     },
     {
@@ -2012,7 +2027,7 @@
       "categoryGroup": "생활·수유",
       "displayMonth": 0,
       "displayMonthLabel": "0개월",
-      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정"
+      "displayMonthBasis": "신생아 초기(생후 1~2주 전후) 수유량·체중 확인이 특히 중요해 0개월부터 안내하되, 3개월까지 지속 관찰하는 항목(대표 월령이 지났다고 완료 처리하지 않음)"
     }
   ]
 }

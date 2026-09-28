@@ -45,8 +45,8 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 .profile-card .avatar {
-  width: 52px; height: 52px; border-radius: 50%; background: #ffe9d9;
-  display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0;
+  width: 52px; height: 52px; border-radius: 50%; background: #ffe9d9; color: var(--accent-dark);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .profile-card .profile-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .profile-card .profile-text strong { font-size: 16px; }
@@ -120,6 +120,24 @@ body {
 .ongoing-group-card.open .chevron { transform: rotate(180deg); }
 .ongoing-group-body { padding: 0 16px 16px; display: none; }
 .ongoing-group-card.open .ongoing-group-body { display: block; }
+
+/* 전체 체크리스트: 월령별 타임라인(세로 선 + 점) — 카드 박스 대신 왼쪽 선으로 흐름을 보여준다 */
+#list-checklist { position: relative; padding-left: 20px; }
+#list-checklist::before {
+  content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: var(--border);
+}
+.month-group-card {
+  position: relative; background: none; border: none; border-radius: 0; margin-bottom: 24px; overflow: visible;
+}
+.month-group-card::before {
+  content: ""; position: absolute; left: -20px; top: 2px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--border); border: 2px solid var(--bg); box-shadow: 0 0 0 1px var(--border);
+}
+.month-group-card.open::before { background: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.month-group-card .ongoing-group-header { padding: 0 0 10px; gap: 8px; }
+.month-group-card .ongoing-group-header .group-text strong { font-size: 16px; }
+.month-group-card .ongoing-group-body { padding: 0; }
+.month-group-card.open .ongoing-group-body { display: flex; flex-direction: column; gap: 10px; }
 
 /* 이달의 달력(주간 스트립) */
 .mini-calendar-card { margin-bottom: 16px; }

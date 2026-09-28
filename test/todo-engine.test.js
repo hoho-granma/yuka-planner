@@ -4,7 +4,7 @@
  */
 const assert = require("assert");
 const Engine = require("../js/todo-engine.js");
-const data = require("../data/todo-definitions.v2.json");
+const data = require("../data/todo-definitions.v3.json");
 
 const TODOS = data.todos;
 function findTodo(id) {
@@ -284,10 +284,10 @@ console.log("\nI. RELATIVE_TO_EVENT (VX-HEPA, A형간염 2차 = 1차 완료일 �
 }
 
 // =====================================================================
-console.log("\n통합: 73개 Todo 전체가 예외 없이 계산되는지");
+console.log("\n통합: 75개 Todo 전체가 예외 없이 계산되는지");
 // =====================================================================
 {
-  test("월령 0~36개월 전 구간에서 73개 전부 예외 없이 계산됨", () => {
+  test("월령 0~36개월 전 구간에서 75개 전부 예외 없이 계산됨", () => {
     for (let m = 0; m <= 36; m += 3) {
       const r = Engine.calculateTodoInstances(baseInput({ today: Engine.addMonths(birthDate, m), todoDefinitions: TODOS }));
       assert.ok(Array.isArray(r));
