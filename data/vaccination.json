@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "설명": "국가예방접종(NIP) 표준 일정. 백신 제조사·아이 건강 상태에 따라 실제 접종 간격이 달라질 수 있어 정확한 개인 일정은 소아청소년과·예방접종도우미에서 재확인해야 한다.",
+    "sourceName": "질병관리청 예방접종도우미 표준일정표",
+    "officialUrl": "https://nip.kdca.go.kr",
+    "lastVerified": "2026-09-28",
+    "disclaimer": "이 서비스는 표준 권장월령만 안내한다. 실제 접종은 담당 의료진과 상의해 결정한다."
+  },
+  "vaccines": [
+    { "id": "V-HEPB", "name": "B형간염", "doses": [ { "ageMonths": 0, "label": "1차 (출생 후 12시간 이내)" }, { "ageMonths": 1, "label": "2차" }, { "ageMonths": 6, "label": "3차" } ] },
+    { "id": "V-BCG", "name": "BCG(결핵)", "doses": [ { "ageMonths": 1, "label": "1회 (생후 4주 이내 권장)" } ] },
+    { "id": "V-DTAP", "name": "DTaP(디프테리아·파상풍·백일해)", "doses": [ { "ageMonths": 2, "label": "1차" }, { "ageMonths": 4, "label": "2차" }, { "ageMonths": 6, "label": "3차" }, { "ageMonths": 16, "label": "4차 추가 (15~18개월)" }, { "ageMonths": 60, "label": "5차 추가 (만 4~6세)" } ] },
+    { "id": "V-IPV", "name": "IPV(폴리오)", "doses": [ { "ageMonths": 2, "label": "1차" }, { "ageMonths": 4, "label": "2차" }, { "ageMonths": 12, "label": "3차 (6~18개월)" }, { "ageMonths": 60, "label": "4차 (만 4~6세)" } ] },
+    { "id": "V-HIB", "name": "Hib(b형헤모필루스인플루엔자)", "doses": [ { "ageMonths": 2, "label": "1차" }, { "ageMonths": 4, "label": "2차" }, { "ageMonths": 6, "label": "3차" }, { "ageMonths": 13, "label": "4차 (12~15개월)" } ] },
+    { "id": "V-PCV", "name": "폐렴구균(단백결합)", "doses": [ { "ageMonths": 2, "label": "1차" }, { "ageMonths": 4, "label": "2차" }, { "ageMonths": 6, "label": "3차" }, { "ageMonths": 13, "label": "4차 (12~15개월)" } ] },
+    { "id": "V-RV", "name": "로타바이러스", "doses": [ { "ageMonths": 2, "label": "1차" }, { "ageMonths": 4, "label": "2차 (백신 종류에 따라 3차 필요할 수 있음)" } ] },
+    { "id": "V-MMR", "name": "MMR(홍역·유행성이하선염·풍진)", "doses": [ { "ageMonths": 13, "label": "1차 (12~15개월)" }, { "ageMonths": 60, "label": "2차 (만 4~6세)" } ] },
+    { "id": "V-VAR", "name": "수두", "doses": [ { "ageMonths": 13, "label": "1회 (12~15개월)" } ] },
+    { "id": "V-HEPA", "name": "A형간염", "doses": [ { "ageMonths": 13, "label": "1차 (12~23개월)" }, { "ageMonths": 19, "label": "2차 (1차 후 6~12개월 뒤)" } ] },
+    { "id": "V-JEV", "name": "일본뇌염(사백신 기준)", "doses": [ { "ageMonths": 12, "label": "1차" }, { "ageMonths": 13, "label": "2차 (1차 후 7~14일 뒤)" }, { "ageMonths": 24, "label": "3차" }, { "ageMonths": 72, "label": "4차 (만 6세)" }, { "ageMonths": 144, "label": "5차 (만 12세)" } ], "note": "생백신을 선택한 경우 12개월·24개월 2회로 일정이 달라진다." },
+    { "id": "V-FLU", "name": "인플루엔자", "doses": [ { "ageMonths": 6, "label": "생후 6개월부터 매년 접종 권장" } ], "recurring": "yearly" }
+  ]
+}

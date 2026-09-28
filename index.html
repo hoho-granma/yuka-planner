@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>한눈육아 | 우리 아이 육아 통합 캘린더</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">🧸 한눈육아</span>
+    <button id="btn-reset" class="btn-text hidden">정보 다시 입력</button>
+  </header>
+
+  <main id="app">
+    <!-- 1. 랜딩 -->
+    <section id="view-landing" class="view">
+      <div class="hero">
+        <h1>아이 키우면서 챙겨야 할 모든 것,<br />한눈육아 하나로.</h1>
+        <p class="sub">아이 생년월일과 사는 지역만 알려주시면<br />건강검진·예방접종·지원금·발달까지 한 캘린더에서 챙겨드려요.</p>
+      </div>
+
+      <form id="query-form" class="card form-card">
+        <div class="field">
+          <label for="birthDate">아이 생년월일 <span class="req">*</span></label>
+          <input type="date" id="birthDate" required />
+        </div>
+
+        <div class="field">
+          <label for="gender">아이 성별</label>
+          <select id="gender">
+            <option value="">선택 안 함</option>
+            <option value="남아">남아</option>
+            <option value="여아">여아</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="province">거주 지역 (시·도) <span class="req">*</span></label>
+          <select id="province" required>
+            <option value="" disabled selected>선택해주세요</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="district">거주 지역 (시·군·구) <span class="req">*</span></label>
+          <select id="district" required disabled>
+            <option value="" disabled selected>시·도를 먼저 선택해주세요</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-primary">우리 아이 캘린더 만들기</button>
+        <p class="fine-print">회원가입 없이 바로 시작해요. 입력한 정보는 이 브라우저에만 저장돼요.</p>
+      </form>
+    </section>
+
+    <!-- 2. 캘린더 -->
+    <section id="view-calendar" class="view hidden">
+      <div id="child-info" class="child-info card"></div>
+
+      <div class="filter-chips" id="filter-chips"></div>
+
+      <div class="card calendar-card">
+        <div class="calendar-nav">
+          <button id="btn-prev-month" class="btn-icon">◀</button>
+          <h2 id="calendar-title"></h2>
+          <button id="btn-next-month" class="btn-icon">▶</button>
+        </div>
+        <div class="calendar-weekdays">
+          <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+        </div>
+        <div id="calendar-grid" class="calendar-grid"></div>
+      </div>
+
+      <div class="card list-card">
+        <h2>이번 달 챙길 일</h2>
+        <div id="list-thismonth" class="event-list"></div>
+        <p id="empty-thismonth" class="empty hidden">이번 달은 특별히 챙길 일정이 없어요.</p>
+      </div>
+
+      <div class="card list-card">
+        <h2>다음 달 미리보기</h2>
+        <div id="list-nextmonth" class="event-list"></div>
+        <p id="empty-nextmonth" class="empty hidden">다음 달도 아직은 여유로워요.</p>
+      </div>
+
+      <div class="card list-card">
+        <h2>지난 일정</h2>
+        <p class="fine-print" style="margin-top:-4px;">완료 체크를 하지 않아도 괜찮아요 — 놓친 게 있는지만 확인하세요.</p>
+        <div id="list-past" class="event-list"></div>
+        <p id="empty-past" class="empty hidden">아직 지난 일정이 없어요.</p>
+      </div>
+    </section>
+  </main>
+
+  <div id="detail-modal" class="modal hidden">
+    <div id="modal-backdrop" class="modal-backdrop"></div>
+    <div class="modal-panel" id="modal-content"></div>
+  </div>
+
+  <script src="js/schedule.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
