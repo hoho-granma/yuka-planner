@@ -25,15 +25,127 @@ body {
   line-height: 1.5;
 }
 
-.topbar {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
-  background: var(--card-bg);
+.landing-topbar {
+  padding: 0 0 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
 }
 .brand { font-weight: 700; font-size: 18px; }
+
+/* 대시보드 헤더 */
+.app-header { display: flex; align-items: center; margin-bottom: 16px; }
+.app-title { font-weight: 800; font-size: 22px; }
+
+/* 프로필 카드 */
+.profile-card {
+  width: 100%;
+  display: flex; align-items: center; gap: 12px;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px 16px; margin-bottom: 16px; cursor: pointer; text-align: left; font-family: inherit;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.profile-card .avatar {
+  width: 52px; height: 52px; border-radius: 50%; background: #ffe9d9;
+  display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0;
+}
+.profile-card .profile-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.profile-card .profile-text strong { font-size: 16px; }
+.profile-card .profile-location { font-size: 13px; color: var(--text-muted); }
+.profile-card .chevron { color: var(--text-muted); font-size: 20px; }
+
+/* 세그먼트 탭 */
+.segmented-tabs {
+  display: flex; background: #f3ece3; border-radius: 999px; padding: 4px; margin-bottom: 16px; gap: 2px;
+}
+.seg-tab {
+  flex: 1; border: none; background: none; padding: 10px 6px; border-radius: 999px;
+  font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; font-family: inherit;
+}
+.seg-tab.active { background: #fff; color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+/* 진행 카드 */
+.progress-card {
+  width: 100%; display: flex; align-items: center; gap: 12px;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; margin-bottom: 20px; cursor: pointer; text-align: left; font-family: inherit;
+}
+.progress-card .progress-icon {
+  width: 40px; height: 40px; border-radius: 12px; background: #ffe9d9; color: var(--accent-dark);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.progress-card .progress-icon svg { width: 20px; height: 20px; }
+.progress-card .progress-text { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.progress-card strong { font-size: 15px; }
+.progress-summary { font-size: 12px; color: var(--text-muted); }
+.progress-bar { display: block; height: 6px; border-radius: 999px; background: #f0eef0; overflow: hidden; margin-top: 2px; }
+.progress-bar-fill { display: block; height: 100%; background: var(--success); border-radius: 999px; }
+.progress-card .chevron { color: var(--text-muted); font-size: 20px; }
+
+/* 섹션 헤더 + 배지 */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin: 20px 0 10px; }
+.section-header h3 { font-size: 15px; margin: 0; }
+.count-badge { background: #f3ece3; color: var(--text-muted); font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+
+/* 곧 다가오는 일정: 컴팩트 행 */
+.compact-list { display: flex; flex-direction: column; gap: 8px; }
+.compact-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; cursor: pointer;
+}
+.compact-item .date-pill {
+  flex-shrink: 0; font-size: 12px; font-weight: 700; color: var(--accent-dark);
+  background: #fff0e4; padding: 5px 8px; border-radius: 8px; white-space: nowrap;
+}
+.compact-item .compact-title { flex: 1; font-size: 13px; font-weight: 600; }
+.compact-item .category-chip {
+  flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; color: #fff;
+}
+.compact-item .chevron { color: var(--text-muted); flex-shrink: 0; }
+
+/* 상시 확인 그룹(접기/펼치기) */
+.ongoing-group-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+.ongoing-group-header {
+  width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  background: none; border: none; cursor: pointer; text-align: left; font-family: inherit;
+}
+.ongoing-group-header .group-icon {
+  width: 36px; height: 36px; border-radius: 10px; background: #ede9fe;
+  display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
+}
+.ongoing-group-header .group-text { flex: 1; }
+.ongoing-group-header .group-text strong { display: block; font-size: 14px; }
+.ongoing-group-header .group-text span { font-size: 12px; color: var(--text-muted); }
+.ongoing-group-header .count-badge { flex-shrink: 0; }
+.ongoing-group-header .chevron { color: var(--text-muted); transition: transform .15s; }
+.ongoing-group-card.open .chevron { transform: rotate(180deg); }
+.ongoing-group-body { padding: 0 16px 16px; display: none; }
+.ongoing-group-card.open .ongoing-group-body { display: block; }
+
+/* 이달의 달력(주간 스트립) */
+.mini-calendar-card { margin-bottom: 16px; }
+.mini-calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.mini-calendar-header h3 { font-size: 15px; margin: 0; }
+.mini-calendar-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.mini-day { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 2px; border-radius: 10px; }
+.mini-day .mini-dow { font-size: 10px; color: var(--text-muted); }
+.mini-day .mini-num { font-size: 14px; font-weight: 700; }
+.mini-day.today { background: #fff0e4; }
+.mini-day .mini-label { font-size: 9px; color: var(--text-muted); white-space: nowrap; }
+.mini-day .mini-dot { width: 5px; height: 5px; border-radius: 50%; margin: 0 auto; }
+
+/* 하단 탭바 */
+.bottom-nav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: flex; background: #fff; border-top: 1px solid var(--border);
+  max-width: 480px; margin: 0 auto; padding: 6px 0 max(6px, env(safe-area-inset-bottom));
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: none; border: none; font-size: 10px; color: var(--text-muted); cursor: pointer; padding: 6px 0; font-family: inherit;
+}
+.nav-item .nav-icon { display: flex; }
+.nav-item .nav-icon svg { width: 22px; height: 22px; }
+.nav-item.active { color: var(--accent-dark); font-weight: 700; }
 
 #app {
   max-width: 480px;
@@ -42,6 +154,8 @@ body {
 }
 
 .hidden { display: none !important; }
+
+#view-calendar { padding-bottom: 64px; }
 
 .hero { text-align: center; margin-bottom: 24px; }
 .hero h1 { font-size: 22px; line-height: 1.4; margin: 0 0 12px; color: var(--accent-dark); }
@@ -132,13 +246,26 @@ select:disabled { background: #f7f2ec; color: var(--text-muted); }
 }
 
 .fine-print { text-align: center; font-size: 12px; color: var(--text-muted); margin: 12px 0 0; }
+.code-hint-oneline { margin: 8px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* 아이 정보 */
 .child-info { background: linear-gradient(135deg, #fff3e6, #ffffff); }
-.child-info h2 { margin: 0 0 8px; font-size: 16px; }
+.child-info-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
+.child-info-header h2 { margin: 0; font-size: 16px; }
 .child-info .row { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; color: var(--text-muted); }
 .child-info .row strong { color: var(--text); }
 .child-info .next-up { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 13px; }
+.btn-code-pill {
+  flex-shrink: 0;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
 
 /* 카테고리 필터 */
 .filter-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
@@ -168,6 +295,44 @@ select:disabled { background: #f7f2ec; color: var(--text-muted); }
 .day-cell .dots .dot { width: 5px; height: 5px; border-radius: 50%; }
 .day-cell.has-event { cursor: pointer; }
 .day-cell.has-event:hover { background: #f7f2ec; }
+
+/* 달력 탭 v2 — 진행카드/범례/마커/선택일 패널/남은 할일 그리드 */
+.cal-progress-card { display: flex; flex-direction: column; gap: 10px; }
+.cal-progress-row { display: flex; align-items: center; gap: 10px; }
+.cal-progress-row strong { font-size: 14px; }
+.cal-progress-bar { position: relative; height: 18px; }
+.cal-progress-bar .progress-bar-fill { background: var(--success); }
+.cal-progress-bar-label {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+}
+.cal-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.cal-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
+.cal-legend-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+.calendar-grid-v2 .day-cell { min-height: 56px; padding: 6px 2px 4px; text-align: left; }
+.calendar-grid-v2 .day-cell .num { padding-left: 4px; font-size: 12px; }
+.calendar-grid-v2 .day-cell.selected { outline: 2px solid var(--accent); outline-offset: -2px; }
+.calendar-grid-v2 .markers { display: flex; justify-content: center; align-items: center; gap: 3px; margin-top: 4px; flex-wrap: wrap; }
+.cal-marker {
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 9px; color: #fff; line-height: 1;
+}
+.cal-marker.todo { }
+.cal-marker.done-strong { }
+.cal-marker.done-soft { background: #e5e1dc; color: #a89f96; }
+.cal-marker-more { font-size: 9px; color: var(--text-muted); }
+
+.selected-day-card { position: relative; }
+.selected-day-handle { width: 36px; height: 4px; border-radius: 999px; background: var(--border); margin: 0 auto 10px; }
+.selected-day-card h3 { font-size: 15px; margin: 0 0 10px; }
+
+.remaining-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+.remaining-item {
+  display: flex; align-items: center; gap: 8px; text-align: left;
+  background: none; border: none; padding: 6px 0; font-size: 13px; font-family: inherit; color: var(--text); cursor: pointer;
+}
+.remaining-item .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
 /* 일정 리스트 */
 .list-card h2 { font-size: 16px; margin: 0 0 12px; }

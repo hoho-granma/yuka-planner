@@ -1,12 +1,42 @@
-// 한눈육아 통합 일정 엔진: 아이 정보(생년월일·거주지역)를 받아
-// 검진·접종·성장발달·지원금 네 카테고리의 일정을 하나의 배열로 합친다.
-// 완료 여부는 여기서 다루지 않는다 (app.js가 localStorage와 함께 처리).
+// 한눈육아 통합 일정 엔진.
+// Phase 3부터는 건강검진·예방접종·성장발달(및 이유식/구강/수면/안전/생활/보육)을
+// js/todo-engine.js + data/todo-definitions.v2.json(73개 TodoDefinition) 기준으로 계산하고,
+// 지자체(지역) 지원금만 기존 data/subsidies.json 로직(buildSubsidyEvents)을 그대로 유지한다.
+// 완료 여부는 여기서 다루지 않는다 (app.js가 localStorage/Firestore와 함께 처리).
 
+// 필터칩·달력 범례·체크리스트가 전부 이 6개 카테고리 하나로 통일된다(예전엔 필터칩이 4개,
+// 달력 범례가 6개로 서로 달라 불일치했다). 각 TodoDefinition의 categoryGroup 필드값과
+// 정확히 같은 문자열을 키로 쓴다(data/todo-definitions.v2.json의 _meta.categoryGroupMap 참고).
 const CATEGORY_META = {
-  health: { label: "건강검진", color: "#3b82f6" },
-  vaccine: { label: "예방접종", color: "#8b5cf6" },
-  growth: { label: "성장·발달", color: "#22c55e" },
-  subsidy: { label: "지원금·제도", color: "#f59e0b" },
+  "발달관찰": { label: "발달관찰", color: "#22c55e" },
+  "예방접종": { label: "예방접종", color: "#3b82f6" },
+  "영유아검진": { label: "영유아검진", color: "#a855f7" },
+  "생활·수유": { label: "생활·수유", color: "#eab308" },
+  "안전·돌봄": { label: "안전·돌봄", color: "#ef4444" },
+  "행정·지원금": { label: "행정·지원금", color: "#f59e0b" },
+};
+
+// TodoDefinition의 10개 세부 카테고리 코드 → 위 6개 그룹 중 하나. td.categoryGroup이 있으면
+// 그걸 우선 쓰고(js/schedule.js buildTodoEngineEvents), 혹시 없는 예외적인 경우에만 이 표로 보정한다.
+const ENGINE_CATEGORY_GROUP = {
+  HC: "영유아검진", VX: "예방접종",
+  DV: "발달관찰",
+  FD: "생활·수유", OR: "생활·수유", SL: "생활·수유", LF: "생활·수유",
+  SF: "안전·돌봄", CR: "안전·돌봄",
+  SB: "행정·지원금",
+};
+const ENGINE_CATEGORY_LABEL = {
+  HC: "건강검진", VX: "예방접종", DV: "성장발달", FD: "이유식·영양", OR: "구강",
+  SL: "수면", SF: "안전", LF: "생활", CR: "보육", SB: "지원금·제도",
+};
+const ENGINE_STATUS_LABEL = {
+  SCHEDULED: "예정",
+  UPCOMING: "곧이에요",
+  DUE: "지금 챙기세요",
+  DONE: "완료",
+  OVERDUE_CATCHUP: "기한이 지났어요 · 지금이라도 챙기세요",
+  OVERDUE_FINAL: "이 시기는 지났어요",
+  PENDING_MILESTONE: "아이가 이 모습을 보이면 체크해주세요",
 };
 
 function addMonths(date, months) {
@@ -35,53 +65,81 @@ function regionMatches(subsidy, province, district) {
   return false;
 }
 
-function buildHealthEvents(birthDate, healthData) {
-  return healthData.checkups.map((c) => ({
-    id: c.id,
-    category: "health",
-    title: `영유아 건강검진 ${c.order}차`,
-    date: addMonths(birthDate, c.minMonths),
-    dateLabel: c.ageLabel,
-    summary: c.items.join(" · ") + (c.hasDevelopmentCheck ? " · 발달선별검사(K-DST)" : "") + (c.hasOralCheck ? " · 구강검진" : ""),
-    detail: c.prep,
-    note: c.note || "",
-    source: healthData._meta.sourceName,
-    officialUrl: healthData._meta.officialUrl,
-  }));
+// occurrenceKey를 사람이 읽을 라벨로 바꾼다(다회차 Todo가 전부 같은 제목으로 보이는 문제 방지).
+function occurrenceLabel(occurrenceKey) {
+  if (!occurrenceKey || occurrenceKey === "default") return "";
+  let m = occurrenceKey.match(/^dose-(\d+)$/);
+  if (m) return ` ${m[1]}차`;
+  m = occurrenceKey.match(/^occ-(\d+)$/);
+  if (m) return ` ${m[1]}회차`;
+  m = occurrenceKey.match(/^season-(\d+)-dose-(\d+)$/);
+  if (m) return ` (최초 시즌 ${m[2]}차)`;
+  m = occurrenceKey.match(/^season-(\d+)$/);
+  if (m) return ` (${m[1]}번째 시즌)`;
+  return ` (${occurrenceKey})`;
 }
 
-function buildVaccineEvents(birthDate, vaccineData) {
+const DATE_SPECIFIC_MAX_WIDTH_DAYS = 60; // 이보다 넓은 창은 "특정 날짜"가 아니라 "그 기간 내 확인할 일"로 다룬다
+
+/**
+ * windowStart~windowEnd 창이 좁으면(검진 예약일, 접종일처럼 실제로 날짜를 특정할 수 있는 것)
+ * "특정 일자 일정"으로, 넓거나 열려있으면(수개월~수년짜리 안전수칙·지원금 수급기간, 마일스톤
+ * 트리거형) "그때그때 확인할 일"로 구분한다 — 사용자 피드백: "뒤집기 시작후 낙상예방"처럼
+ * 월령/모습이 보이면 하는 일을 9/28 같은 특정 날짜에 박아넣는 게 오히려 혼란스러웠다.
+ */
+function computeIsDateSpecific(inst) {
+  if (inst.status === "PENDING_MILESTONE") return false;
+  if (!inst.windowStart || !inst.windowEnd) return false;
+  const widthDays = (inst.windowEnd.getTime() - inst.windowStart.getTime()) / (24 * 60 * 60 * 1000);
+  return widthDays <= DATE_SPECIFIC_MAX_WIDTH_DAYS;
+}
+
+/**
+ * TodoEngine(js/todo-engine.js) + 73개 TodoDefinition으로 HC/VX/DV/FD/OR/SL/SF/LF/CR(전국공통 SB 포함)
+ * 이벤트를 만든다. REFERENCE(OR-02, SB-10 — 지자체지원금은 아래 buildSubsidyEvents가 대신 처리)와
+ * status가 null인 항목(eligibility 미확인, 독감 2번째 시즌 이후처럼 정책 미확정인 것)은
+ * "확정된 일정"으로 잘못 보여주지 않기 위해 캘린더/리스트에서 아예 제외한다.
+ *
+ * windowStart가 null인 경우도 두 가지로 다르다: PENDING_MILESTONE(마일스톤 보고 대기)은
+ * "지금 확인해요" 목록에 계속 떠 있는 게 맞는 항목이라 표시하고, 그 외(RELATIVE_TO_EVENT인데
+ * 직전 회차가 아직 완료 안 돼 날짜를 계산할 수 없는 경우, 예: 일본뇌염 2·3차)는 지금 보여줄
+ * 날짜 자체가 없는 것이므로 아예 숨긴다(직전 회차가 완료되면 자동으로 나타난다).
+ */
+function buildTodoEngineEvents(profile, todoDefinitions, completions) {
+  if (typeof TodoEngine === "undefined" || !todoDefinitions || !todoDefinitions.length) return [];
+  const instances = TodoEngine.calculateTodoInstances({
+    today: new Date(),
+    child: { birthDate: profile.birthDate, gender: profile.gender },
+    region: { province: profile.province, district: profile.district },
+    familyDeclaredAttributes: {},
+    completions: completions || [],
+    todoDefinitions,
+  });
+  const byId = new Map(todoDefinitions.map((t) => [t.todo_id, t]));
   const events = [];
-  for (const v of vaccineData.vaccines) {
-    v.doses.forEach((dose, idx) => {
-      events.push({
-        id: `${v.id}-${idx}`,
-        category: "vaccine",
-        title: `${v.name} ${dose.label}`,
-        date: addMonths(birthDate, dose.ageMonths),
-        dateLabel: `생후 ${dose.ageMonths}개월 무렵`,
-        summary: v.note || "",
-        detail: vaccineData._meta.disclaimer,
-        source: vaccineData._meta.sourceName,
-        officialUrl: vaccineData._meta.officialUrl,
-      });
+  for (const inst of instances) {
+    if (inst.status === "REFERENCE" || inst.status === null) continue;
+    if (inst.windowStart === null && inst.status !== "PENDING_MILESTONE") continue; // 아직 계산 불가(선행 회차 대기)
+    const td = byId.get(inst.todo_id);
+    const isDateSpecific = computeIsDateSpecific(inst);
+    const reviewTag = inst.needsReview ? "⚠️ 확인 필요 · " : "";
+    events.push({
+      id: `${inst.todo_id}__${inst.occurrenceKey}`,
+      category: (td && td.categoryGroup) || ENGINE_CATEGORY_GROUP[inst.category] || "생활·수유",
+      subcategoryLabel: ENGINE_CATEGORY_LABEL[inst.category] || inst.category,
+      title: reviewTag + inst.title + occurrenceLabel(inst.occurrenceKey),
+      date: inst.windowStart || new Date(),
+      dateLabel: ENGINE_STATUS_LABEL[inst.status] || inst.status,
+      isDateSpecific,
+      summary: td ? td.parentAction : "",
+      detail: { instance: inst, definition: td },
+      source: td ? td.source : "",
+      officialUrl: null,
+      isEngineEvent: true,
+      engineStatus: inst.status,
     });
   }
   return events;
-}
-
-function buildGrowthEvents(birthDate, growthData) {
-  return growthData.bands.map((b) => ({
-    id: b.id,
-    category: "growth",
-    title: `${b.title} 성장·발달 체크`,
-    date: addMonths(birthDate, b.minMonths),
-    dateLabel: `생후 ${b.minMonths}~${b.maxMonths}개월`,
-    summary: b.checklist.slice(0, 3).join(" · "),
-    detail: b,
-    source: growthData._meta.sourceName,
-    officialUrl: null,
-  }));
 }
 
 function subsidyDeadlineText(s) {
@@ -92,9 +150,16 @@ function subsidyDeadlineText(s) {
   return "신청 기한 확인 필요";
 }
 
+// data/subsidies.json에는 원래 "전국공통(ALL)"으로 표시된 항목도 몇 개 섞여 있었는데,
+// 그중 아래 4개는 이제 todo-definitions.v2.json의 SB-01/02/03/05로 새 엔진이 계산한다.
+// 두 경로가 같은 제도를 각자 다른 문구로 중복 표시하는 걸 막기 위해 여기서 제외한다.
+// (NAT-004 산모·신생아 건강관리처럼 아직 엔진에 없는 항목은 그대로 지역 지원금 경로로 유지)
+const SUBSIDIES_SUPERSEDED_BY_ENGINE = ["NAT-001", "NAT-002", "NAT-003", "NAT-005"];
+
 function buildSubsidyEvents(birthDate, province, district, subsidyData) {
   const events = [];
   for (const s of subsidyData.subsidies) {
+    if (SUBSIDIES_SUPERSEDED_BY_ENGINE.includes(s.id)) continue;
     if (!regionMatches(s, province, district)) continue;
 
     const minA = s.minAgeMonths ?? 0;
@@ -120,7 +185,8 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData) {
     // 훨씬 중요하다 — 리스트 노출 판단은 app.js가 minAgeMonths/maxAgeMonths/deadlineDate로 직접 한다.
     events.push({
       id: s.id,
-      category: "subsidy",
+      category: "행정·지원금",
+      subcategoryLabel: "지원금·제도",
       title: s.name,
       date: anchorDate,
       dateLabel: subsidyDeadlineText(s),
@@ -133,16 +199,16 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData) {
       maxAgeMonths: maxA,
       entryDate,
       deadlineDate,
+      isLegacySubsidy: true, // 지자체(지역) 지원금 — 기존 subsidyIsActiveNow() 특수 로직을 그대로 쓴다
+      isDateSpecific: true, // 기존 방식 그대로 캘린더에 표시
     });
   }
   return events;
 }
 
-function buildSchedule({ birthDate, province, district }, dataset) {
+function buildSchedule({ birthDate, province, district, gender }, dataset, completions) {
   const events = [
-    ...buildHealthEvents(birthDate, dataset.health),
-    ...buildVaccineEvents(birthDate, dataset.vaccine),
-    ...buildGrowthEvents(birthDate, dataset.growth),
+    ...buildTodoEngineEvents({ birthDate, province, district, gender }, dataset.todoDefinitions, completions),
     ...buildSubsidyEvents(birthDate, province, district, dataset.subsidy),
   ];
   events.sort((a, b) => a.date.getTime() - b.date.getTime());

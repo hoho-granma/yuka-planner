@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>Firestore v2 수동 테스트 (실제 프로젝트용)</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 720px; margin: 40px auto; line-height: 1.6; }
+  button { display: block; width: 100%; margin: 6px 0; padding: 10px; font-size: 14px; }
+  pre { background: #111; color: #0f0; padding: 12px; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; }
+  .warn { background: #fff3cd; padding: 10px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<h1>Firestore v2 수동 테스트</h1>
+<p class="warn">
+  이 페이지는 index.html에서 링크되어 있지 않고, 앱 어디에서도 로드되지 않는다.
+  실제 Firebase 프로젝트(yuka-planner)에 라이브로 read/write하므로,
+  <b>firestore.rules를 먼저 배포한 뒤</b> 브라우저로 직접 이 파일을 열어 확인한다.
+  이 세션(코딩 에이전트)에는 Firebase CLI/인증정보가 없어 이 테스트를 대신 실행할 수 없었다.
+</p>
+
+<button id="btnCreateA">1. 가족 A 생성</button>
+<button id="btnCreateB">2. 가족 B 생성</button>
+<button id="btnWriteA">3. 가족 A에 완료기록 쓰기 (정상 케이스)</button>
+<button id="btnReadAAsA">4. 가족 A 본인 데이터 읽기 (정상 케이스)</button>
+<button id="btnCrossReadB">5. 가족 B의 familyId로 가족 A 아닌 것 확인 (교차 접근은 애초에 다른 경로라 자연히 분리됨)</button>
+<button id="btnListFamilies">6. families 컬렉션 전체 list 시도 (차단되어야 함)</button>
+<button id="btnListCodes">7. familyCodes 컬렉션 전체 list 시도 (차단되어야 함)</button>
+<button id="btnWriteBadId">8. completions에 규칙 위반 ID로 쓰기 시도 (차단되어야 함)</button>
+
+<pre id="log">로그가 여기 표시됩니다.</pre>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+  // sync-v2.js는 로드되는 즉시 firebase.firestore()를 호출하므로,
+  // 반드시 initializeApp을 먼저 실행한 뒤 sync-v2.js를 로드해야 한다
+  // (js/sync.js와 동일한 설정 — 실제 프로젝트).
+  firebase.initializeApp({
+    apiKey: "AIzaSyC0KGZxGXLTwssoDukMON0sZS5nUvNdOGs",
+    authDomain: "yuka-planner.firebaseapp.com",
+    projectId: "yuka-planner",
+    storageBucket: "yuka-planner.firebasestorage.app",
+    messagingSenderId: "840177586261",
+    appId: "1:840177586261:web:ac4c70affbe8a8517a04dc",
+  });
+</script>
+<script src="../js/sync-v2.js"></script>
+<script>
+  const log = (msg, data) => {
+    const el = document.getElementById("log");
+    el.textContent += `\n> ${msg}\n` + (data !== undefined ? JSON.stringify(data, null, 2) : "");
+    el.scrollTop = el.scrollHeight;
+  };
+
+  let A = null; // { code, familyId, childId }
+  let B = null;
+
+  document.getElementById("btnCreateA").onclick = async () => {
+    try {
+      A = await FamilySyncV2.createFamilyV2(
+        { province: "경기도", district: "성남시" },
+        { birthDate: "2025-03-01", gender: "F" }
+      );
+      log("가족 A 생성 성공", A);
+    } catch (e) { log("가족 A 생성 실패", e.message); }
+  };
+
+  document.getElementById("btnCreateB").onclick = async () => {
+    try {
+      B = await FamilySyncV2.createFamilyV2(
+        { province: "서울특별시", district: "강남구" },
+        { birthDate: "2024-11-01", gender: "M" }
+      );
+      log("가족 B 생성 성공", B);
+    } catch (e) { log("가족 B 생성 실패", e.message); }
+  };
+
+  document.getElementById("btnWriteA").onclick = async () => {
+    if (!A) return log("먼저 가족 A를 생성하세요");
+    try {
+      const id = await FamilySyncV2.upsertCompletion(A.familyId, A.childId, {
+        todoId: "HC-01", occurrenceKey: "default", recordType: "TODO_COMPLETED",
+      });
+      log("가족 A 완료기록 쓰기 성공 (정상 케이스여야 함)", id);
+    } catch (e) { log("가족 A 완료기록 쓰기 실패 — 예상과 다름, 확인 필요", e.message); }
+  };
+
+  document.getElementById("btnReadAAsA").onclick = async () => {
+    if (!A) return log("먼저 가족 A를 생성하세요");
+    try {
+      const data = await FamilySyncV2.getFamilyByCode(A.code);
+      log("가족 A 본인 코드로 조회 성공 (정상 케이스여야 함)", data);
+    } catch (e) { log("가족 A 조회 실패 — 예상과 다름, 확인 필요", e.message); }
+  };
+
+  document.getElementById("btnCrossReadB").onclick = async () => {
+    if (!A || !B) return log("먼저 가족 A, B를 모두 생성하세요");
+    log("설명: A와 B는 familyId가 서로 다른 auto-id이고, 코드도 다르다. " +
+        "getFamilyByCode(A.code)가 항상 A의 familyId만 반환하고 B 데이터가 섞여 나오지 " +
+        "않는지 확인한다(=코드→familyId 매핑이 정확히 분리되는지).");
+    const data = await FamilySyncV2.getFamilyByCode(A.code);
+    const isCorrect = data && data.familyId === A.familyId && data.familyId !== B.familyId;
+    log(isCorrect ? "통과: A 코드로 A의 familyId만 반환됨" : "실패: familyId가 섞였습니다", data);
+  };
+
+  document.getElementById("btnListFamilies").onclick = async () => {
+    try {
+      const snap = await firebase.firestore().collection("families").get();
+      log(`차단되어야 하는데 성공함 — 규칙 확인 필요! 문서 ${snap.size}개 노출됨`, snap.docs.map(d => d.id));
+    } catch (e) { log("families 전체 list 차단됨 (기대한 결과)", e.message); }
+  };
+
+  document.getElementById("btnListCodes").onclick = async () => {
+    try {
+      const snap = await firebase.firestore().collection("familyCodes").get();
+      log(`차단되어야 하는데 성공함 — 규칙 확인 필요! 문서 ${snap.size}개 노출됨`, snap.docs.map(d => d.id));
+    } catch (e) { log("familyCodes 전체 list 차단됨 (기대한 결과)", e.message); }
+  };
+
+  document.getElementById("btnWriteBadId").onclick = async () => {
+    if (!A) return log("먼저 가족 A를 생성하세요");
+    try {
+      await firebase.firestore()
+        .collection("families").doc(A.familyId)
+        .collection("children").doc(A.childId)
+        .collection("completions").doc("아무-이름-마음대로")
+        .set({ todo_id: "HC-01", occurrenceKey: "default", recordType: "TODO_COMPLETED", recordedAt: new Date() });
+      log("차단되어야 하는데 성공함 — 규칙의 completionId 일치 검사 확인 필요!");
+    } catch (e) { log("규칙 위반 ID 쓰기 차단됨 (기대한 결과)", e.message); }
+  };
+</script>
+</body>
+</html>

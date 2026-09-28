@@ -1,0 +1,16 @@
+{
+  "name": "한눈육아",
+  "short_name": "한눈육아",
+  "description": "아이 생년월일과 거주지역만 입력하면 건강검진·예방접종·성장발달·지원금을 한 캘린더로 보여주는 서비스",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff8f0",
+  "theme_color": "#ff8a5c",
+  "lang": "ko",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

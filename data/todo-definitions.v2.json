@@ -1,0 +1,1973 @@
+{
+  "_meta": {
+    "설명": "docs/0-36개월-Todo-Master-설계.md(73개 확정 Todo) + docs/Todo-데이터모델-설계.md v2 스키마를 그대로 옮긴 TodoDefinition 마스터 데이터. 새로운 육아 사실/Todo를 추가하지 않았고, 기존 문서에 없던 파라미터(끝월령, event 이름 등)는 '엔진 구현상 필요해서 보수적으로 채운 값'이며 report에 명시한다.",
+    "source": "/Users/hhhhp/Downloads/육아_액션_대표월령_수정본.json (사용자 제공 대표월령 수정본) — 이 파일을 todo_list 기준파일로 채택",
+    "verifiedAt": "2026-09-28",
+    "count": 73,
+    "displayMonthPolicy": "displayMonth는 부모가 해당 행동을 준비·실행하기 좋은 대표 월령이다. 원래 trigger/occurrences/variants는 보존했다. 발달 신호·상대 일정·참고 항목은 월령을 임의로 고정하지 않고 displayMonth=null로 두었다. displayMonth는 실제 적용 기간을 대체하지 않는다.",
+    "displayMonthRevision": "대표 월령 검토본",
+    "categoryGroupPolicy": "달력·체크리스트 화면에 쓰는 6개 상위 카테고리(발달관찰/예방접종/영유아검진/생활·수유/안전·돌봄/행정·지원금)를 각 Todo의 10개 세부 category 코드(HC/VX/DV/FD/OR/SL/LF/SF/CR/SB)에서 categoryGroup 필드로 매핑해 추가했다. 기존에는 화면 표시용 4개 그룹(건강·접종/발달·생활/보육/지원금·제도)과 달력 범례용 6개 그룹이 서로 달라 불일치했던 것을 이 categoryGroup 하나로 통일한다.",
+    "categoryGroupMap": {
+      "HC": "영유아검진",
+      "VX": "예방접종",
+      "DV": "발달관찰",
+      "FD": "생활·수유",
+      "OR": "생활·수유",
+      "SL": "생활·수유",
+      "LF": "생활·수유",
+      "SF": "안전·돌봄",
+      "CR": "안전·돌봄",
+      "SB": "행정·지원금"
+    }
+  },
+  "todos": [
+    {
+      "todo_id": "HC-01",
+      "category": "HC",
+      "title": "1차 건강검진",
+      "parentAction": "검진기관 방문(키/몸무게/머리둘레)",
+      "completionCriteria": "방문 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0.47,
+        "endMonth": 1.17
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "source": "국민건강보험공단",
+      "verificationStatus": "확인됨",
+      "displayMonth": 1,
+      "displayMonthLabel": "1개월",
+      "displayMonthBasis": "생후 1개월 무렵부터 확인",
+      "categoryGroup": "영유아검진"
+    },
+    {
+      "todo_id": "HC-02",
+      "category": "HC",
+      "title": "2차 건강검진",
+      "parentAction": "검진기관 방문",
+      "completionCriteria": "방문 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 4,
+        "endMonth": 6
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "source": "국민건강보험공단",
+      "verificationStatus": "확인됨",
+      "displayMonth": 4,
+      "displayMonthLabel": "4개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "영유아검진"
+    },
+    {
+      "todo_id": "HC-03",
+      "category": "HC",
+      "title": "3차 건강검진(K-DST 최초)",
+      "parentAction": "문진표 사전 작성 후 방문, 발달선별검사 최초 시행",
+      "completionCriteria": "방문 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 9,
+        "endMonth": 12
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "source": "국민건강보험공단",
+      "verificationStatus": "확인됨",
+      "displayMonth": 9,
+      "displayMonthLabel": "9개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "영유아검진"
+    },
+    {
+      "todo_id": "HC-04",
+      "category": "HC",
+      "title": "4차 건강검진(구강검진 포함)",
+      "parentAction": "신체계측+구강검진+K-DST 동시 진행",
+      "completionCriteria": "방문 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 18,
+        "endMonth": 24
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "source": "국민건강보험공단",
+      "verificationStatus": "확인됨(기존 데이터 오류 수정 반영)",
+      "displayMonth": 18,
+      "displayMonthLabel": "18개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "영유아검진"
+    },
+    {
+      "todo_id": "HC-05",
+      "category": "HC",
+      "title": "5차 건강검진(구강검진 포함)",
+      "parentAction": "신체계측+구강검진+K-DST 동시 진행",
+      "completionCriteria": "방문 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 30,
+        "endMonth": 36
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "source": "국민건강보험공단",
+      "verificationStatus": "확인됨(기존 데이터 오류 수정 반영)",
+      "displayMonth": 30,
+      "displayMonthLabel": "30개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "영유아검진"
+    },
+    {
+      "todo_id": "HC-06",
+      "category": "HC",
+      "title": "영아 빈혈(철결핍) 선별검사",
+      "parentAction": "검진 시 혈액검사 요청",
+      "completionCriteria": "결과 확인",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 9,
+        "endMonth": 12
+      },
+      "catchUp": "NOT_ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "source": "대한소아청소년과학회",
+      "verificationStatus": "확인됨",
+      "displayMonth": 9,
+      "displayMonthLabel": "9개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "영유아검진"
+    },
+    {
+      "todo_id": "VX-HEPB",
+      "category": "VX",
+      "title": "B형간염",
+      "parentAction": "표준월령에 맞춰 접종",
+      "completionCriteria": "각 회차 접종 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "occurrences": [
+        {
+          "occurrenceKey": "dose-1",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 0,
+            "endMonth": 0
+          }
+        },
+        {
+          "occurrenceKey": "dose-2",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 1,
+            "endMonth": 1
+          }
+        },
+        {
+          "occurrenceKey": "dose-3",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 6,
+            "endMonth": 6
+          }
+        }
+      ],
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-BCG",
+      "category": "VX",
+      "title": "BCG(결핵)",
+      "parentAction": "생후 4주 이내 접종",
+      "completionCriteria": "접종 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 1
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-DTAP",
+      "category": "VX",
+      "title": "DTaP(디프테리아·파상풍·백일해)",
+      "parentAction": "표준월령에 맞춰 접종",
+      "completionCriteria": "각 회차 접종 완료",
+      "exposureLevel": "MUST",
+      "occurrences": [
+        {
+          "occurrenceKey": "dose-1",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 2,
+            "endMonth": 2
+          }
+        },
+        {
+          "occurrenceKey": "dose-2",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 4,
+            "endMonth": 4
+          }
+        },
+        {
+          "occurrenceKey": "dose-3",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 6,
+            "endMonth": 6
+          }
+        },
+        {
+          "occurrenceKey": "dose-4",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 15,
+            "endMonth": 18
+          }
+        },
+        {
+          "occurrenceKey": "dose-5",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 48,
+            "endMonth": 72
+          }
+        }
+      ],
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 2,
+      "displayMonthLabel": "2개월",
+      "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-IPV",
+      "category": "VX",
+      "title": "IPV(폴리오)",
+      "parentAction": "표준월령에 맞춰 접종",
+      "completionCriteria": "각 회차 접종 완료",
+      "exposureLevel": "MUST",
+      "occurrences": [
+        {
+          "occurrenceKey": "dose-1",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 2,
+            "endMonth": 2
+          }
+        },
+        {
+          "occurrenceKey": "dose-2",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 4,
+            "endMonth": 4
+          }
+        },
+        {
+          "occurrenceKey": "dose-3",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 6,
+            "endMonth": 18
+          }
+        },
+        {
+          "occurrenceKey": "dose-4",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 48,
+            "endMonth": 72
+          }
+        }
+      ],
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 2,
+      "displayMonthLabel": "2개월",
+      "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-HIB",
+      "category": "VX",
+      "title": "Hib(b형헤모필루스인플루엔자)",
+      "parentAction": "표준월령에 맞춰 접종",
+      "completionCriteria": "각 회차 접종 완료",
+      "exposureLevel": "MUST",
+      "occurrences": [
+        {
+          "occurrenceKey": "dose-1",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 2,
+            "endMonth": 2
+          }
+        },
+        {
+          "occurrenceKey": "dose-2",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 4,
+            "endMonth": 4
+          }
+        },
+        {
+          "occurrenceKey": "dose-3",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 6,
+            "endMonth": 6
+          }
+        },
+        {
+          "occurrenceKey": "dose-4",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 12,
+            "endMonth": 15
+          }
+        }
+      ],
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 2,
+      "displayMonthLabel": "2개월",
+      "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-PCV",
+      "category": "VX",
+      "title": "폐렴구균(단백결합)",
+      "parentAction": "표준월령에 맞춰 접종",
+      "completionCriteria": "각 회차 접종 완료",
+      "exposureLevel": "MUST",
+      "occurrences": [
+        {
+          "occurrenceKey": "dose-1",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 2,
+            "endMonth": 2
+          }
+        },
+        {
+          "occurrenceKey": "dose-2",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 4,
+            "endMonth": 4
+          }
+        },
+        {
+          "occurrenceKey": "dose-3",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 6,
+            "endMonth": 6
+          }
+        },
+        {
+          "occurrenceKey": "dose-4",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 12,
+            "endMonth": 15
+          }
+        }
+      ],
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 2,
+      "displayMonthLabel": "2개월",
+      "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-MMR",
+      "category": "VX",
+      "title": "MMR(홍역·유행성이하선염·풍진)",
+      "parentAction": "표준월령에 맞춰 접종",
+      "completionCriteria": "각 회차 접종 완료",
+      "exposureLevel": "MUST",
+      "occurrences": [
+        {
+          "occurrenceKey": "dose-1",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 12,
+            "endMonth": 15
+          }
+        },
+        {
+          "occurrenceKey": "dose-2",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 48,
+            "endMonth": 72
+          }
+        }
+      ],
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-VAR",
+      "category": "VX",
+      "title": "수두",
+      "parentAction": "표준월령에 맞춰 접종(만13세 미만 1회)",
+      "completionCriteria": "접종 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": 15
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨(1회가 맞음, 재검증 완료)",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-HEPA",
+      "category": "VX",
+      "title": "A형간염",
+      "parentAction": "1차 접종 후 6~12개월 뒤 2차",
+      "completionCriteria": "각 회차 접종 완료",
+      "exposureLevel": "MUST",
+      "occurrences": [
+        {
+          "occurrenceKey": "dose-1",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 12,
+            "endMonth": 23
+          }
+        },
+        {
+          "occurrenceKey": "dose-2",
+          "trigger": {
+            "type": "RELATIVE_TO_EVENT",
+            "referenceEvent": "previous_occurrence_completion",
+            "minOffsetDays": 180,
+            "maxOffsetDays": 365
+          }
+        }
+      ],
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-JEV",
+      "category": "VX",
+      "title": "일본뇌염",
+      "parentAction": "사백신(5회)/생백신(2회) 중 선택해 접종",
+      "completionCriteria": "선택한 종류의 전체 회차 완료",
+      "exposureLevel": "MUST",
+      "variants": {
+        "selectionAttribute": "jevProductType",
+        "options": [
+          {
+            "variantId": "사백신",
+            "occurrences": [
+              {
+                "occurrenceKey": "dose-1",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 12,
+                  "endMonth": 24
+                }
+              },
+              {
+                "occurrenceKey": "dose-2",
+                "trigger": {
+                  "type": "RELATIVE_TO_EVENT",
+                  "referenceEvent": "previous_occurrence_completion",
+                  "minOffsetDays": 7,
+                  "maxOffsetDays": 7
+                }
+              },
+              {
+                "occurrenceKey": "dose-3",
+                "trigger": {
+                  "type": "RELATIVE_TO_EVENT",
+                  "referenceEvent": "previous_occurrence_completion",
+                  "minOffsetDays": 365,
+                  "maxOffsetDays": null
+                }
+              },
+              {
+                "occurrenceKey": "dose-4",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 72,
+                  "endMonth": 72
+                }
+              },
+              {
+                "occurrenceKey": "dose-5",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 144,
+                  "endMonth": 144
+                }
+              }
+            ]
+          },
+          {
+            "variantId": "생백신",
+            "occurrences": [
+              {
+                "occurrenceKey": "dose-1",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 12,
+                  "endMonth": 24
+                }
+              },
+              {
+                "occurrenceKey": "dose-2",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 24,
+                  "endMonth": 24
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨(2차 간격 1주(7일) 고정으로 수정)",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "제품별 접종 일정 중 가장 이른 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-ROTA",
+      "category": "VX",
+      "title": "로타바이러스",
+      "parentAction": "생후 8개월 0일 이전에 선택한 종류의 전체 회차 완료",
+      "completionCriteria": "선택한 종류의 전체 회차 완료",
+      "exposureLevel": "MUST",
+      "variants": {
+        "selectionAttribute": "rotaProductType",
+        "options": [
+          {
+            "variantId": "로타릭스",
+            "occurrences": [
+              {
+                "occurrenceKey": "dose-1",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 2,
+                  "endMonth": 3.5
+                }
+              },
+              {
+                "occurrenceKey": "dose-2",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 4,
+                  "endMonth": 8
+                }
+              }
+            ]
+          },
+          {
+            "variantId": "로타텍",
+            "occurrences": [
+              {
+                "occurrenceKey": "dose-1",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 2,
+                  "endMonth": 3.5
+                }
+              },
+              {
+                "occurrenceKey": "dose-2",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 4,
+                  "endMonth": 6
+                }
+              },
+              {
+                "occurrenceKey": "dose-3",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 6,
+                  "endMonth": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "catchUp": "NOT_ALLOWED",
+      "priority": 1,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨(2023.3.6 국가예방접종 전환, 8개월0일 마감 재검증 완료)",
+      "displayMonth": 2,
+      "displayMonthLabel": "2개월",
+      "displayMonthBasis": "제품별 접종 일정 중 가장 이른 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-FLU",
+      "category": "VX",
+      "title": "인플루엔자",
+      "parentAction": "생후 6개월부터 매년 접종. 생애 최초 시즌은 4주 간격 2회, 이후 매 시즌 1회(정확한 시즌 시작 시점은 확인 필요)",
+      "completionCriteria": "해당 시즌 접종 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": null
+      },
+      "repeat": {
+        "type": "annual"
+      },
+      "catchUp": "ALLOWED",
+      "priority": 3,
+      "leadDays": 30,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨(최초시즌 2회 규칙)/확인필요(이후 시즌 정확한 시기)",
+      "firstSeasonRule": {
+        "doseCount": 2,
+        "intervalDays": 28
+      },
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "DV-01",
+      "category": "DV",
+      "title": "0~3개월 발달 관찰",
+      "parentAction": "사회적 미소·눈맞춤·모로반사 소실 관찰",
+      "completionCriteria": "관찰 체크",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 3
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "CDC(K-DST 대상 아님)",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "발달관찰"
+    },
+    {
+      "todo_id": "DV-02",
+      "category": "DV",
+      "title": "4~6개월 발달 관찰",
+      "parentAction": "고개가누기·뒤집기·옹알이 관찰",
+      "completionCriteria": "관찰 체크",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 4,
+        "endMonth": 6
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "K-DST·CDC",
+      "verificationStatus": "확인됨",
+      "displayMonth": 4,
+      "displayMonthLabel": "4개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "발달관찰"
+    },
+    {
+      "todo_id": "DV-03",
+      "category": "DV",
+      "title": "7~9개월 발달 관찰",
+      "parentAction": "기어다니기·낯가림·이름반응 관찰",
+      "completionCriteria": "관찰 체크",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 7,
+        "endMonth": 9
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "K-DST·CDC",
+      "verificationStatus": "확인됨",
+      "displayMonth": 7,
+      "displayMonthLabel": "7개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "발달관찰"
+    },
+    {
+      "todo_id": "DV-04",
+      "category": "DV",
+      "title": "10~12개월 발달 관찰",
+      "parentAction": "크루징·포인팅·의미있는 단어 관찰",
+      "completionCriteria": "관찰 체크",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 10,
+        "endMonth": 12
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "K-DST·CDC",
+      "verificationStatus": "확인됨",
+      "displayMonth": 10,
+      "displayMonthLabel": "10개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "발달관찰"
+    },
+    {
+      "todo_id": "DV-05",
+      "category": "DV",
+      "title": "13~18개월 발달 관찰",
+      "parentAction": "걷기 안정화·단어수 증가 관찰",
+      "completionCriteria": "관찰 체크",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 13,
+        "endMonth": 18
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "K-DST·CDC",
+      "verificationStatus": "확인됨",
+      "displayMonth": 13,
+      "displayMonthLabel": "13개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "발달관찰"
+    },
+    {
+      "todo_id": "DV-06",
+      "category": "DV",
+      "title": "19~24개월 발달 관찰",
+      "parentAction": "두단어 조합·이전에 하던 말/행동을 갑자기 안 하는지 관찰",
+      "completionCriteria": "관찰 체크",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 19,
+        "endMonth": 24
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "K-DST·CDC",
+      "verificationStatus": "확인됨",
+      "displayMonth": 19,
+      "displayMonthLabel": "19개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "발달관찰"
+    },
+    {
+      "todo_id": "DV-07",
+      "category": "DV",
+      "title": "25~30개월 발달 관찰",
+      "parentAction": "3단어 문장·색깔 인지 관찰",
+      "completionCriteria": "관찰 체크",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 25,
+        "endMonth": 30
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "K-DST·CDC",
+      "verificationStatus": "확인됨",
+      "displayMonth": 25,
+      "displayMonthLabel": "25개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "발달관찰"
+    },
+    {
+      "todo_id": "DV-08",
+      "category": "DV",
+      "title": "31~36개월 발달 관찰",
+      "parentAction": "대화 주고받기·대소변 신호 관찰",
+      "completionCriteria": "관찰 체크",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 31,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "K-DST·CDC",
+      "verificationStatus": "확인됨",
+      "displayMonth": 31,
+      "displayMonthLabel": "31개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "발달관찰"
+    },
+    {
+      "todo_id": "DV-09",
+      "category": "DV",
+      "title": "상담 필요 신호 발생 시 소아과 상담",
+      "parentAction": "관찰 중 경고신호 해당 시 상담 예약",
+      "completionCriteria": "상담 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "MILESTONE_EVENT",
+      "triggerParams": {
+        "event": "warning_sign_reported"
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 7,
+      "source": "K-DST·CDC",
+      "verificationStatus": "확인됨",
+      "displayMonth": null,
+      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthBasis": "경고 신호가 관찰되면 즉시",
+      "categoryGroup": "발달관찰"
+    },
+    {
+      "todo_id": "FD-01",
+      "category": "FD",
+      "title": "이유식 시작 판단",
+      "parentAction": "발달신호 확인 후 이유식 시작",
+      "completionCriteria": "이유식 시작",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 4,
+        "endMonth": 6
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 5,
+      "displayMonthLabel": "5개월",
+      "displayMonthBasis": "이유식 시작 전 준비·시작 시점 판단",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "FD-02",
+      "category": "FD",
+      "title": "초기 이유식(미음)",
+      "parentAction": "쌀미음부터 시작, 철분강화 곡분·육류 병행",
+      "completionCriteria": "단계 진행",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": 7
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "FD-03",
+      "category": "FD",
+      "title": "중기 이유식(약간 덩어리)",
+      "parentAction": "입자 크기 점진적으로 키우기",
+      "completionCriteria": "단계 진행",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 7,
+        "endMonth": 9
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 7,
+      "displayMonthLabel": "7개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "FD-04",
+      "category": "FD",
+      "title": "후기 이유식(진밥)",
+      "parentAction": "씹는 연습 유도, 10개월까지 덩어리음식 미도입 시 섭식장애 위험",
+      "completionCriteria": "단계 진행",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 10,
+        "endMonth": 12
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 10,
+      "displayMonthLabel": "10개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "FD-05",
+      "category": "FD",
+      "title": "가족식(일반식) 전환",
+      "parentAction": "가족과 유사한 식사 제공(저염·저당 조정)",
+      "completionCriteria": "전환 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": null
+      },
+      "catchUp": "ALLOWED",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "FD-06",
+      "category": "FD",
+      "title": "새 식품 1개씩 도입",
+      "parentAction": "새 식품 추가 시 3~7일간 단독 급여, 이상반응 관찰",
+      "completionCriteria": "확인 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": 12
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "FD-07",
+      "category": "FD",
+      "title": "알레르기 유발식품 조기 도입",
+      "parentAction": "이유식 초기부터 소량 도입, 이상반응 관찰",
+      "completionCriteria": "도입 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": 12
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "식품의약품안전처·질병관리청",
+      "verificationStatus": "확인됨",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "FD-08",
+      "category": "FD",
+      "title": "꿀 섭취 금지",
+      "parentAction": "꿀 함유 식품·이유식 일체 배제",
+      "completionCriteria": "만 1세 도달",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 12
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 0,
+      "source": "질병관리청·CDC/WHO",
+      "verificationStatus": "확인됨(12개월 기준)",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "이유식 시작 시 주의사항으로 안내; 12개월 미만 계속 금지",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "FD-09",
+      "category": "FD",
+      "title": "철분강화식품 도입",
+      "parentAction": "철분강화 곡분 또는 육류 페이스트 포함",
+      "completionCriteria": "정기 섭취 확인",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": null
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "FD-10",
+      "category": "FD",
+      "title": "생우유 도입",
+      "parentAction": "하루 600ml 이내, 컵으로 급여",
+      "completionCriteria": "도입 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": null
+      },
+      "catchUp": "ALLOWED",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "삼성서울병원",
+      "verificationStatus": "확인됨",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "FD-11",
+      "category": "FD",
+      "title": "컵 사용 연습 시작",
+      "parentAction": "물/소량 음료를 컵으로 제공",
+      "completionCriteria": "연습 시작",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": 9
+      },
+      "catchUp": "ALLOWED",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "FD-12",
+      "category": "FD",
+      "title": "젖병 떼기",
+      "parentAction": "젖병 사용 점진적 축소, 늦어도 18개월 이전 종료",
+      "completionCriteria": "젖병 없이 생활 가능",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": 18
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "OR-01",
+      "category": "OR",
+      "title": "첫니 맹출 후 양치 시작",
+      "parentAction": "첫니 맹출 즉시 영유아용 칫솔로 양치 시작",
+      "completionCriteria": "양치 습관 시작",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "MILESTONE_EVENT",
+      "triggerParams": {
+        "event": "first_tooth"
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 0,
+      "source": "대한소아치과학회",
+      "verificationStatus": "확인됨",
+      "displayMonth": null,
+      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthBasis": "첫니가 나면 시작",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "OR-02",
+      "category": "OR",
+      "title": "불소치약 사용(참고)",
+      "parentAction": "정확한 시작 시기는 소아치과 상담 권장",
+      "completionCriteria": "-",
+      "exposureLevel": "REFERENCE",
+      "triggerType": "REFERENCE",
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 0,
+      "source": "국내외 상충 자료(재검증 완료)",
+      "verificationStatus": "상충/공식기준불명확",
+      "displayMonth": null,
+      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthBasis": "참고 정보; 월령 고정 일정 아님",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "OR-03",
+      "category": "OR",
+      "title": "첫 치과 방문",
+      "parentAction": "첫니 맹출 후 6개월 이내, 또는 늦어도 생후 12개월(둘 중 먼저 오는 시점)까지 소아치과 방문",
+      "completionCriteria": "첫 구강검진 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "RELATIVE_TO_EVENT",
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "source": "대한소아치과학회(국제기준)",
+      "verificationStatus": "확인됨(마일스톤+절대상한 반영, 국내 원문 대조는 권장)",
+      "triggerParams": {
+        "referenceEvent": "milestone_report",
+        "milestoneTodoId": "OR-01",
+        "minOffsetDays": 0,
+        "maxOffsetDays": 180
+      },
+      "absoluteCapMonth": 12,
+      "displayMonth": null,
+      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthBasis": "첫니 발생 시점에 연동",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "OR-04",
+      "category": "OR",
+      "title": "정기 치과검진(6개월 간격)",
+      "parentAction": "6개월 간격으로 정기 검진 예약",
+      "completionCriteria": "검진 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": null
+      },
+      "repeat": {
+        "type": "interval",
+        "intervalMonths": 6
+      },
+      "catchUp": "ALLOWED",
+      "priority": 3,
+      "leadDays": 30,
+      "source": "대한소아치과학회",
+      "verificationStatus": "확인됨",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "OR-05",
+      "category": "OR",
+      "title": "젖병 충치 예방",
+      "parentAction": "젖병 물고 재우지 않기, 수유 후 치아 닦기",
+      "completionCriteria": "습관 정착",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "source": "대한소아치과학회",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "OR-06",
+      "category": "OR",
+      "title": "손가락빨기/공갈젖꼭지 습관 중단 유도",
+      "parentAction": "만 3세 이전 단계적 중단 유도",
+      "completionCriteria": "습관 소실 확인",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 0,
+      "source": "대한소아청소년과학회",
+      "verificationStatus": "확인됨",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "SL-01",
+      "category": "SL",
+      "title": "영아돌연사(SIDS) 예방 수칙",
+      "parentAction": "바로눕혀재우기·침대내위험물제거·같은방다른침대·간접흡연차단·포지셔너미사용",
+      "completionCriteria": "수칙 확인 및 준수",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 12
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 0,
+      "source": "대한소아청소년과학회·AAP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "SL-02",
+      "category": "SL",
+      "title": "낮/밤 구분 형성 돕기",
+      "parentAction": "낮엔 밝고 활동적으로, 밤엔 어둡고 조용하게",
+      "completionCriteria": "습관 형성",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 1.5,
+        "endMonth": 3
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "대한소아청소년과학회",
+      "verificationStatus": "확인됨",
+      "displayMonth": 2,
+      "displayMonthLabel": "2개월",
+      "displayMonthBasis": "生후 2개월 무렵부터 낮·밤 구분 형성 돕기",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "SF-01",
+      "category": "SF",
+      "title": "카시트 장착(법적 의무)",
+      "parentAction": "자동차 탑승 시 항상 카시트 사용",
+      "completionCriteria": "-",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 72
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 0,
+      "source": "도로교통법",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄"
+    },
+    {
+      "todo_id": "SF-02",
+      "category": "SF",
+      "title": "뒤집기 시작 후 낙상 예방",
+      "parentAction": "소파·침대·기저귀교환대에 혼자 두지 않기, 안전가드 설치",
+      "completionCriteria": "안전장치 설치 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "MILESTONE_EVENT",
+      "triggerParams": {
+        "event": "started_rolling"
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 0,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": null,
+      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthBasis": "뒤집기 시작 전후",
+      "categoryGroup": "안전·돌봄"
+    },
+    {
+      "todo_id": "SF-03",
+      "category": "SF",
+      "title": "손 사용 시작 후 이물질·버튼전지 관리",
+      "parentAction": "작은 물건·버튼전지 손 닿는 곳에 두지 않기",
+      "completionCriteria": "위험요소 제거 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 4,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 0,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨(원 조사 AGE_WINDOW로 복원, milestone 임의 추가분 제거)",
+      "displayMonth": 4,
+      "displayMonthLabel": "4개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄"
+    },
+    {
+      "todo_id": "SF-04",
+      "category": "SF",
+      "title": "기어다니기 시작 후 콘센트·모서리 안전장치",
+      "parentAction": "콘센트 커버, 모서리 보호대, 서랍 잠금장치 설치",
+      "completionCriteria": "안전장치 설치 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "MILESTONE_EVENT",
+      "triggerParams": {
+        "event": "started_crawling"
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 0,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": null,
+      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthBasis": "기어 다니기 시작 전후",
+      "categoryGroup": "안전·돌봄"
+    },
+    {
+      "todo_id": "SF-05",
+      "category": "SF",
+      "title": "걷기 시작 후 계단·안전문 설치",
+      "parentAction": "계단 상하단 안전문, 방문 손끼임 방지장치 설치",
+      "completionCriteria": "안전장치 설치 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "MILESTONE_EVENT",
+      "triggerParams": {
+        "event": "started_walking"
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 0,
+      "source": "질병관리청·한국소비자원",
+      "verificationStatus": "확인됨",
+      "displayMonth": null,
+      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthBasis": "걷기 시작 전후",
+      "categoryGroup": "안전·돌봄"
+    },
+    {
+      "todo_id": "SF-06",
+      "category": "SF",
+      "title": "화상 예방(뜨거운 음식·기기)",
+      "parentAction": "전기밥솥·가스레인지 등 아이 손 안 닿는 곳 배치",
+      "completionCriteria": "배치 개선 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄"
+    },
+    {
+      "todo_id": "SF-07",
+      "category": "SF",
+      "title": "익수 예방(목욕·물놀이 상시 관찰)",
+      "parentAction": "목욕/물놀이 중 항상 밀착 관찰",
+      "completionCriteria": "-",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "source": "질병관리청·행정안전부",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄"
+    },
+    {
+      "todo_id": "SF-08",
+      "category": "SF",
+      "title": "질식 위험 식품 형태 조정",
+      "parentAction": "견과류는 갈아서, 포도·방울토마토는 4등분 등",
+      "completionCriteria": "습관 정착",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 안전수칙",
+      "verificationStatus": "확인됨(원칙)",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄"
+    },
+    {
+      "todo_id": "LF-01",
+      "category": "LF",
+      "title": "스크린타임 관리(만2세 미만 최소화)",
+      "parentAction": "TV·스마트폰 노출 최소화(영상통화 제외)",
+      "completionCriteria": "-",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 24
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "source": "WHO 2019 가이드라인",
+      "verificationStatus": "확인됨(권고 취지)",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "LF-02",
+      "category": "LF",
+      "title": "스크린타임 관리(2~4세 하루 1시간 이내)",
+      "parentAction": "하루 1시간 이내 제한, 함께 시청 권장",
+      "completionCriteria": "-",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 24,
+        "endMonth": 48
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 0,
+      "source": "WHO 2019 가이드라인",
+      "verificationStatus": "확인됨(권고 취지)",
+      "displayMonth": 24,
+      "displayMonthLabel": "24개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "LF-03",
+      "category": "LF",
+      "title": "손씻기 습관 형성",
+      "parentAction": "식사 전·외출 후·배변 후 손씻기 시범",
+      "completionCriteria": "습관 시작",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨(원칙)",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "LF-04",
+      "category": "LF",
+      "title": "배변훈련 시작 시점 판단",
+      "parentAction": "아이 준비신호 확인 후 시작, 강요 금지",
+      "completionCriteria": "시작/완료 확인",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 18,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "대한소아청소년과학회(2차 인용)",
+      "verificationStatus": "미검증(원문 대조 필요)",
+      "displayMonth": 18,
+      "displayMonthLabel": "18개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유"
+    },
+    {
+      "todo_id": "SB-01",
+      "category": "SB",
+      "title": "첫만남이용권 신청",
+      "parentAction": "출생신고 시 행복출산원스톱서비스로 통합신청",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "DATE_FROM_BIRTH",
+      "triggerParams": {
+        "offsetDays": 0,
+        "deadlineDays": 730
+      },
+      "catchUp": "NOT_ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "정부24",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "출생 직후 신청 준비",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-02",
+      "category": "SB",
+      "title": "부모급여(0세) 신청",
+      "parentAction": "출생 후 60일 이내 신청 시 출생월부터 소급 지급, 그 외에도 0세 기간 내 신청 가능(소급 없이 신청월부터 지급)",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 11
+      },
+      "catchUp": "NOT_ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "보건복지부",
+      "verificationStatus": "확인됨(수급기간·신청기한 분리)",
+      "retroactiveDeadline": {
+        "offsetDays": 0,
+        "deadlineDays": 60
+      },
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-03",
+      "category": "SB",
+      "title": "부모급여(1세) 확인/신청",
+      "parentAction": "SB-02(0세 부모급여) 신청 완료 시 자동 연장(별도 행동 불필요). 신청 이력이 없으면 별도로 1세 부모급여를 신청해야 함",
+      "completionCriteria": "지급 확인",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": 23
+      },
+      "catchUp": "NOT_ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "보건복지부",
+      "verificationStatus": "확인됨(자동연장 조건 반영)",
+      "autoExtendsFrom": {
+        "todo_id": "SB-02",
+        "occurrenceKey": "default"
+      },
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-04",
+      "category": "SB",
+      "title": "아동수당 신청",
+      "parentAction": "출생신고 시 통합신청 권장. 60일 이내 신청 시 출생월부터 소급, 이후에도 만9세 미만까지 신청 가능(소급 없이 신청월부터 지급)",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 108
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "korea.kr 2026 정책브리핑",
+      "verificationStatus": "확인됨(수급기간·신청기한 분리, 지역별 금액차등은 상태계산에 미반영 — 확인 필요로 별도 표기)",
+      "retroactiveDeadline": {
+        "offsetDays": 0,
+        "deadlineDays": 60
+      },
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-05",
+      "category": "SB",
+      "title": "기저귀·조제분유 바우처 신청",
+      "parentAction": "국민행복카드 발급 후 주민센터/복지로 신청",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 24
+      },
+      "eligibilityCondition": {
+        "attribute": "incomeBracket",
+        "requiredValue": "중위소득100%이하"
+      },
+      "catchUp": "NOT_ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "korea.kr 2026 정책브리핑",
+      "verificationStatus": "준검증(수급기간·신청기한 분리)",
+      "retroactiveDeadline": {
+        "offsetDays": 0,
+        "deadlineDays": 60
+      },
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-06",
+      "category": "SB",
+      "title": "미숙아·선천성이상아 의료비 지원 신청",
+      "parentAction": "보건소 방문 또는 e보건소로 신청(퇴원일 기준 6개월이 정확한 마감이나, 이 엔진은 출생일 기준으로 근사)",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 24
+      },
+      "eligibilityCondition": {
+        "attribute": "prematureBirth",
+        "requiredValue": true
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "korea.kr 2026 정책브리핑",
+      "verificationStatus": "준검증(수급기간·신청기한 분리, 퇴원일 대신 출생일 기준으로 근사 — 확인 필요, 정확 상한액도 미검증)",
+      "retroactiveDeadline": {
+        "offsetDays": 0,
+        "deadlineDays": 180
+      },
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-07",
+      "category": "SB",
+      "title": "어린이집 보육료 지원 확인",
+      "parentAction": "어린이집 입소 시 아이행복카드로 지원",
+      "completionCriteria": "지급 확인",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 35
+      },
+      "eligibilityCondition": {
+        "attribute": "daycareEnrolled",
+        "requiredValue": true
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "중앙육아종합지원센터",
+      "verificationStatus": "미검증(연령별 정확 단가 재확인 필요)",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-08",
+      "category": "SB",
+      "title": "누리과정(유아학비/보육료) 신청",
+      "parentAction": "만3세 진입 시 기관을 통해 신청",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 36,
+        "endMonth": 71
+      },
+      "eligibilityCondition": {
+        "attribute": "daycareEnrolled",
+        "requiredValue": true
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "복지로·교육부",
+      "verificationStatus": "미검증(정확 단가 재확인 필요)",
+      "displayMonth": 36,
+      "displayMonthLabel": "36개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-09",
+      "category": "SB",
+      "title": "아이돌봄서비스 정부지원 신청",
+      "parentAction": "아이돌봄(idolbom.go.kr) 사전 신청",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 144
+      },
+      "eligibilityCondition": {
+        "attribute": "incomeBracket",
+        "requiredValue": "기준중위소득250%이하"
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "복지로·korea.kr",
+      "verificationStatus": "확인됨(소득기준 확대)/세부요금 미검증",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-10",
+      "category": "SB",
+      "title": "거주 지자체 지원금·제도",
+      "parentAction": "이 엔진에서 재계산하지 않음 — 기존 data/subsidies.json + js/app.js의 subsidyIsActiveNow() 로직을 그대로 사용",
+      "completionCriteria": "-",
+      "exposureLevel": "REFERENCE",
+      "triggerType": "REFERENCE",
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "regionCondition": "SEE_SUBSIDIES_JSON",
+      "source": "지원금조회 서비스 데이터 재사용",
+      "verificationStatus": "기존 유지",
+      "displayMonth": null,
+      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthBasis": "거주 지자체 및 자격에 따라 확인",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "CR-01",
+      "category": "CR",
+      "title": "어린이집 입소대기 신청",
+      "parentAction": "아이사랑 포털에서 입소대기 신청",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 30,
+      "source": "임신육아종합포털 아이사랑",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄"
+    },
+    {
+      "todo_id": "CR-02",
+      "category": "CR",
+      "title": "만1세반 전환 확인",
+      "parentAction": "재원 중인 어린이집에 반 편성 시점 확인(기관 재량, 절대월령 아님)",
+      "completionCriteria": "전환 확인",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": 13
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "지역 육아종합지원센터",
+      "verificationStatus": "미검증(기관마다 상이 — 재검토에서 CONDITION 재분류 논의됐으나, 실제로는 자격속성이 아니라 확인형이라 MUST+미검증으로 구현. 아래 report 참고)",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄"
+    },
+    {
+      "todo_id": "CR-03",
+      "category": "CR",
+      "title": "만3세반(유아반) 전환 준비",
+      "parentAction": "만3세 진입 전 반 편성 변경 안내 확인",
+      "completionCriteria": "전환 확인",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 30,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "지역 육아종합지원센터",
+      "verificationStatus": "확인됨(반편성)/준비행동은 참고",
+      "displayMonth": 30,
+      "displayMonthLabel": "30개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄"
+    },
+    {
+      "todo_id": "CR-04",
+      "category": "CR",
+      "title": "어린이집 적응기간 준비",
+      "parentAction": "신입원아 적응프로그램(최소 1주일 이상) 확인",
+      "completionCriteria": "적응 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "서울대 어린이보육지원센터 등",
+      "verificationStatus": "미검증(표준보육과정 원문 대조 필요)",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄"
+    }
+  ]
+}
