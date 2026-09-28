@@ -22,8 +22,28 @@
 
       <form id="query-form" class="card form-card">
         <div class="field">
-          <label for="birthDate">아이 생년월일 <span class="req">*</span></label>
-          <input type="date" id="birthDate" required />
+          <label for="birthDateBtn">아이 생년월일 <span class="req">*</span></label>
+          <div class="date-picker-wrap">
+            <button type="button" id="birthDateBtn" class="date-picker-trigger">
+              <span id="birthDateDisplay" class="placeholder">날짜를 선택해주세요</span>
+              <span class="date-picker-icon">📅</span>
+            </button>
+            <input type="hidden" id="birthDate" />
+            <div id="birthDatePopup" class="date-popup hidden">
+              <div class="date-popup-header">
+                <button type="button" class="btn-icon" id="dp-prev-year">«</button>
+                <button type="button" class="btn-icon" id="dp-prev-month">‹</button>
+                <select id="dp-year"></select>
+                <select id="dp-month"></select>
+                <button type="button" class="btn-icon" id="dp-next-month">›</button>
+                <button type="button" class="btn-icon" id="dp-next-year">»</button>
+              </div>
+              <div class="date-popup-weekdays">
+                <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+              </div>
+              <div class="date-popup-grid" id="dp-grid"></div>
+            </div>
+          </div>
         </div>
 
         <div class="field">

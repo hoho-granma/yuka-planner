@@ -150,6 +150,142 @@
     return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
   }
 
+  function toISODate(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  let dpViewDate = new Date();
+  dpViewDate.setDate(1);
+  let dpSelectedDate = null;
+
+  function setBirthDatePicker(date) {
+    dpSelectedDate = date;
+    dpViewDate = new Date(date.getFullYear(), date.getMonth(), 1);
+    el("birthDate").value = toISODate(date);
+    const display = el("birthDateDisplay");
+    display.textContent = formatDateKR(date);
+    display.classList.remove("placeholder");
+  }
+
+  function resetBirthDatePicker() {
+    dpSelectedDate = null;
+    el("birthDate").value = "";
+    const display = el("birthDateDisplay");
+    display.textContent = "날짜를 선택해주세요";
+    display.classList.add("placeholder");
+  }
+
+  function dpPopulateYearMonth() {
+    const yearSelect = el("dp-year");
+    const monthSelect = el("dp-month");
+    yearSelect.innerHTML = "";
+    const thisYear = new Date().getFullYear();
+    for (let y = thisYear; y >= thisYear - 8; y--) {
+      const opt = document.createElement("option");
+      opt.value = y;
+      opt.textContent = `${y}년`;
+      yearSelect.appendChild(opt);
+    }
+    monthSelect.innerHTML = "";
+    for (let m = 1; m <= 12; m++) {
+      const opt = document.createElement("option");
+      opt.value = m - 1;
+      opt.textContent = `${m}월`;
+      monthSelect.appendChild(opt);
+    }
+  }
+
+  function dpSyncSelects() {
+    el("dp-year").value = dpViewDate.getFullYear();
+    el("dp-month").value = dpViewDate.getMonth();
+  }
+
+  function dpRenderGrid() {
+    const year = dpViewDate.getFullYear();
+    const month = dpViewDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const grid = el("dp-grid");
+    grid.innerHTML = "";
+    for (let i = 0; i < firstDay; i++) {
+      const cell = document.createElement("span");
+      cell.className = "dp-cell dp-empty";
+      grid.appendChild(cell);
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(year, month, d);
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "dp-cell dp-day";
+      cell.textContent = d;
+      if (date > today) {
+        cell.disabled = true;
+        cell.classList.add("dp-disabled");
+      }
+      if (dpSelectedDate && sameDay(date, dpSelectedDate)) cell.classList.add("dp-selected");
+      cell.addEventListener("click", () => {
+        setBirthDatePicker(date);
+        dpClosePopup();
+      });
+      grid.appendChild(cell);
+    }
+  }
+
+  function dpOpenPopup() {
+    dpPopulateYearMonth();
+    dpSyncSelects();
+    dpRenderGrid();
+    el("birthDatePopup").classList.remove("hidden");
+  }
+
+  function dpClosePopup() {
+    el("birthDatePopup").classList.add("hidden");
+  }
+
+  function initBirthDatePicker() {
+    el("birthDateBtn").addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      if (el("birthDatePopup").classList.contains("hidden")) dpOpenPopup();
+      else dpClosePopup();
+    });
+    document.addEventListener("click", (ev) => {
+      const popup = el("birthDatePopup");
+      if (!popup.classList.contains("hidden") && !popup.contains(ev.target) && ev.target !== el("birthDateBtn")) {
+        dpClosePopup();
+      }
+    });
+    el("dp-prev-month").addEventListener("click", () => {
+      dpViewDate.setMonth(dpViewDate.getMonth() - 1);
+      dpSyncSelects();
+      dpRenderGrid();
+    });
+    el("dp-next-month").addEventListener("click", () => {
+      dpViewDate.setMonth(dpViewDate.getMonth() + 1);
+      dpSyncSelects();
+      dpRenderGrid();
+    });
+    el("dp-prev-year").addEventListener("click", () => {
+      dpViewDate.setFullYear(dpViewDate.getFullYear() - 1);
+      dpSyncSelects();
+      dpRenderGrid();
+    });
+    el("dp-next-year").addEventListener("click", () => {
+      dpViewDate.setFullYear(dpViewDate.getFullYear() + 1);
+      dpSyncSelects();
+      dpRenderGrid();
+    });
+    el("dp-year").addEventListener("change", (ev) => {
+      dpViewDate.setFullYear(Number(ev.target.value));
+      dpRenderGrid();
+    });
+    el("dp-month").addEventListener("change", (ev) => {
+      dpViewDate.setMonth(Number(ev.target.value));
+      dpRenderGrid();
+    });
+  }
+
   function renderFilterChips() {
     const wrap = el("filter-chips");
     wrap.innerHTML = Object.entries(CATEGORY_META)
@@ -558,6 +694,7 @@
     familyCode = null;
     profile = null;
     el("query-form").reset();
+    resetBirthDatePicker();
     showLandingView();
   }
 
@@ -575,6 +712,7 @@
     el("btn-reset").addEventListener("click", handleReset);
     el("btn-show-code-entry").addEventListener("click", () => el("code-entry").classList.toggle("hidden"));
     el("btn-load-code").addEventListener("click", handleLoadCode);
+    initBirthDatePicker();
     el("modal-backdrop").addEventListener("click", closeDetail);
     el("btn-prev-month").addEventListener("click", () => {
       viewMonth.setMonth(viewMonth.getMonth() - 1);
@@ -612,7 +750,7 @@
       populateDistricts(profile.province, profile.district);
       el("province").value = profile.province;
       el("gender").value = profile.gender || "";
-      el("birthDate").value = profile.birthDate.toISOString().slice(0, 10);
+      setBirthDatePicker(profile.birthDate);
       buildAndRender();
       showCalendarView();
     }
