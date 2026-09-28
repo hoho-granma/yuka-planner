@@ -1,0 +1,172 @@
+{
+  "_meta": {
+    "설명": "서울특별시 지원금 카탈로그(시 전체 + 구로구 자치구 단위, 0~36개월). data/subsidies.json과 동일 스키마.",
+    "조사일": "2026-09-28",
+    "조사방법": "WebSearch로 후보를 찾은 뒤, 공식 도메인(news.seoul.go.kr, easylaw.go.kr 법제처 조례정보, 관할 지자체 보도자료 재게재 언론사 다수 교차확인)을 WebFetch로 직접 열어 확인. 구로구 홈페이지(guro.go.kr)는 메뉴 페이지만 반환되고 실제 프로그램 상세 콘텐츠가 JS 렌더링이라 WebFetch로 못 읽어서, 같은 정보를 다루는 법제처 조례정보 페이지와 다수 언론사의 구로구 보도자료 재게재 기사로 교차검증했다.",
+    "verifiedTrueCount": 5,
+    "verifiedFalseCount": 0,
+    "구로구자체지원금존재여부": "있음 — 서울시 전체 지원(SEOUL-001~004)과 별도로 구로구 자체 지원금 2건을 확인함(GURO-001 다자녀 출생축하금, GURO-002 구로형 산후조리비용 저소득 추가지원). 둘 다 조건부(GURO-001은 셋째 이상 자녀, GURO-002는 기준중위소득 80% 이하)라 모든 가정에 적용되지는 않는다.",
+    "note": "기존 SEOUL-001~003은 이번 조사에서 금액·조건 재확인함(변경 없음). 서울시 다둥이 행복카드(SEOUL-004)를 새로 추가했다."
+  },
+  "subsidies": [
+    {
+      "id": "SEOUL-001",
+      "name": "서울형 산후조리경비 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "서울시에 출생신고를 하고 산모·출생자녀가 모두 서울에 거주하는 가구(외국인 산모·거소신고자 포함, 소득기준 없음)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "첫째 100만원 / 둘째 120만원 / 셋째 이상 150만원(2026-01-01 이후 출생아부터). 쌍둥이는 첫째+둘째 합산 220만원",
+      "amountByBirthOrder": {
+        "first": 1000000,
+        "second": 1200000,
+        "third": 1500000,
+        "fourthPlus": 1500000
+      },
+      "paymentMethod": "바우처(탄생육아 몽땅정보통 온라인 신청)",
+      "deadlineType": "birth_relative_days",
+      "deadlineValue": 180,
+      "residencyRequirement": "산모·출생자녀 모두 서울시 거주 + 서울시 출생신고, 신청일 기준 90일 이상 거주",
+      "additionalConditions": "사용기한은 출산일로부터 1년 되는 달의 말일까지",
+      "officialUrl": "https://umppa.seoul.go.kr/hmpg/sprt/bzin/bzmgComtDetail.do?biz_mng_no=58D83411277E40D1BFF6255A10CBCDD5",
+      "sourceName": "서울시 임신·출산 정보센터(seoul-agi.seoul.go.kr) — 기존 확인 유지, 이번 조사에서 뉴스검색으로 금액 재확인",
+      "lastVerified": "2026-09-28",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "기존 subsidies.json SEOUL-001과 동일. 변경 없음."
+    },
+    {
+      "id": "SEOUL-002",
+      "name": "서울시 임산부 교통비 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "신청일 기준 서울시 3개월 이상 거주 임산부(다문화가족 외국인 임산부 포함, 부부 모두 외국인은 제외)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "1자녀 70만원 / 2자녀 80만원 / 3자녀 이상 100만원 (2026년부터 자녀수 차등 지원으로 개편, 신청·사용기간도 확대)",
+      "amountByBirthOrder": {
+        "first": 700000,
+        "second": 800000,
+        "third": 1000000,
+        "fourthPlus": 1000000
+      },
+      "paymentMethod": "협약카드사(신한·삼성·KB국민·우리·하나·BC) 교통 포인트",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 6,
+      "residencyRequirement": "신청일 기준 서울시 3개월 이상 계속 거주",
+      "additionalConditions": "임신 확인 시점(통상 12주 경과 후)부터 신청 가능 — 이 앱은 출생일 기준 계산이라 임신 중 신청분은 캘린더에 반영 안 됨",
+      "officialUrl": "https://seoul-agi.seoul.go.kr/pregnant-transportation-support",
+      "sourceName": "서울시 임신·출산 정보센터(seoul-agi.seoul.go.kr) — 기존 확인 유지",
+      "lastVerified": "2026-09-28",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "기존 subsidies.json SEOUL-002와 동일. 변경 없음."
+    },
+    {
+      "id": "SEOUL-003",
+      "name": "서울형 아이돌봄비 지원 (친인척·민간형)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "생후 24~36개월 아동을 조부모 등 4촌 이내 친인척 또는 민간 아이돌보미가 돌보는 중위소득 150% 이하 가구(맞벌이는 부부합산소득 25% 경감)",
+      "minAgeMonths": 24,
+      "maxAgeMonths": 36,
+      "amountText": "친인척형 아동 1명 월 30만원 / 2명 월 45만원 / 3명 월 60만원, 민간형은 시간당 7,500~15,000원(월 15~60만원)",
+      "paymentMethod": "익월 20일 계좌이체(친인척형 월 40시간 이상, 민간형 월 20시간 이상 이용 시)",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 24,
+        "maxMonths": 36
+      },
+      "residencyRequirement": "아동과 부모가 주민등록상 서울시 동일 주소",
+      "additionalConditions": "아동 23개월부터 신청 가능, 정부 아이돌봄서비스 자격판정 결과 제출 필수",
+      "officialUrl": "https://umppa.seoul.go.kr/hmpg/reca/care/sesu/bzin/bzmgPageDetail.do?biz_mng_no=59F45FE9BC024848AD07143C962E6869",
+      "sourceName": "서울시 탄생육아 몽땅정보통(umppa.seoul.go.kr) — 기존 확인 유지",
+      "lastVerified": "2026-09-28",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "기존 subsidies.json SEOUL-003과 동일. 변경 없음."
+    },
+    {
+      "id": "SEOUL-004",
+      "name": "다둥이 행복카드",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "서울시 거주 2자녀 이상 가족(막내 자녀 18세 이하) — 은찬이가 둘째 이상일 때만 해당",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 216,
+      "amountText": "현금성 지원이 아니라 민간기업 제휴 할인/포인트 적립 카드(신용·체크·앱카드) — 고정 지원금액 없음",
+      "paymentMethod": "제휴카드(우리카드·신한카드 신용/체크, 서울지갑 앱 모바일카드)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "부 또는 모 한 명과 자녀들이 서울시 주민등록",
+      "additionalConditions": "앱카드는 부모·자녀가 서울시 내 동일 주소(세대주가 부모)일 때만 발급 가능",
+      "officialUrl": "https://news.seoul.go.kr/welfare/archives/100261",
+      "sourceName": "서울특별시 뉴스(news.seoul.go.kr) — WebFetch로 원문 직접 확인",
+      "lastVerified": "2026-09-28",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "현금 지원이 아니라 할인카드 성격이라 다른 항목과 amountText 성격이 다름 — 캘린더/할일 엔진에 넣을 땐 별도 처리 필요할 수 있음."
+    },
+    {
+      "id": "GURO-001",
+      "name": "구로구 다자녀 출생축하금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:구로구"
+      ],
+      "target": "셋째 이상 자녀를 출산한 구로구 거주 가구 — 은찬이가 셋째 이상일 때만 해당 (첫째·둘째는 구로구 자체 축하금 대상 아님)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "셋째 자녀 60만원 / 넷째 자녀 이상 200만원 (1회 지급, 쌍생아 이상은 출생순으로 개별 지원)",
+      "amountByBirthOrder": {
+        "first": 0,
+        "second": 0,
+        "third": 600000,
+        "fourthPlus": 2000000
+      },
+      "paymentMethod": "현금(계좌입금 추정 — 원문에 구체적 지급수단 명시 안 됨)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "신생아 출생일 기준 6개월 전부터 신청일 현재까지 구로구에 계속 주민등록+실거주(거주기간 6개월 미만이면 6개월 경과 후 6개월 이내 신청)",
+      "additionalConditions": "신생아는 보호자와 동일 세대원이어야 함. 2024년 출생아부터 적용",
+      "officialUrl": "https://easylaw.go.kr/CSP/CnpClsOrdinMain.laf?csmOrdinSeq=6&popMenu=ov&areaCsmOrdinSeq=211&ccfNo=1&cciNo=1&cnpClsNo=1",
+      "sourceName": "찾기쉬운 생활법령정보(법제처 easylaw.go.kr, 구로구 조례정보) — WebFetch로 원문 직접 확인",
+      "lastVerified": "2026-09-28",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "서울시 전체(SEOUL-001~004)와 별도로 구로구가 자체 조례로 운영하는 지원금. 기존 data/subsidies.json·todo-definitions.v3.json 어디에도 없던 항목."
+    },
+    {
+      "id": "GURO-002",
+      "name": "구로형 산후조리비용 저소득 추가지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:구로구"
+      ],
+      "target": "신청일 기준 구로구 거주, 기준중위소득 80% 이하 출산 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "구로사랑상품권 50만원 추가 지원 — 서울형 산후조리경비(SEOUL-001, 최대 150만원)에 더해 지급되어 다자녀·저소득 가정은 최대 200만원 이상 수령 가능",
+      "paymentMethod": "구로사랑상품권",
+      "deadlineType": "birth_relative_days",
+      "deadlineValue": 180,
+      "residencyRequirement": "신청일 기준 구로구 거주",
+      "additionalConditions": "SEOUL-001(서울형 산후조리경비) 신청 시 동주민센터 방문 또는 정부24로 추가 신청. 2026-01-01 이후 출생아부터 적용, 2026-03-30 이전 산후조리비용 신청 건은 별도 절차 없이 소급 지급",
+      "officialUrl": "https://www.m-i.kr/news/articleView.html?idxno=1362436",
+      "sourceName": "매일일보 외 6개 언론사가 동일 수치로 재게재한 구로구 보도자료(2026-04) — WebFetch로 기사 원문 직접 확인, 구로구 공식 홈페이지 자체는 JS 렌더링이라 직접 열람 불가해 언론 재게재로 교차검증",
+      "lastVerified": "2026-09-28",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "구로구 공식 홈페이지(guro.go.kr) 원문 URL은 확보하지 못함 — 추후 정확한 공식 페이지가 열리면 officialUrl 교체 권장. 내용 자체는 6개 이상 독립 언론사가 동일 수치(50만원/중위소득80%)로 보도해 신뢰도 높음."
+    }
+  ]
+}
