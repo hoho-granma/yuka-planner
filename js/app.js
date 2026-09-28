@@ -10,6 +10,8 @@
   let schedule = [];
   let profile = null;
   let completed = {};
+  let familyCode = null;
+  let unsubscribeFamily = null;
   let activeCats = new Set(Object.keys(CATEGORY_META));
   let viewMonth = new Date();
   viewMonth.setDate(1);
@@ -58,6 +60,56 @@
 
   function saveCompleted() {
     localStorage.setItem(COMPLETED_KEY, JSON.stringify(completed));
+  }
+
+  function profileToPlain(p) {
+    return {
+      birthDate: p.birthDate.toISOString().slice(0, 10),
+      gender: p.gender || "",
+      province: p.province,
+      district: p.district,
+    };
+  }
+
+  function profileFromPlain(p) {
+    return {
+      birthDate: new Date(p.birthDate + "T00:00:00"),
+      gender: p.gender || "",
+      province: p.province,
+      district: p.district,
+    };
+  }
+
+  function startListeningFamily() {
+    if (unsubscribeFamily) unsubscribeFamily();
+    unsubscribeFamily = FamilySync.listen(familyCode, (data) => {
+      if (!data || !data.profile) return;
+      profile = profileFromPlain(data.profile);
+      completed = data.completed || {};
+      saveProfile(profile);
+      saveCompleted();
+      if (!el("view-calendar").classList.contains("hidden")) {
+        buildAndRender();
+      }
+    });
+  }
+
+  async function ensureFamilyCode() {
+    if (familyCode) {
+      try {
+        await FamilySync.updateProfile(familyCode, profileToPlain(profile));
+      } catch (e) {
+        console.error(e);
+      }
+      return;
+    }
+    try {
+      familyCode = await FamilySync.createFamily(profileToPlain(profile), completed);
+      startListeningFamily();
+      renderChildInfo();
+    } catch (e) {
+      console.error("가족코드 생성 실패", e);
+    }
   }
 
   function populateProvinces() {
@@ -144,7 +196,24 @@
           ? `<div class="next-up">🔔 다음 일정: <strong>${upcoming.title}</strong> · ${formatDateKR(upcoming.date)}</div>`
           : `<div class="next-up">지금 챙길 예정된 일정이 없어요.</div>`
       }
+      ${
+        familyCode
+          ? `<div class="row"><span>가족코드</span><strong>${familyCode} <button id="btn-copy-code" class="btn-text">복사</button></strong></div>
+             <p class="fine-print" style="margin:6px 0 0;">다른 기기에서 이 코드를 입력하면 아이정보·완료내역이 그대로 연결돼요.</p>`
+          : ""
+      }
     `;
+    const copyBtn = el("btn-copy-code");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", async (ev) => {
+        ev.stopPropagation();
+        try {
+          await navigator.clipboard.writeText(familyCode);
+          copyBtn.textContent = "복사됨!";
+          setTimeout(() => (copyBtn.textContent = "복사"), 1500);
+        } catch (e) {}
+      });
+    }
   }
 
   function renderCalendar() {
@@ -281,6 +350,7 @@
     completed[id] = !completed[id];
     if (!completed[id]) delete completed[id];
     saveCompleted();
+    if (familyCode) FamilySync.updateCompleted(familyCode, completed).catch((e) => console.error(e));
     renderCalendar();
     renderLists();
     renderChildInfo();
@@ -452,10 +522,40 @@
     saveProfile(profile);
     buildAndRender();
     showCalendarView();
+    ensureFamilyCode();
+  }
+
+  async function handleLoadCode() {
+    const input = el("familyCodeInput");
+    const code = input.value.trim().toUpperCase();
+    el("code-error").classList.add("hidden");
+    if (!code) return;
+    try {
+      const data = await FamilySync.fetchFamily(code);
+      if (!data || !data.profile) {
+        el("code-error").classList.remove("hidden");
+        return;
+      }
+      profile = profileFromPlain(data.profile);
+      completed = data.completed || {};
+      saveProfile(profile);
+      saveCompleted();
+      familyCode = code;
+      FamilySync.saveCode(code);
+      startListeningFamily();
+      buildAndRender();
+      showCalendarView();
+    } catch (e) {
+      console.error(e);
+      el("code-error").classList.remove("hidden");
+    }
   }
 
   function handleReset() {
     localStorage.removeItem(PROFILE_KEY);
+    FamilySync.clearCode();
+    if (unsubscribeFamily) unsubscribeFamily();
+    familyCode = null;
     profile = null;
     el("query-form").reset();
     showLandingView();
@@ -473,6 +573,8 @@
     el("province").addEventListener("change", (e) => populateDistricts(e.target.value));
     el("query-form").addEventListener("submit", handleSubmit);
     el("btn-reset").addEventListener("click", handleReset);
+    el("btn-show-code-entry").addEventListener("click", () => el("code-entry").classList.toggle("hidden"));
+    el("btn-load-code").addEventListener("click", handleLoadCode);
     el("modal-backdrop").addEventListener("click", closeDetail);
     el("btn-prev-month").addEventListener("click", () => {
       viewMonth.setMonth(viewMonth.getMonth() - 1);
@@ -484,6 +586,28 @@
     });
 
     profile = loadProfile();
+    familyCode = FamilySync.getSavedCode();
+
+    if (familyCode) {
+      try {
+        const data = await FamilySync.fetchFamily(familyCode);
+        if (data && data.profile) {
+          profile = profileFromPlain(data.profile);
+          completed = data.completed || {};
+          saveProfile(profile);
+          saveCompleted();
+          startListeningFamily();
+        } else {
+          FamilySync.clearCode();
+          familyCode = null;
+        }
+      } catch (e) {
+        console.error("가족코드 조회 실패, 로컬 데이터로 진행합니다.", e);
+      }
+    } else if (profile) {
+      ensureFamilyCode();
+    }
+
     if (profile) {
       populateDistricts(profile.province, profile.district);
       el("province").value = profile.province;

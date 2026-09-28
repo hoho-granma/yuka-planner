@@ -50,8 +50,18 @@
         </div>
 
         <button type="submit" class="btn-primary">우리 아이 캘린더 만들기</button>
-        <p class="fine-print">회원가입 없이 바로 시작해요. 입력한 정보는 이 브라우저에만 저장돼요.</p>
+        <p class="fine-print">회원가입 없이 바로 시작해요. 가족코드로 다른 기기에서도 이어볼 수 있어요.</p>
       </form>
+
+      <button type="button" id="btn-show-code-entry" class="btn-text" style="display:block;margin:4px auto 0;">이미 가족코드가 있으신가요?</button>
+      <div id="code-entry" class="card form-card hidden" style="margin-top:12px;">
+        <div class="field">
+          <label for="familyCodeInput">가족코드 입력</label>
+          <input type="text" id="familyCodeInput" maxlength="8" placeholder="예: 4F2K9X" style="text-transform:uppercase;" />
+        </div>
+        <button type="button" id="btn-load-code" class="btn-primary">불러오기</button>
+        <p id="code-error" class="fine-print hidden" style="color:#e0524e;">코드를 찾을 수 없어요. 다시 확인해주세요.</p>
+      </div>
     </section>
 
     <!-- 2. 캘린더 -->
@@ -98,6 +108,9 @@
     <div class="modal-panel" id="modal-content"></div>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/sync.js"></script>
   <script src="js/schedule.js"></script>
   <script src="js/app.js"></script>
 </body>
