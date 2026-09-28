@@ -635,26 +635,85 @@
     }
   }
 
-  /** 전체 체크리스트: 월령(0~36개월)별로 묶어 아코디언으로 보여준다. 기본은 현재 월령만 펼쳐져 있다. */
+  const NEED_CHECK_GROUP = "NEED_CHECK";
+
+  /**
+   * 다회차 Todo(occurrences) 또는 제품분기 Todo(variants)에서, 이 occurrenceKey에 해당하는
+   * 회차 자체의 AGE_WINDOW 시작월을 찾는다. td.displayMonth는 TodoDefinition 하나당 값이
+   * 하나뿐이라(보통 "1차" 기준) DTaP 2~5차처럼 회차마다 나이가 다른 경우에 전부 1차 월령에
+   * 잘못 묶이는 문제가 있어, 가능하면 회차 자체의 시작월을 우선 쓴다.
+   */
+  function occurrenceStartMonth(td, occurrenceKey) {
+    if (!td || !occurrenceKey) return null;
+    const lists = [];
+    if (Array.isArray(td.occurrences)) lists.push(td.occurrences);
+    if (td.variants && Array.isArray(td.variants.options)) {
+      td.variants.options.forEach((opt) => {
+        if (Array.isArray(opt.occurrences)) lists.push(opt.occurrences);
+      });
+    }
+    for (const list of lists) {
+      const occ = list.find((o) => o.occurrenceKey === occurrenceKey);
+      if (occ && occ.trigger && occ.trigger.type === "AGE_WINDOW" && typeof occ.trigger.startMonth === "number") {
+        return Math.round(occ.trigger.startMonth);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 체크리스트를 묶을 "대표 월령"은 항목이 실제로 계산된 날짜(ageInMonths(e.date))가 아니라
+   * TodoDefinition에 큐레이션돼 있는 displayMonth를 우선 써야 한다 — e.date는 엔진이 계산한
+   * windowStart라, 예를 들어 4개월 트리거 항목이 생년월일의 일(day) 차이 때문에 10/18처럼 4개월
+   * 정각보다 이틀 이르게 나오면 ageInMonths가 그걸 3개월로 오분류해버린다(실제로 발견된 버그:
+   * DTaP 2차 등 4개월 항목 14개가 "생후 3개월" 그룹에 묶여 있었음).
+   *
+   * 다만 다회차 Todo는 회차마다 실제 나이가 다르므로 definition 전체의 displayMonth를 그대로
+   * 쓰면 안 된다(예: DTaP 2~5차가 전부 1차 월령인 "2개월"에 잘못 묶이는 새 버그가 생김) —
+   * occurrenceStartMonth()로 이 회차 자체의 시작월을 먼저 찾고, 그마저 없으면(RELATIVE_TO_EVENT
+   * 처럼 고정 월령이 없는 회차) 실제 계산된 날짜의 월령으로 대체한다.
+   *
+   * displayMonth가 null인 단일 항목(마일스톤 대기·참고정보처럼 월령 하나로 고정할 수 없는 것)과,
+   * displayMonth 필드 자체가 없는 레거시 지자체 지원금은 "그때그때 확인해요" 그룹으로 묶는다.
+   */
+  function displayMonthKeyOf(e) {
+    if (!(e.isEngineEvent && e.detail && e.detail.definition)) return NEED_CHECK_GROUP;
+    const td = e.detail.definition;
+    const inst = e.detail.instance;
+    const isMultiOccurrence = inst.occurrenceKey && inst.occurrenceKey !== "default";
+    if (isMultiOccurrence) {
+      const occMonth = occurrenceStartMonth(td, inst.occurrenceKey);
+      if (occMonth !== null) return occMonth;
+      return Math.max(0, ageInMonths(profile.birthDate, e.date));
+    }
+    return td.displayMonth === null || td.displayMonth === undefined ? NEED_CHECK_GROUP : td.displayMonth;
+  }
+
+  /** 전체 체크리스트: 대표 월령(displayMonth, 0~36개월)별로 묶어 아코디언으로 보여준다. 기본은 현재 월령만 펼쳐져 있다. */
   function renderChecklistTab() {
     ensureOpenMonthGroupsInit();
     const items = visibleSchedule().slice().sort((a, b) => a.date - b.date);
     const groups = new Map();
     items.forEach((e) => {
-      const m = Math.max(0, ageInMonths(profile.birthDate, e.date));
-      if (!groups.has(m)) groups.set(m, []);
-      groups.get(m).push(e);
+      const key = displayMonthKeyOf(e);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(e);
     });
-    const monthNums = [...groups.keys()].sort((a, b) => a - b);
-    el("list-checklist").innerHTML = monthNums
-      .map((m) => {
-        const list = groups.get(m);
-        const isOpen = openMonthGroups.has(m);
+    const monthKeys = [...groups.keys()].sort((a, b) => {
+      if (a === NEED_CHECK_GROUP) return 1;
+      if (b === NEED_CHECK_GROUP) return -1;
+      return a - b;
+    });
+    el("list-checklist").innerHTML = monthKeys
+      .map((key) => {
+        const list = groups.get(key);
+        const isOpen = openMonthGroups.has(key);
         const doneCount = list.filter((e) => completed[e.id]).length;
+        const label = key === NEED_CHECK_GROUP ? "그때그때 확인해요" : `생후 ${key}개월`;
         return `
-          <div class="ongoing-group-card month-group-card ${isOpen ? "open" : ""}" data-month="${m}">
+          <div class="ongoing-group-card month-group-card ${isOpen ? "open" : ""}" data-month="${key}">
             <button type="button" class="ongoing-group-header">
-              <span class="group-text"><strong>생후 ${m}개월</strong></span>
+              <span class="group-text"><strong>${label}</strong></span>
               <span class="count-badge">${doneCount}/${list.length}개</span>
               <span class="chevron">▾</span>
             </button>
@@ -669,9 +728,10 @@
       .forEach((btn) => {
         btn.addEventListener("click", () => {
           const card = btn.closest(".month-group-card");
-          const m = Number(card.getAttribute("data-month"));
-          if (openMonthGroups.has(m)) openMonthGroups.delete(m);
-          else openMonthGroups.add(m);
+          const raw = card.getAttribute("data-month");
+          const key = raw === NEED_CHECK_GROUP ? NEED_CHECK_GROUP : Number(raw);
+          if (openMonthGroups.has(key)) openMonthGroups.delete(key);
+          else openMonthGroups.add(key);
           card.classList.toggle("open");
         });
       });
