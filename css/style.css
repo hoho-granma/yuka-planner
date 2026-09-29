@@ -577,3 +577,9 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .modal-panel .completion-edit { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 .modal-panel .completion-edit input[type="date"] { flex: 1; min-width: 0; }
 .modal-panel .completion-edit.hidden { display: none; }
+
+/* 전체 체크리스트: 완료한 항목은 제목 한 줄만 */
+.event-item.completed.compact { align-items: center; padding: 10px 12px; }
+.event-item.completed.compact .date-label, .event-item.completed.compact .summary { display: none; }
+.event-item.completed.compact .cat-dot { margin-top: 0; }
+.event-item.completed.compact .title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

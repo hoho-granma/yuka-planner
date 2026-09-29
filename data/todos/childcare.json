@@ -98,9 +98,9 @@
       "leadDays": 14,
       "source": "서울대 어린이보육지원센터 등",
       "verificationStatus": "미검증(표준보육과정 원문 대조 필요)",
-      "displayMonth": null,
-      "displayMonthLabel": "필요할 때 확인",
-      "displayMonthBasis": "실제 어린이집 입소가 확정된 시점에 확인하는 항목으로, 부모의 입소 계획에 따라 달라져 0개월 일괄 노출 대상에서 제외",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "어린이집 입소 계획이 있는 가정이 준비를 시작하는 시점으로 6개월부터 안내(0~5개월 노출 제외)",
       "categoryGroup": "안전·돌봄",
       "observationGuide": [
         "등원 초기 울음",

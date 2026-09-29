@@ -1014,7 +1014,7 @@
     return period ? `${period} · ${e.dateLabel}` : e.dateLabel;
   }
 
-  function eventItemHtml(e) {
+  function eventItemHtml(e, opts) {
     const isDone = !!completed[e.id];
     // 특정 날짜가 없는 항목(마일스톤 대기, 몇 달~몇 년짜리 안전수칙)은 "지금 챙기세요" 같은
     // 상태 라벨을 보여주지 않는다 — 날짜가 정해지지 않았는데 급한 것처럼 보이는 게 오히려
@@ -1047,7 +1047,7 @@
       }
     }
     return `
-      <div class="event-item ${isDone ? "completed" : ""}" data-id="${e.id}">
+      <div class="event-item ${isDone ? "completed" : ""} ${isDone && opts && opts.compact ? "compact" : ""}" data-id="${e.id}">
         <span class="cat-dot" style="background:${CATEGORY_META[e.category].color}"></span>
         <div class="body">
           <p class="title">${e.title}</p>
@@ -1206,7 +1206,7 @@
               <span class="count-badge">${doneCount}/${list.length}개</span>
               <span class="chevron">▾</span>
             </button>
-            <div class="ongoing-group-body">${list.slice().sort((a, b) => !!completed[a.id] - !!completed[b.id]).map(eventItemHtml).join("")}</div>
+            <div class="ongoing-group-body">${list.slice().sort((a, b) => !!completed[a.id] - !!completed[b.id]).map((e) => eventItemHtml(e, { compact: true })).join("")}</div>
           </div>
         `;
       })
