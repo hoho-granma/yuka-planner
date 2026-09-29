@@ -293,6 +293,79 @@
       opt.textContent = p.name;
       provinceSelect.appendChild(opt);
     }
+    renderProvinceChips();
+  }
+
+  function makeChip(label, active, onClick) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "region-chip" + (active ? " active" : "");
+    b.setAttribute("role", "radio");
+    b.setAttribute("aria-checked", active ? "true" : "false");
+    b.textContent = label;
+    b.addEventListener("click", onClick);
+    return b;
+  }
+
+  function renderProvinceChips() {
+    const box = el("province-chips");
+    box.innerHTML = "";
+    const cur = el("province").value;
+    for (const p of regionsData.provinces) {
+      box.appendChild(makeChip(shortProvinceName(p.name), p.code === cur, () => {
+        el("province").value = p.code;
+        el("province").dispatchEvent(new Event("change"));
+        renderProvinceChips();
+        el("field-region").classList.remove("invalid");
+      }));
+    }
+    updateRegionSummary();
+  }
+
+  function shortProvinceName(name) {
+    return name
+      .replace("특별자치시", "").replace("특별자치도", "").replace("특별시", "").replace("광역시", "")
+      .replace("충청북도", "충북").replace("충청남도", "충남").replace("전라북도", "전북").replace("전라남도", "전남")
+      .replace("경상북도", "경북").replace("경상남도", "경남").replace("경기도", "경기").replace("강원", "강원");
+  }
+
+  function renderDistrictChips() {
+    const wrap = el("district-wrap");
+    const box = el("district-chips");
+    box.innerHTML = "";
+    const province = regionsData.provinces.find((p) => p.code === el("province").value);
+    wrap.classList.toggle("hidden", !province);
+    if (!province) return updateRegionSummary();
+    const cur = el("district").value;
+    for (const d of province.districts) {
+      box.appendChild(makeChip(d, d === cur, () => {
+        el("district").value = d;
+        renderDistrictChips();
+        el("field-region").classList.remove("invalid");
+      }));
+    }
+    updateRegionSummary();
+  }
+
+  function updateRegionSummary() {
+    const p = regionsData && regionsData.provinces.find((x) => x.code === el("province").value);
+    const d = el("district").value;
+    const sum = el("region-summary");
+    if (p && d) {
+      el("region-summary-text").textContent = `${p.name} ${d}`;
+      sum.classList.remove("hidden");
+    } else {
+      sum.classList.add("hidden");
+    }
+  }
+
+  function syncOrderChips() {
+    const cur = el("birthOrder").value;
+    document.querySelectorAll("#order-chips .order-chip").forEach((b) => {
+      const on = b.dataset.value === cur;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-checked", on ? "true" : "false");
+    });
   }
 
   function populateDistricts(provinceCode, selected) {
@@ -301,6 +374,7 @@
     const province = regionsData.provinces.find((p) => p.code === provinceCode);
     if (!province) {
       districtSelect.disabled = true;
+      renderDistrictChips();
       return;
     }
     districtSelect.disabled = false;
@@ -317,6 +391,7 @@
       if (d === selected) opt.selected = true;
       districtSelect.appendChild(opt);
     }
+    renderDistrictChips();
   }
 
   function formatDateKR(date) {
@@ -1503,7 +1578,13 @@
     const birthOrder = el("birthOrder").value;
     const province = el("province").value;
     const district = el("district").value;
-    if (!name || !birthDateStr || !birthOrder || !province || !district) return;
+    el("field-order").classList.toggle("invalid", !birthOrder);
+    el("field-region").classList.toggle("invalid", !province || !district);
+    if (!name || !birthDateStr || !birthOrder || !province || !district) {
+      const first = !name ? el("childName") : !birthDateStr ? el("birthDateBtn") : !birthOrder ? el("field-order") : el("field-region");
+      first.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
 
     profile = { name, birthDate: new Date(birthDateStr + "T00:00:00"), birthOrder, stage: landingStage || "born", province, district };
     saveProfile(profile);
@@ -1564,6 +1645,13 @@
     } catch (e) {}
 
     el("province").addEventListener("change", (e) => populateDistricts(e.target.value));
+    document.querySelectorAll("#order-chips .order-chip").forEach((b) =>
+      b.addEventListener("click", () => {
+        el("birthOrder").value = b.dataset.value;
+        el("field-order").classList.remove("invalid");
+        syncOrderChips();
+      })
+    );
     el("query-form").addEventListener("submit", handleSubmit);
     el("btn-show-code-entry").addEventListener("click", () => el("code-entry").classList.toggle("hidden"));
     el("btn-load-code").addEventListener("click", handleLoadCode);
@@ -1613,6 +1701,9 @@
       el("province").value = profile.province;
       el("childName").value = profile.name || "";
       el("birthOrder").value = profile.birthOrder || "";
+      syncOrderChips();
+      renderProvinceChips();
+      renderDistrictChips();
       setBirthDatePicker(profile.birthDate);
       await buildAndRender();
       showCalendarView();
