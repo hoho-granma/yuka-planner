@@ -1211,7 +1211,7 @@
               <span class="count-badge">${doneCount}/${list.length}개</span>
               <span class="chevron">▾</span>
             </button>
-            <div class="ongoing-group-body">${list.map(eventItemHtml).join("")}</div>
+            <div class="ongoing-group-body">${list.slice().sort((a, b) => !!completed[a.id] - !!completed[b.id]).map(eventItemHtml).join("")}</div>
           </div>
         `;
       })

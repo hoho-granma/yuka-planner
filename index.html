@@ -224,11 +224,21 @@
   <script src="js/sync.js?v=2"></script>
   <script src="js/todo-engine.js?v=1"></script>
   <script src="js/schedule.js?v=4"></script>
-  <script src="js/app.js?v=8"></script>
+  <script src="js/app.js?v=9"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("sw.js").catch((e) => console.error("서비스워커 등록 실패", e));
+        const hadController = !!navigator.serviceWorker.controller;
+        navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
+          .then((reg) => reg.update())
+          .catch((e) => console.error("서비스워커 등록 실패", e));
+        // 새 버전이 배포돼 서비스워커가 교체되면 한 번만 새로고침해서 바로 최신 화면을 보여준다.
+        let reloaded = false;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (!hadController || reloaded) return;
+          reloaded = true;
+          location.reload();
+        });
       });
     }
   </script>

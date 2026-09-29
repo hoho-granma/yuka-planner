@@ -9,7 +9,7 @@
 //   - CACHE_NAME을 올릴 때마다 이전 캐시를 전부 지운다(activate 단계) — 배포 후에도
 //     예전 코드가 남아있는 걸 방지한다.
 
-const CACHE_NAME = "hannun-shell-v13";
+const CACHE_NAME = "hannun-shell-v14";
 
 const SHELL_ASSETS = [
   "./",
@@ -57,7 +57,7 @@ self.addEventListener("fetch", (event) => {
 
   // 앱 셸: 네트워크 우선, 실패하면(오프라인) 캐시로 대체.
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: "no-cache" })
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
