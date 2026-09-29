@@ -1,0 +1,129 @@
+{
+  "_meta": {
+    "설명": "대구광역시 전체 공통 또는 여러 시군구에 걸쳐 적용되는 지원금. 시군구 전용 항목은 data/subsidies/daegu/{시군구명}/subsidies.json 에 둔다.",
+    "갱신": "2026-09-29 조사 대구 5건. 대부분 언론 기반(verified=false). 구·군 출생축하금(동구 등)은 시군구 전용이라 제외."
+  },
+  "subsidies": [
+    {
+      "id": "DG-001",
+      "name": "대구 미숙아·선천성이상아 의료비 지원 상향",
+      "scope": "provincial",
+      "applicableRegions": [
+        "대구광역시:ALL"
+      ],
+      "target": "대구시 미숙아·선천성 이상아(NICU 입원·수술 등 기준 충족)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 24,
+      "amountText": "2026년부터 지원 한도 최대 2,700만원으로 상향 (세부 기준 확인 필요)",
+      "paymentMethod": "본인부담 의료비 사후 지원, 보건소 신청",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 0,
+        "maxMonths": 24
+      },
+      "residencyRequirement": "대구시 거주",
+      "additionalConditions": "전국 사업 기준: 퇴원 후 6개월 내 관할 보건소 신청, 선천성이상아 2세 이내 진단·수술",
+      "officialUrl": "https://www.khan.co.kr/article/202603031558001/",
+      "sourceName": "경향신문·경북매일(2026.3.3) 대구시 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "국가 사업(미숙아 최대 2,000만원 등)과 시비 추가분의 구분 및 항목별 한도는 미확인. 보건소 확인 필요."
+    },
+    {
+      "id": "DG-002",
+      "name": "대구형 난임부부 시술비 지원 (횟수 제한 폐지)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "대구광역시:ALL"
+      ],
+      "target": "대구시 거주 난임부부(소득 무관)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "체외수정 신선 회당 최대 170만원(45세 이상 110만원), 동결 최대 90만원(45세 이상 50만원), 인공수정 최대 30만원",
+      "paymentMethod": "보건소·정부24 신청 후 지정의료기관에서 지원",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "대구시 거주",
+      "additionalConditions": "2026.9.30부터 지원 횟수 제한 전면 폐지(특·광역시 최초) 보도. 비급여 항목 20~30만원 추가 지원 보도",
+      "officialUrl": "https://www.edaily.co.kr/News/Read?newsId=04546086645576184",
+      "sourceName": "이데일리·뉴스핌·경향(2026.3~9) 대구시 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "금액은 언론 기준, 횟수 폐지 시행일 공식 확인 필요. 국가 난임시술비 지원에 시가 상향·추가한 부분."
+    },
+    {
+      "id": "DG-003",
+      "name": "해피맘콜 임산부 택시비 캐시백",
+      "scope": "provincial",
+      "applicableRegions": [
+        "대구광역시:ALL"
+      ],
+      "target": "대구시 주민등록 임산부 (임신 10개월~출산 후 1년)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "택시요금의 70% 캐시백, 월 최대 3만원 (과거 안내 월 2만원)",
+      "paymentMethod": "대구로페이 카드 결제 후 익월 20일 캐시백",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "대구시 주민등록",
+      "additionalConditions": "해피맘콜 앱 회원승인 시 주민등록등본·임신확인서 제출, 대구로TAXI 이용",
+      "officialUrl": "https://nadrihome.dpfc.or.kr/happy_use.php",
+      "sourceName": "대구공공시설관리공단 해피맘콜 안내",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "검색 요약 기반. 캐시백 한도(2만/3만원)가 자료마다 달라 최신 확인 필요."
+    },
+    {
+      "id": "DG-004",
+      "name": "대구 3자녀 이상 다자녀 도시철도 무료",
+      "scope": "provincial",
+      "applicableRegions": [
+        "대구광역시:ALL"
+      ],
+      "target": "대구시 3자녀 이상 다자녀 가정의 부모와 자녀(막내 만 18세 이하, 자녀 6~18세)",
+      "minAgeMonths": 72,
+      "maxAgeMonths": 216,
+      "amountText": "부모·자녀 도시철도 요금 전액 면제 (2자녀 이상은 공영주차장·시 문화체육시설 최대 50% 할인)",
+      "paymentMethod": "다자녀 카드 발급 후 이용",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 72,
+        "maxMonths": 216
+      },
+      "residencyRequirement": "대구시 거주",
+      "additionalConditions": "카드 신청은 행정복지센터·대구은행·보건소 등",
+      "officialUrl": "https://www.daegu.go.kr/woman/index.do?menu_id=00934300",
+      "sourceName": "대구시 2026.3 보도 / 대구교통공사 안내",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "언론·요약 기반, 세부 발급 요건 확인 필요."
+    },
+    {
+      "id": "DG-005",
+      "name": "대구 아이돌봄 지원 소득기준 확대 (200%→250%)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "대구광역시:ALL"
+      ],
+      "target": "대구시 아이돌봄서비스 이용 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 144,
+      "amountText": "소득기준 중위소득 200%에서 250%로 확대 (지원 금액 확인 필요)",
+      "paymentMethod": "확인 필요",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "대구시 거주",
+      "additionalConditions": "2026.3 대구시 보도에서 '돌봄서비스' 기준 확대로만 언급, 정확한 사업명 확인 필요",
+      "officialUrl": "https://m.news.nate.com/view/20260303n26124",
+      "sourceName": "대구시 2026.3.3 보도(경향 등)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "사업이 아이돌봄서비스(시간제)인지 미확정. 확인 후 유지 또는 삭제 판단."
+    }
+  ]
+}

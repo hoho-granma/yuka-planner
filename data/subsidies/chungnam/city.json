@@ -1,0 +1,155 @@
+{
+  "_meta": {
+    "설명": "충청남도 전체 공통 또는 여러 시군구에 걸쳐 적용되는 지원금. 시군구 전용 항목은 data/subsidies/chungnam/{시군구명}/subsidies.json 에 둔다.",
+    "갱신": "2026-09-29 조사. 충남 도 사업 6건 등록(풀케어 돌봄정책 플러스 신규 4건은 하반기 추경 후 시행 예정으로 확인필요, 공식 원문 미열람 다수). 홍성 공공산후조리원 등 단일 시군 사업은 제외. verified=false는 언론·검색요약 기반."
+  },
+  "subsidies": [
+    {
+      "id": "CN-001",
+      "name": "35세 이상 임산부 의료비 지원(풀케어 돌봄정책 플러스, 신규)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "충청남도:ALL"
+      ],
+      "target": "분만예정일 기준 35세 이상 충남 거주 임산부",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "임신 1회당 외래 진료·검사비 최대 50만원",
+      "paymentMethod": "보건소 신청 후 계좌 지급(추정, 확인 필요)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 6,
+      "residencyRequirement": "충남도 주민등록",
+      "additionalConditions": "임신 확인 후~출산 후 6개월 이내 신청(검색요약 기준). 임신확인서/출생증명서, 진료비 영수증·세부내역서, 통장사본, 국민행복카드 사용내역 필요(확인 필요)",
+      "officialUrl": "https://www.mt.co.kr/policy/2026/02/10/2026021013012251902",
+      "sourceName": "머니투데이 2026-02-10(충남도 풀케어 돌봄정책 플러스 보도)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "2026-02 발표 신규사업. 사전 절차 필요 사업은 상반기 협의·추경 후 하반기부터 본격 추진이라 실제 시행일·신청 개시 여부 확인 필요. 도 공식 원문 미열람."
+    },
+    {
+      "id": "CN-002",
+      "name": "난임시술비 확대 지원(나이·소득·횟수 제한 없음, 신규)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "충청남도:ALL"
+      ],
+      "target": "충남 거주 난임부부",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "확인 필요 (국가 지원 기준 위에 추가, 기존 25회 한정에서 횟수 제한 폐지)",
+      "paymentMethod": "보건소 신청(확인 필요)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "충남도 거주(세부 기간 확인 필요)",
+      "additionalConditions": "금액·회당 한도·국가지원 소진 후 적용 여부 확인 필요",
+      "officialUrl": "https://www.mt.co.kr/policy/2026/02/10/2026021013012251902",
+      "sourceName": "머니투데이 2026-02-10 / 서울경제 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "풀케어 돌봄정책 플러스 임신·출산 패키지 신규. 2026 국가 난임시술비는 소득기준 폐지·출산당 체외수정 20회·인공수정 5회이므로 도 추가분과 구분 필요. 시행 시점 확인 필요."
+    },
+    {
+      "id": "CN-003",
+      "name": "소상공인 출산 대체인력 인건비 지원(신규)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "충청남도:ALL"
+      ],
+      "target": "충남 소재 소상공인 사업주·종사자 출산(육아휴직 대체인력 채용)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "월 100만원 × 최대 3개월",
+      "paymentMethod": "확인 필요",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "충남 소재 사업장",
+      "additionalConditions": "대체인력 채용 요건 등 확인 필요",
+      "officialUrl": "https://www.mt.co.kr/policy/2026/02/10/2026021013012251902",
+      "sourceName": "머니투데이 2026-02-10",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "소상공인 육아 지원 패키지. 하반기 추경 후 본격 추진 예정이라 신청 가능 여부 확인 필요. (아산시 등 시군 자체 대체인력 인센티브는 별도 사업)"
+    },
+    {
+      "id": "CN-004",
+      "name": "소상공인 아이돌봄서비스 이용료 지원(신규)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "충청남도:ALL"
+      ],
+      "target": "12세 이하 자녀를 양육 중인 충남 소상공인 사업주·종사자",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 144,
+      "amountText": "아이돌봄서비스 이용료 연 최대 360만원",
+      "paymentMethod": "확인 필요",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 0,
+        "maxMonths": 144
+      },
+      "residencyRequirement": "충남 소재 사업장 소상공인",
+      "additionalConditions": "정부 아이돌봄서비스 이용과의 관계·소득기준 확인 필요",
+      "officialUrl": "https://www.mt.co.kr/policy/2026/02/10/2026021013012251902",
+      "sourceName": "머니투데이 2026-02-10",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "하반기 추경 후 본격 추진 예정. 신청 방법 미확인."
+    },
+    {
+      "id": "CN-005",
+      "name": "365x24 아동돌봄(거점센터 아침·야간·심야·주말 돌봄)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "충청남도:ALL"
+      ],
+      "target": "충남 거주(또는 근무) 보호자의 6~12세 아동",
+      "minAgeMonths": 72,
+      "maxAgeMonths": 155,
+      "amountText": "이용료 확인 필요",
+      "paymentMethod": "플랫폼(아이충남) 신청·시간대별 예약",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 72,
+        "maxMonths": 155
+      },
+      "residencyRequirement": "충남도 내 거주 또는 근무",
+      "additionalConditions": "다함께돌봄센터·지역아동센터 등 17개 거점센터(시군별 1개소, 천안·아산 2개소)",
+      "officialUrl": "https://www.ichungnam.kr/ichungnam/cnFullCare/cnFullCareBsnsIntro/365x24Care.jsp",
+      "sourceName": "아이충남(충청남도 아동돌봄 포털)",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "이용료 미확인. 마을돌봄터(50개소까지 확대)·방학온돌봄터 20개소 별도 운영 예정."
+    },
+    {
+      "id": "CN-006",
+      "name": "365x24 어린이집(야간·주말 긴급·일시 돌봄)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "충청남도:ALL"
+      ],
+      "target": "충남 거주 또는 근무 보호자의 생후 6개월~7세 영유아",
+      "minAgeMonths": 6,
+      "maxAgeMonths": 83,
+      "amountText": "이용료 확인 필요",
+      "paymentMethod": "어린이집 이용 신청",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 6,
+        "maxMonths": 83
+      },
+      "residencyRequirement": "보호자 주소 또는 근무지가 충남",
+      "additionalConditions": "평일 18시~익일 9시, 주말·공휴일 9~18시(설·추석·근로자의 날 제외) — 검색요약 기준",
+      "officialUrl": "https://www.ichungnam.kr/ichungnam/cnFullCare/cnFullCareSvcGuid/365x24CareSvc.jsp",
+      "sourceName": "아이충남 / 아주경제·네이트 2026-09-16 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "2026-09 지방지킴 대상(출산·돌봄혁신) 수상 보도. 운영 어린이집 수·요금 확인 필요."
+    }
+  ]
+}

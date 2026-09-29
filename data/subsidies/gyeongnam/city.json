@@ -1,0 +1,126 @@
+{
+  "_meta": {
+    "설명": "경상남도 전체 공통 또는 여러 시군구에 걸쳐 적용되는 지원금. 시군구 전용 항목은 data/subsidies/gyeongnam/{시군구명}/subsidies.json 에 둔다.",
+    "갱신": "2026-09-29 조사. verified=false는 공식 원문 미열람(언론 보도·검색요약 기반)."
+  },
+  "subsidies": [
+    {
+      "id": "GN-001",
+      "name": "경남 출산가정 영양꾸러미 바우처",
+      "scope": "provincial",
+      "applicableRegions": [
+        "경상남도:ALL"
+      ],
+      "target": "생후 5~12개월 영아(2025.7~2026.6 출생) 가정",
+      "minAgeMonths": 5,
+      "maxAgeMonths": 12,
+      "amountText": "최대 30만원 상당(자부담 6만원, 주거·의료급여 수급 가구 자부담 면제)",
+      "paymentMethod": "e경남몰 쿠폰(온라인 주문·배송)",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 5,
+        "maxMonths": 12
+      },
+      "residencyRequirement": "경남도 내 거주",
+      "additionalConditions": "약 2,300종 품목. 2026 대상 3,149가구. 신청은 경남바로서비스 또는 보건소, 2026-10-31 마감",
+      "officialUrl": "https://www.newspim.com/news/view/20260320000583",
+      "sourceName": "뉴스핌(2026-03-20) 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "2025 인구감소지역 11개 시군 시범을 2026 전 시군 확대. 신청 마감 2026-10-31(2027 계획 미확인)."
+    },
+    {
+      "id": "GN-002",
+      "name": "경남 난임부부 진단비·시술비 도 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "경상남도:ALL"
+      ],
+      "target": "난임부부(소득기준 있음)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "확인 필요(보도상 120만~160만원 범위 언급, 2026 지원인원 1만600명)",
+      "paymentMethod": "보건소 신청",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "경남도 내 거주",
+      "additionalConditions": "국가 난임시술비에 도가 추가 지원. 상세는 확인 필요",
+      "officialUrl": "https://m.news.nate.com/view/20260122n34044",
+      "sourceName": "네이트뉴스(2026-01-22)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "금액 근거 불충분, 추측 금지."
+    },
+    {
+      "id": "GN-003",
+      "name": "경남 3자녀 이상 가정 의료비 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "경상남도:ALL"
+      ],
+      "target": "3자녀 이상 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 228,
+      "amountText": "확인 필요(2026 예산 2.3억원)",
+      "paymentMethod": "확인 필요",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "경남도 내 거주",
+      "additionalConditions": "확인 필요",
+      "officialUrl": "https://www.gyeongnam.go.kr",
+      "sourceName": "경남도 2026 저출생 대책 보도(검색요약)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "금액·대상 미확인."
+    },
+    {
+      "id": "GN-004",
+      "name": "경남 다자녀 가정 농수축산물 구입 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "경상남도:ALL"
+      ],
+      "target": "다자녀 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 228,
+      "amountText": "확인 필요(2026 예산 30억원)",
+      "paymentMethod": "확인 필요",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "경남도 내 거주",
+      "additionalConditions": "확인 필요",
+      "officialUrl": "https://www.gyeongnam.go.kr",
+      "sourceName": "경남도 2026 저출생 대책 보도(검색요약)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "대상·금액 미확인."
+    },
+    {
+      "id": "GN-005",
+      "name": "경남 소상공인 출산 대체인력 인건비 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "경상남도:ALL"
+      ],
+      "target": "출산한 도내 소상공인",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "출산 후 6개월 대체인력 인건비 지원(확인 필요)",
+      "paymentMethod": "확인 필요",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 6,
+      "residencyRequirement": "경남도 내 사업장",
+      "additionalConditions": "확인 필요",
+      "officialUrl": "https://www.gyeongnam.go.kr",
+      "sourceName": "경남도 2026 저출생 대책 보도(검색요약)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "2026 예산 24억원. 세부 요건 미확인."
+    }
+  ]
+}

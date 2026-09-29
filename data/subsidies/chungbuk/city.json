@@ -1,0 +1,182 @@
+{
+  "_meta": {
+    "설명": "충청북도 전체 공통 또는 여러 시군구에 걸쳐 적용되는 지원금. 시군구 전용 항목은 data/subsidies/chungbuk/{시군구명}/subsidies.json 에 둔다.",
+    "갱신": "2026-09-29 조사. verified=false는 공식 원문 미열람(언론·검색요약 기반). 아동수당 지역 가산·아이돌봄 소득기준 확대(중위 250%)·어린이집 급식비 인상 등은 시·군 단위 또는 확인 미비로 미등록."
+  },
+  "subsidies": [
+    {
+      "id": "CB-001",
+      "name": "충북 출산육아수당",
+      "scope": "provincial",
+      "applicableRegions": [
+        "충청북도:ALL"
+      ],
+      "target": "2023.1.1. 이후 출생아, 부 또는 모와 아동이 도내 동일 주소 주민등록",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 72,
+      "amountText": "출생 후 6세까지 총 1,000만원 (2024년 이후 출생: 1세 100만원, 2~5세 각 200만원, 6세 100만원 등 생일마다 지급 / 2023년 출생: 신청 시 300만원 등)",
+      "paymentMethod": "계좌 입금 (생일 다음 달 25일)",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 0,
+        "maxMonths": 72
+      },
+      "residencyRequirement": "부 또는 모가 출생일 기준 도내 6개월 이상 거주, 타 시도 전입자도 신청 가능",
+      "additionalConditions": "신청일 이전 회차 소급 불가. 관할 행정복지센터 또는 가치자람 신청",
+      "officialUrl": "https://gachi.chungbuk.go.kr/portal/main/contents.do?menuNo=200033",
+      "sourceName": "충청북도 가치자람",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "공식 페이지 본문 확인. 회차별 정확한 금액표는 가치자람·지침 확인 필요."
+    },
+    {
+      "id": "CB-002",
+      "name": "충북 임산부 산후조리비 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "충청북도:ALL"
+      ],
+      "target": "신청일 기준 도내 주민등록·거주 산모로 출생아를 도내 출생신고한 경우 (임신 16주 이후 유산·사산 산모 확대)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "50만원 (다태아 최대 100만원)",
+      "paymentMethod": "개인계좌 현금 (비용 사용 후 증빙 제출)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 6,
+      "residencyRequirement": "신청일 기준 도내 주민등록·거주",
+      "additionalConditions": "출산일로부터 6개월 이내, 읍면동 방문 신청. 접수 2025.1.1~2026.12.31. 산후조리원·의약품·건강식품·산후 건강관리 사용분",
+      "officialUrl": "https://www.chungbuk.go.kr/young/contents.do?key=5429",
+      "sourceName": "충청북도청 인구청년정책담당관",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "공식 페이지 확인. 접수기간이 2026.12.31까지라 2027 연장 여부 확인 필요. 도 소식은 2026 모유수유 항목 추가 언급."
+    },
+    {
+      "id": "CB-003",
+      "name": "군 지역 임산부 교통비 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "충청북도:보은군",
+        "충청북도:옥천군",
+        "충청북도:영동군",
+        "충청북도:증평군",
+        "충청북도:진천군",
+        "충청북도:괴산군",
+        "충청북도:음성군",
+        "충청북도:단양군"
+      ],
+      "target": "군 지역 주민등록 거주 임산부(산전검진·분만)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "1회 5만원 정액, 태아 1인 50만원 (다태아 최대 100만원)",
+      "paymentMethod": "계좌 지급",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "군 지역 주민등록·거주",
+      "additionalConditions": "임신확인서상 임신 확인일부터 출산 후 6개월까지 신청. 가치자람 온라인 또는 보건소 방문",
+      "officialUrl": "https://www.chungbuk.go.kr/young/contents.do?key=5411",
+      "sourceName": "충청북도청 / 괴산군 보건소",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": false,
+      "notes": "검색요약 기반(도청 페이지 열람 실패). 적용 군은 충북 8개 군으로 등재."
+    },
+    {
+      "id": "CB-004",
+      "name": "난임부부 시술비 지원 확대(소득기준 폐지)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "충청북도:ALL"
+      ],
+      "target": "난임 진단 부부 (소득기준 없음)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": null,
+      "amountText": "국가 기준 지원에 더해 배아동결비·유산방지제·착상유도제·냉동난자 해동비까지 지원 (금액 확인 필요)",
+      "paymentMethod": "의료비 지원",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "도내 거주",
+      "additionalConditions": "2026 사업비 44억원(언론에 440억으로 표기된 곳도 있음), 지원결정 통지서 유효기간 3개월→6개월",
+      "officialUrl": "https://www.chungbuk.go.kr/cbnews/selectBbsNttView.do?key=5227&bbsNo=2953&nttNo=416417&searchCtgry=%ED%8A%B9%EC%A7%91%EA%B8%B0%ED%9A%8D&searchCnd=all&searchKrwd=&pageIndex=1",
+      "sourceName": "충북도정소식 / 언론",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "시술별 금액 확인 못함(추측 금지)."
+    },
+    {
+      "id": "CB-005",
+      "name": "충북 초다자녀 가정 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "충청북도:ALL"
+      ],
+      "target": "4자녀 이상 가정, 18세 이하 자녀 1인 이상과 동일 주소 거주 (2026부터 5자녀→4자녀 확대, 도 전역 확대)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 216,
+      "amountText": "4자녀 가구 연 100만원, 5자녀 이상은 18세 이하 자녀 1인당 연 100만원 (청주시 기준 최대 500만원). 서울신문은 '3년간 연 50만원'으로 상이하게 보도",
+      "paymentMethod": "시군별 상품권 등",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "부 또는 모가 도내 주민등록",
+      "additionalConditions": "가치자람 또는 행정복지센터 신청",
+      "officialUrl": "http://gachi.chungbuk.go.kr/portal/policy/policy/view.do?policyNo=315&policyNmbChl=&policyKwrd=&menuNo=200011&policyCateCd=04&pageIndex=1",
+      "sourceName": "충청북도 가치자람 / 청주시 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "금액·지급방식이 시군 사업(청주 상품권 분기 25만원)과 도 사업 간 혼재. 공식 본문 확인 필요."
+    },
+    {
+      "id": "CB-006",
+      "name": "다태아 가정 조제분유 지원(소득기준 폐지)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "충청북도:ALL"
+      ],
+      "target": "12개월 이하 다태아 영아 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "월 최대 10만원 (연 120만원)",
+      "paymentMethod": "분유 구입비 지원",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 0,
+        "maxMonths": 12
+      },
+      "residencyRequirement": "도내 거주",
+      "additionalConditions": "2026 소득기준 폐지. 문의 인구청년정책담당관 043-220-4766",
+      "officialUrl": "https://www.chungbuk.go.kr/cbnews/selectBbsNttView.do?key=5227&bbsNo=2953&nttNo=416417&searchCtgry=%ED%8A%B9%EC%A7%91%EA%B8%B0%ED%9A%8D&searchCnd=all&searchKrwd=&pageIndex=1",
+      "sourceName": "충북도정소식 / 언론",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "언론·검색요약 기반. 지급방식 확인 필요."
+    },
+    {
+      "id": "CB-007",
+      "name": "충북 결혼·출산가정 대출이자 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "충청북도:ALL"
+      ],
+      "target": "기준중위소득 180% 이하, 혼인신고일 또는 자녀 출생일로부터 1년 이내(2025.1.1. 이후 혼인·출산 가구는 1년 경과해도 대상) 주택자금 대출 가구",
+      "minAgeMonths": 0,
+      "maxAgeMonths": null,
+      "amountText": "연 최대 50만원, 최대 5년 총 250만원 (기본 3년, 출산 시 2년 연장, 추가 출산 자녀 1명당 1년씩 최대 2년)",
+      "paymentMethod": "이자 지원",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "도내 거주",
+      "additionalConditions": "결혼·출산 대출이자 사업 통합, 연령기준 폐지, 주택자금대출로 한정",
+      "officialUrl": "https://www.chungbuk.go.kr/cbnews/selectBbsNttView.do?key=5227&bbsNo=2953&nttNo=416417&searchCtgry=%ED%8A%B9%EC%A7%91%EA%B8%B0%ED%9A%8D&searchCnd=all&searchKrwd=&pageIndex=1",
+      "sourceName": "충북도정소식 / 청주·진천·증평 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "시군별 모집이라 시군마다 신청 시기 다름. 공식 원문 미열람."
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+{
+  "_meta": {
+    "설명": "경상북도 전체 공통 또는 여러 시군구에 걸쳐 적용되는 지원금. 시군구 전용 항목은 data/subsidies/gyeongbuk/{시군구명}/subsidies.json 에 둔다.",
+    "갱신": "2026-09-29 조사. verified=false는 공식 원문 미열람(언론 보도·검색요약 기반)."
+  },
+  "subsidies": [
+    {
+      "id": "GB-001",
+      "name": "경북 임산부 친환경 농산물 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "경상북도:ALL"
+      ],
+      "target": "도내 주민등록 임산부 및 2025.1.1 이후 출산한 산모(영양플러스·농식품바우처 수혜자 제외)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "총 44만원 상당 친환경 농산물(자부담 20% 포함, 상반기 도비 20만원 + 하반기 국비 24만원)",
+      "paymentMethod": "'사이소' 쇼핑몰 주문(월 최대 4회, 회당 4~10만원)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "신청일 기준 경북도 내 주민등록(요건 충족 외국인 포함)",
+      "additionalConditions": "2026년 신청은 4월 6~26일 접수, 12월 15일까지 주문. 이후 추가 모집 여부 확인 필요",
+      "officialUrl": "https://www.gb.go.kr",
+      "sourceName": "서울신문(2026-04-02) 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "2026 신청기간 종료됐을 가능성. 추가 모집·2027 계획 확인 필요."
+    },
+    {
+      "id": "GB-002",
+      "name": "경북 난임부부 시술비 도 자체 지원(횟수 제한 없음·남성난임 포함)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "경상북도:ALL"
+      ],
+      "target": "도내 6개월 이상 주민등록 난임 여성(부부)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "시술비 본인부담 지원(신선·동결배아 등 1회 최대 150만원 안팎 보도, 정확 금액 확인 필요)",
+      "paymentMethod": "보건소 신청, 의료기관 지원",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "경북도 내 6개월 이상 주민등록",
+      "additionalConditions": "정부 지원 출산당 25회 제한과 달리 횟수 제한 없이 지원, 연령차등 폐지, 남성난임 시술(고환조직 채취·정계정맥류 수술) 지원 추가, 안동의료원 난임센터 '아이ON', 난임·임산부 심리상담센터(안동·김천의료원)",
+      "officialUrl": "https://www.kyongbuk.co.kr/news/articleView.html?idxno=4085230",
+      "sourceName": "경북매일·신아일보·경북일보 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "소득·세부 금액은 보건소 확인 필요. 국가 난임시술비 지원 확대분과 중복 여부 미확인."
+    },
+    {
+      "id": "GB-003",
+      "name": "경북 임신 사전건강관리(가임력 검사) 도 확대지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "경상북도:ALL"
+      ],
+      "target": "20~49세 남녀",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "AMH·초음파(여), 정액검사(남) 지원, 1인 평생 최대 3회(2025년부터 확대)",
+      "paymentMethod": "보건소·지정기관 검사비 지원",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "경북도 내 거주",
+      "additionalConditions": "전국 임신 사전건강관리 사업의 경북 확대분. 2026.6까지 25,220건 지원",
+      "officialUrl": "https://www.shinailbo.co.kr/news/articleView.html?idxno=1983438",
+      "sourceName": "신아일보·경북일보 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "국가 사업과 중복 등록 아님(경북 추가 횟수 확대분). 정확 대상 요건 확인 필요."
+    },
+    {
+      "id": "GB-004",
+      "name": "경북 산모신생아 건강관리 본인부담 추가지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "경상북도:ALL"
+      ],
+      "target": "산모·신생아 건강관리(산후도우미) 이용 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 3,
+      "amountText": "본인부담금의 90% 지원(보도 기준)",
+      "paymentMethod": "바우처",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 3,
+      "residencyRequirement": "경북도 내 거주",
+      "additionalConditions": "소득구간별 적용 여부 확인 필요",
+      "officialUrl": "https://www.shinailbo.co.kr/news/articleView.html?idxno=1983438",
+      "sourceName": "신아일보 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "정확한 소득구간·금액 미확인. 시군별 상이 가능."
+    },
+    {
+      "id": "GB-005",
+      "name": "경북 다자녀 가정 농수산물 구입 쿠폰",
+      "scope": "provincial",
+      "applicableRegions": [
+        "경상북도:ALL"
+      ],
+      "target": "도내 2자녀 이상 가정(19세 미만 자녀)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 228,
+      "amountText": "2자녀 5만원 / 3자녀 7만원 / 4자녀 이상 10만원",
+      "paymentMethod": "지역 농수산물 구입 쿠폰",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "경북도 내 거주",
+      "additionalConditions": "신청 시기·연령 요건 확인 필요",
+      "officialUrl": "https://m.news.nate.com/view/20260220n31259",
+      "sourceName": "네이트뉴스(2026-02-20)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "일부 시군은 이사비 등 자체 지원 별도."
+    },
+    {
+      "id": "GB-006",
+      "name": "경북 다자녀(2자녀 이상) 가정 진료비 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "경상북도:ALL"
+      ],
+      "target": "도내 다자녀 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 228,
+      "amountText": "확인 필요",
+      "paymentMethod": "확인 필요",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "경북도 내 거주",
+      "additionalConditions": "확인 필요",
+      "officialUrl": "https://m.news.nate.com/view/20260220n31259",
+      "sourceName": "네이트뉴스(2026-02-20)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "세 자녀 이상 진료비 지원이라는 보도와 2자녀 이상이라는 보도가 엇갈림. 공식 확인 필요."
+    }
+  ]
+}

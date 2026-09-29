@@ -1,0 +1,129 @@
+{
+  "_meta": {
+    "설명": "제주특별자치도 전체 공통 또는 여러 시군구에 걸쳐 적용되는 지원금. 시군구 전용 항목은 data/subsidies/jeju/{시군구명}/subsidies.json 에 둔다.",
+    "갱신": "2026-09-29 조사. verified=false는 공식 원문 미열람(언론 보도·검색요약 기반)."
+  },
+  "subsidies": [
+    {
+      "id": "JJ-001",
+      "name": "제주 육아지원금(첫째아)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "제주특별자치도:ALL"
+      ],
+      "target": "2025년 이후 출생·입양 첫째아 부모",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 60,
+      "amountText": "5년간 총 500만원",
+      "paymentMethod": "분할 지급(확인 필요)",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 0,
+        "maxMonths": 60
+      },
+      "residencyRequirement": "출생일 기준 6개월 이상 제주 주민등록 계속 거주",
+      "additionalConditions": "출생신고 시 읍면동 원스톱 신청",
+      "officialUrl": "https://www.jeju.go.kr/wel/child/childPolicy/workSupport.htm",
+      "sourceName": "제주도청·헤드라인제주(2026-03-02)",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "출생일 기준 거주요건(첫째 6개월/둘째 이상 12개월). 연차별 금액 확인 필요."
+    },
+    {
+      "id": "JJ-002",
+      "name": "제주 육아지원금(둘째아 이상)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "제주특별자치도:ALL"
+      ],
+      "target": "2026.1.1 이후 출생·입양 둘째아 이상 부모",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 108,
+      "amountText": "9년간 총 1,000만원(연령별 분할)",
+      "paymentMethod": "분할 지급(확인 필요)",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 0,
+        "maxMonths": 108
+      },
+      "residencyRequirement": "출생일 기준 12개월 이상 제주 주민등록 계속 거주",
+      "additionalConditions": "2025.12.31까지 출생 둘째아는 기존 5년간 1,000만원(연 200만원). 출생신고 시 신청",
+      "officialUrl": "https://www.jeju.go.kr/wel/child/childPolicy/workSupport.htm",
+      "sourceName": "제주도청·헤드라인제주",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "연령별 금액 미확인."
+    },
+    {
+      "id": "JJ-003",
+      "name": "제주 산후조리비 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "제주특별자치도:ALL"
+      ],
+      "target": "도내 산후조리원 이용 산모(영아 12개월 이내)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "이용비 실비 최대 40만원",
+      "paymentMethod": "보건소 신청 후 지급",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "영아 출생일 기준 부 또는 모 6개월 이상 제주 주민등록, 신청일 현재도 거주",
+      "additionalConditions": "이용 종료 다음날부터 60일 이내 관할 보건소 신청. 타 지자체 산후조리 지원 수급자 제외",
+      "officialUrl": "https://www.servedream.com/service/650000001132",
+      "sourceName": "모두의혜택(정부24 기반) / 지금제주",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "제주도 공식 원문 미열람."
+    },
+    {
+      "id": "JJ-004",
+      "name": "제주 산후조리 한약(한의원) 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "제주특별자치도:ALL"
+      ],
+      "target": "제주 주민등록 임산부",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 4,
+      "amountText": "한약 처방 시 15만원 할인(2026년 10만→15만원 인상)",
+      "paymentMethod": "참여 한의원 방문 할인",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 4,
+      "residencyRequirement": "분만(예정)일 기준 제주 주민등록",
+      "additionalConditions": "임신 30주부터 출산 후 4개월까지 읍면동 신청, 지원확인서 발급 후 3개월 내 참여 한의원 이용. 2026-12월까지, 예산 소진 시 종료",
+      "officialUrl": "https://www.jigeumjeju.com/news/articleView.html?idxno=106561",
+      "sourceName": "지금제주 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "2025 이용자 1,138명."
+    },
+    {
+      "id": "JJ-005",
+      "name": "제주 다자녀 가정 우대(2자녀 이상 다자녀카드)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "제주특별자치도:ALL"
+      ],
+      "target": "제주도 2자녀 이상 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 228,
+      "amountText": "다자녀카드 발급 및 시설 우대 혜택(금액 확인 필요)",
+      "paymentMethod": "카드 발급",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "제주도 내 거주",
+      "additionalConditions": "다자녀 기준 3자녀에서 2자녀로 완화(조례 개정)",
+      "officialUrl": "https://www.jeju.go.kr/news/bodo/list.htm?act=view&seq=1236536",
+      "sourceName": "제주도청 보도자료",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "시행 시점·혜택 세부 확인 필요."
+    }
+  ]
+}
