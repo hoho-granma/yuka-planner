@@ -1,0 +1,58 @@
+{
+  "_meta": {
+    "설명": "서울특별시 관악구 자치구 전용 지원금(서울시 전체 공통 항목은 seoul.json 참고).",
+    "조사일": "2026-09-29",
+    "note": "있음 — 서울시 공통과 별도로 관악구 자체 지원 2건 확인(GWANAK-001 깡충깡충 성장양육지원금 2~4세 각 30만원 상품권, GWANAK-002 출생축하용품 2만원). 현금성 출생축하금(구 조례: 첫째 10만~다섯째 100만원 등)은 관악구청 현행 지원사업 목록에 없어 폐지된 것으로 보이나(2022년 폐지 조례안 확인), 폐지 확정은 원문으로 확인하지 못함."
+  },
+  "subsidies": [
+    {
+      "scope": "municipal",
+      "lastVerified": "2026-09-29",
+      "id": "GWANAK-001",
+      "name": "관악구 깡충깡충 성장양육지원금(2~4세 각 1회 30만원)",
+      "applicableRegions": [
+        "서울특별시:관악구"
+      ],
+      "target": "관악구에 주민등록하고 실제 거주하는 2세·3세·4세 영유아 보호자(자녀 순위 무관, 소득제한 없음) — 은찬이는 2세(2028-06-20) 이후 해당",
+      "minAgeMonths": 24,
+      "maxAgeMonths": 54,
+      "amountText": "2세·3세·4세 각 연령마다 1회 관악사랑상품권 30만원(총 3회 최대 90만원)",
+      "paymentMethod": "관악사랑상품권(서울Pay+ 앱, 신청일 기준 익월 20일 지급, 구 내 서울사랑상품권 가맹점 사용)",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 24,
+        "maxMonths": 54
+      },
+      "residencyRequirement": "지원대상이 되는 날(해당 연령 생일 도래일) 기준 6개월 전부터 계속 관악구 주민등록·실거주",
+      "additionalConditions": "각 연령(2·3·4세)의 생일로부터 6개월 이내에 연령마다 각각 신청(예: 2028-06-20 2세 → 2028-06-20~2028-12-20, 3세·4세도 동일). 정부24(보조금24) 또는 동주민센터. 2028년 시점의 사업 지속 여부·금액은 미확인",
+      "officialUrl": "https://www.gwanak.go.kr/site/gwanak/06/10614010800002024110410.jsp",
+      "sourceName": "관악구청 '깡충깡충 성장양육지원금' 안내 페이지(WebFetch 원문 확인) + 2026-08 보도(아시아경제 등)로 2026년 시행 확인",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "2024-11 전국 최초 도입. 페이지 자체에 2026 시행 명시는 없으나 2026-08 보도와 2026 저출생 시행계획에 포함되어 현행 확인. 은찬이(2026-06 출생)는 아직 대상 아님이라 향후 사업 지속 여부 재확인 필요. 문의 성평등가족과 02-879-6133."
+    },
+    {
+      "scope": "municipal",
+      "lastVerified": "2026-09-29",
+      "id": "GWANAK-002",
+      "name": "관악구 출생축하용품(2만원 상당 유아용품)",
+      "applicableRegions": [
+        "서울특별시:관악구"
+      ],
+      "target": "관악구 거주·출생신고한 영아 가정(신생아용품 꾸러미: 내복세트·양말·턱받이)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 1,
+      "amountText": "2만원 상당 유아용품(현물)",
+      "paymentMethod": "현물(출생신고 시 구청 또는 동주민센터에서 직접 배부)",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "관악구 거주 및 관악구에 출생신고",
+      "additionalConditions": "출생신고 시 배부 — 별도 신청기한 원문에 명시되지 않음",
+      "officialUrl": "https://www.gwanak.go.kr/site/gwanak/06/10614011300002025051402.jsp",
+      "sourceName": "관악구청 '한눈에 보는 출산 및 양육 관련 연령별 지원사업'·'출산장려사업' 페이지(WebFetch 확인)",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "신청기한이 명시되지 않아 unconfirmed. 출생신고 시점에 받는 것으로 추정."
+    }
+  ]
+}

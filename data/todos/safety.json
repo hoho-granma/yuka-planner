@@ -1,0 +1,233 @@
+{
+  "category": "SF",
+  "count": 8,
+  "todos": [
+    {
+      "todo_id": "SF-01",
+      "category": "SF",
+      "title": "카시트 장착(법적 의무)",
+      "parentAction": "자동차 탑승 시 항상 카시트 사용",
+      "completionCriteria": "-",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 72
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 0,
+      "source": "도로교통법",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄",
+      "observationGuide": [
+        "탑승할 때마다 벨트가 헐렁하지 않은지",
+        "카시트 방향(후방·전방)이 월령에 맞는지"
+      ],
+      "abnormalSigns": [
+        "예외 없이 매번 사용이 원칙입니다.",
+        "미사용 시 사고로 인한 치명상 위험이 급격히 높아집니다."
+      ]
+    },
+    {
+      "todo_id": "SF-02",
+      "category": "SF",
+      "title": "뒤집기 시작 후 낙상 예방",
+      "parentAction": "소파·침대·기저귀교환대에 혼자 두지 않기, 안전가드 설치",
+      "completionCriteria": "안전장치 설치 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "MILESTONE_EVENT",
+      "triggerParams": {
+        "event": "started_rolling"
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 0,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": null,
+      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthBasis": "뒤집기 시작 전후",
+      "categoryGroup": "안전·돌봄",
+      "observationGuide": [
+        "소파·침대·기저귀교환대 위에서 방심하는 순간이 없는지",
+        "안전가드가 제대로 설치됐는지"
+      ],
+      "abnormalSigns": [
+        "낙상 후 구토·의식저하·움직임 이상이 있으면 즉시 응급실로 가세요."
+      ]
+    },
+    {
+      "todo_id": "SF-03",
+      "category": "SF",
+      "title": "손 사용 시작 후 이물질·버튼전지 관리",
+      "parentAction": "작은 물건·버튼전지 손 닿는 곳에 두지 않기",
+      "completionCriteria": "위험요소 제거 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 4,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 0,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨(원 조사 AGE_WINDOW로 복원, milestone 임의 추가분 제거)",
+      "displayMonth": 4,
+      "displayMonthLabel": "4개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄",
+      "observationGuide": [
+        "바닥과 손 닿는 곳에 작은 물건·버튼전지가 없는지 주기적으로 점검"
+      ],
+      "abnormalSigns": [
+        "이물질을 삼킨 것 같거나 갑자기 기침·구역질·무호흡이 나타남",
+        "버튼전지는 특히 응급 상황이니 즉시 응급실로 가세요."
+      ]
+    },
+    {
+      "todo_id": "SF-04",
+      "category": "SF",
+      "title": "기어다니기 시작 후 콘센트·모서리 안전장치",
+      "parentAction": "콘센트 커버, 모서리 보호대, 서랍 잠금장치 설치",
+      "completionCriteria": "안전장치 설치 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "MILESTONE_EVENT",
+      "triggerParams": {
+        "event": "started_crawling"
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 0,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": null,
+      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthBasis": "기어 다니기 시작 전후",
+      "categoryGroup": "안전·돌봄",
+      "observationGuide": [
+        "기어다니는 동선을 따라 콘센트·가구 모서리·문턱 위험 요소를 재점검"
+      ],
+      "abnormalSigns": [
+        "충돌 후 혹이 빠르게 커지거나 구토·졸림이 동반되면 병원 진료를 받으세요."
+      ]
+    },
+    {
+      "todo_id": "SF-05",
+      "category": "SF",
+      "title": "걷기 시작 후 계단·안전문 설치",
+      "parentAction": "계단 상하단 안전문, 방문 손끼임 방지장치 설치",
+      "completionCriteria": "안전장치 설치 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "MILESTONE_EVENT",
+      "triggerParams": {
+        "event": "started_walking"
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 0,
+      "source": "질병관리청·한국소비자원",
+      "verificationStatus": "확인됨",
+      "displayMonth": null,
+      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthBasis": "걷기 시작 전후",
+      "categoryGroup": "안전·돌봄",
+      "observationGuide": [
+        "걷기 시작 후 계단 접근 동선",
+        "방문 손끼임 위험 지점 재점검"
+      ],
+      "abnormalSigns": [
+        "계단에서 넘어진 뒤 팔다리를 안 쓰려 하거나 심하게 운다면 골절 가능성을 염두에 두고 진료받으세요."
+      ]
+    },
+    {
+      "todo_id": "SF-06",
+      "category": "SF",
+      "title": "화상 예방(뜨거운 음식·기기)",
+      "parentAction": "전기밥솥·가스레인지 등 아이 손 안 닿는 곳 배치",
+      "completionCriteria": "배치 개선 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄",
+      "observationGuide": [
+        "전기밥솥 증기 배출구, 가스레인지, 뜨거운 음료 등이 아이 손에 닿지 않는지"
+      ],
+      "abnormalSigns": [
+        "화상 부위에 물집이 잡히거나 손바닥 크기 이상으로 넓으면 집에서 처치하지 말고 바로 병원으로 가세요."
+      ]
+    },
+    {
+      "todo_id": "SF-07",
+      "category": "SF",
+      "title": "익수 예방(목욕·물놀이 상시 관찰)",
+      "parentAction": "목욕/물놀이 중 항상 밀착 관찰",
+      "completionCriteria": "-",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "source": "질병관리청·행정안전부",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄",
+      "observationGuide": [
+        "목욕·물놀이 중 단 몇 초도 눈을 떼지 않는지 스스로 점검"
+      ],
+      "abnormalSigns": [
+        "물에 빠진 뒤 기침·구토가 지속되거나 평소보다 처지면 당장 괜찮아 보여도 반드시 병원 진료를 받으세요(마른익수 가능성)."
+      ]
+    },
+    {
+      "todo_id": "SF-08",
+      "category": "SF",
+      "title": "질식 위험 식품 형태 조정",
+      "parentAction": "견과류는 갈아서, 포도·방울토마토는 4등분 등",
+      "completionCriteria": "습관 정착",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 안전수칙",
+      "verificationStatus": "확인됨(원칙)",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄",
+      "observationGuide": [
+        "견과류·포도·방울토마토 등을 아이 월령에 맞게 자르거나 갈았는지 매번 확인"
+      ],
+      "abnormalSigns": [
+        "갑자기 기침도 소리도 못 내고 얼굴이 파래짐 — 기도폐쇄 응급상황",
+        "즉시 하임리히 시행과 119 신고가 필요합니다."
+      ]
+    }
+  ]
+}

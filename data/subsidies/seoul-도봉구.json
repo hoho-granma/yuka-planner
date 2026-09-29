@@ -1,0 +1,124 @@
+{
+  "_meta": {
+    "설명": "서울특별시 도봉구 자치구 전용 지원금(서울시 전체 공통 항목은 seoul.json 참고).",
+    "조사일": "2026-09-29",
+    "note": "있음 — 서울시 공통(SEOUL-001~004)과 별도로 도봉구 자체 지원 확인: DOBONG-001 출생축하용품(현물, 2024.1.1 이후 출생 전원), DOBONG-002 산모신생아 건강관리 본인부담금 2차 지원(최대 35만원), DOBONG-003 도봉형 아이돌봄(시간당 1,000원 추가). 확인필요 2건(DOBONG-004 아이사랑 안심보험, DOBONG-005 장애인 가정 출산지원금). 도봉구 자체 출산축하금(현금)은 확인되지 않음(2019년 기사상 둘째 30만/셋째 50만/넷째 100만 지급 기록은 있으나 현행 여부 불명)."
+  },
+  "subsidies": [
+    {
+      "id": "DOBONG-001",
+      "name": "도봉구 출생축하용품 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:도봉구"
+      ],
+      "target": "도봉구에 주민등록을 두고 출생신고한 2024년 1월 1일 이후 출생 신생아 가정(첫째 포함 전원)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "현물(기저귀·방수패드·아기양말·물티슈/손수건 등 꾸러미, 택배 배송) — 금액 미공개",
+      "paymentMethod": "현물(택배 배송)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 6,
+      "residencyRequirement": "도봉구 주민등록(출생신고 시 도봉구 접수)",
+      "additionalConditions": "출생 신고일부터 6개월 이내 신청. 출생신고 시 작성하는 출산서비스 통합신청서로 갈음(별도 신청 불필요), 동주민센터 방문 또는 정부24(맘편한 임신)도 가능. 세대당이 아닌 신생아 1명당 지급 추정(원문 명시 없음)",
+      "officialUrl": "https://welfare.dobong.go.kr/dobongBokji/bbs/BMSR00002/view.do?boardId=478&menuNo=200099",
+      "sourceName": "도봉복지로(도봉구청) 복지소식 + 서울Pn·데일리 보도(2025-01) + 이투데이",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "신청기한 출처가 갈림: 도봉구 관련 보도·정책 요약은 6개월, 민간 요약사이트(servedream)는 3개월. 구청 공지 기준 6개월 채택. 문의 도봉구청 가족정책과 02-2091-3133."
+    },
+    {
+      "id": "DOBONG-002",
+      "name": "도봉구 산모·신생아 건강관리 본인부담금 2차 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:도봉구"
+      ],
+      "target": "산모·배우자 건강보험료 기준 중위소득 150% 이하 출산가정(둘째아 이상·다태아·장애인·희귀난치·이민·미혼모·미숙아 산모는 소득 무관) — 서울시 산모신생아 건강관리 서비스 이용자",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "서비스 본인부담금의 90%, 최대 35만원 (1차: 서울시 공통 본인부담금 100% 바우처와 별도)",
+      "paymentMethod": "서비스 종료 후 본인부담금 환급(추정)",
+      "deadlineType": "birth_relative_days",
+      "deadlineValue": 60,
+      "residencyRequirement": "신청일 기준 6개월 이상 도봉구 주민등록",
+      "additionalConditions": "서비스(서울시 건강관리 지원) 신청은 출산예정일 40일 전~출산일 후 60일까지 가능하므로 서비스 이용은 출생 후 60일 이내 시작해야 함. 도봉구 2차 지원 실제 청구기한은 서비스 종료 후 3개월(90일) 이내이므로 출생일 기준 종료일은 이용 기간에 따라 달라짐",
+      "officialUrl": "https://health.dobong.go.kr/Contents.asp?code=10005065",
+      "sourceName": "도봉구보건소 산모신생아건강관리 지원 페이지 — WebFetch로 직접 확인",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "deadlineValue 60은 서비스 이용 시작 가능 기한이며 최종 청구기한은 서비스 종료 후 90일. 문의 도봉구보건소 지역보건과 02-2091-4557."
+    },
+    {
+      "id": "DOBONG-003",
+      "name": "도봉형 아이돌봄 추가 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:도봉구"
+      ],
+      "target": "12세 이하 자녀 2명 이상 가구가 서울시 아이돌봄서비스를 이용하는 경우",
+      "minAgeMonths": 3,
+      "maxAgeMonths": 155,
+      "amountText": "이용 시간당 1,000원 추가 지원(2026년 예산 약 8,600만원)",
+      "paymentMethod": "이용요금 차감",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "도봉구 거주(세부 요건 미확인)",
+      "additionalConditions": "서울시 아이돌봄 이용 가정 대상. 이용자 부담 차감 방식으로 추정",
+      "officialUrl": "https://go.seoul.co.kr/news/newsView.php?id=20260313500124",
+      "sourceName": "서울Pn(2026-03-13) 도봉구 보도 — WebFetch 확인",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": false,
+      "notes": "공식 구청 페이지 미확인(언론 보도만 확인). 서울형 아이돌봄비(SEOUL 공통)와 별개. minAgeMonths 3은 아이돌봄 통상 이용 하한(추정). 신청방법 미확인."
+    },
+    {
+      "id": "DOBONG-004",
+      "name": "도봉구 아이사랑 안심보험",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:도봉구"
+      ],
+      "target": "셋째 이상 자녀(추정: 도봉구 거주)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 60,
+      "amountText": "보험료 구가 대납(질병·상해 보장, 최근 응급실·감염병 진단 보장 확대) — 보장금액 미확인",
+      "paymentMethod": "구가 보험 가입(현물)",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "미확인",
+      "additionalConditions": "보험료 5년 지원(민간 요약 기준)",
+      "officialUrl": "https://go.seoul.co.kr/news/newsView.php?id=20260313500124",
+      "sourceName": "서울Pn(2026-03-13) 도봉구 보도, 육아생활(lifewithbaby) 요약",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "셋째 이상 대상이라는 것 외에 신청방법·기한·보장금액·연령상한(5년은 민간요약)이 확인되지 않음."
+    },
+    {
+      "id": "DOBONG-005",
+      "name": "도봉구 장애인 가정 출산지원금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:도봉구"
+      ],
+      "target": "등록장애인 산모 또는 장애인 배우자를 둔 출산 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "150만원(민간 요약) — 일부 검색 요약에서는 '7세 미만 아동 1명당 월 10만원'으로 달라 불일치",
+      "paymentMethod": "미확인",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "6개월 이상 도봉구 주민등록(민간 요약)",
+      "additionalConditions": "장애인복지법상 등록장애인 요건",
+      "officialUrl": "https://lifewithbaby.co.kr/money/10/3",
+      "sourceName": "육아생활(lifewithbaby) 도봉구 페이지 — 2차 자료",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "공식 출처 미확인·금액 상충. 모든 가정 해당 아님(장애인 가정 한정)."
+    }
+  ]
+}

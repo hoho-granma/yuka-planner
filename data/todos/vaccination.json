@@ -1,0 +1,568 @@
+{
+  "category": "VX",
+  "count": 12,
+  "todos": [
+    {
+      "todo_id": "VX-HEPB",
+      "category": "VX",
+      "title": "B형간염",
+      "parentAction": "표준월령에 맞춰 접종",
+      "completionCriteria": "각 회차 접종 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "occurrences": [
+        {
+          "occurrenceKey": "dose-1",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 0,
+            "endMonth": 0
+          }
+        },
+        {
+          "occurrenceKey": "dose-2",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 1,
+            "endMonth": 1
+          }
+        },
+        {
+          "occurrenceKey": "dose-3",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 6,
+            "endMonth": 6
+          }
+        }
+      ],
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-BCG",
+      "category": "VX",
+      "title": "BCG(결핵)",
+      "parentAction": "생후 4주 이내 접종",
+      "completionCriteria": "접종 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 1
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-DTAP",
+      "category": "VX",
+      "title": "DTaP(디프테리아·파상풍·백일해)",
+      "parentAction": "표준월령에 맞춰 접종",
+      "completionCriteria": "각 회차 접종 완료",
+      "exposureLevel": "MUST",
+      "occurrences": [
+        {
+          "occurrenceKey": "dose-1",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 2,
+            "endMonth": 2
+          }
+        },
+        {
+          "occurrenceKey": "dose-2",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 4,
+            "endMonth": 4
+          }
+        },
+        {
+          "occurrenceKey": "dose-3",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 6,
+            "endMonth": 6
+          }
+        },
+        {
+          "occurrenceKey": "dose-4",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 15,
+            "endMonth": 18
+          }
+        },
+        {
+          "occurrenceKey": "dose-5",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 48,
+            "endMonth": 72
+          }
+        }
+      ],
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 2,
+      "displayMonthLabel": "2개월",
+      "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-IPV",
+      "category": "VX",
+      "title": "IPV(폴리오)",
+      "parentAction": "표준월령에 맞춰 접종",
+      "completionCriteria": "각 회차 접종 완료",
+      "exposureLevel": "MUST",
+      "occurrences": [
+        {
+          "occurrenceKey": "dose-1",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 2,
+            "endMonth": 2
+          }
+        },
+        {
+          "occurrenceKey": "dose-2",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 4,
+            "endMonth": 4
+          }
+        },
+        {
+          "occurrenceKey": "dose-3",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 6,
+            "endMonth": 18
+          }
+        },
+        {
+          "occurrenceKey": "dose-4",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 48,
+            "endMonth": 72
+          }
+        }
+      ],
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 2,
+      "displayMonthLabel": "2개월",
+      "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-HIB",
+      "category": "VX",
+      "title": "Hib(b형헤모필루스인플루엔자)",
+      "parentAction": "표준월령에 맞춰 접종",
+      "completionCriteria": "각 회차 접종 완료",
+      "exposureLevel": "MUST",
+      "occurrences": [
+        {
+          "occurrenceKey": "dose-1",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 2,
+            "endMonth": 2
+          }
+        },
+        {
+          "occurrenceKey": "dose-2",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 4,
+            "endMonth": 4
+          }
+        },
+        {
+          "occurrenceKey": "dose-3",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 6,
+            "endMonth": 6
+          }
+        },
+        {
+          "occurrenceKey": "dose-4",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 12,
+            "endMonth": 15
+          }
+        }
+      ],
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 2,
+      "displayMonthLabel": "2개월",
+      "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-PCV",
+      "category": "VX",
+      "title": "폐렴구균(단백결합)",
+      "parentAction": "표준월령에 맞춰 접종",
+      "completionCriteria": "각 회차 접종 완료",
+      "exposureLevel": "MUST",
+      "occurrences": [
+        {
+          "occurrenceKey": "dose-1",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 2,
+            "endMonth": 2
+          }
+        },
+        {
+          "occurrenceKey": "dose-2",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 4,
+            "endMonth": 4
+          }
+        },
+        {
+          "occurrenceKey": "dose-3",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 6,
+            "endMonth": 6
+          }
+        },
+        {
+          "occurrenceKey": "dose-4",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 12,
+            "endMonth": 15
+          }
+        }
+      ],
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 2,
+      "displayMonthLabel": "2개월",
+      "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-MMR",
+      "category": "VX",
+      "title": "MMR(홍역·유행성이하선염·풍진)",
+      "parentAction": "표준월령에 맞춰 접종",
+      "completionCriteria": "각 회차 접종 완료",
+      "exposureLevel": "MUST",
+      "occurrences": [
+        {
+          "occurrenceKey": "dose-1",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 12,
+            "endMonth": 15
+          }
+        },
+        {
+          "occurrenceKey": "dose-2",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 48,
+            "endMonth": 72
+          }
+        }
+      ],
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-VAR",
+      "category": "VX",
+      "title": "수두",
+      "parentAction": "표준월령에 맞춰 접종(만13세 미만 1회)",
+      "completionCriteria": "접종 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": 15
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨(1회가 맞음, 재검증 완료)",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-HEPA",
+      "category": "VX",
+      "title": "A형간염",
+      "parentAction": "1차 접종 후 6~12개월 뒤 2차",
+      "completionCriteria": "각 회차 접종 완료",
+      "exposureLevel": "MUST",
+      "occurrences": [
+        {
+          "occurrenceKey": "dose-1",
+          "trigger": {
+            "type": "AGE_WINDOW",
+            "startMonth": 12,
+            "endMonth": 23
+          }
+        },
+        {
+          "occurrenceKey": "dose-2",
+          "trigger": {
+            "type": "RELATIVE_TO_EVENT",
+            "referenceEvent": "previous_occurrence_completion",
+            "minOffsetDays": 180,
+            "maxOffsetDays": 365
+          }
+        }
+      ],
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-JEV",
+      "category": "VX",
+      "title": "일본뇌염",
+      "parentAction": "사백신(5회)/생백신(2회) 중 선택해 접종",
+      "completionCriteria": "선택한 종류의 전체 회차 완료",
+      "exposureLevel": "MUST",
+      "variants": {
+        "selectionAttribute": "jevProductType",
+        "options": [
+          {
+            "variantId": "사백신",
+            "occurrences": [
+              {
+                "occurrenceKey": "dose-1",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 12,
+                  "endMonth": 24
+                }
+              },
+              {
+                "occurrenceKey": "dose-2",
+                "trigger": {
+                  "type": "RELATIVE_TO_EVENT",
+                  "referenceEvent": "previous_occurrence_completion",
+                  "minOffsetDays": 7,
+                  "maxOffsetDays": 7
+                }
+              },
+              {
+                "occurrenceKey": "dose-3",
+                "trigger": {
+                  "type": "RELATIVE_TO_EVENT",
+                  "referenceEvent": "previous_occurrence_completion",
+                  "minOffsetDays": 365,
+                  "maxOffsetDays": null
+                }
+              },
+              {
+                "occurrenceKey": "dose-4",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 72,
+                  "endMonth": 72
+                }
+              },
+              {
+                "occurrenceKey": "dose-5",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 144,
+                  "endMonth": 144
+                }
+              }
+            ]
+          },
+          {
+            "variantId": "생백신",
+            "occurrences": [
+              {
+                "occurrenceKey": "dose-1",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 12,
+                  "endMonth": 24
+                }
+              },
+              {
+                "occurrenceKey": "dose-2",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 24,
+                  "endMonth": 24
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨(2차 간격 1주(7일) 고정으로 수정)",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "제품별 접종 일정 중 가장 이른 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-ROTA",
+      "category": "VX",
+      "title": "로타바이러스",
+      "parentAction": "생후 8개월 0일 이전에 선택한 종류의 전체 회차 완료",
+      "completionCriteria": "선택한 종류의 전체 회차 완료",
+      "exposureLevel": "MUST",
+      "variants": {
+        "selectionAttribute": "rotaProductType",
+        "options": [
+          {
+            "variantId": "로타릭스",
+            "occurrences": [
+              {
+                "occurrenceKey": "dose-1",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 2,
+                  "endMonth": 3.5
+                }
+              },
+              {
+                "occurrenceKey": "dose-2",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 4,
+                  "endMonth": 8
+                }
+              }
+            ]
+          },
+          {
+            "variantId": "로타텍",
+            "occurrences": [
+              {
+                "occurrenceKey": "dose-1",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 2,
+                  "endMonth": 3.5
+                }
+              },
+              {
+                "occurrenceKey": "dose-2",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 4,
+                  "endMonth": 6
+                }
+              },
+              {
+                "occurrenceKey": "dose-3",
+                "trigger": {
+                  "type": "AGE_WINDOW",
+                  "startMonth": 6,
+                  "endMonth": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "catchUp": "NOT_ALLOWED",
+      "priority": 1,
+      "leadDays": 14,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨(2023.3.6 국가예방접종 전환, 8개월0일 마감 재검증 완료)",
+      "displayMonth": 2,
+      "displayMonthLabel": "2개월",
+      "displayMonthBasis": "제품별 접종 일정 중 가장 이른 첫 접종 월령",
+      "categoryGroup": "예방접종"
+    },
+    {
+      "todo_id": "VX-FLU",
+      "category": "VX",
+      "title": "인플루엔자",
+      "parentAction": "생후 6개월부터 매년 접종. 생애 최초 시즌은 4주 간격 2회, 이후 매 시즌 1회(정확한 시즌 시작 시점은 확인 필요)",
+      "completionCriteria": "해당 시즌 접종 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": null
+      },
+      "repeat": {
+        "type": "annual"
+      },
+      "catchUp": "ALLOWED",
+      "priority": 3,
+      "leadDays": 30,
+      "source": "질병관리청 NIP",
+      "verificationStatus": "확인됨(최초시즌 2회 규칙)/확인필요(이후 시즌 정확한 시기)",
+      "firstSeasonRule": {
+        "doseCount": 2,
+        "intervalDays": 28
+      },
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "예방접종"
+    }
+  ]
+}

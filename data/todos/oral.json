@@ -1,0 +1,179 @@
+{
+  "category": "OR",
+  "count": 6,
+  "todos": [
+    {
+      "todo_id": "OR-01",
+      "category": "OR",
+      "title": "첫니 맹출 후 양치 시작",
+      "parentAction": "첫니 맹출 즉시 영유아용 칫솔로 양치 시작",
+      "completionCriteria": "양치 습관 시작",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "MILESTONE_EVENT",
+      "triggerParams": {
+        "event": "first_tooth"
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 0,
+      "source": "대한소아치과학회",
+      "verificationStatus": "확인됨",
+      "displayMonth": null,
+      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthBasis": "첫니가 나면 시작",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "잇몸이 붓고 침을 많이 흘리는 맹출 초기 증상",
+        "첫니가 실제로 보이는 시점"
+      ],
+      "abnormalSigns": [
+        "고열·전신 발진이 동반되면 단순 치아맹출이 아닐 수 있어 소아과 진료를 받으세요(치아맹출 자체는 보통 고열을 동반하지 않습니다)."
+      ]
+    },
+    {
+      "todo_id": "OR-02",
+      "category": "OR",
+      "title": "불소치약 사용(참고)",
+      "parentAction": "정확한 시작 시기는 소아치과 상담 권장",
+      "completionCriteria": "-",
+      "exposureLevel": "REFERENCE",
+      "triggerType": "REFERENCE",
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 0,
+      "source": "국내외 상충 자료(재검증 완료)",
+      "verificationStatus": "상충/공식기준불명확",
+      "displayMonth": null,
+      "displayMonthLabel": "필요할 때 확인",
+      "displayMonthBasis": "참고 정보; 월령 고정 일정 아님",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "쌀알 크기(만 2세 미만)~완두콩 크기(2세 이상)로 사용량 조절",
+        "삼키는 양이 많지 않은지"
+      ]
+    },
+    {
+      "todo_id": "OR-03",
+      "category": "OR",
+      "title": "첫 치과 방문",
+      "parentAction": "첫니 맹출 후 6개월 이내, 또는 늦어도 생후 12개월(둘 중 먼저 오는 시점)까지 소아치과 방문",
+      "completionCriteria": "첫 구강검진 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "RELATIVE_TO_EVENT",
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "source": "대한소아치과학회(국제기준)",
+      "verificationStatus": "확인됨(마일스톤+절대상한 반영, 국내 원문 대조는 권장)",
+      "triggerParams": {
+        "referenceEvent": "milestone_report",
+        "milestoneTodoId": "OR-01",
+        "minOffsetDays": 0,
+        "maxOffsetDays": 180
+      },
+      "absoluteCapMonth": 12,
+      "displayMonth": null,
+      "displayMonthLabel": "발달 신호/조건 발생 시",
+      "displayMonthBasis": "첫니 발생 시점에 연동",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "충치·치아 변색 여부",
+        "잇몸 출혈 여부를 육안으로 미리 확인"
+      ],
+      "abnormalSigns": [
+        "치아에 갈색·검은 반점이 보이거나 잇몸이 자주 붓고 피가 나면 정기검진을 기다리지 말고 바로 치과를 방문하세요."
+      ]
+    },
+    {
+      "todo_id": "OR-04",
+      "category": "OR",
+      "title": "정기 치과검진(6개월 간격)",
+      "parentAction": "6개월 간격으로 정기 검진 예약",
+      "completionCriteria": "검진 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": null
+      },
+      "repeat": {
+        "type": "interval",
+        "intervalMonths": 6
+      },
+      "catchUp": "ALLOWED",
+      "priority": 3,
+      "leadDays": 30,
+      "source": "대한소아치과학회",
+      "verificationStatus": "확인됨",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "6개월 간격으로 충치 진행 여부",
+        "치열 상태"
+      ],
+      "abnormalSigns": [
+        "치아 통증을 호소하거나 음식을 씹을 때 피하는 모습이 보이면 정기검진 전이라도 바로 방문하세요."
+      ]
+    },
+    {
+      "todo_id": "OR-05",
+      "category": "OR",
+      "title": "젖병 충치 예방",
+      "parentAction": "젖병 물고 재우지 않기, 수유 후 치아 닦기",
+      "completionCriteria": "습관 정착",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "source": "대한소아치과학회",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "젖병 물고 재우는 습관이 있는지",
+        "수유 후 치아를 닦아주는지"
+      ],
+      "abnormalSigns": [
+        "앞니 표면이 하얗게 변하거나(초기 충치 신호) 갈색으로 변하면 바로 치과 진료를 받으세요."
+      ]
+    },
+    {
+      "todo_id": "OR-06",
+      "category": "OR",
+      "title": "손가락빨기/공갈젖꼭지 습관 중단 유도",
+      "parentAction": "만 3세 이전 단계적 중단 유도",
+      "completionCriteria": "습관 소실 확인",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 0,
+      "source": "대한소아청소년과학회",
+      "verificationStatus": "확인됨",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "습관 빈도와 강도(낮에도 지속되는지)",
+        "위턱이 좁아지거나 앞니가 벌어지는 등 치열 변화가 있는지"
+      ],
+      "abnormalSigns": [
+        "만 3세가 지나도 습관이 계속되며 치열 변형이 보이면 소아치과 상담을 받으세요."
+      ]
+    }
+  ]
+}

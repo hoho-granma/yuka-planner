@@ -1,0 +1,38 @@
+{
+  "_meta": {
+    "설명": "서울특별시 종로구 자치구 전용 지원금(서울시 전체 공통 항목은 seoul.json 참고).",
+    "조사일": "2026-09-29",
+    "note": "있음 — 서울시 공통(SEOUL-001~004)과 별도로 종로구 자체 지원 1건 확인(JONGNO-001 출생 축하선물 10종 중 택1). 출산장려금·현금성 양육지원·산후조리 추가지원은 조사 범위에서 확인되지 않음(종로구 보건소 산후조리경비 페이지는 서울형만 안내)."
+  },
+  "subsidies": [
+    {
+      "id": "JONGNO-001",
+      "name": "종로구 출생 축하선물 (10종 세트 중 택1)",
+      "target": "2026-01-01 이후 종로구에 출생신고·주민등록한 신생아 가정 (첫째부터 해당, 소득·출생순위 무관)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "출생 축하선물 세트 1종 현물(건강·놀이·안전·맘·위생·외출·이유식·수유·목욕·생활 등 10종 중 선택) + 임신·출산·양육 가이드북. 세트 금액은 확인 못함",
+      "amountByBirthOrder": {
+        "first": 0,
+        "second": 0,
+        "third": 0,
+        "fourthPlus": 0
+      },
+      "paymentMethod": "현물(택배 배송, 요건 심사 후 2주 이내)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "보호자 중 1명 이상이 출생일부터 신청일까지 신생아와 동일 세대로 종로구 거주",
+      "additionalConditions": "2026-01-01 이후 출생아부터 적용. 동주민센터 방문 또는 정부24 '출산서비스 통합처리(행복출산)'로 신청",
+      "officialUrl": "https://biz.heraldcorp.com/article/10676016",
+      "sourceName": "헤럴드경제·이뉴스투데이·시정일보 등 종로구 보도자료 재게재(2026-02) — WebFetch로 본문 확인. 종로구청 홈페이지 원문은 미확인",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "종로구 공식 페이지 원문은 확인하지 못해 언론 재게재(동일 내용 다수)로 교차확인. 세트 가격 미공개.",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:종로구"
+      ],
+      "lastVerified": "2026-09-29"
+    }
+  ]
+}

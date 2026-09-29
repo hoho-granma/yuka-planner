@@ -1,0 +1,115 @@
+{
+  "category": "CR",
+  "count": 4,
+  "todos": [
+    {
+      "todo_id": "CR-01",
+      "category": "CR",
+      "title": "어린이집 입소대기 신청",
+      "parentAction": "아이사랑 포털에서 입소대기 신청",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 30,
+      "source": "임신육아종합포털 아이사랑",
+      "verificationStatus": "확인됨",
+      "displayMonth": null,
+      "displayMonthLabel": "필요할 때 확인",
+      "displayMonthBasis": "어린이집 이용 계획이 있는 가정만 해당하며 계획 시점에 따라 준비 시점이 크게 달라짐(국공립 대기가 긴 경우 조기 신청이 유리하나 전 가정 공통 사항 아님) — 0개월 일괄 노출 대상에서 제외",
+      "categoryGroup": "안전·돌봄",
+      "observationGuide": [
+        "거주지 인근 어린이집의 대기 순번",
+        "정원 현황을 아이사랑포털에서 주기적으로 확인"
+      ],
+      "abnormalSigns": [
+        "대기가 너무 길어져 입소 계획에 차질이 생기면 복수 기관에 동시 대기 신청을 고려하세요."
+      ]
+    },
+    {
+      "todo_id": "CR-02",
+      "category": "CR",
+      "title": "만1세반 전환 확인",
+      "parentAction": "재원 중인 어린이집에 반 편성 시점 확인(기관 재량, 절대월령 아님)",
+      "completionCriteria": "전환 확인",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": 13
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "지역 육아종합지원센터",
+      "verificationStatus": "미검증(기관마다 상이 — 재검토에서 CONDITION 재분류 논의됐으나, 실제로는 자격속성이 아니라 확인형이라 MUST+미검증으로 구현. 아래 report 참고)",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄",
+      "observationGuide": [
+        "반 편성 시점과 아이의 월령·발달 수준이 맞는지 기관에 확인"
+      ]
+    },
+    {
+      "todo_id": "CR-03",
+      "category": "CR",
+      "title": "만3세반(유아반) 전환 준비",
+      "parentAction": "만3세 진입 전 반 편성 변경 안내 확인",
+      "completionCriteria": "전환 확인",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 30,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "지역 육아종합지원센터",
+      "verificationStatus": "확인됨(반편성)/준비행동은 참고",
+      "displayMonth": 30,
+      "displayMonthLabel": "30개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "안전·돌봄",
+      "observationGuide": [
+        "만3세 진입 전 반 편성 변경 안내를 기관에서 미리 확인"
+      ]
+    },
+    {
+      "todo_id": "CR-04",
+      "category": "CR",
+      "title": "어린이집 적응기간 준비",
+      "parentAction": "신입원아 적응프로그램(최소 1주일 이상) 확인",
+      "completionCriteria": "적응 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "서울대 어린이보육지원센터 등",
+      "verificationStatus": "미검증(표준보육과정 원문 대조 필요)",
+      "displayMonth": null,
+      "displayMonthLabel": "필요할 때 확인",
+      "displayMonthBasis": "실제 어린이집 입소가 확정된 시점에 확인하는 항목으로, 부모의 입소 계획에 따라 달라져 0개월 일괄 노출 대상에서 제외",
+      "categoryGroup": "안전·돌봄",
+      "observationGuide": [
+        "등원 초기 울음",
+        "식사·낮잠 거부",
+        "분리불안 정도를 어린이집 교사와 공유하며 관찰"
+      ],
+      "abnormalSigns": [
+        "2주 이상 적응 거부가 심하거나 퇴행(대소변 실수 재발 등)이 지속되면 담임교사·소아과와 함께 상담하세요."
+      ]
+    }
+  ]
+}

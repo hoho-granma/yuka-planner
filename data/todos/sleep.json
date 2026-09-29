@@ -1,0 +1,66 @@
+{
+  "category": "SL",
+  "count": 2,
+  "todos": [
+    {
+      "todo_id": "SL-01",
+      "category": "SL",
+      "title": "영아돌연사(SIDS) 예방 수칙",
+      "parentAction": "바로눕혀재우기·침대내위험물제거·같은방다른침대·간접흡연차단·포지셔너미사용",
+      "completionCriteria": "수칙 확인 및 준수",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 12
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 0,
+      "source": "대한소아청소년과학회·AAP",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "매 수면 시 바로 눕혀 재우는지",
+        "침구에 푹신한 물건이 없는지",
+        "같은 방 다른 침대에서 재우는지"
+      ],
+      "abnormalSigns": [
+        "대표 월령이 지났다고 완료되는 항목이 아니라 지속적으로 지켜야 하는 수칙입니다.",
+        "수면 중 무호흡, 얼굴색 변화, 유독 처지는 모습이 보이면 즉시 응급 진료를 받으세요."
+      ]
+    },
+    {
+      "todo_id": "SL-02",
+      "category": "SL",
+      "title": "낮/밤 구분 형성 돕기",
+      "parentAction": "낮엔 밝고 활동적으로, 밤엔 어둡고 조용하게",
+      "completionCriteria": "습관 형성",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 1.5,
+        "endMonth": 3
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "대한소아청소년과학회",
+      "verificationStatus": "확인됨",
+      "displayMonth": 2,
+      "displayMonthLabel": "2개월",
+      "displayMonthBasis": "生후 2개월 무렵부터 낮·밤 구분 형성 돕기",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "낮잠과 밤잠의 총 수면시간",
+        "밤에 깨는 횟수가 점차 줄어드는 패턴"
+      ],
+      "abnormalSigns": [
+        "3~4개월이 지나도 밤낮 구분이 전혀 없고 매우 자주 깨서 일상생활이 어려우면 소아과 상담을 받아보세요."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "_meta": {
+    "설명": "서울특별시 성동구 자치구 전용 지원금(서울시 전체 공통 항목은 seoul.json 참고).",
+    "조사일": "2026-09-29",
+    "note": "있음 — 서울시 공통과 별도로 성동구 자체 지원 2건 확인(SEONGDONG-001 셋째 이상 출생축하금, SEONGDONG-002 성동구 산후조리비 50만원 현금). 001은 셋째 이상만 해당."
+  },
+  "subsidies": [
+    {
+      "id": "SEONGDONG-001",
+      "name": "성동구 출생축하금 (셋째 이상)",
+      "target": "영아의 출생일 포함 1년 이상 계속 성동구에 주민등록·실거주한 셋째아 이상 출생아의 부 또는 모 — 은찬이가 셋째 이상일 때만 해당",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 18,
+      "amountText": "셋째 300만원(일시) / 넷째 500만원(최초 300만원 + 1년 후 200만원) / 다섯째 이상 1,000만원(최초 400만원 + 이후 연 200만원씩 3년)",
+      "amountByBirthOrder": {
+        "first": 0,
+        "second": 0,
+        "third": 3000000,
+        "fourth": 5000000,
+        "fifthPlus": 10000000
+      },
+      "paymentMethod": "현금(분할 지급 시 후속분은 구 스마트관리시스템으로 자동 추적, 2025-06~)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 18,
+      "residencyRequirement": "영아의 출생일 포함 1년 이상 동일 세대로 성동구 주민등록 유지 및 실거주 → 실제 신청 가능 시점은 출생 후 12개월 경과~18개월 이내",
+      "additionalConditions": "신청기한 출생일로부터 1년 6개월 이내. 타 지자체에서 동일 지원을 받으면 제외. 동주민센터 방문 또는 정부24(혜택알리미). 서류: 등본, 출생증명서, 신청서, 신분증",
+      "officialUrl": "https://www.servedream.com/service/303000000111",
+      "sourceName": "정부24 공공서비스 정보를 옮긴 모두의혜택 페이지 + 시정일보(2025 성동구 스마트관리시스템 보도) — 성동구청 페이지(sd.go.kr)는 인증서 오류로 열람 실패",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "sd.go.kr 원문 직접 열람 실패(SSL 오류). 금액·분할은 다수 출처 일치. 넷째 이상 분할 후속분은 신청기간 이후 지급되어 birth_relative_months 계산에서 제외.",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:성동구"
+      ],
+      "lastVerified": "2026-09-29"
+    },
+    {
+      "id": "SEONGDONG-002",
+      "name": "성동구 산후조리비용 지원",
+      "target": "부 또는 모가 성동구에 주민등록·실거주 중인 출산가정 (소득 무관, 첫째부터 해당)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 2,
+      "amountText": "출산가정당 50만원 정액 (서울형 산후조리경비와 별도)",
+      "paymentMethod": "현금",
+      "deadlineType": "birth_relative_days",
+      "deadlineValue": 60,
+      "residencyRequirement": "신청일 기준 부 또는 모가 성동구 주민등록 및 실거주",
+      "additionalConditions": "신생아 출생일 기준 60일 이내 신청. 동주민센터(출생신고 시 동시 신청 가능) 또는 정부24 혜택알리미. 시행 시작일은 확인 못함",
+      "officialUrl": "https://www.gov.kr/portal/rcvfvrSvc/dtlEx/303000000114?administOrgCd=ALL",
+      "sourceName": "정부24 공공서비스 상세(소관: 성동구 건강관리과) — WebFetch 확인",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "정부24 페이지에서 '상시신청'이라 표기하나 신청 가능 기간은 출생일 60일 이내로 명시. 2026년 변경 여부 미확인.",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:성동구"
+      ],
+      "lastVerified": "2026-09-29"
+    },
+    {
+      "id": "SEONGDONG-P01",
+      "name": "성동형 임산부 가사돌봄서비스",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:성동구"
+      ],
+      "target": "성동구에 주민등록을 두고 실제 거주하는 임산부 및 출산가정(출생 후 12개월 미만). 소득제한 없음",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "1일 4시간(휴게 30분 포함) 가사관리사 파견: 단태아 7회·다태아 10회(한부모 단태아 10회·다태아 15회). 이용료 무료",
+      "paymentMethod": "서비스 제공(현물)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "성동구 주민등록 + 실거주",
+      "additionalConditions": "",
+      "officialUrl": "https://www.sd.go.kr/main/contents.do?key=4188",
+      "sourceName": "성동구청 임산부 가사돌봄서비스 페이지(sd.go.kr, 최종수정 2026-07-01) 원문 확인",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "서비스 첫 개시일부터 4개월 이내에 횟수를 모두 사용해야 하며 최대 사용기한은 자녀 출생일로부터 1년(미사용 소멸). 청소·세탁 등 기본 + 식사 제공·병원 동반 등 맞춤. 서울형 가사서비스(SEOUL-P03) 등 유사 사업과 중복 불가. 온라인 신청(성동구 홈페이지 신속예약 → 성동형 임산부 가사돌봄). 문의 성평등가족과 02-2286-6877.",
+      "lastVerified": "2026-09-29",
+      "periods": [
+        {
+          "label": "신청·이용 가능",
+          "startDays": null,
+          "startText": "임신 확인 후(임신 중부터)",
+          "endDays": 365,
+          "endText": "자녀 출생일로부터 1년",
+          "note": "개시일 후 4개월 이내 사용"
+        }
+      ]
+    }
+  ]
+}

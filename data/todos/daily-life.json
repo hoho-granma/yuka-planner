@@ -1,0 +1,120 @@
+{
+  "category": "LF",
+  "count": 4,
+  "todos": [
+    {
+      "todo_id": "LF-01",
+      "category": "LF",
+      "title": "스크린타임 관리(만2세 미만 최소화)",
+      "parentAction": "TV·스마트폰 노출 최소화(영상통화 제외)",
+      "completionCriteria": "-",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 24
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "source": "WHO 2019 가이드라인",
+      "verificationStatus": "확인됨(권고 취지)",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "TV·스마트폰에 노출되는 시간과 상황(밥 먹일 때, 달랠 때 등)",
+        "화면 없이도 놀이에 집중하는지"
+      ],
+      "abnormalSigns": [
+        "영상통화 목적 외 화면 노출이 습관적으로 길어지거나 화면을 꺼도 심하게 보채면 노출 시간을 줄이는 계획을 세워보세요."
+      ]
+    },
+    {
+      "todo_id": "LF-02",
+      "category": "LF",
+      "title": "스크린타임 관리(2~4세 하루 1시간 이내)",
+      "parentAction": "하루 1시간 이내 제한, 함께 시청 권장",
+      "completionCriteria": "-",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 24,
+        "endMonth": 48
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 0,
+      "source": "WHO 2019 가이드라인",
+      "verificationStatus": "확인됨(권고 취지)",
+      "displayMonth": 24,
+      "displayMonthLabel": "24개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "하루 1시간 제한을 지키는지",
+        "부모와 함께 시청하며 내용에 대해 이야기 나누는지"
+      ],
+      "abnormalSigns": [
+        "화면을 못 보게 하면 심한 떼쓰기·수면장애가 반복되면 스크린 의존 여부를 소아과와 상담해보세요."
+      ]
+    },
+    {
+      "todo_id": "LF-03",
+      "category": "LF",
+      "title": "손씻기 습관 형성",
+      "parentAction": "식사 전·외출 후·배변 후 손씻기 시범",
+      "completionCriteria": "습관 시작",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨(원칙)",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "식사 전·외출 후·배변 후 스스로 손을 씻으려는 시도",
+        "비누 사용법을 따라 하는지"
+      ]
+    },
+    {
+      "todo_id": "LF-04",
+      "category": "LF",
+      "title": "배변훈련 시작 시점 판단",
+      "parentAction": "아이 준비신호 확인 후 시작, 강요 금지",
+      "completionCriteria": "시작/완료 확인",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 18,
+        "endMonth": 36
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "대한소아청소년과학회(2차 인용)",
+      "verificationStatus": "미검증(원문 대조 필요)",
+      "displayMonth": 18,
+      "displayMonthLabel": "18개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "기저귀가 젖었을 때 불편해하는 표시",
+        "배변 전 일정한 자세나 표정",
+        "화장실에 대한 관심"
+      ],
+      "abnormalSigns": [
+        "36개월이 지나도 준비 신호가 전혀 없거나 변비·배뇨통 같은 증상이 동반되면 소아과 상담을 받아보세요."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,568 @@
+{
+  "_meta": {
+    "설명": "전국 공통 지원금 카탈로그(0~36개월). 이 중 NAT-001/002/003/005는 이미 data/subsidies/national-todos.json의 SB-01/02/04/05로 더 정교하게(자격조건·소급기한·자동연장) 계산되므로, js/schedule.js의 SUBSIDIES_SUPERSEDED_BY_ENGINE이 여기 있는 동일 항목을 화면에서 제외한다.",
+    "조사일": "2026-09-28",
+    "조사방법": "WebSearch로 후보를 찾은 뒤, 정부 공식 도메인(korea.kr 정책브리핑, easylaw.go.kr 법제처, 관할 보건소·구청 공식 go.kr 페이지)을 WebFetch로 직접 열어 원문을 확인한 항목만 verified:true로 표시했다. bokjiro.go.kr·voucher.go.kr은 SPA/SSL 문제로 WebFetch가 렌더링된 본문을 가져오지 못해, 같은 내용을 다루는 다른 공식 도메인(korea.kr, easylaw.go.kr, 지자체 보건소)으로 대체 확인했다.",
+    "note": "기존 data/subsidies.json의 NAT-001~005도 이번에 전부 원문 재확인해 verified:true로 올렸다(기존 파일은 손대지 않고 이 파일에만 반영). 조사 중 기존 카탈로그에 없던 전국 공통 제도 2개(양육수당, 어린이집 보육료지원)를 추가로 발견해 NAT-006/007로 넣었다."
+  },
+  "subsidies": [
+    {
+      "id": "NAT-001",
+      "name": "부모급여",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "0~1세 영아를 키우는 모든 가구 (소득·국적 기준 없음)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 23,
+      "amountText": "0세(0~11개월) 월 100만원, 1세(12~23개월) 월 50만원. 어린이집 이용 시 기본보육료를 뺀 차액만 현금 지급(0세 기준 차액 약 41.6만원)",
+      "paymentMethod": "현금(계좌입금) — 가정양육은 매월 25일, 어린이집 이용 차액분은 익월 20일",
+      "deadlineType": "birth_relative_days",
+      "deadlineValue": 60,
+      "residencyRequirement": "없음",
+      "additionalConditions": "출생 후 60일 이내 신청 시 출생월부터 소급 지급. 읍·면·동 행정복지센터에서 출생신고와 원스톱 신청 가능",
+      "officialUrl": "https://www.korea.kr/multi/visualNewsView.do?newsId=148957936",
+      "sourceName": "대한민국 정책브리핑(korea.kr) — WebFetch로 원문 직접 확인",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "기존 subsidies.json NAT-001과 금액·조건 동일함을 원문으로 재확인. 최초 조사 당시(같은 날) 못 열었던 bokjiro.go.kr 대신 korea.kr 정책브리핑 원문으로 확인 완료."
+    },
+    {
+      "id": "NAT-002",
+      "name": "첫만남이용권",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "모든 출생아 (소득기준 없음)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 24,
+      "amountText": "첫째 200만원, 둘째 이상 300만원(2024-01-01 이후 출생아 기준) — 국민행복카드 포인트",
+      "amountByBirthOrder": {
+        "first": 2000000,
+        "second": 3000000,
+        "third": 3000000,
+        "fourthPlus": 3000000
+      },
+      "paymentMethod": "바우처(국민행복카드 포인트)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 24,
+      "residencyRequirement": "없음",
+      "additionalConditions": "출생신고로 주민등록번호 부여 후 신청. 사용기한은 출생일(주민등록상 생년월일)로부터 2년(예: 2025-01-01생 → 2026-12-31까지, 이후 자동소멸). 늦게 신청해도 사용기한은 연장되지 않음 — 신청 마감은 사실상 사용 종료 2개월 전(지자체 안내)",
+      "officialUrl": "https://www.socialservice.or.kr:444/user/htmlEditor/view2.do?p_sn=69",
+      "sourceName": "사회서비스 전자바우처(한국사회보장정보원, 공식 정부기관) — WebFetch로 원문 직접 확인",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "금액은 korea.kr 정책브리핑, 사용기한(2년)은 한국사회보장정보원 공식 바우처 안내 페이지에서 각각 원문으로 확인."
+    },
+    {
+      "id": "NAT-003",
+      "name": "아동수당",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "만 9세 미만 아동(2026-04부터 시행, 기존 8세 미만에서 확대). 2030년까지 매년 1세씩 13세 미만으로 단계적 확대 예정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 107,
+      "amountText": "수도권 월 10만원 / 비수도권 10.5만원 / 인구감소지역 우대 11만원 / 특별 12만원 (지역사랑상품권 선택 시 수도권 10만원(동일), 비수도권 10.5만원, 우대 12만원, 특별 13만원)",
+      "paymentMethod": "현금 또는 지역상품권(지자체 선택)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "2026-04 시행. 법개정 전 생일 경과로 지급 중단됐던 2017년1월생~2018년3월생은 2026년1월 미지급분부터 소급해 4월 일괄지급",
+      "officialUrl": "https://www.korea.kr/multi/visualNewsView.do?newsId=148963446",
+      "sourceName": "대한민국 정책브리핑(korea.kr) — WebFetch로 원문 직접 확인",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행(2026-04 시행)",
+      "verified": true,
+      "notes": "기존 subsidies.json NAT-003은 상한월령이 '확인필요'였으나, 이번에 원문으로 9세 미만(=107개월)임을 확정. 기존에 있던 '지역상품권 수령 시 최대 13만원' 문구는 이번 원문에서 확인되지 않아 제외."
+    },
+    {
+      "id": "NAT-004",
+      "name": "산모·신생아 건강관리 서비스 지원",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "출산 전후 산모. 소득유형에 따라 가형(생계·의료·주거·교육급여 수급자·차상위)/통합형(기준중위소득 150% 이하)/라형(150% 초과, 전액 본인부담)으로 구분",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 2,
+      "amountText": "정부지원금은 태아유형·출산순위·소득수준·서비스기간(단축형/표준형/연장형)에 따라 차등 — 전국 단일 고정금액 없음, 관할 보건소 서비스가격표 확인 필요",
+      "paymentMethod": "바우처(본인부담금 차등)",
+      "deadlineType": "birth_relative_days",
+      "deadlineValue": 60,
+      "residencyRequirement": "국내 주민등록 또는 외국인등록",
+      "additionalConditions": "출산예정일 40일 전부터 출산 후 60일까지 신청. 바우처 유효기간은 출산일로부터 90일(삼태아 이상 100일). 서비스 형태(단축/표준/연장형)는 최초 선택 후 변경 불가",
+      "officialUrl": "https://www.gwanak.go.kr/site/health/04/10402020000002016051301.jsp",
+      "sourceName": "관악구보건소(공식 go.kr) — WebFetch로 원문 직접 확인, 전국 공통 소득기준 사업",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "구체적 지원금액은 전국이 아니라 가구별 소득유형·서비스기간에 따라 달라지는 구조라 고정 amountText를 제공할 수 없음(제도 자체가 변동형) — 대상·신청기한·소득기준 구조는 원문으로 확인 완료. 2026-09-29: 기준중위소득 150% 초과 가구 특례(2026-09-30 신청분까지)가 있다는 2차 자료가 있으나 공식 원문(복지부 지침 PDF/HWPX)은 열지 못해 미반영 — 확인불가.",
+      "periods": [
+        {
+          "label": "신청 가능",
+          "startDays": -40,
+          "startText": null,
+          "endDays": 60,
+          "endText": null,
+          "note": "출산예정일 40일 전부터 출산 후 60일까지"
+        },
+        {
+          "label": "서비스 이용",
+          "startDays": null,
+          "startText": "바우처 발급 후(출산 전후)",
+          "endDays": 90,
+          "endText": "출산일로부터 90일(삼태아 이상 100일)",
+          "note": "바우처 유효기간은 출산일 기준"
+        }
+      ]
+    },
+    {
+      "id": "NAT-005",
+      "name": "저소득층 기저귀·조제분유 지원 (전국)",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "기저귀: 기초생활보장·차상위·한부모가족 영아(0~24개월 미만), 기준중위소득 100% 이하 장애인 가구·다자녀(자녀 2인 이상) 가구 영아(다자녀·장애인 소득기준은 2026-07부터 80%→100% 확대). 조제분유: 기저귀 지원대상 중 시설·공동생활가정·가정위탁 아동, 또는 산모의 질병·사망 등으로 모유수유가 불가능한 경우(의사진단서 필요)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 24,
+      "amountText": "기저귀 월 9만원. 조제분유 해당자는 월 11만원 추가(기저귀+조제분유 합계 월 20만원). 조제분유만 단독 지원되지 않음",
+      "paymentMethod": "바우처(국민행복카드 포인트, 3개월 단위 일괄 충전)",
+      "deadlineType": "birth_relative_days",
+      "deadlineValue": 60,
+      "residencyRequirement": "없음(영아 주민등록 주소지 관할 보건소/주민센터에서 신청)",
+      "additionalConditions": "출생 후 60일 이내 신청 시 만 2세 전날까지 24개월분 전액 지원, 60일 이후 신청 시 소급 없이 신청일부터 지원",
+      "officialUrl": "https://www.ydp.go.kr/health/contents.do?key=3538",
+      "sourceName": "영등포구보건소(공식 go.kr) — WebFetch로 원문 직접 확인, 전국 공통 소득기준 사업",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "2026-09-29 재검증: 기존 '조제분유만 월 11만원' 표현은 오류(조제분유는 모유수유 불가 사유가 있는 기저귀 대상자에게만 추가 지급)로 수정."
+    },
+    {
+      "id": "NAT-006",
+      "name": "양육수당(가정양육수당)",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "어린이집·유치원을 이용하지 않고 가정에서 양육되는 24~86개월 미만 아동(초등학교 취학년도 2월까지, 86개월 미만)",
+      "minAgeMonths": 24,
+      "maxAgeMonths": 85,
+      "amountText": "월 10만원(일반). 농어촌 지역은 24~35개월 15.6만원/36~47개월 12.9만원으로 더 높음. 장애아동은 월 20만원",
+      "paymentMethod": "현금(계좌입금)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "어린이집·유치원·종일제 아이돌봄서비스를 이용하지 않는 가정양육 아동만 대상. 어린이집 등록 시 자동으로 보육료 지원(NAT-007)으로 전환되고 양육수당은 중단됨",
+      "officialUrl": "https://easylaw.go.kr/CSP/CnpClsMain.laf?popMenu=ov&csmSeq=626&ccfNo=3&cciNo=1&cnpClsNo=1",
+      "sourceName": "찾기쉬운 생활법령정보(법제처 easylaw.go.kr) — WebFetch로 원문 직접 확인",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "기존 subsidies.json/todo-definitions.v3.json 어디에도 없던 전국 공통 제도. 부모급여(NAT-001, 0~23개월)가 끝나는 24개월 시점부터 어린이집 미이용 가정에 이어지는 제도라 0~36개월 카탈로그에 반드시 필요해서 추가함."
+    },
+    {
+      "id": "NAT-007",
+      "name": "어린이집 보육료 지원",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "만 0~5세 영유아 중 어린이집 이용 아동(대한민국 국적·주민등록, 소득기준 없음)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 71,
+      "amountText": "(2026-01-01 시행 기준) 만0세반 기본보육 58.4만원/야간 58.4만원/24시간 87.6만원, 만1세반 51.5만원/51.5만원/77.25만원, 만2세반 42.6만원/42.6만원/63.9만원, 만3~5세반 28만원/28만원/42만원",
+      "paymentMethod": "바우처(어린이집에 직접 지급, 보호자는 차액만 부담)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "보호자가 어린이집과 상담 후 입소·연장보육 여부 결정, 어린이집이 해당 반으로 등록·편성. 장애아·다문화·방과후 보육료 등 별도 특별지원 있음",
+      "officialUrl": "https://easylaw.go.kr/CSP/CnpClsMain.laf?popMenu=ov&csmSeq=626&ccfNo=2&cciNo=3&cnpClsNo=1",
+      "sourceName": "찾기쉬운 생활법령정보(법제처 easylaw.go.kr) — WebFetch로 원문 직접 확인",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행(2026-01-01 시행)",
+      "verified": true,
+      "notes": "todo-definitions.v3.json의 SB-07(어린이집 보육료 지원 확인)과 같은 제도의 지원금 카탈로그 버전 — 엔진 데이터(SB-07)에는 정확한 금액이 없었는데 이번에 원문으로 확보함. 어린이집 미이용 시 NAT-006(양육수당)으로 대체됨."
+    },
+    {
+      "id": "NAT-008",
+      "name": "임신·출산 진료비 지원(국민행복카드)",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "건강보험 가입자(피부양자 포함) 임산부, 소득기준 없음. 출산 후에는 만 2세 미만 영유아 진료·약제·처방비에도 사용",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 24,
+      "amountText": "태아 1명 100만원, 다태아 140만원(분만취약지 추가 20만원) — 국민행복카드 바우처",
+      "paymentMethod": "바우처(국민행복카드)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 24,
+      "residencyRequirement": "없음",
+      "additionalConditions": "사용기한은 출산 전 신청 시 분만예정일+2년, 출산 후 신청 시 출산일+2년. 임신확인서로 건강보험공단·카드사 신청",
+      "officialUrl": "https://www.mohw.go.kr/menu.es?mid=a10705020100",
+      "sourceName": "보건복지부 임신·출산진료비지원사업(mohw.go.kr) + 찾기쉬운 생활법령정보(easylaw.go.kr) WebFetch 원문 확인",
+      "lastVerified": "2026-09-29",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "2026-09-29 보건복지부·생활법령 원문으로 금액(100만/다태아 140만/분만취약지 +20만)·신청·사용기한 확인, verified:true로 상향. 35세 이상 임산부 의료비(SEOUL-P01) 등과 중복 사용 불가.",
+      "periods": [
+        {
+          "label": "신청 가능",
+          "startDays": null,
+          "startText": "임신 확인 후(요양기관에서 임신확인서 발급)",
+          "endDays": 730,
+          "endText": "출산 후에도 신청 가능(사용기한 내)",
+          "note": "임신 초기에 신청할수록 초기 진료비부터 사용 가능. 정부24·건강보험공단 지사·국민행복카드 발급 금융사"
+        },
+        {
+          "label": "사용 가능",
+          "startDays": null,
+          "startText": "이용권 발급일부터",
+          "endDays": 730,
+          "endText": "분만예정일(출산 후 신청 시 출산일)로부터 2년",
+          "note": "미사용 금액은 기한 종료 시 소멸"
+        }
+      ]
+    },
+    {
+      "id": "PREG-001",
+      "name": "보건소 임산부 등록 · 모자보건수첩 발급 · 엽산제 지원",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "임신 중인 임산부(보건소에 임산부로 등록). 엽산제는 임신 전·후 3개월분",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "모자보건수첩 발급 + 엽산제(임신 전후 3개월분, 현물). 보건소에 따라 위생용품 등 기념품 지급",
+      "paymentMethod": "현물(의약품)·수첩 발급",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "주민등록 주소지 관할 보건소(전국 공통). 서울은 위생용품 4종(손 세정제·치약·칫솔 등) 지원이 있었으나 소진 여부 확인필요",
+      "officialUrl": "https://easylaw.go.kr/CSP/CnpClsMain.laf?csmSeq=735&ccfNo=2&cciNo=1&cnpClsNo=2",
+      "sourceName": "찾기쉬운 생활법령정보(easylaw.go.kr) + 중구보건소 임산부 등록관리(junggu.seoul.kr) WebFetch 원문 확인",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "임산부 등록은 모자보건법에 따른 각종 지원(엽산·철분·산전검사·맘편한 임신 원스톱 등)의 출발점. 엽산제는 보건소별로 임신 12주 이내 지급하는 곳이 많음(중구 기준). 세부 지급 시기·품목은 보건소마다 다름.",
+      "lastVerified": "2026-09-29",
+      "periods": [
+        {
+          "label": "등록·수첩 발급",
+          "startDays": null,
+          "startText": "임신 확인 후",
+          "endDays": -1,
+          "endText": "분만 전까지",
+          "note": "보건소 방문 또는 정부24(맘편한 임신 원스톱)"
+        },
+        {
+          "label": "엽산제 지급",
+          "startDays": null,
+          "startText": "임신 확인 후",
+          "endDays": -196,
+          "endText": "임신 12주 이내(보건소별 상이)",
+          "note": "임신 전후 3개월분"
+        }
+      ],
+      "prenatalOnly": true
+    },
+    {
+      "id": "PREG-002",
+      "name": "보건소 임산부 철분제 지원",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "임신 16주 이상 보건소 등록 임산부",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "철분제 1인 최대 5개월분(1개월분씩, 현물)",
+      "paymentMethod": "현물(의약품)",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "",
+      "officialUrl": "https://easylaw.go.kr/CSP/CnpClsMain.laf?csmSeq=735&ccfNo=2&cciNo=1&cnpClsNo=2",
+      "sourceName": "찾기쉬운 생활법령정보(easylaw.go.kr) + 중구보건소 임산부 등록관리 WebFetch 원문 확인",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "보건소별로 방문 수령 또는 택배 신청 등 방식 상이.",
+      "lastVerified": "2026-09-29",
+      "periods": [
+        {
+          "label": "지급 시작",
+          "startDays": -168,
+          "startText": null,
+          "endDays": -1,
+          "endText": "분만 시까지",
+          "note": "임신 16주부터, 최대 5개월분"
+        }
+      ],
+      "prenatalOnly": true
+    },
+    {
+      "id": "PREG-003",
+      "name": "보건소 산전검사 비용 지원(기본 혈액·소변검사, 기형아 선별검사, 임신성 당뇨 검사)",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "보건소에 등록된 임산부",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "혈액검사(빈혈·혈액형·B형간염·풍진·매독·AIDS 등)·소변검사·선천성 기형아검사 등 비용 지원. 항목·금액은 지역별로 다름",
+      "paymentMethod": "현물(검사) 또는 비용 지원",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "구체 금액·항목은 관할 보건소별 상이",
+      "officialUrl": "https://easylaw.go.kr/CSP/CnpClsMain.laf?csmSeq=735&ccfNo=2&cciNo=1&cnpClsNo=2",
+      "sourceName": "찾기쉬운 생활법령정보(easylaw.go.kr) + 중구보건소 임산부 등록관리 WebFetch 원문 확인",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "전국 시·군·구 보건소가 지원하나 지원 항목과 금액이 지역별로 달라 구체 금액은 미확인(관할 보건소 문의). 국민행복카드 임신·출산 진료비와 별개로 보건소 자체 지원.",
+      "lastVerified": "2026-09-29",
+      "periods": [
+        {
+          "label": "기본 산전검사",
+          "startDays": null,
+          "startText": "임산부 등록 후",
+          "endDays": -1,
+          "endText": "분만 전까지",
+          "note": "등록 시 기본 혈액검사"
+        },
+        {
+          "label": "기형아 선별검사",
+          "startDays": -168,
+          "startText": null,
+          "endDays": -154,
+          "endText": "임신 18주까지",
+          "note": "임신 16~18주(중구 기준)"
+        },
+        {
+          "label": "임신성 당뇨·빈혈 검사",
+          "startDays": -112,
+          "startText": null,
+          "endDays": -84,
+          "endText": null,
+          "note": "임신 24~28주(중구 기준)"
+        }
+      ],
+      "prenatalOnly": true
+    },
+    {
+      "id": "PREG-004",
+      "name": "고위험 임산부 의료비 지원",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "19대 고위험 임신질환(조기진통·전치태반·절박유산·다태임신·중증 임신중독증 등)으로 진단받고 입원치료를 받은 임산부. 소득제한 없음",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "입원치료비 중 급여의 전액본인부담금 + 비급여(병실입원료·환자특식 제외)의 90%, 1인당 최대 300만원",
+      "paymentMethod": "현금(계좌입금)",
+      "deadlineType": "birth_relative_days",
+      "deadlineValue": 180,
+      "residencyRequirement": "없음",
+      "additionalConditions": "분만일로부터 6개월 이내 신청. 소득 기준 없음",
+      "officialUrl": "https://easylaw.go.kr/CSP/CnpClsMain.laf?popMenu=ov&csmSeq=735&ccfNo=2&cciNo=2&cnpClsNo=4",
+      "sourceName": "찾기쉬운 생활법령정보(easylaw.go.kr) WebFetch 원문 확인",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "임신 중 입원치료를 받은 뒤 분만일로부터 6개월 이내에 보건소에 신청(사후 정산 방식). 임신 중에는 진단서·입퇴원확인서·영수증을 보관해 둘 것. 신청: 주민등록 소재지 보건소 방문 또는 e보건소·아이마중 앱.",
+      "lastVerified": "2026-09-29",
+      "periods": [
+        {
+          "label": "신청 가능",
+          "startDays": null,
+          "startText": "입원치료 후",
+          "endDays": 180,
+          "endText": "분만일로부터 6개월까지",
+          "note": "진단서(질병코드)·입퇴원확인서·진료비 영수증·통장사본 필요"
+        }
+      ]
+    },
+    {
+      "id": "PREG-005",
+      "name": "임신부 국가 인플루엔자(독감) 무료 예방접종(2026-2027절기)",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "임신이 확인된 임신부(임신 초기·중기·후기 무관)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "인플루엔자 3가 백신 무료접종(본인부담 없음)",
+      "paymentMethod": "현물(접종)",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "",
+      "officialUrl": "https://www.kbcs.kr/news/article.html?no=400458",
+      "sourceName": "지자체 보도(수원시 등) 및 검색 결과 — 질병관리청 공식 원문 직접 확인 못함",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "신분증 + 산모수첩·임신확인서 등 임신 확인 서류 지참, 전국 위탁의료기관·보건소 접종. 접종기간은 2026-09-21~2027-04-30(보도 기준)이라 예정일 기준 상대일수로 표현 불가. 백신 재고는 사전 전화 확인 권장.",
+      "lastVerified": "2026-09-29",
+      "periods": [
+        {
+          "label": "무료접종 가능",
+          "startDays": null,
+          "startText": "2026-09-21",
+          "endDays": null,
+          "endText": "2027-04-30",
+          "note": "임신 중인 기간과 겹치는 구간만 해당(임신 중 접종만 대상)"
+        }
+      ],
+      "prenatalOnly": true
+    },
+    {
+      "id": "PREG-006",
+      "name": "청소년산모 임신·출산 의료비 지원",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "임신확인일 기준 만 19세 이하 임산부(소득 무관)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 24,
+      "amountText": "임신 1회당 120만원 이내(임신·출산 진료비 100만원에 추가), 본인부담 의료비·약제비 지원. 출생 후 1년 이내 영유아 진료비도 포함",
+      "paymentMethod": "바우처(국민행복카드)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 24,
+      "residencyRequirement": "없음",
+      "additionalConditions": "",
+      "officialUrl": "http://www.voucher.go.kr/voucher/youth.do",
+      "sourceName": "국민행복카드·지자체 안내 검색 결과 — 공식 원문 직접 확인 못함(성동구청 페이지 인증서 오류)",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "보건소 방문 또는 사회서비스 전자바우처 포털 신청. 금액·연령 기준은 검색 요약 기준이라 최종 확인 필요.",
+      "lastVerified": "2026-09-29",
+      "periods": [
+        {
+          "label": "신청 가능",
+          "startDays": null,
+          "startText": "임신 확인 후",
+          "endDays": 730,
+          "endText": "사용기한 내",
+          "note": "보건소 방문 또는 전자바우처 포털"
+        },
+        {
+          "label": "사용 가능",
+          "startDays": null,
+          "startText": "카드 수령·서비스 승인 다음날",
+          "endDays": 730,
+          "endText": "분만예정일로부터 2년",
+          "note": "검색 결과 기준"
+        }
+      ]
+    },
+    {
+      "id": "PREG-007",
+      "name": "영양플러스 사업(임산부 보충식품·영양교육)",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "기준중위소득 80% 이하 임산부(임신부는 소득 기준만 충족하면 가능, 영유아는 영양위험요인 필요)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "영양교육·상담, 가정방문 영양지도, 맞춤 보충식품 패키지(현물) — 금액 미공개",
+      "paymentMethod": "현물(식품 패키지 배송)",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "",
+      "officialUrl": "http://yeonje.go.kr/health/contents.do?mId=0409000000",
+      "sourceName": "연제구보건소(yeonje.go.kr) WebFetch 확인(소득·임신부 조건) + 자치구 보도",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "보건소에 신청(정부24 온라인 또는 유선). 최대 12개월 지원(보도 기준)이며 임산부의 지원 종료 시점(출산 후 몇 개월)은 확인 못함. 서울시 임산부 친환경농산물(SEOUL-P02)과 중복 불가.",
+      "lastVerified": "2026-09-29",
+      "periods": [
+        {
+          "label": "신청 가능",
+          "startDays": null,
+          "startText": "임신 확인 후",
+          "endDays": null,
+          "endText": "출산 후 지원 종료 시점 확인필요",
+          "note": "선정 후 최대 12개월(보도 기준)"
+        }
+      ]
+    },
+    {
+      "id": "PREG-008",
+      "name": "출산전후휴가 급여·임신기 근로시간 단축·육아휴직 신청 시기(고용보험)",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "고용보험 가입 임신 근로자(급여는 휴가 종료일 전 피보험단위기간 180일 이상)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 14,
+      "amountText": "출산전후휴가 급여: 통상임금 상당(2026년 상한 월 220만원, 하한 최저임금). 우선지원대상기업은 휴가 전 기간, 대규모기업은 60일 초과분(최대 30일). 임신기 근로시간 단축은 임금 삭감 없이 1일 2시간",
+      "paymentMethod": "현금(고용센터)",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "고용보험 미적용 1인 자영업자·프리랜서는 서울시 출산급여(출산 후 1년 이내 신청) 별도",
+      "officialUrl": "https://www.gov.kr/portal/service/serviceInfo/WII000001460",
+      "sourceName": "정부24 출산전후(유산·사산)휴가 급여(gov.kr) WebFetch 원문 확인 + 검색 결과",
+      "status": "확정시행",
+      "verified": true,
+      "notes": "임신 중에는 “언제 신청해야 하는지”를 미리 알아두는 안내용 항목. 출산전후휴가 90일(다태아 120일)은 출산 후 45일(다태아 60일) 이상 배정. 급여 신청은 휴가 시작 후 1개월부터 종료 후 12개월 이내(work24·고용센터 1350). 상한액은 일부 자료가 210만원으로 상이해 gov.kr 기준(220만원)을 채택. 육아휴직은 개시 30일 전까지 사업주에게 신청, 급여는 시작 후 1개월~종료 후 12개월 이내(2026-08-20부터 1주·2주 단기 육아휴직 급여 가능 — 검색 결과 기준).",
+      "lastVerified": "2026-09-29",
+      "periods": [
+        {
+          "label": "근로시간 단축 청구(초기)",
+          "startDays": null,
+          "startText": "임신 확인 후",
+          "endDays": -196,
+          "endText": "임신 12주 이내",
+          "note": "1일 2시간 단축, 임금 삭감 없음"
+        },
+        {
+          "label": "근로시간 단축 청구(후기)",
+          "startDays": -28,
+          "startText": null,
+          "endDays": -1,
+          "endText": "분만 전까지",
+          "note": "임신 36주 이후"
+        },
+        {
+          "label": "출산전후휴가 사용",
+          "startDays": -45,
+          "startText": null,
+          "endDays": 45,
+          "endText": null,
+          "note": "총 90일 중 출산 후 45일 이상 배정(출산 전 사용일 수는 조정 가능, 근사값)"
+        },
+        {
+          "label": "휴가 급여 신청",
+          "startDays": -15,
+          "startText": null,
+          "endDays": 410,
+          "endText": null,
+          "note": "휴가 시작 후 1개월 ~ 휴가 종료 후 12개월(근사값)"
+        },
+        {
+          "label": "육아휴직 신청",
+          "startDays": null,
+          "startText": "휴직 개시 30일 전까지 사업주에게",
+          "endDays": null,
+          "endText": "출산 후",
+          "note": "육아휴직 급여는 개시 후 1개월~종료 후 12개월 이내 신청"
+        }
+      ]
+    }
+  ]
+}

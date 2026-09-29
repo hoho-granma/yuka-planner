@@ -1,0 +1,138 @@
+{
+  "category": "HC",
+  "count": 6,
+  "todos": [
+    {
+      "todo_id": "HC-01",
+      "category": "HC",
+      "title": "1차 건강검진",
+      "parentAction": "검진기관 방문(키/몸무게/머리둘레)",
+      "completionCriteria": "방문 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0.47,
+        "endMonth": 1.17
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "source": "국민건강보험공단",
+      "verificationStatus": "확인됨",
+      "displayMonth": 1,
+      "displayMonthLabel": "1개월",
+      "displayMonthBasis": "생후 1개월 무렵부터 확인",
+      "categoryGroup": "영유아검진"
+    },
+    {
+      "todo_id": "HC-02",
+      "category": "HC",
+      "title": "2차 건강검진",
+      "parentAction": "검진기관 방문",
+      "completionCriteria": "방문 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 4,
+        "endMonth": 6
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "source": "국민건강보험공단",
+      "verificationStatus": "확인됨",
+      "displayMonth": 4,
+      "displayMonthLabel": "4개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "영유아검진"
+    },
+    {
+      "todo_id": "HC-03",
+      "category": "HC",
+      "title": "3차 건강검진(K-DST 최초)",
+      "parentAction": "문진표 사전 작성 후 방문, 발달선별검사 최초 시행",
+      "completionCriteria": "방문 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 9,
+        "endMonth": 12
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "source": "국민건강보험공단",
+      "verificationStatus": "확인됨",
+      "displayMonth": 9,
+      "displayMonthLabel": "9개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "영유아검진"
+    },
+    {
+      "todo_id": "HC-04",
+      "category": "HC",
+      "title": "4차 건강검진(구강검진 포함)",
+      "parentAction": "신체계측+구강검진+K-DST 동시 진행",
+      "completionCriteria": "방문 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 18,
+        "endMonth": 24
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "source": "국민건강보험공단",
+      "verificationStatus": "확인됨(기존 데이터 오류 수정 반영)",
+      "displayMonth": 18,
+      "displayMonthLabel": "18개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "영유아검진"
+    },
+    {
+      "todo_id": "HC-05",
+      "category": "HC",
+      "title": "5차 건강검진(구강검진 포함)",
+      "parentAction": "신체계측+구강검진+K-DST 동시 진행",
+      "completionCriteria": "방문 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 30,
+        "endMonth": 36
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "source": "국민건강보험공단",
+      "verificationStatus": "확인됨(기존 데이터 오류 수정 반영)",
+      "displayMonth": 30,
+      "displayMonthLabel": "30개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "영유아검진"
+    },
+    {
+      "todo_id": "HC-06",
+      "category": "HC",
+      "title": "영아 빈혈(철결핍) 선별검사",
+      "parentAction": "검진 시 혈액검사 요청",
+      "completionCriteria": "결과 확인",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 9,
+        "endMonth": 12
+      },
+      "catchUp": "NOT_ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "source": "대한소아청소년과학회",
+      "verificationStatus": "확인됨",
+      "displayMonth": 9,
+      "displayMonthLabel": "9개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "영유아검진"
+    }
+  ]
+}

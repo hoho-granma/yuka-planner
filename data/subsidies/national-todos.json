@@ -1,0 +1,273 @@
+{
+  "category": "SB",
+  "count": 10,
+  "_설명": "전국 공통으로 즉시 적용되는 제도(부모급여·아동수당·첫만남이용권 등)는 TodoDefinition 스키마 그대로 유지해 js/todo-engine.js가 자격조건·소급기한·자동연장까지 정교하게 계산한다. 이 폴더의 다른 지역별 파일(national.json/seoul.json 등)은 스키마가 달라(지역 매칭 기반, 상태 계산이 더 단순함) 같은 계산 경로를 타지 않는다 — js/schedule.js의 SUBSIDIES_SUPERSEDED_BY_ENGINE이 두 경로의 중복 표시를 막아준다.",
+  "todos": [
+    {
+      "todo_id": "SB-01",
+      "category": "SB",
+      "title": "첫만남이용권 신청",
+      "parentAction": "출생신고 시 행복출산원스톱서비스로 통합신청. 사용기한은 출생일로부터 2년이며 늦게 신청해도 연장되지 않으므로, 지급 소요기간을 고려해 사용 종료 2개월 전까지는 신청",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "DATE_FROM_BIRTH",
+      "triggerParams": {
+        "offsetDays": 0,
+        "deadlineDays": 730
+      },
+      "catchUp": "NOT_ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "정부24",
+      "verificationStatus": "확인됨",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "출생 직후 신청 준비",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-02",
+      "category": "SB",
+      "title": "부모급여(0세) 신청",
+      "parentAction": "출생 후 60일 이내 신청 시 출생월부터 소급 지급, 그 외에도 0세 기간 내 신청 가능(소급 없이 신청월부터 지급)",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 12
+      },
+      "catchUp": "NOT_ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "보건복지부",
+      "verificationStatus": "확인됨(수급기간·신청기한 분리)",
+      "retroactiveDeadline": {
+        "offsetDays": 0,
+        "deadlineDays": 60
+      },
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-03",
+      "category": "SB",
+      "title": "부모급여(1세) 확인/신청",
+      "parentAction": "SB-02(0세 부모급여) 신청 완료 시 자동 연장(별도 행동 불필요). 신청 이력이 없으면 별도로 1세 부모급여를 신청해야 함",
+      "completionCriteria": "지급 확인",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": 24
+      },
+      "catchUp": "NOT_ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "보건복지부",
+      "verificationStatus": "확인됨(자동연장 조건 반영)",
+      "autoExtendsFrom": {
+        "todo_id": "SB-02",
+        "occurrenceKey": "default"
+      },
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-04",
+      "category": "SB",
+      "title": "아동수당 신청",
+      "parentAction": "출생신고 시 통합신청 권장. 60일 이내 신청 시 출생월부터 소급, 이후에도 만9세 미만까지 신청 가능(소급 없이 신청월부터 지급)",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 108
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "korea.kr 2026 정책브리핑",
+      "verificationStatus": "확인됨(수급기간·신청기한 분리, 지역별 금액차등은 상태계산에 미반영 — 확인 필요로 별도 표기)",
+      "retroactiveDeadline": {
+        "offsetDays": 0,
+        "deadlineDays": 60
+      },
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-05",
+      "category": "SB",
+      "title": "기저귀·조제분유 바우처 신청",
+      "parentAction": "국민행복카드 발급 후 주민센터/복지로 신청. 대상: 기초·차상위·한부모, 또는 중위소득100% 이하 장애인·다자녀(2자녀 이상) 가구. 기저귀 월 9만원(조제분유는 모유수유 불가 사유 시 월 11만원 추가)",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 24
+      },
+      "eligibilityCondition": {
+        "attribute": "incomeBracket",
+        "requiredValue": "중위소득100%이하"
+      },
+      "catchUp": "NOT_ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "korea.kr 2026 정책브리핑",
+      "verificationStatus": "준검증(수급기간·신청기한 분리)",
+      "retroactiveDeadline": {
+        "offsetDays": 0,
+        "deadlineDays": 60
+      },
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-06",
+      "category": "SB",
+      "title": "미숙아·선천성이상아 의료비 지원 신청",
+      "parentAction": "보건소 방문 또는 e보건소로 신청(퇴원일 기준 6개월이 정확한 마감이나, 이 엔진은 출생일 기준으로 근사)",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 24
+      },
+      "eligibilityCondition": {
+        "attribute": "prematureBirth",
+        "requiredValue": true
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "korea.kr 2026 정책브리핑",
+      "verificationStatus": "준검증(수급기간·신청기한 분리, 퇴원일 대신 출생일 기준으로 근사 — 확인 필요, 정확 상한액도 미검증)",
+      "retroactiveDeadline": {
+        "offsetDays": 0,
+        "deadlineDays": 180
+      },
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-07",
+      "category": "SB",
+      "title": "어린이집 보육료 지원 확인",
+      "parentAction": "어린이집 입소 시 아이행복카드로 지원",
+      "completionCriteria": "지급 확인",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 36
+      },
+      "eligibilityCondition": {
+        "attribute": "daycareEnrolled",
+        "requiredValue": true
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "중앙육아종합지원센터",
+      "verificationStatus": "미검증(연령별 정확 단가 재확인 필요)",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-08",
+      "category": "SB",
+      "title": "누리과정(유아학비/보육료) 신청",
+      "parentAction": "만3세 진입 시 기관을 통해 신청",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 36,
+        "endMonth": 72
+      },
+      "eligibilityCondition": {
+        "attribute": "daycareEnrolled",
+        "requiredValue": true
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "복지로·교육부",
+      "verificationStatus": "미검증(정확 단가 재확인 필요)",
+      "displayMonth": 36,
+      "displayMonthLabel": "36개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-09",
+      "category": "SB",
+      "title": "아이돌봄서비스 정부지원 신청",
+      "parentAction": "아이돌봄(idolbom.go.kr) 사전 신청",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 3,
+        "endMonth": 156
+      },
+      "eligibilityCondition": {
+        "attribute": "incomeBracket",
+        "requiredValue": "기준중위소득250%이하"
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 30,
+      "regionCondition": null,
+      "source": "복지로·korea.kr",
+      "verificationStatus": "확인됨(소득기준 확대)/세부요금 미검증",
+      "displayMonth": null,
+      "displayMonthLabel": "필요할 때 확인",
+      "displayMonthBasis": "소득기준 충족 여부와 실제 돌봄 필요 발생 여부에 따라 달라지는 저우선순위(priority 3) 항목이라 0개월 일괄 노출 대상에서 제외",
+      "categoryGroup": "행정·지원금"
+    },
+    {
+      "todo_id": "SB-10",
+      "category": "SB",
+      "title": "거주 지자체 지원금·제도",
+      "parentAction": "이 엔진에서 재계산하지 않음 — 기존 data/subsidies.json + js/app.js의 subsidyIsActiveNow() 로직을 그대로 사용",
+      "completionCriteria": "-",
+      "exposureLevel": "REFERENCE",
+      "triggerType": "REFERENCE",
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "regionCondition": "SEE_SUBSIDIES_JSON",
+      "source": "지원금조회 서비스 데이터 재사용",
+      "verificationStatus": "기존 유지",
+      "displayMonth": null,
+      "displayMonthLabel": "필요할 때 확인",
+      "displayMonthBasis": "거주 지자체 및 자격에 따라 확인",
+      "categoryGroup": "행정·지원금"
+    }
+  ]
+}

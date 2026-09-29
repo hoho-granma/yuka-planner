@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "설명": "화성시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-HWASEONG",
+      "name": "화성시 출산지원금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:화성시"
+      ],
+      "target": "화성시 출생아",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 60,
+      "amountText": "첫째 100만원 / 둘째 200만원 / 셋째 200만원 / 넷째 이상 300만원(2회 분할)",
+      "amountByBirthOrder": {
+        "first": 1000000,
+        "second": 2000000,
+        "third": 2000000,
+        "fourthPlus": 3000000
+      },
+      "paymentMethod": "분할 지급(넷째 이상)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "화성시 거주",
+      "additionalConditions": "출생일로부터 1년 이내 신청",
+      "officialUrl": "https://www.hscity.go.kr/www/partInfo/femaleFamily/Welfare1/Welfare1_2.jsp",
+      "sourceName": "화성시청 공식 홈페이지",
+      "lastVerified": "2026-09-01",
+      "status": "확정시행",
+      "verified": true,
+      "notes": ""
+    }
+  ]
+}

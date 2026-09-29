@@ -1,0 +1,421 @@
+{
+  "category": "FD",
+  "count": 14,
+  "todos": [
+    {
+      "todo_id": "FD-01",
+      "category": "FD",
+      "title": "이유식 시작 판단",
+      "parentAction": "발달신호 확인 후 이유식 시작",
+      "completionCriteria": "이유식 시작",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 4,
+        "endMonth": 6
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 5,
+      "displayMonthLabel": "5개월",
+      "displayMonthBasis": "이유식 시작 전 준비·시작 시점 판단",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "목을 잘 가누고 앉혀두면 상체를 세울 수 있는지",
+        "음식에 관심을 보이며 입을 벌리는지",
+        "혀로 밀어내는 반사(설반사)가 줄었는지"
+      ],
+      "abnormalSigns": [
+        "6개월이 지나도 목을 가누지 못하거나 삼키기를 유독 힘들어하면 이유식을 미루지 말고 소아과와 먼저 상담하세요."
+      ]
+    },
+    {
+      "todo_id": "FD-02",
+      "category": "FD",
+      "title": "초기 이유식(미음)",
+      "parentAction": "쌀미음부터 시작, 철분강화 곡분·육류 병행",
+      "completionCriteria": "단계 진행",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": 7
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "한 숟가락씩 시작해 삼키는 양상",
+        "변 상태(변비·설사)",
+        "피부 발진 여부"
+      ],
+      "abnormalSigns": [
+        "새 음식 도입 후 두드러기·구토·설사·호흡곤란이 나타나면 즉시 섭취를 중단하고 병원 진료를 받으세요."
+      ]
+    },
+    {
+      "todo_id": "FD-03",
+      "category": "FD",
+      "title": "중기 이유식(약간 덩어리)",
+      "parentAction": "입자 크기 점진적으로 키우기",
+      "completionCriteria": "단계 진행",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 7,
+        "endMonth": 9
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 7,
+      "displayMonthLabel": "7개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "입자 크기를 키워가며 삼키지 못하고 뱉어내는지",
+        "구역질이 심한지"
+      ],
+      "abnormalSigns": [
+        "입자가 큰 음식을 계속 거부하거나 구역반사가 과도하면 소아과·구강운동 상담을 고려하세요."
+      ]
+    },
+    {
+      "todo_id": "FD-04",
+      "category": "FD",
+      "title": "후기 이유식(진밥)",
+      "parentAction": "씹는 연습 유도, 10개월까지 덩어리음식 미도입 시 섭식장애 위험",
+      "completionCriteria": "단계 진행",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 10,
+        "endMonth": 12
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 10,
+      "displayMonthLabel": "10개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "씹는 동작(오물오물)이 나타나는지",
+        "10개월이 지나도 계속 곱게 간 음식만 먹는지"
+      ],
+      "abnormalSigns": [
+        "12개월이 다 되도록 덩어리 음식을 전혀 못 먹으면 섭식장애 위험이 있어 소아과 상담이 필요합니다."
+      ]
+    },
+    {
+      "todo_id": "FD-05",
+      "category": "FD",
+      "title": "가족식(일반식) 전환",
+      "parentAction": "가족과 유사한 식사 제공(저염·저당 조정)",
+      "completionCriteria": "전환 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": null
+      },
+      "catchUp": "ALLOWED",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "저염·저당으로 조정한 가족식에 아이가 적응하는지",
+        "새 식감·맛에 대한 거부 반응"
+      ],
+      "abnormalSigns": [
+        "특정 식품군을 지속적으로 완전히 거부하거나 체중 증가가 정체되면 소아과 상담을 받아보세요."
+      ]
+    },
+    {
+      "todo_id": "FD-06",
+      "category": "FD",
+      "title": "새 식품 1개씩 도입",
+      "parentAction": "새 식품 추가 시 3~7일간 단독 급여, 이상반응 관찰",
+      "completionCriteria": "확인 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": 12
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "도입 후 3~7일간 발진",
+        "구토·설사",
+        "호흡기 증상이 나타나는지"
+      ],
+      "abnormalSigns": [
+        "두드러기·입술과 눈 주위 부종·구토·호흡곤란이 함께 나타남 — 알레르기 반응 가능성",
+        "호흡곤란이 있으면 즉시 응급실로 가세요."
+      ]
+    },
+    {
+      "todo_id": "FD-07",
+      "category": "FD",
+      "title": "알레르기 유발식품 조기 도입",
+      "parentAction": "이유식 초기부터 소량 도입, 이상반응 관찰",
+      "completionCriteria": "도입 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": 12
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "식품의약품안전처·질병관리청",
+      "verificationStatus": "확인됨",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "달걀·땅콩 등 도입 후 30분~2시간 이내 피부 반응",
+        "소화기 반응",
+        "호흡기 반응"
+      ],
+      "abnormalSigns": [
+        "두드러기가 얼굴을 넘어 퍼지거나 입술이 붓거나 쌕쌕거리는 호흡을 하면 즉시 응급 진료를 받으세요."
+      ]
+    },
+    {
+      "todo_id": "FD-08",
+      "category": "FD",
+      "title": "꿀 섭취 금지",
+      "parentAction": "꿀 함유 식품·이유식 일체 배제",
+      "completionCriteria": "만 1세 도달",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 12
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 1,
+      "leadDays": 0,
+      "source": "질병관리청·CDC/WHO",
+      "verificationStatus": "확인됨(12개월 기준)",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "이유식 시작 시 주의사항으로 안내; 12개월 미만 계속 금지",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "꿀이 포함된 식품(빵, 시리얼, 소스 등)을 성분표에서 확인하는 습관"
+      ],
+      "abnormalSigns": [
+        "꿀 섭취 후 변비, 근육 힘 빠짐, 빨기·삼키기 어려움",
+        "위 증상은 영아보툴리누스증 가능성이 있어 즉시 응급 진료가 필요합니다."
+      ]
+    },
+    {
+      "todo_id": "FD-09",
+      "category": "FD",
+      "title": "철분강화식품 도입",
+      "parentAction": "철분강화 곡분 또는 육류 페이스트 포함",
+      "completionCriteria": "정기 섭취 확인",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": null
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "철분강화 곡분·육류를 정기적으로 섭취하는지",
+        "안색이 창백하거나 유독 쉽게 처지는지"
+      ],
+      "abnormalSigns": [
+        "안색이 창백하고 잘 처지며 식욕이 뚜렷이 떨어지면 철결핍성빈혈 가능성이 있어 검진 때 혈액검사를 요청하세요."
+      ]
+    },
+    {
+      "todo_id": "FD-10",
+      "category": "FD",
+      "title": "생우유 도입",
+      "parentAction": "하루 600ml 이내, 컵으로 급여",
+      "completionCriteria": "도입 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": null
+      },
+      "catchUp": "ALLOWED",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "삼성서울병원",
+      "verificationStatus": "확인됨",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "하루 600ml 이내로 제한하는지",
+        "우유만 과다 섭취해 다른 음식 섭취가 줄지 않는지"
+      ],
+      "abnormalSigns": [
+        "우유를 마신 뒤 두드러기·설사·구토가 반복되면 우유단백알레르기를 의심하고 소아과 상담을 받으세요."
+      ]
+    },
+    {
+      "todo_id": "FD-11",
+      "category": "FD",
+      "title": "컵 사용 연습 시작",
+      "parentAction": "물/소량 음료를 컵으로 제공",
+      "completionCriteria": "연습 시작",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 6,
+        "endMonth": 9
+      },
+      "catchUp": "ALLOWED",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 6,
+      "displayMonthLabel": "6개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "컵을 잡고 스스로 기울여 마시는 시도",
+        "흘리는 양이 점차 줄어드는지"
+      ],
+      "abnormalSigns": [
+        "사레가 잦거나 삼킴에 어려움이 지속되면 소아과 상담을 받아보세요."
+      ]
+    },
+    {
+      "todo_id": "FD-12",
+      "category": "FD",
+      "title": "젖병 떼기",
+      "parentAction": "젖병 사용 점진적 축소, 늦어도 18개월 이전 종료",
+      "completionCriteria": "젖병 없이 생활 가능",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 12,
+        "endMonth": 18
+      },
+      "catchUp": "ALLOWED",
+      "priority": 2,
+      "leadDays": 30,
+      "source": "질병관리청 국가건강정보포털",
+      "verificationStatus": "확인됨",
+      "displayMonth": 12,
+      "displayMonthLabel": "12개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "젖병 사용 횟수를 서서히 줄여가는지",
+        "컵으로 대체 가능한지"
+      ],
+      "abnormalSigns": [
+        "18개월이 지나도 젖병 의존이 전혀 줄지 않거나 치아 우식(충치)이 눈에 띄면 소아치과 상담을 받아보세요."
+      ]
+    },
+    {
+      "todo_id": "FD-13",
+      "category": "FD",
+      "title": "핑거푸드(자기주도이유식) 연습 시작",
+      "parentAction": "질감 있는 부드러운 음식을 손으로 집어 먹는 연습 시작(자기주도이유식/BLW)",
+      "completionCriteria": "연습 시작",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 8,
+        "endMonth": 12
+      },
+      "catchUp": "ALLOWED",
+      "priority": 3,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털(카드뉴스 콘텐츠 원고 인용)",
+      "verificationStatus": "준검증(카드뉴스 원고 인용, 1차 공식 문서 대조 권장)",
+      "categoryGroup": "생활·수유",
+      "displayMonth": 8,
+      "displayMonthLabel": "8개월",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "observationGuide": [
+        "손으로 집어 스스로 입에 넣는 시도",
+        "질식 없이 씹어 삼키는지"
+      ],
+      "abnormalSigns": [
+        "구역질을 넘어 실제로 숨막힘(기침도 소리도 못 냄)이 나타나면 즉시 하임리히 등 응급 처치와 병원 이송이 필요합니다."
+      ]
+    },
+    {
+      "todo_id": "FD-14",
+      "category": "FD",
+      "title": "수유·이유식 상태 관찰(수유량·소변·체중·활력)",
+      "parentAction": "평소 대비 수유량·소변 횟수·체중 증가·깨어있을 때 활력을 확인",
+      "completionCriteria": "관찰 체크",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 3
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 14,
+      "source": "질병관리청 국가건강정보포털(카드뉴스 콘텐츠 원고 인용)",
+      "verificationStatus": "준검증(카드뉴스 원고 인용, 1차 공식 문서 대조 권장)",
+      "categoryGroup": "생활·수유",
+      "displayMonth": 0,
+      "displayMonthLabel": "0개월",
+      "displayMonthBasis": "신생아 초기(생후 1~2주 전후) 수유량·체중 확인이 특히 중요해 0개월부터 안내하되, 3개월까지 지속 관찰하는 항목(대표 월령이 지났다고 완료 처리하지 않음)",
+      "observationGuide": [
+        "하루 소변 기저귀 수(생후 5일 이후 6개 이상)",
+        "체중 증가 추이",
+        "수유 후 활력(깨어있을 때 반응성)"
+      ],
+      "abnormalSigns": [
+        "소변량이 눈에 띄게 줄어듦",
+        "체중이 늘지 않거나 줄어듦",
+        "평소보다 처지고 반응이 둔함",
+        "위 신호가 있으면 즉시 소아과 진료를 받으세요."
+      ]
+    }
+  ]
+}

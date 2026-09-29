@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "설명": "연천군 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-YEONCHEON",
+      "name": "연천군 출산장려금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:연천군"
+      ],
+      "target": "연천군 출생아, 출생 3개월 전부터 거주",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 60,
+      "amountText": "첫째 100만원 / 둘째 200만원 / 셋째 500만원 / 넷째 이상 1,000만원",
+      "amountByBirthOrder": {
+        "first": 1000000,
+        "second": 2000000,
+        "third": 5000000,
+        "fourthPlus": 10000000
+      },
+      "paymentMethod": "확인 필요",
+      "deadlineType": "birth_relative_days",
+      "deadlineValue": 180,
+      "residencyRequirement": "출생 3개월 전부터 연천군 거주",
+      "additionalConditions": "출생 후 180일 이내 신청",
+      "officialUrl": "https://www.yeoncheon.go.kr/www/contents.do?key=3310",
+      "sourceName": "연천군청 공식 홈페이지",
+      "lastVerified": "2026-09-01",
+      "status": "확정시행",
+      "verified": true,
+      "notes": ""
+    }
+  ]
+}

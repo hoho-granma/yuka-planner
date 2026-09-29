@@ -4,9 +4,21 @@
  */
 const assert = require("assert");
 const Engine = require("../js/todo-engine.js");
-const data = require("../data/todo-definitions.v3.json");
-
-const TODOS = data.todos;
+// 2026-09-29부터 마스터 데이터가 카테고리별 파일(data/todos/*.json)로 나뉘었다 — 엔진 테스트는
+// 여전히 전체 75개를 한 배열로 합쳐서 검증한다.
+const TODO_CATEGORY_FILES = [
+  "../data/todos/health-checkup.json",
+  "../data/todos/vaccination.json",
+  "../data/todos/development.json",
+  "../data/todos/feeding.json",
+  "../data/todos/oral.json",
+  "../data/todos/sleep.json",
+  "../data/todos/safety.json",
+  "../data/todos/daily-life.json",
+  "../data/todos/childcare.json",
+  "../data/subsidies/national-todos.json",
+];
+const TODOS = TODO_CATEGORY_FILES.flatMap((f) => require(f).todos);
 function findTodo(id) {
   const t = TODOS.find((x) => x.todo_id === id);
   if (!t) throw new Error(`fixture 없음: ${id}`);

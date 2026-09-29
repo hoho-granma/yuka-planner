@@ -1,23 +1,27 @@
 // 한눈육아 통합 일정 엔진.
 // Phase 3부터는 건강검진·예방접종·성장발달(및 이유식/구강/수면/안전/생활/보육)을
-// js/todo-engine.js + data/todo-definitions.v3.json(75개 TodoDefinition) 기준으로 계산하고,
-// 지자체(지역) 지원금만 기존 data/subsidies.json 로직(buildSubsidyEvents)을 그대로 유지한다.
+// js/todo-engine.js + data/todos/*.json(카테고리별 파일, 총 75개 TodoDefinition) 기준으로
+// 계산하고, 지자체(지역) 지원금은 data/subsidies/national.json + {시도}.json + {시도}-{시군구}.json
+// (js/app.js loadSubsidyDataForRegion) 조합을 buildSubsidyEvents()로 처리한다.
 // 완료 여부는 여기서 다루지 않는다 (app.js가 localStorage/Firestore와 함께 처리).
 
 // 필터칩·달력 범례·체크리스트가 전부 이 6개 카테고리 하나로 통일된다(예전엔 필터칩이 4개,
 // 달력 범례가 6개로 서로 달라 불일치했다). 키는 각 TodoDefinition의 categoryGroup 필드값과
-// 정확히 같은 문자열이라야 한다(data/todo-definitions.v3.json의 _meta.categoryGroupMap 참고).
+// 정확히 같은 문자열이라야 한다(data/todos/_meta.json의 categoryGroupMap 참고).
 // label은 필터칩 등 좁은 칩 안에 한 줄로 들어가야 해서 3글자 이하로 줄여서 표시한다.
 // color는 6개가 서로 뚜렷이 구분되도록 색상환에서 고르게 떨어뜨렸다 — 예전엔 생활·수유(#eab308)와
 // 행정·지원금(#f59e0b)이 둘 다 노랑·주황 계열로 너무 비슷해서(색상환상 8도 차이) 구분이 안 됐던
-// 문제를, 행정·지원금을 핑크·마젠타 계열로 바꿔서 해결했다.
+// 문제를, 행정·지원금을 핑크(빨강과 겹침) → 청록(초록·파랑과 겹침) 순으로 바꿨다가, 5개 색
+// 전부 채도 높은 무지개색이라 6번째를 더해봤자 어딘가와는 겹쳐 보인다는 피드백을 받아
+// 아예 색상환을 벗어난 무채색 계열(슬레이트 네이비)로 바꿨다 — 나머지 5개와 톤 자체가
+// 달라서(채도 있는 색 vs 무채색) 절대 헷갈리지 않는다.
 const CATEGORY_META = {
   "발달관찰": { label: "발달", color: "#22c55e" }, // 초록
   "예방접종": { label: "접종", color: "#3b82f6" }, // 파랑
   "영유아검진": { label: "검진", color: "#a855f7" }, // 보라
   "생활·수유": { label: "생활", color: "#f59e0b" }, // 주황
   "안전·돌봄": { label: "안전", color: "#ef4444" }, // 빨강
-  "행정·지원금": { label: "지원금", color: "#ec4899" }, // 핑크
+  "행정·지원금": { label: "지원금", color: "#475569" }, // 슬레이트 네이비(무채색)
 };
 
 // TodoDefinition의 10개 세부 카테고리 코드 → 위 6개 그룹 중 하나. td.categoryGroup이 있으면
@@ -154,17 +158,27 @@ function subsidyDeadlineText(s) {
   return "신청 기한 확인 필요";
 }
 
-// data/subsidies.json에는 원래 "전국공통(ALL)"으로 표시된 항목도 몇 개 섞여 있었는데,
-// 그중 아래 4개는 이제 todo-definitions.v3.json의 SB-01/02/03/05로 새 엔진이 계산한다.
+// data/subsidies/national.json에는 원래 "전국공통(ALL)"으로 표시된 항목도 몇 개 섞여 있는데,
+// 그중 아래 4개는 이제 data/subsidies/national-todos.json의 SB-01/02/04/05로 새 엔진이 계산한다.
 // 두 경로가 같은 제도를 각자 다른 문구로 중복 표시하는 걸 막기 위해 여기서 제외한다.
 // (NAT-004 산모·신생아 건강관리처럼 아직 엔진에 없는 항목은 그대로 지역 지원금 경로로 유지)
 const SUBSIDIES_SUPERSEDED_BY_ENGINE = ["NAT-001", "NAT-002", "NAT-003", "NAT-005"];
 
-function buildSubsidyEvents(birthDate, province, district, subsidyData) {
+function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrder, stage) {
   const events = [];
   for (const s of subsidyData.subsidies) {
     if (SUBSIDIES_SUPERSEDED_BY_ENGINE.includes(s.id)) continue;
     if (!regionMatches(s, province, district)) continue;
+    // amountByBirthOrder에 0으로 표시된 순위(예: GURO-001은 첫째·둘째=0, 셋째 이상만 지원)는
+    // 이 가정에 해당하지 않는 제도라 캘린더에서 아예 뺀다. birthOrder 미입력(구버전 프로필 등)이면
+    // 자격을 임의로 판단하지 않고 그대로 보여준다.
+    // 출산 전(임신 중)에만 신청하는 제도는 출생일 기준 캘린더에 맞지 않아 뺀다.
+    if (s.prenatalOnly && stage !== "pregnant") continue;
+    // 구별 파일마다 넷째 이상 키가 fourthPlus 또는 fourth/fifthPlus로 다르다 — 앱의 fourthPlus는 fourth로도 조회한다.
+    const orderAmount = s.amountByBirthOrder
+      ? s.amountByBirthOrder[birthOrder] ?? (birthOrder === "fourthPlus" ? s.amountByBirthOrder.fourth : undefined)
+      : undefined;
+    if (birthOrder && orderAmount === 0) continue;
 
     const minA = s.minAgeMonths ?? 0;
     const maxA = s.maxAgeMonths ?? Infinity;
@@ -185,6 +199,14 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData) {
       anchorDate = entryDate;
     }
 
+    // 임신 중 제도는 periods(출산예정일 기준 상대 일수)로 앵커/마감 날짜를 잡는다.
+    if (stage === "pregnant" && Array.isArray(s.periods) && s.periods.length) {
+      const starts = s.periods.map((r) => r.startDays).filter((v) => v != null);
+      const ends = s.periods.map((r) => r.endDays).filter((v) => v != null);
+      if (starts.length) anchorDate = addDays(birthDate, Math.min(...starts));
+      if (ends.length) deadlineDate = addDays(birthDate, Math.max(...ends));
+    }
+
     // 마감·연령조건이 있는 지원금은 "지금 신청 가능한지"가 캘린더의 어느 달에 있는지보다
     // 훨씬 중요하다 — 리스트 노출 판단은 app.js가 minAgeMonths/maxAgeMonths/deadlineDate로 직접 한다.
     events.push({
@@ -203,17 +225,19 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData) {
       maxAgeMonths: maxA,
       entryDate,
       deadlineDate,
+      periods: s.periods || null,
+      isPrenatalOnly: !!s.prenatalOnly,
       isLegacySubsidy: true, // 지자체(지역) 지원금 — 기존 subsidyIsActiveNow() 특수 로직을 그대로 쓴다
-      isDateSpecific: true, // 기존 방식 그대로 캘린더에 표시
+      isDateSpecific: true, // 상세보기에 실제 날짜(entryDate/deadlineDate)를 보여줄지 여부(달력 배치와는 무관, js/app.js eventItemHtml 참고)
     });
   }
   return events;
 }
 
-function buildSchedule({ birthDate, province, district, gender }, dataset, completions) {
+function buildSchedule({ birthDate, province, district, gender, birthOrder, stage }, dataset, completions) {
   const events = [
     ...buildTodoEngineEvents({ birthDate, province, district, gender }, dataset.todoDefinitions, completions),
-    ...buildSubsidyEvents(birthDate, province, district, dataset.subsidy),
+    ...buildSubsidyEvents(birthDate, province, district, dataset.subsidy, birthOrder, stage),
   ];
   events.sort((a, b) => a.date.getTime() - b.date.getTime());
   return events;
