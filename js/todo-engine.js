@@ -54,6 +54,20 @@
     return false;
   }
 
+  // 개편 전/후 분기 — td.birthOnOrAfter / td.birthBefore(YYYY-MM-DD)가 있으면 아이 생년월일이
+  // 그 범위 안일 때만 계산한다(js/app.js가 data/subsidies/reform-2027.json 기준일로 채운다).
+  function ymd(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function birthRuleMatches(td, birthDate) {
+    if (!td.birthOnOrAfter && !td.birthBefore) return true;
+    if (!birthDate) return true;
+    const b = ymd(birthDate);
+    if (td.birthOnOrAfter && b < td.birthOnOrAfter) return false;
+    if (td.birthBefore && b >= td.birthBefore) return false;
+    return true;
+  }
+
   function needsReviewBadge(verificationStatus) {
     return !(verificationStatus || "").startsWith("확인됨");
   }
@@ -227,6 +241,8 @@
   function calculateOne(td, ctx) {
     // 1) 지역 필터
     if (!regionMatches(td.regionCondition, ctx.province, ctx.district)) return [];
+    // 1-1) 출생일 범위 필터(제도 개편 전/후)
+    if (!birthRuleMatches(td, ctx.birthDate)) return [];
 
     // 2) REFERENCE — 상태 계산 대상 아님
     if (td.triggerType === "REFERENCE") {

@@ -1,0 +1,115 @@
+{
+  "_설명": "전국 카탈로그(national.json)에서 뺀 '확인 필요' 항목 보관용. 앱(js/app.js)이 읽지 않는 파일이라 화면에 나오지 않는다. 공식 원문으로 확인되면 status를 '확정시행'으로 바꾸고 national.json으로 옮긴다.",
+  "조사일": "2026-09-29",
+  "subsidies": [
+    {
+      "id": "PREG-003",
+      "name": "보건소 산전검사 비용 지원(기본 혈액·소변검사, 기형아 선별검사, 임신성 당뇨 검사)",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "보건소에 등록된 임산부(지원 항목·금액은 지자체별로 다름 — 전국 공통 제도가 아님)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "혈액검사(빈혈·혈액형·B형간염·풍진·매독·AIDS 등)·소변검사·선천성 기형아검사 등 비용 지원. 항목·금액은 지역별로 다름",
+      "paymentMethod": "현물(검사) 또는 비용 지원",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "전국 공통이 아니라 보건소·지자체마다 지원 항목과 금액이 달라요. 거주지 관할 보건소에 확인하세요.",
+      "officialUrl": "https://easylaw.go.kr/CSP/CnpClsMain.laf?csmSeq=735&ccfNo=2&cciNo=1&cnpClsNo=2",
+      "sourceName": "찾기쉬운 생활법령정보(easylaw.go.kr) + 중구보건소 임산부 등록관리 WebFetch 원문 확인",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "2026-09-29 재검증: 산전검사 지원은 지자체별로 확인됨(전국 공통 아님).",
+      "lastVerified": "2026-09-29",
+      "periods": [
+        {
+          "label": "기본 산전검사",
+          "startDays": null,
+          "startText": "임산부 등록 후",
+          "endDays": -1,
+          "endText": "분만 전까지",
+          "note": "등록 시 기본 혈액검사"
+        },
+        {
+          "label": "기형아 선별검사",
+          "startDays": -168,
+          "startText": null,
+          "endDays": -154,
+          "endText": "임신 18주까지",
+          "note": "임신 16~18주(중구 기준)"
+        },
+        {
+          "label": "임신성 당뇨·빈혈 검사",
+          "startDays": -112,
+          "startText": null,
+          "endDays": -84,
+          "endText": null,
+          "note": "임신 24~28주(중구 기준)"
+        }
+      ],
+      "prenatalOnly": true
+    },
+    {
+      "id": "NAT-025",
+      "name": "생애초기 건강관리 사업(보건소 가정방문)",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "보건소에 등록하고 서비스를 신청한 임산부 및 만 2세 미만 영아 가정(이른둥이는 교정 기간만큼 연장)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 23,
+      "amountText": "영유아 건강간호사·사회복지사가 가정을 방문해 건강상담·영아 발달 상담·양육 교육·정서적 지지 제공(정부 사업, 산모 우울 등 고위험 가구는 만 2세까지 지속 방문)",
+      "paymentMethod": "방문 서비스(무료)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "2026년에는 전국 73개 보건소(서울 8곳·경북 15곳 등)에서만 시행 — 거주지 관할 보건소의 사업 시행 여부를 먼저 확인하세요. 신청: 보건소 방문, e보건소, 아이마중 앱",
+      "officialUrl": "https://www.e-health.go.kr",
+      "sourceName": "「2026년 생애초기 건강관리 사업안내」(보건복지부) PDF 직접 확인",
+      "status": "확인필요",
+      "verified": true,
+      "notes": "전국 공통이 아니라 참여 보건소만 시행. 참여 보건소 목록은 사업안내 p.5 참고.",
+      "lastVerified": "2026-09-29",
+      "audience": "mother"
+    },
+    {
+      "id": "NAT-026",
+      "name": "임산부 교통 혜택(맘편한 KTX·SRT 할인)",
+      "scope": "national",
+      "applicableRegions": [
+        "ALL"
+      ],
+      "target": "임산부",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "맘편한 KTX, SRT 임산부 할인(전국 공통). 임산부 주차증·배지·임신축하선물은 지자체별로 제공 여부가 다름",
+      "paymentMethod": "할인",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "정부24 '맘편한 임신' 서비스에서 거주지 지자체 서비스를 함께 안내",
+      "officialUrl": "https://www.gov.kr",
+      "sourceName": "정부24 안내(사용자 제공 자료, 공식 페이지 직접 대조 전)",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "할인율·이용조건은 미확인 — 코레일·SR 안내로 확인 필요.",
+      "lastVerified": "2026-09-29",
+      "prenatalOnly": true,
+      "periods": [
+        {
+          "label": "이용 가능",
+          "startDays": -280,
+          "startText": "임신 확인 후",
+          "endDays": -1,
+          "endText": "분만 시까지",
+          "note": ""
+        }
+      ],
+      "audience": "mother"
+    }
+  ]
+}

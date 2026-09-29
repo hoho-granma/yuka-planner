@@ -130,6 +130,17 @@
    * 시군 공통) + {시도}-{시군구}.json(그 시군구 전용, 없으면 조용히 생략)만 불러온다 — 다른
    * 시도 파일은 아예 요청하지 않으므로 지역이 아무리 늘어도 매 세션 요청 수는 항상 2~3개다.
    */
+  // 2027 개편 기준일(data/subsidies/reform-2027.json) — 항목의 birthRule을 출생일 범위로 바꾼다.
+  let reformConfig = null;
+  function applyBirthRule(item) {
+    if (!item || !item.birthRule) return item;
+    const eff = reformConfig && reformConfig.effectiveBirthDate;
+    if (item.birthRule === "preReform") return eff ? { ...item, birthBefore: eff } : item;
+    // 기준일을 못 불러왔으면 개편 후 항목은 보여주지 않는다(확정되지 않은 제도를 잘못 안내하지 않기 위해).
+    if (item.birthRule === "postReform") return { ...item, birthOnOrAfter: eff || "9999-12-31" };
+    return item;
+  }
+
   async function loadSubsidyDataForRegion(province, district) {
     const slug = PROVINCE_SLUG[province];
     const paths = ["data/subsidies/national.json"];
@@ -138,7 +149,7 @@
       if (district) paths.push(`data/subsidies/${slug}-${district}.json`);
     }
     const files = await Promise.all(paths.map(loadJsonOrNull));
-    const subsidies = files.filter(Boolean).flatMap((f) => f.subsidies || []);
+    const subsidies = files.filter(Boolean).flatMap((f) => f.subsidies || []).map(applyBirthRule);
     return { subsidies };
   }
 
@@ -152,15 +163,17 @@
   }
 
   async function loadAll() {
-    const [regions, ...categoryFiles] = await Promise.all([
+    const [regions, reform, ...categoryFiles] = await Promise.all([
       loadJson("data/regions.json"),
+      loadJsonOrNull("data/subsidies/reform-2027.json"),
       ...TODO_CATEGORY_FILES.map(loadJson),
     ]);
     regionsData = regions;
+    reformConfig = reform;
     // 건강검진·예방접종·성장발달(및 이유식/구강/수면/안전/생활/보육)은 카테고리별 파일
     // (data/todos/*.json, 총 75개 TodoDefinition) + js/todo-engine.js로 계산한다.
     // 지자체 지원금(dataset.subsidy)은 프로필의 지역이 정해진 뒤 ensureRegionSubsidyLoaded()가 채운다.
-    const todoDefinitions = categoryFiles.flatMap((f) => f.todos);
+    const todoDefinitions = categoryFiles.flatMap((f) => f.todos).map(applyBirthRule);
     dataset = { todoDefinitions, subsidy: { subsidies: [] } };
   }
 
@@ -703,7 +716,6 @@
         const cat = chip.getAttribute("data-cat");
         if (activeCats.has(cat)) activeCats.delete(cat);
         else activeCats.add(cat);
-        localStorage.setItem(ACTIVE_CATS_KEY, JSON.stringify([...activeCats]));
         renderFilterChips();
         renderAll();
       });
@@ -1783,14 +1795,9 @@
     await loadAll();
     populateProvinces();
     completed = loadCompleted();
-    try {
-      const savedCats = JSON.parse(localStorage.getItem(ACTIVE_CATS_KEY));
-      // 예전 4개 카테고리 체계("health"/"growth" 등)로 저장된 값은 새 6개 카테고리 키와
-      // 하나도 안 맞아서 전부 걸러지면 화면에 아무것도 안 보이게 된다 — 그런 경우 기본값(전체
-      // 선택)으로 되돌린다.
-      const validSaved = Array.isArray(savedCats) ? savedCats.filter((c) => c in CATEGORY_META) : [];
-      if (validSaved.length) activeCats = new Set(validSaved);
-    } catch (e) {}
+    // 카테고리 필터는 저장·복원하지 않는다 — 앱을 켤 때마다 6개 전체 ON으로 시작한다.
+    // (예전에 저장된 값 때문에 지원금만 켜진 채 시작하는 문제가 있었다)
+    try { localStorage.removeItem(ACTIVE_CATS_KEY); } catch (e) {}
 
     el("province").addEventListener("change", (e) => populateDistricts(e.target.value));
     document.querySelectorAll("#order-chips .order-chip").forEach((b) =>

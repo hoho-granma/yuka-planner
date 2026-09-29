@@ -164,10 +164,20 @@ function subsidyDeadlineText(s) {
 // (NAT-004 산모·신생아 건강관리처럼 아직 엔진에 없는 항목은 그대로 지역 지원금 경로로 유지)
 const SUBSIDIES_SUPERSEDED_BY_ENGINE = ["NAT-001", "NAT-002", "NAT-003", "NAT-005"];
 
+// 제도 개편 전/후 분기 — s.birthOnOrAfter / s.birthBefore(YYYY-MM-DD)가 있으면 생년월일이 범위 안일 때만 보여준다.
+function birthRuleAllows(s, birthDate) {
+  if (!s.birthOnOrAfter && !s.birthBefore) return true;
+  const b = `${birthDate.getFullYear()}-${String(birthDate.getMonth() + 1).padStart(2, "0")}-${String(birthDate.getDate()).padStart(2, "0")}`;
+  if (s.birthOnOrAfter && b < s.birthOnOrAfter) return false;
+  if (s.birthBefore && b >= s.birthBefore) return false;
+  return true;
+}
+
 function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrder, stage) {
   const events = [];
   for (const s of subsidyData.subsidies) {
     if (SUBSIDIES_SUPERSEDED_BY_ENGINE.includes(s.id)) continue;
+    if (!birthRuleAllows(s, birthDate)) continue;
     if (!regionMatches(s, province, district)) continue;
     // amountByBirthOrder에 0으로 표시된 순위(예: GURO-001은 첫째·둘째=0, 셋째 이상만 지원)는
     // 이 가정에 해당하지 않는 제도라 캘린더에서 아예 뺀다. birthOrder 미입력(구버전 프로필 등)이면
@@ -220,7 +230,7 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrd
       detail: s,
       source: s.sourceName,
       officialUrl: s.officialUrl,
-      needsCheck: s.status === "확인필요",
+      needsCheck: s.status === "확인필요" || !!s.proposed,
       minAgeMonths: minA,
       maxAgeMonths: maxA,
       entryDate,

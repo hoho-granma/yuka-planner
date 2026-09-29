@@ -1,0 +1,8 @@
+{
+  "_설명": "2027 출산·양육 지원금 개편(아이맞이지원금·아동기본수당)의 적용 기준일. 개편 전/후 분기는 이 파일의 effectiveBirthDate 한 곳에서만 결정한다. national.json·national-todos.json의 항목에 birthRule(\"preReform\"=기준일 이전 출생만, \"postReform\"=기준일 이후 출생만)을 달면 js/app.js가 로드 시 birthBefore/birthOnOrAfter로 바꿔 엔진·달력에 넘긴다. 기준일이 바뀌면(예: 2027-01-01 소급안 확정) 아래 effectiveBirthDate만 고치면 된다.",
+  "effectiveBirthDate": "2027-07-01",
+  "status": "정부안(국회 확정 전)",
+  "statusNote": "2027-07-01 이후 출생아부터 적용 예정(복지부 2026-08-28 보도자료). 아동수당법 개정과 국회 예산 심의가 전제이며 개편법 발의는 확인하지 못했다. 2027-01-01 출생부터 소급 적용하는 방안은 검토 중(확정 아님).",
+  "sourceUrl": "https://www.mohw.go.kr/board.es?mid=a10503010100&bid=0027&act=view&list_no=1491722",
+  "lastVerified": "2026-09-29"
+}
