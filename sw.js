@@ -9,7 +9,7 @@
 //   - CACHE_NAME을 올릴 때마다 이전 캐시를 전부 지운다(activate 단계) — 배포 후에도
 //     예전 코드가 남아있는 걸 방지한다.
 
-const CACHE_NAME = "hannun-shell-v27";
+const CACHE_NAME = "hannun-shell-v28";
 
 const SHELL_ASSETS = [
   "./",
@@ -22,6 +22,7 @@ const SHELL_ASSETS = [
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./icons/icon-180.png",
 ];
 
 self.addEventListener("install", (event) => {
