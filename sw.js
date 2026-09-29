@@ -9,12 +9,15 @@
 //   - CACHE_NAME을 올릴 때마다 이전 캐시를 전부 지운다(activate 단계) — 배포 후에도
 //     예전 코드가 남아있는 걸 방지한다.
 
-const CACHE_NAME = "hannun-shell-v37";
+// 버전은 js/version.js 한 곳에서만 올린다 — 캐시 이름도 거기서 만든다(버전이 바뀌면 이전 캐시를 전부 지운다).
+importScripts("js/version.js");
+const CACHE_NAME = `hannun-shell-v${self.APP_VERSION}`;
 
 const SHELL_ASSETS = [
   "./",
   "./index.html",
   "./css/style.css",
+  "./js/version.js",
   "./js/sync.js",
   "./js/todo-engine.js",
   "./js/schedule.js",

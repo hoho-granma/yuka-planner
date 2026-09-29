@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#ff8a5c" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
-<link rel="stylesheet" href="css/style.css?v=17" />
+<link rel="stylesheet" href="css/style.css?v=18" />
 </head>
 <body>
   <main id="app">
@@ -119,7 +119,12 @@
     <section id="view-calendar" class="view hidden">
       <header class="app-header">
         <span class="app-title" id="brand-text">한눈육아</span>
-        <button type="button" class="btn-add-child" id="btn-add-child" aria-label="새 아이 추가">+</button>
+        <div class="header-actions">
+          <button type="button" class="btn-refresh" id="btn-refresh" aria-label="최신 버전으로 새로고침">
+            <span class="refresh-icon" aria-hidden="true">↻</span><span id="app-version-text"></span>
+          </button>
+          <button type="button" class="btn-add-child" id="btn-add-child" aria-label="새 아이 추가">+</button>
+        </div>
       </header>
 
       <button type="button" class="profile-card" id="btn-profile-card">
@@ -222,9 +227,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="js/sync.js?v=3"></script>
-  <script src="js/todo-engine.js?v=1"></script>
-  <script src="js/schedule.js?v=4"></script>
-  <script src="js/app.js?v=17"></script>
+  <script src="js/version.js?v=1"></script>
+  <script src="js/todo-engine.js?v=2"></script>
+  <script src="js/schedule.js?v=5"></script>
+  <script src="js/app.js?v=18"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

@@ -1830,6 +1830,72 @@
     });
   }
 
+  // ── 앱 버전 표시 · 새로고침 ─────────────────────────────────────────────
+  // 홈 화면(PWA)으로 연 앱은 껐다 켜도 옛 화면이 메모리에 남을 수 있다. 헤더에 실행 중인 버전을
+  // 보여주고, 서버의 최신 버전(js/version.js)과 다르면 버튼이 강조된다. 버튼을 누르면 링크로
+  // 새로 여는 것과 같게 캐시·서비스워커를 비우고 다시 불러온다(입력한 정보는 그대로 유지).
+  const RUNNING_VERSION = self.APP_VERSION || "";
+
+  async function fetchLatestVersion() {
+    try {
+      const res = await fetch(`js/version.js?ts=${Date.now()}`, { cache: "no-store" });
+      if (!res.ok) return null;
+      const m = (await res.text()).match(/APP_VERSION\s*=\s*"([^"]+)"/);
+      return m ? m[1] : null;
+    } catch (e) {
+      return null; // 오프라인 등 — 조용히 넘어간다
+    }
+  }
+
+  function renderVersionButton(latest) {
+    const btn = el("btn-refresh");
+    const label = el("app-version-text");
+    if (!btn || !label) return;
+    const hasUpdate = !!latest && !!RUNNING_VERSION && latest !== RUNNING_VERSION;
+    btn.classList.toggle("has-update", hasUpdate);
+    label.textContent = hasUpdate ? `새 버전 v${latest}` : RUNNING_VERSION ? `v${RUNNING_VERSION}` : "";
+    btn.setAttribute("aria-label", hasUpdate ? `새 버전 v${latest}이 있어요. 눌러서 업데이트` : "최신 버전으로 새로고침");
+  }
+
+  async function checkForUpdate() {
+    renderVersionButton(await fetchLatestVersion());
+  }
+
+  /** 서비스워커·캐시를 비우고 앱 파일을 서버에서 새로 받은 뒤 다시 불러온다. */
+  async function refreshApp() {
+    const btn = el("btn-refresh");
+    if (btn) btn.classList.add("busy");
+    try {
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+      if (window.caches) {
+        const names = await caches.keys();
+        await Promise.all(names.map((n) => caches.delete(n)));
+      }
+      // 브라우저 HTTP 캐시에 옛 파일이 남아 있지 않도록 페이지가 쓰는 파일을 서버에서 강제로 다시 받는다.
+      const urls = new Set([location.href.split("#")[0], new URL("manifest.json", location.href).href]);
+      document.querySelectorAll("script[src], link[rel='stylesheet']").forEach((n) => urls.add(n.src || n.href));
+      await Promise.all([...urls].map((u) => fetch(u, { cache: "reload" }).catch(() => null)));
+    } catch (e) {
+      console.error("새로고침 준비 중 오류", e);
+    }
+    location.reload();
+  }
+
+  function setupRefreshButton() {
+    const btn = el("btn-refresh");
+    if (!btn) return;
+    renderVersionButton(null);
+    btn.addEventListener("click", refreshApp);
+    checkForUpdate();
+    // 앱으로 돌아올 때마다 새 버전이 있는지 확인만 한다(자동으로 새로고침하지는 않는다).
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") checkForUpdate();
+    });
+  }
+
   async function init() {
     await loadAll();
     populateProvinces();
@@ -1867,6 +1933,7 @@
     document.querySelectorAll(".nav-item").forEach((btn) => btn.addEventListener("click", () => switchTab(btn.dataset.nav)));
     el("btn-profile-card").addEventListener("click", showProfileSheet);
     el("btn-add-child").addEventListener("click", showNewChildSheet);
+    setupRefreshButton();
 
     profile = loadProfile();
     familyCode = FamilySync.getSavedCode();

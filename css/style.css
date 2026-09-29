@@ -36,6 +36,13 @@ body {
 .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .btn-add-child { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--accent); background: #fff; color: var(--accent); font-size: 22px; line-height: 1; font-weight: 600; cursor: pointer; padding: 0; }
 .app-title { font-weight: 800; font-size: 22px; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.btn-refresh { height: 32px; border-radius: 16px; border: 1.5px solid var(--border); background: #fff; color: var(--text-muted); font-size: 12px; font-weight: 700; font-family: inherit; display: inline-flex; align-items: center; gap: 4px; padding: 0 10px; cursor: pointer; }
+.btn-refresh .refresh-icon { font-size: 15px; line-height: 1; display: inline-block; }
+.btn-refresh.has-update { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-refresh.busy { opacity: .7; pointer-events: none; }
+.btn-refresh.busy .refresh-icon { animation: refresh-spin 1s linear infinite; }
+@keyframes refresh-spin { to { transform: rotate(360deg); } }
 
 /* 프로필 카드 */
 .profile-card {
