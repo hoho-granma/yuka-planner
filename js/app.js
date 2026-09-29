@@ -257,12 +257,15 @@
     if (unsubscribeFamily) unsubscribeFamily();
     unsubscribeFamily = FamilySync.listen(familyCode, async (data) => {
       if (!data || !data.profile) return;
+      const profileChanged = JSON.stringify(profileToPlain(profileFromPlain(data.profile))) !== JSON.stringify(profileToPlain(profile));
       profile = profileFromPlain(data.profile);
       completed = data.completed || {};
       saveProfile(profile);
       saveCompleted();
       if (!el("view-calendar").classList.contains("hidden")) {
-        await buildAndRender();
+        // 완료 처리만 바뀐 경우엔 보던 탭·달을 유지한 채 일정만 다시 계산한다.
+        if (profileChanged) await buildAndRender();
+        else refreshSchedule();
       }
     });
   }

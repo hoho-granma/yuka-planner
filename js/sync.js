@@ -64,10 +64,16 @@
   }
 
   async function updateCompleted(code, completedData) {
-    await db
-      .collection("families")
-      .doc(code)
-      .set({ completed: completedData, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    // set({merge:true})는 completed 맵을 필드 단위로 병합해서, 완료 취소로 지운 키가 서버에 그대로
+    // 남아 다시 완료로 되돌아온다. update()는 completed 필드를 통째로 교체하므로 삭제가 반영된다.
+    const ref = db.collection("families").doc(code);
+    const payload = { completed: completedData, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+    try {
+      await ref.update(payload);
+    } catch (e) {
+      if (e && e.code === "not-found") await ref.set(payload, { merge: true });
+      else throw e;
+    }
   }
 
   function listen(code, onChange) {
