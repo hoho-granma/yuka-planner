@@ -683,7 +683,7 @@
   }
 
   function renderFilterChips() {
-    ["filter-chips", "filter-chips-checklist"].forEach(renderFilterChipsInto);
+    ["filter-chips-checklist"].forEach(renderFilterChipsInto);
   }
 
   function renderFilterChipsInto(containerId) {
@@ -713,8 +713,13 @@
   // 서비스 범위는 생후 0~36개월이다 — 지원금처럼 36개월 이후까지 수급기간이 이어지는 항목도
   // "언제부터 챙겨야 하는지"(e.date 기준 월령)가 36개월 이내면 보여주고, 그 이후에 처음
   // 시작되는 항목만 걸러낸다.
-  function visibleSchedule() {
-    return schedule.filter((e) => activeCats.has(e.category) && ageInMonths(profile.birthDate, e.date) <= 36);
+  function visibleSchedule(ignoreCategoryFilter) {
+    return schedule.filter((e) => (ignoreCategoryFilter || activeCats.has(e.category)) && ageInMonths(profile.birthDate, e.date) <= 36);
+  }
+
+  /** 달력·기록은 체크리스트의 카테고리 필터와 무관하게 늘 전체 카테고리를 보여준다. */
+  function calendarSchedule() {
+    return visibleSchedule(true);
   }
 
   function sameDay(a, b) {
@@ -826,12 +831,11 @@
   function renderCalendarProgress() {
     const year = viewMonth.getFullYear();
     const month = viewMonth.getMonth();
-    const monthDated = visibleSchedule().filter((e) => eventInCalendarMonth(e, year, month));
+    const monthDated = calendarSchedule().filter((e) => eventInCalendarMonth(e, year, month));
     const total = monthDated.length;
     const done = monthDated.filter((e) => completed[e.id]).length;
-    const remain = total - done;
     const percent = total ? Math.round((done / total) * 100) : 0;
-    el("cal-progress-summary").textContent = `${month + 1}월 총 ${total}개 중 ${done}개 완료 (남은 할 일 ${remain}개)`;
+    el("cal-progress-summary").innerHTML = `<span style="display:block;font-size:.8em;font-weight:500;opacity:.75">이번 달 알아둘 육아 정보</span>${month + 1}월 · ${total}개 중 ${done}개 확인`;
     el("cal-progress-bar-fill").style.width = `${percent}%`;
     el("cal-progress-bar-label").textContent = total ? `${percent}%` : "";
   }
@@ -876,7 +880,7 @@
 
     // 달력에 보여줄 항목 = 체크리스트의 대표 월령이 이번 달과 같은 항목 전부(체크리스트 기준
     // 매핑). displayMonth가 없는 항목(그때그때 확인해요)은 특정 달이 없어 달력에는 안 나온다.
-    const monthEvents = visibleSchedule().filter((e) => eventInCalendarMonth(e, year, month));
+    const monthEvents = calendarSchedule().filter((e) => eventInCalendarMonth(e, year, month));
     calendarDisplayDayMap = computeDisplayDayMap(year, month, monthEvents);
     const grid = el("calendar-grid");
     grid.innerHTML = "";
@@ -931,7 +935,7 @@
     const date = selectedCalendarDate;
     // 달력 칸의 마커는 이 달 안에서 고르게 분산배치된 위치에 찍히므로, 선택한 날짜의 목록도
     // 실제 날짜가 아니라 같은 분산배치 결과(calendarDisplayDayMap)를 기준으로 골라야 맞는다.
-    const events = visibleSchedule()
+    const events = calendarSchedule()
       .filter((e) => eventInCalendarMonth(e, date.getFullYear(), date.getMonth()) && calendarDisplayDayMap.get(e.id) === date.getDate())
       .sort((a, b) => (isImportantEvent(b) ? 1 : 0) - (isImportantEvent(a) ? 1 : 0));
     const dowNames = ["일", "월", "화", "수", "목", "금", "토"];
@@ -949,7 +953,7 @@
   function renderRemainingList() {
     const year = viewMonth.getFullYear();
     const month = viewMonth.getMonth();
-    const items = visibleSchedule().filter((e) => eventInCalendarMonth(e, year, month) && !completed[e.id]);
+    const items = calendarSchedule().filter((e) => eventInCalendarMonth(e, year, month) && !completed[e.id]);
     el("remaining-grid").innerHTML = items.map(remainingItemHtml).join("");
     el("remaining-empty").classList.toggle("hidden", items.length > 0);
   }
@@ -977,7 +981,7 @@
    */
   function subsidyDateLineForEngineEvent(e, forDetail) {
     const inst = e.detail.instance;
-    if (inst.status === "DONE") return ENGINE_STATUS_LABEL.DONE;
+    if (inst.status === "DONE") return doneWords(e.category).state;
     const periodRows = subsidyPeriodRows(e.detail.definition && e.detail.definition.todo_id, null, profile.birthDate);
     if (periodRows.length) {
       return forDetail
@@ -1012,9 +1016,57 @@
 
   function vaccinationPeriodDateLine(e) {
     const inst = e.detail.instance;
-    if (inst.status === "DONE") return ENGINE_STATUS_LABEL.DONE;
+    if (inst.status === "DONE") return doneWords(e.category).state;
     const period = periodTextFromWindow(inst.windowStart, inst.windowEnd);
     return period ? `${period} · ${e.dateLabel}` : e.dateLabel;
+  }
+
+  /** 체크리스트 카드용 지원 내용 — 첫 구절만(괄호·부연 설명 제외) 짧게 보여준다. 전체 내용은 상세에서 본다. */
+  function shortSubsidySummary(text) {
+    let t = String(text || "").split(/ — |\n|; /)[0].replace(/\s*\([^)]*\)/g, "").trim();
+    if (t.length > 40) t = t.slice(0, 40).replace(/[\s,·/]+\S*$/, "") + "…";
+    return t;
+  }
+
+  /** 항목 유형별 완료 문구 — 정보·수칙은 "확인", 접종·검진·지원금 신청은 실제 행동 "완료"로 구분한다. */
+  function doneWords(category) {
+    if (category === "예방접종") return { state: "접종 완료", mark: "접종 완료 표시", undo: "접종 완료 취소" };
+    if (category === "영유아검진") return { state: "검진 완료", mark: "검진 완료 표시", undo: "검진 완료 취소" };
+    if (category === "행정·지원금") return { state: "신청 완료", mark: "신청 완료 표시", undo: "신청 완료 취소" };
+    return { state: "확인 완료", mark: "확인했어요", undo: "확인 취소" };
+  }
+
+  function isVaccinationLike(category) {
+    return category === "예방접종" || category === "영유아검진" || category === "행정·지원금";
+  }
+
+  /** 지원금 대상 구분 태그 — 임신 중에만 신청하는 제도 / 산모(출산 후 신청 가능) 제도를 아이 대상 제도와 구분해 보여준다. */
+  function subsidyAudienceLabel(e) {
+    if (e.category !== "행정·지원금" || !e.isLegacySubsidy || !e.detail) return "";
+    if (e.detail.prenatalOnly) return "임신 중";
+    if (e.detail.audience === "mother") return isPregnant() ? "임신·산모" : "산모 대상";
+    return "";
+  }
+
+  /** 지원금을 어디서 주는지 — 전국 공통 / 시·도 / 시·군·구 단계와 상세 설명. 지원금이 아니면 null. */
+  function subsidyProvider(e) {
+    if (e.category !== "행정·지원금") return null;
+    const provShort = (p) => String(p || "").replace(/특별자치시|특별시|광역시/, "시").replace(/특별자치도/, "도");
+    if (e.isLegacySubsidy && e.detail) {
+      const s = e.detail;
+      if (s.scope === "national") return { short: "전국 공통", long: "전국 공통 (정부 지원 · 어느 지역에 살아도 신청 가능)" };
+      if (s.scope === "provincial") {
+        const regs = (s.applicableRegions || []).filter((r) => r !== "ALL");
+        const all = regs.some((r) => r.endsWith(":ALL"));
+        return all
+          ? { short: provShort(profile.province), long: `${profile.province} 지원 (${profile.province} 전체 거주자 대상)` }
+          : { short: provShort(profile.province), long: `${profile.province} 지원 (일부 시·군만 해당 — 우리 지역 ${profile.district}는 대상이에요)` };
+      }
+      return { short: profile.district, long: `${profile.province} ${profile.district} 지원 (${profile.district} 거주자 대상)` };
+    }
+    const id = e.detail && e.detail.definition && e.detail.definition.todo_id;
+    if (id === "SB-10") return { short: "거주 지자체", long: `${profile.province} ${profile.district} 등 거주 지자체 제도` };
+    return { short: "전국 공통", long: "전국 공통 (정부 지원 · 어느 지역에 살아도 신청 가능)" };
   }
 
   function eventItemHtml(e, opts) {
@@ -1049,13 +1101,15 @@
         dateLine = e.deadlineDate ? `신청 기한 지남(${formatDateKR(e.deadlineDate)}까지였어요)` : `신청 기한 지남 · ${e.dateLabel}`;
       }
     }
+    if (e.category === "행정·지원금") dateLine = String(dateLine).split(" · ")[0];
+    if (isDone) dateLine = doneWords(e.category).state;
     return `
       <div class="event-item ${isDone ? "completed" : ""} ${isDone && opts && opts.compact ? "compact" : ""}" data-id="${e.id}">
         <span class="cat-dot" style="background:${CATEGORY_META[e.category].color}"></span>
         <div class="body">
-          <p class="title">${e.title}</p>
+          <p class="title">${subsidyProvider(e) ? `<span class="scope-tag">${subsidyProvider(e).short}</span>` : ""}${subsidyAudienceLabel(e) ? `<span class="aud-tag">${subsidyAudienceLabel(e)}</span>` : ""}${e.title}</p>
           <p class="date-label">${dateLine}</p>
-          <p class="summary">${e.summary || ""}</p>
+          <p class="summary">${e.category === "행정·지원금" ? shortSubsidySummary(e.summary) : e.summary || ""}</p>
         </div>
         <span class="check ${isDone ? "checked" : ""}" data-check-id="${e.id}">${isDone ? "✓" : ""}</span>
       </div>
@@ -1230,7 +1284,7 @@
   }
 
   function renderRecordTab() {
-    const items = visibleSchedule()
+    const items = visibleSchedule(true)
       .filter((e) => completed[e.id])
       .sort((a, b) => b.date - a.date);
     el("list-record").innerHTML = items.map(eventItemHtml).join("");
@@ -1366,7 +1420,8 @@
   function detailValueHtml(v) {
     if (Array.isArray(v)) return bulletListHtml(v);
     const split = splitToBullets(v);
-    return Array.isArray(split) ? bulletListHtml(split) : split == null ? "" : split;
+    if (split == null || split === "") return "";
+    return bulletListHtml(Array.isArray(split) ? split : [split]);
   }
 
   /** "이상 기준"은 마지막 항목이 관례상 "언제 병원에 가야 하는지" 결론이라, 그 줄만
@@ -1379,7 +1434,20 @@
       .join("")}</ul>`;
   }
 
+  /** 상세 팝업의 모든 행을 점(불릿) 목록으로 통일한다 — 값이 한 줄이어도 똑같이 점 들여쓰기로 보여준다.
+   * (이미 목록·버튼 등 태그가 들어 있는 행은 건드리지 않고, 순수 텍스트 값만 감싼다.) */
+  function bulletizePlainRows(html) {
+    return html.replace(
+      /(<div class="detail-row"><div class="label">[^<]*<\/div>)([^<]+?)(<\/div>)/g,
+      (m, head, text, tail) => (text.trim() ? `${head}${bulletListHtml([text.trim()])}${tail}` : m)
+    );
+  }
+
   function detailBodyHtml(e) {
+    return bulletizePlainRows(detailBodyHtmlRaw(e));
+  }
+
+  function detailBodyHtmlRaw(e) {
     if (e.isEngineEvent) {
       const inst = e.detail.instance;
       const td = e.detail.definition;
@@ -1392,6 +1460,7 @@
       const period = isVaccineOrCheckup ? periodTextFromWindow(inst.windowStart, inst.windowEnd) : null;
       if (isObservationType) {
         return `
+          ${completed[e.id] ? `<div class="detail-row"><div class="label">현재 상태</div>${doneWords(e.category).state}</div>` : ""}
           <div class="detail-row"><div class="label">관찰 포인트</div>${detailValueHtml(td && td.observationGuide ? td.observationGuide : td ? td.parentAction : "")}</div>
           ${
             td && td.abnormalSigns
@@ -1406,15 +1475,21 @@
           <div class="detail-row"><div class="label">정보 출처</div>${td ? td.source : "-"}</div>
         `;
       }
+      const infoRowsHtml = isVaccineOrCheckup && td
+        ? `${td.about ? `<div class="detail-row"><div class="label">${e.category === "예방접종" ? "이 접종은" : "이 검진은"}</div>${detailValueHtml(td.about)}</div>` : ""}
+        ${td.why ? `<div class="detail-row"><div class="label">왜 하나요</div>${detailValueHtml(td.why)}</div>` : ""}
+        ${td.observationGuide ? `<div class="detail-row"><div class="label">주로 보는 것</div>${detailValueHtml(td.observationGuide)}</div>` : ""}
+        ${td.abnormalSigns ? `<div class="detail-row"><div class="label">정상/비정상 기준</div>${detailValueHtml(td.abnormalSigns)}</div>` : ""}`
+        : "";
       return `
         ${isPregnant() ? `<div class="detail-row"><div class="label">안내</div>출산 예정일(${formatDateKR(profile.birthDate)}) 기준 계산이에요. 실제 출산일에 따라 달라져요.</div>` : ""}
-        <div class="detail-row"><div class="label">현재 상태</div>${ENGINE_STATUS_LABEL[inst.status] || inst.status}</div>
+        <div class="detail-row"><div class="label">현재 상태</div>${inst.status === "DONE" || completed[e.id] ? doneWords(e.category).state : ENGINE_STATUS_LABEL[inst.status] || inst.status}</div>
         <div class="detail-row"><div class="label">해야 할 일</div>${detailValueHtml(td ? td.parentAction : "")}</div>
         ${
           isSubsidy
             ? `<div class="detail-row"><div class="label">신청·지급 기간</div>${subsidyDateLineForEngineEvent(e, true)}</div>`
             : period
-            ? `<div class="detail-row"><div class="label">권장 시기</div>${period} · 정확한 날짜는 병원 사정에 맞춰 예약하세요</div>`
+            ? `<div class="detail-row"><div class="label">권장 시기</div>${period}</div>`
             : `<div class="detail-row"><div class="label">완료 기준</div>${detailValueHtml(td ? td.completionCriteria : "-")}</div>`
         }
         ${
@@ -1422,6 +1497,7 @@
             ? `<div class="detail-row"><div class="label">안내</div>이 정보는 아직 검증이 더 필요해요. 정확한 내용은 공식기관에 확인해주세요.</div>`
             : ""
         }
+        ${infoRowsHtml}
         <div class="detail-row"><div class="label">정보 출처</div>${td ? td.source : "-"}</div>
       `;
     }
@@ -1474,10 +1550,10 @@
       doneDateValue = localDateInputValue(doneAt);
       completionRowHtml = `
         <div class="detail-row completion-row">
-          <div class="label">완료일</div>
+          <div class="label">${isVaccinationLike(e.category) ? "완료일" : "확인일"}</div>
           <div class="completion-line">
             <span id="completion-text">${formatDateKR(doneAt)}</span>
-            <button type="button" class="completion-change" id="btn-change-completion">완료일 변경</button>
+            <button type="button" class="completion-change" id="btn-change-completion">${isVaccinationLike(e.category) ? "완료일 변경" : "확인일 변경"}</button>
           </div>
           <div class="completion-edit hidden" id="completion-edit">
             <input type="date" id="completion-date-input" value="${doneDateValue}" max="${localDateInputValue(new Date())}" />
@@ -1486,12 +1562,14 @@
         </div>`;
     }
     el("modal-content").innerHTML = `
-      <span class="cat-badge" style="background:${meta.color}">${meta.label}</span>
+      <span class="cat-badge" style="background:${meta.color}">${meta.label}</span>${
+        subsidyProvider(e) ? `<span class="scope-tag detail-tag">${subsidyProvider(e).short}</span>` : ""
+      }${subsidyAudienceLabel(e) ? `<span class="aud-tag detail-tag">${subsidyAudienceLabel(e)}</span>` : ""}
       <h3>${e.title}</h3>
       ${detailBodyHtml(e)}
       ${e.officialUrl ? `<a class="btn-official" href="${e.officialUrl}" target="_blank" rel="noopener">공식 안내 페이지로 이동</a>` : ""}
       ${completionRowHtml}
-      <button class="btn-complete" id="btn-toggle-complete">${isDone ? "완료 취소하기" : "완료로 표시하기"}</button>
+      <button class="btn-complete" id="btn-toggle-complete">${isDone ? doneWords(e.category).undo : doneWords(e.category).mark}</button>
       ${showBack ? `<button class="btn-close" id="btn-back-to-day">← 이 날 목록으로</button>` : ""}
       <button class="btn-close" id="btn-close-modal">닫기</button>
     `;
@@ -1669,6 +1747,9 @@
 
   function handleReset() {
     localStorage.removeItem(PROFILE_KEY);
+    // 완료 기록도 함께 비운다 — 남겨 두면 새로 만든 아이(새 가족코드)에 이전 아이의 완료 상태가 섞여 들어간다.
+    completed = {};
+    saveCompleted();
     FamilySync.clearCode();
     if (unsubscribeFamily) unsubscribeFamily();
     familyCode = null;
@@ -1677,6 +1758,25 @@
     setLandingStage(null);
     updateBrandText();
     showLandingView();
+  }
+
+  /** 헤더의 + 버튼 — 새 아이를 처음부터 입력한다(새 가족코드 생성). 기존 아이는 가족코드로 다시 불러올 수 있다. */
+  function showNewChildSheet() {
+    modalMode = "new-child";
+    el("modal-content").innerHTML = `
+      <h3>새 아이 추가</h3>
+      <p class="fine-print">새 아이 정보를 입력하면 새 가족코드가 만들어지고 완료 기록도 새로 시작해요.${
+        familyCode ? `<br />지금 아이의 가족코드 <strong>${familyCode}</strong>는 저장돼 있으니, 나중에 처음 화면에서 코드를 입력하면 다시 불러올 수 있어요.` : ""
+      }</p>
+      <button class="btn-complete" id="btn-confirm-new-child">새 아이 입력하기</button>
+      <button class="btn-close" id="btn-cancel-new-child">취소</button>
+    `;
+    el("detail-modal").classList.remove("hidden");
+    el("btn-cancel-new-child").addEventListener("click", closeDetail);
+    el("btn-confirm-new-child").addEventListener("click", () => {
+      closeDetail();
+      handleReset();
+    });
   }
 
   async function init() {
@@ -1720,6 +1820,7 @@
     document.querySelectorAll(".seg-tab").forEach((btn) => btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
     document.querySelectorAll(".nav-item").forEach((btn) => btn.addEventListener("click", () => switchTab(btn.dataset.nav)));
     el("btn-profile-card").addEventListener("click", showProfileSheet);
+    el("btn-add-child").addEventListener("click", showNewChildSheet);
 
     profile = loadProfile();
     familyCode = FamilySync.getSavedCode();

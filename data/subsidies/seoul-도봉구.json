@@ -49,7 +49,8 @@
       "lastVerified": "2026-09-29",
       "status": "확정시행",
       "verified": true,
-      "notes": "deadlineValue 60은 서비스 이용 시작 가능 기한이며 최종 청구기한은 서비스 종료 후 90일. 문의 도봉구보건소 지역보건과 02-2091-4557."
+      "notes": "deadlineValue 60은 서비스 이용 시작 가능 기한이며 최종 청구기한은 서비스 종료 후 90일. 문의 도봉구보건소 지역보건과 02-2091-4557.",
+      "audience": "mother"
     },
     {
       "id": "DOBONG-003",
@@ -118,7 +119,8 @@
       "lastVerified": "2026-09-29",
       "status": "확인필요",
       "verified": false,
-      "notes": "공식 출처 미확인·금액 상충. 모든 가정 해당 아님(장애인 가정 한정)."
+      "notes": "공식 출처 미확인·금액 상충. 모든 가정 해당 아님(장애인 가정 한정).",
+      "audience": "mother"
     }
   ]
 }

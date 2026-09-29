@@ -24,7 +24,8 @@
       "displayMonth": 0,
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "출생 직후 신청 준비",
-      "categoryGroup": "행정·지원금"
+      "categoryGroup": "행정·지원금",
+      "cardSummary": "첫째 200만원 · 둘째 이상 300만원 (국민행복카드 포인트)"
     },
     {
       "todo_id": "SB-02",
@@ -51,7 +52,8 @@
       "displayMonth": 0,
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
-      "categoryGroup": "행정·지원금"
+      "categoryGroup": "행정·지원금",
+      "cardSummary": "0세 월 100만원 부모급여"
     },
     {
       "todo_id": "SB-03",
@@ -78,7 +80,8 @@
       "displayMonth": 12,
       "displayMonthLabel": "12개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
-      "categoryGroup": "행정·지원금"
+      "categoryGroup": "행정·지원금",
+      "cardSummary": "1세 월 50만원 부모급여"
     },
     {
       "todo_id": "SB-04",
@@ -105,7 +108,8 @@
       "displayMonth": 0,
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
-      "categoryGroup": "행정·지원금"
+      "categoryGroup": "행정·지원금",
+      "cardSummary": "아동수당 월 10만원 (지역별 차등)"
     },
     {
       "todo_id": "SB-05",
@@ -136,7 +140,8 @@
       "displayMonth": 0,
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
-      "categoryGroup": "행정·지원금"
+      "categoryGroup": "행정·지원금",
+      "cardSummary": "기저귀 월 9만원 · 조제분유 월 11만원 (해당자)"
     },
     {
       "todo_id": "SB-06",
@@ -167,7 +172,8 @@
       "displayMonth": 0,
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
-      "categoryGroup": "행정·지원금"
+      "categoryGroup": "행정·지원금",
+      "cardSummary": "미숙아·선천성이상아 의료비 지원"
     },
     {
       "todo_id": "SB-07",
@@ -194,7 +200,8 @@
       "displayMonth": 0,
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
-      "categoryGroup": "행정·지원금"
+      "categoryGroup": "행정·지원금",
+      "cardSummary": "어린이집 보육료 지원"
     },
     {
       "todo_id": "SB-08",
@@ -221,7 +228,8 @@
       "displayMonth": 36,
       "displayMonthLabel": "36개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
-      "categoryGroup": "행정·지원금"
+      "categoryGroup": "행정·지원금",
+      "cardSummary": "누리과정 유아학비·보육료 지원"
     },
     {
       "todo_id": "SB-09",
@@ -248,7 +256,8 @@
       "displayMonth": null,
       "displayMonthLabel": "필요할 때 확인",
       "displayMonthBasis": "소득기준 충족 여부와 실제 돌봄 필요 발생 여부에 따라 달라지는 저우선순위(priority 3) 항목이라 0개월 일괄 노출 대상에서 제외",
-      "categoryGroup": "행정·지원금"
+      "categoryGroup": "행정·지원금",
+      "cardSummary": "아이돌봄서비스 이용요금 정부지원"
     },
     {
       "todo_id": "SB-10",
@@ -267,7 +276,8 @@
       "displayMonth": null,
       "displayMonthLabel": "필요할 때 확인",
       "displayMonthBasis": "거주 지자체 및 자격에 따라 확인",
-      "categoryGroup": "행정·지원금"
+      "categoryGroup": "행정·지원금",
+      "cardSummary": "거주 지자체 지원금·제도 확인"
     }
   ]
 }

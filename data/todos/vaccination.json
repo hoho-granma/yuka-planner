@@ -44,7 +44,9 @@
       "displayMonth": 0,
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
-      "categoryGroup": "예방접종"
+      "categoryGroup": "예방접종",
+      "about": "B형간염 바이러스가 간에 만성 감염을 일으켜 간경변·간암으로 이어지는 것을 막는 백신이에요.",
+      "why": "신생아·영아는 감염되면 만성 보균자가 될 확률이 높아서, 태어나자마자 시작해 3회로 면역을 완성해요. 산모가 보균자면 출생 직후 면역글로불린을 함께 맞기도 해요."
     },
     {
       "todo_id": "VX-BCG",
@@ -66,7 +68,9 @@
       "displayMonth": 0,
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
-      "categoryGroup": "예방접종"
+      "categoryGroup": "예방접종",
+      "about": "결핵균을 막는 백신이에요. 피내용(주사)으로 접종하고, 국가예방접종은 피내용만 지원돼요.",
+      "why": "영유아 결핵은 결핵성 수막염 같은 중증으로 진행하기 쉬워서, 생후 4주 이내에 1회 맞춰 중증 결핵을 예방해요."
     },
     {
       "todo_id": "VX-DTAP",
@@ -125,7 +129,9 @@
       "displayMonth": 2,
       "displayMonthLabel": "2개월",
       "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
-      "categoryGroup": "예방접종"
+      "categoryGroup": "예방접종",
+      "about": "디프테리아·파상풍·백일해 3가지 감염병을 한 번에 막는 혼합백신이에요.",
+      "why": "백일해는 영아에게 무호흡·폐렴을 일으켜 위험하고, 파상풍·디프테리아는 치명적이에요. 초기 3회 접종 후 추가접종으로 면역을 유지해요."
     },
     {
       "todo_id": "VX-IPV",
@@ -176,7 +182,9 @@
       "displayMonth": 2,
       "displayMonthLabel": "2개월",
       "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
-      "categoryGroup": "예방접종"
+      "categoryGroup": "예방접종",
+      "about": "소아마비(폴리오)를 막는 불활성화 백신이에요.",
+      "why": "폴리오 바이러스는 신경을 침범해 영구적인 팔다리 마비를 남길 수 있어요. 국내는 퇴치됐지만 해외 유입 가능성이 있어 계속 접종해요."
     },
     {
       "todo_id": "VX-HIB",
@@ -227,7 +235,9 @@
       "displayMonth": 2,
       "displayMonthLabel": "2개월",
       "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
-      "categoryGroup": "예방접종"
+      "categoryGroup": "예방접종",
+      "about": "b형 헤모필루스인플루엔자균이 일으키는 세균성 수막염·폐렴·패혈증 등을 막는 백신이에요.",
+      "why": "만 5세 미만, 특히 2세 미만 영아에게 중증 감염이 잘 생겨서 생후 2개월부터 맞아요."
     },
     {
       "todo_id": "VX-PCV",
@@ -278,7 +288,9 @@
       "displayMonth": 2,
       "displayMonthLabel": "2개월",
       "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
-      "categoryGroup": "예방접종"
+      "categoryGroup": "예방접종",
+      "about": "폐렴구균이 일으키는 폐렴·중이염·수막염·패혈증 등을 막는 단백결합 백신이에요.",
+      "why": "영유아는 폐렴구균 감염에 취약하고 중증으로 번지기 쉬워서, 생후 2개월부터 4회에 걸쳐 접종해요."
     },
     {
       "todo_id": "VX-MMR",
@@ -313,7 +325,9 @@
       "displayMonth": 12,
       "displayMonthLabel": "12개월",
       "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
-      "categoryGroup": "예방접종"
+      "categoryGroup": "예방접종",
+      "about": "홍역·유행성이하선염(볼거리)·풍진 3가지를 한 번에 막는 생백신이에요.",
+      "why": "홍역은 전염력이 매우 강하고 폐렴·뇌염 합병증이 있어요. 집단 면역을 유지하는 것도 중요해서 2회 접종해요."
     },
     {
       "todo_id": "VX-VAR",
@@ -335,7 +349,9 @@
       "displayMonth": 12,
       "displayMonthLabel": "12개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
-      "categoryGroup": "예방접종"
+      "categoryGroup": "예방접종",
+      "about": "수두-대상포진 바이러스를 막는 생백신이에요.",
+      "why": "수두는 전염력이 강해 어린이집·유치원에서 쉽게 번져요. 접종하면 걸려도 가볍게 지나가는 경우가 많고, 중증 합병증을 줄여요."
     },
     {
       "todo_id": "VX-HEPA",
@@ -371,7 +387,9 @@
       "displayMonth": 12,
       "displayMonthLabel": "12개월",
       "displayMonthBasis": "접종 시리즈 중 첫 접종 월령",
-      "categoryGroup": "예방접종"
+      "categoryGroup": "예방접종",
+      "about": "A형간염 바이러스를 막는 백신이에요.",
+      "why": "오염된 음식·물, 어린이집 등 집단생활로 전파돼요. 영유아는 증상이 약해 눈에 띄지 않은 채 주변에 퍼뜨릴 수 있어서 1세 이후 2회 접종해요."
     },
     {
       "todo_id": "VX-JEV",
@@ -461,7 +479,9 @@
       "displayMonth": 12,
       "displayMonthLabel": "12개월",
       "displayMonthBasis": "제품별 접종 일정 중 가장 이른 첫 접종 월령",
-      "categoryGroup": "예방접종"
+      "categoryGroup": "예방접종",
+      "about": "모기가 옮기는 일본뇌염 바이러스를 막는 백신이에요. 사백신(5회)과 생백신(2회) 중 선택해요.",
+      "why": "일본뇌염은 걸리면 뇌염으로 이어져 후유증·사망 위험이 있어요. 모기 활동 시기에 앞서 접종 일정을 맞추는 게 좋아요."
     },
     {
       "todo_id": "VX-ROTA",
@@ -533,7 +553,9 @@
       "displayMonth": 2,
       "displayMonthLabel": "2개월",
       "displayMonthBasis": "제품별 접종 일정 중 가장 이른 첫 접종 월령",
-      "categoryGroup": "예방접종"
+      "categoryGroup": "예방접종",
+      "about": "로타바이러스로 인한 심한 장염(구토·설사·탈수)을 막는 먹는 백신이에요.",
+      "why": "영유아 급성 장염의 가장 흔한 원인이에요. 접종 시기가 정해져 있어(생후 8개월 0일 이전 완료) 늦으면 맞을 수 없어요. 제품에 따라 2회(로타릭스) 또는 3회(로타텍)예요."
     },
     {
       "todo_id": "VX-FLU",
@@ -562,7 +584,9 @@
       "displayMonth": 6,
       "displayMonthLabel": "6개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
-      "categoryGroup": "예방접종"
+      "categoryGroup": "예방접종",
+      "about": "매년 유행하는 인플루엔자(독감) 바이러스를 막는 백신이에요.",
+      "why": "영유아는 독감에 걸리면 폐렴 등 합병증 위험이 커요. 백신 성분이 매년 바뀌고 면역이 오래가지 않아 6개월부터 매년 맞아요. 생후 6개월 미만은 접종할 수 없어요."
     }
   ]
 }

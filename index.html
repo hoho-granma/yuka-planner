@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#ff8a5c" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
-<link rel="stylesheet" href="css/style.css?v=13" />
+<link rel="stylesheet" href="css/style.css?v=17" />
 </head>
 <body>
   <main id="app">
@@ -119,6 +119,7 @@
     <section id="view-calendar" class="view hidden">
       <header class="app-header">
         <span class="app-title" id="brand-text">한눈육아</span>
+        <button type="button" class="btn-add-child" id="btn-add-child" aria-label="새 아이 추가">+</button>
       </header>
 
       <button type="button" class="profile-card" id="btn-profile-card">
@@ -173,12 +174,11 @@
         </div>
 
         <div class="card list-card">
-          <h2>이번 달 남은 할 일 목록</h2>
+          <h2>이번 달 미확인 정보</h2>
           <div id="remaining-grid" class="remaining-grid"></div>
-          <p id="remaining-empty" class="empty hidden">이번 달 남은 할 일이 없어요 🎉</p>
+          <p id="remaining-empty" class="empty hidden">이번 달 미확인 정보가 없어요 🎉</p>
         </div>
 
-        <div class="filter-chips" id="filter-chips"></div>
       </div>
 
       <!-- 전체 체크리스트 탭 -->
@@ -191,9 +191,9 @@
       <!-- 기록 탭(완료한 것만) -->
       <div id="tab-record" class="tab-panel hidden">
         <div class="card list-card">
-          <h2>완료 기록</h2>
+          <h2>확인·완료 기록</h2>
           <div id="list-record" class="event-list"></div>
-          <p id="empty-record" class="empty hidden">아직 완료한 게 없어요.</p>
+          <p id="empty-record" class="empty hidden">아직 확인·완료한 게 없어요.</p>
         </div>
       </div>
 

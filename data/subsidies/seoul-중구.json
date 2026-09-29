@@ -56,7 +56,8 @@
       "applicableRegions": [
         "서울특별시:중구"
       ],
-      "lastVerified": "2026-09-29"
+      "lastVerified": "2026-09-29",
+      "audience": "mother"
     }
   ]
 }

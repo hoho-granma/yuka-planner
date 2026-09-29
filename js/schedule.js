@@ -139,7 +139,7 @@ function buildTodoEngineEvents(profile, todoDefinitions, completions) {
       date: inst.windowStart || new Date(),
       dateLabel: ENGINE_STATUS_LABEL[inst.status] || inst.status,
       isDateSpecific,
-      summary: td ? td.parentAction : "",
+      summary: td ? (td.cardSummary || td.parentAction) : "",
       detail: { instance: inst, definition: td },
       source: td ? td.source : "",
       officialUrl: null,
