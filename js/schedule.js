@@ -19,7 +19,7 @@ const CATEGORY_META = {
   "발달관찰": { label: "발달", color: "#22c55e" }, // 초록
   "예방접종": { label: "접종", color: "#3b82f6" }, // 파랑
   "영유아검진": { label: "검진", color: "#a855f7" }, // 보라
-  "생활·수유": { label: "생활", color: "#f59e0b" }, // 주황
+  "생활·수유": { label: "생활", color: "#eab308" }, // 노랑
   "안전·돌봄": { label: "안전", color: "#ef4444" }, // 빨강
   "행정·지원금": { label: "지원금", color: "#475569" }, // 슬레이트 네이비(무채색)
 };

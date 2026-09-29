@@ -339,17 +339,17 @@ select:disabled { background: #f7f2ec; color: var(--text-muted); }
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 700; color: #fff;
 }
-.cal-legend { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 14px; margin-top: 6px; }
-.cal-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
-.cal-legend-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.cal-legend { margin-top: 6px; }
+.cal-legend-item { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.cal-legend-item .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
 .calendar-grid-v2 .day-cell { min-height: 56px; padding: 6px 2px 4px; text-align: left; }
 .calendar-grid-v2 .day-cell .num { padding-left: 4px; font-size: 12px; }
 .calendar-grid-v2 .day-cell.selected { outline: 2px solid var(--accent); outline-offset: -2px; }
 .calendar-grid-v2 .markers { display: flex; justify-content: center; align-items: center; gap: 3px; margin-top: 4px; flex-wrap: wrap; }
 .cal-marker {
-  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; font-size: 9px; color: #fff; line-height: 1;
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 7px; color: #fff; line-height: 1;
 }
 .cal-marker.todo { }
 .cal-marker.done-strong { }
@@ -537,8 +537,31 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
   .region-chips { gap: 6px; }
   .region-chip { font-size: 12.5px; padding: 10px 0; }
   .district-wrap { padding: 10px; }
-  .cal-legend { gap: 6px 10px; }
 }
 @media (min-width: 400px) {
   .region-chip { font-size: 14px; padding: 11px 2px; }
 }
+
+/* ── 전체 체크리스트: 달력 카드와 같은 너비 + 월령 타임라인(점·선) 유지 ── */
+#list-checklist { padding-left: 0; width: 100%; }
+#list-checklist::before { display: none; }
+.month-group-card { position: relative; padding-left: 0; }
+.month-group-card::before { display: block; left: 0; top: 4px; z-index: 1; }
+.month-group-card::after {
+  content: ""; position: absolute; left: 5px; top: 16px; bottom: -24px; width: 2px; background: var(--border);
+}
+.month-group-card:last-child::after { display: none; }
+.month-group-card.open::after { bottom: auto; height: 26px; }
+.month-group-card .ongoing-group-header { padding: 0 2px 10px 22px; }
+.month-group-card, .month-group-card .ongoing-group-body, .event-list { min-width: 0; max-width: 100%; }
+.event-item { min-width: 0; max-width: 100%; width: 100%; }
+.event-item .body { min-width: 0; }
+.event-item .title, .event-item .date-label, .event-item .summary { overflow-wrap: anywhere; }
+
+/* 달력 범례: 6개를 항상 한 줄로 */
+.cal-legend { display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 4px clamp(6px, 2.6vw, 12px); }
+.cal-legend-item { font-size: clamp(11px, 3.4vw, 13px); gap: 4px; white-space: nowrap; }
+.cal-legend-item .dot { width: 8px; height: 8px; }
+
+/* 상세 팝업 버튼 글씨 */
+.modal-panel .btn-close, .modal-panel .btn-complete, .modal-panel .btn-official { font-size: 16px; padding: 14px; min-height: 50px; }
