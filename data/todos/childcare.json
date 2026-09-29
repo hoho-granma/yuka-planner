@@ -22,7 +22,7 @@
       "displayMonth": null,
       "displayMonthLabel": "필요할 때 확인",
       "displayMonthBasis": "어린이집 이용 계획이 있는 가정만 해당하며 계획 시점에 따라 준비 시점이 크게 달라짐(국공립 대기가 긴 경우 조기 신청이 유리하나 전 가정 공통 사항 아님) — 0개월 일괄 노출 대상에서 제외",
-      "categoryGroup": "안전·돌봄",
+      "categoryGroup": "생활·수유",
       "observationGuide": [
         "거주지 인근 어린이집의 대기 순번",
         "정원 현황을 아이사랑포털에서 주기적으로 확인"
@@ -51,7 +51,7 @@
       "displayMonth": 12,
       "displayMonthLabel": "12개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
-      "categoryGroup": "안전·돌봄",
+      "categoryGroup": "생활·수유",
       "observationGuide": [
         "반 편성 시점과 아이의 월령·발달 수준이 맞는지 기관에 확인"
       ]
@@ -76,7 +76,7 @@
       "displayMonth": 30,
       "displayMonthLabel": "만 2세 (24~36개월)",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
-      "categoryGroup": "안전·돌봄",
+      "categoryGroup": "생활·수유",
       "observationGuide": [
         "만3세 진입 전 반 편성 변경 안내를 기관에서 미리 확인"
       ]
@@ -101,7 +101,7 @@
       "displayMonth": 6,
       "displayMonthLabel": "6개월",
       "displayMonthBasis": "어린이집 입소 계획이 있는 가정이 준비를 시작하는 시점으로 6개월부터 안내(0~5개월 노출 제외)",
-      "categoryGroup": "안전·돌봄",
+      "categoryGroup": "생활·수유",
       "observationGuide": [
         "등원 초기 울음",
         "식사·낮잠 거부",

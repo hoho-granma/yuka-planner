@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#ff8a5c" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
-<link rel="stylesheet" href="css/style.css?v=18" />
+<link rel="stylesheet" href="css/style.css?v=47" />
 </head>
 <body>
   <main id="app">
@@ -19,18 +19,18 @@
     <section id="view-landing" class="view">
       <div class="hero">
         <h1 id="hero-title">아이 키우면서 챙겨야 할 모든 것<br /><span class="hl">한눈육아</span> 하나로.</h1>
-        <p class="sub" id="hero-sub">아이 생년월일과 사는 지역만 알려주시면<br />건강검진·예방접종·지원금·발달까지 한 캘린더에서 챙겨드려요.</p>
+        <p class="sub" id="hero-sub">아이 생년월일과 사는 지역만 알려주시면<br />건강검진·예방접종·육아 혜택·발달까지 한 캘린더에서 챙겨드려요.</p>
       </div>
 
       <div id="stage-choice" class="card form-card stage-choice">
         <p class="stage-question">지금 어떤 상황이세요?</p>
         <button type="button" class="stage-btn" data-stage="pregnant">
-          <span class="stage-emoji">🤰</span>
-          <span><strong>임신 중이에요</strong><small>출산 예정일로 임신 중 지원금부터 챙겨요</small></span>
+          <span class="stage-icon" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="10" r="5"/><path d="M20 16c-4 1-6 5-6 10v8"/><path d="M20 16c4 0 7 3 8 7 2 1 4 4 4 8 0 5-4 8-9 8h-4"/><path d="M28 27c-2 1-3 3-3 5"/><path d="M14 34l-1 8M22 41l1 3"/></svg></span>
+          <span><strong>임신 중이에요</strong><small>출산 예정일로 임신 중 혜택부터 챙겨요</small></span>
         </button>
         <button type="button" class="stage-btn" data-stage="born">
-          <span class="stage-emoji">👶</span>
-          <span><strong>아이가 태어났어요</strong><small>생년월일로 검진·접종·지원금을 챙겨요</small></span>
+          <span class="stage-icon" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="25" r="15"/><path d="M20 10c1-3 5-4 7-1"/><circle cx="18.5" cy="24" r="1.2" fill="currentColor"/><circle cx="29.5" cy="24" r="1.2" fill="currentColor"/><path d="M20 31c2.5 2.5 5.5 2.5 8 0"/></svg></span>
+          <span><strong>아이가 태어났어요</strong><small>생년월일로 검진·접종·혜택을 챙겨요</small></span>
         </button>
       </div>
 
@@ -98,9 +98,10 @@
           <select id="district" class="native-hidden" tabindex="-1" aria-hidden="true" disabled>
             <option value="" disabled selected></option>
           </select>
+          <p class="region-hint" id="region-hint">📍 선택한 지역의 지원 제도·혜택도 함께 확인할 수 있어요.</p>
         </div>
 
-        <button type="submit" class="btn-primary" id="btn-submit">우리 아이 캘린더 만들기</button>
+        <button type="submit" class="btn-primary" id="btn-submit">우리 아이 맞춤 육아 일정 만들기</button>
         <p class="fine-print">회원가입 없이 바로 시작해요. 가족코드로 다른 기기에서도 이어볼 수 있어요.</p>
       </form>
 
@@ -115,7 +116,7 @@
       </div>
     </section>
 
-    <!-- 2. 대시보드(오늘/달력/전체 체크리스트) -->
+    <!-- 2. 대시보드: 하단 탭 4개(홈·캘린더·기록·지원금) + 전체 할 일 서브 화면 -->
     <section id="view-calendar" class="view hidden">
       <header class="app-header">
         <span class="app-title" id="brand-text">한눈육아</span>
@@ -127,24 +128,25 @@
         </div>
       </header>
 
-      <button type="button" class="profile-card" id="btn-profile-card">
-        <span class="avatar" id="profile-avatar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="person-icon"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
-        </span>
-        <span class="profile-text">
-          <strong id="profile-name-age"></strong>
-          <span class="profile-location">📍 <span id="profile-location-text"></span></span>
-        </span>
-        <span class="chevron">›</span>
-      </button>
-
-      <div class="segmented-tabs" id="segmented-tabs">
-        <button type="button" class="seg-tab" data-tab="calendar">달력</button>
-        <button type="button" class="seg-tab" data-tab="checklist">전체 체크리스트</button>
+      <!-- 홈 -->
+      <div id="tab-home" class="tab-panel">
+        <div class="profile-row">
+          <button type="button" class="profile-card" id="btn-profile-card">
+            <span class="avatar" id="profile-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="person-icon"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
+            </span>
+            <span class="profile-text">
+              <strong id="profile-name-age"></strong>
+              <span class="profile-location">📍 <span id="profile-location-text"></span></span>
+            </span>
+            <span class="chevron">›</span>
+          </button>
+        </div>
+        <div id="home-body"></div>
       </div>
 
-      <!-- 달력 탭 -->
-      <div id="tab-calendar" class="tab-panel">
+      <!-- 캘린더 -->
+      <div id="tab-calendar" class="tab-panel hidden">
         <div class="card cal-progress-card">
           <div class="cal-progress-row">
             <span class="progress-icon">
@@ -161,55 +163,75 @@
 
         <div class="card calendar-card">
           <div class="calendar-nav">
-            <button id="btn-prev-month" class="btn-icon">◀</button>
+            <button id="btn-prev-month" class="btn-icon" aria-label="이전 달">◀</button>
             <h2 id="calendar-title"></h2>
-            <button id="btn-next-month" class="btn-icon">▶</button>
+            <button id="btn-next-month" class="btn-icon" aria-label="다음 달">▶</button>
           </div>
           <div class="calendar-weekdays">
             <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
           </div>
           <div id="calendar-grid" class="calendar-grid calendar-grid-v2"></div>
+          <div class="cal-kind-legend" id="cal-kind-legend">
+            <span><i class="kl-dot"></i>혜택은 신청 시작일 · 그 외는 추천일(정해진 예정일이 아니에요)</span>
+          </div>
         </div>
 
         <div class="card selected-day-card">
           <div class="selected-day-handle"></div>
           <h3 id="selected-day-title">선택한 날짜</h3>
           <div id="selected-day-list" class="event-list"></div>
-          <p id="selected-day-empty" class="empty hidden">이 날은 챙길 일이 없어요.</p>
+          <p id="selected-day-empty" class="empty hidden">이 날 표시할 항목이 없어요.</p>
         </div>
-
-        <div class="card list-card">
-          <h2>이번 달 미확인 정보</h2>
-          <div id="remaining-grid" class="remaining-grid"></div>
-          <p id="remaining-empty" class="empty hidden">이번 달 미확인 정보가 없어요 🎉</p>
-        </div>
-
       </div>
 
-      <!-- 전체 체크리스트 탭 -->
+      <!-- 전체 할 일(서브 화면 — 홈의 "전체 할 일 보기"로 들어온다) -->
       <div id="tab-checklist" class="tab-panel hidden">
+        <div class="sub-header">
+          <button type="button" class="btn-back hidden" id="btn-todos-back">‹ 홈</button>
+          <h2>체크리스트</h2>
+        </div>
+        <div class="scope-banner hidden" id="checklist-scope-banner"><span class="scope-label"></span><button type="button" id="btn-scope-clear">전체 할 일 보기</button></div>
+        <div class="status-filter" id="status-filter-checklist" role="tablist" aria-label="완료 상태">
+          <button type="button" class="sf-btn" data-status="all">전체</button>
+          <button type="button" class="sf-btn" data-status="todo">미완료</button>
+          <button type="button" class="sf-btn" data-status="done">완료</button>
+        </div>
         <div class="filter-chips" id="filter-chips-checklist"></div>
         <div id="list-checklist" class="event-list"></div>
         <p id="empty-checklist" class="empty hidden">해당하는 항목이 없어요.</p>
       </div>
 
-      <!-- 기록 탭(완료한 것만) -->
+      <!-- 기록 -->
       <div id="tab-record" class="tab-panel hidden">
-        <div class="card list-card">
-          <h2>확인·완료 기록</h2>
-          <div id="list-record" class="event-list"></div>
-          <p id="empty-record" class="empty hidden">아직 확인·완료한 게 없어요.</p>
-        </div>
+        <div class="filter-chips record-filter" id="record-filter"></div>
+        <div id="list-record" class="event-list"></div>
+        <p id="empty-record" class="empty hidden"></p>
+        <button type="button" class="fab" id="btn-add-record">＋ 기록 추가</button>
       </div>
 
-      <nav class="bottom-nav">
+      <!-- 지원금·제도 -->
+      <div id="tab-subsidy" class="tab-panel hidden">
+        <div class="segmented-tabs" id="subsidy-seg" role="tablist" aria-label="신청 상태"></div>
+        <div class="filter-chips subsidy-scope" id="subsidy-scope"></div>
+        <div id="subsidy-body"></div>
+      </div>
+
+      <nav class="bottom-nav" aria-label="주요 화면">
+        <button type="button" class="nav-item" data-nav="home">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></span>
+          <span>홈</span>
+        </button>
         <button type="button" class="nav-item" data-nav="calendar">
           <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg></span>
-          <span>달력</span>
+          <span>캘린더</span>
         </button>
         <button type="button" class="nav-item" data-nav="checklist">
           <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span>
           <span>체크리스트</span>
+        </button>
+        <button type="button" class="nav-item" data-nav="subsidy">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.5"/><path d="M6.5 9.5v.01M17.5 14.5v.01"/></svg></span>
+          <span>육아 혜택</span>
         </button>
         <button type="button" class="nav-item" data-nav="record">
           <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/></svg></span>
@@ -226,11 +248,16 @@
 
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="js/sync.js?v=3"></script>
+  <script src="js/sync.js?v=4"></script>
   <script src="js/version.js?v=1"></script>
   <script src="js/todo-engine.js?v=2"></script>
-  <script src="js/schedule.js?v=5"></script>
-  <script src="js/app.js?v=18"></script>
+  <script src="js/schedule.js?v=9"></script>
+  <script src="js/hn-logic.js?v=4"></script>
+  <script src="js/records.js?v=1"></script>
+  <script src="js/home.js?v=19"></script>
+  <script src="js/subsidy-view.js?v=3"></script>
+  <script src="js/records-view.js?v=3"></script>
+  <script src="js/app.js?v=50"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

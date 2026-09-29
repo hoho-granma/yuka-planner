@@ -596,3 +596,322 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .scope-tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 8px; background: #e8f1fb; color: #2f6db3; font-size: 11px; font-weight: 700; vertical-align: 1px; }
 .modal-panel .detail-tag { margin: 0 0 10px 6px; padding: 3px 8px; font-size: 11px; border-radius: 999px; vertical-align: baseline; }
 .empty-month-note { margin: 0; padding: 12px 16px; font-size: 13px; color: #9a8b80; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   UX 개편(홈 · 캘린더 3유형 · 기록 · 지원금 탭) — 기존 토큰·카드 스타일을 그대로 쓴다
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 온보딩 지역 안내 */
+.region-hint { margin: 10px 0 0; font-size: 12px; color: var(--text-muted); text-align: left; }
+
+/* 홈: 프로필 + 아이 전환 */
+.profile-row { display: flex; gap: 8px; align-items: stretch; margin-bottom: 16px; }
+.profile-row .profile-card { margin-bottom: 0; flex: 1; min-width: 0; }
+.btn-switch-child {
+  flex-shrink: 0; width: 56px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--card-bg);
+  color: var(--accent-dark); font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.btn-switch-child span:first-child { font-size: 18px; line-height: 1; }
+
+/* 홈 섹션 */
+.home-sec { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+.home-sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.home-sec-head h3 { margin: 0; font-size: 16px; }
+.home-note { margin: 0 0 8px; font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+.home-row {
+  width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; font-family: inherit; color: var(--text);
+  background: none; border: none; border-top: 1px solid var(--border); padding: 11px 2px; cursor: pointer; min-height: 52px;
+}
+.home-sec-head + .home-row, .home-note + .home-row { border-top: none; }
+.home-row .cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.home-row .hr-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.home-row .hr-body strong { font-size: 14px; overflow-wrap: anywhere; }
+.home-row .hr-body small { font-size: 12px; color: var(--text-muted); overflow-wrap: anywhere; }
+.home-row .hr-chev { color: var(--text-muted); font-size: 18px; flex-shrink: 0; }
+.home-row.late .hr-body small { color: #b4691f; }
+.home-more { display: block; width: 100%; margin-top: 8px; padding: 10px; border-radius: 12px; border: 1px solid var(--border); background: #fffaf5; color: var(--accent-dark); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; min-height: 44px; }
+.home-empty { display: flex; flex-direction: column; gap: 4px; padding: 6px 0 2px; }
+.home-empty strong { font-size: 14px; }
+.home-empty span { font-size: 12px; color: var(--text-muted); }
+.home-empty-line { margin: 0; font-size: 13px; color: var(--text-muted); }
+.home-banner { background: #fff0e4; border: 1px solid #ffd9bd; border-radius: var(--radius); padding: 14px 16px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 4px; }
+.home-banner strong { font-size: 15px; color: var(--accent-dark); }
+.home-banner span { font-size: 12px; color: var(--text); line-height: 1.55; }
+/* 지원금 카드는 일반 일정과 시각적으로 구분(주황 강조), 마감 임박은 한 단계 더 진하게 */
+.home-sec.sec-subsidy { background: #fffaf3; border-color: #ffdcb8; }
+.home-row.urgent { background: #fff1e8; border-radius: 10px; padding-left: 8px; padding-right: 8px; border-top-color: transparent; }
+.urgent-tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 8px; background: #e0524e; color: #fff; font-size: 11px; font-weight: 800; }
+.home-row .scope-tag { margin-right: 6px; }
+.home-row .rec-cat { flex-shrink: 0; min-width: 50px; text-align: center; padding: 4px 6px; border-radius: 8px; background: #f3ece3; color: var(--text-muted); font-size: 11px; font-weight: 700; }
+.home-all {
+  width: 100%; display: flex; align-items: center; gap: 10px; justify-content: space-between; text-align: left;
+  padding: 16px; border-radius: var(--radius); border: 1.5px solid var(--accent); background: #fff; color: var(--accent-dark);
+  font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer; min-height: 56px; margin-bottom: 8px;
+}
+.home-all small { flex: 1; font-size: 12px; font-weight: 500; color: var(--text-muted); }
+.home-all b { font-size: 20px; }
+
+/* 전체 할 일(서브 화면) */
+.sub-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.sub-header h2 { margin: 0; font-size: 18px; }
+.btn-back { border: none; background: none; color: var(--accent-dark); font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; padding: 8px 6px 8px 0; min-height: 44px; }
+.status-filter { display: flex; background: #f3ece3; border-radius: 999px; padding: 4px; margin-bottom: 12px; gap: 2px; }
+.sf-btn { flex: 1; border: none; background: none; padding: 9px 6px; border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; font-family: inherit; min-height: 40px; }
+.sf-btn.active { background: #fff; color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.now-badge { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; vertical-align: 2px; }
+.now-badge.next { background: #f3ece3; color: var(--accent-dark); }
+
+/* 캘린더: 권장 기간 띠 · 마감 점 · 유형 태그 */
+.calendar-grid-v2 .day-cell { position: relative; min-height: 60px; }
+.win-bars { display: flex; flex-direction: column; gap: 2px; margin-top: 3px; padding: 0 1px; }
+.win-bar { display: block; height: 4px; border-radius: 2px; opacity: .55; }
+.win-bar.done { background: #e5e1dc; opacity: 1; }
+.win-bars .cal-marker-more { align-self: flex-end; line-height: 1; }
+.cal-kind-legend { display: flex; gap: 14px; justify-content: center; margin-top: 10px; font-size: 12px; color: var(--text-muted); }
+.cal-kind-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.kl-dot { width: 9px; height: 9px; border-radius: 50%; background: #64748b; display: inline-block; }
+.kl-bar { width: 16px; height: 4px; border-radius: 2px; background: #64748b; opacity: .55; display: inline-block; }
+.day-group-title { margin: 10px 0 8px; font-size: 13px; font-weight: 800; color: var(--text); }
+.day-group-title small { font-weight: 500; color: var(--text-muted); margin-left: 4px; }
+.day-group-title:first-child { margin-top: 0; }
+.month-check-note { text-align: left; margin: -6px 0 10px; }
+.remaining-item.done { color: var(--text-muted); text-decoration: line-through; }
+.remaining-item .ri-check { color: var(--success); font-size: 11px; margin-left: 2px; }
+.kind-tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 8px; font-size: 11px; font-weight: 700; vertical-align: 1px; }
+.kind-tag.k-fixed { background: #fde8e8; color: #c23a37; }
+.kind-tag.k-window { background: #e6f4ec; color: #2f7d55; }
+.kind-tag.k-monthly { background: #eee9e3; color: #7a6c63; }
+
+/* 지원금·제도 탭 */
+#subsidy-seg { margin-bottom: 12px; }
+#subsidy-seg .seg-tab { font-size: 13px; min-height: 40px; }
+.seg-n { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 2px; border-radius: 999px; background: #e9dfd5; color: var(--text-muted); font-size: 11px; }
+.seg-tab.active .seg-n { background: var(--accent); color: #fff; }
+.scope-chip.active, .rec-chip.active, .rv-cat.active { background: var(--accent); color: #fff; border-color: transparent; }
+.sub-region-note { margin: 0 0 12px; font-size: 12px; color: var(--text-muted); }
+.sub-group-title { margin: 16px 0 8px; font-size: 15px; }
+.sub-group-title small { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-left: 4px; }
+.sub-group-title.urgent { color: #c23a37; }
+.sub-wrap { margin-bottom: 10px; }
+.sub-wrap .event-item { margin: 0; }
+.sub-wrap.urgent .event-item { border-color: #f2b8a6; background: #fff6f1; }
+.urgent-badge { display: inline-block; margin: 0 0 6px 2px; padding: 3px 10px; border-radius: 999px; background: #e0524e; color: #fff; font-size: 12px; font-weight: 800; }
+.applied-at { margin: 0 0 6px 2px; font-size: 12px; font-weight: 700; color: #2f7d55; }
+.sub-link { display: inline-block; margin: 6px 4px 0; font-size: 12px; font-weight: 700; color: var(--accent-dark); text-decoration: none; padding: 4px 2px; }
+.sub-expired-toggle { display: block; width: 100%; margin: 18px 0 8px; padding: 12px; border: 1px dashed var(--border); border-radius: 12px; background: none; color: var(--text-muted); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.sub-expired { opacity: .75; }
+
+/* 기록 탭 */
+.record-filter { position: sticky; top: 0; background: var(--bg); padding: 4px 0 8px; margin-bottom: 4px; z-index: 5; }
+.rec-month { margin: 16px 0 8px; font-size: 14px; color: var(--text-muted); }
+.rec-row {
+  width: 100%; display: flex; align-items: flex-start; gap: 12px; text-align: left; font-family: inherit; color: var(--text);
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 8px; cursor: pointer; min-height: 56px;
+}
+.rec-row.manual { border-left: 4px solid var(--accent); }
+.rec-day { flex-shrink: 0; min-width: 40px; font-size: 13px; font-weight: 800; color: var(--accent-dark); padding-top: 1px; }
+.rec-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rec-main strong { font-size: 14px; overflow-wrap: anywhere; }
+.rec-main small { font-size: 12px; color: var(--text-muted); }
+.rec-main em { font-style: normal; font-size: 12px; color: var(--text); opacity: .8; overflow-wrap: anywhere; }
+.rec-row .hr-chev { color: var(--text-muted); font-size: 18px; align-self: center; }
+.sync-note { margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; background: #f3ece3; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+.sync-note.warn { background: #fff3dc; color: #8a5a12; }
+.fab {
+  position: fixed; right: max(16px, calc(50% - 224px)); bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 25;
+  padding: 14px 20px; border: none; border-radius: 999px; background: var(--accent); color: #fff;
+  font-family: inherit; font-size: 15px; font-weight: 800; box-shadow: 0 6px 16px rgba(255,138,92,.4); cursor: pointer; min-height: 50px;
+}
+.fab:active { transform: scale(.97); background: var(--accent-dark); }
+#tab-record { padding-bottom: 72px; }
+.tab-panel.hidden .fab { display: none; }
+
+/* 기록 상세·작성 폼(모달) */
+.rv-field { margin-bottom: 14px; }
+.rv-field label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 700; }
+.rv-field label small { font-weight: 500; color: var(--text-muted); }
+.rv-field input[type="text"], .rv-field input[type="date"], .rv-textarea {
+  width: 100%; border: 1.5px solid var(--border); border-radius: 12px; padding: 10px 12px; font-family: inherit; font-size: 16px; color: var(--text); background: #fff;
+}
+.rv-textarea { min-height: 84px; resize: vertical; line-height: 1.5; }
+.rv-cats { display: flex; flex-wrap: wrap; gap: 8px; }
+.rv-cat { min-height: 40px; padding: 8px 14px; font-size: 13px; }
+.rv-age { display: block; margin-top: 4px; font-size: 12px; color: var(--accent-dark); font-weight: 700; }
+.rv-save { margin-top: 8px; }
+.rv-memo-text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.rv-none { font-size: 13px; color: var(--text-muted); }
+.rv-photo img { display: block; max-width: 100%; max-height: 260px; border-radius: 12px; margin-bottom: 8px; }
+.rv-photo-btn { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border); background: #fff; color: var(--accent-dark); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; min-height: 40px; }
+.rv-photo-note { display: block; margin-top: 6px; font-size: 11px; color: var(--text-muted); }
+.rv-next { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: #fffaf5; font-family: inherit; font-size: 14px; font-weight: 700; color: var(--text); cursor: pointer; }
+.rv-next small { font-weight: 500; font-size: 12px; color: var(--text-muted); }
+.modal-panel .btn-close.rv-danger { color: #c23a37; }
+
+/* 아이 전환 시트 */
+.child-switch-note { text-align: left; margin: -4px 0 12px; }
+.child-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.child-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px; border-radius: 12px; border: 1.5px solid var(--border); background: #fff; font-family: inherit; cursor: pointer; text-align: left; min-height: 56px; }
+.child-item.current { border-color: var(--accent); background: #fff6ef; }
+.child-name { font-size: 15px; font-weight: 800; color: var(--text); }
+.child-code { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+.month-group-card .ongoing-group-header .group-text { display: flex; align-items: center; flex-wrap: wrap; gap: 0 2px; }
+.month-group-card .ongoing-group-header .group-text strong { display: inline-block; }
+.month-group-card .ongoing-group-header .group-text .now-badge { margin-left: 6px; }
+.ep-select { width: 100%; border: 1.5px solid var(--border); border-radius: 12px; padding: 8px 12px; font-family: inherit; color: var(--text); background: #fff; }
+
+/* 기록 추가 버튼: 작게, 그림자 없이 */
+.fab { padding: 8px 14px; min-height: 36px; font-size: 13px; box-shadow: none; }
+.fab:active { box-shadow: none; }
+.sub-period { margin: 2px 0; font-size: 12px; font-weight: 700; color: var(--accent-dark); }
+.cal-kind-legend { text-align: center; line-height: 1.5; }
+
+/* 지원금 주체 뱃지(전국 공통·시·도·시군구별 고유색) — 카드 맨 위 줄 */
+.prov-row { margin: 0 0 5px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.prov-tag { display: inline-block; padding: 2px 9px; border-radius: 8px; font-size: 11px; font-weight: 800; }
+.prov-row .aud-tag { margin-right: 0; }
+.modal-panel .prov-tag.detail-tag { margin: 0 0 10px 6px; padding: 3px 9px; border-radius: 999px; vertical-align: baseline; }
+.home-row .prov-tag { margin-right: 6px; }
+
+/* 혜택 상세: 미해당 / 해당(신청 완료) 두 버튼 */
+.apply-choice { display: flex; gap: 8px; margin-top: 10px; }
+.apply-choice .btn-complete { flex: 1.6; margin-top: 0; }
+.modal-panel .btn-na { flex: 1; min-height: 50px; padding: 14px 8px; border-radius: 12px; border: 1.5px solid var(--border); background: #fff; color: var(--text-muted); font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.na-toggle { display: inline-flex; margin: 0 0 10px; padding: 8px 14px; border-radius: 999px; border: 1px dashed var(--border); background: none; color: var(--text-muted); font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.na-toggle.active { border-style: solid; background: #f3ece3; color: var(--text); }
+.rec-row.na { opacity: .85; }
+
+.scope-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; padding: 10px 12px; border-radius: 12px; background: #fff0e4; font-size: 13px; font-weight: 700; color: var(--accent-dark); }
+.scope-banner button { border: none; background: #fff; color: var(--accent-dark); border-radius: 999px; padding: 6px 12px; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer; min-height: 32px; }
+.home-row.done .hr-body strong { color: var(--text-muted); text-decoration: line-through; }
+.home-row .hr-check { color: var(--success); font-size: 14px; font-weight: 800; flex-shrink: 0; }
+.home-sec.sec-past { background: #faf6f1; }
+
+/* 권장 기간은 뱃지가 아니라 일반 글씨로 */
+.kind-plain { font-size: inherit; font-weight: 600; color: var(--text-muted); }
+.home-row.late .hr-body small { color: var(--text-muted); }
+
+.sub-header h2 { font-size: 16px; }
+
+/* 다음 달에 확인할 것(안내 시트) */
+.ns-note { text-align: left; margin: -4px 0 12px; }
+.ns-group { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.ns-cat { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; margin-bottom: 6px; }
+.ns-cat small { font-weight: 500; color: var(--text-muted); }
+.ns-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.ns-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ns-list li { position: relative; padding-left: 14px; font-size: 14px; }
+.ns-list li::before { content: "·"; position: absolute; left: 0; color: var(--text-muted); font-weight: 700; }
+
+/* 상세 팝업 버튼: 한 단계 작게 */
+.modal-panel .btn-close, .modal-panel .btn-complete, .modal-panel .btn-official { font-size: 15px; padding: 11px; min-height: 44px; }
+.modal-panel .btn-na { font-size: 15px; padding: 11px 8px; min-height: 44px; }
+
+/* 전체 할 일: 펼쳐진 월령 그룹은 흰 카드 */
+.month-group-card.open { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 14px 4px; }
+.month-group-card.open::before { top: 18px; left: -20px; }
+.month-group-card.open .ongoing-group-header { padding-left: 2px; padding-bottom: 10px; }
+.month-group-card.open .ongoing-group-body { padding-bottom: 10px; }
+
+.nav-item { font-size: 10px; letter-spacing: -0.3px; }
+
+/* 홈: 이번 달 카테고리별 한 줄 요약 */
+.cat-line { width: 100%; display: flex; align-items: center; gap: 8px; padding: 11px 2px; background: none; border: none; border-top: 1px solid var(--border); font-family: inherit; color: var(--text); text-align: left; cursor: pointer; min-height: 46px; }
+.home-sec-head + .cat-line { border-top: none; }
+.cat-line .cl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.cat-line .cl-label { flex-shrink: 0; min-width: 32px; font-size: 13px; font-weight: 800; }
+.cat-line .cl-text { flex: 1; min-width: 0; font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-line .cl-n { flex-shrink: 0; min-width: 22px; padding: 1px 7px; border-radius: 999px; background: #f3ece3; color: var(--text-muted); font-size: 11px; font-weight: 800; text-align: center; }
+.cat-line .cl-n.ok { background: none; color: var(--success); font-size: 14px; }
+.cat-line.all-done .cl-label { color: var(--text-muted); }
+
+.home-viewall { border: none; background: #f3ece3; color: var(--accent-dark); border-radius: 999px; padding: 6px 12px; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer; min-height: 32px; }
+
+/* 팝업 오른쪽 위 ✕ 닫기 */
+.modal-x { position: sticky; top: 0; float: right; z-index: 3; width: 32px; height: 32px; margin: -6px -6px 6px 8px; border: none; border-radius: 50%; background: #f3ece3; color: var(--text-muted); font-size: 15px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.modal-x:active { background: #e9dfd5; }
+/* 홈 혜택 카드도 다른 카드처럼 흰 배경 */
+.home-sec.sec-subsidy { background: var(--card-bg); border-color: var(--border); }
+
+/* 선택된 필터·칩은 진한 주황 대신 배경에 어울리는 파스텔 */
+.scope-chip.active, .rec-chip.active, .rv-cat.active { background: #ffe3d1; color: var(--accent-dark); border-color: #ffcfb3; }
+.seg-tab.active .seg-n { background: #ffe3d1; color: var(--accent-dark); }
+
+/* 지원금 주체(전국 공통·서울시 등)는 뱃지가 아니라 글자색만 다르게 */
+.prov-tag, .modal-panel .prov-tag.detail-tag, .home-row .prov-tag { background: none; padding: 0; border-radius: 0; font-size: 12px; font-weight: 800; }
+.prov-row { margin-bottom: 3px; }
+.modal-panel .prov-tag.detail-tag { margin: 0 0 10px 8px; vertical-align: baseline; }
+.home-row .prov-tag { margin-right: 8px; }
+
+/* 프로필 시트: 사진 미리보기 + 이름 옆 수정(연필) 아이콘 */
+.profile-photo-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.profile-sheet-avatar { width: 72px; height: 72px; border-radius: 50%; background: #ffe9d9; color: var(--accent-dark); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+.profile-sheet-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-sheet-avatar .person-icon { width: 30px; height: 30px; }
+.profile-photo-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.profile-name-row { margin-bottom: 8px; }
+.btn-edit-icon { width: 32px; height: 32px; border-radius: 50%; border: none; background: #f3ece3; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+.btn-edit-icon:active { background: #e9dfd5; }
+
+/* 혜택 상세의 "해당 (신청 완료)" — 주황(공식 안내 버튼)과 어울리는 연한 살구색 */
+.modal-panel .apply-choice .btn-complete { background: #ffeadb; color: #b4552a; border: 1px solid #f8cdb0; }
+.modal-panel .apply-choice .btn-complete:active { background: #ffdfc9; }
+.modal-panel #btn-na-restore { background: #ffeadb; color: #b4552a; border: 1px solid #f8cdb0; }
+.modal-panel #btn-na-restore:active { background: #ffdfc9; }
+
+/* 완료일: 날짜 옆 수정(연필) 아이콘 → 누르면 작은 날짜 선택 줄이 열린다 */
+.modal-panel .completion-line { justify-content: flex-start; gap: 8px; }
+.completion-edit-icon { width: 28px; height: 28px; border-radius: 50%; border: none; background: #f3ece3; color: var(--text-muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; flex-shrink: 0; }
+.completion-edit-icon:active { background: #e9dfd5; }
+.modal-panel .completion-edit { gap: 6px; margin-top: 8px; }
+.modal-panel .completion-edit input[type="date"] { flex: 0 1 auto; width: 150px; min-height: 34px; height: 34px; padding: 4px 8px; font-size: 14px; border-radius: 8px; }
+.modal-panel .completion-save { padding: 6px 12px; font-size: 13px; background: #ffeadb; color: #b4552a; border: 1px solid #f8cdb0; }
+
+/* 완료일 작은 달력 */
+.modal-panel .completion-edit { display: block; margin-top: 8px; }
+.modal-panel .completion-edit.hidden { display: none; }
+.mini-cal { width: 220px; max-width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: #fffaf5; }
+.mc-head { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 800; margin-bottom: 4px; }
+.mc-nav { width: 26px; height: 26px; border: none; border-radius: 50%; background: #f3ece3; color: var(--text-muted); font-size: 15px; line-height: 1; cursor: pointer; padding: 0; }
+.mc-nav:disabled { opacity: .35; cursor: default; }
+.mc-week, .mc-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
+.mc-week span { font-size: 10px; color: var(--text-muted); padding: 2px 0; }
+.mc-day { height: 28px; border: none; border-radius: 50%; background: none; font-family: inherit; font-size: 12px; color: var(--text); cursor: pointer; padding: 0; }
+.mc-day.today { font-weight: 800; color: var(--accent-dark); }
+.mc-day.sel { background: #ffe3d1; color: var(--accent-dark); font-weight: 800; }
+.mc-day:disabled { color: #d8cfc7; cursor: default; }
+.mini-cal-foot { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.mini-cal-label { font-size: 13px; font-weight: 700; }
+
+/* 확인·완료(취소) 버튼: 카테고리 대표색 파스텔(인라인 변수로 전달) */
+.modal-panel .btn-complete[data-cat] { background: var(--bc-bg); color: var(--bc-fg); border: 1px solid var(--bc-bd); }
+
+.chip.chip-all { color: var(--text-muted); border-color: var(--border); }
+.chip.chip-all.active { background: #f3ece3; color: var(--text); border-color: var(--border); }
+
+/* 온보딩 상황 선택: 이모지 대신 선 아이콘 */
+.stage-icon { width: 44px; height: 44px; border-radius: 14px; background: #fff0e4; color: var(--accent-dark); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.stage-icon svg { width: 30px; height: 30px; }
+
+/* 아이 전환 시트 */
+.cs-title { font-size: 18px; margin: 0 0 2px; }
+.cs-sub { margin: 0 0 14px; font-size: 12px; color: var(--text-muted); }
+.cs-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.cs-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border-radius: 16px; border: 1.5px solid var(--border); background: #fff; font-family: inherit; text-align: left; cursor: pointer; min-height: 68px; }
+.cs-item.current { border-color: #f8cdb0; background: #fff6ef; }
+.cs-avatar { width: 46px; height: 46px; border-radius: 50%; background: #ffe9d9; color: var(--accent-dark); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+.cs-avatar svg { width: 22px; height: 22px; }
+.cs-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.cs-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cs-info strong { font-size: 15px; color: var(--text); overflow-wrap: anywhere; }
+.cs-info small { font-size: 12px; color: var(--text-muted); }
+.cs-now { display: inline-flex; align-items: center; gap: 3px; padding: 4px 10px; border-radius: 999px; background: #ffe3d1; color: var(--accent-dark); font-size: 12px; font-weight: 800; flex-shrink: 0; }
+.cs-now svg { width: 13px; height: 13px; }
+.cs-go { color: var(--text-muted); font-size: 20px; flex-shrink: 0; }
+.cs-add { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 12px; border-radius: 14px; border: 1px solid #f8cdb0; background: #ffeadb; color: #b4552a; font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer; min-height: 46px; }
+.cs-add svg { width: 16px; height: 16px; }
+.cs-code { display: block; width: 100%; margin-top: 6px; padding: 12px; border: none; background: none; color: var(--text-muted); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+/* 프로필 사진 저장 버튼: 살구색, 시트 맨 아래 */
+.modal-panel .btn-photo-save { background: #ffeadb; color: #b4552a; border: 1px solid #f8cdb0; margin-top: 16px; }
+.modal-panel .btn-photo-save:active { background: #ffdfc9; }

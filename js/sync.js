@@ -76,6 +76,22 @@
     }
   }
 
+  /**
+   * 직접 작성한 기록 하나만 갱신한다 — records 맵 전체를 교체하지 않고 "records.<id>" 필드 하나만 쓰므로
+   * 두 기기가 서로 다른 기록을 동시에 써도 서로 덮어쓰지 않는다(completed 맵과 다른 점).
+   * id에는 점(.)이 들어가지 않는다(js/records.js newId).
+   */
+  async function updateRecord(code, id, record) {
+    const ref = db.collection("families").doc(code);
+    const stamp = firebase.firestore.FieldValue.serverTimestamp();
+    try {
+      await ref.update({ ["records." + id]: record, updatedAt: stamp });
+    } catch (e) {
+      if (e && e.code === "not-found") await ref.set({ records: { [id]: record }, updatedAt: stamp }, { merge: true });
+      else throw e;
+    }
+  }
+
   function listen(code, onChange) {
     return db
       .collection("families")
@@ -96,6 +112,7 @@
     fetchFamily,
     updateProfile,
     updateCompleted,
+    updateRecord,
     listen,
   };
 })();

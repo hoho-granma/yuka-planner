@@ -54,10 +54,11 @@
   viewMonth.setDate(1);
   let currentDayContext = null; // { events, date } — 날짜 클릭으로 연 일정 여러 개 목록
   let modalMode = null; // "day-list" | "detail" | "profile"
-  let currentTab = "calendar"; // "calendar" | "checklist" | "record"
+  let currentTab = "home"; // "home" | "calendar" | "record" | "subsidy" | "checklist"(전체 할 일 서브 화면)
+  let checklistScope = null; // 홈의 "전체 보기"로 들어왔을 때만 { label, ids:Set } — 그 항목들만 보여준다
+  let checklistStatus = "all"; // 전체 할 일의 완료 상태 필터: "all" | "todo" | "done"
   let openMonthGroups = null; // 전체 체크리스트의 월령별 아코디언 펼침 상태(Set<월령>). null=아직 초기화 전(기본은 현재 월령만 펼침)
   let selectedCalendarDate = new Date(); // 달력 탭에서 선택된 날짜(기본값: 오늘)
-  let calendarDisplayDayMap = new Map(); // 이번에 그려진 달의 todo_id__occ → "달력에 표시할 날짜"(분산배치 결과)
 
   // e.category는 이제 필터칩·체크리스트와 동일한 6개 카테고리(CATEGORY_META) 문자열이라,
   // 달력 전용으로 따로 매핑표를 둘 필요 없이 그대로 조회하면 된다.
@@ -247,6 +248,12 @@
     };
   }
 
+  /** 현재 프로필(사진 포함)을 가족 문서에 올린다 — 같은 가족코드를 쓰는 다른 기기에서도 같은 프로필·사진이 보인다. */
+  function pushProfileToFamily() {
+    if (!familyCode || !profile) return Promise.resolve();
+    return FamilySync.updateProfile(familyCode, profileToPlain(profile)).catch((e) => console.error("프로필 동기화 실패", e));
+  }
+
   function profileFromPlain(p) {
     return {
       name: p.name || "",
@@ -255,6 +262,8 @@
       stage: p.stage || "born",
       province: p.province,
       district: p.district,
+      // 사진도 가족 문서(profile.photoDataUrl)에 들어 있으므로 다른 기기에서 가족코드로 불러와도 함께 복원한다.
+      ...(p.photoDataUrl ? { photoDataUrl: p.photoDataUrl } : {}),
     };
   }
 
@@ -285,11 +294,14 @@
     if (unsubscribeFamily) unsubscribeFamily();
     unsubscribeFamily = FamilySync.listen(familyCode, async (data) => {
       if (!data || !data.profile) return;
-      const profileChanged = JSON.stringify(profileToPlain(profileFromPlain(data.profile))) !== JSON.stringify(profileToPlain(profile));
+      // 사진만 바뀐 경우엔 일정을 다시 계산(=홈으로 이동)하지 않고 화면의 사진만 갱신한다.
+      const noPhoto = (p) => ({ ...profileToPlain(p), photoDataUrl: null });
+      const profileChanged = JSON.stringify(noPhoto(profileFromPlain(data.profile))) !== JSON.stringify(noPhoto(profile));
       profile = profileFromPlain(data.profile);
       completed = data.completed || {};
       saveProfile(profile);
       saveCompleted();
+      if (data.records) HNRecords.mergeRemote(data.records);
       if (!el("view-calendar").classList.contains("hidden")) {
         // 완료 처리만 바뀐 경우엔 보던 탭·달을 유지한 채 일정만 다시 계산한다.
         if (profileChanged) await buildAndRender();
@@ -309,6 +321,8 @@
     }
     try {
       familyCode = await FamilySync.createFamily(profileToPlain(profile), completed);
+      HNRecords.adopt(familyCode);
+      rememberChild();
       startListeningFamily();
       renderProfileHeader();
     } catch (e) {
@@ -717,19 +731,25 @@
   function renderFilterChipsInto(containerId) {
     const wrap = el(containerId);
     if (!wrap) return;
-    wrap.innerHTML = Object.entries(CATEGORY_META)
-      .map(([key, meta]) => {
-        const active = activeCats.has(key);
-        const style = active
-          ? `background:${meta.color};border-color:transparent;`
-          : `color:${meta.color};border-color:${meta.color};`;
-        return `<button class="chip ${active ? "active" : ""}" data-cat="${key}" style="${style}">${meta.label}</button>`;
-      })
-      .join("");
+    const allOn = Object.keys(CATEGORY_META).every((k) => activeCats.has(k));
+    wrap.innerHTML =
+      Object.entries(CATEGORY_META)
+        .map(([key, meta]) => {
+          const active = activeCats.has(key);
+          const style = active
+            ? `background:${meta.color};border-color:transparent;`
+            : `color:${meta.color};border-color:${meta.color};`;
+          return `<button class="chip ${active ? "active" : ""}" data-cat="${key}" style="${style}">${meta.label}</button>`;
+        })
+        .join("") +
+      // 맨 끝 "전체" — 전부 켜져 있으면 눌러서 전부 끄고, 하나라도 꺼져 있으면 눌러서 전부 켠다.
+      `<button class="chip chip-all ${allOn ? "active" : ""}" data-cat="__all">전체</button>`;
     wrap.querySelectorAll(".chip").forEach((chip) => {
       chip.addEventListener("click", () => {
         const cat = chip.getAttribute("data-cat");
-        if (activeCats.has(cat)) activeCats.delete(cat);
+        // "전체" 토글: 전부 켜져 있으면 전부 끄고, 하나라도 꺼져 있으면 전부 켠다.
+        if (cat === "__all") activeCats = Object.keys(CATEGORY_META).every((k) => activeCats.has(k)) ? new Set() : new Set(Object.keys(CATEGORY_META));
+        else if (activeCats.has(cat)) activeCats.delete(cat);
         else activeCats.add(cat);
         renderFilterChips();
         renderAll();
@@ -741,7 +761,27 @@
   // "언제부터 챙겨야 하는지"(e.date 기준 월령)가 36개월 이내면 보여주고, 그 이후에 처음
   // 시작되는 항목만 걸러낸다.
   function visibleSchedule(ignoreCategoryFilter) {
-    return schedule.filter((e) => (ignoreCategoryFilter || activeCats.has(e.category)) && ageInMonths(profile.birthDate, e.date) <= 36);
+    return schedule.filter((e) => (ignoreCategoryFilter || activeCats.has(e.category)) && ageInMonths(profile.birthDate, e.date) <= 36 && !isNotApplicable(e.id));
+  }
+
+  // "미해당" 표시 — 나에게 해당하지 않는 혜택. completed 맵에 `${id}__na` 키로 저장한다(완료·가족 동기화 경로를
+  // 그대로 쓰고, 엔진은 recordType이 TODO_COMPLETED가 아닌 항목을 보지 않으므로 계산에 영향이 없다).
+  // 달력·홈·혜택 탭·전체 할 일에서는 빠지고, 기록 탭의 "미해당 항목 보기"에서 확인·되돌릴 수 있다.
+  const NA_SUFFIX = "__na";
+  function isNotApplicable(id) {
+    return !!completed[id + NA_SUFFIX];
+  }
+  function setNotApplicable(id, on) {
+    if (on) {
+      delete completed[id];
+      completed[id + NA_SUFFIX] = { done: true, todo_id: id.split("__")[0], occurrenceKey: "default", recordType: "NOT_APPLICABLE", recordedAt: new Date().toISOString() };
+    } else {
+      delete completed[id + NA_SUFFIX];
+    }
+    saveCompleted();
+    if (familyCode) FamilySync.updateCompleted(familyCode, completed).catch((e) => console.error(e));
+    closeDetail();
+    refreshSchedule();
   }
 
   /** 달력·기록은 체크리스트의 카테고리 필터와 무관하게 늘 전체 카테고리를 보여준다. */
@@ -769,16 +809,31 @@
   }
 
   /** 프로필 카드를 탭하면 뜨는 바텀시트 — 상세정보 + 가족코드 복사 + 정보 다시 입력. */
-  function showProfileSheet() {
+  /**
+   * pendingPhoto: undefined = 사진 변경 없음, null = 삭제 예정, 문자열 = 새로 고른 사진(미리보기).
+   * 사진을 고르면 바로 이 팝업에서 미리 보이고, "저장"을 눌러야 실제로 적용된다.
+   */
+  function showProfileSheet(pendingPhoto) {
+    if (pendingPhoto && pendingPhoto.type) pendingPhoto = undefined; // 클릭 이벤트가 인자로 넘어온 경우
     modalMode = "profile";
     const today = new Date();
     const ageNow = ageInMonths(profile.birthDate, today);
+    const changed = pendingPhoto !== undefined;
+    const shownPhoto = changed ? pendingPhoto : profile.photoDataUrl;
     el("modal-content").innerHTML = `
+      <div class="profile-photo-row">
+        <span class="avatar profile-sheet-avatar">${avatarInnerHTML(shownPhoto, childDisplayName())}</span>
+        <div class="profile-photo-actions">
+          <input type="file" accept="image/*" id="photo-input" class="hidden" />
+          <button type="button" class="btn-photo" id="btn-photo-upload">${shownPhoto ? "사진 변경" : "사진 추가"}</button>
+          ${shownPhoto ? `<button type="button" class="btn-photo-remove" id="btn-photo-remove">삭제</button>` : ""}
+        </div>
+      </div>
       <div class="profile-name-row">
-        <h3>${childDisplayName()}</h3>
-        <input type="file" accept="image/*" id="photo-input" class="hidden" />
-        <button type="button" class="btn-photo" id="btn-photo-upload">${profile.photoDataUrl ? "사진 변경" : "사진 추가"}</button>
-        ${profile.photoDataUrl ? `<button type="button" class="btn-photo-remove" id="btn-photo-remove">삭제</button>` : ""}
+        <h3>${esc(childDisplayName())}</h3>
+        <button type="button" class="btn-edit-icon" id="btn-open-reset" aria-label="${isPregnant() ? "임신 정보 수정" : "아이 정보 수정"}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>
+        </button>
       </div>
       <div class="detail-row"><div class="label">${isPregnant() ? "출산 예정일" : "생년월일"}</div>${
         isPregnant()
@@ -795,16 +850,13 @@
              </div>`
           : ""
       }
-      ${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요 👶</button>` : ""}
-      <button class="btn-close" id="btn-open-reset">${isPregnant() ? "임신 정보 다시 입력하기" : "아이 정보 다시 입력하기"}</button>
+      ${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
+      ${changed ? `<button class="btn-complete btn-photo-save" id="btn-photo-save">저장</button>` : ""}
       <button class="btn-close" id="btn-close-modal">닫기</button>
     `;
     el("detail-modal").classList.remove("hidden");
     el("btn-close-modal").addEventListener("click", closeDetail);
-    el("btn-open-reset").addEventListener("click", () => {
-      closeDetail();
-      handleReset();
-    });
+    el("btn-open-reset").addEventListener("click", showEditProfileSheet);
     const switchBtn = el("btn-switch-born");
     if (switchBtn) switchBtn.addEventListener("click", showBornSwitchSheet);
     el("btn-photo-upload").addEventListener("click", (ev) => {
@@ -815,11 +867,7 @@
       const file = ev.target.files && ev.target.files[0];
       if (!file) return;
       try {
-        profile.photoDataUrl = await resizeImageFile(file, 240);
-        saveProfile(profile);
-        pushProfileToFamily();
-        renderProfileHeader();
-        showProfileSheet();
+        showProfileSheet(await resizeImageFile(file, 240)); // 바로 팝업에 미리보기 + 저장 버튼
       } catch (e) {
         console.error("사진 등록 실패", e);
       }
@@ -828,7 +876,14 @@
     if (removeBtn) {
       removeBtn.addEventListener("click", (ev) => {
         ev.stopPropagation();
-        delete profile.photoDataUrl;
+        showProfileSheet(null);
+      });
+    }
+    const saveBtn = el("btn-photo-save");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", () => {
+        if (pendingPhoto) profile.photoDataUrl = pendingPhoto;
+        else delete profile.photoDataUrl;
         saveProfile(profile);
         pushProfileToFamily();
         renderProfileHeader();
@@ -850,55 +905,118 @@
     }
   }
 
+  /**
+   * 아이 정보 수정 — 처음 화면으로 돌아가 새로 입력하지 않고, 저장된 정보를 그대로 채운 폼을 띄운다.
+   * 가족코드·완료 내역·기록·사진은 그대로 두고 이름/생년월일(출산예정일)/몇째/지역만 바꾼다.
+   */
+  function showEditProfileSheet() {
+    modalMode = "profile";
+    const preg = isPregnant();
+    const todayIso = toISODate(new Date());
+    const maxDate = preg ? toISODate(new Date(Date.now() + 300 * 86400000)) : todayIso;
+    const orders = [["first", "첫째"], ["second", "둘째"], ["third", "셋째"], ["fourthPlus", "넷째 이상"]];
+    let order = profile.birthOrder || "";
+    el("modal-content").innerHTML = `
+      <h3>${preg ? "임신 정보 수정" : "아이 정보 수정"}</h3>
+      <div class="rv-field"><label for="ep-name">${preg ? "태명 또는 별칭" : "이름 또는 별칭"}</label><input type="text" id="ep-name" maxlength="12" value="${esc(profile.name || "")}" /></div>
+      <div class="rv-field"><label for="ep-date">${preg ? "출산 예정일" : "생년월일"}</label><input type="date" id="ep-date" max="${maxDate}" value="${toISODate(profile.birthDate)}" /></div>
+      <div class="rv-field"><label>몇째</label><div class="rv-cats" id="ep-orders">${orders
+        .map(([v, l]) => `<button type="button" class="chip rv-cat ${order === v ? "active" : ""}" data-v="${v}">${l}</button>`)
+        .join("")}</div></div>
+      <div class="rv-field"><label for="ep-province">시·도</label><select id="ep-province" class="ep-select">${regionsData.provinces
+        .map((pv) => `<option value="${esc(pv.code)}" ${pv.code === profile.province ? "selected" : ""}>${esc(pv.name)}</option>`)
+        .join("")}</select></div>
+      <div class="rv-field"><label for="ep-district">시·군·구</label><select id="ep-district" class="ep-select"></select></div>
+      <p id="ep-error" class="fine-print hidden" style="color:#e0524e">이름과 날짜를 입력해 주세요.</p>
+      <button class="btn-complete" id="ep-save">저장</button>
+      <button class="btn-close" id="ep-cancel">취소</button>
+    `;
+    const fillDistricts = (selected) => {
+      const pv = regionsData.provinces.find((x) => x.code === el("ep-province").value);
+      el("ep-district").innerHTML = (pv ? pv.districts : [])
+        .map((d) => `<option value="${esc(d)}" ${d === selected ? "selected" : ""}>${esc(d)}</option>`)
+        .join("");
+    };
+    fillDistricts(profile.district);
+    el("ep-province").addEventListener("change", () => fillDistricts(null));
+    el("ep-orders").querySelectorAll(".rv-cat").forEach((b) =>
+      b.addEventListener("click", () => {
+        order = b.dataset.v;
+        el("ep-orders").querySelectorAll(".rv-cat").forEach((x) => x.classList.toggle("active", x === b));
+      })
+    );
+    el("ep-cancel").addEventListener("click", showProfileSheet);
+    el("ep-save").addEventListener("click", async () => {
+      const name = el("ep-name").value.trim();
+      const dateStr = el("ep-date").value;
+      if (!name || !dateStr || !el("ep-district").value) {
+        el("ep-error").classList.remove("hidden");
+        return;
+      }
+      profile = {
+        ...profile,
+        name,
+        birthDate: new Date(dateStr + "T00:00:00"),
+        birthOrder: order || profile.birthOrder,
+        province: el("ep-province").value,
+        district: el("ep-district").value,
+      };
+      saveProfile(profile);
+      if (familyCode) {
+        try {
+          await FamilySync.updateProfile(familyCode, profileToPlain(profile));
+        } catch (e) {
+          console.error("아이 정보 동기화 실패", e);
+        }
+      }
+      rememberChild();
+      closeDetail();
+      openMonthGroups = null;
+      await buildAndRender();
+    });
+  }
+
   function renderCalLegend() {
     el("cal-legend").innerHTML = Object.values(CATEGORY_META)
       .map((g) => `<span class="cal-legend-item"><span class="dot" style="background:${g.color}"></span>${g.label}</span>`)
       .join("");
   }
 
-  /** 진행현황 카드 — 체크리스트 대표 월령이 이번 달인 항목 기준(달력 그리드와 동일 기준). */
+  // 달력 표시용 "추천일" 배치(js/hn-logic.js assignDisplayDays) — 화면을 그릴 때마다 전체를 다시 계산한다
+  // (완료 여부와 무관하고 결과가 결정적이라 완료 처리해도 다른 항목 위치가 바뀌지 않는다).
+  let calDisplayDays = new Map();
+  function computeCalendarDays() {
+    calDisplayDays = HNLogic.assignDisplayDays(calendarSchedule(), { birthDate: profile.birthDate, monthKeysOf });
+  }
+
+  /** 그 날짜에 달력에 표시할 항목: 지원금 신청 시작(fixed) + 그날로 추천된 항목. */
+  function calendarDayItems(date) {
+    const cal = calendarSchedule();
+    const fixed = cal.filter((e) => e.scheduleKind === "fixed" && HNLogic.coversDay(e, date));
+    const planned = HNLogic.plannedOnDay(cal, calDisplayDays, date);
+    return { fixed, planned };
+  }
+
+  /** 진행현황 카드 — 그 달 달력에 표시되는 항목(지원금 신청 시작 + 추천일 배치) 중 실제로 완료 처리한 수. */
   function renderCalendarProgress() {
-    const year = viewMonth.getFullYear();
     const month = viewMonth.getMonth();
-    const monthDated = calendarSchedule().filter((e) => eventInCalendarMonth(e, year, month));
-    const total = monthDated.length;
-    const done = monthDated.filter((e) => completed[e.id]).length;
-    const percent = total ? Math.round((done / total) * 100) : 0;
-    el("cal-progress-summary").innerHTML = `<span style="display:block;font-size:.8em;font-weight:500;opacity:.75">이번 달 알아둘 육아 정보</span>${month + 1}월 · ${total}개 중 ${done}개 확인`;
+    const { total, done, percent } = HNLogic.calendarMonthProgress(calendarSchedule(), calDisplayDays, completed, viewMonth.getFullYear(), month);
+    el("cal-progress-summary").innerHTML = `<span style="display:block;font-size:.8em;font-weight:500;opacity:.75">${month + 1}월에 확인할 항목</span>${month + 1}월 · ${total}개 중 ${done}개 확인`;
     el("cal-progress-bar-fill").style.width = `${percent}%`;
     el("cal-progress-bar-label").textContent = total ? `${percent}%` : "";
   }
 
   /**
-   * 달력에 뜨는 항목은 이제 "이 달에 확인하면 되는 것"(체크리스트의 대표 월령 그룹)이지,
-   * 특정 날짜에 반드시 해야 하는 일이 아니다 — 그래서 실제 날짜와 무관하게 이번 달 항목들을
-   * 월 전체 날짜에 최대한 고르게 펼쳐서, 하루에 몰려 보이지 않고 한눈에 훑어보기 좋게 한다.
-   *
-   * 다만 예방접종(카테고리 "예방접종")은 예외다 — 실제로 병원에 한 번 가면 그날 여러 백신을
-   * 같이 맞는 게 정상이라(예: 2개월 방문에서 DTaP·폴리오·Hib·폐렴구균·로타를 한꺼번에), 같은
-   * 달의 접종 항목들은 따로 흩어놓지 않고 하나의 방문일로 묶는다. 이 접종 묶음도 "한 자리"만
-   * 차지해서 다른 카테고리의 분산을 방해하지 않는다.
+   * 달력 표시 규칙
+   *  - 지원금·제도: 신청 시작일 칸에 원. 신청 기간(시작~마감)은 카드에 함께 보여준다.
+   *  - 그 밖의 항목(접종·검진·발달·생활·안전 등): 각자의 권장 기간/월령 안에서 "추천일"을 골라 원으로 표시한다.
+   *    같은 시기 접종은 한날로 묶고, 나머지는 하루에 몰리지 않게 나눈다. 정해진 예정일이 아니라는 점은 화면에 밝힌다.
    */
-  function computeDisplayDayMap(year, month, monthEvents) {
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const map = new Map();
-    const vaccineEvents = monthEvents.filter((e) => e.category === "예방접종");
-    const otherEvents = monthEvents.filter((e) => e.category !== "예방접종");
-    const groups = otherEvents.map((e) => [e]);
-    if (vaccineEvents.length) groups.push(vaccineEvents);
-    groups.sort((a, b) => calGroupFor(a[0]).label.localeCompare(calGroupFor(b[0]).label) || a[0].id.localeCompare(b[0].id));
-    const n = groups.length;
-    groups.forEach((group, i) => {
-      const day = Math.min(daysInMonth, Math.floor((i * daysInMonth) / n) + 1);
-      group.forEach((e) => map.set(e.id, day));
-    });
-    return map;
-  }
-
   function renderCalendar() {
     const year = viewMonth.getFullYear();
     const month = viewMonth.getMonth();
     el("calendar-title").textContent = `${year}년 ${month + 1}월`;
+    computeCalendarDays();
     renderCalLegend();
     renderCalendarProgress();
 
@@ -906,11 +1024,6 @@
     const startOffset = firstDay.getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const today = new Date();
-
-    // 달력에 보여줄 항목 = 체크리스트의 대표 월령이 이번 달과 같은 항목 전부(체크리스트 기준
-    // 매핑). displayMonth가 없는 항목(그때그때 확인해요)은 특정 달이 없어 달력에는 안 나온다.
-    const monthEvents = calendarSchedule().filter((e) => eventInCalendarMonth(e, year, month));
-    calendarDisplayDayMap = computeDisplayDayMap(year, month, monthEvents);
     const grid = el("calendar-grid");
     grid.innerHTML = "";
 
@@ -920,33 +1033,24 @@
       grid.appendChild(cell);
     }
 
-    const MAX_MARKERS = 3;
+    const byUrgency = (a, b) => (!!completed[a.id] - !!completed[b.id]) || (isImportantEvent(b) ? 1 : 0) - (isImportantEvent(a) ? 1 : 0);
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      const dayEvents = monthEvents
-        .filter((e) => calendarDisplayDayMap.get(e.id) === day)
-        .slice()
-        .sort((a, b) => (isImportantEvent(b) ? 1 : 0) - (isImportantEvent(a) ? 1 : 0));
+      const { fixed, planned } = calendarDayItems(date);
+      const marks = [...fixed, ...planned].sort(byUrgency);
       const cell = document.createElement("div");
       cell.className =
-        "day-cell" +
-        (sameDay(date, today) ? " today" : "") +
-        (sameDay(date, selectedCalendarDate) ? " selected" : "") +
-        (dayEvents.length ? " has-event" : "");
-
-      const shown = dayEvents.slice(0, MAX_MARKERS);
-      const overflow = dayEvents.length - shown.length;
-      // 미완료: 카테고리색 단색 도트. 완료: 중요도와 무관하게 연회색 체크.
-      const markerHtml = shown
-        .map((e) => {
-          const g = calGroupFor(e);
-          const done = !!completed[e.id];
-          if (done) return `<span class="cal-marker done-soft">✓</span>`;
-          return `<span class="cal-marker todo" style="background:${g.color}"></span>`;
-        })
+        "day-cell" + (sameDay(date, today) ? " today" : "") + (sameDay(date, selectedCalendarDate) ? " selected" : "") + (marks.length ? " has-event" : "");
+      // 미완료: 카테고리색 원. 완료: 연회색 ✓.
+      const dotHtml = marks
+        .slice(0, 3)
+        .map((e) => (completed[e.id] ? `<span class="cal-marker done-soft">✓</span>` : `<span class="cal-marker todo" style="background:${calGroupFor(e).color}"></span>`))
         .join("");
-      const moreHtml = overflow > 0 ? `<span class="cal-marker-more">+${overflow}</span>` : "";
-      cell.innerHTML = `<span class="num">${day}</span><span class="markers">${markerHtml}${moreHtml}</span>`;
+      const moreCount = marks.length - 3;
+      const moreHtml = moreCount > 0 ? `<span class="cal-marker-more">+${moreCount}</span>` : "";
+      cell.setAttribute("role", "button");
+      cell.setAttribute("aria-label", `${month + 1}월 ${day}일 · 항목 ${marks.length}건`);
+      cell.innerHTML = `<span class="num">${day}</span><span class="markers">${dotHtml}${moreHtml}</span>`;
       cell.addEventListener("click", () => {
         selectedCalendarDate = date;
         renderCalendar();
@@ -960,29 +1064,35 @@
     }
   }
 
+  /** 선택한 날짜 패널 — "이 날 신청 시작하는 지원금"과 "이 날 추천 항목"을 나눠 보여준다. */
   function renderSelectedDayPanel() {
     const date = selectedCalendarDate;
-    // 달력 칸의 마커는 이 달 안에서 고르게 분산배치된 위치에 찍히므로, 선택한 날짜의 목록도
-    // 실제 날짜가 아니라 같은 분산배치 결과(calendarDisplayDayMap)를 기준으로 골라야 맞는다.
-    const events = calendarSchedule()
-      .filter((e) => eventInCalendarMonth(e, date.getFullYear(), date.getMonth()) && calendarDisplayDayMap.get(e.id) === date.getDate())
-      .sort((a, b) => (isImportantEvent(b) ? 1 : 0) - (isImportantEvent(a) ? 1 : 0));
+    if (!calDisplayDays || !calDisplayDays.size) computeCalendarDays();
+    const { fixed, planned } = calendarDayItems(date);
+    const byUrgency = (a, b) => (!!completed[a.id] - !!completed[b.id]) || (isImportantEvent(b) ? 1 : 0) - (isImportantEvent(a) ? 1 : 0);
     const dowNames = ["일", "월", "화", "수", "목", "금", "토"];
     el("selected-day-title").textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 (${dowNames[date.getDay()]})`;
-    el("selected-day-list").innerHTML = events.map(eventItemHtml).join("");
-    el("selected-day-empty").classList.toggle("hidden", events.length > 0);
+    const html = [...fixed, ...planned]
+      .sort(byUrgency)
+      .map((e) => eventItemHtml(e))
+      .join("");
+    el("selected-day-list").innerHTML = html;
+    el("selected-day-empty").classList.toggle("hidden", fixed.length + planned.length > 0);
   }
 
   function remainingItemHtml(e) {
     const g = calGroupFor(e);
+    const done = !!completed[e.id];
     const title = e.title.replace(/^⚠️ 확인 필요 · /, "");
-    return `<button type="button" class="remaining-item" data-id="${e.id}"><span class="dot" style="background:${g.color}"></span>${title}</button>`;
+    return `<button type="button" class="remaining-item${done ? " done" : ""}" data-id="${e.id}"><span class="dot" style="background:${done ? "#cfc7bf" : g.color}"></span>${title}${done ? '<span class="ri-check">✓</span>' : ""}</button>`;
   }
 
+  /** "이 달 월령 체크" — 특정 날짜가 없는 월령별 항목(달력 칸에는 찍지 않는다). 미완료를 먼저 보여준다. */
   function renderRemainingList() {
-    const year = viewMonth.getFullYear();
-    const month = viewMonth.getMonth();
-    const items = calendarSchedule().filter((e) => eventInCalendarMonth(e, year, month) && !completed[e.id]);
+    if (!el("remaining-grid")) return; // 월령 체크는 달력 추천일로 통합돼 목록 카드가 없다
+    const items = HNLogic.monthlyInMonth(calendarSchedule(), viewMonth.getFullYear(), viewMonth.getMonth(), eventInCalendarMonth)
+      .slice()
+      .sort((a, b) => !!completed[a.id] - !!completed[b.id]);
     el("remaining-grid").innerHTML = items.map(remainingItemHtml).join("");
     el("remaining-empty").classList.toggle("hidden", items.length > 0);
   }
@@ -1047,7 +1157,7 @@
     const inst = e.detail.instance;
     if (inst.status === "DONE") return doneWords(e.category).state;
     const period = periodTextFromWindow(inst.windowStart, inst.windowEnd);
-    return period ? `${period} · ${e.dateLabel}` : e.dateLabel;
+    return period || "";
   }
 
   /** 체크리스트 카드용 지원 내용 — 첫 구절만(괄호·부연 설명 제외) 짧게 보여준다. 전체 내용은 상세에서 본다. */
@@ -1059,9 +1169,9 @@
 
   /** 항목 유형별 완료 문구 — 정보·수칙은 "확인", 접종·검진·지원금 신청은 실제 행동 "완료"로 구분한다. */
   function doneWords(category) {
-    if (category === "예방접종") return { state: "접종 완료", mark: "접종 완료 표시", undo: "접종 완료 취소" };
-    if (category === "영유아검진") return { state: "검진 완료", mark: "검진 완료 표시", undo: "검진 완료 취소" };
-    if (category === "행정·지원금") return { state: "신청 완료", mark: "신청 완료 표시", undo: "신청 완료 취소" };
+    if (category === "예방접종") return { state: "접종 완료", mark: "접종 완료", undo: "접종 완료 취소" };
+    if (category === "영유아검진") return { state: "검진 완료", mark: "검진 완료", undo: "검진 완료 취소" };
+    if (category === "행정·지원금") return { state: "신청 완료", mark: "신청 완료", undo: "신청 완료 취소" };
     return { state: "확인 완료", mark: "확인했어요", undo: "확인 취소" };
   }
 
@@ -1073,8 +1183,7 @@
   function subsidyAudienceLabel(e) {
     if (e.category !== "행정·지원금" || !e.isLegacySubsidy || !e.detail) return "";
     if (e.detail.prenatalOnly) return "임신 중";
-    if (e.detail.audience === "mother") return isPregnant() ? "임신·산모" : "산모 대상";
-    return "";
+    return ""; // 산모 대상 등은 라벨을 달지 않는다(상세의 지원 대상에서 확인)
   }
 
   /** 지원금을 어디서 주는지 — 전국 공통 / 시·도 / 시·군·구 단계와 상세 설명. 지원금이 아니면 null. */
@@ -1098,6 +1207,49 @@
     return { short: "전국 공통", long: "전국 공통 (정부 지원 · 어느 지역에 살아도 신청 가능)" };
   }
 
+  /** 일정 유형 태그 — 마감일 / 권장 기간 / 월령 체크를 카드마다 구분해 보여준다(실제 날짜와 권장 시점을 혼동하지 않게). */
+  function kindTagHtml(e) {
+    // 권장 기간만 뱃지로 구분한다(월령 체크·지원금 신청 기간은 뱃지를 달지 않는다 — 지원금은 카드의 신청 기간 줄이 대신한다).
+    if (e.category === "행정·지원금" || e.scheduleKind !== "window") return "";
+    return `<span class="kind-plain">권장 기간</span> `;
+  }
+
+  /** 권장 기간 문구("9월 1일 ~ 9월 30일"). 올해가 아니면 연도를 붙인다. 끝이 없으면 "~부터". */
+  function windowRangeText(e) {
+    if (!e.windowStart) return "";
+    const thisYear = new Date().getFullYear();
+    const f = (d) => `${d.getFullYear() !== thisYear ? d.getFullYear() + "년 " : ""}${d.getMonth() + 1}월 ${d.getDate()}일`;
+    return e.windowEnd ? `${f(e.windowStart)} ~ ${f(e.windowEnd)}` : `${f(e.windowStart)}부터`;
+  }
+
+  /** 지원금을 주는 주체 뱃지 — 전국 공통은 고정 파랑, 시·도/시·군·구는 이름마다 고유색. */
+  function providerTagHtml(e, extra) {
+    const p = subsidyProvider(e);
+    if (!p) return "";
+    let fg = "#2f6db3";
+    let bg = "#e8f1fb";
+    if (p.short !== "전국 공통") {
+      let h = 0;
+      for (const ch of p.short) h = (h * 31 + ch.charCodeAt(0)) % 360;
+      fg = `hsl(${h},55%,34%)`;
+      bg = `hsl(${h},70%,92%)`;
+    }
+    return `<span class="prov-tag${extra ? " " + extra : ""}" style="color:${fg}">${esc(p.short)}</span>`;
+  }
+
+  /** 지원금 카드에 신청 기간(시작~마감)을 항상 보여준다. 마감이 없으면 상시. */
+  function subsidyPeriodLineHtml(e) {
+    if (e.category !== "행정·지원금") return "";
+    // 상세 화면의 "신청·지급 기간"과 같은 계산(subsidyPeriodRows)을 써서 카드와 상세의 날짜가 어긋나지 않게 한다.
+    const rows = subsidyPeriodRows(e.isEngineEvent ? e.detail.definition && e.detail.definition.todo_id : e.id, e.isEngineEvent ? null : e.detail, profile.birthDate);
+    const row = rows.find((r) => /신청/.test(r.label)) || rows[0];
+    if (row && row.text) return `<p class="sub-period">${/신청/.test(row.label) ? "신청 기간" : esc(row.label)} ${esc(row.text)}</p>`;
+    const { start, end } = HNLogic.subsidyPeriod(e);
+    if (!start) return "";
+    const f = (d) => `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
+    return `<p class="sub-period">신청 기간 ${f(start)} ~ ${end ? f(end) : "상시(기한 없음)"}</p>`;
+  }
+
   function eventItemHtml(e, opts) {
     const isDone = !!completed[e.id];
     // 특정 날짜가 없는 항목(마일스톤 대기, 몇 달~몇 년짜리 안전수칙)은 "지금 챙기세요" 같은
@@ -1109,6 +1261,9 @@
       dateLine = subsidyDateLineForEngineEvent(e);
     } else if ((e.category === "예방접종" || e.category === "영유아검진") && e.isEngineEvent) {
       dateLine = vaccinationPeriodDateLine(e);
+    } else if (e.scheduleKind === "window" && e.windowStart && !e.isLegacySubsidy) {
+      // 권장 기간이 있는 항목(이유식·발달 등)은 특정일이 아니라 기간으로 보여준다(달력의 추천일과는 별개).
+      dateLine = windowRangeText(e);
     } else if (e.isDateSpecific === false) {
       dateLine = e.subcategoryLabel || "";
     } else {
@@ -1136,8 +1291,9 @@
       <div class="event-item ${isDone ? "completed" : ""} ${isDone && opts && opts.compact ? "compact" : ""}" data-id="${e.id}">
         <span class="cat-dot" style="background:${CATEGORY_META[e.category].color}"></span>
         <div class="body">
-          <p class="title">${subsidyProvider(e) ? `<span class="scope-tag">${subsidyProvider(e).short}</span>` : ""}${subsidyAudienceLabel(e) ? `<span class="aud-tag">${subsidyAudienceLabel(e)}</span>` : ""}${e.title}</p>
-          <p class="date-label">${dateLine}</p>
+          ${providerTagHtml(e) ? `<p class="prov-row">${providerTagHtml(e)}${subsidyAudienceLabel(e) ? `<span class="aud-tag">${subsidyAudienceLabel(e)}</span>` : ""}</p>` : ""}
+          <p class="title">${e.title}</p>
+          ${e.category === "행정·지원금" && !isDone && subsidyPeriodLineHtml(e) ? "" : `<p class="date-label">${isDone ? "" : kindTagHtml(e)}${dateLine}</p>`}${subsidyPeriodLineHtml(e)}
           <p class="summary">${e.category === "행정·지원금" ? shortSubsidySummary(e.summary) : e.summary || ""}</p>
         </div>
         <span class="check ${isDone ? "checked" : ""}" data-check-id="${e.id}">${isDone ? "✓" : ""}</span>
@@ -1148,6 +1304,7 @@
   /** 처음 체크리스트 탭을 그릴 때 한 번만 "현재 월령" 그룹을 펼친 상태로 초기화한다. */
   function ensureOpenMonthGroupsInit() {
     if (openMonthGroups === null) {
+      // 현재 월령 그룹만 펼쳐 두고 나머지는 접는다.
       openMonthGroups = new Set([checklistBucket(Math.max(0, ageInMonths(profile.birthDate, new Date())))]);
     }
   }
@@ -1282,16 +1439,42 @@
   /** 전체 체크리스트: 대표 월령(displayMonth, 0~36개월)별로 묶어 아코디언으로 보여준다. 기본은 현재 월령만 펼쳐져 있다. */
   function renderChecklistTab() {
     ensureOpenMonthGroupsInit();
-    const items = visibleSchedule().slice().sort((a, b) => a.date - b.date);
+    const scopeBanner = el("checklist-scope-banner");
+    if (scopeBanner) {
+      scopeBanner.classList.toggle("hidden", !checklistScope);
+      if (checklistScope) scopeBanner.querySelector(".scope-label").textContent = `“${checklistScope.label}”만 보는 중이에요`;
+    }
+    const inScope = (e) => !checklistScope || checklistScope.ids.has(e.id);
+    const statusOk = (e) => (checklistStatus === "todo" ? !completed[e.id] : checklistStatus === "done" ? !!completed[e.id] : true);
+    const items = visibleSchedule().filter(inScope).filter(statusOk).sort((a, b) => a.date - b.date);
+    const nowAge = Math.max(0, ageInMonths(profile.birthDate, new Date()));
+    const curKey = checklistBucket(nowAge);
+    const nextKey = checklistBucket(nowAge + 1);
+    document.querySelectorAll("#status-filter-checklist .sf-btn").forEach((b) => b.classList.toggle("active", b.dataset.status === checklistStatus));
+    const scoped = !!checklistScope;
+    const nowAgeKey = nowAge;
+    // 그룹 안 정렬: 미완료(카테고리 순으로 묶음) → 완료(맨 아래, 한 줄). 같은 카테고리 안에서는 기존(날짜) 순서를 유지한다.
+    const CAT_ORDER = Object.keys(CATEGORY_META);
+    const catOrder = (e) => {
+      const i = CAT_ORDER.indexOf(e.category);
+      return i < 0 ? CAT_ORDER.length : i;
+    };
     const groups = new Map();
     items.forEach((e) => {
-      new Set(monthKeysOf(e).map((k) => (k === NEED_CHECK_GROUP ? k : checklistBucket(k)))).forEach((key) => {
+      let ks = monthKeysOf(e);
+      // 범위 보기에서 여러 달에 반복되는 월령 항목은 해당되는 월령 그룹에만 넣는다(다른 달 그룹에 반복 노출하지 않음).
+      if (checklistScope && checklistScope.keys[e.id]) ks = ks.filter((k) => checklistScope.keys[e.id].includes(k));
+      // 이번 달 보기: 홈은 "기간이 이번 달과 겹치는지"로 골랐는데 전체 할 일은 항목마다 정해진 대표 월령(예: DTaP 2차=생후 2개월)으로
+      // 묶어서, 이번 달 항목이 접힌 다른 월령 그룹에 숨는 문제가 있었다. 홈과 같은 기준으로 지금 월령 한 그룹에 모아 보여준다.
+      if (checklistScope && checklistScope.flat) ks = [nowAgeKey];
+      new Set(ks.map((k) => (k === NEED_CHECK_GROUP ? k : checklistBucket(k)))).forEach((key) => {
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(e);
       });
     });
     // 돌 전(0~12개월)은 그 달에 항목이 없어도 월별 그룹을 항상 보여준다 — 13개월 이후는 항목이 있는 달만.
-    if (items.length > 0) for (let m = 0; m <= 12; m++) if (!groups.has(m)) groups.set(m, []);
+    // (완료 상태 필터를 걸었을 땐 빈 달 그룹을 만들지 않는다.)
+    if (items.length > 0 && checklistStatus === "all" && !scoped) for (let m = 0; m <= 12; m++) if (!groups.has(m)) groups.set(m, []);
     const monthKeys = [...groups.keys()].sort((a, b) => {
       if (a === NEED_CHECK_GROUP) return 1;
       if (b === NEED_CHECK_GROUP) return -1;
@@ -1304,18 +1487,20 @@
         const doneCount = list.filter((e) => completed[e.id]).length;
         const label = key === NEED_CHECK_GROUP ? "그때그때 확인해요" : isPregnant() && key === 0 ? "임신 중·출산 직후" : checklistGroupLabel(key);
         return `
-          <div class="ongoing-group-card month-group-card ${isOpen ? "open" : ""}" data-month="${key}">
+          <div class="ongoing-group-card month-group-card ${isOpen ? "open" : ""}" data-month="${key}"${key === curKey ? ' data-now="1"' : ""}>
             <button type="button" class="ongoing-group-header">
               <span class="group-text"><strong>${label}</strong></span>
               <span class="count-badge">${list.length ? `${doneCount}/${list.length}개` : "없음"}</span>
               <span class="chevron">▾</span>
             </button>
-            <div class="ongoing-group-body">${list.length ? "" : '<p class="empty-month-note">이 달에 새로 챙길 항목은 없어요</p>'}${list.slice().sort((a, b) => !!completed[a.id] - !!completed[b.id]).map((e) => eventItemHtml(e, { compact: true })).join("")}</div>
+            <div class="ongoing-group-body">${list.length ? "" : '<p class="empty-month-note">이 달에 새로 챙길 항목은 없어요</p>'}${list.slice().sort((a, b) => !!completed[a.id] - !!completed[b.id] || catOrder(a) - catOrder(b)).map((e) => eventItemHtml(e, { compact: true })).join("")}</div>
           </div>
         `;
       })
       .join("");
+    el("list-checklist").querySelectorAll(".event-item").forEach(bindEventItem);
     el("empty-checklist").classList.toggle("hidden", items.length > 0);
+    el("empty-checklist").textContent = checklistStatus === "todo" ? "미완료 항목이 없어요. 👏" : checklistStatus === "done" ? "아직 완료한 항목이 없어요." : "해당하는 항목이 없어요.";
     el("list-checklist")
       .querySelectorAll(".ongoing-group-header")
       .forEach((btn) => {
@@ -1331,17 +1516,19 @@
   }
 
   function renderRecordTab() {
-    const items = visibleSchedule(true)
-      .filter((e) => completed[e.id])
-      .sort((a, b) => b.date - a.date);
-    el("list-record").innerHTML = items.map(eventItemHtml).join("");
-    el("empty-record").classList.toggle("hidden", items.length > 0);
+    if (window.HNRecordsView) HNRecordsView.render(hnCtx());
+  }
+  function renderHome() {
+    if (window.HNHome) HNHome.render(hnCtx());
+  }
+  function renderSubsidyTab() {
+    if (window.HNSubsidyView) HNSubsidyView.render(hnCtx());
   }
 
   /** 페이지 안의 리스트 컨테이너들에만 한정해서 바인딩한다 — 모달(#modal-content)은 각자 따로
    * 바인딩하므로 여기서 document 전체를 선택하면 모달이 열려있을 때 이중 바인딩된다. */
   function attachListHandlers() {
-    const containerIds = ["selected-day-list", "list-checklist", "list-record"];
+    const containerIds = ["selected-day-list", "list-record"];
     containerIds.forEach((id) => {
       const c = el(id);
       if (c) c.querySelectorAll(".event-item").forEach(bindEventItem);
@@ -1367,6 +1554,7 @@
 
   function toggleComplete(id) {
     const wasDone = !!completed[id];
+    delete completed[id + NA_SUFFIX];
     if (wasDone) {
       delete completed[id];
     } else {
@@ -1395,6 +1583,48 @@
         if (e) openDetail(e, !!currentDayContext);
       }
     }
+  }
+
+  /**
+   * 작은 달력(완료일 선택용) — 브라우저 기본 날짜 선택창 대신 팝업 안에 들어가는 컴팩트한 월 달력.
+   * 오늘 이후 날짜는 고를 수 없고, 고른 날짜는 hidden input(value)과 라벨에 반영된다.
+   */
+  function renderMiniCal(box, input, label, view) {
+    const max = input.dataset.max;
+    const sel = input.value;
+    const base = view || new Date((sel || max) + "T12:00:00");
+    const y = base.getFullYear();
+    const m = base.getMonth();
+    const first = new Date(y, m, 1).getDay();
+    const days = new Date(y, m + 1, 0).getDate();
+    const iso = (d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const maxD = new Date(max + "T12:00:00");
+    const nextDisabled = new Date(y, m + 1, 1) > maxD;
+    let cells = "";
+    for (let i = 0; i < first; i++) cells += `<span></span>`;
+    for (let d = 1; d <= days; d++) {
+      const v = iso(d);
+      const off = v > max;
+      cells += `<button type="button" class="mc-day${v === sel ? " sel" : ""}${v === max ? " today" : ""}" data-d="${v}" ${off ? "disabled" : ""}>${d}</button>`;
+    }
+    box.innerHTML = `
+      <div class="mc-head">
+        <button type="button" class="mc-nav" data-nav="-1" aria-label="이전 달">‹</button>
+        <span>${y}년 ${m + 1}월</span>
+        <button type="button" class="mc-nav" data-nav="1" aria-label="다음 달" ${nextDisabled ? "disabled" : ""}>›</button>
+      </div>
+      <div class="mc-week"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+      <div class="mc-grid">${cells}</div>`;
+    if (label) label.textContent = sel ? formatDateKR(new Date(sel + "T12:00:00")) : "";
+    box.querySelectorAll(".mc-nav").forEach((b) =>
+      b.addEventListener("click", () => renderMiniCal(box, input, label, new Date(y, m + Number(b.dataset.nav), 1, 12)))
+    );
+    box.querySelectorAll(".mc-day").forEach((b) =>
+      b.addEventListener("click", () => {
+        input.value = b.dataset.d;
+        renderMiniCal(box, input, label, new Date(y, m, 1, 12));
+      })
+    );
   }
 
   function localDateInputValue(d) {
@@ -1508,6 +1738,7 @@
       if (isObservationType) {
         return `
           ${completed[e.id] ? `<div class="detail-row"><div class="label">현재 상태</div>${doneWords(e.category).state}</div>` : ""}
+          ${e.scheduleKind === "window" ? `<div class="detail-row"><div class="label">권장 기간</div>${windowRangeText(e)}</div>` : ""}
           <div class="detail-row"><div class="label">관찰 포인트</div>${detailValueHtml(td && td.observationGuide ? td.observationGuide : td ? td.parentAction : "")}</div>
           ${
             td && td.abnormalSigns
@@ -1530,7 +1761,8 @@
         : "";
       return `
         ${isPregnant() ? `<div class="detail-row"><div class="label">안내</div>출산 예정일(${formatDateKR(profile.birthDate)}) 기준 계산이에요. 실제 출산일에 따라 달라져요.</div>` : ""}
-        <div class="detail-row"><div class="label">현재 상태</div>${inst.status === "DONE" || completed[e.id] ? doneWords(e.category).state : ENGINE_STATUS_LABEL[inst.status] || inst.status}</div>
+        ${inst.status === "DONE" || completed[e.id] ? `<div class="detail-row"><div class="label">현재 상태</div>${doneWords(e.category).state}</div>` : ""}
+        ${!isVaccineOrCheckup && !isSubsidy && e.scheduleKind === "window" ? `<div class="detail-row"><div class="label">권장 기간</div>${windowRangeText(e)}</div>` : ""}
         <div class="detail-row"><div class="label">해야 할 일</div>${detailValueHtml(td ? td.parentAction : "")}</div>
         ${
           isSubsidy
@@ -1588,6 +1820,19 @@
     return typeof v === "string" && v.trim() !== "" && !/^(-|미확인|확인\s*필요)$/.test(v.trim());
   }
 
+  /** 확인·완료(취소) 버튼 색 — 카테고리 대표색(CATEGORY_META)에 맞춘 파스텔. 혜택은 살구색 스타일을 따로 쓴다. */
+  const CAT_BUTTON_COLORS = {
+    "발달관찰": ["#e6f7ec", "#1d7a45", "#9bdbb5"],
+    "예방접종": ["#e8f0fe", "#1f5fbf", "#a9c6f5"],
+    "영유아검진": ["#f1e8fd", "#7a34c4", "#d3b7f2"],
+    "생활·수유": ["#fdf4d8", "#8a6a05", "#f0d885"],
+    "안전·돌봄": ["#fde8e8", "#c23a37", "#f2b3b1"],
+  };
+  function catButtonStyle(category) {
+    const c = CAT_BUTTON_COLORS[category];
+    return c ? `data-cat="1" style="--bc-bg:${c[0]};--bc-fg:${c[1]};--bc-bd:${c[2]}"` : "";
+  }
+
   function openDetail(e, cameFromDayList) {
     modalMode = "detail";
     const meta = CATEGORY_META[e.category];
@@ -1604,34 +1849,43 @@
           <div class="label">${isVaccinationLike(e.category) ? "완료일" : "확인일"}</div>
           <div class="completion-line">
             <span id="completion-text">${formatDateKR(doneAt)}</span>
-            <button type="button" class="completion-change" id="btn-change-completion">${isVaccinationLike(e.category) ? "완료일 변경" : "확인일 변경"}</button>
+            <button type="button" class="completion-edit-icon" id="btn-change-completion" aria-label="${isVaccinationLike(e.category) ? "완료일 변경" : "확인일 변경"}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>
+            </button>
           </div>
           <div class="completion-edit hidden" id="completion-edit">
-            <input type="date" id="completion-date-input" value="${doneDateValue}" max="${localDateInputValue(new Date())}" />
-            <button type="button" class="completion-save" id="btn-save-completion">저장</button>
+            <input type="hidden" id="completion-date-input" value="${doneDateValue}" data-max="${localDateInputValue(new Date())}" />
+            <div class="mini-cal" id="completion-cal"></div>
+            <div class="mini-cal-foot"><span id="completion-cal-label" class="mini-cal-label"></span><button type="button" class="completion-save" id="btn-save-completion">저장</button></div>
           </div>
         </div>`;
     }
     el("modal-content").innerHTML = `
-      <span class="cat-badge" style="background:${meta.color}">${meta.label}</span>${
-        subsidyProvider(e) ? `<span class="scope-tag detail-tag">${subsidyProvider(e).short}</span>` : ""
-      }${subsidyAudienceLabel(e) ? `<span class="aud-tag detail-tag">${subsidyAudienceLabel(e)}</span>` : ""}
+      <span class="cat-badge" style="background:${meta.color}">${meta.label}</span>${providerTagHtml(e, "detail-tag")}${subsidyAudienceLabel(e) ? `<span class="aud-tag detail-tag">${subsidyAudienceLabel(e)}</span>` : ""}
       <h3>${e.title}</h3>
       ${detailBodyHtml(e)}
-      ${e.officialUrl ? `<a class="btn-official" href="${e.officialUrl}" target="_blank" rel="noopener">공식 안내 페이지로 이동</a>` : ""}
       ${completionRowHtml}
-      <button class="btn-complete" id="btn-toggle-complete">${isDone ? doneWords(e.category).undo : doneWords(e.category).mark}</button>
+      ${e.officialUrl ? `<a class="btn-official" href="${e.officialUrl}" target="_blank" rel="noopener">공식 안내 페이지로 이동</a>` : ""}
+      ${
+        e.category === "행정·지원금"
+          ? isNotApplicable(e.id)
+            ? `<button class="btn-complete" id="btn-na-restore">다시 내 혜택에 포함하기</button>`
+            : `<div class="apply-choice"><button class="btn-na" id="btn-mark-na">미해당</button><button class="btn-complete" id="btn-toggle-complete">${isDone ? "신청 완료 취소" : "해당 (신청 완료)"}</button></div>`
+          : `<button class="btn-complete" id="btn-toggle-complete" ${catButtonStyle(e.category)}>${isDone ? doneWords(e.category).undo : doneWords(e.category).mark}</button>`
+      }
       ${showBack ? `<button class="btn-close" id="btn-back-to-day">← 이 날 목록으로</button>` : ""}
       <button class="btn-close" id="btn-close-modal">닫기</button>
     `;
     el("detail-modal").classList.remove("hidden");
     el("btn-close-modal").addEventListener("click", closeDetail);
-    el("btn-toggle-complete").addEventListener("click", () => toggleComplete(e.id));
+    if (el("btn-toggle-complete")) el("btn-toggle-complete").addEventListener("click", () => toggleComplete(e.id));
+    if (el("btn-mark-na")) el("btn-mark-na").addEventListener("click", () => setNotApplicable(e.id, true));
+    if (el("btn-na-restore")) el("btn-na-restore").addEventListener("click", () => setNotApplicable(e.id, false));
     const dateInput = el("completion-date-input");
     if (dateInput) {
       el("btn-change-completion").addEventListener("click", () => {
         el("completion-edit").classList.toggle("hidden");
-        dateInput.focus();
+        renderMiniCal(el("completion-cal"), dateInput, el("completion-cal-label"));
       });
       el("btn-save-completion").addEventListener("click", () => setCompletionDate(e.id, dateInput.value));
     }
@@ -1644,31 +1898,54 @@
     modalMode = null;
   }
 
-  /** 프로필/데이터가 바뀐 뒤 3개 탭(달력/체크리스트/기록)을 전부 다시 그린다. */
+  /** 프로필/데이터가 바뀐 뒤 모든 화면(홈·캘린더·전체 할 일·기록·지원금)을 다시 그린다. */
   function renderAll() {
     renderProfileHeader();
+    renderHome();
     renderCalendar();
     renderSelectedDayPanel();
     renderRemainingList();
     renderChecklistTab();
     renderRecordTab();
+    renderSubsidyTab();
     attachListHandlers();
   }
 
+  const TAB_NAMES = ["home", "calendar", "record", "subsidy", "checklist"];
   function switchTab(name) {
+    // 체크리스트에서 특정 카테고리만 보다가 다른 탭으로 나가면, 돌아왔을 때 다시 전체 카테고리가 켜진 상태로 시작한다.
+    if (currentTab === "checklist" && name !== "checklist" && Object.keys(CATEGORY_META).some((k) => !activeCats.has(k))) {
+      activeCats = new Set(Object.keys(CATEGORY_META));
+      renderFilterChips();
+      renderChecklistTab();
+    }
     currentTab = name;
-    ["calendar", "checklist", "record"].forEach((t) => el(`tab-${t}`).classList.toggle("hidden", t !== name));
-    document.querySelectorAll(".seg-tab").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === name));
-    document.querySelectorAll(".nav-item").forEach((btn) => btn.classList.toggle("active", btn.dataset.nav === name));
+    if (name !== "checklist" && checklistScope) {
+      // 범위 보기는 전체 할 일 화면을 벗어나면 풀리고, 펼침 상태도 기본(현재·다음 월령)으로 돌린다.
+      checklistScope = null;
+      openMonthGroups = null;
+    }
+    TAB_NAMES.forEach((t) => el(`tab-${t}`).classList.toggle("hidden", t !== name));
+    const navKey = name;
+    document.querySelectorAll(".nav-item").forEach((btn) => btn.classList.toggle("active", btn.dataset.nav === navKey));
     window.scrollTo(0, 0);
+    if (name === "checklist") {
+      // 현재 월령 그룹이 보이도록 스크롤한다(과거 월령이 위에 쌓여 있어도 지금 챙길 것부터 보이게).
+      requestAnimationFrame(() => {
+        const now = document.querySelector('#list-checklist .month-group-card[data-now="1"]');
+        if (now) now.scrollIntoView({ block: "start" });
+      });
+    }
   }
 
   async function buildAndRender() {
     await ensureRegionSubsidyLoaded();
     schedule = buildSchedule(profile, dataset, completionsForEngine());
+    rememberChild();
     viewMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    selectedCalendarDate = new Date();
     renderFilterChips();
-    switchTab("calendar");
+    switchTab("home");
     renderAll();
   }
 
@@ -1695,8 +1972,8 @@
     const todayIso = toISODate(new Date());
     const dueIso = toISODate(profile.birthDate);
     el("modal-content").innerHTML = `
-      <h3>출산을 축하드려요! 🎉</h3>
-      <p class="fine-print">아이가 태어난 날을 알려주세요. 입력한 날짜 기준으로 검진·접종·지원금 기간이 다시 계산돼요.</p>
+      <h3>출산을 축하드려요!</h3>
+      <p class="fine-print">아이가 태어난 날을 알려주세요. 입력한 날짜 기준으로 검진·접종·혜택 기간이 다시 계산돼요.</p>
       <input type="date" id="born-date" class="born-switch-date" max="${todayIso}" value="${dueIso > todayIso ? todayIso : dueIso}" />
       <button class="btn-complete" id="btn-confirm-born">아이 정보로 바꾸기</button>
       <button class="btn-close" id="btn-cancel-born">취소</button>
@@ -1723,14 +2000,14 @@
   let landingStage = null;
   const STAGE_TEXT = {
     born: {
-      sub: "아이 생년월일과 사는 지역만 알려주시면<br />건강검진·예방접종·지원금·발달까지 한 캘린더에서 챙겨드려요.",
+      sub: "아이 생년월일과 사는 지역만 알려주시면<br />건강검진·예방접종·육아 혜택·발달까지 한 캘린더에서 챙겨드려요.",
       name: "아이 이름 또는 별칭", placeholder: "예: 하은이, 콩이",
-      birth: "아이 생년월일", order: "몇째 아이인가요?", submit: "우리 아이 캘린더 만들기",
+      birth: "아이 생년월일", order: "몇째 아이인가요?", submit: "우리 아이 맞춤 육아 일정 만들기",
     },
     pregnant: {
-      sub: "출산 예정일과 사는 지역만 알려주시면<br />임신 중 지원금부터 출산 후 검진·접종·지원금까지 한 캘린더에서 챙겨드려요.",
+      sub: "출산 예정일과 사는 지역만 알려주시면<br />출산 전 준비와 임신 중 혜택부터, 출산 후 검진·접종·발달 일정까지 이어서 챙겨드려요.",
       name: "태명 또는 별칭", placeholder: "예: 콩이, 튼튼이",
-      birth: "출산 예정일", order: "몇째 아이가 태어날 예정인가요?", submit: "임신·출산 캘린더 만들기",
+      birth: "출산 예정일", order: "몇째 아이가 태어날 예정인가요?", submit: "출산 전후 맞춤 일정 만들기",
     },
   };
 
@@ -1787,6 +2064,7 @@
       saveCompleted();
       familyCode = code;
       FamilySync.saveCode(code);
+      HNRecords.use(code, data.records);
       startListeningFamily();
       await buildAndRender();
       showCalendarView();
@@ -1805,6 +2083,9 @@
     if (unsubscribeFamily) unsubscribeFamily();
     familyCode = null;
     profile = null;
+    // completed와 같은 이유로 코드 없는 임시 기록도 비운다(새 아이에게 이전 아이의 기록이 섞이지 않게).
+    HNRecords.clearLocal();
+    HNRecords.use(null);
     el("query-form").reset();
     setLandingStage(null);
     updateBrandText();
@@ -1896,6 +2177,208 @@
     });
   }
 
+  // ── 아이 전환(여러 아이) ───────────────────────────────────────────────
+  // 가족코드는 이미 "아이 1명 = 코드 1개" 구조다. 이 기기에서 열어 본 아이의 코드 목록만 로컬에 두고,
+  // 전환은 그 코드로 다시 불러오는 것(handleLoadCode와 같은 경로)이라 별도 데이터 마이그레이션이 없다.
+  const CHILDREN_KEY = "hannun_children";
+  const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  function loadChildren() {
+    try {
+      const l = JSON.parse(localStorage.getItem(CHILDREN_KEY));
+      return Array.isArray(l) ? l : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function rememberChild() {
+    if (!familyCode || !profile) return;
+    try {
+      const list = loadChildren();
+      const entry = { code: familyCode, name: childDisplayName(), stage: profile.stage || "born" };
+      const i = list.findIndex((c) => c.code === familyCode);
+      if (i >= 0) list[i] = entry;
+      else list.push(entry);
+      localStorage.setItem(CHILDREN_KEY, JSON.stringify(list.slice(0, 8)));
+    } catch (e) {}
+  }
+
+  async function switchToChild(code) {
+    const errEl = el("child-switch-error");
+    if (errEl) errEl.classList.add("hidden");
+    try {
+      const data = await FamilySync.fetchFamily(code);
+      if (!data || !data.profile) throw new Error("가족 정보를 찾을 수 없어요");
+      if (unsubscribeFamily) unsubscribeFamily();
+      profile = profileFromPlain(data.profile);
+      completed = data.completed || {};
+      saveProfile(profile);
+      saveCompleted();
+      familyCode = code;
+      FamilySync.saveCode(code);
+      HNRecords.use(code, data.records);
+      startListeningFamily();
+      populateDistricts(profile.province, profile.district);
+      el("province").value = profile.province;
+      el("childName").value = profile.name || "";
+      el("birthOrder").value = profile.birthOrder || "";
+      syncOrderChips();
+      renderProvinceChips();
+      renderDistrictChips();
+      setBirthDatePicker(profile.birthDate);
+      closeDetail();
+      openMonthGroups = null;
+      await buildAndRender();
+    } catch (e) {
+      console.error("아이 전환 실패", e);
+      if (errEl) errEl.classList.remove("hidden");
+    }
+  }
+
+  function showChildSwitchSheet() {
+    modalMode = "profile";
+    rememberChild();
+    const list = loadChildren();
+    const person = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>';
+    const check = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    const plus = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+    el("modal-content").innerHTML = `
+      <h3 class="cs-title">아이 전환</h3>
+      <p class="cs-sub">이 기기에서 열어 본 아이예요. 눌러서 바꿔 볼 수 있어요.</p>
+      <div class="cs-list">${
+        list.length
+          ? list
+              .map((c) => {
+                const now = c.code === familyCode;
+                const photo = now && profile && profile.photoDataUrl ? `<img src="${profile.photoDataUrl}" alt="" />` : person;
+                return `<button type="button" class="cs-item${now ? " current" : ""}" data-code="${esc(c.code)}">
+                  <span class="cs-avatar">${photo}</span>
+                  <span class="cs-info"><strong>${esc(c.name)}</strong><small>${c.stage === "pregnant" ? "임신 중 · " : ""}가족코드 ${esc(c.code)}</small></span>
+                  ${now ? `<span class="cs-now">${check}보는 중</span>` : `<span class="cs-go">›</span>`}
+                </button>`;
+              })
+              .join("")
+          : '<p class="empty">저장된 아이가 아직 없어요.</p>'
+      }</div>
+      <p id="child-switch-error" class="fine-print hidden" style="color:#e0524e">불러오지 못했어요. 인터넷 연결을 확인해 주세요.</p>
+      <button class="cs-add" id="btn-child-add">${plus}새 아이 추가</button>
+      <button class="cs-code" id="btn-child-code">가족코드로 아이 불러오기</button>
+    `;
+    el("detail-modal").classList.remove("hidden");
+    el("btn-child-add").addEventListener("click", showNewChildSheet);
+    el("btn-child-code").addEventListener("click", () => {
+      closeDetail();
+      handleReset();
+      el("code-entry").classList.remove("hidden");
+    });
+    document.querySelectorAll("#modal-content .cs-item").forEach((b) =>
+      b.addEventListener("click", () => {
+        if (b.dataset.code === familyCode) return closeDetail();
+        switchToChild(b.dataset.code);
+      })
+    );
+  }
+
+  // ── 새 화면 모듈(js/home.js · subsidy-view.js · records-view.js)에 넘기는 읽기용 컨텍스트 ─────────────
+  // 새 화면들은 app.js의 클로저 상태를 직접 만지지 않고 여기서 넘겨주는 값·동작만 쓴다.
+  function hnCtx() {
+    const today = new Date();
+    const bindOpen = (container) => {
+      if (!container) return;
+      container.querySelectorAll(".event-item").forEach(bindEventItem);
+      container.querySelectorAll("[data-open-event]").forEach((n) =>
+        n.addEventListener("click", () => {
+          const ev = schedule.find((x) => x.id === n.getAttribute("data-open-event"));
+          if (ev) openDetail(ev);
+        })
+      );
+    };
+    return {
+      profile,
+      completed,
+      familyCode,
+      today,
+      pregnant: isPregnant(),
+      ageNow: ageInMonths(profile.birthDate, today),
+      events: calendarSchedule(),
+      allEvents: schedule,
+      CATEGORY_META,
+      esc,
+      formatDateKR,
+      eventItemHtml,
+      kindTagHtml,
+      doneWords,
+      shortSubsidySummary,
+      subsidyProvider,
+      subsidyAudienceLabel,
+      providerTagHtml,
+      notApplicable: () =>
+        schedule
+          .filter((e) => isNotApplicable(e.id))
+          .map((e) => ({ event: e, at: completed[e.id + NA_SUFFIX].recordedAt })),
+      calGroupFor,
+      isImportantEvent,
+      childDisplayName,
+      bindOpen,
+      inCalendarMonth: eventInCalendarMonth,
+      toggleComplete,
+      /** 완료한 할 일에 부모 메모를 붙인다(completed[id].memo). 비우면 필드를 지운다(Firestore는 undefined 값을 거부). */
+      setCompletionMemo(id, memo) {
+        if (!completed[id]) return;
+        const next = { ...completed[id] };
+        const t = String(memo || "").trim();
+        if (t) next.memo = t;
+        else delete next.memo;
+        completed[id] = next;
+        saveCompleted();
+        if (familyCode) FamilySync.updateCompleted(familyCode, completed).catch((err) => console.error(err));
+        renderHome();
+        renderRecordTab();
+      },
+      openDetail,
+      openProfile: showProfileSheet,
+      switchTab,
+      monthKeysOf,
+      /** 접종·검진의 권장 기간 문구("2026년 7월~2026년 9월 사이" / "2026년 9월 중") — 카드·상세와 같은 표기. */
+      monthPeriodText: (e) => periodTextFromWindow(e.windowStart, e.windowEnd),
+      /** scope = { label, ids[], status? } 이면 그 항목들만, 없으면 전체 할 일. */
+      openTodos(scope) {
+        checklistScope = scope ? { label: scope.label, ids: new Set(scope.ids), keys: scope.keys || {}, flat: !!scope.flat } : null;
+        checklistStatus = scope && scope.status ? scope.status : "all";
+        if (scope) {
+          // 범위 보기는 한 그룹만 펼친다: 이번 달 = 지금 월령, 다가오는 일정 = 가장 가까운 월령, 지난 일정 = 가장 최근 월령.
+          const nowKey = checklistBucket(Math.max(0, ageInMonths(profile.birthDate, new Date())));
+          const keys = schedule
+            .filter((e) => scope.ids.includes(e.id))
+            .flatMap((e) => (scope.keys && scope.keys[e.id] ? scope.keys[e.id] : monthKeysOf(e)))
+            .filter((k) => typeof k === "number")
+            .map(checklistBucket);
+          const pick = scope.open === "current" ? nowKey : scope.open === "last" ? Math.max(...keys, 0) : Math.min(...(keys.length ? keys : [nowKey]));
+          openMonthGroups = new Set([pick]);
+        } else openMonthGroups = null;
+        switchTab("checklist");
+        renderChecklistTab();
+      },
+      goCalendar(date) {
+        viewMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+        selectedCalendarDate = date;
+        switchTab("calendar");
+        renderCalendar();
+        renderSelectedDayPanel();
+        renderRemainingList();
+        attachListHandlers();
+      },
+      showModal(html, mode) {
+        modalMode = mode || "record";
+        el("modal-content").innerHTML = html;
+        el("detail-modal").classList.remove("hidden");
+      },
+      closeModal: closeDetail,
+      resizeImageFile,
+    };
+  }
+
   async function init() {
     await loadAll();
     populateProvinces();
@@ -1919,6 +2402,23 @@
     document.querySelectorAll(".stage-btn").forEach((b) => b.addEventListener("click", () => setLandingStage(b.dataset.stage)));
     el("btn-stage-back").addEventListener("click", () => setLandingStage(null));
     el("modal-backdrop").addEventListener("click", closeDetail);
+    // 모든 팝업 오른쪽 위에 ✕ 닫기 버튼을 달고, 맨 아래의 "닫기" 버튼은 숨긴다(내용이 바뀔 때마다 적용).
+    const ensureModalX = () => {
+      const box = el("modal-content");
+      if (!box.querySelector(".modal-x")) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "modal-x";
+        b.setAttribute("aria-label", "닫기");
+        b.textContent = "✕";
+        b.addEventListener("click", closeDetail);
+        box.prepend(b);
+      }
+      box.querySelectorAll("button.btn-close").forEach((btn) => {
+        if (btn.textContent.trim() === "닫기") btn.classList.add("hidden");
+      });
+    };
+    new MutationObserver(ensureModalX).observe(el("modal-content"), { childList: true });
     el("btn-prev-month").addEventListener("click", () => {
       viewMonth.setMonth(viewMonth.getMonth() - 1);
       renderCalendar();
@@ -1928,30 +2428,52 @@
       renderCalendar();
     });
 
-    // 대시보드 탭(세그먼트 + 하단 탭바) — 4번째(기록)는 하단 탭바에만 있다.
-    document.querySelectorAll(".seg-tab").forEach((btn) => btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
+    // 대시보드 내비게이션 — 하단 탭 4개(홈·캘린더·기록·지원금). 상단 세그먼트 탭은 없앴다(중복 내비게이션).
     document.querySelectorAll(".nav-item").forEach((btn) => btn.addEventListener("click", () => switchTab(btn.dataset.nav)));
+    el("btn-todos-back").addEventListener("click", () => switchTab("home"));
+    el("btn-scope-clear").addEventListener("click", () => {
+      checklistScope = null;
+      checklistStatus = "all";
+      openMonthGroups = null;
+      renderChecklistTab();
+    });
+    document.querySelectorAll("#status-filter-checklist .sf-btn").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        checklistStatus = btn.dataset.status;
+        renderChecklistTab();
+      })
+    );
+    el("btn-add-record").addEventListener("click", () => window.HNRecordsView && HNRecordsView.openEditor(hnCtx()));
     el("btn-profile-card").addEventListener("click", showProfileSheet);
     el("btn-add-child").addEventListener("click", showNewChildSheet);
     setupRefreshButton();
 
     profile = loadProfile();
     familyCode = FamilySync.getSavedCode();
+    HNRecords.use(familyCode);
+    HNRecords.onChange(() => {
+      if (!profile || el("view-calendar").classList.contains("hidden")) return;
+      renderHome();
+      renderRecordTab();
+    });
 
     if (familyCode) {
       try {
         const data = await FamilySync.fetchFamily(familyCode);
         if (data && data.profile) {
-          // 예전에 이 기기에만 저장된 사진이 있고 서버엔 없으면 올려서 가족과 공유한다.
+          // 사진은 서버(가족 문서)가 기준이다 — 다른 기기에서 바꾸거나 지운 사진이 그대로 반영된다.
+          // 예외: 서버 프로필에 사진 필드 자체가 없는 예전 데이터(삭제는 null로 기록됨)일 때만, 이 기기에만 있던 사진을 올려 공유한다.
           const localPhoto = profile && profile.photoDataUrl;
+          const serverHasPhotoField = data.profile.photoDataUrl !== undefined;
           profile = profileFromPlain(data.profile);
-          if (!profile.photoDataUrl && localPhoto) {
+          if (!serverHasPhotoField && !profile.photoDataUrl && localPhoto) {
             profile.photoDataUrl = localPhoto;
             pushProfileToFamily();
           }
           completed = data.completed || {};
           saveProfile(profile);
           saveCompleted();
+          HNRecords.mergeRemote(data.records);
           startListeningFamily();
         } else {
           FamilySync.clearCode();

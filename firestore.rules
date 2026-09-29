@@ -71,11 +71,12 @@ service cloud.firestore {
           && request.resource.data.currentCode is string);
 
       allow update: if
-        // 레거시: updateProfile()은 {profile, updatedAt}만, updateCompleted()는 {completed, updatedAt}만
+        // 레거시: updateProfile()은 {profile, updatedAt}만, updateCompleted()는 {completed, updatedAt}만,
+        // updateRecord()(UX 개편: 직접 작성한 성장·활동 기록)는 {records.<id>, updatedAt}만 쓴다.
         // merge:true로 쓴다(js/sync.js). archived/migratedTo/migratedAt은 마이그레이션 시 레거시 문서에
         // 표시하는 필드라 여기 같이 허용한다(docs/Firestore-마이그레이션-계획.md).
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['profile', 'completed', 'updatedAt', 'archived', 'migratedTo', 'migratedAt'])
+          .hasOnly(['profile', 'completed', 'records', 'updatedAt', 'archived', 'migratedTo', 'migratedAt'])
         ||
         // v2
         request.resource.data.diff(resource.data).affectedKeys()

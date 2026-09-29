@@ -21,7 +21,7 @@ const CATEGORY_META = {
   "영유아검진": { label: "검진", color: "#a855f7" }, // 보라
   "생활·수유": { label: "생활", color: "#eab308" }, // 노랑
   "안전·돌봄": { label: "안전", color: "#ef4444" }, // 빨강
-  "행정·지원금": { label: "지원금", color: "#475569" }, // 슬레이트 네이비(무채색)
+  "행정·지원금": { label: "혜택", color: "#475569" }, // 슬레이트 네이비(무채색)
 };
 
 // TodoDefinition의 10개 세부 카테고리 코드 → 위 6개 그룹 중 하나. td.categoryGroup이 있으면
@@ -30,12 +30,12 @@ const ENGINE_CATEGORY_GROUP = {
   HC: "영유아검진", VX: "예방접종",
   DV: "발달관찰",
   FD: "생활·수유", OR: "생활·수유", SL: "생활·수유", LF: "생활·수유",
-  SF: "안전·돌봄", CR: "안전·돌봄",
+  SF: "안전·돌봄", CR: "생활·수유", // 어린이집·보육은 안전이 아니라 생활 영역
   SB: "행정·지원금",
 };
 const ENGINE_CATEGORY_LABEL = {
   HC: "건강검진", VX: "예방접종", DV: "성장발달", FD: "이유식·영양", OR: "구강",
-  SL: "수면", SF: "안전", LF: "생활", CR: "보육", SB: "지원금·제도",
+  SL: "수면", SF: "안전", LF: "생활", CR: "보육", SB: "혜택·제도",
 };
 const ENGINE_STATUS_LABEL = {
   SCHEDULED: "예정",
@@ -133,6 +133,7 @@ function buildTodoEngineEvents(profile, todoDefinitions, completions) {
     const td = byId.get(inst.todo_id);
     const isDateSpecific = computeIsDateSpecific(inst);
     const reviewTag = inst.needsReview ? "⚠️ 확인 필요 · " : "";
+    const isSubsidyEvt = ((td && td.categoryGroup) || ENGINE_CATEGORY_GROUP[inst.category]) === "행정·지원금";
     events.push({
       id: `${inst.todo_id}__${inst.occurrenceKey}`,
       category: (td && td.categoryGroup) || ENGINE_CATEGORY_GROUP[inst.category] || "생활·수유",
@@ -141,6 +142,12 @@ function buildTodoEngineEvents(profile, todoDefinitions, completions) {
       date: inst.windowStart || new Date(),
       dateLabel: ENGINE_STATUS_LABEL[inst.status] || inst.status,
       isDateSpecific,
+      // 일정 3유형(js/hn-logic.js): 기간이 좁으면 window(권장 기간), 넓거나 열려 있으면 monthly(월령별 체크).
+      // 엔진 계산 결과에는 "확정 예정일"이 없으므로 fixed는 여기서 만들지 않는다.
+      scheduleKind: isSubsidyEvt && inst.windowStart ? "fixed" : isDateSpecific ? "window" : "monthly",
+      fixedDate: isSubsidyEvt && inst.windowStart ? inst.windowStart : null,
+      windowStart: inst.windowStart || null,
+      windowEnd: inst.windowEnd || null,
       summary: td ? (td.cardSummary || td.parentAction) : "",
       detail: { instance: inst, definition: td },
       source: td ? td.source : "",
@@ -227,7 +234,7 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrd
     events.push({
       id: s.id,
       category: "행정·지원금",
-      subcategoryLabel: "지원금·제도",
+      subcategoryLabel: "혜택·제도",
       title: s.name,
       date: anchorDate,
       dateLabel: subsidyDeadlineText(s),
@@ -243,6 +250,9 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrd
       periods: s.periods || null,
       isPrenatalOnly: !!s.prenatalOnly,
       isLegacySubsidy: true, // 지자체(지역) 지원금 — 기존 subsidyIsActiveNow() 특수 로직을 그대로 쓴다
+      // 지원금은 신청 시작일(entryDate)에 표시한다. 신청 기간(시작~마감)은 카드·상세에 함께 보여준다.
+      scheduleKind: "fixed",
+      fixedDate: entryDate,
       isDateSpecific: true, // 상세보기에 실제 날짜(entryDate/deadlineDate)를 보여줄지 여부(달력 배치와는 무관, js/app.js eventItemHtml 참고)
     });
   }
