@@ -931,13 +931,8 @@
     const events = visibleSchedule()
       .filter((e) => eventInCalendarMonth(e, date.getFullYear(), date.getMonth()) && calendarDisplayDayMap.get(e.id) === date.getDate())
       .sort((a, b) => (isImportantEvent(b) ? 1 : 0) - (isImportantEvent(a) ? 1 : 0));
-    const today = new Date();
     const dowNames = ["일", "월", "화", "수", "목", "금", "토"];
-    const d0 = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const t0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const diffDays = Math.round((d0 - t0) / (24 * 60 * 60 * 1000));
-    const ddayText = diffDays === 0 ? "오늘" : diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
-    el("selected-day-title").textContent = `📌 ${date.getMonth() + 1}월 ${date.getDate()}일 (${dowNames[date.getDay()]}) · ${ddayText}`;
+    el("selected-day-title").textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 (${dowNames[date.getDay()]})`;
     el("selected-day-list").innerHTML = events.map(eventItemHtml).join("");
     el("selected-day-empty").classList.toggle("hidden", events.length > 0);
   }
