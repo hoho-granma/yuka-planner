@@ -20,28 +20,6 @@
     return { auto: records, manual, orphanCount };
   }
 
-  /** 사진은 원본 비율을 유지한 채 긴 변 기준으로 줄여 JPEG로 저장한다(프로필 사진처럼 정사각으로 자르지 않는다). */
-  function fitImage(file, max) {
-    return new Promise((resolve, reject) => {
-      const fr = new FileReader();
-      fr.onerror = () => reject(fr.error);
-      fr.onload = () => {
-        const img = new Image();
-        img.onerror = () => reject(new Error("이미지를 읽을 수 없어요"));
-        img.onload = () => {
-          const k = Math.min(1, max / Math.max(img.width, img.height));
-          const c = document.createElement("canvas");
-          c.width = Math.round(img.width * k);
-          c.height = Math.round(img.height * k);
-          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-          resolve(c.toDataURL("image/jpeg", 0.82));
-        };
-        img.src = fr.result;
-      };
-      fr.readAsDataURL(file);
-    });
-  }
-
   function syncNote(ctx) {
     const err = HNRecords.syncError();
     if (!ctx.familyCode) return `<p class="sync-note">가족코드가 아직 없어서, 직접 남긴 기록은 이 기기에만 저장돼요.</p>`;
@@ -145,7 +123,6 @@
        <div class="detail-row"><div class="label">부모 메모</div>
          ${isAuto ? `<textarea id="rv-memo" class="rv-textarea" rows="3" maxlength="500" placeholder="예: 접종 후 열 없었어요">${ctx.esc(r.memo)}</textarea><button type="button" class="completion-save rv-save" id="rv-save-memo">메모 저장</button>` : r.memo ? `<div class="rv-memo-text">${ctx.esc(r.memo)}</div>` : `<span class="rv-none">남긴 메모가 없어요</span>`}
        </div>
-       <div class="detail-row"><div class="label">사진</div><div id="rv-photo" class="rv-photo"></div></div>
        ${nextHtml}
        ${isAuto ? `<button class="btn-complete" id="rv-open-source">원래 할 일 보기</button>` : `<button class="btn-complete" id="rv-edit">수정하기</button><button class="btn-close rv-danger" id="rv-delete">이 기록 삭제</button>`}
        <button class="btn-close" id="rv-close">닫기</button>`,
@@ -178,36 +155,6 @@
         ctx.closeModal();
       });
     }
-    renderPhotoArea(ctx, id, q("rv-photo"), true);
-  }
-
-  async function renderPhotoArea(ctx, recId, host, allowChange) {
-    const url = await HNRecords.getPhoto(recId);
-    host.innerHTML = url
-      ? `<img src="${url}" alt="기록 사진" />${allowChange ? `<button type="button" class="rv-photo-btn" data-x="remove">사진 삭제</button>` : ""}<small class="rv-photo-note">사진은 이 기기에만 저장돼요(가족과 공유되지 않아요).</small>`
-      : allowChange
-      ? `<input type="file" accept="image/*" class="hidden" data-x="file" /><button type="button" class="rv-photo-btn" data-x="add">사진 추가</button><small class="rv-photo-note">사진은 이 기기에만 저장돼요(가족과 공유되지 않아요).</small>`
-      : "";
-    const file = host.querySelector("[data-x='file']");
-    const add = host.querySelector("[data-x='add']");
-    const rm = host.querySelector("[data-x='remove']");
-    if (add) add.addEventListener("click", () => file.click());
-    if (file)
-      file.addEventListener("change", async () => {
-        const f = file.files && file.files[0];
-        if (!f) return;
-        try {
-          await HNRecords.setPhoto(recId, await fitImage(f, 1024));
-        } catch (e) {
-          console.error("사진 저장 실패", e);
-        }
-        renderPhotoArea(ctx, recId, host, allowChange);
-      });
-    if (rm)
-      rm.addEventListener("click", async () => {
-        await HNRecords.removePhoto(recId);
-        renderPhotoArea(ctx, recId, host, allowChange);
-      });
   }
 
   // ── 추가/수정 ───────────────────────────────────────────────────────────
@@ -223,17 +170,12 @@
        <div class="rv-field"><label for="rv-date">날짜 <span class="req">*</span></label><input type="date" id="rv-date" max="${todayIso}" value="${existing ? existing.date : todayIso}" /><small id="rv-age" class="rv-age"></small></div>
        <div class="rv-field"><label for="rv-memo-new">메모</label><textarea id="rv-memo-new" class="rv-textarea" rows="3" maxlength="500" placeholder="그날의 모습이나 느낌을 적어 보세요">${existing ? ctx.esc(existing.memo || "") : ""}</textarea></div>
        <div class="rv-field"><label for="rv-author">작성자 <small>(가족이 볼 때 표시돼요)</small></label><input type="text" id="rv-author" maxlength="10" placeholder="예: 엄마, 아빠" value="${ctx.esc(existing ? existing.authorLabel || "" : HNRecords.authorLabel())}" /></div>
-       <div class="rv-field"><label>사진</label><div id="rv-photo" class="rv-photo"></div></div>
        <p id="rv-error" class="fine-print hidden" style="color:#e0524e">제목과 날짜를 입력해 주세요.</p>
        <button class="btn-complete" id="rv-save">${existing ? "저장" : "기록 남기기"}</button>
        <button class="btn-close" id="rv-cancel">취소</button>`,
       "record"
     );
     const q = (i) => document.getElementById(i);
-    // 새 기록의 사진은 저장 전에 임시 키로 두었다가, 저장하면 실제 id로 옮긴다(취소하면 버린다).
-    const photoKey = editId || "__pending__";
-    if (!editId) HNRecords.removePhoto(photoKey);
-    renderPhotoArea(ctx, photoKey, q("rv-photo"), true);
     const updateAge = () => {
       const v = q("rv-date").value;
       q("rv-age").textContent = v ? `생후 ${L.ageMonthsAt(ctx.profile.birthDate, new Date(v + "T12:00:00"))}개월` : "";
@@ -247,7 +189,6 @@
       })
     );
     q("rv-cancel").addEventListener("click", () => {
-      if (!editId) HNRecords.removePhoto(photoKey);
       editId ? openDetail(ctx, editId) : ctx.closeModal();
     });
     q("rv-save").addEventListener("click", async () => {
@@ -261,11 +202,6 @@
       const author = q("rv-author").value.trim();
       HNRecords.setAuthorLabel(author);
       const res = await HNRecords.save({ id: editId, category: cat, title, date, memo: q("rv-memo-new").value, authorLabel: author });
-      if (!editId) {
-        const pending = await HNRecords.getPhoto(photoKey);
-        if (pending) await HNRecords.setPhoto(res.id, pending);
-        await HNRecords.removePhoto(photoKey);
-      }
       const notice = res.synced
         ? { text: "기록을 남겼어요." }
         : { warn: true, text: ctx.familyCode ? "가족과 공유하지 못해 이 기기에만 저장했어요." : "가족코드가 없어 이 기기에만 저장했어요." };

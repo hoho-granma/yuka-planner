@@ -1,12 +1,11 @@
 /*
- * 기록 저장소 — 부모가 직접 쓴 성장·활동 기록(records)과 기록 사진.
+ * 기록 저장소 — 부모가 직접 쓴 성장·활동 기록(records).
  *
  * 저장 원칙 (docs/UX-개편-분석-및-설계.md §2-4)
  *  - 완료 내역에서 만들어지는 "자동 기록"은 여기서 저장하지 않는다(completed 맵에서 그때그때 파생 → js/hn-logic.js).
  *  - 직접 기록은 localStorage("hannun_records:<가족코드|local>")에 두고, 가족코드가 있으면 Firestore
  *    families/{코드}.records.<id> 필드 단위로 동기화한다(FamilySync.updateRecord). 충돌은 updatedAt이 새로운 쪽이 이긴다.
  *  - 삭제는 deletedAt 표시(소프트 삭제) — 다른 기기에서 부활하지 않게.
- *  - 사진은 이 기기의 IndexedDB에만 둔다(가족 문서 1MB 한도를 넘지 않게). 다른 기기와 공유되지 않는다.
  *  - 동기화가 실패해도(배포된 Firestore 규칙이 records 필드를 막고 있을 수 있다) 기록은 이 기기에 남고,
  *    화면에는 "이 기기에만 저장됨"이 표시된다 — 실패를 조용히 삼키지 않는다.
  */
@@ -139,52 +138,8 @@
     const now = Date.now();
     map[id] = { ...map[id], deletedAt: now, updatedAt: now };
     persist();
-    removePhoto(id);
     emit();
     return push(id);
-  }
-
-  // ── 사진(IndexedDB, 이 기기 전용) ────────────────────────────────────────
-  let dbPromise = null;
-  function photoDb() {
-    if (!dbPromise) {
-      dbPromise = new Promise((resolve) => {
-        try {
-          const req = indexedDB.open("hannun-record-photos", 1);
-          req.onupgradeneeded = () => req.result.createObjectStore("photos", { keyPath: "id" });
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => resolve(null);
-        } catch (e) {
-          resolve(null); // 사생활 보호 모드 등 — 사진만 못 쓰고 나머지는 정상
-        }
-      });
-    }
-    return dbPromise;
-  }
-  async function photoTx(mode, fn) {
-    const db = await photoDb();
-    if (!db) return null;
-    return new Promise((resolve) => {
-      try {
-        const tx = db.transaction("photos", mode);
-        const req = fn(tx.objectStore("photos"));
-        tx.oncomplete = () => resolve(req && "result" in req ? req.result : true);
-        tx.onerror = () => resolve(null);
-        tx.onabort = () => resolve(null);
-      } catch (e) {
-        resolve(null);
-      }
-    });
-  }
-  async function getPhoto(id) {
-    const r = await photoTx("readonly", (st) => st.get(id));
-    return r && r.dataUrl ? r.dataUrl : null;
-  }
-  function setPhoto(id, dataUrl) {
-    return photoTx("readwrite", (st) => st.put({ id, dataUrl, updatedAt: Date.now() }));
-  }
-  function removePhoto(id) {
-    return photoTx("readwrite", (st) => st.delete(id));
   }
 
   window.HNRecords = {
@@ -211,8 +166,5 @@
         localStorage.setItem(AUTHOR_KEY, String(v || "").trim());
       } catch (e) {}
     },
-    getPhoto,
-    setPhoto,
-    removePhoto,
   };
 })();
