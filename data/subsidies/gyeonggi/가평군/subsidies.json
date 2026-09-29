@@ -1,0 +1,37 @@
+{
+  "_meta": {
+    "설명": "가평군 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-GAPYEONG",
+      "name": "가평군 출산 및 입양축하금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:가평군"
+      ],
+      "target": "가평군 출생아, 출생 6개월 전부터 거주",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 120,
+      "amountText": "첫째 100만원(현금50+상품권50) / 둘째 400만원(2년분할) / 셋째 1,000만원(5년분할) / 넷째 이상 2,000만원(10년분할, 50% 상품권)",
+      "amountByBirthOrder": {
+        "first": 1000000,
+        "second": 4000000,
+        "third": 10000000,
+        "fourthPlus": 20000000
+      },
+      "paymentMethod": "현금+상품권 혼합, 순위별 분할",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 6,
+      "residencyRequirement": "출생 6개월 전부터 가평군 거주",
+      "additionalConditions": "",
+      "officialUrl": "https://www.gp.go.kr/portal/contents.do?key=572",
+      "sourceName": "가평군청 공식 홈페이지",
+      "lastVerified": "2026-09-01",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "",
+      "statusOriginal": "확정시행"
+    }
+  ]
+}

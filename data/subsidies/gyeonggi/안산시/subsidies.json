@@ -1,0 +1,37 @@
+{
+  "_meta": {
+    "설명": "안산시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-ANSAN-01",
+      "name": "안산시 출생축하금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:안산시"
+      ],
+      "target": "안산시 출생·입양아",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 18,
+      "amountText": "첫째 100만원 / 둘째 300만원 / 셋째 이상 500만원 (+출산축하용품 10만원 상당)",
+      "amountByBirthOrder": {
+        "first": 1000000,
+        "second": 3000000,
+        "third": 5000000,
+        "fourthPlus": 5000000
+      },
+      "paymentMethod": "행정복지센터 신청, 예산 소진 시 지연 가능",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 18,
+      "residencyRequirement": "출생일 기준 부 또는 모 안산시 주민등록 12개월 이상 계속",
+      "additionalConditions": "출생일로부터 1년 6개월 이내 신청",
+      "officialUrl": "https://ansan.go.kr/iloveyou/sub/contents.do?c1=3&c3=14",
+      "sourceName": "안산시 아이LoveYou (여성가족과 031-481-2604)",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2027-01-01 이후 출생아부터 첫째 200만원(일시금), 둘째 300만원(150+150 분할), 셋째 이상 500만원(150+350 분할)로 변경(언론 2026-07). 공식 페이지 본문은 현행 100/300/500 기준.",
+      "statusOriginal": "확정시행"
+    }
+  ]
+}

@@ -160,7 +160,7 @@
       "source": "K-DST·CDC",
       "verificationStatus": "확인됨",
       "displayMonth": 13,
-      "displayMonthLabel": "13개월",
+      "displayMonthLabel": "만 1세 (13~17개월)",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "발달관찰",
       "observationGuide": [
@@ -194,7 +194,7 @@
       "source": "K-DST·CDC",
       "verificationStatus": "확인됨",
       "displayMonth": 19,
-      "displayMonthLabel": "19개월",
+      "displayMonthLabel": "만 1세 (18~23개월)",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "발달관찰",
       "observationGuide": [
@@ -228,7 +228,7 @@
       "source": "K-DST·CDC",
       "verificationStatus": "확인됨",
       "displayMonth": 25,
-      "displayMonthLabel": "25개월",
+      "displayMonthLabel": "만 2세 (24~36개월)",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "발달관찰",
       "observationGuide": [
@@ -261,7 +261,7 @@
       "source": "K-DST·CDC",
       "verificationStatus": "확인됨",
       "displayMonth": 31,
-      "displayMonthLabel": "31개월",
+      "displayMonthLabel": "만 2세 (24~36개월)",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "발달관찰",
       "observationGuide": [

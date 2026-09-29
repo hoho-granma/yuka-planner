@@ -1,0 +1,64 @@
+{
+  "_meta": {
+    "설명": "이천시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-ICHEON-01",
+      "name": "이천시 출산축하금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:이천시"
+      ],
+      "target": "이천시 출생아",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "첫째 100만원 / 둘째 200만원 / 셋째 300만원 / 넷째 이상 500만원 (다태아 출생아별 지급)",
+      "amountByBirthOrder": {
+        "first": 1000000,
+        "second": 2000000,
+        "third": 3000000,
+        "fourthPlus": 5000000
+      },
+      "paymentMethod": "이천사랑 지역화폐",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "2026년 출생아부터 전입일 기준 1년 이상 이천시 주민등록·거주 (종전 출생일 기준 6개월)",
+      "additionalConditions": "지원기준 충족일부터 1년 이내 신청. 읍면동 방문 또는 정부24",
+      "officialUrl": "https://www.icheon.go.kr/depart/contents.do?mid=0604070202",
+      "sourceName": "이천시 보건소 모자건강팀",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2026년 출생아부터 거주요건 강화.",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-ICHEON-02",
+      "name": "이천시 다자녀가정 양육비",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:이천시"
+      ],
+      "target": "셋째 이후 자녀(만1세~만6세)",
+      "minAgeMonths": 12,
+      "maxAgeMonths": 84,
+      "amountText": "월 5만원",
+      "paymentMethod": "계좌 지급(익월), 사용기한 지급일로부터 3년",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 12,
+        "maxMonths": 84
+      },
+      "residencyRequirement": "부 또는 모 관내 주민등록·실거주",
+      "additionalConditions": "첫돌이 속한 달에 읍면동 신청 시 익월부터 지급",
+      "officialUrl": "https://www.icheon.go.kr/depart/contents.do?mid=0604070200",
+      "sourceName": "이천시 보건소 모자건강팀",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "",
+      "statusOriginal": "확정시행"
+    }
+  ]
+}

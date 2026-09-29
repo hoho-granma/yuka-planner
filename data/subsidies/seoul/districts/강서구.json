@@ -1,0 +1,77 @@
+{
+  "_meta": {
+    "설명": "서울특별시 강서구 자치구 전용 지원금(서울시 전체 공통 항목은 ../city.json 참고).",
+    "조사일": "2026-09-29",
+    "note": "제한적 — 강서구는 2022년 첫만남이용권 시행 이후 자체 출산축하금을 지급하지 않는 것으로 확인(육아생활 정리 페이지 '구 자체 출산축하금 지급되지 않음'). 강서구청 출산양육지원 메뉴에도 서울시·국가 사업(임산부 교통비, 아동수당, 부모급여, 가정양육수당 등) 외 자체 사업은 임신부 가사돌봄서비스 1건만 확인(GANGSEO-001, 출산 전 임신부 대상, 2026년 신청 마감). 강서구 '출산·양육 지원사업 안내서'(e-book)는 열람하지 못해 다른 자체 사업이 있을 가능성은 배제 못함.",
+    "2026-09-29 갱신": "구청 지원사업 재조사: 신규 0건 추가(-), 기존 2개 필드 정정. 미확인 사항은 항목 notes 참고.",
+    "2026-09-29 브라우저 검증": "구청·법제처 원문 재확인 반영(정정 1개 필드)."
+  },
+  "subsidies": [
+    {
+      "id": "GANGSEO-001",
+      "name": "강서구 임신부 가사돌봄서비스",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:강서구"
+      ],
+      "target": "강서구에 주민등록을 두고 거주하는 임신부(임신판정~출산 전) — 출생 후 가정은 해당 없음",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "기본 가사서비스(청소·빨래·설거지 등)·병원동행 최대 10회(1회 4시간). 본인부담 평일 7,000원/토요일 8,000원 (현금 지급 아님, 서비스 제공)",
+      "paymentMethod": "서비스 제공(현물)",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "강서구 주민등록 + 거주",
+      "additionalConditions": "2026년 신청기간 3/23~8/31, 2026-09-29 현재 구청 페이지에 '신청 마감, 추가접수 대기 문의(02-2600-6967)'로 표시(신청 마감 확인). 서울형 가사서비스·한부모가족 가사서비스와 중복지원 불가.",
+      "officialUrl": "https://www.gangseo.seoul.kr/welfare/wel100501",
+      "sourceName": "강서구청 출산양육지원 '임신부 가사돌봄서비스' 페이지 WebFetch 확인",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "구청 출산양육 메뉴 전수 확인: 자체 사업은 임신부 가사돌봄 외 다자녀가정 의료비(조건 미확인)·강서구형 시간제보육이 추가 후보. 산후조리비용 취약산모 지원 조례 존재",
+      "lastVerified": "2026-09-29",
+      "prenatalOnly": true,
+      "periods": [
+        {
+          "label": "신청 가능",
+          "startDays": null,
+          "startText": "2026-03-23",
+          "endDays": null,
+          "endText": "2026-08-31(구청 페이지 기준, 마감 확인필요)",
+          "note": "검색 스니펫은 10/30까지로 상이"
+        },
+        {
+          "label": "이용",
+          "startDays": null,
+          "startText": "임신 판정 후·자격 확정 시",
+          "endDays": -1,
+          "endText": "출산 전까지(2026년 12월 이전)",
+          "note": "최대 10회, 1회 4시간"
+        }
+      ]
+    },
+    {
+      "id": "GANGSEO-002",
+      "name": "강서구 산후조리비용 지원(취약 산모 대상)",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:강서구"
+      ],
+      "target": "기초수급·차상위·한부모·미혼모·19세 이하 산모 등 취약 산모, 강서구 주민등록·실거주 + 신생아 동일세대",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 2,
+      "amountText": "금액은 조례에 명시 없음(구청 원문 확인 필요)",
+      "paymentMethod": "미확인",
+      "deadlineType": "birth_relative_days",
+      "deadlineValue": 60,
+      "residencyRequirement": "",
+      "additionalConditions": "",
+      "officialUrl": "https://www.law.go.kr/자치법규/서울특별시강서구산후조리비용지원조례",
+      "sourceName": "법제처 강서구 산후조리비용 지원 조례(2026.4.8) 제3~5조",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "출생일 60일 이내 동주민센터 신청. 금액은 구청 원문 확인 전까지 미확인. 일반 가정 대상 아님.",
+      "periods": []
+    }
+  ]
+}

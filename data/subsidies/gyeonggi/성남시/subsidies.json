@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "설명": "성남시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-SEONGNAM",
+      "name": "성남시 출산지원금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:성남시"
+      ],
+      "target": "성남시 출생아, 180일 이상 거주",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 60,
+      "amountText": "첫째 30만원 / 둘째 50만원 / 셋째 100만원 / 넷째 200만원 / 다섯째 이상 300만원",
+      "amountByBirthOrder": {
+        "first": 300000,
+        "second": 500000,
+        "third": 1000000,
+        "fourthPlus": 2000000
+      },
+      "paymentMethod": "첫째·둘째는 카드형 지역화폐(아동수당 체크카드 필수)",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "180일 이상 거주",
+      "additionalConditions": "",
+      "officialUrl": "https://www.seongnam.go.kr/city/1000647/16/10485/subTabCont.do",
+      "sourceName": "성남시청 공식 홈페이지",
+      "lastVerified": "2026-09-01",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "신청기한 미확인"
+    }
+  ]
+}

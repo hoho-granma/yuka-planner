@@ -1,0 +1,156 @@
+{
+  "_meta": {
+    "설명": "서울특별시 서대문구 자치구 전용 지원금(서울시 전체 공통 항목은 ../city.json 참고).",
+    "조사일": "2026-09-29",
+    "note": "있음 — 서울시 공통(SEOUL-001~004)과 별도로 서대문구 자체 지원 3건을 확인함(SDM-001 임신축하금, SDM-002 공공산후조리원 이용료 감면, SDM-003 아빠육아휴직장려금). 모두 서대문구 '2026 출생양육 지원정책 안내(GUIDE BOOK, 2026-04)' 원문으로 확인. 서대문구 자체 출산축하금(출생 후 현금)·기저귀 지원은 확인되지 않음(저소득 기저귀·조제분유는 국가 사업). 임신축하금·산후조리원은 출산 전에 신청하는 제도라 출생일 기준 신청기한이 음수(출산 전)로 표현됨.",
+    "2026-09-29 갱신": "구청 지원사업 재조사: 신규 1건 추가(SDM-004), 기존 2개 필드 정정. 미확인 사항은 항목 notes 참고.",
+    "2026-09-29 브라우저 검증": "구청·법제처 원문 재확인 반영(정정 5개 필드)."
+  },
+  "subsidies": [
+    {
+      "id": "SDM-001",
+      "name": "서대문구 임신축하금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:서대문구"
+      ],
+      "target": "출산예정일(출산일) 1년 전부터 신청일 현재까지 서대문구에 주민등록+실거주 중인 임신부 (출생 후가 아니라 출산 전에 신청하는 지원금)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "단태아 30만원 / 쌍태아 60만원 / 삼태아 이상 90만원 (1회)",
+      "paymentMethod": "현금",
+      "deadlineType": "birth_relative_days",
+      "deadlineValue": -1,
+      "residencyRequirement": "출산예정일(출산일) 1년 전부터 신청일 현재까지 계속 서대문구 주민등록+실거주.",
+      "additionalConditions": "신청기간은 '출산예정일(출산일) 전일까지'이므로 출생 후에는 신청 불가(deadlineValue -1 = 출생일 하루 전). 동주민센터·보건소 방문 또는 정부24 온라인 신청. 문의 서대문구보건소 지역건강과 02-330-3818",
+      "officialUrl": "https://www.sdm.go.kr/health/contents/healthbiz/maternal/pregnancy",
+      "sourceName": "서대문구 2026 출생양육 지원정책 안내 GUIDE BOOK 원문 확인 + 서대문구 보건소 임신축하금 지원 페이지",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "사후 신청 불가. 출산 임박 가정은 기한 경과 여부 반드시 확인. 서울시 공통 아님(구 자체).",
+      "lastVerified": "2026-09-29",
+      "prenatalOnly": true,
+      "periods": [
+        {
+          "label": "신청 가능",
+          "startDays": null,
+          "startText": "임신 확인 후(출산예정일 1년 전부터 거주 요건)",
+          "endDays": -1,
+          "endText": "출산예정일 전일까지",
+          "note": "동주민센터·보건소 방문 또는 정부24. 출산 후 신청 불가"
+        }
+      ],
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "paymentMethod": "현금(구체 지급수단 원문에 명시 없음)",
+        "residencyRequirement": "출산예정일(출산일) 1년 전부터 신청일 현재까지 계속 서대문구 주민등록+실거주. 외국인은 임신부와 배우자(남성) 모두 1년 전부터 거주 확인 필요(배우자 한국인이면 사실혼 지원 불가)",
+        "sourceName": "서대문구 2026 출생양육 지원정책 안내 GUIDE BOOK(2026-04, sdm.go.kr PDF p.16) 원문 확인 + 서대문구 보건소 임신축하금 지원 페이지"
+      }
+    },
+    {
+      "id": "SDM-002",
+      "name": "서대문구 공공산후조리원 품애(愛)가득 이용료 감면",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:서대문구"
+      ],
+      "target": "산후조리원 이용을 원하는 산모 — 서대문구 1년 이상 거주 구민은 이용료 90% 감면",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 1,
+      "amountText": "기본요금 2주 250만원 중 서대문구 1년 이상 거주 구민 90% 감면",
+      "paymentMethod": "이용료 감면(현금 지급 아님)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "서대문구 1년 이상 거주 구민(감면 대상 기준)",
+      "additionalConditions": "서대문구 1년 미만 거주 구민은 20% 감면, 타구 주민은 기본요금. 추첨 시 서대문구 주민 우선 선정 후 미달 시 타구 주민 포함",
+      "officialUrl": "https://www.sdm.go.kr/health/contents/healthbiz/maternal/carecenter",
+      "sourceName": "서대문구 2026 출생양육 지원정책 안내 GUIDE BOOK(2026-04)",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "추첨제라 모든 신청자가 이용 가능한 것은 아님. 서울형 산후조리경비(SEOUL-001)와의 중복 사용 가능 여부는 확인 못함.",
+      "lastVerified": "2026-09-29",
+      "prenatalOnly": true,
+      "periods": [
+        {
+          "label": "신청 가능",
+          "startDays": -90,
+          "startText": null,
+          "endDays": null,
+          "endText": "출산 전(월 1~10일 접수, 15일 추첨)",
+          "note": "분만예정일 3개월 전부터 신청, 추첨제"
+        },
+        {
+          "label": "이용",
+          "startDays": 0,
+          "startText": "출산 후",
+          "endDays": 14,
+          "endText": "2주(기본 이용 기간)",
+          "note": "기본요금 2주 기준"
+        }
+      ],
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "amountText": "기본요금 2주 250만원 중 서대문구 1년 이상 거주 구민 90% 감면(감면액 약 225만원, 본인부담 약 25만원 추정)",
+        "sourceName": "서대문구 2026 출생양육 지원정책 안내 GUIDE BOOK(2026-04, p.20) 원문 확인"
+      }
+    },
+    {
+      "id": "SDM-003",
+      "name": "서대문형 아빠육아휴직장려금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:서대문구"
+      ],
+      "target": "서대문구에 1년 이상 주민등록한 고용보험 육아휴직급여 수급 남성(대상 자녀도 서대문구 주민등록) — 육아휴직 중인 아빠",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 96,
+      "amountText": "월 30만원 지원",
+      "paymentMethod": "현금",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "신청 남성 1년 이상 서대문구 주민등록 + 대상 자녀도 서대문구 주민등록",
+      "additionalConditions": "신청기간: 육아휴직 시작일 이후 1개월부터 종료일 이후 12개월 이내(출생일 기준이 아닌 휴직기간 기준). 6+6부모육아휴직특례 적용자는 특례 종료 후 지원 가능. 정부24 또는 동주민센터. 문의 가족정책과 02-330-1834",
+      "officialUrl": "https://www.sdm.go.kr/fileUpload/yooncomseditor/Files/20260408_11195744928352408.pdf",
+      "sourceName": "서대문구 2026 출생양육 지원정책 안내 GUIDE BOOK(2026-04)",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "지급 총 개월 수 상한은 안내서에 명시 없음(확인 못함). 자녀 나이 상한(maxAgeMonths 96)은 육아휴직 가능 연령(만 8세 이하)에서 추정한 값이라 원문 근거 아님.",
+      "lastVerified": "2026-09-29",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "paymentMethod": "현금(계좌입금 추정)",
+        "sourceName": "서대문구 2026 출생양육 지원정책 안내 GUIDE BOOK(2026-04, p.33) 원문 확인"
+      }
+    },
+    {
+      "id": "SDM-004",
+      "name": "서대문 책이요 책배달 서비스(서대문구립도서관)",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:서대문구"
+      ],
+      "target": "서대문구 거주 서대문구립도서관 정회원 중 임산부·장애인·생후 1년 영아의 보호자",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "무료 도서 배달·대출: 사서선정 책꾸러미 21일 또는 개별요청도서 최대 5권 14일, 한 가구 1꾸러미",
+      "paymentMethod": "서비스",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "서대문구 거주 + 구립도서관 정회원(회원증 소지자)",
+      "additionalConditions": "운영 매년 2~11월(12~1월 중단). 최초 1회 이진아·새롬·도담 도서관 방문 신청서·자격확인(가족대리 가능, 불가 시 유선 02-360-8616) 후 홈페이지 [재택서비스>서대문책이요] 예약. 도서관별 오전2/오후1 인원 제한. 대상: 서대문구 주민 정회원 중 임산부·생후1년 영아 보호자·등록장애인",
+      "officialUrl": "https://lib.sdm.or.kr/sdmlib/menu/10074/contents/40027/contents.do",
+      "sourceName": "서대문구도시관리공단 보도자료(2025-02-07)",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "공식 페이지 기준 매년 2~11월 운영. 2025 보도의 3~11월과 상이하므로 공식 표기 사용",
+      "periods": [],
+      "audience": "mother",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "amountText": "무료 도서 배달·대출: 사서선정 책꾸러미 21일 또는 개별요청도서 최대 5권 14일(꾸러미 내 권수는 미확인), 한 가구 1꾸러미",
+        "sourceName": "서대문구도시관리공단 보도자료(2025-02-07) — WebFetch 확인"
+      }
+    }
+  ]
+}

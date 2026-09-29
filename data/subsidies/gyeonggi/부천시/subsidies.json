@@ -1,0 +1,37 @@
+{
+  "_meta": {
+    "설명": "부천시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-BUCHEON-01",
+      "name": "부천시 출산지원금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:부천시"
+      ],
+      "target": "2026-01-01 이후 부천시 출생·입양아",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "첫째·둘째 100만원 / 셋째 200만원 / 넷째 이상 700만원(400만원 지급 후 1년 뒤 300만원)",
+      "amountByBirthOrder": {
+        "first": 1000000,
+        "second": 1000000,
+        "third": 2000000,
+        "fourthPlus": 7000000
+      },
+      "paymentMethod": "출생·입양 후 승인 시 매월 10·25일 계좌 지급",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "부 또는 모가 출산일 기준 1년 이전부터 부천시 주민등록(연속 거주)",
+      "additionalConditions": "출생일로부터 1년 이내 행정복지센터 방문 신청(온라인 불가). 넷째 이상 잔액은 이사 시 미지급",
+      "officialUrl": "https://www.bucheon.go.kr/site/homepage/menu/viewMenu?menuid=148006003009005",
+      "sourceName": "부천시청 아기환영부천",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2026년 첫째·둘째까지 확대. 언론은 넷째 이상 400만원으로 표기, 공식페이지 700만원 기준. 거주 1년 미만은 1년 경과 후 지급.",
+      "statusOriginal": "확정시행"
+    }
+  ]
+}

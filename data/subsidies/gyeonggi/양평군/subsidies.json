@@ -1,0 +1,37 @@
+{
+  "_meta": {
+    "설명": "양평군 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-YANGPYEONG",
+      "name": "양평군 출산장려금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:양평군"
+      ],
+      "target": "양평군 출생아, 출생 6개월 전부터 거주",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 60,
+      "amountText": "첫째 500만원 / 둘째 500만원 / 셋째 1,000만원 / 넷째 이상 2,000만원 (4~5년 분할 지급)",
+      "amountByBirthOrder": {
+        "first": 5000000,
+        "second": 5000000,
+        "third": 10000000,
+        "fourthPlus": 20000000
+      },
+      "paymentMethod": "분할 지급(첫째·둘째 125만원×4년 등)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 1,
+      "residencyRequirement": "출생 6개월 전부터 양평군 거주",
+      "additionalConditions": "출산 1개월 이내 신청, 전출 시 잔여분 중단",
+      "officialUrl": "https://www.yp21.go.kr/www/contents.do?key=2141",
+      "sourceName": "양평군청 공식 홈페이지",
+      "lastVerified": "2026-09-01",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "신청기한이 1개월로 매우 짧음 — 놓치기 쉬운 제도",
+      "statusOriginal": "확정시행"
+    }
+  ]
+}

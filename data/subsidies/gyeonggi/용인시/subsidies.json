@@ -1,0 +1,37 @@
+{
+  "_meta": {
+    "설명": "용인시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-YONGIN",
+      "name": "용인시 출산지원금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:용인시"
+      ],
+      "target": "용인시 출생아, 180일 이상 거주",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 60,
+      "amountText": "첫째 30만원 / 둘째 50만원 / 셋째 100만원 / 넷째 200만원 / 다섯째 이상 300만원",
+      "amountByBirthOrder": {
+        "first": 300000,
+        "second": 500000,
+        "third": 1000000,
+        "fourthPlus": 2000000
+      },
+      "paymentMethod": "신청 익월 25일 지급",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "180일 이상 거주",
+      "additionalConditions": "1년 이내 신청",
+      "officialUrl": "https://www.yongin.go.kr/",
+      "sourceName": "용인시청 공식 홈페이지",
+      "lastVerified": "2026-09-01",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "",
+      "statusOriginal": "확정시행"
+    }
+  ]
+}

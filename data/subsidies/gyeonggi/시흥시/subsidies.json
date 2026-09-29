@@ -1,0 +1,91 @@
+{
+  "_meta": {
+    "설명": "시흥시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-SIHEUNG-01",
+      "name": "시흥시 출생축하금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:시흥시"
+      ],
+      "target": "시흥시 출생아, 부 또는 모가 출생신고일 기준 180일 이상 시흥시 주민등록",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "2026년 출생아: 첫째 50만원 / 둘째 100만원 / 셋째 200만원 / 넷째 이상 800만원(4년간 분할, 연 200만원)",
+      "amountByBirthOrder": {
+        "first": 500000,
+        "second": 1000000,
+        "third": 2000000,
+        "fourthPlus": 8000000
+      },
+      "paymentMethod": "행정복지센터 또는 정부24 신청",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "부 또는 모 180일 이상 시흥시 주민등록",
+      "additionalConditions": "출생신고 후 1년 이내 신청. 2025년 출생아는 둘째 50만/셋째 100만/넷째이상 800만",
+      "officialUrl": "https://www.siheung.go.kr/portal/contents.do?mId=0302020901",
+      "sourceName": "시흥시 분야별포털",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "언론 일부는 도 산후조리비 포함 합산액(첫째 90만 등)으로 보도",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-SIHEUNG-02",
+      "name": "시흥시 산후조리비 (시 자체)",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:시흥시"
+      ],
+      "target": "시흥시 출생아 가정(부 또는 모 시흥시 주민등록·실거주)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "2026년 출생아 50만원 (2025년 출생아 40만원)",
+      "amountByBirthOrder": {
+        "first": 500000,
+        "second": 500000,
+        "third": 500000,
+        "fourthPlus": 500000
+      },
+      "paymentMethod": "경기도 산후조리비 종료(2026-10-01) 후에도 시 자체 지원",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "부 또는 모 시흥시 주민등록 및 실거주",
+      "additionalConditions": "출생일 12개월 이내 신청. 행정복지센터, 경기민원24, 정부24",
+      "officialUrl": "https://www.siheung.go.kr/portal/contents.do?mId=0302020902",
+      "sourceName": "시흥시 분야별포털, 머니투데이",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "도 산후조리비(GG-001)와 별도. 10~12월 출생아 지급 방식은 언론상 '검토 중' 보도가 있어 확인 필요",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-SIHEUNG-03",
+      "name": "아이마중 임산부 교실",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:시흥시"
+      ],
+      "target": "시흥시 거주 임산부",
+      "minAgeMonths": 0,
+      "maxAgeMonths": null,
+      "amountText": "무료(임산부 요가, 신생아 돌보기, DIY 태교, 모유수유 교육)",
+      "paymentMethod": "현물(교육)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "시흥시 거주",
+      "additionalConditions": "프로그램 일정별 모집",
+      "officialUrl": "https://www.siheung.go.kr/portal/contents.do?mId=0302020901",
+      "sourceName": "경기일보 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "모집 일정 확인 필요",
+      "statusOriginal": "확정시행"
+    }
+  ]
+}

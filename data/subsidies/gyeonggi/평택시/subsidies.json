@@ -1,0 +1,60 @@
+{
+  "_meta": {
+    "설명": "평택시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-PYEONGTAEK-01",
+      "name": "평택시 출산장려금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:평택시"
+      ],
+      "target": "평택시 출생·입양아, 부모 중 1명 1년 이상 거주",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "첫째 50만원 / 둘째 120만원 / 셋째 300만원 / 넷째 이상 500만원",
+      "amountByBirthOrder": {
+        "first": 500000,
+        "second": 1200000,
+        "third": 3000000,
+        "fourthPlus": 5000000
+      },
+      "paymentMethod": "동 주민센터 신청 (평택사랑카드 등 지역화폐 지급 추정, 확인 필요)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 6,
+      "residencyRequirement": "출생·입양일 1년 전부터 신청일까지 부모 중 1명 평택시 거주",
+      "additionalConditions": "출생일로부터 6개월 이내 신청. 거주 1년 미만이면 1년 6개월이 되는 날부터 6개월 이내 신청 가능. 장애인 가정은 출산지원금·축하금 중복 지원",
+      "officialUrl": "https://www.pyeongtaek.go.kr/pyeongtaek/contents.do?mId=1205000000",
+      "sourceName": "데일리경기신문 2026-03-16",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "블로그는 둘째 100만·셋째 200만으로 상이해 2026-03 보도 금액을 채택. 공식 페이지(HTTP 400)로 직접 확인 못함",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-PYEONGTAEK-02",
+      "name": "평택시 자체 산후조리비 (2027 신설 예정)",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:평택시"
+      ],
+      "target": "평택시 출생아 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "확인 필요",
+      "paymentMethod": "확인 필요",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "확인 필요",
+      "additionalConditions": "2027년 시행 목표, 2026 4분기(10~12월) 출산자는 대상 아님으로 보도됨",
+      "officialUrl": "https://www.pyeongtaek.go.kr/",
+      "sourceName": "이투데이 2026-09",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "조례 제정 준비 중이라는 보도뿐, 금액·대상 미확정"
+    }
+  ]
+}

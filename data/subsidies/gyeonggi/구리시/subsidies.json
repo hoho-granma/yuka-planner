@@ -1,0 +1,84 @@
+{
+  "_meta": {
+    "설명": "구리시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-GURI-01",
+      "name": "구리시 출산지원금(축하금)",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:구리시"
+      ],
+      "target": "구리시 출생아 (2023년 이후 출생)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "첫째 50만원 / 둘째 100만원 / 셋째 200만원 / 넷째 이상 300만원",
+      "amountByBirthOrder": {
+        "first": 500000,
+        "second": 1000000,
+        "third": 2000000,
+        "fourthPlus": 3000000
+      },
+      "paymentMethod": "신청 승인 후 20일 이내 계좌 지급",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "출생 시 부모 구리시 주민등록·실거주",
+      "additionalConditions": "주민등록번호 부여일로부터 1년 이내 동 행정복지센터/정부24 신청",
+      "officialUrl": "https://www.guri.go.kr/health/contents.do?key=3557",
+      "sourceName": "구리시보건소 모자보건팀 031-550-8668",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2022년 이전 출생아는 종전 기준.",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-GURI-02",
+      "name": "구리시 임산부 친환경 농산물 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:구리시"
+      ],
+      "target": "2025-01-01 이후 출산한 산모 또는 임신 중인 임산부",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "연 24만원 상당 친환경 농산물(자부담 4만8천원), 550명 추첨",
+      "paymentMethod": "에코이몰 바우처",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "구리시 거주 (세부 확인 필요)",
+      "additionalConditions": "2026년 접수 6/17~30 종료. 매년 공모형·선착/추첨",
+      "officialUrl": "https://www.dtoday.co.kr/news/articleView.html?idxno=775120",
+      "sourceName": "일간투데이 / 구리시 산업지원과",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "언론 기반. 2026년 접수 종료, 내년 재공모 예상. 연령 범위는 임신~출산 후로 근사.",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-GURI-03",
+      "name": "구리시 아빠 육아휴직 장려금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:구리시"
+      ],
+      "target": "올해 1월 1일 이후 육아휴직 시작, 고용보험 육아휴직급여 수급 아빠",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 96,
+      "amountText": "월 30만원 (기간·상한 최대 150만원 보도, 확인 필요)",
+      "paymentMethod": "확인 필요",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "아빠 1년 이상 구리시 주민등록, 자녀 구리시 주민등록",
+      "additionalConditions": "가구 중위소득 150% 이하, 3개월 이상 휴직(언론 기준)",
+      "officialUrl": "https://www.guri.go.kr/www/contents.do?key=7956",
+      "sourceName": "구리시청(공식 페이지 403으로 미열람) / 신아일보",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "공식 본문 미확인. 소득기준·상한 등 조건 확인 필요. 자녀 연령 상한은 가정치."
+    }
+  ]
+}

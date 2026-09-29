@@ -69,7 +69,8 @@
   }
 
   function needsReviewBadge(verificationStatus) {
-    return !(verificationStatus || "").startsWith("확인됨");
+    const v = verificationStatus || "";
+    return !(v.startsWith("확인됨") || v === "확인완료");
   }
 
   /** 완료기록에서 특정 (todoId, occurrenceKey, recordType) 하나를 찾는다. */

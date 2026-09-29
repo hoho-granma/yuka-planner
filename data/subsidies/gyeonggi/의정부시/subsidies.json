@@ -1,0 +1,37 @@
+{
+  "_meta": {
+    "설명": "의정부시 전용 지원금. 참고: 시 산후조리비 50만원(지역화폐)은 2026-09-30 신청분까지로 종료(도 사업 연계), 산모신생아 건강관리 추가지원·난임시술 중단 지원·난자동결 지원도 종료(일간경기 2026-09-10)."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-UIJEONGBU-01",
+      "name": "의정부시 출산장려금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:의정부시"
+      ],
+      "target": "의정부시 주민등록·실거주 부모의 출생·입양아 (2025-01-01 이후 출생)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 60,
+      "amountText": "첫째 30만원 / 둘째 이상 100만원",
+      "amountByBirthOrder": {
+        "first": 300000,
+        "second": 1000000,
+        "third": 1000000,
+        "fourthPlus": 1000000
+      },
+      "paymentMethod": "동 주민센터 신청, 매월 5일까지 신청 시 익월 20일 지급",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 60,
+      "residencyRequirement": "부 또는 모가 의정부시에 주민등록·실거주",
+      "additionalConditions": "출생일(입양일)로부터 5년 이내 신청",
+      "officialUrl": "https://www.ui4u.go.kr/depart/contents.do?mId=0901020000",
+      "sourceName": "의정부시청 출산장려금 페이지(검색 요약)·블로그",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "공식 페이지 SSL 오류로 본문 직접 확인 못함. 지급 형태(현금/지역화폐) 확인 필요",
+      "statusOriginal": "확정시행"
+    }
+  ]
+}

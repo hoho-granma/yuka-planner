@@ -1,0 +1,171 @@
+{
+  "_meta": {
+    "설명": "서울특별시 구로구 자치구 전용 지원금(서울시 전체 공통 항목은 ../city.json 참고).",
+    "조사일": "2026-09-28",
+    "note": "있음 — 서울시 전체 지원(SEOUL-001~004)과 별도로 구로구 자체 지원금 2건을 확인함(GURO-001 다자녀 출생축하금, GURO-002 구로형 산후조리비용 저소득 추가지원). 둘 다 조건부(GURO-001은 셋째 이상 자녀, GURO-002는 기준중위소득 80% 이하)라 모든 가정에 적용되지는 않는다.",
+    "2026-09-29 갱신": "구청 지원사업 재조사: 신규 1건 추가(GURO-P02), 기존 0개 필드 정정. 미확인 사항은 항목 notes 참고.",
+    "2026-09-29 브라우저 검증": "구청·법제처 원문 재확인 반영(정정 5개 필드)."
+  },
+  "subsidies": [
+    {
+      "id": "GURO-001",
+      "name": "구로구 다자녀 출생축하금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:구로구"
+      ],
+      "target": "셋째 이상 자녀를 출산한 구로구 거주 가구 — 은찬이가 셋째 이상일 때만 해당 (첫째·둘째는 구로구 자체 축하금 대상 아님)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "셋째 자녀 60만원 / 넷째 자녀 이상 200만원 (1회 지급, 쌍생아 이상은 출생순으로 개별 지원)",
+      "amountByBirthOrder": {
+        "first": 0,
+        "second": 0,
+        "third": 600000,
+        "fourthPlus": 2000000
+      },
+      "paymentMethod": "현금",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "신생아 출생일 기준 6개월 전부터 신청일 현재까지 구로구에 계속 주민등록+실거주(거주기간 6개월 미만이면 6개월 경과 후 6개월 이내 신청)",
+      "additionalConditions": "신생아는 보호자와 동일 세대원이어야 함. 2024년 출생아부터 적용",
+      "officialUrl": "https://easylaw.go.kr/CSP/CnpClsOrdinMain.laf?csmOrdinSeq=6&popMenu=ov&areaCsmOrdinSeq=211&ccfNo=1&cciNo=1&cnpClsNo=1",
+      "sourceName": "찾기쉬운 생활법령정보(법제처 easylaw.go.kr, 구로구 조례정보)",
+      "lastVerified": "2026-09-28",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "서울시 전체(SEOUL-001~004)와 별도로 구로구가 자체 조례로 운영하는 지원금. 기존 data/subsidies.json·todo-definitions.v3.json 어디에도 없던 항목.",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "paymentMethod": "현금(계좌입금 추정 — 원문에 구체적 지급수단 명시 안 됨)",
+        "sourceName": "찾기쉬운 생활법령정보(법제처 easylaw.go.kr, 구로구 조례정보) — WebFetch로 원문 직접 확인"
+      }
+    },
+    {
+      "id": "GURO-002",
+      "name": "구로형 산후조리비용 저소득 추가지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:구로구"
+      ],
+      "target": "신청일 기준 구로구 거주, 기준중위소득 80% 이하 출산 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "구로사랑상품권 50만원 추가 지원 — 서울형 산후조리경비(SEOUL-001, 최대 150만원)에 더해 지급되어 다자녀·저소득 가정은 최대 200만원 이상 수령 가능",
+      "paymentMethod": "구로사랑상품권",
+      "deadlineType": "birth_relative_days",
+      "deadlineValue": 180,
+      "residencyRequirement": "신청일 기준 구로구 거주",
+      "additionalConditions": "기준중위소득 80% 이하(2026 건보료 판정표), 구로사랑상품권 50만원(모바일 서울pay+, 본인 명의 휴대폰), 사용기한 12개월, 출생일 기준 6개월 이내 신청(정부24 또는 동주민센터), 서울형 산후조리비용 100만원과 별도. 문의 02-860-3003.",
+      "officialUrl": "https://www.guro.go.kr/health/contents.do?key=4450",
+      "sourceName": "매일일보 외 6개 언론사가 동일 수치로 재게재한 구로구 보도자료(2026-04)",
+      "lastVerified": "2026-09-28",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "구로구 공식 홈페이지(guro.go.kr) 원문 URL은 확보하지 못함 — 추후 정확한 공식 페이지가 열리면 officialUrl 교체 권장. 내용 자체는 6개 이상 독립 언론사가 동일 수치(50만원/중위소득80%)로 보도해 신뢰도 높음.",
+      "audience": "mother",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "additionalConditions": "기준중위소득 80% 이하(2026 건보료 판정표), 구로사랑상품권 50만원(모바일 서울pay+, 본인 명의 휴대폰), 사용기한 12개월, 출생일 기준 6개월 이내 신청(정부24 또는 동주민센터), 서울형 산후조리비용 100만원과 별도. 문의 02-860-3003. (2026-01-01 이후 출생아·소급 기재는 구청 페이지에서 확인되지 않음)",
+        "sourceName": "매일일보 외 6개 언론사가 동일 수치로 재게재한 구로구 보도자료(2026-04) — WebFetch로 기사 원문 직접 확인, 구로구 공식 홈페이지 자체는 JS 렌더링이라 직접 열람 불가해 언론 재게재로 교차검증"
+      }
+    },
+    {
+      "id": "GURO-P01",
+      "name": "구로구 모자건강센터 임신부 프로그램(태교교실·산전 맘핏 운동·태교 요리 등)",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:구로구"
+      ],
+      "target": "구로구 거주 임산부(및 2세 미만 영유아 가족). 임신 주수 제한 없음",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "태교교실·산전 맘핏 운동·태교식 요리교실·임신주수별 건강상담 등 프로그램 참여",
+      "paymentMethod": "프로그램 참여(현물)",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "구로구 거주",
+      "additionalConditions": "",
+      "officialUrl": "https://www.guro.go.kr/health/contents.do?key=4460",
+      "sourceName": "구로구보건소 모자건강센터 페이지(guro.go.kr)+ 구청 보도",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "매월 16일 오전 10시에 익월 프로그램 선착순 접수(서울시 임신·출산 정보센터 누리집). 문의 02-2620-7775~7782. 현금·바우처 지원은 아님.",
+      "lastVerified": "2026-09-29",
+      "periods": [
+        {
+          "label": "신청 가능",
+          "startDays": null,
+          "startText": "임신 확인 후(임신 주수 제한 없음)",
+          "endDays": -1,
+          "endText": "분만 전까지(출산 후 영유아 프로그램은 별도)",
+          "note": "매월 16일 익월분 선착순"
+        }
+      ],
+      "prenatalOnly": true,
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "amountText": "태교교실·산전 맘핏 운동·태교식 요리교실·임신주수별 건강상담 등 프로그램 참여(비용은 공식 페이지에 명시 없음, 보도 기준 무료)",
+        "sourceName": "구로구보건소 모자건강센터 페이지(guro.go.kr) WebFetch 원문 확인 + 구청 보도"
+      }
+    },
+    {
+      "id": "GURO-P02",
+      "name": "찾아가는 구로맘 수유 온(溫) 방문 수유코칭",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:구로구"
+      ],
+      "target": "구로구 주민등록을 둔 출산 후 60일 이내 산모",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 2,
+      "amountText": "전문 수유관리사(간호사·조산사) 가정방문 1:1 수유 코칭 1인당 최대 2회, 무료(연 약 500명, 예산 1억원)",
+      "paymentMethod": "방문 서비스 제공(현물)",
+      "deadlineType": "birth_relative_days",
+      "deadlineValue": 60,
+      "residencyRequirement": "구로구 주민등록",
+      "additionalConditions": "신청 2026.3.4~12.31(예산 소진 시 조기 마감), 정부24 온라인 신청(서류: 출생신고 후 주민등록등본, 다문화는 가족관계증명서). 최대 2회(1회 1시간), 산후조리원 불가. 문의 02-2620-7043",
+      "officialUrl": "https://www.guro.go.kr/health/contents.do?key=4584",
+      "sourceName": "서울Pn 2026-03-13 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "구청 공식 페이지·신청방법·접수처 미확인. 신청 창구 확인 후 공식 URL 교체 필요.",
+      "audience": "mother",
+      "periods": [],
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "sourceName": "서울Pn 2026-03-13 보도(구청 원문 미확인)"
+      }
+    },
+    {
+      "id": "GURO-003",
+      "name": "구로형 0세아 의료비 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:구로구"
+      ],
+      "target": "기준중위소득 80% 이하 0세아(12개월 미만)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "본인부담 의료비 최고 50만원(둘째 이상 최고 70만원)",
+      "paymentMethod": "",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "",
+      "additionalConditions": "",
+      "officialUrl": "https://www.guro.go.kr/health/contents.do?key=1332",
+      "sourceName": "구로구청 보건소 페이지",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "진료 후 2개월 이내 보건소 신청.",
+      "periods": [],
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "paymentMethod": "미확인",
+        "sourceName": "구로구청 보건소 페이지(guro.go.kr) 직접 확인"
+      }
+    }
+  ]
+}

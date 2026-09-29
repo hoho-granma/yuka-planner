@@ -1,0 +1,96 @@
+{
+  "_meta": {
+    "설명": "서울특별시 서초구 자치구 전용 지원금(서울시 전체 공통 항목은 ../city.json 참고).",
+    "조사일": "2026-09-29",
+    "note": "조사 결과 서초구 자체 현금 출산지원금은 없음(확인 불가 부분 있음). 서초구 조례(출산·양육 지원에 관한 조례)상 출산지원금(첫째 30만/둘째 50만/셋째 이상 100만, 출생 1년 이내 신청, 365일 거주)은 2022년부터 폐지되고 첫만남이용권으로 일원화되었다는 자료(육아생활 사이트, 국정감사 보도자료 요약)를 확인했으나 서초구청 공식 폐지 공고는 열람하지 못함. 2022년 이후 출생아 대상 자체 지원 근거를 찾지 못해 빈 배열로 둠. 참고: 임산부 친환경농산물 지원(연 최대 24만원 상당 꾸러미, 임신부·2025-01-01 이후 출산 산모 대상, 2026년 신청은 7월 13~26일 마감, 자부담 20%)은 임산부·산모 대상 연 1회 공모형이라 영유아 지원 목록에는 넣지 않음.",
+    "2026-09-29 갱신": "구청 지원사업 재조사: 신규 3건 추가(SEOCHO-001, SEOCHO-002, SEOCHO-003), 기존 0개 필드 정정. 미확인 사항은 항목 notes 참고.",
+    "2026-09-29 브라우저 검증": "구청·법제처 원문 재확인 반영(정정 10개 필드)."
+  },
+  "subsidies": [
+    {
+      "id": "SEOCHO-001",
+      "name": "서초구 아빠 육아휴직장려금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:서초구"
+      ],
+      "target": "신청일 기준 1년 이상 계속 서초구 주민등록된 아빠 육아휴직자(대상자녀가 서초구 주민등록된 경우), 고용보험 가입 근로자(공무원·교사 등 연금수급자 제외)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "월 30만원(최대 12개월, 연 최대 360만원)",
+      "paymentMethod": "현금(계좌입금)",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "서초구 거주 1년 이상",
+      "additionalConditions": "신청기간: 육아휴직 시작일 이후 1개월부터 종료일 이후 12개월 이내. 매월 18일 신청분까지 당월 25일 지급. 서류: 육아휴직급여 지급결정통지서, 주민등록등본(온라인 신청). 문의 여성보육과 02-2155-6687",
+      "officialUrl": "https://www.seocho.go.kr/site/seocho/ex/parental/ParentalLeaveFList.do",
+      "sourceName": "서초구청 서초사용법-영유아 페이지",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "구청 공식 페이지에 목록 존재 확인. 페이지 게시일 불명이라 2026년 현행은 미확정, 신청기한 원문 미확인. 자세한 조건은 조례·구청 개별 페이지 재확인 필요.",
+      "periods": [],
+      "audience": "parent",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "sourceName": "서초구청 서초사용법-영유아 페이지(WebFetch 요약)"
+      }
+    },
+    {
+      "id": "SEOCHO-002",
+      "name": "서초 아이돌보미",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:서초구"
+      ],
+      "target": "서초구 1년 이상 거주, 한 자녀 이상 맞벌이 가정의 만 24개월 이하(23개월 이하) 영아",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 23,
+      "amountText": "월 50시간 아이돌보미 파견, 이용가정 부담 1일 3,000원(할증 별도)",
+      "paymentMethod": "서비스(서초아이돌보미 사이트 회원가입 후 이용신청)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "서초구 1년 이상 거주(가족센터 안내)",
+      "additionalConditions": "맞벌이 요건. 서초구가족센터 아이돌봄팀 전화 신청(070-7461-9764)",
+      "officialUrl": "https://www.seocho.go.kr/site/seocho/04/10402010302002015070605.jsp",
+      "sourceName": "서초구청 서초사용법-영유아 페이지 + 서초구가족센터 안내",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "구청 개별 페이지 본문은 열람 불가(메뉴만 로드). 상세는 서초사용법 표와 검색 요약 기준. 서울시 공통 아이돌봄과 별개인 구 자체사업으로 표기됨.",
+      "periods": [],
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "sourceName": "서초구청 서초사용법-영유아 페이지 + 서초구가족센터 안내(검색 요약)"
+      }
+    },
+    {
+      "id": "SEOCHO-003",
+      "name": "서초 손주돌보미(조부모 돌봄수당)",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:서초구"
+      ],
+      "target": "서초구 거주 한 자녀 이상 가정, 만 24개월 이하 손주를 돌보는 조부모(교육과정 이수자)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 23,
+      "amountText": "손주돌봄 활동수당 월 최대 30만원(월 40시간 기준)",
+      "paymentMethod": "현금(활동수당)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "서초구 거주 한 자녀 이상 가정; 조부모는 교육 서류접수 전까지 주민등록 서초구이면 되고 거주기간 무관",
+      "additionalConditions": "조부모 교육과정 이수 필요. 서초구가족센터 02-576-2852/2853",
+      "officialUrl": "https://www.seocho.go.kr/site/seocho/04/10402010302002015070605.jsp",
+      "sourceName": "서초구청 서초사용법-영유아 페이지 + 서초구가족센터 안내",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "구청 개별 페이지 본문 미열람. 서울시 조부모 돌봄수당과 중복 여부·2026 현행 미확정.",
+      "periods": [],
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "sourceName": "서초구청 서초사용법-영유아 페이지 + 서초구가족센터 안내(검색 요약)"
+      }
+    }
+  ]
+}

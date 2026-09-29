@@ -127,6 +127,8 @@ function buildTodoEngineEvents(profile, todoDefinitions, completions) {
   const events = [];
   for (const inst of instances) {
     if (inst.status === "REFERENCE" || inst.status === null) continue;
+    // 지원금 할일도 '확인완료'만 노출(verificationStatus가 정확히 '확인필요'인 항목은 숨김).
+    if (byId.get(inst.todo_id) && byId.get(inst.todo_id).verificationStatus === "확인필요") continue;
     if (inst.windowStart === null && inst.status !== "PENDING_MILESTONE") continue; // 아직 계산 불가(선행 회차 대기)
     const td = byId.get(inst.todo_id);
     const isDateSpecific = computeIsDateSpecific(inst);
@@ -155,14 +157,15 @@ function subsidyDeadlineText(s) {
   if (s.deadlineType === "birth_relative_months") return `출생 후 ${s.deadlineValue}개월 이내 신청`;
   if (s.deadlineType === "age_window") return `생후 ${s.deadlineValue.minMonths}~${s.deadlineValue.maxMonths}개월 사이 신청`;
   if (s.deadlineType === "ongoing") return "상시 신청 가능";
-  return "신청 기한 확인 필요";
+  return "신청 기한은 관할 기관 안내를 따라요";
 }
 
 // data/subsidies/national.json에는 원래 "전국공통(ALL)"으로 표시된 항목도 몇 개 섞여 있는데,
-// 그중 아래 4개는 이제 data/subsidies/national-todos.json의 SB-01/02/04/05로 새 엔진이 계산한다.
+// 그중 아래 3개는 이제 data/subsidies/national-todos.json의 SB-01/02/04로 새 엔진이 계산한다.
+// (NAT-005 기저귀·조제분유는 SB-05가 '확인필요'라 화면에 안 나오므로 여기서 제외하지 않고 지역 지원금 경로로 보여준다)
 // 두 경로가 같은 제도를 각자 다른 문구로 중복 표시하는 걸 막기 위해 여기서 제외한다.
 // (NAT-004 산모·신생아 건강관리처럼 아직 엔진에 없는 항목은 그대로 지역 지원금 경로로 유지)
-const SUBSIDIES_SUPERSEDED_BY_ENGINE = ["NAT-001", "NAT-002", "NAT-003", "NAT-005"];
+const SUBSIDIES_SUPERSEDED_BY_ENGINE = ["NAT-001", "NAT-002", "NAT-003"];
 
 // 제도 개편 전/후 분기 — s.birthOnOrAfter / s.birthBefore(YYYY-MM-DD)가 있으면 생년월일이 범위 안일 때만 보여준다.
 function birthRuleAllows(s, birthDate) {
@@ -177,6 +180,8 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrd
   const events = [];
   for (const s of subsidyData.subsidies) {
     if (SUBSIDIES_SUPERSEDED_BY_ENGINE.includes(s.id)) continue;
+    // 화면에는 '확인완료'만 보여준다 — '확인필요'(미확인·정부안 등)는 데이터에만 두고 노출하지 않는다.
+    if (s.status !== "확인완료") continue;
     if (!birthRuleAllows(s, birthDate)) continue;
     if (!regionMatches(s, province, district)) continue;
     // amountByBirthOrder에 0으로 표시된 순위(예: GURO-001은 첫째·둘째=0, 셋째 이상만 지원)는

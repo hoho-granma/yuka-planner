@@ -1,0 +1,89 @@
+{
+  "_meta": {
+    "설명": "김포시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-GIMPO-01",
+      "name": "김포시 출산축하금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:김포시"
+      ],
+      "target": "김포시 둘째 이상 출생아(다태아는 출생순서 구분)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "둘째 이상 100만원",
+      "amountByBirthOrder": {
+        "first": 0,
+        "second": 1000000,
+        "third": 1000000,
+        "fourthPlus": 1000000
+      },
+      "paymentMethod": "지역화폐",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 6,
+      "residencyRequirement": "출생일 180일 이전부터 신청일까지 김포시 주민등록·거주",
+      "additionalConditions": "지급요건 충족일로부터 6개월 이내 신청. 첫째는 대상 아님",
+      "officialUrl": "https://www.easylaw.go.kr/CSP/CnpClsOrdinMain.laf?csmOrdinSeq=null&areaCsmOrdinSeq=287&ccfNo=1&cciNo=1&cnpClsNo=1",
+      "sourceName": "찾기쉬운 생활법령정보(김포시 조례)",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-GIMPO-02",
+      "name": "김포시 임신축하금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:김포시"
+      ],
+      "target": "김포시 임신부(임신확인서 제출)",
+      "minAgeMonths": null,
+      "maxAgeMonths": null,
+      "amountText": "50만원",
+      "paymentMethod": "계좌 입금(신청 후 약 2주)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "180일 이상 김포시 주민등록·거주",
+      "additionalConditions": "정부24 맘편한 임신 또는 행정복지센터·보건소 신청. 타 지자체 중복수령 불가",
+      "officialUrl": "https://eco.gimpo.go.kr/health/contents.do?key=4514",
+      "sourceName": "김포시보건소 임신축하금 지원(검색 요약)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "공식 페이지 본문 직접 확인 못함. 지급수단 확인 필요",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-GIMPO-03",
+      "name": "김포시 산모신생아 건강관리 본인부담금 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:김포시"
+      ],
+      "target": "산모신생아 건강관리 서비스 이용 김포시 산모",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 3,
+      "amountText": "본인부담금의 90% 지원(2025-01부터 확대)",
+      "paymentMethod": "",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 3,
+      "residencyRequirement": "김포시 거주",
+      "additionalConditions": "소득·서비스형(단축/표준/연장)별 차등.",
+      "officialUrl": "https://www.gimpo.go.kr/health/contents.do?key=2201",
+      "sourceName": "김포시보건소",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "신청기한·정확한 지원율 확인 필요",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "paymentMethod": "확인 필요",
+        "additionalConditions": "소득·서비스형(단축/표준/연장)별 차등. 신청기한 확인 필요"
+      }
+    }
+  ]
+}

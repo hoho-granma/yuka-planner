@@ -1,0 +1,61 @@
+{
+  "_meta": {
+    "설명": "오산시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-OSAN-01",
+      "name": "오산시 출산장려금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:오산시"
+      ],
+      "target": "2026-01-01 이후 출생·입양아, 오산시 6개월 이상 거주 부모",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "첫째 100만원 / 둘째 200만원 / 셋째 총 300만원(3년 분할) / 넷째 이상 총 600만원(3년 분할)",
+      "amountByBirthOrder": {
+        "first": 1000000,
+        "second": 2000000,
+        "third": 3000000,
+        "fourthPlus": 6000000
+      },
+      "paymentMethod": "출생·입양 신고 시 행정복지센터 신청, 셋째 이상은 3년 분할 지급",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "오산시 6개월 이상 주민등록",
+      "additionalConditions": "기존 금액(첫째 20만/둘째 50만)을 받은 가구는 차액 소급 지급. 신청기한 정확한 개월 수는 확인 필요",
+      "officialUrl": "https://www.osan.go.kr/",
+      "sourceName": "오산시 보도(머니투데이·오산일보 2026-03/05)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "2026-01-01 출생아부터 인상. 신청기한(출생 후 몇 개월)은 공식 페이지 미확인이라 12개월로 잠정 표기",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-OSAN-02",
+      "name": "오산시 35세 이상 임산부 기형아검사비 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:오산시"
+      ],
+      "target": "오산시 주민등록 임산부(35세 이상)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "기형아 검사비 및 관련 진료비 본인부담금 최대 30만원",
+      "paymentMethod": "신청 후 지급(본인 또는 배우자 신청)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "검사일 6개월 전부터 신청 시점까지 오산시 주민등록",
+      "additionalConditions": "검사일 기준 6개월 이내 신청. 2026-01-01 이후 발생 비용 소급 적용",
+      "officialUrl": "https://www.osan.go.kr/",
+      "sourceName": "오산시 보도(오산일보 2026-05-15)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "임신 중 사업이므로 아기 월령 무관(0으로 표기)",
+      "statusOriginal": "확정시행"
+    }
+  ]
+}

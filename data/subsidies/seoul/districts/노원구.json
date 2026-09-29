@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "설명": "서울특별시 노원구 자치구 전용 지원금(서울시 전체 공통 항목은 ../city.json 참고).",
+    "조사일": "2026-09-29",
+    "note": "있음 — 서울시 공통과 별도로 노원구 자체 지원 2건 확인: NOWON-001 둘째 이상 출산축하용품(20만원 상당), NOWON-002 셋째 이상 다자녀 문화상품권(연 1회 1인당 2만원). 노원구는 과거(2019~2020) 첫째 10만/둘째 20만/셋째 50만/넷째 100만원 현금 출산축하금을 지급했으나, 2025.1.1 이후 출생아부터 둘째 이상 현물(축하용품) 체계로 바뀐 것으로 보이며 현금 축하금 현행 여부는 확인하지 못함(검색 요약의 '첫째 100만원/둘째 200만원/셋째 500만원 분할지급'은 타 지자체 수치로 판단해 제외).",
+    "2026-09-29 갱신": "구청 지원사업 재조사: 신규 0건 추가(-), 기존 3개 필드 정정. 미확인 사항은 항목 notes 참고.",
+    "2026-09-29 브라우저 검증": "구청·법제처 원문 재확인 반영(정정 2개 필드)."
+  },
+  "subsidies": [
+    {
+      "id": "NOWON-001",
+      "name": "노원구 둘째아 이상 출산축하용품(키트) 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:노원구"
+      ],
+      "target": "노원구 거주 가정의 해당 연도 출생 둘째아 이상(2026년은 2026.1.1~12.31 출생, 신청기간 2026.1.1~12.31). 쌍둥이는 출생순서별 각각 신청 가능",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "20만원 상당 출산축하용품(키트)",
+      "amountByBirthOrder": {
+        "first": 0,
+        "second": 200000,
+        "third": 200000,
+        "fourthPlus": 200000
+      },
+      "paymentMethod": "현물",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "노원구 주소지로 출생신고",
+      "additionalConditions": "(공식 사업사이트 FAQ 확인: 2026년에 둘째 이상 출산한 노원구 거주 가정이 2026.1.1~12.31 내 신청. 거주 기준은 둘째 이상 자녀 출생일. '출생 후 1년 이내'는 구 보도 기준으로 현행 아님)",
+      "officialUrl": "https://nowonmom.kr/m/bbs/faq.php",
+      "sourceName": "서울Pn(2025-08-20) 노원구 보도 + 육아생활(2026-09 기준 페이지)",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "금액 20만원 상당은 육아생활 요약 출처, 서울Pn 기사에는 금액 없이 대상·기한만 있음. 노원구청 공식 원문은 열람하지 못함. 첫째아용 지원은 확인되지 않음. 2026-09-29: 연도 단위(해당 연도 출생·해당 연도 내 신청) — 기존 스키마에 calendar_year 유형이 있으면 그것으로 교체, 없으면 12개월 유지하고 notes에 명시",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "residencyRequirement": "노원구 주소지로 출생신고(세부 거주요건은 원문에서 확인 못함)",
+        "sourceName": "서울Pn(2025-08-20) 노원구 보도 + 육아생활(2026-09 기준 페이지) — WebFetch 확인"
+      }
+    },
+    {
+      "id": "NOWON-002",
+      "name": "노원구 다자녀(셋째 이상) 문화상품권",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:노원구"
+      ],
+      "target": "신청일 현재 노원구에 3개월 이상 주민등록을 두고 자녀 3명 이상을 양육하는 가구(자녀 연령 기준이 기사별 '20세 미만'/'18세 이하'로 상이)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 216,
+      "amountText": "연 1회 가구원 1인당 2만원 상당 문화상품권",
+      "paymentMethod": "문화상품권",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "신청일 현재 노원구 3개월 이상 주민등록",
+      "additionalConditions": "동주민센터 신청, 연 1회. 자녀 연령 상한 18세 이하/20세 미만 중 어느 쪽인지 미확인",
+      "officialUrl": "https://go.seoul.co.kr/news/newsView.php?id=20250820500110",
+      "sourceName": "서울Pn(2025-08-20) + 육아생활(2026-09 기준)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "자녀 연령기준 불일치와 구청 원문 미확인으로 verified false. 셋째 이상 가정에만 해당하며 영유아 출생 직후 1회성 신청 제도가 아님.",
+      "statusOriginal": "확정시행"
+    }
+  ]
+}

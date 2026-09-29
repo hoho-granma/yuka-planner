@@ -1,0 +1,94 @@
+{
+  "_meta": {
+    "설명": "광주시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-GWANGJU-01",
+      "name": "광주시 출산장려금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:광주시"
+      ],
+      "target": "광주시 출생아(첫째 이상), 입양 포함",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "출생아 1인당 100만원",
+      "amountByBirthOrder": {
+        "first": 1000000,
+        "second": 1000000,
+        "third": 1000000,
+        "fourthPlus": 1000000
+      },
+      "paymentMethod": "경기지역화폐(광주사랑카드)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "출생·입양일 기준 보호자 180일 이전부터 계속 광주시 주민등록",
+      "additionalConditions": "출생 후 1년 이내 신청",
+      "officialUrl": "https://www.gjcity.go.kr/depart/contents.do?mId=1005010100",
+      "sourceName": "광주시청 출산장려정책",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-GWANGJU-02",
+      "name": "광주시 셋째 이상 양육비",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:광주시"
+      ],
+      "target": "광주시 셋째 이상 출생아",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "월 20.9만원 x 12개월(출생월부터)",
+      "amountByBirthOrder": {
+        "first": 0,
+        "second": 0,
+        "third": 2508000,
+        "fourthPlus": 2508000
+      },
+      "paymentMethod": "",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "보호자 180일 이상 광주시 주민등록",
+      "additionalConditions": "출생신고 시 행정복지센터 신청",
+      "officialUrl": "https://www.gjcity.go.kr/depart/contents.do?mId=1005010100",
+      "sourceName": "광주시청 출산장려정책",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "paymentMethod": "확인 필요"
+      }
+    },
+    {
+      "id": "GGM-GWANGJU-03",
+      "name": "광주시 산모·신생아 본인부담금 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:광주시"
+      ],
+      "target": "광주시 산모(출산예정일 180일 전부터 신청일까지 계속 거주), 건강관리 서비스 이용자",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 3,
+      "amountText": "본인부담금의 90%(연장형은 표준형 본인부담금 기준 90%)",
+      "paymentMethod": "산모 계좌 입금",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "출산예정일 180일 전부터 신청일까지 광주시 거주",
+      "additionalConditions": "서비스 종료 후 60일 이내 보건소·오포건강생활지원센터 방문 또는 정부24 신청. 외국인은 F-2/F-5/F-6",
+      "officialUrl": "https://www.gjcity.go.kr/depart/contents.do?mId=0805071100",
+      "sourceName": "광주시청 보건사업",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "deadlineValue는 서비스 종료 후 60일 이내(개월 단위 아님) 신청기한은 서비스 종료 후 60일(개월 단위 아님)이라 ongoing으로 표기.",
+      "statusOriginal": "확정시행"
+    }
+  ]
+}

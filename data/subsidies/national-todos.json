@@ -1,7 +1,7 @@
 {
   "category": "SB",
   "count": 12,
-  "_설명": "전국 공통으로 즉시 적용되는 제도(부모급여·아동수당·첫만남이용권 등)는 TodoDefinition 스키마 그대로 유지해 js/todo-engine.js가 자격조건·소급기한·자동연장까지 정교하게 계산한다. 이 폴더의 다른 지역별 파일(national.json/seoul.json 등)은 스키마가 달라(지역 매칭 기반, 상태 계산이 더 단순함) 같은 계산 경로를 타지 않는다 — js/schedule.js의 SUBSIDIES_SUPERSEDED_BY_ENGINE이 두 경로의 중복 표시를 막아준다. [2026-09-29] birthRule(preReform/postReform)은 2027 개편 기준일(data/subsidies/reform-2027.json)로 개편 전·후 출생아를 나눈다. SB-01~04는 2027-07-01 이전 출생, SB-11·12(아이맞이지원금·아동기본수당, 정부안)는 이후 출생에만 나온다.",
+  "_설명": "전국 공통으로 즉시 적용되는 제도(부모급여·아동수당·첫만남이용권 등)는 TodoDefinition 스키마 그대로 유지해 js/todo-engine.js가 자격조건·소급기한·자동연장까지 정교하게 계산한다. 이 폴더의 다른 지역별 파일(national.json/seoul.json 등)은 스키마가 달라(지역 매칭 기반, 상태 계산이 더 단순함) 같은 계산 경로를 타지 않는다 — js/schedule.js의 SUBSIDIES_SUPERSEDED_BY_ENGINE이 두 경로의 중복 표시를 막아준다. [2026-09-29] birthRule(preReform/postReform)은 2027 개편 기준일(data/subsidies/reform-2027.json)로 개편 전·후 출생아를 나눈다. SB-01~04는 2027-07-01 이전 출생, SB-11·12(아이맞이지원금·아동기본수당, 정부안)는 이후 출생에만 나온다. [2026-09-29] verificationStatus는 '확인완료'(공식 원문 확인)/'확인필요'(그 외)로 통일했고, '확인필요' 항목은 앱 화면에 노출하지 않는다(상세 문구는 verificationNote). SB-11·12(2027-07 개편, 정부안)는 확인필요라 숨김이며, 개편이 확정되면 확인완료로 바꾸고 SB-01~04에 birthRule:'preReform'을 다시 붙이면 출생일 기준으로 나뉜다(data/subsidies/reform-2027.json 참고).",
   "todos": [
     {
       "todo_id": "SB-01",
@@ -20,13 +20,13 @@
       "leadDays": 30,
       "regionCondition": null,
       "source": "정부24",
-      "verificationStatus": "확인됨",
+      "verificationStatus": "확인완료",
       "displayMonth": 0,
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "출생 직후 신청 준비",
       "categoryGroup": "행정·지원금",
       "cardSummary": "첫째 200만원 · 둘째 이상 300만원 (국민행복카드 포인트, 출생일부터 2년 이내 사용)",
-      "birthRule": "preReform"
+      "verificationNote": "확인됨"
     },
     {
       "todo_id": "SB-02",
@@ -45,7 +45,7 @@
       "leadDays": 30,
       "regionCondition": null,
       "source": "보건복지부",
-      "verificationStatus": "확인됨(수급기간·신청기한 분리)",
+      "verificationStatus": "확인완료",
       "retroactiveDeadline": {
         "offsetDays": 0,
         "deadlineDays": 60
@@ -55,7 +55,7 @@
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "행정·지원금",
       "cardSummary": "0세 월 100만원 부모급여",
-      "birthRule": "preReform"
+      "verificationNote": "확인됨(수급기간·신청기한 분리)"
     },
     {
       "todo_id": "SB-03",
@@ -74,7 +74,7 @@
       "leadDays": 30,
       "regionCondition": null,
       "source": "보건복지부",
-      "verificationStatus": "확인됨(자동연장 조건 반영)",
+      "verificationStatus": "확인완료",
       "autoExtendsFrom": {
         "todo_id": "SB-02",
         "occurrenceKey": "default"
@@ -84,7 +84,7 @@
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "행정·지원금",
       "cardSummary": "1세 월 50만원 부모급여",
-      "birthRule": "preReform"
+      "verificationNote": "확인됨(자동연장 조건 반영)"
     },
     {
       "todo_id": "SB-04",
@@ -103,7 +103,7 @@
       "leadDays": 30,
       "regionCondition": null,
       "source": "korea.kr 2026 정책브리핑",
-      "verificationStatus": "확인됨(수급기간·신청기한 분리, 지역별 금액차등은 상태계산에 미반영 — 확인 필요로 별도 표기)",
+      "verificationStatus": "확인완료",
       "retroactiveDeadline": {
         "offsetDays": 0,
         "deadlineDays": 60
@@ -113,7 +113,7 @@
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "행정·지원금",
       "cardSummary": "아동수당 월 10만원 (지역별 차등)",
-      "birthRule": "preReform"
+      "verificationNote": "확인됨(수급기간·신청기한 분리, 지역별 금액차등은 상태계산에 미반영 — 확인 필요로 별도 표기)"
     },
     {
       "todo_id": "SB-05",
@@ -136,7 +136,7 @@
       "leadDays": 30,
       "regionCondition": null,
       "source": "korea.kr 2026 정책브리핑",
-      "verificationStatus": "준검증(100% 소득기준·대상 요건은 복지로 원문 확인, 시행일 2026-07-01·60일 이후 신청 규칙은 지자체 자료 기준)",
+      "verificationStatus": "확인필요",
       "retroactiveDeadline": {
         "offsetDays": 0,
         "deadlineDays": 60
@@ -145,7 +145,8 @@
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "행정·지원금",
-      "cardSummary": "기저귀 월 9만원 · 조제분유 월 11만원 (저소득·다자녀·장애인 가구)"
+      "cardSummary": "기저귀 월 9만원 · 조제분유 월 11만원 (저소득·다자녀·장애인 가구)",
+      "verificationNote": "준검증(100% 소득기준·대상 요건은 복지로 원문 확인, 시행일 2026-07-01·60일 이후 신청 규칙은 지자체 자료 기준)"
     },
     {
       "todo_id": "SB-06",
@@ -168,7 +169,7 @@
       "leadDays": 30,
       "regionCondition": null,
       "source": "korea.kr 2026 정책브리핑",
-      "verificationStatus": "확인됨(대상·한도·기한·소득기준 없음 — 복지부 사업안내 요약 열람, 퇴원일 대신 출생일 기준으로 근사)",
+      "verificationStatus": "확인완료",
       "retroactiveDeadline": {
         "offsetDays": 0,
         "deadlineDays": 180
@@ -177,7 +178,8 @@
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "행정·지원금",
-      "cardSummary": "미숙아 최대 2,000만원 · 선천성이상아 최대 700만원 (소득 제한 없음)"
+      "cardSummary": "미숙아 최대 2,000만원 · 선천성이상아 최대 700만원 (소득 제한 없음)",
+      "verificationNote": "확인됨(대상·한도·기한·소득기준 없음 — 복지부 사업안내 요약 열람, 퇴원일 대신 출생일 기준으로 근사)"
     },
     {
       "todo_id": "SB-07",
@@ -200,12 +202,13 @@
       "leadDays": 30,
       "regionCondition": null,
       "source": "중앙육아종합지원센터",
-      "verificationStatus": "확인됨(2026 기본보육료 0세 58.4만·1세 51.5만·2세 42.6만·3~5세 28만원)",
+      "verificationStatus": "확인완료",
       "displayMonth": 0,
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "행정·지원금",
-      "cardSummary": "어린이집 보육료 지원 (0세 58.4만 · 1세 51.5만 · 2세 42.6만원)"
+      "cardSummary": "어린이집 보육료 지원 (0세 58.4만 · 1세 51.5만 · 2세 42.6만원)",
+      "verificationNote": "확인됨(2026 기본보육료 0세 58.4만·1세 51.5만·2세 42.6만·3~5세 28만원)"
     },
     {
       "todo_id": "SB-08",
@@ -228,12 +231,13 @@
       "leadDays": 30,
       "regionCondition": null,
       "source": "복지로·교육부",
-      "verificationStatus": "확인됨(복지로 유아학비 2026 — 국공립 월 10만·사립 월 28만원)",
+      "verificationStatus": "확인완료",
       "displayMonth": 36,
-      "displayMonthLabel": "36개월",
+      "displayMonthLabel": "만 2세 (24~36개월)",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "행정·지원금",
-      "cardSummary": "누리과정 유아학비 (국공립 월 10만 · 사립 월 28만원)"
+      "cardSummary": "누리과정 유아학비 (국공립 월 10만 · 사립 월 28만원)",
+      "verificationNote": "확인됨(복지로 유아학비 2026 — 국공립 월 10만·사립 월 28만원)"
     },
     {
       "todo_id": "SB-09",
@@ -256,12 +260,13 @@
       "leadDays": 30,
       "regionCondition": null,
       "source": "복지로·korea.kr",
-      "verificationStatus": "확인됨(소득 250% 이하·가~라형 지원율·요금표 확인) — 연 한도시간은 확인 필요",
+      "verificationStatus": "확인완료",
       "displayMonth": null,
       "displayMonthLabel": "필요할 때 확인",
       "displayMonthBasis": "소득기준 충족 여부와 실제 돌봄 필요 발생 여부에 따라 달라지는 저우선순위(priority 3) 항목이라 0개월 일괄 노출 대상에서 제외",
       "categoryGroup": "행정·지원금",
-      "cardSummary": "아이돌봄 정부지원 (시간당 가형 10,872원 등, 소득 250% 이하)"
+      "cardSummary": "아이돌봄 정부지원 (시간당 가형 10,872원 등, 소득 250% 이하)",
+      "verificationNote": "확인됨(소득 250% 이하·가~라형 지원율·요금표 확인) — 연 한도시간은 확인 필요"
     },
     {
       "todo_id": "SB-10",
@@ -276,12 +281,13 @@
       "leadDays": 0,
       "regionCondition": "SEE_SUBSIDIES_JSON",
       "source": "지원금조회 서비스 데이터 재사용",
-      "verificationStatus": "기존 유지",
+      "verificationStatus": "확인필요",
       "displayMonth": null,
       "displayMonthLabel": "필요할 때 확인",
       "displayMonthBasis": "거주 지자체 및 자격에 따라 확인",
       "categoryGroup": "행정·지원금",
-      "cardSummary": "거주 지자체 지원금·제도 확인"
+      "cardSummary": "거주 지자체 지원금·제도 확인",
+      "verificationNote": "기존 유지"
     },
     {
       "todo_id": "SB-11",
@@ -300,13 +306,14 @@
       "leadDays": 30,
       "regionCondition": null,
       "source": "보건복지부 2026-08-28 보도자료(원문 대조)",
-      "verificationStatus": "정부안(국회 확정 전) — 아동수당법 개정·예산 심의 필요, 신청 방법·기한 미정",
+      "verificationStatus": "확인필요",
       "displayMonth": 0,
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "2027-07-01 이후 출생아 — 정부안",
       "categoryGroup": "행정·지원금",
       "cardSummary": "첫째 1,000만 · 둘째 1,200만 · 셋째 이상 1,500만원 (출생 후 1년, 분기별 현금) · 정부안",
-      "birthRule": "postReform"
+      "birthRule": "postReform",
+      "verificationNote": "정부안(국회 확정 전) — 아동수당법 개정·예산 심의 필요, 신청 방법·기한 미정"
     },
     {
       "todo_id": "SB-12",
@@ -325,13 +332,14 @@
       "leadDays": 30,
       "regionCondition": null,
       "source": "보건복지부 2026-08-28 보도자료(원문 대조)",
-      "verificationStatus": "정부안(국회 확정 전) — 아동수당법 개정·예산 심의 필요, 신청 방법·기한 미정",
+      "verificationStatus": "확인필요",
       "displayMonth": 0,
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "2027-07-01 이후 출생아 — 정부안",
       "categoryGroup": "행정·지원금",
       "cardSummary": "월 20만원 (현금 10만 + 상품권 10만) · 0~1세 가정보육 월 30만원 추가 · 정부안",
-      "birthRule": "postReform"
+      "birthRule": "postReform",
+      "verificationNote": "정부안(국회 확정 전) — 아동수당법 개정·예산 심의 필요, 신청 방법·기한 미정"
     }
   ]
 }

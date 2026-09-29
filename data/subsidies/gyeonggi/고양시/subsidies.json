@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "설명": "고양시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-GOYANG",
+      "name": "고양시 출산지원금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:고양시"
+      ],
+      "target": "고양시 출생아",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 60,
+      "amountText": "첫째 100만원 / 둘째 200만원 / 셋째 300만원 / 넷째 500만원 / 다섯째 이상 1,000만원",
+      "amountByBirthOrder": {
+        "first": 1000000,
+        "second": 2000000,
+        "third": 3000000,
+        "fourthPlus": 5000000
+      },
+      "paymentMethod": "확인 필요",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "고양시 거주",
+      "additionalConditions": "",
+      "officialUrl": "https://www.goyang.go.kr/www/www03/www03_8/www03_8_6/www03_8_6_tab7.jsp",
+      "sourceName": "고양시청 공식 홈페이지",
+      "lastVerified": "2026-09-01",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "신청기한 미확인"
+    }
+  ]
+}

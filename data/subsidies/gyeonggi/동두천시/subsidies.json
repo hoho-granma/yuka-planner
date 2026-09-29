@@ -1,0 +1,108 @@
+{
+  "_meta": {
+    "설명": "동두천시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-DONGDUCHEON-01",
+      "name": "동두천시 출산장려금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:동두천시"
+      ],
+      "target": "동두천시 출생·입양 아동의 부 또는 모",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "첫째 100만원 / 둘째 150만원 / 셋째 250만원 / 넷째 이상 500만원(2년 분할: 200만원, 300만원)",
+      "amountByBirthOrder": {
+        "first": 1000000,
+        "second": 1500000,
+        "third": 2500000,
+        "fourthPlus": 5000000
+      },
+      "paymentMethod": "현금(넷째 이상 2회 분할)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "출생(입양)일 기준 1년 이전부터 신청일까지 계속 동두천시 거주",
+      "additionalConditions": "출생신고 후 1년 이내 동행정복지센터 또는 정부24 (통합신청서). 문의 여성가족팀 031-860-2263",
+      "officialUrl": "https://www.ddc.go.kr/ddc/contents.do?key=1936",
+      "sourceName": "동두천시청 / 2026 정책안내 / 육아생활",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "공식 본문 직접 확인 못함(검색요약·정리 사이트 기반).",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-DONGDUCHEON-02",
+      "name": "동두천시 산후조리비 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:동두천시"
+      ],
+      "target": "동두천시 산모(유산·사산모 포함)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "산모 1인당 100만원 (현금)",
+      "paymentMethod": "현금",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "출생일 기준 1년 이상 동두천시 주민등록·실거주 (보건소 안내에는 신청일 기준 6개월 이상 표기도 있음)",
+      "additionalConditions": "출생일(유산·사산일)로부터 1년 이내 신청",
+      "officialUrl": "https://www.ddc.go.kr/health/contents.do?key=2110",
+      "sourceName": "동두천시 보건소 / 이데일리 2023-03 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "2023년 시작 시 자체 사업. 2026-10-01 도 산후조리비 종료 이후 시 사업 유지·거주요건(1년 vs 6개월) 재확인 필요."
+    },
+    {
+      "id": "GGM-DONGDUCHEON-03",
+      "name": "동두천시 임산부 교통비 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:동두천시"
+      ],
+      "target": "신청일 기준 6개월 이상 동두천시 주민등록 임산부",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "실제 소요 교통비 최대 30만원",
+      "paymentMethod": "현금 지급(영수증 정산)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 6,
+      "residencyRequirement": "신청일 기준 6개월 이상 동두천시 주민등록",
+      "additionalConditions": "임신 확인일~분만 후 6개월(180일) 이내. 임신확인서/산모수첩, 진료비 영수증, 교통비 영수증(카드결제 영수증 불가) 제출. 건강증진팀 031-860-3398",
+      "officialUrl": "https://www.ddc.go.kr/health/contents.do?key=2111",
+      "sourceName": "동두천시 보건소 임산부 교통비 지원 페이지",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "임차택시 이동지원(출산 후 3개월까지)은 별도 사업으로 안내되나 세부 미확인.",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-DONGDUCHEON-04",
+      "name": "동두천시 여성장애인 출산지원금 및 양육비",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:동두천시"
+      ],
+      "target": "동두천시 거주 여성장애인",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 24,
+      "amountText": "출산지원금 100만원 + 양육비 월 10만원씩 2년",
+      "paymentMethod": "현금",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 24,
+      "residencyRequirement": "신생아 출생일 6개월 전부터 신청일까지 계속 동두천시 거주",
+      "additionalConditions": "동행정복지센터 신청, 복지카드·주민등록등본 필요",
+      "officialUrl": "https://lifewithbaby.co.kr/money/227/2",
+      "sourceName": "육아생활(동두천시 정리)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "정리 사이트 기반. 신청기한 미확인.",
+      "statusOriginal": "확정시행"
+    }
+  ]
+}

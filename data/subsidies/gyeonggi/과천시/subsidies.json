@@ -1,0 +1,125 @@
+{
+  "_meta": {
+    "설명": "과천시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-GWACHEON-01",
+      "name": "과천시 임신축하금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:과천시"
+      ],
+      "target": "과천시 보건소 등록 임산부",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "20만원 (지역화폐 카드)",
+      "paymentMethod": "신청 후 30일 이내 지역화폐 지급",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 1,
+      "residencyRequirement": "3개월 이상 과천시 거주",
+      "additionalConditions": "임신확인 후 분만예정일 확인 시점~출산일로부터 30일 이내 신청. 보건소 방문/홈페이지/정부24",
+      "officialUrl": "https://www.gccity.go.kr/gcyouth/contents.do?mId=0203050000",
+      "sourceName": "과천시청 청년정책 임신축하금 페이지",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-GWACHEON-02",
+      "name": "과천시 출산축하용품",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:과천시"
+      ],
+      "target": "부 또는 모가 과천시 주민등록, 관내 출생신고 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 3,
+      "amountText": "출생아 1인당 20만원 상당 용품 (2026년부터 4개 세트에서 각 1종씩 선택, 총 4종)",
+      "paymentMethod": "택배 발송",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 3,
+      "residencyRequirement": "부 또는 모 과천시 주민등록",
+      "additionalConditions": "출산일로부터 3개월 이내, 출생신고 시 정부24/동행정복지센터 신청",
+      "officialUrl": "https://www.gccity.go.kr/gcyouth/contents.do?mId=0203040000",
+      "sourceName": "과천시청 청년정책 출산축하용품 페이지 / 뉴스핌 2026-02-11",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2026년 구성 개편은 언론(뉴스핌) 기반. 공식 페이지는 구 A~D세트 택1 표기가 남아 있음.",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-GWACHEON-03",
+      "name": "과천시 다자녀 양육바우처",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:과천시"
+      ],
+      "target": "과천시 거주 8세 이상 13세 미만 둘째 이상 자녀 (2026년부터 다자녀 기준 3자녀에서 2자녀로 확대)",
+      "minAgeMonths": 96,
+      "maxAgeMonths": 155,
+      "amountText": "둘째 월 3만원 / 셋째 월 5만원 / 넷째 이상 월 10만원 (지역화폐 과천토리, 소득 제한 없음)",
+      "paymentMethod": "경기지역화폐 과천토리 카드 정책발행",
+      "deadlineType": "age_window",
+      "deadlineValue": "96~155개월(만 8세~13세 미만)",
+      "residencyRequirement": "신청자·대상 자녀 모두 과천시 주민등록 및 실거주",
+      "additionalConditions": "신청자 명의 경기지역화폐 앱 가입 필수. 자기계발·진로탐색 분야 지정 가맹점(학원·서적·문구 등)에서만 사용. 상시신청, 신청일 포함 당해연도분 소급",
+      "officialUrl": "https://new.gccity.go.kr/portal/bbs/view.do?bIdx=190444&ptIdx=111&mId=0301010000",
+      "sourceName": "과천시청 2026년 다자녀 양육바우처 지원 안내",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "영유아 아닌 초등 연령 대상. 문의 가족아동과 02-3677-2356",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-GWACHEON-04",
+      "name": "과천시 출산·입양장려금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:과천시"
+      ],
+      "target": "과천시 출생·입양 아동 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "첫째 100만원, 넷째 이상 500만원(분할지급) 확인. 둘째·셋째 금액 확인 필요",
+      "paymentMethod": "확인 필요",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "확인 필요",
+      "additionalConditions": "확인 필요",
+      "officialUrl": "https://www.gccity.go.kr/dept/contents.do?mId=0212020400",
+      "sourceName": "과천시청 임신·출산·양육지원 페이지(요약본 확인)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "본문 요약 기반으로 순위별 금액과 신청기한 미확정. 시행 여부 재확인 필요."
+    },
+    {
+      "id": "GGM-GWACHEON-05",
+      "name": "과천시 신혼부부 주택전세자금 대출이자 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:과천시"
+      ],
+      "target": "과천시 신혼부부",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 216,
+      "amountText": "대출이자 최대 100만원 (확인 필요)",
+      "paymentMethod": "확인 필요",
+      "deadlineType": "ongoing",
+      "deadlineValue": 0,
+      "residencyRequirement": "확인 필요",
+      "additionalConditions": "확인 필요",
+      "officialUrl": "https://www.gccity.go.kr/dept/contents.do?mId=0212020400",
+      "sourceName": "과천시청 임신·출산·양육지원 페이지(요약본 확인)",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "출산가구 전용 여부 불명확. 조건 재확인 필요."
+    }
+  ]
+}

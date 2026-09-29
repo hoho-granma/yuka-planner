@@ -124,6 +124,12 @@
     "제주특별자치도": "jeju",
   };
 
+  // 폴더 구조 2종: seoul = {슬러그}/city.json + {슬러그}/districts/{시군구}.json,
+  // gyeonggi = {슬러그}/city.json + {슬러그}/{시군구}/subsidies.json
+  const SPLIT_SUBSIDY_PROVINCES = new Set(["seoul"]);
+  // 서울 외 시·도는 모두 {슬러그}/city.json + {슬러그}/{시군구}/subsidies.json 구조.
+  const DISTRICT_FOLDER_PROVINCES = new Set(Object.values(PROVINCE_SLUG).filter((s) => s !== "seoul"));
+
   /**
    * 지원금은 지역마다 항목이 다르고 전국 단위로 계속 늘어날 예정이라, 프로필(시·도/시·군구)이
    * 정해지기 전까지는 불러오지 않는다. 항상 national.json(전국 공통) + {시도}.json(도 전체·여러
@@ -144,7 +150,14 @@
   async function loadSubsidyDataForRegion(province, district) {
     const slug = PROVINCE_SLUG[province];
     const paths = ["data/subsidies/national.json"];
-    if (slug) {
+    if (slug && SPLIT_SUBSIDY_PROVINCES.has(slug)) {
+      // 시·도 폴더 구조: {슬러그}/city.json(시·도 공통) + {슬러그}/districts/{시군구}.json
+      paths.push(`data/subsidies/${slug}/city.json`);
+      if (district) paths.push(`data/subsidies/${slug}/districts/${district}.json`);
+    } else if (slug && DISTRICT_FOLDER_PROVINCES.has(slug)) {
+      paths.push(`data/subsidies/${slug}/city.json`);
+      if (district) paths.push(`data/subsidies/${slug}/${district}/subsidies.json`);
+    } else if (slug) {
       paths.push(`data/subsidies/${slug}.json`);
       if (district) paths.push(`data/subsidies/${slug}-${district}.json`);
     }
@@ -229,6 +242,8 @@
       stage: p.stage || "born",
       province: p.province,
       district: p.district,
+      // null로 보내야 set({merge:true})가 서버의 기존 사진을 지운다(필드 생략하면 그대로 남음).
+      photoDataUrl: p.photoDataUrl || null,
     };
   }
 
@@ -500,7 +515,7 @@
       return rowsSrc.map((r) => {
         const a = r.startDays != null ? formatDateKR(calAdd(birthDate, 0, r.startDays)) : r.startText || null;
         const b = r.endDays != null && !r.endText ? formatDateKR(calAdd(birthDate, 0, r.endDays)) : r.endText || (r.endDays != null ? formatDateKR(calAdd(birthDate, 0, r.endDays)) : null);
-        const text = a && b ? `${a} ~ ${b}` : b ? `${b}까지` : a ? `${a}부터` : "확인 필요";
+        const text = a && b ? `${a} ~ ${b}` : b ? `${b}까지` : a ? `${a}부터` : "관할 기관 안내 참고";
         return { label: r.label, text, note: r.note || "" };
       });
     }
@@ -522,13 +537,13 @@
         note = "상시 신청 가능 — 대상 월령 안에서만 받을 수 있어요";
       }
       if (legacy.deadlineType === "age_window") specs = [{ label, start: M(dv.minMonths), end }];
-      else if (legacy.deadlineType === "unconfirmed") specs = [{ label: "신청 기한", start: null, end: null, note: "기한 확인 필요 — 관할 기관에 문의하세요" }];
+      else if (legacy.deadlineType === "unconfirmed") specs = [{ label: "신청 기한", start: null, end: null, note: "신청 기한은 관할 기관 안내를 따라요" }];
       else specs = [{ label, start: end ? M(minA) : null, end, note }];
     }
     return (specs || []).map((r) => {
       const a = fmt(r.start);
       const b = fmt(r.end);
-      const text = a && b ? `${a} ~ ${b}` : b ? `${b}까지` : a ? `${a}부터` : "확인 필요";
+      const text = a && b ? `${a} ~ ${b}` : b ? `${b}까지` : a ? `${a}부터` : "관할 기관 안내 참고";
       const note = typeof r.note === "function" ? r.note(birthDate) : r.note || "";
       return { label: r.label, text, note };
     });
@@ -802,6 +817,7 @@
       try {
         profile.photoDataUrl = await resizeImageFile(file, 240);
         saveProfile(profile);
+        pushProfileToFamily();
         renderProfileHeader();
         showProfileSheet();
       } catch (e) {
@@ -814,6 +830,7 @@
         ev.stopPropagation();
         delete profile.photoDataUrl;
         saveProfile(profile);
+        pushProfileToFamily();
         renderProfileHeader();
         showProfileSheet();
       });
@@ -1131,11 +1148,27 @@
   /** 처음 체크리스트 탭을 그릴 때 한 번만 "현재 월령" 그룹을 펼친 상태로 초기화한다. */
   function ensureOpenMonthGroupsInit() {
     if (openMonthGroups === null) {
-      openMonthGroups = new Set([Math.max(0, ageInMonths(profile.birthDate, new Date()))]);
+      openMonthGroups = new Set([checklistBucket(Math.max(0, ageInMonths(profile.birthDate, new Date())))]);
     }
   }
 
   const NEED_CHECK_GROUP = "NEED_CHECK";
+
+  /** 돌 이후(13개월~)는 만 나이(만 1세는 반씩, 만 2세는 36개월까지)로 묶는다. 키는 구간 시작 월령. 돌 전은 월별 그대로. */
+  const LATE_BUCKETS = [
+    { start: 13, end: 17, label: "만 1세 (13~17개월)" },
+    { start: 18, end: 23, label: "만 1세 (18~23개월)" },
+    { start: 24, end: 36, label: "만 2세 (24~36개월)" },
+  ];
+  function checklistBucket(m) {
+    if (typeof m !== "number" || m <= 12) return m;
+    const b = LATE_BUCKETS.find((x) => m >= x.start && m <= x.end);
+    return b ? b.start : LATE_BUCKETS[LATE_BUCKETS.length - 1].start;
+  }
+  function checklistGroupLabel(key) {
+    const b = LATE_BUCKETS.find((x) => x.start === key);
+    return b && key > 12 ? b.label : `생후 ${key}개월`;
+  }
 
   /**
    * 다회차 Todo(occurrences) 또는 제품분기 Todo(variants)에서, 이 occurrenceKey에 해당하는
@@ -1252,11 +1285,13 @@
     const items = visibleSchedule().slice().sort((a, b) => a.date - b.date);
     const groups = new Map();
     items.forEach((e) => {
-      monthKeysOf(e).forEach((key) => {
+      new Set(monthKeysOf(e).map((k) => (k === NEED_CHECK_GROUP ? k : checklistBucket(k)))).forEach((key) => {
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(e);
       });
     });
+    // 돌 전(0~12개월)은 그 달에 항목이 없어도 월별 그룹을 항상 보여준다 — 13개월 이후는 항목이 있는 달만.
+    if (items.length > 0) for (let m = 0; m <= 12; m++) if (!groups.has(m)) groups.set(m, []);
     const monthKeys = [...groups.keys()].sort((a, b) => {
       if (a === NEED_CHECK_GROUP) return 1;
       if (b === NEED_CHECK_GROUP) return -1;
@@ -1267,15 +1302,15 @@
         const list = groups.get(key);
         const isOpen = openMonthGroups.has(key);
         const doneCount = list.filter((e) => completed[e.id]).length;
-        const label = key === NEED_CHECK_GROUP ? "그때그때 확인해요" : isPregnant() && key === 0 ? "임신 중·출산 직후" : `생후 ${key}개월`;
+        const label = key === NEED_CHECK_GROUP ? "그때그때 확인해요" : isPregnant() && key === 0 ? "임신 중·출산 직후" : checklistGroupLabel(key);
         return `
           <div class="ongoing-group-card month-group-card ${isOpen ? "open" : ""}" data-month="${key}">
             <button type="button" class="ongoing-group-header">
               <span class="group-text"><strong>${label}</strong></span>
-              <span class="count-badge">${doneCount}/${list.length}개</span>
+              <span class="count-badge">${list.length ? `${doneCount}/${list.length}개` : "없음"}</span>
               <span class="chevron">▾</span>
             </button>
-            <div class="ongoing-group-body">${list.slice().sort((a, b) => !!completed[a.id] - !!completed[b.id]).map((e) => eventItemHtml(e, { compact: true })).join("")}</div>
+            <div class="ongoing-group-body">${list.length ? "" : '<p class="empty-month-note">이 달에 새로 챙길 항목은 없어요</p>'}${list.slice().sort((a, b) => !!completed[a.id] - !!completed[b.id]).map((e) => eventItemHtml(e, { compact: true })).join("")}</div>
           </div>
         `;
       })
@@ -1540,13 +1575,17 @@
           ? subsidyPeriodHtml(subsidyPeriodRows(e.id, s, profile.birthDate), statusLine)
           : statusLine
       }</div>
-      <div class="detail-row"><div class="label">지급 방식</div>${detailValueHtml(s.paymentMethod || "확인 필요")}</div>
-      <div class="detail-row"><div class="label">거주 조건</div>${detailValueHtml(s.residencyRequirement || "-")}</div>
-      <div class="detail-row"><div class="label">추가 자격 조건</div>${detailValueHtml(s.additionalConditions || "-")}</div>
+      ${hasDetailValue(s.paymentMethod) ? `<div class="detail-row"><div class="label">지급 방식</div>${detailValueHtml(s.paymentMethod)}</div>` : ""}
+      ${hasDetailValue(s.residencyRequirement) ? `<div class="detail-row"><div class="label">거주 조건</div>${detailValueHtml(s.residencyRequirement)}</div>` : ""}
+      ${hasDetailValue(s.additionalConditions) ? `<div class="detail-row"><div class="label">추가 자격 조건</div>${detailValueHtml(s.additionalConditions)}</div>` : ""}
       <div class="detail-row"><div class="label">정보 출처</div>${s.sourceName}</div>
       <div class="detail-row"><div class="label">최종 확인일</div>${s.lastVerified}</div>
-      ${s.notes ? `<div class="detail-row"><div class="label">비고</div>${detailValueHtml(s.notes)}</div>` : ""}
     `;
+  }
+
+  /** 값이 비었거나 "-"·"미확인"뿐이면 그 행을 아예 보여주지 않는다(화면에 "확인 필요"류 문구가 나오지 않게). */
+  function hasDetailValue(v) {
+    return typeof v === "string" && v.trim() !== "" && !/^(-|미확인|확인\s*필요)$/.test(v.trim());
   }
 
   function openDetail(e, cameFromDayList) {
@@ -1836,7 +1875,13 @@
       try {
         const data = await FamilySync.fetchFamily(familyCode);
         if (data && data.profile) {
+          // 예전에 이 기기에만 저장된 사진이 있고 서버엔 없으면 올려서 가족과 공유한다.
+          const localPhoto = profile && profile.photoDataUrl;
           profile = profileFromPlain(data.profile);
+          if (!profile.photoDataUrl && localPhoto) {
+            profile.photoDataUrl = localPhoto;
+            pushProfileToFamily();
+          }
           completed = data.completed || {};
           saveProfile(profile);
           saveCompleted();

@@ -1,0 +1,99 @@
+{
+  "_meta": {
+    "설명": "서울특별시 금천구 자치구 전용 지원금(서울시 전체 공통 항목은 ../city.json 참고).",
+    "조사일": "2026-09-29",
+    "note": "있음 — 서울시 공통과 별도로 금천구 자체 지원 3건 확인(GEUMCHEON-001 셋째 이상 출생축하금, 002 출생축하용품 5만원 세트, 003 금천아이성장지원금 2~4세 10만원 상품권). 001은 조건부(셋째 이상), 003은 구청 원문 미확인이라 확인필요. 금천구청 출산장려지원 페이지 기준.",
+    "2026-09-29 갱신": "구청 지원사업 재조사: 신규 0건 추가(-), 기존 2개 필드 정정. 미확인 사항은 항목 notes 참고.",
+    "2026-09-29 브라우저 검증": "구청·법제처 원문 재확인 반영(정정 4개 필드)."
+  },
+  "subsidies": [
+    {
+      "scope": "municipal",
+      "lastVerified": "2026-09-29",
+      "id": "GEUMCHEON-001",
+      "name": "금천구 출생축하금(셋째 이상)",
+      "applicableRegions": [
+        "서울특별시:금천구"
+      ],
+      "target": "금천구 거주 가정의 셋째 이상 출생아 — 은찬이가 셋째 이상일 때만 해당",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "셋째아 70만원 / 넷째아 이상 100만원(1회)",
+      "amountByBirthOrder": {
+        "first": 0,
+        "second": 0,
+        "third": 700000,
+        "fourthPlus": 1000000
+      },
+      "paymentMethod": "현금",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "출생일 기준 1년 전부터 금천구에 출생아동과 주민등록을 같이 두고 거주하는 부 또는 모(1년 미만이면 1년 경과일부터 대상, 그날부터 1년 이내 신청)",
+      "additionalConditions": "출생일(주민등록상)로부터 1년 이내 신청. 주민센터 방문 또는 정부24 '출산서비스 통합처리'로 신청",
+      "officialUrl": "https://www.geumcheon.go.kr/portal/contents.do?key=525",
+      "sourceName": "금천구청 홈페이지 '출산장려지원' 페이지",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "구청 원문은 신청기한 '출생일로부터 1년 이내'. 일부 민간 사이트(모두의혜택)는 '6개월 이내', '소득 상위 20% 제외'로 다르게 적었으나 구청 원문에 없어 채택하지 않음. 문의 가족정책과 02-2627-1437.",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "paymentMethod": "현금(계좌입금 추정 — 구청 원문에 지급수단 명시 없음)",
+        "sourceName": "금천구청 홈페이지 '출산장려지원' 페이지(WebFetch로 원문 확인)"
+      }
+    },
+    {
+      "scope": "municipal",
+      "lastVerified": "2026-09-29",
+      "id": "GEUMCHEON-002",
+      "name": "금천구 출생축하용품(육아용품 5만원 상당 세트)",
+      "applicableRegions": [
+        "서울특별시:금천구"
+      ],
+      "target": "2025.1.1 이후 출생해 금천구에 출생신고·주민등록된 아동의 보호자(출생일부터 신청일까지 금천구 주민등록·동일 세대 거주)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "출생아당 5만원 상당 육아용품 1세트(2026년 6종 세트 중 택1: 건강·놀이·생활·수유(백색소음기·수유시트)·안전(가정용 베이비홈캠)·이유식(이유식 용기·턱받이·식판·스푼포크))",
+      "paymentMethod": "현물(계약업체 택배 배송, 신청일 기준 2주 이내)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "보호자가 출생일부터 신청일까지 금천구 주민등록, 출생아와 동일 주민등록지 거주",
+      "additionalConditions": "신청기간 2026-01-02~2026-12-18 이내이면서 출생일로부터 1년 이내.",
+      "officialUrl": "https://www.geumcheon.go.kr/portal/contents.do?key=525",
+      "sourceName": "금천구청 홈페이지 '출산장려지원' 페이지",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "세트 구성(건강: 귀체온계·콧물흡입기·온습도계 / 놀이: 치발기·사운드북·노리개젖꼭지·모빌 / 생활: 손수건·거즈블랭킷·아기비데)은 검색 요약 기준. 신청은 2026-12-18 마감이므로 연말 출생아는 마감일 주의.",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "additionalConditions": "신청기간 2026-01-02~2026-12-18 이내이면서 출생일로부터 1년 이내. 2026년 사업 기준이라 2027년 이후 지속 여부는 미확인",
+        "sourceName": "금천구청 홈페이지 '출산장려지원' 페이지(WebFetch로 원문 확인)"
+      }
+    },
+    {
+      "scope": "municipal",
+      "lastVerified": "2026-09-29",
+      "id": "GEUMCHEON-003",
+      "name": "금천아이성장지원금(2~4세 연 1회 10만원)",
+      "applicableRegions": [
+        "서울특별시:금천구"
+      ],
+      "target": "신청일 기준 6개월 전부터 계속 금천구 주민등록·실거주하는 만 2~4세 영유아의 보호자(나이 기준, 조례 제6조의2). 2026년 해당 출생연도는 2022~2024년생 추정(연도는 조례 미명시)",
+      "minAgeMonths": 24,
+      "maxAgeMonths": 60,
+      "amountText": "연 1회 10만원 상당 금천G밸리사랑상품권(서울Pay+ 앱 지급, 금천구 내 가맹점 사용, 발급일로부터 5년 사용)",
+      "paymentMethod": "금천G밸리사랑상품권(서울Pay+ 앱, 신청 익월 15일 지급)",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 24,
+        "maxMonths": 60
+      },
+      "residencyRequirement": "신청일 기준 과거 6개월 이상 계속 금천구 주민등록·실거주",
+      "additionalConditions": "영유아 연령 도래일(거주 6개월 미만이면 전입 후 6개월 되는 날)부터 1년 이내 동주민센터(또는 정부24) 신청. 지급은 금천G밸리사랑상품권 등. 금액·소득제한 등 세부는 조례에 없어 구청 원문 재확인 필요. 은찬이(2026-06-20생)는 만 2세 도래일(2028-06-20)부터 1년 이내",
+      "officialUrl": "https://www.law.go.kr/자치법규/서울특별시금천구출생및양육지원에관한조례",
+      "sourceName": "서울Pn 2025-03-04 도입보도(2~4세 연10만원 금천G밸리사랑상품권, 서울Pay+ , 6개월 이상 거주, 2025-03-04 신청 시작), 금천구 '2026 달라지는 금천생활'(G밸리타임스: 사용처 확대) + 구청 생애주기 페이지가 '금천아이성장지원금(2~4세)' 명시. 세부 조건 구청 원문은 미열람",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "구청 공식 페이지에서 직접 확인하지 못하고 2차 출처(2026년 1~12월 신청 기재)로만 확인. 2028년(은찬 만2세) 사업 존속·연령 기준 변경 가능성 있어 신청 시점에 재확인 필요. officialUrl은 출산장려지원 페이지로 임시 지정."
+    }
+  ]
+}

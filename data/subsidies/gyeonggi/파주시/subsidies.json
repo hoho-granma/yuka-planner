@@ -1,0 +1,109 @@
+{
+  "_meta": {
+    "설명": "파주시 전용 지원금."
+  },
+  "subsidies": [
+    {
+      "id": "GGM-PAJU-01",
+      "name": "파주시 출생축하금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:파주시"
+      ],
+      "target": "파주시 출생아 (2024년 출생아부터 인상 적용)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 24,
+      "amountText": "첫째 100만원 / 둘째 200만원 / 셋째 이상 300만원 (출생신고 시 1차 첫째10·둘째30·셋째100만원, 1년 후 2차 첫째90·둘째170·셋째200만원)",
+      "amountByBirthOrder": {
+        "first": 1000000,
+        "second": 2000000,
+        "third": 3000000,
+        "fourthPlus": 3000000
+      },
+      "paymentMethod": "출생 후 1차, 1년 경과 후 2차 자동 분할 지급",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "출생신고일부터 신청 시까지 파주시 주민등록, 자녀와 동일세대",
+      "additionalConditions": "2차 지급일까지 계속 거주해야 지급. 출생신고일로부터 1년 이내 1회 신청",
+      "officialUrl": "https://www.paju.go.kr/news/user/mediaPaju/BD_themaInPajuView.do?sn=1174",
+      "sourceName": "파주시청 미디어파주(조례개정 2024-09)",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2024 개정 조례 기준. 다태아·재혼가정 산정, 2026 현재 금액 변동 여부는 조례 재확인 권장.",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-PAJU-02",
+      "name": "파주시 산모·신생아 건강관리지원 본인부담금 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:파주시"
+      ],
+      "target": "출산 6개월 전부터 계속 파주시에 주민등록한 산모",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 3,
+      "amountText": "본인부담금의 90% 지원",
+      "paymentMethod": "서비스 이용 시 본인부담 경감",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "출산 전 6개월 이상 계속 파주시 주민등록",
+      "additionalConditions": "국고 산모·신생아 건강관리지원과 연계",
+      "officialUrl": "https://clinic.paju.go.kr/clinic/clinic_03/clinic_03_11/clinic_03_11_03.jsp",
+      "sourceName": "파주시 보건소",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "보건소 출산 후 지원 안내 페이지 기준. 소득·이용일수 세부조건은 확인 필요.",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-PAJU-03",
+      "name": "파주시 유축기 무료 대여",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:파주시"
+      ],
+      "target": "파주시 산모",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "유축기 본체(부속품 포함) 무료 대여 1인 1회 2개월",
+      "paymentMethod": "보건소 방문 대여",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "파주시 산모",
+      "additionalConditions": "",
+      "officialUrl": "https://clinic.paju.go.kr/clinic/clinic_03/clinic_03_11/clinic_03_11_03.jsp",
+      "sourceName": "파주시 보건소",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "금전 지원 아닌 물품 대여.",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-PAJU-04",
+      "name": "파주시 아빠 육아휴직 장려금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:파주시"
+      ],
+      "target": "2026-01-01 이후 육아휴직을 시작한 아빠(고용보험 육아휴직급여 수급, 1개월 이상 휴직)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 96,
+      "amountText": "월 30만원 최대 3개월 (최대 90만원)",
+      "paymentMethod": "정부24 온라인 신청(매월 15일까지) 후 지급",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "신청일 기준 아빠 파주시 1년 이상 주민등록, 자녀도 파주시 주민등록",
+      "additionalConditions": "공무원·자영업자·예술인·노무제공자 제외",
+      "officialUrl": "https://www.paju.go.kr/user/www_02_01_09_01/board/BD_board.view.do?seq=20260212133350176&bbsCd=2001",
+      "sourceName": "파주시청 공고(2026-02) / 언론",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "공고 원문 미열람, 검색요약·언론 기반. 자녀 연령 상한 미확인(96개월은 가정치).",
+      "statusOriginal": "확정시행"
+    }
+  ]
+}

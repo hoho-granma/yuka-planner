@@ -1,0 +1,159 @@
+{
+  "_meta": {
+    "설명": "서울특별시 강남구 자치구 전용 지원금(서울시 전체 공통 항목은 ../city.json 참고).",
+    "조사일": "2026-09-29",
+    "note": "있음 — 서울시 공통(SEOUL-001~004)과 별도로 강남구 자체 지원 2건 확인(GANGNAM-001 출산양육지원금, GANGNAM-002 산후건강관리비용 지원). 강남구 '아빠 육아휴직 장려금'(2026-01 신설, 남성 육아휴직자 월 30만원·최대 1년, 강남구 1년 이상 거주+고용보험 육아휴직급여 수급자)은 대상 자녀 연령 조건을 공식 문서에서 확인하지 못해 목록에서 제외함. 웹 검색 요약 중 '강남구 2026 산후조리경비 확대(첫째 220만원 등)'는 서울시 공통(SEOUL-001) 금액이라 중복으로 제외.",
+    "2026-09-29 갱신": "구청 지원사업 재조사: 신규 3건 추가(GANGNAM-003, GANGNAM-P01, GANGNAM-P02), 기존 1개 필드 정정. 미확인 사항은 항목 notes 참고.",
+    "2026-09-29 브라우저 검증": "구청·법제처 원문 재확인 반영(정정 21개 필드)."
+  },
+  "subsidies": [
+    {
+      "id": "GANGNAM-001",
+      "name": "강남구 출산양육지원금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:강남구"
+      ],
+      "target": "강남구에 출생신고한 자녀의 친권자·후견인 (첫째부터 지급, 소득 제한 없음)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "첫째 200만원 / 둘째 200만원 / 셋째 300만원 / 넷째 이상 500만원 (1회, 2023년 이후 출생아 기준)",
+      "amountByBirthOrder": {
+        "first": 2000000,
+        "second": 2000000,
+        "third": 3000000,
+        "fourthPlus": 5000000
+      },
+      "paymentMethod": "현금(신청 시 제출한 통장 계좌 입금)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "자녀 출생신고일 1년 전부터 신청일 현재까지 강남구에 계속 주민등록(보호자). 신청 당시 1년 미만이면 1년 경과 후 지급",
+      "additionalConditions": "신청 기한은 출생신고일로부터 1년 이내(조례). 자녀와 보호자는 주민등록상 동일 세대여야 함, 자녀는 강남구에 출생신고. 다른 지자체에서 동일·유사 지원을 받은 경우 제외. 2020~2022년생은 개정 전 기준(첫째 30만원, 둘째 100만원). 신청: 동주민센터 방문 또는 정부24, 필요서류 신분증·통장사본",
+      "officialUrl": "https://www.gangnam.go.kr/board/B_000060/14890/view.do?mid=ID03_010104",
+      "sourceName": "강남구청 민원서식(출산양육지원금 신청서) + 서울특별시 강남구 출산·양육 지원에 관한 조례(2023-01-01 시행) + 강남구 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2026년 보도로 금액 재확인. 신청기한: 출생신고일부터 1년 이내, 거주: 출생신고일 1년 전~신청일 강남구 거주(1년 미만이면 1년 경과 후 지급). 구청 원문 페이지 직접 열람은 실패해 verified 변경 제안 없음.",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "sourceName": "강남구청 민원서식(출산양육지원금 신청서) + 서울특별시 강남구 출산·양육 지원에 관한 조례(2023-01-01 시행) + 강남구 보도 — WebFetch로 확인"
+      }
+    },
+    {
+      "id": "GANGNAM-002",
+      "name": "강남구 산후건강관리비용 지원(산모·신생아 건강관리 본인부담금 환급)",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:강남구"
+      ],
+      "target": "산모·신생아 건강관리(산후도우미) 서비스를 이용한 강남구 출산가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "서비스 이용 본인부담금을 신생아 1명당 최대 100만원 현금 1회 지원",
+      "paymentMethod": "현금(산모 계좌 입금)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "부 또는 모가 신청일 기준 1년 이상 계속 강남구 주민등록, 신생아는 강남구에 출생신고",
+      "additionalConditions": "서비스 이용 완료 후 신청(강남구보건소 1층 의료비지원실 방문·우편 또는 정부24). 서울시 산후조리경비 바우처 등으로 같은 서비스 본인부담금을 결제하면 중복지원 불가·제외 또는 차감.",
+      "officialUrl": "https://health.gangnam.go.kr/web/business/moja/sub13.do",
+      "sourceName": "강남구보건소 산후건강관리비용 지원사업 페이지",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "신청기한 '출생일로부터 1년 이내'는 보건소 페이지 기준. 검색 결과 요약에는 '출산일로부터 60일까지'로 나온 곳이 있어 최종 기한은 보건소(02-3423-7230) 확인 권장. 2024년 기사에는 최대 50만원으로 나와 있었으나 현행 보건소 페이지는 100만원.",
+      "audience": "mother",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "additionalConditions": "서비스 이용 완료 후 신청(강남구보건소 1층 의료비지원실 방문·우편 또는 정부24). 서울시 산후조리경비 바우처 등으로 같은 서비스 본인부담금을 결제하면 중복지원 불가·제외 또는 차감. 다른 자료에는 신청기간이 '출산예정일 40일 전~출산 후 60일'로 나와 상충(서비스 신청 기간일 가능성)",
+        "sourceName": "강남구보건소 산후건강관리비용 지원사업 페이지 — WebFetch로 확인"
+      }
+    },
+    {
+      "id": "GANGNAM-003",
+      "name": "강남구 아빠 육아휴직장려금(2026 신규)",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:강남구"
+      ],
+      "target": "신청일 기준 1년 이상 계속 강남구 주민등록된 남성 육아휴직자(대상자녀 강남구 주민등록), 고용보험 육아휴직급여 수급자(공무원·교사 등 연금수급자 제외)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "월 30만원, 최대 1년",
+      "paymentMethod": "현금",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "신청일 기준 1년 이상 계속 강남구 주민등록(자녀도 강남구 주민등록)",
+      "additionalConditions": "신청: 동주민센터 방문 또는 정부24. 서류: 신청서·육아휴직확인서·육아휴직급여 지급결정통지서(매월 제출). 신청기간: 육아휴직 시작일 이후 1개월~종료일 이후 1년 이내(구청 안내), 2026.1.1 이후 육아휴직자, 사업기간 2026.1~12. 고용노동부 6+6 부모육아휴직 특례 수급 동일 휴직기간은 제외. 문의 02-3423-5855",
+      "officialUrl": "https://bokji.gangnam.go.kr/board/BBS_SUPPORT/2077/view.do?mid=ID01_01&type=",
+      "sourceName": "한국사회복지저널 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "구 공식 안내 확인. 자녀 연령 제한은 원문에 없음(자녀는 강남구 주민등록 필요). maxAgeMonths 12는 앱 표시용 근사.",
+      "periods": [],
+      "audience": "parent",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "sourceName": "한국사회복지저널 보도(2차 자료)"
+      }
+    },
+    {
+      "id": "GANGNAM-P01",
+      "name": "강남구 아이돌봄서비스 본인부담금 추가 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:강남구"
+      ],
+      "target": "주민등록상 강남구 실거주 아이돌봄서비스 이용가구(전 소득구간)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 36,
+      "amountText": "본인부담금의 50~100% 구비 추가지원(가형 100%·나형 90%·다형 80%·라형/마형 50%), 정부지원시간 내(시간제 연 960시간, 종일제 월 80~200시간)",
+      "paymentMethod": "서비스 요금 감면",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "등본상 강남구 주소지 실거주",
+      "additionalConditions": "사후정산: 이용 후 다음달 초 안내문자 → 기한 내 등본+신청서(구글폼) 제출(매년 1회) → 다음달 말일 예치금 충전. 이용 종료 전 지원 불가",
+      "officialUrl": "https://www.gangnam.go.kr/office/gngfamily/board/gngfamily_notice/3256/view.do?mid=gngfamily_notice",
+      "sourceName": "한국사회복지저널 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "보도 요약만 확인. 세부 비율·연령·신청방법 확인 못함.",
+      "periods": [],
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "sourceName": "한국사회복지저널 보도(2차 자료)"
+      }
+    },
+    {
+      "id": "GANGNAM-P02",
+      "name": "강남구형 시간제보육(무료)",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:강남구"
+      ],
+      "target": "13개월~취학 전 영유아 자녀를 둔 강남구민 및 강남구 소재 직장인",
+      "minAgeMonths": 13,
+      "maxAgeMonths": 36,
+      "amountText": "월 100시간 이내 무료(토요일 아동당 최대 4시간), 대치·수서·논현·삼성점 4개소",
+      "paymentMethod": "서비스",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "",
+      "additionalConditions": "육아종합지원센터 홈페이지 사전예약제. 서류: 신분증, 3개월 이내 주민등록등본(부모-자녀관계 미기입 시 가족관계증명서), 직장인은 재직증명서/사업자등록증",
+      "officialUrl": "https://bokji.gangnam.go.kr/board/BBS_SUPPORT/1558/view.do?mid=ID03_02",
+      "sourceName": "한국사회복지저널 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "보도 요약만 확인.",
+      "periods": [],
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "residencyRequirement": "미확인",
+        "sourceName": "한국사회복지저널 보도(2차 자료)"
+      }
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "_meta": {
+    "설명": "서울특별시 강동구 자치구 전용 지원금(서울시 전체 공통 항목은 ../city.json 참고).",
+    "조사일": "2026-09-29",
+    "note": "있음 — 서울시 공통과 별도로 강동구 자체 지원 3건. GANGDONG-001 다자녀특별장려금(셋째 이상, 확정), GANGDONG-002 출산축하용품(2025년생 기준 기사, 2026년생 적용 미확인), GANGDONG-003 출산축하금(현금, 현행 여부·금액 미확인). 넷째 이상 자녀 초·중·고 입학축하금(50만원)은 영유아 대상이 아니라 제외.",
+    "2026-09-29 갱신": "구청 지원사업 재조사: 신규 1건 추가(GANGDONG-004), 기존 1개 필드 정정. 미확인 사항은 항목 notes 참고.",
+    "2026-09-29 브라우저 검증": "구청·법제처 원문 재확인 반영(정정 2개 필드)."
+  },
+  "subsidies": [
+    {
+      "id": "GANGDONG-001",
+      "name": "강동구 다자녀특별장려금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:강동구"
+      ],
+      "target": "강동구에 주민등록을 둔 세 자녀 이상 가정 (막내 만6세 미만) — 은찬이가 셋째 이상 가구일 때만 해당",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 71,
+      "amountText": "세 자녀 가정 세대당 월 10만원 / 네 자녀 이상 가정 세대당 월 20만원",
+      "paymentMethod": "현금(매월 20일 지정 계좌 입금)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "강동구 주민등록 + 부 또는 모와 동일 세대",
+      "additionalConditions": "지급기간: 신청한 다음 달부터 대상 자녀가 만 6세 미만(0~71개월)인 동안. 신청 마감은 별도 없이 상시 신청이지만 신청 다음 달부터 지급되므로 출생 후 빨리 신청할수록 유리. 신청: 거주지 동주민센터",
+      "officialUrl": "https://www.gangdong.go.kr/web/newportal/contents/gdp_005_001_005_001_003",
+      "sourceName": "강동구청 다자녀지원 페이지 + e-강동구소식 + 강동구 조례 시행규칙",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "조례 제10조·제11조 원문(2023-12-27 시행본) 확인: 세 자녀 월 10만원, 네 자녀 이상 월 20만원, 신청일 다음 달부터 막내 6세 도래 전 달까지, 세대당 최대 6년. 2026 개정본은 미확인",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "sourceName": "강동구청 다자녀지원 페이지 + e-강동구소식 + 강동구 조례 시행규칙 — WebFetch로 확인"
+      }
+    },
+    {
+      "id": "GANGDONG-002",
+      "name": "강동구 출산 축하용품(신생아 기저귀 + 종량제봉투)",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:강동구"
+      ],
+      "target": "강동구에 출생신고한 신생아 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "신생아용 기저귀 1팩 + 20L 종량제봉투 30매 (현물 1회)",
+      "paymentMethod": "현물(동주민센터에서 수령)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "강동구 출생신고(세부 거주기간 요건 미확인)",
+      "additionalConditions": "출생신고 시 동주민센터에서 현장 수령하거나 온라인 신고 시 이후 방문 수령. 2025년 1월 이후 출생신고분부터 제공(2025-02 기사·e-강동구소식). 신청 기한: 출생일로부터 1년 이내",
+      "officialUrl": "https://egangdong.kr/vol583/sub_02.html",
+      "sourceName": "e-강동구소식 '2025 달라지는 제도' + 시정일보 2025-02-13 보도 — WebFetch로 확인",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "2026년 보도에서 모든 출산 가구에 기저귀·종량제봉투 지원 및 동주민센터 제공 확인(공식 원문 미열람이라 verified 유지)"
+    },
+    {
+      "id": "GANGDONG-004",
+      "name": "강동구 보건소 모유수유클리닉",
+      "scope": "municipal",
+      "applicableRegions": [
+        "서울특별시:강동구"
+      ],
+      "target": "모유 수유부(산모)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "모유수유법·젖량조절·유두통증관리·1:1 상담",
+      "paymentMethod": "서비스(보건소 방문)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "",
+      "additionalConditions": "매월 첫째·셋째 목요일 14:00~15:00, 10~11월 공사로 일시 중단(2026 현재 시점 중단 예정). 일정 변경 가능하니 전화 확인. 문의 02-3425-6732",
+      "officialUrl": "https://health.gangdong.go.kr/health/site/main/content/GD20010500",
+      "sourceName": "강동구 보건소 모유수유 페이지",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "공식 페이지 확인. 대상 연령·비용·사전예약 여부는 원문에 없음. 연도별 게시일 미표시라 2026 운영은 '매년' 문구 기준.",
+      "periods": [],
+      "audience": "mother",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "amountText": "무료 추정(비용 원문 미기재) — 모유수유법·젖량조절·유두통증관리·1:1 상담",
+        "residencyRequirement": "미기재"
+      }
+    }
+  ]
+}
