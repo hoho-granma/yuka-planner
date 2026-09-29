@@ -1298,6 +1298,28 @@
     }
   }
 
+  function localDateInputValue(d) {
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  /** 완료 기록의 날짜를 사용자가 고른 날짜로 바꾼다. 접종 간격 등 엔진 계산이 recordedAt을 기준으로 한다. */
+  function setCompletionDate(id, dateStr) {
+    if (!completed[id] || !dateStr) return;
+    const [y, m, d] = dateStr.split("-").map(Number);
+    if (!y || !m || !d) return;
+    const iso = new Date(y, m - 1, d, 12, 0, 0).toISOString();
+    completed[id] = { ...completed[id], recordedAt: iso };
+    if (completed[`${id}__milestone`]) completed[`${id}__milestone`] = { ...completed[`${id}__milestone`], recordedAt: iso };
+    saveCompleted();
+    if (familyCode) FamilySync.updateCompleted(familyCode, completed).catch((err) => console.error(err));
+    refreshSchedule();
+    if (!el("detail-modal").classList.contains("hidden")) {
+      const e = schedule.find((x) => x.id === id);
+      if (e) openDetail(e, !!currentDayContext);
+    }
+  }
+
   function openDayDetail(events, date) {
     if (events.length === 1) {
       currentDayContext = null;
@@ -1446,11 +1468,31 @@
     const meta = CATEGORY_META[e.category];
     const isDone = !!completed[e.id];
     const showBack = cameFromDayList && currentDayContext && currentDayContext.events.length > 1;
+    let completionRowHtml = "";
+    let doneDateValue = "";
+    if (isDone) {
+      const rec = completed[e.id];
+      const doneAt = rec && rec.recordedAt ? new Date(rec.recordedAt) : new Date();
+      doneDateValue = localDateInputValue(doneAt);
+      completionRowHtml = `
+        <div class="detail-row completion-row">
+          <div class="label">완료일</div>
+          <div class="completion-line">
+            <span id="completion-text">${formatDateKR(doneAt)}</span>
+            <button type="button" class="completion-change" id="btn-change-completion">완료일 변경</button>
+          </div>
+          <div class="completion-edit hidden" id="completion-edit">
+            <input type="date" id="completion-date-input" value="${doneDateValue}" max="${localDateInputValue(new Date())}" />
+            <button type="button" class="completion-save" id="btn-save-completion">저장</button>
+          </div>
+        </div>`;
+    }
     el("modal-content").innerHTML = `
       <span class="cat-badge" style="background:${meta.color}">${meta.label}</span>
       <h3>${e.title}</h3>
       ${detailBodyHtml(e)}
       ${e.officialUrl ? `<a class="btn-official" href="${e.officialUrl}" target="_blank" rel="noopener">공식 안내 페이지로 이동</a>` : ""}
+      ${completionRowHtml}
       <button class="btn-complete" id="btn-toggle-complete">${isDone ? "완료 취소하기" : "완료로 표시하기"}</button>
       ${showBack ? `<button class="btn-close" id="btn-back-to-day">← 이 날 목록으로</button>` : ""}
       <button class="btn-close" id="btn-close-modal">닫기</button>
@@ -1458,6 +1500,14 @@
     el("detail-modal").classList.remove("hidden");
     el("btn-close-modal").addEventListener("click", closeDetail);
     el("btn-toggle-complete").addEventListener("click", () => toggleComplete(e.id));
+    const dateInput = el("completion-date-input");
+    if (dateInput) {
+      el("btn-change-completion").addEventListener("click", () => {
+        el("completion-edit").classList.toggle("hidden");
+        dateInput.focus();
+      });
+      el("btn-save-completion").addEventListener("click", () => setCompletionDate(e.id, dateInput.value));
+    }
     if (showBack) el("btn-back-to-day").addEventListener("click", renderDayList);
   }
 

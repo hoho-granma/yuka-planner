@@ -565,3 +565,15 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 
 /* 상세 팝업 버튼 글씨 */
 .modal-panel .btn-close, .modal-panel .btn-complete, .modal-panel .btn-official { font-size: 16px; padding: 14px; min-height: 50px; }
+
+/* 완료일 표시 + 변경 (상세 팝업의 다른 detail-row와 같은 양식) */
+.modal-panel .completion-row { margin-top: 14px; }
+.modal-panel .completion-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.modal-panel .completion-change, .modal-panel .completion-save {
+  flex-shrink: 0; padding: 7px 14px; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+  background: #fff; border: 1px solid var(--success); color: #2f7d55;
+}
+.modal-panel .completion-save { background: var(--success); color: #fff; }
+.modal-panel .completion-edit { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.modal-panel .completion-edit input[type="date"] { flex: 1; min-width: 0; }
+.modal-panel .completion-edit.hidden { display: none; }
