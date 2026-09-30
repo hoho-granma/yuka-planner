@@ -47,10 +47,26 @@ const ENGINE_STATUS_LABEL = {
   PENDING_MILESTONE: "아이가 이 모습을 보이면 체크해주세요",
 };
 
-function addMonths(date, months) {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + months);
-  return d;
+// 달력 월 더하기. 대상 월에 같은 일자가 없으면 그 달 말일로 보정한다(1/31 + 1개월 = 2/28) — 계산은 js/date-calc.js.
+// 항상 출생일 같은 원본 날짜에서 한 번에 계산해야 한다(결과를 다시 더하지 말 것).
+//
+// 월 수가 정수가 아닌 잘못된 데이터(docs/한눈육아-이슈기록.md I-4)는 DateCalc가 RangeError로 거부한다. 그 항목 하나 때문에
+// 지역 전체 일정 계산이 중단되지 않도록 여기(앱 경계)에서만 잡아, 그 항목의 날짜를 Invalid Date로 남기고(수정 전에 월 수가
+// undefined일 때와 같은 상태) console.warn으로 기록한다. 잘못된 값을 임의의 정상 날짜로 보정하지 않는다.
+// label은 경고에 항목을 식별하려는 선택 인자(호출부는 생략해도 된다). 같은 경고는 한 번만 남긴다.
+const ADD_MONTHS_WARNED = new Set();
+function addMonths(date, months, label) {
+  try {
+    return DateCalc.addMonthsClamped(date, months);
+  } catch (e) {
+    if (!e || e.name !== "RangeError") throw e; // 잘못된 월 수·Date만 격리한다(그 밖의 오류는 그대로 드러낸다)
+    const key = `${label || ""}|${String(months)}`;
+    if (!ADD_MONTHS_WARNED.has(key)) {
+      ADD_MONTHS_WARNED.add(key);
+      console.warn(`[addMonths] 잘못된 월 값이라 날짜를 계산하지 않았어요(Invalid Date 처리): ${label ? label + " · " : ""}months=${JSON.stringify(months)}`);
+    }
+    return new Date(NaN);
+  }
 }
 
 function addDays(date, days) {
@@ -204,7 +220,7 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrd
 
     const minA = s.minAgeMonths ?? 0;
     const maxA = s.maxAgeMonths ?? Infinity;
-    const entryDate = addMonths(birthDate, minA);
+    const entryDate = addMonths(birthDate, minA, s.id);
 
     let deadlineDate = null;
     let anchorDate;
@@ -212,10 +228,10 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrd
       deadlineDate = addDays(birthDate, s.deadlineValue);
       anchorDate = deadlineDate;
     } else if (s.deadlineType === "birth_relative_months") {
-      deadlineDate = addMonths(birthDate, s.deadlineValue);
+      deadlineDate = addMonths(birthDate, s.deadlineValue, s.id);
       anchorDate = deadlineDate;
     } else if (s.deadlineType === "age_window") {
-      deadlineDate = addMonths(birthDate, s.deadlineValue.maxMonths);
+      deadlineDate = addMonths(birthDate, s.deadlineValue.maxMonths, s.id);
       anchorDate = entryDate;
     } else {
       anchorDate = entryDate;

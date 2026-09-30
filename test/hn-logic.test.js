@@ -10,6 +10,7 @@ const ROOT = path.join(__dirname, "..");
 const rd = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), "utf8"));
 
 global.TodoEngine = require("../js/todo-engine.js");
+global.DateCalc = require("../js/date-calc.js"); // schedule.js의 addMonths가 쓴다(브라우저에서는 index.html이 먼저 로드)
 vm.runInThisContext(fs.readFileSync(path.join(ROOT, "js/schedule.js"), "utf8") + "\n;globalThis.__buildSchedule = buildSchedule; globalThis.__ageInMonths = ageInMonths;");
 const L = require("../js/hn-logic.js");
 
@@ -310,6 +311,176 @@ test("홈 분류: 임신 중 — 지난 일정이 없고 출산 후 항목은 �
   const res = L.classifyHomeItems(ev, {}, { today: NOW, birthDate: due, monthKeysOf: (e) => (e.detail && e.detail.definition && typeof e.detail.definition.displayMonth === "number" ? [e.detail.definition.displayMonth] : []) });
   assert.strictEqual(res.past.length, 0);
   assert.ok(res.upcoming.length > 0);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Q-A: 말일생 월 계산(js/date-calc.js) — 월령 슬롯·혜택 날짜·엔진 창 불변
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+const ymdStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const legacySetMonth = (date, n) => {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + n);
+  return d;
+};
+
+/** 대표 월령 k 하나짜리 monthly 이벤트의 [시작, 끝](classifyHomeItems가 계산하는 기간). */
+function slotOf(birthDate, k) {
+  const ev = { id: `slot-${k}`, category: "생활·수유", scheduleKind: "monthly" };
+  const res = L.classifyHomeItems([ev], {}, { today: new Date(2026, 8, 30), birthDate, monthKeysOf: () => [k] });
+  const item = [...res.thisMonth, ...res.upcoming, ...res.past][0];
+  assert.ok(item, `k=${k} 슬롯이 어느 분류에도 없음`);
+  return [item.start, item.end];
+}
+
+test("Q-A 슬롯: 1/31생 — 월령 슬롯이 실제 달력 월마다 하나씩(2월에도 있다)", () => {
+  const b = new Date(2026, 0, 31);
+  const expected = { 0: ["2026-01-31", "2026-02-27"], 1: ["2026-02-28", "2026-03-30"], 2: ["2026-03-31", "2026-04-29"], 3: ["2026-04-30", "2026-05-30"], 4: ["2026-05-31", "2026-06-29"], 5: ["2026-06-30", "2026-07-30"] };
+  for (const [k, [s, e]] of Object.entries(expected)) {
+    const [gs, ge] = slotOf(b, Number(k));
+    assert.deepStrictEqual([ymdStr(gs), ymdStr(ge)], [s, e], `k=${k}`);
+  }
+});
+
+test("Q-A 슬롯: assignDisplayDays — 1/31생 k=1 항목의 추천일이 2/28~3/30 안(수정 전에는 3/3 이후에만 가능했다)", () => {
+  const b = new Date(2026, 0, 31);
+  const ev = { id: "slot-1", category: "생활·수유", scheduleKind: "monthly" };
+  const days = L.assignDisplayDays([ev], { birthDate: b, monthKeysOf: () => [1] }).get("slot-1");
+  assert.strictEqual(days.length, 1);
+  assert.ok(ymdStr(days[0]) >= "2026-02-28" && ymdStr(days[0]) <= "2026-03-30", ymdStr(days[0]));
+});
+
+test("Q-A 슬롯 P4: 모든 출생일(2026 전체 + 2024-02-29) × k∈[0,72] — 빈틈·겹침 없이 이어지고 시작 달이 출생월+k", () => {
+  const births = [];
+  for (let t = new Date(2026, 0, 1); t.getFullYear() === 2026; t = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1)) births.push(t);
+  births.push(new Date(2024, 1, 29));
+  for (const b of births) {
+    let prevEnd = null;
+    for (let k = 0; k <= 72; k++) {
+      const [s, e] = slotOf(b, k);
+      const idx = b.getFullYear() * 12 + b.getMonth() + k;
+      assert.strictEqual(s.getFullYear() * 12 + s.getMonth(), idx, `${ymdStr(b)} k=${k}: 시작 달이 출생월+k가 아님(${ymdStr(s)})`);
+      if (prevEnd) assert.strictEqual(ymdStr(new Date(prevEnd.getFullYear(), prevEnd.getMonth(), prevEnd.getDate() + 1)), ymdStr(s), `${ymdStr(b)} k=${k}: 앞 슬롯과 이어지지 않음`);
+      assert.ok(e >= s);
+      prevEnd = e;
+    }
+  }
+});
+
+test("Q-A 슬롯: 28일 이하 출생은 수정 전(setMonth) 슬롯과 동일", () => {
+  for (const b of [new Date(2026, 5, 20), new Date(2026, 0, 28), new Date(2026, 1, 28), new Date(2026, 4, 15), new Date(2025, 11, 1)]) {
+    for (let k = 0; k <= 72; k++) {
+      const [s, e] = slotOf(b, k);
+      const os = new Date(legacySetMonth(b, k).getFullYear(), legacySetMonth(b, k).getMonth(), legacySetMonth(b, k).getDate());
+      const ne = legacySetMonth(b, k + 1);
+      const oe = new Date(ne.getFullYear(), ne.getMonth(), ne.getDate() - 1);
+      assert.deepStrictEqual([ymdStr(s), ymdStr(e)], [ymdStr(os), ymdStr(oe)], `${ymdStr(b)} k=${k}`);
+    }
+  }
+});
+
+// 테스트 전용 합성 혜택(서비스 데이터가 아님) — 혜택 신청 시작일·마감일 계산만 확인한다.
+const fx = (id, extra) => ({ id, name: id, status: "확인완료", applicableRegions: ["ALL"], amountText: "테스트", sourceName: "테스트", officialUrl: null, minAgeMonths: 0, maxAgeMonths: 999, deadlineType: "ongoing", deadlineValue: null, ...extra });
+function subsidyDates(birthDate, subs) {
+  const profile = { birthDate, province: "서울특별시", district: "구로구", gender: null, birthOrder: null, stage: "born" };
+  const out = {};
+  for (const e of __buildSchedule(profile, { todoDefinitions: [], subsidy: { subsidies: subs } }, [])) out[e.id] = e;
+  return out;
+}
+const SUBS = [
+  fx("MIN3", { minAgeMonths: 3 }),
+  fx("REL1", { deadlineType: "birth_relative_months", deadlineValue: 1 }),
+  fx("REL12", { deadlineType: "birth_relative_months", deadlineValue: 12 }),
+  fx("WIN2", { deadlineType: "age_window", deadlineValue: { minMonths: 0, maxMonths: 2 } }),
+];
+
+test("Q-A 혜택 날짜: 2026-01-31생 — 신청 시작일·마감일이 말일로 보정된다", () => {
+  const r = subsidyDates(new Date(2026, 0, 31), SUBS);
+  assert.strictEqual(ymdStr(r.MIN3.entryDate), "2026-04-30"); // 수정 전 05-01
+  assert.strictEqual(ymdStr(r.MIN3.fixedDate), "2026-04-30");
+  assert.strictEqual(ymdStr(r.REL1.deadlineDate), "2026-02-28"); // 수정 전 03-03
+  assert.strictEqual(ymdStr(r.WIN2.deadlineDate), "2026-03-31"); // 31일 있는 달은 수정 전과 동일
+});
+
+test("Q-A 혜택 날짜: 2024-02-29생 — 12개월 뒤 마감일은 2025-02-28(Q-B)", () => {
+  const r = subsidyDates(new Date(2024, 1, 29), SUBS);
+  assert.strictEqual(ymdStr(r.REL12.deadlineDate), "2025-02-28"); // 수정 전 2025-03-01
+});
+
+test("Q-A 혜택 날짜: 28일 이하 출생은 수정 전(setMonth)과 동일 — 2026-06-20, 2026-01-28, 2026-02-28", () => {
+  for (const b of [new Date(2026, 5, 20), new Date(2026, 0, 28), new Date(2026, 1, 28)]) {
+    const r = subsidyDates(b, SUBS);
+    assert.strictEqual(ymdStr(r.MIN3.entryDate), ymdStr(legacySetMonth(b, 3)), ymdStr(b));
+    assert.strictEqual(ymdStr(r.REL1.deadlineDate), ymdStr(legacySetMonth(b, 1)), ymdStr(b));
+    assert.strictEqual(ymdStr(r.REL12.deadlineDate), ymdStr(legacySetMonth(b, 12)), ymdStr(b));
+    assert.strictEqual(ymdStr(r.WIN2.deadlineDate), ymdStr(legacySetMonth(b, 2)), ymdStr(b));
+  }
+});
+
+test("Q-A 엔진 무접촉: todo-engine.js는 DateCalc를 쓰지 않고, 1/31생의 엔진 창은 30일 근사 그대로(HC-01: 출생+0.47×30일)", () => {
+  assert.ok(!/DateCalc/.test(fs.readFileSync(path.join(ROOT, "js/todo-engine.js"), "utf8")));
+  const b = new Date(2026, 0, 31);
+  const profile = { birthDate: b, province: "서울특별시", district: "구로구", gender: null, birthOrder: "first", stage: "born" };
+  const ev = __buildSchedule(profile, { todoDefinitions, subsidy: { subsidies: [] } }, []).find((e) => e.id === "HC-01__default");
+  assert.ok(ev, "HC-01 없음");
+  assert.strictEqual(ev.windowStart.getTime(), b.getTime() + 0.47 * 30 * 86400000);
+  assert.strictEqual(ev.windowEnd.getTime(), b.getTime() + 1.17 * 30 * 86400000);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Q-A 안전장치(I-4): 잘못된 월 값은 그 항목만 Invalid Date로 남기고 일정 계산 전체는 중단시키지 않는다
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+function captureWarn(fn) {
+  const warns = [];
+  const orig = console.warn;
+  console.warn = (...a) => warns.push(a.join(" "));
+  try {
+    return { result: fn(), warns };
+  } finally {
+    console.warn = orig;
+  }
+}
+
+test("Q-A I-4: 월 값이 잘못된 혜택(문자열·객체 아님)이 있어도 buildSchedule이 중단되지 않고, 그 항목만 Invalid Date", () => {
+  const subs = [
+    fx("BAD-STR-WINDOW", { deadlineType: "age_window", deadlineValue: "96~155개월(만 8세~13세 미만)" }), // 과천시 GGM-GWACHEON-03 유형
+    fx("BAD-NUM-WINDOW", { deadlineType: "age_window", deadlineValue: 36 }), // 양주시 GGM-YANGJU-04 유형
+    fx("BAD-STR-REL", { deadlineType: "birth_relative_months", deadlineValue: "12" }), // 마포구 MAPO-001 유형
+    fx("GOOD-MIN3", { minAgeMonths: 3 }),
+    fx("GOOD-WIN2", { deadlineType: "age_window", deadlineValue: { minMonths: 0, maxMonths: 2 } }),
+  ];
+  const { result: r, warns } = captureWarn(() => subsidyDates(new Date(2026, 5, 20), subs));
+  for (const id of ["BAD-STR-WINDOW", "BAD-NUM-WINDOW", "BAD-STR-REL"]) {
+    assert.ok(r[id], `${id} 이벤트가 사라짐`);
+    assert.ok(isNaN(r[id].deadlineDate), `${id}: 임의의 정상 날짜로 보정하면 안 됨(Invalid Date여야 함) — ${r[id].deadlineDate}`);
+  }
+  assert.strictEqual(ymdStr(r["GOOD-MIN3"].entryDate), "2026-09-20", "정상 항목은 영향 없음");
+  assert.strictEqual(ymdStr(r["GOOD-WIN2"].deadlineDate), "2026-08-20");
+  // 경고: 항목 id로 식별 가능
+  for (const id of ["BAD-STR-WINDOW", "BAD-NUM-WINDOW", "BAD-STR-REL"]) assert.ok(warns.some((w) => w.includes(id)), `경고에 ${id}가 없음: ${warns.join(" / ")}`);
+  assert.ok(!warns.some((w) => w.includes("GOOD-")), "정상 항목에는 경고가 없어야 함");
+});
+
+test("Q-A I-4: 같은 경고는 반복해서 남기지 않는다(화면을 다시 그릴 때마다 콘솔이 넘치지 않게)", () => {
+  const subs = [fx("BAD-DEDUPE", { deadlineType: "age_window", deadlineValue: "0~12개월" })];
+  const first = captureWarn(() => subsidyDates(new Date(2026, 5, 20), subs));
+  const second = captureWarn(() => subsidyDates(new Date(2026, 5, 20), subs));
+  assert.strictEqual(first.warns.length, 1);
+  assert.strictEqual(second.warns.length, 0);
+});
+
+test("Q-A I-4: 래퍼는 RangeError(잘못된 월 수)만 격리하고 다른 오류(Date가 아닌 입력 등)는 그대로 드러낸다", () => {
+  assert.doesNotThrow(() => captureWarn(() => addMonths(new Date(2026, 0, 31), undefined, "T")));
+  assert.throws(() => addMonths("2026-01-31", 1), TypeError);
+  assert.strictEqual(ymdStr(addMonths(new Date(2026, 0, 31), 1)), "2026-02-28"); // 정상 경로(label 생략 가능)
+});
+
+test("Q-A I-4: assignDisplayDays — 월 값이 잘못된 슬롯만 건너뛰고 다른 항목은 정상 배치", () => {
+  const b = new Date(2026, 0, 31);
+  const evBad = { id: "bad", category: "생활·수유", scheduleKind: "monthly" };
+  const evOk = { id: "ok", category: "생활·수유", scheduleKind: "monthly" };
+  const { result: days } = captureWarn(() => L.assignDisplayDays([evBad, evOk], { birthDate: b, monthKeysOf: (e) => (e.id === "bad" ? [1.5] : [1]) }));
+  assert.ok(!days.has("bad"), "잘못된 월 값의 슬롯은 배치되지 않아야 함");
+  assert.ok(days.has("ok") && ymdStr(days.get("ok")[0]) >= "2026-02-28");
 });
 
 console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);

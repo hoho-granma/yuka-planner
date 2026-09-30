@@ -10,9 +10,9 @@
  * 각자의 기간 안에서만, 하루에 몰리지 않게 나누고, 같은 시기 접종은 한날에 묶는다(화면에 "추천일"이라고 밝힌다).
  */
 (function (root, factory) {
-  if (typeof module !== "undefined" && module.exports) module.exports = factory();
-  else root.HNLogic = factory();
-})(typeof window !== "undefined" ? window : global, function () {
+  if (typeof module !== "undefined" && module.exports) module.exports = factory(require("./date-calc.js"));
+  else root.HNLogic = factory(root.DateCalc);
+})(typeof window !== "undefined" ? window : global, function (DateCalc) {
   "use strict";
 
   const DAY = 24 * 60 * 60 * 1000;
@@ -69,10 +69,21 @@
 
   const ymd = (d) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
   const addDaysD = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  // 달력 월 더하기 — 대상 월에 같은 일자가 없으면 그 달 말일(js/date-calc.js). 항상 출생일에서 한 번에 계산한다.
+  // 잘못된 월 수(비정수)는 DateCalc가 RangeError로 거부한다. 일정 계산 전체가 중단되지 않도록 여기서만 잡아 Invalid Date로 남기고
+  // (assignDisplayDays는 그 슬롯만 건너뛴다) 경고를 한 번 기록한다. 임의의 정상 날짜로 보정하지 않는다. 현재 데이터에서는 발생하지 않는다.
+  const warnedMonths = new Set();
   const addMonthsD = (d, n) => {
-    const x = new Date(d);
-    x.setMonth(x.getMonth() + n);
-    return x;
+    try {
+      return DateCalc.addMonthsClamped(d, n);
+    } catch (e) {
+      if (!e || e.name !== "RangeError") throw e;
+      if (!warnedMonths.has(String(n))) {
+        warnedMonths.add(String(n));
+        console.warn(`[addMonthsD] 잘못된 월 값이라 슬롯을 계산하지 않았어요: n=${JSON.stringify(n)}`);
+      }
+      return new Date(NaN);
+    }
   };
   const isWeekend = (d) => d.getDay() === 0 || d.getDay() === 6;
 
@@ -100,6 +111,7 @@
           if (typeof k !== "number") continue;
           const s = sod(addMonthsD(opts.birthDate, k));
           const en = addDaysD(sod(addMonthsD(opts.birthDate, k + 1)), -1);
+          if (isNaN(s) || isNaN(en)) continue; // 잘못된 월 값의 슬롯은 배치하지 않는다(다른 항목은 정상 배치)
           slots.push({ e, start: s, end: en, gkey: isVx ? `VXM|${k}` : `S|${e.id}|${k}` });
         }
       }
