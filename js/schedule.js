@@ -76,9 +76,8 @@ function addDays(date, days) {
 }
 
 function ageInMonths(birthDate, today) {
-  let months = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
-  if (today.getDate() < birthDate.getDate()) months -= 1;
-  return Math.max(0, months);
+  // 계산은 js/child-timeline.js (규칙 불변: 오늘 일자 < 출생 일자이면 미완 개월, 하한 0)
+  return ChildTimeline.completedMonths(birthDate, today);
 }
 
 function regionMatches(subsidy, province, district) {

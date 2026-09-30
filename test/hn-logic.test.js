@@ -11,6 +11,7 @@ const rd = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), "utf8"));
 
 global.TodoEngine = require("../js/todo-engine.js");
 global.DateCalc = require("../js/date-calc.js"); // schedule.js의 addMonths가 쓴다(브라우저에서는 index.html이 먼저 로드)
+global.ChildTimeline = require("../js/child-timeline.js"); // schedule.js의 ageInMonths가 쓴다
 vm.runInThisContext(fs.readFileSync(path.join(ROOT, "js/schedule.js"), "utf8") + "\n;globalThis.__buildSchedule = buildSchedule; globalThis.__ageInMonths = ageInMonths;");
 const L = require("../js/hn-logic.js");
 

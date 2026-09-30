@@ -19,6 +19,7 @@ const SHELL_ASSETS = [
   "./css/style.css",
   "./js/version.js",
   "./js/date-calc.js",
+  "./js/child-timeline.js",
   "./js/sync.js",
   "./js/todo-engine.js",
   "./js/schedule.js",

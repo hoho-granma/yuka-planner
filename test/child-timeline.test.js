@@ -10,6 +10,7 @@ const vm = require("vm");
 const ROOT = path.join(__dirname, "..");
 global.TodoEngine = require("../js/todo-engine.js");
 global.DateCalc = require("../js/date-calc.js");
+global.ChildTimeline = require("../js/child-timeline.js");
 vm.runInThisContext(fs.readFileSync(path.join(ROOT, "js/schedule.js"), "utf8") + "\n;globalThis.__legacyAge = ageInMonths;");
 const L = require("../js/hn-logic.js");
 const CT = require("../js/child-timeline.js");

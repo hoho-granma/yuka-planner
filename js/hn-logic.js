@@ -10,9 +10,9 @@
  * 각자의 기간 안에서만, 하루에 몰리지 않게 나누고, 같은 시기 접종은 한날에 묶는다(화면에 "추천일"이라고 밝힌다).
  */
 (function (root, factory) {
-  if (typeof module !== "undefined" && module.exports) module.exports = factory(require("./date-calc.js"));
-  else root.HNLogic = factory(root.DateCalc);
-})(typeof window !== "undefined" ? window : global, function (DateCalc) {
+  if (typeof module !== "undefined" && module.exports) module.exports = factory(require("./date-calc.js"), require("./child-timeline.js"));
+  else root.HNLogic = factory(root.DateCalc, root.ChildTimeline);
+})(typeof window !== "undefined" ? window : global, function (DateCalc, ChildTimeline) {
   "use strict";
 
   const DAY = 24 * 60 * 60 * 1000;
@@ -382,9 +382,7 @@
   }
 
   function ageMonthsAt(birthDate, date) {
-    let m = (date.getFullYear() - birthDate.getFullYear()) * 12 + (date.getMonth() - birthDate.getMonth());
-    if (date.getDate() < birthDate.getDate()) m -= 1;
-    return Math.max(0, m);
+    return ChildTimeline.completedMonths(birthDate, date);
   }
 
   /**
