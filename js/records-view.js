@@ -62,7 +62,7 @@
         html += `<h3 class="rec-month">${mk}</h3>`;
         lastMonth = mk;
       }
-      const meta = [`생후 ${r.ageMonths}개월`, r.category, r.source === "auto" ? "자동" : r.authorLabel ? `직접 · ${ctx.esc(r.authorLabel)}` : "직접"].join(" · ");
+      const meta = [ChildTimeline.ageLabel(r.ageMonths), r.category, r.source === "auto" ? "자동" : r.authorLabel ? `직접 · ${ctx.esc(r.authorLabel)}` : "직접"].join(" · ");
       html += `<button type="button" class="rec-row ${r.source}" data-rec="${ctx.esc(r.id)}">
         <span class="rec-day">${r.date.getMonth() + 1}/${r.date.getDate()}</span>
         <span class="rec-main"><strong>${ctx.esc(r.title)}</strong><small>${meta}</small>${r.memo ? `<em>${ctx.esc(r.memo.length > 46 ? r.memo.slice(0, 46) + "…" : r.memo)}</em>` : ""}</span>
@@ -117,7 +117,7 @@
        <h3>${ctx.esc(r.title)}</h3>
        ${notice ? `<p class="sync-note ${notice.warn ? "warn" : ""}">${ctx.esc(notice.text)}</p>` : ""}
        <div class="detail-row"><div class="label">기록 날짜</div>${ctx.formatDateKR(r.date)}</div>
-       <div class="detail-row"><div class="label">해당 월령</div>생후 ${r.ageMonths}개월</div>
+       <div class="detail-row"><div class="label">해당 월령</div>${ChildTimeline.ageLabel(r.ageMonths)}</div>
        <div class="detail-row"><div class="label">카테고리</div>${ctx.esc(r.category)}${isAuto ? " · 완료한 할 일에서 자동으로 만들어졌어요" : ""}</div>
        ${!isAuto && r.authorLabel ? `<div class="detail-row"><div class="label">작성자</div>${ctx.esc(r.authorLabel)}</div>` : ""}
        <div class="detail-row"><div class="label">부모 메모</div>
@@ -178,7 +178,7 @@
     const q = (i) => document.getElementById(i);
     const updateAge = () => {
       const v = q("rv-date").value;
-      q("rv-age").textContent = v ? `생후 ${L.ageMonthsAt(ctx.profile.birthDate, new Date(v + "T12:00:00"))}개월` : "";
+      q("rv-age").textContent = v ? ChildTimeline.ageLabel(L.ageMonthsAt(ctx.profile.birthDate, new Date(v + "T12:00:00"))) : "";
     };
     updateAge();
     q("rv-date").addEventListener("change", updateAge);

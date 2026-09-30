@@ -615,7 +615,7 @@
     const thisYear = new Date().getFullYear();
     const years = [];
     if (landingStage === "pregnant") years.push(thisYear + 1, thisYear);
-    else for (let y = thisYear; y >= thisYear - 8; y--) years.push(y);
+    else for (let y = thisYear; y >= thisYear - ChildTimeline.SERVICE_RANGE.pickerYearsBack; y--) years.push(y);
     for (const y of years) {
       const opt = document.createElement("option");
       opt.value = y;
@@ -802,7 +802,7 @@
       const dLabel = pi.daysToDue > 0 ? `출산까지 D-${pi.daysToDue}` : pi.daysToDue === 0 ? "오늘이 출산 예정일" : "출산 예정일이 지났어요";
       el("profile-name-age").textContent = `${childDisplayName()} · 임신 ${pi.weeks}주 · ${dLabel}`;
     } else {
-      el("profile-name-age").textContent = `${childDisplayName()} · 생후 ${ageNow}개월`;
+      el("profile-name-age").textContent = `${childDisplayName()} · ${ChildTimeline.ageLabel(ageNow)}`;
     }
     el("profile-location-text").textContent = `${profile.province} ${profile.district}`;
     el("profile-avatar").innerHTML = avatarInnerHTML(profile.photoDataUrl, childDisplayName());
@@ -838,7 +838,7 @@
       <div class="detail-row"><div class="label">${isPregnant() ? "출산 예정일" : "생년월일"}</div>${
         isPregnant()
           ? `${formatDateKR(profile.birthDate)} · 임신 ${pregnancyInfo(profile.birthDate, today).weeks}주`
-          : `${formatDateKR(profile.birthDate)} · 생후 ${ageNow}개월`
+          : `${formatDateKR(profile.birthDate)} · ${ChildTimeline.ageLabel(ageNow)}`
       }</div>
       <div class="detail-row"><div class="label">거주 지역</div>${profile.province} ${profile.district}</div>
       ${
@@ -1311,21 +1311,9 @@
 
   const NEED_CHECK_GROUP = "NEED_CHECK";
 
-  /** 돌 이후(13개월~)는 만 나이(만 1세는 반씩, 만 2세는 36개월까지)로 묶는다. 키는 구간 시작 월령. 돌 전은 월별 그대로. */
-  const LATE_BUCKETS = [
-    { start: 13, end: 17, label: "만 1세 (13~17개월)" },
-    { start: 18, end: 23, label: "만 1세 (18~23개월)" },
-    { start: 24, end: 36, label: "만 2세 (24~36개월)" },
-  ];
-  function checklistBucket(m) {
-    if (typeof m !== "number" || m <= 12) return m;
-    const b = LATE_BUCKETS.find((x) => m >= x.start && m <= x.end);
-    return b ? b.start : LATE_BUCKETS[LATE_BUCKETS.length - 1].start;
-  }
-  function checklistGroupLabel(key) {
-    const b = LATE_BUCKETS.find((x) => x.start === key);
-    return b && key > 12 ? b.label : `생후 ${key}개월`;
-  }
+  /** 체크리스트 그룹 키·라벨은 ChildTimeline 표(CHECKLIST_BUCKETS)가 정한다. 돌 전은 월별, 13개월~는 구간 시작 월령. */
+  const checklistBucket = ChildTimeline.checklistBucket;
+  const checklistGroupLabel = ChildTimeline.checklistGroupLabel;
 
   /**
    * 다회차 Todo(occurrences) 또는 제품분기 Todo(variants)에서, 이 occurrenceKey에 해당하는
