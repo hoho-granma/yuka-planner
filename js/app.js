@@ -757,11 +757,11 @@
     });
   }
 
-  // 서비스 범위는 생후 0~36개월이다 — 지원금처럼 36개월 이후까지 수급기간이 이어지는 항목도
-  // "언제부터 챙겨야 하는지"(e.date 기준 월령)가 36개월 이내면 보여주고, 그 이후에 처음
+  // 서비스 범위(ChildTimeline.SERVICE_RANGE, 현재 생후 0~36개월)를 넘지 않는 항목만 보인다 — 지원금처럼 범위 이후까지
+  // 수급기간이 이어지는 항목도 "언제부터 챙겨야 하는지"(e.date 기준 월령)가 범위 이내면 보여주고, 그 이후에 처음
   // 시작되는 항목만 걸러낸다.
   function visibleSchedule(ignoreCategoryFilter) {
-    return schedule.filter((e) => (ignoreCategoryFilter || activeCats.has(e.category)) && ageInMonths(profile.birthDate, e.date) <= 36 && !isNotApplicable(e.id));
+    return schedule.filter((e) => (ignoreCategoryFilter || activeCats.has(e.category)) && ChildTimeline.isWithinServiceRange(profile.birthDate, e.date) && !isNotApplicable(e.id));
   }
 
   // "미해당" 표시 — 나에게 해당하지 않는 혜택. completed 맵에 `${id}__na` 키로 저장한다(완료·가족 동기화 경로를
@@ -1409,7 +1409,8 @@
     // (예: 꿀 섭취 금지는 적용은 0~12개월이지만 이유식 시작 시점인 6개월부터 안내).
     const dm = e.detail.definition.displayMonth;
     const windowStart = Math.max(0, Math.floor(tp.startMonth));
-    const end = tp.endMonth == null ? 36 : Math.min(36, Math.ceil(tp.endMonth));
+    const cap = ChildTimeline.SERVICE_RANGE.maxMonths;
+    const end = tp.endMonth == null ? cap : Math.min(cap, Math.ceil(tp.endMonth));
     const start = typeof dm === "number" && dm > windowStart && dm <= end ? Math.floor(dm) : windowStart;
     if (end <= start) return null;
     const months = [];
@@ -1436,7 +1437,7 @@
     });
   }
 
-  /** 전체 체크리스트: 대표 월령(displayMonth, 0~36개월)별로 묶어 아코디언으로 보여준다. 기본은 현재 월령만 펼쳐져 있다. */
+  /** 전체 체크리스트: 대표 월령(displayMonth, 서비스 범위 안)별로 묶어 아코디언으로 보여준다. 기본은 현재 월령만 펼쳐져 있다. */
   function renderChecklistTab() {
     ensureOpenMonthGroupsInit();
     const scopeBanner = el("checklist-scope-banner");
