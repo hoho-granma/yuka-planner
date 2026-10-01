@@ -68,7 +68,8 @@
       "statusOriginal": "확정시행",
       "auditNotes": {
         "sourceName": "종로구 보건소 공식 페이지(WebFetch 확인)"
-      }
+      },
+      "conditionLabel": "소득 100% 이하"
     }
   ]
 }

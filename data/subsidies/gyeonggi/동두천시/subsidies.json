@@ -78,7 +78,8 @@
       "status": "확인완료",
       "verified": true,
       "notes": "임차택시 이동지원(출산 후 3개월까지)은 별도 사업으로 안내되나 세부 미확인.",
-      "statusOriginal": "확정시행"
+      "statusOriginal": "확정시행",
+      "postpartumOk": true
     },
     {
       "id": "GGM-DONGDUCHEON-04",

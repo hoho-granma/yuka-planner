@@ -164,7 +164,8 @@
       "statusOriginal": "확정시행",
       "auditNotes": {
         "sourceName": "영등포구보건소(공식 go.kr) — WebFetch로 원문 직접 확인, 전국 공통 소득기준 사업"
-      }
+      },
+      "conditionLabel": "저소득·다자녀 등"
     },
     {
       "id": "NAT-006",
@@ -265,7 +266,8 @@
       "statusOriginal": "확정시행",
       "auditNotes": {
         "sourceName": "보건복지부 임신·출산진료비지원사업(mohw.go.kr) + 찾기쉬운 생활법령정보(easylaw.go.kr) WebFetch 원문 확인"
-      }
+      },
+      "postpartumOk": true
     },
     {
       "id": "PREG-001",
@@ -387,7 +389,9 @@
       "statusOriginal": "확정시행",
       "auditNotes": {
         "sourceName": "찾기쉬운 생활법령정보(easylaw.go.kr) WebFetch 원문 확인"
-      }
+      },
+      "conditionLabel": "고위험 임신질환",
+      "postpartumOk": true
     },
     {
       "id": "PREG-005",
@@ -473,7 +477,9 @@
           }
         ],
         "sourceName": "국민행복카드 바우처(voucher.go.kr) + 찾기쉬운 생활법령정보(easylaw.go.kr) — 2026-09-29 재확인"
-      }
+      },
+      "conditionLabel": "만 19세 이하",
+      "postpartumOk": true
     },
     {
       "id": "PREG-007",
@@ -519,7 +525,9 @@
           }
         ],
         "sourceName": "정부24(gov.kr) + 원주시보건소 — 2026-09-29 재확인"
-      }
+      },
+      "conditionLabel": "소득·영양 요건",
+      "postpartumOk": true
     },
     {
       "id": "PREG-008",
@@ -589,7 +597,8 @@
       "statusOriginal": "확정시행",
       "auditNotes": {
         "sourceName": "고용노동부고시 제2025-124호(직접 대조) + 고용노동부 2025년 달라지는 육아지원제도"
-      }
+      },
+      "conditionLabel": "고용보험 근로자"
     },
     {
       "id": "NAT-009",
@@ -730,7 +739,8 @@
       "auditNotes": {
         "additionalConditions": "2026-01-01부터 세금 신고 소득 기준 인정. 배우자·동거친족이 사업주이면 제외. 출산 전 18개월 중 3개월 이상 소득활동 등 요건(스니펫 확인)",
         "sourceName": "고용노동부 공지(금액·2026 변경사항 직접 확인)"
-      }
+      },
+      "conditionLabel": "프리랜서·특고"
     },
     {
       "id": "NAT-014",
@@ -1122,7 +1132,8 @@
       "notes": "정부24·복지로 신청.",
       "lastVerified": "2026-09-29",
       "audience": "mother",
-      "statusOriginal": "확정시행"
+      "statusOriginal": "확정시행",
+      "conditionLabel": "등록 여성장애인"
     },
     {
       "id": "PREG-003",
@@ -1256,7 +1267,8 @@
       "notes": "국가(복지부) 사업, 국립중앙의료원이 중앙센터 운영. 10회·무료는 서울시 임신·출산 정보센터와 서울권역센터 페이지 근거이고 NMC 이용안내 본문에는 횟수·비용이 없음. 시행일·중앙센터 전화번호는 원문 미확인.",
       "lastVerified": "2026-09-30",
       "statusOriginal": "확정시행",
-      "audience": "mother"
+      "audience": "mother",
+      "postpartumOk": true
     },
     {
       "id": "NAT-031",

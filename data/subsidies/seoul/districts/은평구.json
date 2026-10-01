@@ -126,7 +126,8 @@
       "auditNotes": {
         "residencyRequirement": "은평구 거주(세부 요건 원문 미확인)",
         "sourceName": "헤럴드경제(2026-01-18) 은평구 보도 + 정부24 서비스 안내 + 아시아경제(2026-01-16) 검색 확인"
-      }
+      },
+      "postpartumOk": true
     },
     {
       "id": "EUNPYEONG-P02",

@@ -60,7 +60,8 @@
       "auditNotes": {
         "paymentMethod": "서비스 종료 후 본인부담금 환급(추정)",
         "sourceName": "도봉구보건소 산모신생아건강관리 지원 페이지 — WebFetch로 직접 확인"
-      }
+      },
+      "conditionLabel": "소득 150% 이하"
     },
     {
       "id": "DOBONG-003",

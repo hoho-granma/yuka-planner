@@ -310,6 +310,34 @@
       "reportNo": 4,
       "excludeReason": "전국 사업으로 표기(어린이 과일간식) 겹침",
       "excludedAt": "2026-09-30"
+    },
+    {
+      "id": "GGM-ANYANG-04",
+      "name": "안양시 냉동난자 사용 보조생식술 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:안양시"
+      ],
+      "target": "냉동난자로 임신·출산을 시도하는 부부(사실혼 포함)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 216,
+      "amountText": "1회 최대 100만원, 부부당 2회",
+      "paymentMethod": "시술 후 보건소에 청구, 현금 지급",
+      "deadlineType": "ongoing",
+      "deadlineValue": 0,
+      "residencyRequirement": "",
+      "additionalConditions": "시술 종료 후 3개월 이내 신청 (2024-04-01부터). 난임 진단 전 지원",
+      "officialUrl": "https://www.anyang.go.kr/health/contents.do?key=4823",
+      "sourceName": "안양시 보건소 냉동난자 사용 보조생식술 지원 페이지",
+      "lastVerified": "2026-09-29",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "거주요건 미기재. 난자 동결 시술비(도 사업 종료 후 대체 사업) 지원은 별도로 확인 필요.",
+      "statusOriginal": "확정시행",
+      "auditNotes": {
+        "residencyRequirement": "확인 필요"
+      },
+      "excludeReason": "냉동난자 사용 보조생식술은 임신 전(난임 진단 전) 제도라 서비스 범위(임신~36개월) 밖(2026-10-01 판정)."
     }
   ]
 }

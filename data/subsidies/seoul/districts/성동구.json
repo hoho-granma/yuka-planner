@@ -104,7 +104,8 @@
       "statusOriginal": "확정시행",
       "auditNotes": {
         "sourceName": "성동구청 임산부 가사돌봄서비스 페이지(sd.go.kr, 최종수정 2026-07-01) 원문 확인"
-      }
+      },
+      "postpartumOk": true
     }
   ]
 }

@@ -88,7 +88,8 @@
       "status": "확인완료",
       "verified": true,
       "notes": "deadlineValue는 서비스 종료 후 60일 이내(개월 단위 아님) 신청기한은 서비스 종료 후 60일(개월 단위 아님)이라 ongoing으로 표기.",
-      "statusOriginal": "확정시행"
+      "statusOriginal": "확정시행",
+      "conditionLabel": "서비스 이용자"
     }
   ]
 }

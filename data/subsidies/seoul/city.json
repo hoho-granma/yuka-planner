@@ -109,7 +109,8 @@
       "statusOriginal": "확정시행",
       "auditNotes": {
         "additionalConditions": "임신 확인 시점(통상 12주 경과 후)부터 신청 가능 — 이 앱은 출생일 기준 계산이라 임신 중 신청분은 캘린더에 반영 안 됨. 신청: 임신 확인 후~출산 후 6개월, 사용기한: 지원일~(분만예정일 또는 출생일)로부터 12개월 되는 달 말일(seoul-agi 확인; umppa 구버전 페이지는 3개월/6개월로 상이)"
-      }
+      },
+      "postpartumOk": true
     },
     {
       "id": "SEOUL-003",
@@ -202,7 +203,9 @@
       "auditNotes": {
         "target": "서울시 주민등록 거주 35세 이상 임산부(분만예정연도 기준). 부부 모두 외국인은 제외(다문화가족 외국인 임산부는 포함). 소득 제한 명시 없음",
         "sourceName": "서울시 임신·출산 정보센터(seoul-agi.seoul.go.kr) + 몽땅정보통 WebFetch 원문 확인"
-      }
+      },
+      "conditionLabel": "35세 이상",
+      "postpartumOk": true
     },
     {
       "id": "SEOUL-P04",
@@ -236,7 +239,8 @@
           "note": "주차장에서 임산부 증빙 제시. 정기권은 현장 접수"
         }
       ],
-      "audience": "mother"
+      "audience": "mother",
+      "postpartumOk": true
     },
     {
       "id": "SEOUL-M01",
@@ -270,7 +274,8 @@
           "note": "임산부 교통비 신청 시 함께 신청. 물량 소진 시 종료 가능"
         }
       ],
-      "audience": "mother"
+      "audience": "mother",
+      "postpartumOk": true
     },
     {
       "id": "SEOUL-M02",
@@ -304,7 +309,8 @@
           "note": "몽땅정보통 온라인. 임신 중 신청 불가"
         }
       ],
-      "audience": "mother"
+      "audience": "mother",
+      "conditionLabel": "무주택·소득 요건"
     },
     {
       "id": "SEOUL-M03",
@@ -338,7 +344,9 @@
           "note": "온라인. 임신 중 신청 불가"
         }
       ],
-      "audience": "mother"
+      "audience": "mother",
+      "conditionLabel": "1인 자영업자 등",
+      "postpartumOk": true
     },
     {
       "id": "SEOUL-M04",
@@ -371,7 +379,8 @@
           "endText": "휴가 종료 후 12개월(출산 후 약 16개월)",
           "note": "휴가를 모두 쓴 뒤 일괄 신청, 온라인"
         }
-      ]
+      ],
+      "conditionLabel": "1인 자영업자 배우자"
     },
     {
       "id": "SEOUL-M05",
@@ -433,7 +442,8 @@
       "notes": "공식 사업 페이지(몽땅정보통) 본문 기준으로 확정(2026-10-01 열람): 신청은 몽땅정보통 온라인, 상시 신청 가능(사전신청은 임신판정일부터). FAQ의 자치구 서비스제공기관·2024-02 공지의 가족센터 안내는 현행 사업 페이지와 달라 채택하지 않음. 지원 대상은 출산 자녀가 아니라 12세 이하 기존 자녀. 서식(hwp) 미열람. 2026년 운영 확인(서울사랑 2026-05-28). 문의 서비스제공기관 1577-2514, 120.",
       "lastVerified": "2026-10-01",
       "periods": [],
-      "audience": "mother"
+      "audience": "mother",
+      "conditionLabel": "둘째 이상·돌봄 이용"
     },
     {
       "id": "SEOUL-M08",
@@ -458,7 +468,8 @@
       "notes": "서울시 임신·출산 정보센터 현행 페이지 기준(2026-10-01 열람): 대상은 수급자·차상위 출산가정, 본인부담금 90%, 서비스 종료일부터 30일 이내, 신청은 센터 온라인 또는 주소지 보건소 방문(둘 다 가능). 몽땅정보통의 비혼모 트랙(3개월)은 별도 트랙이라 구분. 서울형 산후조리경비와의 차감·중복 여부는 센터 페이지에 없고 일부 보건소는 차감 안내라 해당 가정은 보건소 확인 필요. 바탕 서비스는 국가(복지부) 사업. 문의 센터 02-2133-9489, 주소지 보건소.",
       "lastVerified": "2026-10-01",
       "periods": [],
-      "audience": "mother"
+      "audience": "mother",
+      "conditionLabel": "수급자·차상위"
     },
     {
       "id": "SEOUL-M09",
@@ -492,7 +503,8 @@
           "note": "온라인 신청, 임신 중 불가"
         }
       ],
-      "audience": "mother"
+      "audience": "mother",
+      "conditionLabel": "세쌍둥이 이상"
     },
     {
       "id": "SEOUL-N01",
@@ -594,7 +606,8 @@
           "note": "2026.1~12 연중 상시, 이메일 신청"
         }
       ],
-      "audience": "mother"
+      "audience": "mother",
+      "conditionLabel": "한부모"
     },
     {
       "id": "SEOUL-P06",

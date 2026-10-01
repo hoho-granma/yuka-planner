@@ -35,7 +35,8 @@
       "statusOriginal": "확정시행",
       "auditNotes": {
         "sourceName": "한국금융신문·아시아투데이(2026-07-27) 보도(구청 원문 미확인)"
-      }
+      },
+      "postpartumOk": true
     },
     {
       "id": "YEONGDEUNGPO-P01",
@@ -63,7 +64,8 @@
       "statusOriginal": "확정시행",
       "auditNotes": {
         "paymentMethod": "미확인"
-      }
+      },
+      "conditionLabel": "등록장애인 가정"
     },
     {
       "id": "YEONGDEUNGPO-P02",

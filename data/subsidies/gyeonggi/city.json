@@ -263,11 +263,12 @@
       "lastVerified": "2026-09-30",
       "status": "확인완료",
       "verified": true,
-      "notes": "시설 공식 페이지 본문 확인(gypc.or.kr, pocheon-mom.or.kr, medical.or.kr). 여주시 자체 환급(둘째 이상 본인부담 50%)은 시청 공식 페이지를 열지 못해 반영하지 않음. 안성·평택 추가 개원은 미확인.",
+      "notes": "시설 공식 페이지 본문 확인(gypc.or.kr, pocheon-mom.or.kr, medical.or.kr). 여주시 자체 환급(둘째 이상 본인부담 50%)은 시청 공식 페이지를 열지 못해 반영하지 않음. 안성·평택 추가 개원은 미확인. [2026-10-01] 임신 중에만 신청·이용 가능한 제도라 prenatalOnly 지정(출산 후 화면에서 숨김).",
       "audience": "mother",
       "category": "postpartum",
       "benefitType": "facility",
-      "appVisible": true
+      "appVisible": true,
+      "prenatalOnly": true
     },
     {
       "id": "GG-016",

@@ -57,7 +57,8 @@
       "verified": true,
       "notes": "[2026-10-01 검증 반영] 중위소득 100% 이하, 출생 전 12개월부터 거주, 서비스 가격의 10% 제외 금액 지원, 출산 후 6개월 이내 확인.",
       "periods": [],
-      "audience": "mother"
+      "audience": "mother",
+      "conditionLabel": "소득 100% 이하"
     },
     {
       "id": "YONGSAN-P03",
@@ -92,7 +93,8 @@
       "statusOriginal": "확정시행",
       "auditNotes": {
         "amountText": "셋째 200만원 / 넷째 이상 400만원 (2차 자료 기준)"
-      }
+      },
+      "conditionLabel": "셋째 이상"
     }
   ]
 }

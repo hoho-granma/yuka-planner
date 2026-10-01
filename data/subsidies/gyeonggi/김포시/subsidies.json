@@ -83,7 +83,8 @@
       "auditNotes": {
         "paymentMethod": "확인 필요",
         "additionalConditions": "소득·서비스형(단축/표준/연장)별 차등. 신청기한 확인 필요"
-      }
+      },
+      "conditionLabel": "서비스 이용자"
     }
   ]
 }

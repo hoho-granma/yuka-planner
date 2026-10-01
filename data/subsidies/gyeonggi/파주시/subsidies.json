@@ -55,7 +55,8 @@
       "status": "확인완료",
       "verified": true,
       "notes": "보건소 출산 후 지원 안내 페이지 기준. 소득·이용일수 세부조건은 확인 필요.",
-      "statusOriginal": "확정시행"
+      "statusOriginal": "확정시행",
+      "conditionLabel": "서비스 이용자"
     },
     {
       "id": "GGM-PAJU-03",
