@@ -1186,6 +1186,22 @@
     return ""; // 산모 대상 등은 라벨을 달지 않는다(상세의 지원 대상에서 확인)
   }
 
+  /**
+   * 지원금 카드·상세의 대상 태그들.
+   * - 임신 중에만 신청하는 제도: "임신 중"
+   * - 이름에 '임산부' 등이 들어 있어도 출산 후에 신청할 수 있는 제도(data의 postpartumOk): "출산 후에도 신청 가능" — 이미 출산한 가정이 임산부 글자만 보고 지나치지 않게 한다.
+   * - 소득·직종·질환 등 해당자만 받는 제도(data의 conditionLabel): 조건 요약
+   */
+  function subsidyTagsHtml(e, extraClass) {
+    if (e.category !== "행정·지원금" || !e.isLegacySubsidy || !e.detail) return "";
+    const s = e.detail;
+    const tags = [];
+    if (s.prenatalOnly) tags.push(["임신 중", ""]);
+    else if (s.postpartumOk && !isPregnant()) tags.push(["출산 후에도 신청 가능", "aud-ok"]);
+    if (s.conditionLabel) tags.push([s.conditionLabel, "aud-cond"]);
+    return tags.map(([t, c]) => `<span class="aud-tag ${c} ${extraClass || ""}">${esc(t)}</span>`).join("");
+  }
+
   /** 지원금을 어디서 주는지 — 전국 공통 / 시·도 / 시·군·구 단계와 상세 설명. 지원금이 아니면 null. */
   function subsidyProvider(e) {
     if (e.category !== "행정·지원금") return null;
@@ -1291,7 +1307,7 @@
       <div class="event-item ${isDone ? "completed" : ""} ${isDone && opts && opts.compact ? "compact" : ""}" data-id="${e.id}">
         <span class="cat-dot" style="background:${CATEGORY_META[e.category].color}"></span>
         <div class="body">
-          ${providerTagHtml(e) ? `<p class="prov-row">${providerTagHtml(e)}${subsidyAudienceLabel(e) ? `<span class="aud-tag">${subsidyAudienceLabel(e)}</span>` : ""}</p>` : ""}
+          ${providerTagHtml(e) ? `<p class="prov-row">${providerTagHtml(e)}${subsidyTagsHtml(e)}</p>` : ""}
           <p class="title">${e.title}</p>
           ${e.category === "행정·지원금" && !isDone && subsidyPeriodLineHtml(e) ? "" : `<p class="date-label">${isDone ? "" : kindTagHtml(e)}${dateLine}</p>`}${subsidyPeriodLineHtml(e)}
           <p class="summary">${e.category === "행정·지원금" ? shortSubsidySummary(e.summary) : e.summary || ""}</p>
@@ -1850,7 +1866,7 @@
         </div>`;
     }
     el("modal-content").innerHTML = `
-      <span class="cat-badge" style="background:${meta.color}">${meta.label}</span>${providerTagHtml(e, "detail-tag")}${subsidyAudienceLabel(e) ? `<span class="aud-tag detail-tag">${subsidyAudienceLabel(e)}</span>` : ""}
+      <span class="cat-badge" style="background:${meta.color}">${meta.label}</span>${providerTagHtml(e, "detail-tag")}${subsidyTagsHtml(e, "detail-tag")}
       <h3>${e.title}</h3>
       ${detailBodyHtml(e)}
       ${completionRowHtml}
@@ -2301,6 +2317,7 @@
       shortSubsidySummary,
       subsidyProvider,
       subsidyAudienceLabel,
+      subsidyTagsHtml,
       providerTagHtml,
       notApplicable: () =>
         schedule

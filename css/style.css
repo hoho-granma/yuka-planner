@@ -757,6 +757,9 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .prov-row { margin: 0 0 5px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .prov-tag { display: inline-block; padding: 2px 9px; border-radius: 8px; font-size: 11px; font-weight: 800; }
 .prov-row .aud-tag { margin-right: 0; }
+.aud-tag.aud-ok { background: #e6f6ec; color: #1f7a45; }
+.aud-tag.aud-cond { background: #f1f1f1; color: #555; }
+.sub-region-note { line-height: 1.6; }
 .modal-panel .prov-tag.detail-tag { margin: 0 0 10px 6px; padding: 3px 9px; border-radius: 999px; vertical-align: baseline; }
 .home-row .prov-tag { margin-right: 6px; }
 
