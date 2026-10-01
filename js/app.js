@@ -654,11 +654,12 @@
     });
   }
 
-  // 서비스 범위(ChildTimeline.SERVICE_RANGE, 현재 생후 0~36개월)를 넘지 않는 항목만 보인다 — 지원금처럼 범위 이후까지
+  // 서비스 범위(ChildTimeline.SERVICE_RANGE, 생후 0~72개월)를 넘지 않는 항목만 보인다 — 지원금처럼 범위 이후까지
   // 수급기간이 이어지는 항목도 "언제부터 챙겨야 하는지"(e.date 기준 월령)가 범위 이내면 보여주고, 그 이후에 처음
-  // 시작되는 항목만 걸러낸다.
+  // 시작되는 항목만 걸러낸다. 단 마일스톤·끝 없는 정의·지원금은 기존 범위(LEGACY_TODO_CAP_MONTHS=36)로 보존한다
+  // (ChildTimeline.isEventVisible — A6-3).
   function visibleSchedule(ignoreCategoryFilter) {
-    return schedule.filter((e) => (ignoreCategoryFilter || activeCats.has(e.category)) && ChildTimeline.isWithinServiceRange(profile.birthDate, e.date) && !isNotApplicable(e.id));
+    return schedule.filter((e) => (ignoreCategoryFilter || activeCats.has(e.category)) && ChildTimeline.isEventVisible(profile.birthDate, e) && !isNotApplicable(e.id));
   }
 
   // "미해당" 표시 — 나에게 해당하지 않는 혜택. completed 맵에 `${id}__na` 키로 저장한다(완료·가족 동기화 경로를
@@ -1324,7 +1325,7 @@
     // (예: 꿀 섭취 금지는 적용은 0~12개월이지만 이유식 시작 시점인 6개월부터 안내).
     const dm = e.detail.definition.displayMonth;
     const windowStart = Math.max(0, Math.floor(tp.startMonth));
-    const cap = ChildTimeline.SERVICE_RANGE.maxMonths;
+    const cap = ChildTimeline.effectiveMaxMonths(e); // 끝 없는(null) 정의는 36(보존), endMonth 가 있는 정의는 72 상한 안에서 자기 endMonth 까지
     const end = tp.endMonth == null ? cap : Math.min(cap, Math.ceil(tp.endMonth));
     const start = typeof dm === "number" && dm > windowStart && dm <= end ? Math.floor(dm) : windowStart;
     if (end <= start) return null;

@@ -51,16 +51,20 @@ test("출산 예정일 이전(임신 중)은 0으로 고정", () => {
   assert.strictEqual(CT.completedMonths(D(2026, 12, 31), D(2026, 9, 30)), 0);
 });
 
-test("isWithinServiceRange = 기존 공식 ageInMonths(birth, date) <= 36 (전 구간)", () => {
+test("isWithinServiceRange: 범위를 36으로 주면 기존 공식 ageInMonths(birth, date) <= 36 과 전 구간 동일, 기본은 서비스 상한(72)", () => {
+  const LEG = { maxMonths: CT.LEGACY_TODO_CAP_MONTHS };
   for (const b of [D(2026, 6, 20), D(2023, 9, 30), D(2023, 9, 28), D(2026, 1, 31), D(2024, 2, 29)]) {
     for (let t = D(2023, 1, 1); t.getTime() < D(2036, 1, 1).getTime(); t = D(t.getFullYear(), t.getMonth() + 1, t.getDate() + 1)) {
-      assert.strictEqual(CT.isWithinServiceRange(b, t), globalThis.__legacyAge(b, t) <= 36, `${b.toDateString()} / ${t.toDateString()}`);
+      assert.strictEqual(CT.isWithinServiceRange(b, t, LEG), globalThis.__legacyAge(b, t) <= 36, `${b.toDateString()} / ${t.toDateString()}`);
+      assert.strictEqual(CT.isWithinServiceRange(b, t), globalThis.__legacyAge(b, t) <= 72, `72 ${b.toDateString()} / ${t.toDateString()}`);
     }
   }
 });
 
-test("SERVICE_RANGE는 현재 값(36개월, 선택기 8년)이며 변경 불가", () => {
-  assert.deepStrictEqual({ ...CT.SERVICE_RANGE }, { maxMonths: 36, pickerYearsBack: 11 });
+test("SERVICE_RANGE는 72개월(선택기 11년), 보존 상한·영유아 경계는 36으로 분리되어 있고 변경 불가", () => {
+  assert.deepStrictEqual({ ...CT.SERVICE_RANGE }, { maxMonths: 72, pickerYearsBack: 11 });
+  assert.strictEqual(CT.LEGACY_TODO_CAP_MONTHS, 36);
+  assert.strictEqual(CT.INFANT_TODDLER_MAX_MONTHS, 36);
   assert.ok(Object.isFrozen(CT.SERVICE_RANGE) && Object.isFrozen(CT.CHECKLIST_BUCKETS));
 });
 
@@ -69,13 +73,22 @@ const LEGACY = [{ start: 13, end: 17, label: "만 1세 (13~17개월)" }, { start
 const legacyBucket = (m) => { if (typeof m !== "number" || m <= 12) return m; const b = LEGACY.find((x) => m >= x.start && m <= x.end); return b ? b.start : LEGACY[LEGACY.length - 1].start; };
 const legacyLabel = (key) => { const b = LEGACY.find((x) => x.start === key); return b && key > 12 ? b.label : `생후 ${key}개월`; };
 
-test("체크리스트 그룹 키·라벨: 월령 0~60과 비숫자 키가 기준선 공식과 동일", () => {
-  for (let m = 0; m <= 60; m++) {
+test("체크리스트 그룹 키·라벨: 월령 0~36과 비숫자 키가 기준선 공식과 동일(기존 3개 구간의 경계·라벨·순서 불변)", () => {
+  for (let m = 0; m <= 36; m++) {
     assert.strictEqual(CT.checklistBucket(m), legacyBucket(m), `bucket ${m}`);
     assert.strictEqual(CT.checklistGroupLabel(CT.checklistBucket(m)), legacyLabel(legacyBucket(m)), `label ${m}`);
   }
+  assert.deepStrictEqual(CT.CHECKLIST_BUCKETS.slice(0, 3).map((b) => ({ ...b })), LEGACY);
   assert.strictEqual(CT.checklistBucket("NEED_CHECK"), "NEED_CHECK");
   assert.strictEqual(CT.checklistBucket(null), null);
+});
+
+test("A6-3 체크리스트 그룹: 37~47 / 48~59 / 60~72 구간이 뒤에 붙고 빈틈·겹침이 없다", () => {
+  assert.deepStrictEqual(CT.CHECKLIST_BUCKETS.slice(3).map((b) => [b.start, b.end, b.label]), [[37, 47, "만 3세 (37~47개월)"], [48, 59, "만 4세 (48~59개월)"], [60, 72, "만 5~6세 (60~72개월)"]]);
+  for (let i = 1; i < CT.CHECKLIST_BUCKETS.length; i++) assert.strictEqual(CT.CHECKLIST_BUCKETS[i].start, CT.CHECKLIST_BUCKETS[i - 1].end + 1);
+  const exp = (m) => (m <= 36 ? legacyBucket(m) : m <= 47 ? 37 : m <= 59 ? 48 : 60);
+  for (let m = 37; m <= 72; m++) assert.strictEqual(CT.checklistBucket(m), exp(m), `bucket ${m}`);
+  assert.strictEqual(CT.checklistGroupLabel(48), "만 4세 (48~59개월)");
 });
 
 test("ageLabel / compute: 헤더 문자열 동일, 임신 중은 label 없음, days 필드 없음, school null", () => {

@@ -1,7 +1,7 @@
 /*
  * auto-diff — 기준선 커밋 대비 "자동 일정(AUTO)" 결과 비교 도구. 소스를 수정하지 않는다(읽기 전용). 골든 JSON을 만들지 않는다.
  *
- *   node test/tools/auto-diff.js [--base <커밋>] [--allow-birth-day-ge <일>] [--report <파일>]
+ *   node test/tools/auto-diff.js [--base <커밋>] [--allow-birth-day-ge <일>] [--report <파일>] [--scope-months <N>]
  *
  * "전" = 기준선 커밋(기본 479d68e)의 js/*.js 를 `git show`로 읽어 계산, "후" = 현재 작업 트리. 둘 다 **지금의 데이터**로 계산하므로
  * data/subsidies 가 다른 트랙에서 바뀌어도 코드 변경만 비교된다.
@@ -14,6 +14,12 @@
  *   - 헤더 "생후 N개월" 문자열, 월령 0~48 의 그룹 키·라벨 표, 생년월일 선택기 연도 수
  * app.js 는 Node 에서 실행할 수 없어 위 공식은 이 파일에 **복제**했다(기준선 공식). "후"는 js/child-timeline.js 가 있으면 그 모듈의
  * 함수를, 없으면 같은 복제 공식을 쓴다 → 모듈로 옮긴 뒤에도 값이 같아야 통과.
+ *
+ * --scope-months N (A6-3, 선택): 서비스 범위를 N개월에서 더 넓힌 변경(36 → 72)을 검증할 때 "N개월 이하 결과는 차이 0"만 비교한다. 지정하지 않으면 종전과 완전히 같다.
+ *   - 엔진 이벤트 집합·창·유형·카테고리(STOP 검사)는 그대로 전부 비교한다.
+ *   - 추천일·홈·체크리스트는 이벤트 날짜 월령 ≤ N 이고 월령 키 ≤ N 인 부분만 비교한다(그 위는 범위 확장의 의도된 변화라 이 도구가 아니라 test/a6-3-cap.test.js 가 검증).
+ *   - 표시 범위는 전부 비교하되, 월령 > N 인 이벤트가 "숨김 → 표시"로 바뀐 것은 위반이 아니라 "범위 확장 신규 노출"로 따로 나열한다(어떤 id 가 몇 건인지 눈으로 확인). 월령 ≤ N 의 표시 변화나 "표시 → 숨김"은 위반이다.
+ *   - 그룹 표·헤더 표는 월령 0~N 만 비교한다. 반복 월령 상한 표는 의도된 변경이라 정보로만 출력한다.
  *
  * 판정
  *   STOP(종료코드 3): 엔진 windowStart/windowEnd 변경 · 이벤트 집합 변경 · 유형/카테고리 변경
@@ -33,6 +39,7 @@ const opt = (name, dflt) => {
 };
 const BASE = opt("--base", "479d68e");
 const ALLOW_DAY_GE = Number(opt("--allow-birth-day-ge", "0")) || 0;
+const SCOPE = Number(opt("--scope-months", "0")) || 0;
 const REPORT = opt("--report", path.join(ROOT, "test", "golden", "auto-diff-report.md"));
 
 const git = (a) => cp.execFileSync("git", a, { cwd: ROOT, encoding: "utf8", maxBuffer: 1 << 28, stdio: ["ignore", "pipe", "ignore"] });
@@ -111,7 +118,7 @@ const LEGACY_BUCKETS = [
   { start: 24, end: 36, label: "만 2세 (24~36개월)" },
 ];
 const legacy = {
-  isVisible: (P, birth, eventDate) => P.api.ageInMonths(birth, eventDate) <= 36,
+  isVisible: (P, birth, e) => P.api.ageInMonths(birth, e.date) <= 36,
   bucket: (m) => {
     if (typeof m !== "number" || m <= 12) return m;
     const b = LEGACY_BUCKETS.find((x) => m >= x.start && m <= x.end);
@@ -124,6 +131,7 @@ const legacy = {
   headerLabel: (months) => `생후 ${months}개월`,
   pickerYears: () => 9, // app.js:618 thisYear..thisYear-8
   repeatCap: () => 36, // app.js:1412
+  repeatCapOf: () => 36,
 };
 function impl(P) {
   const CT = P.CT;
@@ -131,12 +139,14 @@ function impl(P) {
   const pick = (name, fallback) => (typeof CT[name] === "function" ? CT[name] : fallback);
   const rng = CT.SERVICE_RANGE || null;
   return {
-    isVisible: CT.isWithinServiceRange ? (P2, birth, eventDate) => CT.isWithinServiceRange(birth, eventDate) : legacy.isVisible,
+    // A6-3: app.js visibleSchedule 은 isEventVisible(마일스톤·끝 없는 정의·지원금은 36 보존). 모듈에 없으면 이전 공식.
+    isVisible: CT.isEventVisible ? (P2, birth, e) => CT.isEventVisible(birth, e) : CT.isWithinServiceRange ? (P2, birth, e) => CT.isWithinServiceRange(birth, e.date) : legacy.isVisible,
     bucket: pick("checklistBucket", legacy.bucket),
     groupLabel: pick("checklistGroupLabel", legacy.groupLabel),
     headerLabel: pick("ageLabel", legacy.headerLabel),
     pickerYears: () => (rng && rng.pickerYearsBack !== undefined ? rng.pickerYearsBack + 1 : legacy.pickerYears()),
     repeatCap: () => (rng && rng.maxMonths !== undefined ? rng.maxMonths : legacy.repeatCap()),
+    repeatCapOf: (e) => (CT.effectiveMaxMonths ? CT.effectiveMaxMonths(e) : rng && rng.maxMonths !== undefined ? rng.maxMonths : legacy.repeatCap()), // app.js repeatMonthRangeOf 의 cap
   };
 }
 
@@ -172,7 +182,7 @@ function makeMonthKeysOf(P, birth, I) {
     if (inst.occurrenceKey && inst.occurrenceKey !== "default") return null;
     const tp = e.detail.definition.triggerParams;
     if (!tp || typeof tp.startMonth !== "number") return null;
-    const cap = I.repeatCap();
+    const cap = I.repeatCapOf(e);
     const dm = e.detail.definition.displayMonth;
     const windowStart = Math.max(0, Math.floor(tp.startMonth));
     const end = tp.endMonth == null ? cap : Math.min(cap, Math.ceil(tp.endMonth));
@@ -195,8 +205,12 @@ function snapshot(P, [birthStr, stage, region]) {
   const birth = new Date(birthStr + "T00:00:00");
   const profile = { birthDate: birth, province, district, gender: null, birthOrder: "first", stage };
   const events = P.api.buildSchedule(profile, { todoDefinitions: defs, subsidy: { subsidies: subsidiesOf(region) } }, []);
-  const visible = events.filter((e) => I.isVisible(P, birth, e.date));
-  const monthKeysOf = makeMonthKeysOf(P, birth, I);
+  const visibleAll = events.filter((e) => I.isVisible(P, birth, e));
+  const ageOf = (e) => P.api.ageInMonths(birth, e.date);
+  // --scope-months: 이벤트 날짜 월령 ≤ N 인 것만, 월령 키도 ≤ N 인 것만 비교한다(visibleIds 는 전부 유지).
+  const visible = SCOPE ? visibleAll.filter((e) => ageOf(e) <= SCOPE) : visibleAll;
+  const fullKeysOf = makeMonthKeysOf(P, birth, I);
+  const monthKeysOf = SCOPE ? (e) => fullKeysOf(e).filter((k) => typeof k !== "number" || k <= SCOPE) : fullKeysOf;
   const evs = {};
   for (const e of events) {
     const dateStable = !e.isEngineEvent || !!e.windowStart; // windowStart 없는 엔진 항목의 date 는 "지금"이라 시간 의존 → 제외
@@ -213,17 +227,18 @@ function snapshot(P, [birthStr, stage, region]) {
   const months = P.api.ageInMonths(birth, TODAY);
   return {
     events: evs, displayDays, home: homeOut,
-    visibleIds: visible.map((e) => e.id).sort(),
+    visibleIds: visibleAll.map((e) => e.id).sort(),
+    visibleAge: Object.fromEntries(visibleAll.map((e) => [e.id, ageOf(e)])),
     checklist,
     header: stage === "born" ? I.headerLabel(Math.max(0, months)) : null, // 임신 표기는 이번 비교 범위 밖
-    currentBucket: stage === "born" ? [I.bucket(Math.max(0, months)), I.groupLabel(I.bucket(Math.max(0, months)))] : null,
+    currentBucket: stage === "born" && !(SCOPE && months > SCOPE) ? [I.bucket(Math.max(0, months)), I.groupLabel(I.bucket(Math.max(0, months)))] : null,
   };
 }
 
 function tables(P) {
   const I = impl(P);
   const t = { bucketTable: {}, headerTable: {}, pickerYears: I.pickerYears(), repeatCap: I.repeatCap() };
-  for (let m = 0; m <= 48; m++) {
+  for (let m = 0; m <= (SCOPE || 48); m++) {
     t.bucketTable[m] = [I.bucket(m), I.groupLabel(I.bucket(m))];
     t.headerTable[m] = I.headerLabel(m);
   }
@@ -241,6 +256,8 @@ const before = snapshotAll(makePipeline(baseSrc()));
 const after = snapshotAll(makePipeline(currentSrc()));
 
 const stop = [];
+const info = []; // --scope-months 로 위반에서 제외한 의도된 변화(눈으로 확인용)
+const expanded = []; // 범위 확장 신규 노출 {fixture, id, age}
 const diffs = []; // {fixture, area, id, before, after}
 const per = [];
 const add = (fx, area, id, b, a) => diffs.push({ fixture: fx, area, id, before: b, after: a });
@@ -270,7 +287,10 @@ for (const key of Object.keys(before.fixtures)) {
   if (JSON.stringify(B.visibleIds) !== JSON.stringify(A.visibleIds)) {
     const bs = new Set(B.visibleIds), as = new Set(A.visibleIds);
     for (const id of bs) if (!as.has(id)) add(key, "표시 범위", id, "표시", "숨김");
-    for (const id of as) if (!bs.has(id)) add(key, "표시 범위", id, "숨김", "표시");
+    for (const id of as) if (!bs.has(id)) {
+      if (SCOPE && A.visibleAge[id] > SCOPE) expanded.push({ fixture: key, id, age: A.visibleAge[id] });
+      else add(key, "표시 범위", id, "숨김", "표시");
+    }
   }
   for (const id of new Set([...Object.keys(B.checklist), ...Object.keys(A.checklist)])) {
     const b = JSON.stringify(B.checklist[id]), a = JSON.stringify(A.checklist[id]);
@@ -285,7 +305,10 @@ for (const k of Object.keys(before.tables.bucketTable)) {
   if (before.tables.headerTable[k] !== after.tables.headerTable[k]) add("표", "헤더 표", `월령 ${k}`, before.tables.headerTable[k], after.tables.headerTable[k]);
 }
 if (before.tables.pickerYears !== after.tables.pickerYears) add("표", "선택기 연도 수", "-", before.tables.pickerYears, after.tables.pickerYears);
-if (before.tables.repeatCap !== after.tables.repeatCap) add("표", "반복 월령 상한", "-", before.tables.repeatCap, after.tables.repeatCap);
+if (before.tables.repeatCap !== after.tables.repeatCap) {
+  if (SCOPE) info.push(`반복 월령 상한 표(서비스 상한): ${before.tables.repeatCap} → ${after.tables.repeatCap} (의도된 변경, 항목별 cap 은 test/a6-3-cap.test.js 가 검증)`);
+  else add("표", "반복 월령 상한", "-", before.tables.repeatCap, after.tables.repeatCap);
+}
 
 // 대조군(출생 일자 ≤ 28)은 항상 차이 0, 그 밖의 차이는 --allow-birth-day-ge 로 승인된 범위만 허용
 const violations = [];
@@ -307,6 +330,13 @@ else {
   if (diffs.length > 400) L.push(`| … | | | | (이하 ${diffs.length - 400}건 생략) |`);
 }
 L.push("", "## 판정", "", `- STOP(엔진 창·이벤트 집합·유형): ${stop.length}건`, `- 승인 범위 밖 차이: ${violations.length}건`);
+if (SCOPE) {
+  const byId = {};
+  expanded.forEach((x) => ((byId[x.id] = byId[x.id] || []).push(x.age)));
+  L.push("", `## 범위 확장 신규 노출 (월령 > ${SCOPE}, 위반 아님)`, "");
+  Object.keys(byId).sort().forEach((id) => L.push(`- ${id}: 픽스처 ${byId[id].length}개`));
+  info.forEach((x) => L.push(`- ${x}`));
+}
 stop.forEach((x) => L.push(`  - STOP: ${x}`));
 violations.slice(0, 50).forEach((x) => L.push(`  - 실패: ${x}`));
 fs.mkdirSync(path.dirname(REPORT), { recursive: true });
@@ -314,6 +344,13 @@ fs.writeFileSync(REPORT, L.join("\n") + "\n");
 
 console.log(`기준선 ${BASE} ↔ 작업 트리 · 픽스처 ${FIXTURES.length}개`);
 per.forEach((p) => console.log(`  ${p.key.padEnd(30)} 출생일자 ${String(p.day).padStart(2)} · 차이 ${p.n}`));
+if (SCOPE) {
+  const byId = {};
+  expanded.forEach((x) => ((byId[x.id] = byId[x.id] || new Set()).add(x.fixture)));
+  console.log(`\n범위 확장 신규 노출(월령 > ${SCOPE}, 위반 아님): ${Object.keys(byId).length}종`);
+  Object.keys(byId).sort().forEach((id) => console.log(`  ${id}  (픽스처 ${byId[id].size}개)`));
+  info.forEach((x) => console.log("  정보:", x));
+}
 console.log(`\nSTOP ${stop.length}건 · 승인 범위 밖 차이 ${violations.length}건 · 전체 차이 ${diffs.length}건 (${areas.join(", ") || "-"}) → ${path.relative(ROOT, REPORT)}`);
 stop.slice(0, 10).forEach((x) => console.log("  STOP:", x));
 violations.slice(0, 10).forEach((x) => console.log("  실패:", x));
