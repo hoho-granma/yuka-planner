@@ -51,6 +51,7 @@
   let unsubscribeFamily = null;
   let activeCats = new Set(Object.keys(CATEGORY_META));
   let viewMonth = new Date();
+  let calView = "month"; // 캘린더 보기("month"|"week") — 주 보기는 가구가 있을 때만(F2)
   viewMonth.setDate(1);
   let currentDayContext = null; // { events, date } — 날짜 클릭으로 연 일정 여러 개 목록
   let modalMode = null; // "day-list" | "detail" | "profile"
@@ -964,6 +965,7 @@
    *    같은 시기 접종은 한날로 묶고, 나머지는 하루에 몰리지 않게 나눈다. 정해진 예정일이 아니라는 점은 화면에 밝힌다.
    */
   function renderCalendar() {
+    if (calWeekOn()) return renderWeek();
     const year = viewMonth.getFullYear();
     const month = viewMonth.getMonth();
     el("calendar-title").textContent = `${year}년 ${month + 1}월`;
@@ -2663,9 +2665,9 @@
     return l ? l.childKey : null;
   };
   /** 월/일 범위의 캘린더 모델(자동 일정은 읽기 전용 입력). */
-  function usBuildModel(startIso, endIso, filterOverride) {
+  function usBuildModel(startIso, endIso, filterOverride, view) {
     return CalendarModel.buildCalendarModel({
-      view: "month",
+      view: view === "week" ? "week" : "month",
       range: { start: startIso, end: endIso },
       filter: filterOverride || UserScheduleView.toModelFilter(us.selection, us.showAuto, usLinks()),
       auto: { events: calendarDotSchedule(), displayDates: calDisplayDays, completed, childKey: usActiveChildKey() },
@@ -2696,9 +2698,89 @@
     renderSelectedDayPanel();
     attachListHandlers();
   }
+  // ── F2 주 보기 시작 ─────────────────────────────────────────────────────────────
+  // 월 보기(renderCalendar)는 그대로 두고, 가구가 있고 플래그가 켜졌을 때만 "월 | 주" 전환이 생긴다. 선택 날짜(selectedCalendarDate)가 주·월 공용 상태다.
+  // 주 = 선택 날짜가 속한 일요일~토요일. 주 이동은 같은 요일을 유지(선택일 ±7일). 날짜 클릭·주 이동·보기 전환은 모두 usCalRefreshAll() 한 곳으로 다시 그린다.
+  const calWeekAvailable = () => typeof CalendarWeek !== "undefined" && usActive();
+  const calWeekOn = () => calView === "week" && calWeekAvailable();
+  /** 캘린더 · 선택일 패널 · 항목 클릭 연결 — 셋은 항상 함께(하나라도 빠지면 새로 그린 카드가 반응하지 않는다). */
+  function usCalRefreshAll() {
+    renderCalendar();
+    renderSelectedDayPanel();
+    attachListHandlers();
+  }
+  /** 이전/다음 버튼의 접근성 이름을 현재 보기(주/달)에 맞춘다. */
+  function usSyncNavLabels() {
+    if (typeof CalendarWeek === "undefined") return;
+    const w = calWeekOn();
+    el("btn-prev-month").setAttribute("aria-label", w ? CalendarWeek.MSG.prevWeek : CalendarWeek.MSG.prevMonth);
+    el("btn-next-month").setAttribute("aria-label", w ? CalendarWeek.MSG.nextWeek : CalendarWeek.MSG.nextMonth);
+  }
+  /** "월 | 주" 칩, 주 보기용 그리드 클래스, 이전/다음 이름을 맞춘다. 주 보기를 쓸 수 없는 상태(플래그 OFF·가구 없음)면 모두 비운다. */
+  function usRenderViewToggle() {
+    const slot = el("cal-view-slot");
+    if (!slot) return;
+    const on = calWeekOn();
+    el("calendar-grid").classList.toggle("calendar-week", on);
+    if (!calWeekAvailable()) {
+      slot.innerHTML = "";
+      usSyncNavLabels();
+      return;
+    }
+    slot.innerHTML = CalendarWeek.renderViewToggle(on ? "week" : "month");
+    usSyncNavLabels();
+  }
+  function usSetCalView(view) {
+    if (!calWeekAvailable() || (view !== "week" && view !== "month") || view === calView) return;
+    calView = view;
+    if (view === "month") viewMonth = new Date(selectedCalendarDate.getFullYear(), selectedCalendarDate.getMonth(), 1); // 주→월: 선택일의 달
+    usCalRefreshAll();
+  }
+  /** 주 이동: 같은 요일을 유지한 채 n 주(선택일 ±7n일). */
+  function usWeekShift(n) {
+    selectedCalendarDate = CalendarWeek.toLocalDate(CalendarWeek.shiftWeek(toISODate(selectedCalendarDate), n));
+    usCalRefreshAll();
+  }
+  /** 주 보기: 선택 날짜가 속한 한 주(일~토)를 7열로 그린다. 추가한 일정은 제목, 자동 일정은 개수만. 하단 기간 일정·진행률은 월 기준 그대로(선택일의 달). */
+  function renderWeek() {
+    const selIso = toISODate(selectedCalendarDate);
+    viewMonth = new Date(selectedCalendarDate.getFullYear(), selectedCalendarDate.getMonth(), 1);
+    el("calendar-title").textContent = CalendarWeek.weekTitle(selIso);
+    computeCalendarDays();
+    renderCalLegend();
+    renderCalendarProgress();
+    const range = CalendarWeek.weekRange(selIso);
+    const wm = usBuildModel(range.start, range.end, undefined, "week");
+    const todayIso = toISODate(new Date());
+    const links = usLinks();
+    const days = CalendarWeek.weekDays(selIso).map((date) => {
+      const dm = wm.days.get(date);
+      return {
+        date,
+        today: date === todayIso,
+        selected: date === selIso,
+        user: dm.user.map((o) => ({ title: o.title, color: UserScheduleView.occurrenceColor(o, links), done: o.status === "DONE" })),
+        autoCount: dm.benefit.length + dm.planned.length,
+      };
+    });
+    const grid = el("calendar-grid");
+    grid.innerHTML = CalendarWeek.renderWeekCols(days);
+    grid.querySelectorAll("[data-wk-date]").forEach((b) =>
+      b.addEventListener("click", () => {
+        selectedCalendarDate = CalendarWeek.toLocalDate(b.getAttribute("data-wk-date"));
+        usCalRefreshAll();
+      })
+    );
+    const y = viewMonth.getFullYear();
+    const m = viewMonth.getMonth();
+    usRenderCalendarSlots(usBuildModel(toISODate(new Date(y, m, 1)), toISODate(new Date(y, m + 1, 0))));
+    renderAutoPeriodSlot();
+  }
+  // ── F2 주 보기 끝 ───────────────────────────────────────────────────────────────
   /** 캘린더 위(개수 줄·필터·범례)와 그리드 아래(이번 달 기간 일정) 영역. 가구가 없으면 비워 둔다. */
   function usRenderCalendarSlots(model) {
     if (!hhEnabled()) return;
+    usRenderViewToggle();
     const top = el("us-filter-slot");
     const bottom = el("us-period-slot");
     if (!top || !bottom) return;
@@ -3173,6 +3255,11 @@
   function usInit() {
     if (!hhEnabled() || !usReady()) return;
     el("tab-calendar").addEventListener("click", usOnCalendarClick);
+    const viewSlot = el("cal-view-slot");
+    if (viewSlot) viewSlot.addEventListener("click", (ev) => {
+      const b = ev.target.closest("[data-cal-view]");
+      if (b) usSetCalView(b.getAttribute("data-cal-view"));
+    });
     const m = el("modal-content");
     m.addEventListener("click", usOnModalClick);
     m.addEventListener("change", usOnModalChange);
@@ -3372,10 +3459,12 @@
     };
     new MutationObserver(ensureModalX).observe(el("modal-content"), { childList: true });
     el("btn-prev-month").addEventListener("click", () => {
+      if (calWeekOn()) return usWeekShift(-1);
       viewMonth.setMonth(viewMonth.getMonth() - 1);
       renderCalendar();
     });
     el("btn-next-month").addEventListener("click", () => {
+      if (calWeekOn()) return usWeekShift(1);
       viewMonth.setMonth(viewMonth.getMonth() + 1);
       renderCalendar();
     });

@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#ff8a5c" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
-<link rel="stylesheet" href="css/style.css?v=56" />
+<link rel="stylesheet" href="css/style.css?v=57" />
 </head>
 <body>
   <main id="app">
@@ -165,6 +165,7 @@
 
         <div id="us-filter-slot"></div>
         <div class="card calendar-card">
+          <div id="cal-view-slot"></div>
           <div class="calendar-nav">
             <button id="btn-prev-month" class="btn-icon" aria-label="이전 달">◀</button>
             <h2 id="calendar-title"></h2>
@@ -270,9 +271,10 @@
   <script src="js/date-picker.js?v=2"></script>
   <script src="js/user-schedule.js?v=2"></script>
   <script src="js/calendar-model.js?v=2"></script>
+  <script src="js/calendar-week.js?v=1"></script>
   <script src="js/user-schedule-view.js?v=6"></script>
   <script src="js/records-view.js?v=5"></script>
-  <script src="js/app.js?v=61"></script>
+  <script src="js/app.js?v=62"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

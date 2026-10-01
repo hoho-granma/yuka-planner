@@ -34,6 +34,7 @@ const SHELL_ASSETS = [
   "./js/date-picker.js",
   "./js/user-schedule.js",
   "./js/calendar-model.js",
+  "./js/calendar-week.js",
   "./js/user-schedule-view.js",
   "./js/records-view.js",
   "./js/app.js",

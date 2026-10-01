@@ -254,7 +254,7 @@ test("연결: usRefreshCalendar 는 캘린더가 숨겨져 있어도 홈 갱신�
 });
 test("버전 쿼리: home.js·user-schedule-view.js·app.js 스크립트 태그가 올라갔다", () => {
   const idx = read("index.html");
-  assert.ok(/home\.js\?v=22/.test(idx) && /user-schedule-view\.js\?v=6/.test(idx) && /app\.js\?v=61/.test(idx));
+  assert.ok(/home\.js\?v=(2[2-9]|[3-9]\d)\b/.test(idx) && /user-schedule-view\.js\?v=([6-9]|\d{2})\b/.test(idx) && /app\.js\?v=(6[1-9]|[7-9]\d)\b/.test(idx));
 });
 test("스키마·규칙·AUTO 계산 파일은 건드리지 않았다(작업본 diff 에 없음)", () => {
   const changed = execSync("git status --porcelain", { cwd: ROOT, encoding: "utf8" });

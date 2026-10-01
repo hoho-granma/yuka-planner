@@ -987,3 +987,21 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .us-scope strong { font-size: 15px; }
 .us-scope span { font-size: 12px; line-height: 1.5; color: var(--text-muted); }
 .us-scope.us-danger strong { color: #c0392b; }
+
+/* 캘린더 주 보기(F2) — 월 보기 그리드와 같은 7열, 열마다 일정 제목(한 줄 말줄임)·자동 일정 개수 */
+.cal-view-toggle { display: flex; gap: 6px; margin-bottom: 10px; }
+.calendar-grid.calendar-week { gap: 3px; }
+.week-col {
+  display: flex; flex-direction: column; align-items: stretch; gap: 3px; min-width: 0; min-height: 112px;
+  padding: 4px 2px; border: 1px solid var(--border); border-radius: 8px; background: transparent;
+  font: inherit; font-size: 10px; text-align: center; color: inherit; cursor: pointer;
+}
+.week-col.today { background: #fff0e4; }
+.week-col.selected { border-color: var(--accent-dark); box-shadow: inset 0 0 0 1px var(--accent-dark); }
+.week-col .wk-num { display: block; font-size: 12px; font-weight: 700; }
+.week-col .wk-item {
+  display: block; min-width: 0; padding: 1px 2px; border-left: 3px solid var(--wk-color, #6b5b53); border-radius: 2px; background: #faf6f2;
+  font-size: 10px; line-height: 1.25; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.week-col .wk-item.done { opacity: .4; text-decoration: line-through; }
+.week-col .wk-more, .week-col .wk-auto, .week-col .wk-empty { display: block; font-size: 9px; line-height: 1.2; color: var(--text-muted); overflow-wrap: anywhere; }
