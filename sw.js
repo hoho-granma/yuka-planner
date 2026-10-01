@@ -20,6 +20,7 @@ const SHELL_ASSETS = [
   "./js/version.js",
   "./js/date-calc.js",
   "./js/child-timeline.js",
+  "./js/school-policy.js",
   "./js/sync.js",
   "./js/feature-flags.js",
   "./js/household-sync.js",

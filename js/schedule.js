@@ -130,8 +130,14 @@ function computeIsDateSpecific(inst) {
  */
 function buildTodoEngineEvents(profile, todoDefinitions, completions) {
   if (typeof TodoEngine === "undefined" || !todoDefinitions || !todoDefinitions.length) return [];
+  const today = new Date();
+  // A6-2: 학교 정책이 주입된 경우에만 timeline(학교·학년 포함)을 만들어 엔진에 넘긴다. 정책이 없거나 확인되지 않으면 school:null, 정책 인자가 없으면 이전과 완전히 같은 입력이다.
+  const timeline = profile.schoolPolicy
+    ? ChildTimeline.compute({ birthDate: profile.birthDate, asOf: today, stage: profile.stage, policy: profile.schoolPolicy, enrollmentYearOverride: profile.enrollmentYearOverride })
+    : undefined;
   const instances = TodoEngine.calculateTodoInstances({
-    today: new Date(),
+    today,
+    ...(timeline ? { timeline } : {}),
     child: { birthDate: profile.birthDate, gender: profile.gender },
     region: { province: profile.province, district: profile.district },
     familyDeclaredAttributes: {},
@@ -274,9 +280,9 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrd
   return events;
 }
 
-function buildSchedule({ birthDate, province, district, gender, birthOrder, stage }, dataset, completions) {
+function buildSchedule({ birthDate, province, district, gender, birthOrder, stage, schoolPolicy, enrollmentYearOverride }, dataset, completions) {
   const events = [
-    ...buildTodoEngineEvents({ birthDate, province, district, gender }, dataset.todoDefinitions, completions),
+    ...buildTodoEngineEvents({ birthDate, province, district, gender, stage, schoolPolicy, enrollmentYearOverride }, dataset.todoDefinitions, completions),
     ...buildSubsidyEvents(birthDate, province, district, dataset.subsidy, birthOrder, stage),
   ];
   events.sort((a, b) => a.date.getTime() - b.date.getTime());

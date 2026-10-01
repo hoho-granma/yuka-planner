@@ -86,6 +86,13 @@
     }
   }
 
+  // 학교 정책(A6-2): 읽기 실패·형식 오류는 빈 정책 → ChildTimeline 이 school:null 로 처리한다(기존 동작). 파일은 첫 화면 전에 로드를 마친다(loadAll).
+  let schoolPolicy = {};
+  async function loadSchoolPolicy() {
+    if (typeof SchoolPolicy === "undefined") return {};
+    return SchoolPolicy.load(fetch);
+  }
+
   // 건강검진·예방접종·발달관찰 등은 카테고리별 파일로 나눠뒀다(data/todos/*.json) — 전국 공통이라
   // 지역과 무관하게 앱 시작 시 한 번만 불러온다. SB(전국 공통 제도)만 예외적으로 TodoDefinition
   // 스키마를 그대로 쓰면서 data/subsidies/national-todos.json으로 옮겨져 있다(js/schedule.js 참고).
@@ -177,12 +184,14 @@
   }
 
   async function loadAll() {
-    const [regions, reform, ...categoryFiles] = await Promise.all([
+    const [regions, reform, policy, ...categoryFiles] = await Promise.all([
       loadJson("data/regions.json"),
       loadJsonOrNull("data/subsidies/reform-2027.json"),
+      loadSchoolPolicy(),
       ...TODO_CATEGORY_FILES.map(loadJson),
     ]);
     regionsData = regions;
+    schoolPolicy = policy;
     reformConfig = reform;
     // 건강검진·예방접종·성장발달(및 이유식/구강/수면/안전/생활/보육)은 카테고리별 파일
     // (data/todos/*.json, 총 75개 TodoDefinition) + js/todo-engine.js로 계산한다.
@@ -1847,7 +1856,7 @@
 
   async function buildAndRender() {
     await ensureRegionSubsidyLoaded();
-    schedule = buildSchedule(profile, dataset, completionsForEngine());
+    schedule = buildSchedule({ ...profile, schoolPolicy }, dataset, completionsForEngine());
     rememberChild();
     viewMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     selectedCalendarDate = new Date();
@@ -1858,7 +1867,7 @@
 
   /** buildAndRender()와 달리 보고있던 달(viewMonth)은 그대로 두고 일정만 다시 계산한다(완료 처리 후 호출). */
   function refreshSchedule() {
-    schedule = buildSchedule(profile, dataset, completionsForEngine());
+    schedule = buildSchedule({ ...profile, schoolPolicy }, dataset, completionsForEngine());
     renderAll();
   }
 
