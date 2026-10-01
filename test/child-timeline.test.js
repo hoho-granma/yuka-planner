@@ -99,7 +99,7 @@ test("의존성 없음: 다른 모듈을 require/참조하지 않는다(엔진·
 const T_POLICY = {
   enrollmentOffsetYears: { value: 7, verificationStatus: "확인됨", source: "테스트 전용" },
   schoolYearStartMonth: { value: 3, verificationStatus: "확인됨", source: "테스트 전용" },
-  preElementaryYearsBefore: { value: 1, verificationStatus: "확인됨", source: "테스트 전용" },
+  preElementaryYearsBefore: { value: 1, kind: "PRODUCT_DEFINITION", verificationStatus: "제품정의", source: "테스트 전용" },
 };
 const deepFreeze = (o) => (Object.values(o).forEach((v) => v && typeof v === "object" && deepFreeze(v)), Object.freeze(o));
 const sch = (b, a, over = {}) => CT.compute({ birthDate: b, asOf: a, stage: "born", policy: T_POLICY, ...over }).school;

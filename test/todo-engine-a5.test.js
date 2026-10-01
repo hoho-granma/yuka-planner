@@ -235,7 +235,7 @@ test("ChildTimeline.compute(정책 주입)와 이어서 쓴다: 2020-05-10생(�
   const policy = {
     enrollmentOffsetYears: { value: 7, verificationStatus: "확인됨", source: "테스트 전용" },
     schoolYearStartMonth: { value: 3, verificationStatus: "확인됨", source: "테스트 전용" },
-    preElementaryYearsBefore: { value: 1, verificationStatus: "확인됨", source: "테스트 전용" },
+    preElementaryYearsBefore: { value: 1, kind: "PRODUCT_DEFINITION", verificationStatus: "제품정의", source: "테스트 전용" },
   };
   const birth = D(2020, 5, 10);
   const timeline = CT.compute({ birthDate: birth, asOf: D(2026, 10, 15), stage: "born", policy });

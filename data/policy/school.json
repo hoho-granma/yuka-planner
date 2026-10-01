@@ -1,0 +1,22 @@
+{
+  "enrollmentOffsetYears": {
+    "value": 7,
+    "kind": "OFFICIAL_POLICY",
+    "verificationStatus": "확인됨",
+    "source": "초·중등교육법 제13조 제1항 (국가법령정보센터)",
+    "effectiveDate": "2026-09-11"
+  },
+  "schoolYearStartMonth": {
+    "value": 3,
+    "kind": "OFFICIAL_POLICY",
+    "verificationStatus": "확인됨",
+    "source": "초·중등교육법 제24조 제1항 (국가법령정보센터)",
+    "effectiveDate": "2026-09-11"
+  },
+  "preElementaryYearsBefore": {
+    "value": 1,
+    "kind": "PRODUCT_DEFINITION",
+    "verificationStatus": "제품정의",
+    "source": "제품 정의 — 입학 학년도 바로 직전 학년도 (설계 Q-C, 사용자 결정 2026-10-01)"
+  }
+}

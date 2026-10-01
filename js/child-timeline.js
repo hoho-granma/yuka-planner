@@ -62,10 +62,19 @@
   //   enrollmentOffsetYears  출생연도 + N = 초등 입학 학년도 (override 가 없을 때 필요)
   //   schoolYearStartMonth   학년도 시작 월(1~12). 예: 3 → 3월~다음 해 2월이 한 학년도
   //   preElementaryYearsBefore  입학 학년도 몇 해 전을 "예비초등"으로 볼지(제품 정의, Q-C). 예: 1 → 입학 직전 학년도
-  // 필요한 키가 하나라도 없거나 "확인됨"이 아니거나 값이 올바르지 않으면 계산하지 않는다(null) — 확인 전 값으로 확정 표시를 만들지 않기 위해서다.
+  // 필요한 키가 하나라도 없거나 키별 허용 상태(아래 ALLOWED_STATUS)가 아니거나 값이 올바르지 않으면 계산하지 않는다(null) — 확인 전 값으로 확정 표시를 만들지 않기 위해서다.
+  // 키별 허용 상태(A6-1): 법령 근거 값은 "확인됨"만, 제품 정의 값(preElementaryYearsBefore)은 kind=PRODUCT_DEFINITION + "제품정의"만 쓴다.
+  const ALLOWED_STATUS = {
+    enrollmentOffsetYears: ["확인됨"],
+    schoolYearStartMonth: ["확인됨"],
+    preElementaryYearsBefore: ["제품정의"],
+  };
+  const REQUIRED_KIND = { preElementaryYearsBefore: "PRODUCT_DEFINITION" };
   function verifiedPolicyValue(policy, key, ok) {
     const e = policy && policy[key];
-    if (!e || e.verificationStatus !== "확인됨") return undefined;
+    const allowed = ALLOWED_STATUS[key] || ["확인됨"];
+    if (!e || allowed.indexOf(e.verificationStatus) < 0) return undefined;
+    if (REQUIRED_KIND[key] && e.kind !== REQUIRED_KIND[key]) return undefined;
     return ok(e.value) ? e.value : undefined;
   }
   const isInt = (n) => typeof n === "number" && Number.isInteger(n);
