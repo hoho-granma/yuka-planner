@@ -21,7 +21,7 @@ function test(name, fn) {
 }
 
 const rd = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), "utf8"));
-const TODO_FILES = ["health-checkup", "vaccination", "development", "feeding", "oral", "sleep", "safety", "daily-life", "childcare"].map((f) => `data/todos/${f}.json`).concat("data/subsidies/national-todos.json");
+const TODO_FILES = ["health-checkup", "vaccination", "development", "feeding", "oral", "sleep", "safety", "daily-life", "childcare"].map((f) => `data/todos/${f}.json`).concat("data/subsidies/national-todos.json", "data/todos/school.json"); // A6-4: 학교 정의를 포함해도 36 보존 대상이 정확히 10개여야 한다
 const defs = TODO_FILES.flatMap((f) => rd(f).todos);
 const D = (y, m, d) => new Date(y, m - 1, d);
 const REGIONS = {

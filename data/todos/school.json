@@ -1,0 +1,106 @@
+{
+  "category": "SC",
+  "count": 3,
+  "todos": [
+    {
+      "todo_id": "SC-01",
+      "category": "SC",
+      "title": "취학통지서 확인",
+      "parentAction": "12월에 취학통지서가 오면 입학할 학교와 입학기일을 확인해요",
+      "completionCriteria": "입학할 학교와 입학기일 확인",
+      "exposureLevel": "MUST",
+      "triggerType": "SCHOOL_TERM_WINDOW",
+      "triggerParams": {
+        "anchor": "ENROLLMENT",
+        "yearOffset": -1,
+        "startMonth": 12,
+        "endMonth": 12
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "source": "초·중등교육법 시행령 제17조 제1항 (국가법령정보센터), 교육부 보도자료 2025-11-26 「2026학년도 초등학교 취학통지 및 예비소집」",
+      "verificationStatus": "확인됨",
+      "displayMonth": null,
+      "displayMonthBasis": "학교 단계(예비초등) 기준 — 월령 그룹이 아니라 '학교·입학' 그룹에 표시",
+      "categoryGroup": "생활·수유",
+      "schoolGroup": "학교·입학",
+      "visibleStages": ["PRE_ELEMENTARY"],
+      "guideType": "SCHEDULED",
+      "cardSummary": "입학할 학교와 입학기일 확인 (12월)",
+      "why": "읍·면·동장이 입학 전해 12월 20일까지 취학통지를 하게 되어 있어요(법정 기한). 최근에는 12월 초부터 정부24 온라인 발급과 우편 송부가 시작돼요. 정확한 발급·송부 시점은 거주지 안내를 확인하세요.",
+      "observationGuide": [
+        "취학통지서에 적힌 입학할 학교",
+        "입학기일(입학하는 날짜)",
+        "12월 20일까지 받지 못했다면 거주지 읍·면·동에 문의"
+      ]
+    },
+    {
+      "todo_id": "SC-02",
+      "category": "SC",
+      "title": "예비소집 확인",
+      "parentAction": "예비소집 일정은 학교·교육청 안내를 확인하세요. 예비소집에서 학교의 알림 방법과 연락 방법도 함께 확인해요",
+      "completionCriteria": "예비소집 참석(또는 학교에 사전 연락)과 알림·연락 방법 확인",
+      "exposureLevel": "MUST",
+      "triggerType": "SCHOOL_TERM_WINDOW",
+      "triggerParams": {
+        "anchor": "ENROLLMENT",
+        "yearOffset": -1,
+        "startMonth": 12,
+        "endMonth": 1
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "source": "교육부 보도자료 2025-11-26 「2026학년도 초등학교 취학통지 및 예비소집」, 경기도교육청 「2025 신입생 학부모를 위한 초등학교 안내서」(알림장·연락 방법)",
+      "verificationStatus": "확인됨(교육부 안내 기준 — 날짜는 학교·교육청별)",
+      "displayMonth": null,
+      "displayMonthBasis": "학교 단계(예비초등) 기준 — 월령 그룹이 아니라 '학교·입학' 그룹에 표시",
+      "categoryGroup": "생활·수유",
+      "schoolGroup": "학교·입학",
+      "visibleStages": ["PRE_ELEMENTARY"],
+      "guideType": "CHECK",
+      "cardSummary": "예비소집 일정은 학교·교육청 안내 확인 (보통 12월~1월)",
+      "why": "예비소집은 법령이 아니라 교육부 안내에 따라 학교별로 12월~1월 사이에 열려요. 날짜와 장소는 학교·교육청마다 달라서 정확한 일정은 학교·교육청 안내를 확인해야 해요.",
+      "observationGuide": [
+        "예비소집 날짜·시간·장소는 학교·교육청 안내 확인 (학교마다 달라요)",
+        "보호자가 아이와 함께 참석 (교육부 안내)",
+        "참석이 어렵다면 학교에 미리 연락 — 불참하면 학교가 아이의 소재·안전을 확인해요",
+        "학교의 알림 방법(알림장 등)과 결석·지각 연락 방법 확인"
+      ]
+    },
+    {
+      "todo_id": "SC-03",
+      "category": "SC",
+      "title": "입학연기 신청 여부 확인",
+      "parentAction": "입학을 1년 미루려는 경우에만 해당해요. 10월 1일~12월 31일에 거주지 읍·면·동에 입학연기신청서를 내요",
+      "completionCriteria": "입학연기 해당 여부 확인",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "SCHOOL_TERM_WINDOW",
+      "triggerParams": {
+        "anchor": "ENROLLMENT",
+        "yearOffset": -1,
+        "startMonth": 10,
+        "endMonth": 12
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 0,
+      "source": "초·중등교육법 제13조 제2항, 초·중등교육법 시행령 제15조 제3항 (국가법령정보센터)",
+      "verificationStatus": "확인됨",
+      "displayMonth": null,
+      "displayMonthBasis": "학교 단계(예비초등) 기준 — 월령 그룹이 아니라 '학교·입학' 그룹에 표시",
+      "categoryGroup": "생활·수유",
+      "schoolGroup": "학교·입학",
+      "visibleStages": ["PRE_ELEMENTARY"],
+      "guideType": "CHECK",
+      "cardSummary": "입학을 미룰 경우에만 해당 (10~12월 신청)",
+      "why": "법에 따라 입학을 1년 늦출 수 있어요. 신청 기간은 입학 전해 10월 1일부터 12월 31일까지이고, 신청처는 거주지 읍·면·동이에요. 신청하지 않으면 취학통지서대로 입학해요.",
+      "observationGuide": [
+        "입학을 1년 미룰 계획이 있는지",
+        "미룰 경우 10월 1일~12월 31일 사이에 거주지 읍·면·동에 입학연기신청서 제출",
+        "신청하지 않으면 취학통지서대로 입학해요"
+      ]
+    }
+  ]
+}

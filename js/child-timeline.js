@@ -82,8 +82,25 @@
     return isLegacyCapped(event) ? Math.min(LEGACY_TODO_CAP_MONTHS, SERVICE_RANGE.maxMonths) : SERVICE_RANGE.maxMonths;
   }
 
-  /** app.js visibleSchedule 의 월령 판정: 이벤트 날짜의 월령이 그 이벤트의 유효 상한 이하인가. */
+  /**
+   * 학교 단계(SCHOOL_TERM_WINDOW) 정의의 노출 판정 — 월령 상한(72/36)과 무관하게 "지금 아이의 학교 단계"로 정한다(A6-4).
+   * def.visibleStages 의 값: "PRE_ELEMENTARY"(예비초등) · "GRADE_1"(초1). 현재 데이터는 PRE_ELEMENTARY 만 쓴다.
+   * stage = schedule.js 가 이벤트에 실은 { stageBand, grade } (정책이 없거나 미확인이면 null → 보이지 않음).
+   * 주의: 이 정의의 triggerParams.startMonth/endMonth 는 월령이 아니라 달력 월(1~12)이다 — 월령 규칙(isLegacyCapped·반복 행)과 섞지 않는다.
+   */
+  function isSchoolTermDefinition(def) {
+    return !!def && def.triggerType === "SCHOOL_TERM_WINDOW";
+  }
+  function isSchoolStageVisible(def, stage) {
+    if (!stage || !Array.isArray(def.visibleStages)) return false;
+    if (def.visibleStages.indexOf(stage.stageBand) >= 0) return true;
+    return stage.grade === 1 && def.visibleStages.indexOf("GRADE_1") >= 0;
+  }
+
+  /** app.js visibleSchedule 의 노출 판정: 학교 단계 정의는 현재 학교 단계로, 그 밖에는 이벤트 날짜의 월령이 그 이벤트의 유효 상한 이하인가. */
   function isEventVisible(birthDate, event) {
+    const def = event && event.isEngineEvent && event.detail ? event.detail.definition : null;
+    if (isSchoolTermDefinition(def)) return isSchoolStageVisible(def, event.schoolStage);
     return completedMonths(birthDate, event.date) <= effectiveMaxMonths(event);
   }
 
@@ -172,5 +189,5 @@
     };
   }
 
-  return { SERVICE_RANGE, LEGACY_TODO_CAP_MONTHS, INFANT_TODDLER_MAX_MONTHS, CHECKLIST_BUCKETS, completedMonths, ageLabel, isWithinServiceRange, isLegacyCappedDefinition, isLegacyCapped, effectiveMaxMonths, isEventVisible, checklistBucket, checklistGroupLabel, computeSchool, compute };
+  return { SERVICE_RANGE, LEGACY_TODO_CAP_MONTHS, INFANT_TODDLER_MAX_MONTHS, CHECKLIST_BUCKETS, completedMonths, ageLabel, isWithinServiceRange, isLegacyCappedDefinition, isLegacyCapped, effectiveMaxMonths, isEventVisible, isSchoolTermDefinition, checklistBucket, checklistGroupLabel, computeSchool, compute };
 });

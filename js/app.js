@@ -106,6 +106,7 @@
     "data/todos/safety.json",
     "data/todos/daily-life.json",
     "data/todos/childcare.json",
+    "data/todos/school.json",
     "data/subsidies/national-todos.json",
   ];
 
@@ -1233,11 +1234,14 @@
   function ensureOpenMonthGroupsInit() {
     if (openMonthGroups === null) {
       // 현재 월령 그룹만 펼쳐 두고 나머지는 접는다.
-      openMonthGroups = new Set([checklistBucket(Math.max(0, ageInMonths(profile.birthDate, new Date())))]);
+      // (학교·입학 그룹은 해당 항목이 있을 때만 그려지므로 같이 펼쳐 두어도 다른 아이에게는 영향이 없다.)
+      openMonthGroups = new Set([checklistBucket(Math.max(0, ageInMonths(profile.birthDate, new Date()))), SCHOOL_GROUP]);
     }
   }
 
   const NEED_CHECK_GROUP = "NEED_CHECK";
+  // A6-4: 학교 Todo(td.schoolGroup)는 월령 그룹이 아니라 이 그룹에 모은다. 숫자가 아닌 키라 달력·홈의 월령 배치에는 쓰이지 않는다.
+  const SCHOOL_GROUP = "SCHOOL";
 
   /** 체크리스트 그룹 키·라벨은 ChildTimeline 표(CHECKLIST_BUCKETS)가 정한다. 돌 전은 월별, 13개월~는 구간 시작 월령. */
   const checklistBucket = ChildTimeline.checklistBucket;
@@ -1292,6 +1296,7 @@
     if (!(e.isEngineEvent && e.detail && e.detail.definition)) return NEED_CHECK_GROUP;
     const td = e.detail.definition;
     const inst = e.detail.instance;
+    if (td.schoolGroup) return SCHOOL_GROUP;
     const isMultiOccurrence = inst.occurrenceKey && inst.occurrenceKey !== "default";
     if (isMultiOccurrence) {
       const occMonth = occurrenceStartMonth(td, inst.occurrenceKey);
@@ -1319,6 +1324,8 @@
     if (e.isDateSpecific !== false) return null;
     const inst = e.detail.instance;
     if (inst.occurrenceKey && inst.occurrenceKey !== "default") return null;
+    // A6-4: SCHOOL_TERM_WINDOW 의 startMonth/endMonth 는 달력 월(1~12)이지 월령이 아니다 — 월령 반복 행으로 읽으면 안 된다.
+    if (e.detail.definition.triggerType === "SCHOOL_TERM_WINDOW") return null;
     const tp = e.detail.definition.triggerParams;
     if (!tp || typeof tp.startMonth !== "number") return null;
     // 반복 노출은 "적용 기간의 시작"이 아니라 "검토해야 할 대표 월령(displayMonth)"부터 시작한다
@@ -1347,7 +1354,7 @@
    */
   function eventInCalendarMonth(e, year, month) {
     return monthKeysOf(e).some((key) => {
-      if (key === NEED_CHECK_GROUP) return false;
+      if (key === NEED_CHECK_GROUP || key === SCHOOL_GROUP) return false;
       const d = addMonths(profile.birthDate, key);
       return d.getFullYear() === year && d.getMonth() === month;
     });
@@ -1395,6 +1402,8 @@
     const monthKeys = [...groups.keys()].sort((a, b) => {
       if (a === NEED_CHECK_GROUP) return 1;
       if (b === NEED_CHECK_GROUP) return -1;
+      if (a === SCHOOL_GROUP) return 1; // 학교·입학: 월령 그룹 뒤, "그때그때 확인해요" 앞
+      if (b === SCHOOL_GROUP) return -1;
       return a - b;
     });
     el("list-checklist").innerHTML = monthKeys
@@ -1402,7 +1411,7 @@
         const list = groups.get(key);
         const isOpen = openMonthGroups.has(key);
         const doneCount = list.filter((e) => completed[e.id]).length;
-        const label = key === NEED_CHECK_GROUP ? "그때그때 확인해요" : isPregnant() && key === 0 ? "임신 중·출산 직후" : checklistGroupLabel(key);
+        const label = key === NEED_CHECK_GROUP ? "그때그때 확인해요" : key === SCHOOL_GROUP ? "학교·입학" : isPregnant() && key === 0 ? "임신 중·출산 직후" : checklistGroupLabel(key);
         return `
           <div class="ongoing-group-card month-group-card ${isOpen ? "open" : ""}" data-month="${key}"${key === curKey ? ' data-now="1"' : ""}>
             <button type="button" class="ongoing-group-header">
@@ -1424,7 +1433,7 @@
         btn.addEventListener("click", () => {
           const card = btn.closest(".month-group-card");
           const raw = card.getAttribute("data-month");
-          const key = raw === NEED_CHECK_GROUP ? NEED_CHECK_GROUP : Number(raw);
+          const key = raw === NEED_CHECK_GROUP || raw === SCHOOL_GROUP ? raw : Number(raw);
           if (openMonthGroups.has(key)) openMonthGroups.delete(key);
           else openMonthGroups.add(key);
           card.classList.toggle("open");

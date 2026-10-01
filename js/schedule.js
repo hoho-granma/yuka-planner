@@ -35,7 +35,7 @@ const ENGINE_CATEGORY_GROUP = {
 };
 const ENGINE_CATEGORY_LABEL = {
   HC: "건강검진", VX: "예방접종", DV: "성장발달", FD: "이유식·영양", OR: "구강",
-  SL: "수면", SF: "안전", LF: "생활", CR: "보육", SB: "혜택·제도",
+  SL: "수면", SF: "안전", LF: "생활", CR: "보육", SB: "혜택·제도", SC: "학교·입학",
 };
 const ENGINE_STATUS_LABEL = {
   SCHEDULED: "예정",
@@ -175,6 +175,11 @@ function buildTodoEngineEvents(profile, todoDefinitions, completions) {
       officialUrl: null,
       isEngineEvent: true,
       engineStatus: inst.status,
+      // A6-4: 학교 단계(SCHOOL_TERM_WINDOW) 정의의 이벤트에만 현재 학교 단계를 실어 보낸다(ChildTimeline.isEventVisible 이 월령 대신 이 값으로 노출을 판단).
+      // 정책이 없거나 확인되지 않으면 null → 보이지 않는다. 다른 정의의 이벤트에는 이 필드가 없다.
+      ...(td && td.triggerType === "SCHOOL_TERM_WINDOW"
+        ? { schoolStage: timeline && timeline.school ? { stageBand: timeline.school.stageBand, grade: timeline.school.grade } : null }
+        : {}),
     });
   }
   return events;
