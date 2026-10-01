@@ -9,6 +9,7 @@ const path = require("path");
 const vm = require("vm");
 
 const HS = require("../js/household-sync.js");
+const US = require("../js/user-schedule.js");
 const FEATURES_SRC = fs.readFileSync(path.join(__dirname, "..", "js", "feature-flags.js"), "utf8");
 
 let passed = 0;
@@ -97,11 +98,14 @@ const mk = (flag, extra = {}) => {
       await hs.upsertMember("h1", { role: "MOM", label: "엄마" }),
       await hs.removeMember("h1", "m1"),
       await hs.reissueCode("h1", "OLD"),
+      await hs.createSchedule("h1", { v: 1 }),
+      await hs.patchSchedule("h1", "s1", { title: "x" }),
       await hs.flush("h1"),
       hs.startListening("h1"),
     ];
     r.forEach((x) => assert.deepStrictEqual({ ok: x.ok, reason: x.reason }, { ok: false, reason: "disabled" }));
     assert.strictEqual(hs.getMirror("h1"), null);
+    assert.deepStrictEqual(hs.getSchedules("h1"), []);
     assert.strictEqual(hs.getSavedCode(), null);
     assert.strictEqual(hs.attachLifecycle({ addEventListener() { throw new Error("등록됨"); } }, () => "h1"), false);
     assert.deepStrictEqual(hs.getStatus("h1").pending, 0);
@@ -171,7 +175,9 @@ const mk = (flag, extra = {}) => {
     await hs.addChild(r.householdId, { familyCode: "ZZZ999", displayName: "둘째" });
     await hs.removeChild(r.householdId, r.childKey);
     await hs.reissueCode(r.householdId, r.code);
-    assert(adapter.writes().length >= 8);
+    const sc = await hs.createSchedule(r.householdId, US.buildCreateDoc({ sourceType: "MANUAL", title: "수업", category: "LESSON", scope: "FAMILY", allDay: true, dateKind: "FIXED", eventDate: "2026-10-06" }, 1).doc);
+    await hs.patchSchedule(r.householdId, sc.scheduleId, { title: "수정", updatedAt: 2 });
+    assert(adapter.writes().length >= 10);
     adapter.writes().forEach((w) => assert(/^(households|householdCodes)\//.test(w[1]), "허용 밖 경로: " + w[1]));
     assert(!adapter.writes().some((w) => /^families\//.test(w[1])));
   });
@@ -275,12 +281,13 @@ const mk = (flag, extra = {}) => {
     assert.strictEqual(A.hs.getMirror(r.householdId).children[r.childKey].displayName, "은찬(로컬)");
   });
 
-  await test("리스너: 3개 등록, stopListening 이 모두 해제하고 재시작 시 중복 등록하지 않는다", async () => {
+  await test("리스너: 4개 등록(가구·아이·담당자·일정), stopListening 이 모두 해제하고 재시작 시 중복 등록하지 않는다", async () => {
     const A = mk(true);
     A.hs.startListening("h1");
-    assert.strictEqual(A.adapter.listeners.length, 3);
+    assert.strictEqual(A.adapter.listeners.length, 4);
+    assert(A.adapter.listeners.some((l) => l.p === "households/h1/schedules"));
     A.hs.startListening("h1");
-    assert.strictEqual(A.adapter.listeners.filter((x) => !x.off).length, 3);
+    assert.strictEqual(A.adapter.listeners.filter((x) => !x.off).length, 4);
     A.hs.stopListening();
     assert(A.adapter.listeners.every((x) => x.off));
   });
@@ -294,6 +301,150 @@ const mk = (flag, extra = {}) => {
     assert.strictEqual(typeof A.adapter.docs.get(`households/${r.householdId}/children/${r.childKey}`).removedAt, "number");
     assert.strictEqual(typeof A.adapter.docs.get(`households/${r.householdId}/members/${mid}`).deletedAt, "number");
     assert(!A.adapter.calls.some((c) => c[0] === "delete"));
+  });
+
+  console.log("\n사용자 일정 I/O (B4)");
+  const mkDoc = (over = {}) => {
+    const r = US.buildCreateDoc({ sourceType: "MANUAL", title: "피아노", category: "LESSON", scope: "CHILD", childKeys: ["c1"], allDay: false, startTime: "16:00", dateKind: "FIXED", eventDate: "2026-10-06", ...over }, 1000);
+    assert(r.ok, JSON.stringify(r.errors));
+    return r.doc;
+  };
+
+  await test("createSchedule: households/{hid}/schedules/{sid} 에 전체 문서를 set(병합 없음)하고 미러에 반영, 문서 ID 반환", async () => {
+    const A = mk(true);
+    const doc = mkDoc();
+    const r = await A.hs.createSchedule("h1", doc);
+    assert(r.ok && r.scheduleId && !r.pending);
+    const w = A.adapter.writes().filter((c) => c[1].includes("/schedules/"));
+    assert.strictEqual(w.length, 1);
+    assert.strictEqual(w[0][0], "set");
+    assert.strictEqual(w[0][1], `households/h1/schedules/${r.scheduleId}`);
+    assert.strictEqual(w[0][3], undefined, "merge 옵션 없음");
+    assert.deepStrictEqual(A.adapter.docs.get(w[0][1]), doc);
+    assert.deepStrictEqual(A.hs.getSchedules("h1").map((x) => x.id), [r.scheduleId]);
+    assert.strictEqual(A.hs.getSchedules("h1")[0].title, "피아노");
+  });
+
+  await test("patchSchedule: update 로 보내고(dot-path 포함), 미러 결과가 UserSchedule.buildPatch().after 와 같다", async () => {
+    const A = mk(true);
+    const recurring = mkDoc({ eventDate: undefined, recurrence: { freq: "WEEKLY", interval: 1, byDay: ["TU"], startDate: "2026-10-06", until: null } });
+    const { scheduleId } = await A.hs.createSchedule("h1", recurring);
+    const b1 = US.buildPatch(recurring, { exceptions: { "2026-10-13": { status: "CANCELLED", note: "휴강" } }, memo: "메모" }, 2000);
+    assert(b1.ok);
+    await A.hs.patchSchedule("h1", scheduleId, b1.patch);
+    assert.deepStrictEqual(A.hs.getSchedules("h1")[0], { ...b1.after, id: scheduleId });
+    const up = A.adapter.writes().find((c) => c[0] === "update");
+    assert.deepStrictEqual(Object.keys(up[2]).sort(), ["exceptions.2026-10-13", "memo", "updatedAt"]);
+    // 예외 제거(null) + memo 삭제(null) → 필드가 사라진다
+    const b2 = US.buildPatch(b1.after, { exceptions: { "2026-10-13": null }, memo: null }, 3000);
+    assert(b2.ok && b2.patch["exceptions.2026-10-13"] === null && b2.patch.memo === null);
+    await A.hs.patchSchedule("h1", scheduleId, b2.patch);
+    assert.deepStrictEqual(A.hs.getSchedules("h1")[0], { ...b2.after, id: scheduleId });
+    assert(!("memo" in A.hs.getSchedules("h1")[0]) && !("exceptions" in A.hs.getSchedules("h1")[0]));
+  });
+
+  await test("완료·소프트 삭제 패치도 미러에 같은 결과로 반영된다(status DONE → deletedAt)", async () => {
+    const A = mk(true);
+    const doc = mkDoc();
+    const { scheduleId } = await A.hs.createSchedule("h1", doc);
+    const done = US.markDone(doc, 2000);
+    await A.hs.patchSchedule("h1", scheduleId, done.patch);
+    const del = US.softDelete(done.after, 3000);
+    await A.hs.patchSchedule("h1", scheduleId, del.patch);
+    assert.deepStrictEqual(A.hs.getSchedules("h1")[0], { ...del.after, id: scheduleId });
+    assert.strictEqual(A.hs.getSchedules("h1")[0].status, "DONE");
+    assert.strictEqual(A.hs.getSchedules("h1")[0].deletedAt, 3000);
+    assert(A.adapter.docs.has(`households/h1/schedules/${scheduleId}`), "하드 삭제 없음");
+    assert(!A.adapter.calls.some((c) => c[0] === "delete"));
+  });
+
+  await test("오프라인: 일정 생성·수정이 순서대로 대기열에 쌓이고 복구 후 flush 로 서버에 같은 결과", async () => {
+    const A = mk(true);
+    A.adapter.fail = "unavailable";
+    const doc = mkDoc();
+    const { scheduleId, pending } = await A.hs.createSchedule("h1", doc);
+    assert.strictEqual(pending, true);
+    const p = US.buildPatch(doc, { title: "바이올린" }, 2000);
+    const r2 = await A.hs.patchSchedule("h1", scheduleId, p.patch);
+    assert.strictEqual(r2.pending, true);
+    assert.strictEqual(A.hs.getStatus("h1").pending, 2);
+    assert.strictEqual(A.hs.getSchedules("h1")[0].title, "바이올린", "로컬 즉시 반영");
+    A.adapter.fail = null;
+    A.adapter.calls.length = 0;
+    const f = await A.hs.flush("h1");
+    assert.strictEqual(f.remaining, 0);
+    assert.deepStrictEqual(A.adapter.writes().map((c) => c[0]), ["set", "update"], "생성 → 수정 순서");
+    assert.deepStrictEqual(A.adapter.docs.get(`households/h1/schedules/${scheduleId}`), p.after);
+  });
+
+  await test("서버 스냅샷: 대기열에 없는 일정은 서버 값, 대기열에 있는 일정은 로컬 그대로(지운 필드가 되살아나지 않음)", async () => {
+    const A = mk(true);
+    const doc = mkDoc({ memo: "서버메모" });
+    const { scheduleId } = await A.hs.createSchedule("h1", doc);
+    A.adapter.fail = "unavailable";
+    const p = US.buildPatch(doc, { memo: null, title: "로컬수정" }, 2000);
+    await A.hs.patchSchedule("h1", scheduleId, p.patch);
+    A.adapter.fail = null;
+    A.hs.startListening("h1");
+    const l = A.adapter.listeners.find((x) => x.p.endsWith("/schedules"));
+    l.onData([{ id: scheduleId, data: doc }, { id: "other", data: mkDoc({ title: "다른 기기 일정" }) }]);
+    const got = Object.fromEntries(A.hs.getSchedules("h1").map((x) => [x.id, x]));
+    assert.strictEqual(got[scheduleId].title, "로컬수정");
+    assert(!("memo" in got[scheduleId]), "서버의 옛 memo 가 되살아나면 안 된다");
+    assert.strictEqual(got.other.title, "다른 기기 일정");
+    // flush 후에는 서버 값이 이긴다
+    await A.hs.flush("h1");
+    l.onData([{ id: scheduleId, data: p.after }]);
+    assert.deepStrictEqual(A.hs.getSchedules("h1").map((x) => x.id), [scheduleId], "서버 목록에 없는 다른 기기 일정은 사라진다(서버가 기준)");
+  });
+
+  await test("참여(joinHousehold): 가구의 일정 목록도 미러에 들어온다 / 다른 기기가 보낸 일정이 getSchedules 에 보인다", async () => {
+    const A = mk(true);
+    const r = await A.hs.createHousehold({});
+    const { scheduleId } = await A.hs.createSchedule(r.householdId, mkDoc({ scope: "FAMILY", childKeys: undefined, category: "FAMILY", title: "가족 외식" }));
+    const B = mk(true, { adapter: A.adapter });
+    const j = await B.hs.joinHousehold(r.code);
+    assert(j.ok);
+    assert.deepStrictEqual(B.hs.getSchedules(r.householdId).map((x) => [x.id, x.title]), [[scheduleId, "가족 외식"]]);
+    assert(A.adapter.calls.some((c) => c[0] === "list" && c[1].endsWith("/schedules")));
+  });
+
+  await test("예전 미러(schedules 필드 없음)도 안전하게 읽는다", async () => {
+    const storage = memStorage();
+    storage.setItem("hannun_household:h1", JSON.stringify({ householdId: "h1", household: null, children: {}, members: {} }));
+    const A = mk(true, { storage });
+    assert.deepStrictEqual(A.hs.getSchedules("h1"), []);
+    assert.deepStrictEqual(A.hs.getMirror("h1").schedules, {});
+  });
+
+  await test("일정 쓰기 경로는 households/** 뿐 — families/** 쓰기 0건(생성·수정·완료·삭제·오프라인 flush 모두)", async () => {
+    const A = mk(true);
+    const doc = mkDoc();
+    const { scheduleId } = await A.hs.createSchedule("h1", doc);
+    A.adapter.fail = "unavailable";
+    await A.hs.patchSchedule("h1", scheduleId, US.markDone(doc, 2000).patch);
+    A.adapter.fail = null;
+    await A.hs.flush("h1");
+    await A.hs.patchSchedule("h1", scheduleId, US.softDelete(US.markDone(doc, 2000).after, 3000).patch);
+    assert(A.adapter.writes().length >= 3);
+    A.adapter.writes().forEach((w) => assert(/^households\/h1\/schedules\//.test(w[1]), w[1]));
+  });
+
+  await test("실제 Firestore 어댑터: update 패치의 null 은 FieldValue.delete() 로 바뀌고 나머지 값은 그대로", async () => {
+    const SENTINEL = { __delete: true };
+    global.firebase = { firestore: { FieldValue: { delete: () => SENTINEL } } };
+    let sent = null;
+    const node = (path) => ({ collection: (c) => node(path + "/" + c), doc: (d) => node(path + "/" + d), update: async (d) => ((sent = d), (sent.__path = path)) });
+    const fakeDb = { collection: (c) => node(c) };
+    const ad = HS.firestoreAdapter(() => fakeDb);
+    await ad.update("households/h1/schedules/s1", { title: "x", memo: null, "exceptions.2026-10-13": null, "exceptions.2026-10-14": { status: "DONE" }, updatedAt: 5 });
+    delete global.firebase;
+    assert.strictEqual(sent.__path, "households/h1/schedules/s1");
+    assert.strictEqual(sent.memo, SENTINEL);
+    assert.strictEqual(sent["exceptions.2026-10-13"], SENTINEL);
+    assert.deepStrictEqual(sent["exceptions.2026-10-14"], { status: "DONE" });
+    assert.strictEqual(sent.title, "x");
+    assert.strictEqual(sent.updatedAt, 5);
   });
 
   console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);

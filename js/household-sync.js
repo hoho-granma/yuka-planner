@@ -49,7 +49,12 @@
         return { exists: d.exists, data: d.exists ? d.data() : null };
       },
       set: (path, data, opts) => refOf(path).set(data, opts),
-      update: (path, data) => refOf(path).update(data),
+      // update 패치의 값이 null 이면 그 필드를 지운다(UserSchedule.buildPatch 계약). 값이 null 로 저장되지 않는다.
+      update: (path, data) => {
+        const out = {};
+        for (const [k, v] of Object.entries(data)) out[k] = v === null ? firebase.firestore.FieldValue.delete() : v;
+        return refOf(path).update(out);
+      },
       async list(path) {
         const snap = await refOf(path).get();
         return snap.docs.map((d) => ({ id: d.id, data: d.data() }));
@@ -111,8 +116,12 @@
       }
     }
     const getSavedCode = () => (enabled() && storage ? storage.getItem(CODE_KEY) : null);
-    const emptyMirror = (hid) => ({ householdId: hid, household: null, children: {}, members: {} });
-    const loadMirror = (hid) => readJson(MIRROR_PREFIX + hid, null) || emptyMirror(hid);
+    const emptyMirror = (hid) => ({ householdId: hid, household: null, children: {}, members: {}, schedules: {} });
+    const loadMirror = (hid) => {
+      const m = readJson(MIRROR_PREFIX + hid, null) || emptyMirror(hid);
+      if (!m.schedules) m.schedules = {}; // B3 까지 저장된 예전 미러에는 schedules 가 없다
+      return m;
+    };
     const saveMirror = (m) => writeJson(MIRROR_PREFIX + m.householdId, m);
     const loadPending = (hid) => readJson(PENDING_PREFIX + hid, []);
     const savePending = (hid, q) => writeJson(PENDING_PREFIX + hid, q);
@@ -129,6 +138,36 @@
       if (seg.length === 2) m.household = { ...(m.household || {}), ...data };
       else if (seg[2] === "children") m.children[seg[3]] = { ...(m.children[seg[3]] || {}), ...data };
       else if (seg[2] === "members") m.members[seg[3]] = { ...(m.members[seg[3]] || {}), ...data };
+      else if (seg[2] === "schedules") applyScheduleOp(m, seg[3], op);
+    }
+
+    /** 일정: set(전체 문서)는 통째로, update 는 "exceptions.2026-10-08" 같은 dot-path 와 null(=필드 삭제)을 Firestore 와 같은 규칙으로 반영한다. */
+    function applyScheduleOp(m, id, op) {
+      if (op.op === "set") {
+        m.schedules[id] = op.merge ? { ...(m.schedules[id] || {}), ...op.payload } : { ...op.payload };
+        return;
+      }
+      const cur = m.schedules[id];
+      if (!cur) return; // 미러에 없는 문서의 update 는 서버 스냅샷이 채워 준다
+      for (const [key, val] of Object.entries(op.payload)) {
+        const parts = key.split(".");
+        let o = cur;
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!o[parts[i]] || typeof o[parts[i]] !== "object") {
+            if (val === null) {
+              o = null;
+              break;
+            }
+            o[parts[i]] = {};
+          }
+          o = o[parts[i]];
+        }
+        if (!o) continue;
+        const last = parts[parts.length - 1];
+        if (val === null) delete o[last];
+        else o[last] = val;
+      }
+      if (cur.exceptions && Object.keys(cur.exceptions).length === 0) delete cur.exceptions;
     }
 
     async function run(op) {
@@ -223,11 +262,12 @@
       const hid = c.data.householdId;
       const h = await a.get("households/" + hid);
       if (!h.exists) return { ok: false, reason: "not-found" };
-      const [kids, members] = await Promise.all([a.list(`households/${hid}/children`), a.list(`households/${hid}/members`)]);
+      const [kids, members, schedules] = await Promise.all([a.list(`households/${hid}/children`), a.list(`households/${hid}/members`), a.list(`households/${hid}/schedules`)]);
       const m = loadMirror(hid);
       m.household = h.data;
       mergeCollection(m, "children", kids, hid);
       mergeCollection(m, "members", members, hid);
+      mergeCollection(m, "schedules", schedules, hid);
       saveMirror(m);
       if (storage) storage.setItem(CODE_KEY, code);
       return { ok: true, householdId: hid, mirror: m };
@@ -243,7 +283,8 @@
       );
       const next = {};
       docs.forEach((d) => {
-        next[d.id] = pendingIds.has(d.id) ? { ...d.data, ...(m[kind][d.id] || {}) } : d.data;
+        if (pendingIds.has(d.id)) next[d.id] = kind === "schedules" && m[kind][d.id] ? m[kind][d.id] : { ...d.data, ...(m[kind][d.id] || {}) };
+        else next[d.id] = d.data;
       });
       pendingIds.forEach((id) => {
         if (!next[id] && m[kind][id]) next[id] = m[kind][id];
@@ -285,6 +326,26 @@
       return write(hid, { op: "set", merge: true, path: `households/${hid}/members/${memberId}`, payload: { deletedAt: t, updatedAt: t } });
     }
 
+    // ── 사용자 일정(households/{hid}/schedules/{sid}) ────────────────────────
+    // 문서 모양·검증은 UserSchedule(B2)이 정한다. 여기서는 저장 위치·미러·대기열만 맡는다(스키마를 다시 정의하지 않는다).
+    /** doc: UserSchedule.buildCreateDoc 의 결과. 문서 ID 는 클라이언트가 만든다. */
+    async function createSchedule(hid, doc) {
+      if (!enabled()) return DISABLED;
+      const scheduleId = newId("s");
+      const r = await write(hid, { op: "set", path: `households/${hid}/schedules/${scheduleId}`, payload: { ...doc } });
+      return { ...r, scheduleId };
+    }
+    /** patch: UserSchedule.buildPatch 의 patch(평탄 맵, "exceptions.<날짜>" dot-path, null=필드 삭제). 문서 단위 update. */
+    async function patchSchedule(hid, scheduleId, patch) {
+      if (!enabled()) return DISABLED;
+      return write(hid, { op: "update", path: `households/${hid}/schedules/${scheduleId}`, payload: { ...patch } });
+    }
+    /** 미러의 일정 목록 [{id, ...문서}]. CalendarModel 의 user.schedules 입력 형태. */
+    function getSchedules(hid) {
+      if (!enabled() || !hid) return [];
+      return Object.entries(loadMirror(hid).schedules).map(([id, d]) => ({ ...d, id }));
+    }
+
     /** 가구 코드 재발급 — 새 코드 문서를 만들고 이전 코드를 비활성화한다(R3). */
     async function reissueCode(hid, oldCode) {
       if (!enabled()) return DISABLED;
@@ -313,6 +374,7 @@
         a.listen("households/" + hid, (d) => d && apply((m) => (m.household = { ...d.data })), err),
         a.listen(`households/${hid}/children`, (docs) => apply((m) => mergeCollection(m, "children", docs, hid)), err),
         a.listen(`households/${hid}/members`, (docs) => apply((m) => mergeCollection(m, "members", docs, hid)), err),
+        a.listen(`households/${hid}/schedules`, (docs) => apply((m) => mergeCollection(m, "schedules", docs, hid)), err),
       ];
       return { ok: true };
     }
@@ -362,6 +424,9 @@
       removeChild,
       upsertMember,
       removeMember,
+      createSchedule,
+      patchSchedule,
+      getSchedules,
       reissueCode,
       flush,
       startListening,

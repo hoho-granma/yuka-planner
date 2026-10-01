@@ -7,9 +7,11 @@
  *   - markup(prefix): 팝업 마크업(수정 화면이 주입). 온보딩은 index.html 의 기존 마크업을 그대로 쓴다.
  *   - bind(els, opts): 요소에 동작을 연결하고 { set, reset, get } 을 돌려준다(브라우저 전용).
  *
- * 선택 범위(기존 온보딩 규칙 그대로, 연도 하한만 확장)
- *   - 태어난 아이: 오늘까지, 연도 하한 = 올해 − yearsBack (ChildTimeline.SERVICE_RANGE.pickerYearsBack — 올해 초등 6학년의 출생연도).
- *   - 임신 중(출산 예정일): 오늘 ~ 오늘+300일, 연도는 올해와 내년.
+ * 선택 범위(stage)
+ *   - "born"      태어난 아이: 오늘까지, 연도 하한 = 올해 − yearsBack (ChildTimeline.SERVICE_RANGE.pickerYearsBack — 올해 초등 6학년의 출생연도).
+ *   - "pregnant"  임신 중(출산 예정일): 오늘 ~ 오늘+300일, 연도는 올해와 내년.
+ *   - "schedule"  가족 일정 날짜(B4): 작년 1월 1일 ~ 후년 12월 31일(과거·미래 모두 선택 가능). 연도 목록은 내림차순 [올해+2 … 올해−1].
+ *   - 어느 stage 든 opts.getMinDate 가 있으면 그 날짜 이전은 막는다(예: 연속 일정의 마지막 날은 시작일 이후).
  */
 (function (root, factory) {
   const mod = factory();
@@ -19,6 +21,8 @@
   "use strict";
 
   const DAY = 86400000;
+  const SCHEDULE_YEARS_BACK = 1; // 작년
+  const SCHEDULE_YEARS_FORWARD = 2; // 후년
   const sod = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -27,14 +31,24 @@
   function birthYears(stage, today, yearsBack) {
     const y = today.getFullYear();
     if (stage === "pregnant") return [y + 1, y];
+    if (stage === "schedule") {
+      const ys = [];
+      for (let i = y + SCHEDULE_YEARS_FORWARD; i >= y - SCHEDULE_YEARS_BACK; i--) ys.push(i);
+      return ys;
+    }
     const out = [];
     for (let i = y; i >= y - yearsBack; i--) out.push(i);
     return out;
   }
 
-  /** 그 날짜를 고를 수 있는가. 오늘 기준(시각은 무시). */
-  function isSelectable(date, stage, today, yearsBack) {
+  /** 그 날짜를 고를 수 있는가. 오늘 기준(시각은 무시). minDate(선택)가 있으면 그 날짜 이전은 막는다. */
+  function isSelectable(date, stage, today, yearsBack, minDate) {
     const t = sod(today);
+    if (minDate && date < sod(minDate)) return false;
+    if (stage === "schedule") {
+      const y = t.getFullYear();
+      return date.getFullYear() >= y - SCHEDULE_YEARS_BACK && date.getFullYear() <= y + SCHEDULE_YEARS_FORWARD;
+    }
     if (stage === "pregnant") return !(date < t || date > new Date(t.getTime() + 300 * DAY));
     if (date > t) return false;
     return yearsBack === undefined || date.getFullYear() >= t.getFullYear() - yearsBack;
@@ -72,7 +86,7 @@
 
   /**
    * 요소에 동작을 연결한다. els: { btn, display, hidden, popup, prevYear, prevMonth, nextMonth, nextYear, yearSel, monthSel, grid } (DOM 요소)
-   * opts: { getStage: () => "born"|"pregnant", yearsBack, format: (Date) => string, placeholder, onChange?: (Date) => void }
+   * opts: { getStage: () => "born"|"pregnant"|"schedule", yearsBack, format: (Date) => string, placeholder, onChange?: (Date) => void, getMinDate?: () => Date|null }
    */
   function bind(els, opts) {
     const o = { placeholder: "날짜를 선택해주세요", ...opts };
@@ -145,7 +159,7 @@
         cell.type = "button";
         cell.className = "dp-cell dp-day";
         cell.textContent = d;
-        if (!isSelectable(date, stage(), t, o.yearsBack)) {
+        if (!isSelectable(date, stage(), t, o.yearsBack, o.getMinDate ? o.getMinDate() : null)) {
           cell.disabled = true;
           cell.classList.add("dp-disabled");
         }

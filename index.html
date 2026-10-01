@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#ff8a5c" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
-<link rel="stylesheet" href="css/style.css?v=51" />
+<link rel="stylesheet" href="css/style.css?v=52" />
 </head>
 <body>
   <main id="app">
@@ -162,6 +162,7 @@
           <div class="cal-legend" id="cal-legend"></div>
         </div>
 
+        <div id="us-filter-slot"></div>
         <div class="card calendar-card">
           <div class="calendar-nav">
             <button id="btn-prev-month" class="btn-icon" aria-label="이전 달">◀</button>
@@ -177,11 +178,13 @@
           </div>
         </div>
 
+        <div id="us-period-slot"></div>
         <div class="card selected-day-card">
           <div class="selected-day-handle"></div>
           <h3 id="selected-day-title">선택한 날짜</h3>
           <div id="selected-day-list" class="event-list"></div>
           <p id="selected-day-empty" class="empty hidden">이 날 표시할 항목이 없어요.</p>
+          <div id="us-add-slot"></div>
         </div>
       </div>
 
@@ -250,7 +253,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="js/sync.js?v=4"></script>
   <script src="js/feature-flags.js?v=2"></script>
-  <script src="js/household-sync.js?v=1"></script>
+  <script src="js/household-sync.js?v=2"></script>
   <script src="js/household-view.js?v=1"></script>
   <script src="js/version.js?v=1"></script>
   <script src="js/date-calc.js?v=1"></script>
@@ -261,9 +264,12 @@
   <script src="js/records.js?v=2"></script>
   <script src="js/home.js?v=20"></script>
   <script src="js/subsidy-view.js?v=3"></script>
-  <script src="js/date-picker.js?v=1"></script>
+  <script src="js/date-picker.js?v=2"></script>
+  <script src="js/user-schedule.js?v=1"></script>
+  <script src="js/calendar-model.js?v=1"></script>
+  <script src="js/user-schedule-view.js?v=1"></script>
   <script src="js/records-view.js?v=5"></script>
-  <script src="js/app.js?v=54"></script>
+  <script src="js/app.js?v=55"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

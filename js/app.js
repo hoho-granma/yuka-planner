@@ -923,22 +923,33 @@
     }
 
     const byUrgency = (a, b) => (!!completed[a.id] - !!completed[b.id]) || (isImportantEvent(b) ? 1 : 0) - (isImportantEvent(a) ? 1 : 0);
+    // 가족 캘린더(가구)가 있으면 추가한 일정까지 합친 월 모델을 쓴다. 없으면 null → 아래는 기존 계산 그대로.
+    const usModel = usActive() ? usBuildModel(toISODate(firstDay), toISODate(new Date(year, month, daysInMonth))) : null;
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      const { fixed, planned } = calendarDayItems(date);
+      const dm = usModel ? usModel.days.get(toISODate(date)) : null;
+      const { fixed, planned } = dm ? { fixed: dm.benefit, planned: dm.planned } : calendarDayItems(date);
       const marks = [...fixed, ...planned].sort(byUrgency);
+      const userBars = dm ? dm.user : [];
+      const totalMarks = marks.length + userBars.length;
       const cell = document.createElement("div");
       cell.className =
-        "day-cell" + (sameDay(date, today) ? " today" : "") + (sameDay(date, selectedCalendarDate) ? " selected" : "") + (marks.length ? " has-event" : "");
-      // 미완료: 카테고리색 원. 완료: 연회색 ✓.
-      const dotHtml = marks
+        "day-cell" + (sameDay(date, today) ? " today" : "") + (sameDay(date, selectedCalendarDate) ? " selected" : "") + (totalMarks ? " has-event" : "");
+      // 추가한 일정: 아이색 막대(맨 앞). 자동 일정 미완료: 카테고리색 원, 완료: 연회색 ✓.
+      const barHtml = userBars
         .slice(0, 3)
-        .map((e) => (completed[e.id] ? `<span class="cal-marker done-soft">✓</span>` : `<span class="cal-marker todo" style="background:${calGroupFor(e).color}"></span>`))
+        .map((o) => `<span class="cal-bar${o.status === "DONE" ? " done" : ""}" style="background:${UserScheduleView.occurrenceColor(o, usLinks())}"></span>`)
         .join("");
-      const moreCount = marks.length - 3;
+      const dotHtml =
+        barHtml +
+        marks
+          .slice(0, 3 - Math.min(3, userBars.length))
+          .map((e) => (completed[e.id] ? `<span class="cal-marker done-soft">✓</span>` : `<span class="cal-marker todo" style="background:${calGroupFor(e).color}"></span>`))
+          .join("");
+      const moreCount = totalMarks - 3;
       const moreHtml = moreCount > 0 ? `<span class="cal-marker-more">+${moreCount}</span>` : "";
       cell.setAttribute("role", "button");
-      cell.setAttribute("aria-label", `${month + 1}월 ${day}일 · 항목 ${marks.length}건`);
+      cell.setAttribute("aria-label", `${month + 1}월 ${day}일 · 항목 ${totalMarks}건`);
       cell.innerHTML = `<span class="num">${day}</span><span class="markers">${dotHtml}${moreHtml}</span>`;
       cell.addEventListener("click", () => {
         selectedCalendarDate = date;
@@ -951,6 +962,7 @@
       });
       grid.appendChild(cell);
     }
+    usRenderCalendarSlots(usModel);
   }
 
   /** 선택한 날짜 패널 — "이 날 신청 시작하는 지원금"과 "이 날 추천 항목"을 나눠 보여준다. */
@@ -967,6 +979,7 @@
       .join("");
     el("selected-day-list").innerHTML = html;
     el("selected-day-empty").classList.toggle("hidden", fixed.length + planned.length > 0);
+    usRenderDayPanel(date, byUrgency);
   }
 
   function remainingItemHtml(e) {
@@ -2171,7 +2184,7 @@
       } catch (e) {
         console.error("가족 캘린더 재전송 실패", e);
       }
-      hhRender();
+      hhAfterSync();
     };
     window.addEventListener("online", go);
     document.addEventListener("visibilitychange", () => {
@@ -2179,9 +2192,14 @@
     });
     go();
   }
+  /** 가구 데이터가 바뀐 뒤(리스너·재전송·참여): 프로필 시트의 상태 줄과 캘린더(추가한 일정)를 다시 그린다. */
+  function hhAfterSync() {
+    hhRender();
+    usRefreshCalendar();
+  }
   function hhStart() {
     if (!hh.hid) return;
-    HouseholdSync.startListening(hh.hid, hhRender);
+    HouseholdSync.startListening(hh.hid, hhAfterSync);
     hhAttachLifecycle();
   }
   function hhSetJoined(hid, code) {
@@ -2263,6 +2281,7 @@
       hh.view = hh.hid && hh.code ? "active" : "none";
     }
     hhRender();
+    usRefreshCalendar();
   }
   /** 앱 시작: 이 기기에 가구가 있으면 미러·리스너·대기열 재시도를 시작한다. 실패해도 기존 가족코드 흐름은 막지 않는다. */
   async function hhInit() {
@@ -2274,7 +2293,7 @@
     hhStart();
     try {
       await HouseholdSync.joinHousehold(hh.code);
-      hhRender();
+      hhAfterSync();
     } catch (e) {
       if (e && e.code === "permission-denied") hh.rulesUnavailable = true;
     }
@@ -2312,6 +2331,323 @@
       console.error("가족 캘린더 참여 실패", e);
       hhSetEntryMessage(HouseholdView.failMessage(e));
     }
+  }
+
+  // ── 가족 캘린더의 "추가한 일정" ──────────────────────────────────────────────────────────────
+  // 문구·마크업·폼 변환: js/user-schedule-view.js / 검증·패치: js/user-schedule.js / 월 집계: js/calendar-model.js / 저장·미러·대기열: js/household-sync.js.
+  // 가구가 있고 플래그(FEATURES.household)가 켜졌을 때만 동작한다. 자동 일정(autoEvents·displayDate·visibleSchedule·completed·진행률)은 읽기만 하고 바꾸지 않는다.
+  // 추가한 일정의 완료는 일정 문서의 status 에만 기록한다(completed 와 분리). 캘린더는 하나이며 scope 는 CHILD / FAMILY 두 가지뿐이다.
+  const us = { selection: "ALL", showAuto: true, form: null, messages: [], saving: false, detailId: null };
+  const usReady = () => typeof UserScheduleView !== "undefined" && typeof UserSchedule !== "undefined" && typeof CalendarModel !== "undefined";
+  const usActive = () => hhEnabled() && usReady() && !!hh.hid && !!hh.code;
+  const usMirror = () => (hh.hid ? HouseholdSync.getMirror(hh.hid) : null);
+  const usLinks = () => Object.entries((usMirror() || {}).children || {}).map(([childKey, l]) => ({ childKey, ...l }));
+  const usMembers = () => Object.entries((usMirror() || {}).members || {}).map(([memberId, m]) => ({ memberId, ...m }));
+  const usDocs = () => (hh.hid ? HouseholdSync.getSchedules(hh.hid) : []);
+  const usDocById = (id) => usDocs().find((d) => d.id === id) || null;
+  /** 지금 보는 아이의 가구 내 childKey(링크돼 있지 않으면 null). */
+  const usActiveChildKey = () => {
+    const l = usLinks().find((x) => !x.removedAt && x.familyCode === familyCode);
+    return l ? l.childKey : null;
+  };
+  /** 월/일 범위의 캘린더 모델(자동 일정은 읽기 전용 입력). */
+  function usBuildModel(startIso, endIso, filterOverride) {
+    return CalendarModel.buildCalendarModel({
+      view: "month",
+      range: { start: startIso, end: endIso },
+      filter: filterOverride || UserScheduleView.toModelFilter(us.selection, us.showAuto, usLinks()),
+      auto: { events: calendarSchedule(), displayDates: calDisplayDays, completed, childKey: usActiveChildKey() },
+      user: { schedules: usDocs(), childLinks: usLinks(), members: usMembers() },
+    });
+  }
+  function usRefreshCalendar() {
+    if (!profile || !hhEnabled() || el("view-calendar").classList.contains("hidden")) return;
+    renderCalendar();
+    renderSelectedDayPanel();
+    attachListHandlers();
+  }
+  /** 캘린더 위(개수 줄·필터·범례)와 그리드 아래(이번 달 기간 일정) 영역. 가구가 없으면 비워 둔다. */
+  function usRenderCalendarSlots(model) {
+    if (!hhEnabled()) return;
+    const top = el("us-filter-slot");
+    const bottom = el("us-period-slot");
+    if (!top || !bottom) return;
+    if (!model) {
+      top.innerHTML = "";
+      bottom.innerHTML = "";
+      return;
+    }
+    const links = usLinks();
+    // 개수 줄은 날짜 미정(기간) 일정까지 포함해 센다(모델의 userItems 는 칸에 찍히는 일정만 센다).
+    const periodDone = model.periodList.filter((o) => o.status === "DONE").length;
+    const counts = { userItems: model.counts.userItems + model.counts.periodItems, userDone: model.counts.userDone + periodDone };
+    top.innerHTML =
+      `<div class="card us-top"><p class="us-summary">${esc(UserScheduleView.monthSummary(counts))}</p>` +
+      UserScheduleView.renderFilterChips(UserScheduleView.filterChips(links, us.selection), us.showAuto) +
+      `<p class="us-note">${esc(UserScheduleView.MSG.legend)}</p></div>`;
+    const skipped = UserScheduleView.skippedNote(model.skipped);
+    const period = UserScheduleView.renderPeriodSection(UserScheduleView.periodSection(model.periodList, links));
+    bottom.innerHTML = period || skipped ? `<div class="card us-period-card">${period}${skipped ? `<p class="us-note">${esc(skipped)}</p>` : ""}</div>` : "";
+  }
+  /** 선택일 패널: 추가한 일정 / 혜택 신청 시작 / 추천 항목 3구역(가구가 있을 때), 가구가 없으면 추가 영역에 안내만. */
+  function usRenderDayPanel(date, byUrgency) {
+    if (!hhEnabled()) return;
+    const addSlot = el("us-add-slot");
+    if (!addSlot) return;
+    if (!usActive()) {
+      addSlot.innerHTML = UserScheduleView.renderAddButton({ enabled: true, hasHousehold: false });
+      return;
+    }
+    const iso = toISODate(date);
+    const day = usBuildModel(iso, iso).days.get(iso);
+    const panel = UserScheduleView.dayPanel(day, usLinks());
+    const group = (title) => `<h4 class="us-group">${esc(title)}</h4>`;
+    el("selected-day-list").innerHTML =
+      group(panel.added.title) +
+      (panel.added.cards.length ? panel.added.cards.map(UserScheduleView.renderCard).join("") : `<p class="us-note">${esc(panel.emptyText)}</p>`) +
+      (day.benefit.length ? group(panel.benefit.title) + day.benefit.slice().sort(byUrgency).map((e) => eventItemHtml(e)).join("") : "") +
+      (day.planned.length ? group(panel.planned.title) + day.planned.slice().sort(byUrgency).map((e) => eventItemHtml(e)).join("") : "");
+    el("selected-day-empty").classList.add("hidden");
+    addSlot.innerHTML = UserScheduleView.renderAddButton({ enabled: true, hasHousehold: true });
+  }
+
+  // 시트(모달) 조작
+  const usModalNote = (text) => {
+    const m = el("modal-content");
+    const old = m.querySelector(".us-error-note");
+    if (old) old.remove();
+    m.insertAdjacentHTML("beforeend", `<p class="us-error us-error-note">${esc(text)}</p>`);
+  };
+  function usOccurrenceOf(doc) {
+    const startIso = doc.dateKind === "PERIOD" ? doc.periodStart : doc.eventDate;
+    const m = usBuildModel(startIso, startIso, { scope: "ALL", showAuto: false });
+    return doc.dateKind === "PERIOD" ? m.periodList.find((o) => o.scheduleId === doc.id) : (m.days.get(startIso) || { user: [] }).user.find((o) => o.scheduleId === doc.id);
+  }
+  function usOpenDetail(id) {
+    const doc = usDocById(id);
+    const occ = doc && usOccurrenceOf(doc);
+    if (!occ) return;
+    us.detailId = id;
+    modalMode = "profile";
+    el("modal-content").innerHTML = UserScheduleView.renderDetail(UserScheduleView.cardData(occ, usLinks()));
+    el("detail-modal").classList.remove("hidden");
+  }
+  function usOpenForm(id) {
+    const doc = id ? usDocById(id) : null;
+    us.form = doc ? UserScheduleView.formFromSchedule(doc) : UserScheduleView.newForm({ date: toISODate(selectedCalendarDate), activeChildKey: usActiveChildKey(), links: usLinks() });
+    us.messages = [];
+    us.saving = false;
+    usShowForm();
+  }
+  function usShowForm() {
+    modalMode = "profile";
+    el("modal-content").innerHTML = UserScheduleView.renderForm(us.form, usLinks(), { messages: us.messages, saving: us.saving });
+    el("detail-modal").classList.remove("hidden");
+    usBindPickers();
+  }
+  /** 폼에 들어 있는 날짜 칸(최대 2개)에 공통 달력(HNDatePicker, 일정용 범위)을 연결한다. */
+  function usBindPickers() {
+    const P = UserScheduleView.PICKER_PREFIXES;
+    const parse = (iso) => (iso ? new Date(`${iso}T00:00:00`) : null);
+    const bind = (prefix, field, minField) => {
+      if (!el(`${prefix}-dp-btn`)) return;
+      const picker = HNDatePicker.bindById(prefix, {
+        getStage: () => "schedule",
+        format: formatDateKR,
+        placeholder: "날짜를 선택해주세요",
+        getMinDate: minField ? () => parse(us.form[minField]) : undefined,
+        onChange: (d) => {
+          us.form[field] = toISODate(d);
+        },
+      });
+      const v = parse(us.form[field]);
+      if (v) picker.set(v);
+    };
+    bind(P.date, "eventDate");
+    bind(P.end, "endDate", "eventDate");
+    bind(P.periodStart, "periodStart");
+    bind(P.periodEnd, "periodEnd", "periodStart");
+  }
+  function usReadTime(group) {
+    const h = el(`${group}-h`).value;
+    let m = el(`${group}-m`).value;
+    if (!h) return "";
+    if (!m) m = "00"; // 시만 고르면 정각으로
+    return `${h}:${m}`;
+  }
+  async function usSave() {
+    if (us.saving || !us.form) return;
+    const now = Date.now();
+    const prep = UserScheduleView.prepareSave(us.form, now);
+    if (!prep.ok) {
+      us.messages = prep.messages;
+      usShowForm();
+      return;
+    }
+    us.saving = true;
+    us.messages = [];
+    usShowForm();
+    try {
+      if (us.form.mode === "edit") {
+        const before = UserScheduleView.stripId(usDocById(us.form.scheduleId));
+        const changes = UserScheduleView.changesFromForm(us.form, before);
+        if (Object.keys(changes).length) {
+          const r = UserSchedule.buildPatch(before, changes, now);
+          if (!r.ok) {
+            us.saving = false;
+            us.messages = UserScheduleView.messagesFromErrors(r.errors);
+            return usShowForm();
+          }
+          const res = await HouseholdSync.patchSchedule(hh.hid, us.form.scheduleId, r.patch);
+          if (!res.ok) throw new Error(res.reason || "patch-failed");
+        }
+      } else {
+        const r = UserSchedule.buildCreateDoc(prep.input, now);
+        if (!r.ok) {
+          us.saving = false;
+          us.messages = UserScheduleView.messagesFromErrors(r.errors);
+          return usShowForm();
+        }
+        const res = await HouseholdSync.createSchedule(hh.hid, r.doc);
+        if (!res.ok) throw new Error(res.reason || "create-failed");
+      }
+      us.saving = false;
+      us.form = null;
+      closeDetail();
+      usRefreshCalendar();
+    } catch (e) {
+      console.error("일정 저장 실패", e);
+      us.saving = false;
+      us.messages = [UserScheduleView.MSG.saveFail];
+      usShowForm();
+    }
+  }
+  /** 완료/완료 취소 · 삭제(소프트). 추가한 일정의 완료는 일정 문서의 status 에만 기록한다. */
+  async function usPatchAction(id, build) {
+    const doc = usDocById(id);
+    if (!doc) return;
+    try {
+      const r = build(UserScheduleView.stripId(doc), Date.now());
+      if (!r.ok) throw new Error("invalid-patch");
+      const res = await HouseholdSync.patchSchedule(hh.hid, id, r.patch);
+      if (!res.ok) throw new Error(res.reason || "patch-failed");
+      closeDetail();
+      usRefreshCalendar();
+    } catch (e) {
+      console.error("일정 처리 실패", e);
+      usModalNote(UserScheduleView.MSG.actionFail);
+    }
+  }
+  function usOnCalendarClick(ev) {
+    if (!usActive()) return;
+    const f = ev.target.closest("[data-us-filter]");
+    if (f) {
+      us.selection = f.getAttribute("data-us-filter");
+      return usRefreshCalendar();
+    }
+    const a = ev.target.closest("[data-us-action]");
+    if (a) {
+      const act = a.getAttribute("data-us-action");
+      if (act === "toggle-auto") {
+        us.showAuto = !us.showAuto;
+        return usRefreshCalendar();
+      }
+      if (act === "add") return usOpenForm(null);
+    }
+    const c = ev.target.closest(".us-card");
+    if (c) usOpenDetail(c.getAttribute("data-us-id"));
+  }
+  function usOnModalClick(ev) {
+    if (!usActive()) return;
+    const root = ev.target.closest(".us-form, .us-detail, .us-confirm");
+    if (!root) return;
+    const a = ev.target.closest("[data-us-action]");
+    if (a) {
+      const act = a.getAttribute("data-us-action");
+      const id = us.detailId;
+      if (act === "save") return usSave();
+      if (act === "cancel") {
+        us.form = null;
+        return closeDetail();
+      }
+      if (act === "close") return closeDetail();
+      if (act === "toggle-done") return usPatchAction(id, (before, now) => (before.status === "DONE" ? UserSchedule.setStatus(before, "TODO", now) : UserSchedule.markDone(before, now)));
+      if (act === "edit") return usOpenForm(id);
+      if (act === "delete") {
+        el("modal-content").innerHTML = UserScheduleView.renderDeleteConfirm();
+        return;
+      }
+      if (act === "cancel-delete") return usOpenDetail(id);
+      if (act === "confirm-delete") return usPatchAction(id, (before, now) => UserSchedule.softDelete(before, now));
+      return;
+    }
+    if (!us.form) return;
+    const cat = ev.target.closest("[data-us-cat]");
+    if (cat) {
+      us.form.category = cat.getAttribute("data-us-cat");
+      root.querySelectorAll("[data-us-cat]").forEach((x) => x.classList.toggle("active", x === cat));
+      return;
+    }
+    const tgt = ev.target.closest("[data-us-target]");
+    if (tgt) {
+      const v = tgt.getAttribute("data-us-target");
+      if (v === "FAMILY") {
+        us.form.scope = "FAMILY";
+        us.form.childKeys = [];
+      } else {
+        us.form.scope = "CHILD";
+        const ks = new Set(us.form.childKeys);
+        if (ks.has(v)) ks.delete(v);
+        else ks.add(v);
+        us.form.childKeys = [...ks];
+      }
+      root.querySelectorAll("[data-us-target]").forEach((x) => {
+        const k = x.getAttribute("data-us-target");
+        x.classList.toggle("active", k === "FAMILY" ? us.form.scope === "FAMILY" : us.form.scope === "CHILD" && us.form.childKeys.includes(k));
+      });
+      return;
+    }
+    const kind = ev.target.closest("[data-us-kind]");
+    if (kind) {
+      us.form.dateKind = kind.getAttribute("data-us-kind");
+      if (us.form.dateKind === "PERIOD") {
+        // 날짜 미정(기간) 일정은 시각·연속 기간을 갖지 않는다 — 이전에 입력한 값이 문서에 남지 않게 비운다.
+        us.form.allDay = true;
+        us.form.startTime = "";
+        us.form.endTime = "";
+        us.form.multiDay = false;
+        us.form.endDate = "";
+      }
+      usShowForm();
+    }
+  }
+  function usOnModalChange(ev) {
+    if (!usActive() || !us.form || !ev.target.closest(".us-form")) return;
+    const t = ev.target;
+    if (t.id === "us-multi") {
+      us.form.multiDay = t.checked;
+      if (!t.checked) us.form.endDate = "";
+      usShowForm();
+    } else if (t.id === "us-allday") {
+      us.form.allDay = t.checked;
+      usShowForm();
+    } else if (t.getAttribute("data-us-time")) {
+      us.form.startTime = el("us-start-h") ? usReadTime("us-start") : "";
+      us.form.endTime = el("us-end-h") ? usReadTime("us-end") : "";
+    }
+  }
+  function usOnModalInput(ev) {
+    if (!usActive() || !us.form || !ev.target.closest(".us-form")) return;
+    const map = { "us-title": "title", "us-location": "location", "us-memo": "memo" };
+    if (map[ev.target.id]) us.form[map[ev.target.id]] = ev.target.value;
+  }
+  function usInit() {
+    if (!hhEnabled() || !usReady()) return;
+    el("tab-calendar").addEventListener("click", usOnCalendarClick);
+    const m = el("modal-content");
+    m.addEventListener("click", usOnModalClick);
+    m.addEventListener("change", usOnModalChange);
+    m.addEventListener("input", usOnModalInput);
   }
 
   function showChildSwitchSheet() {
@@ -2565,6 +2901,7 @@
       ensureFamilyCode();
     }
     hhInit();
+    usInit();
 
     if (profile) {
       populateDistricts(profile.province, profile.district);
