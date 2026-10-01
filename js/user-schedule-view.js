@@ -33,6 +33,13 @@
     groupBenefit: "혜택 신청 시작", // #6
     groupPlanned: "추천 항목 (정해진 날이 아니에요)", // #7
     dayEmpty: "이 날 추가한 일정이 없어요.", // #8
+    // F1 홈 '다음 일정' 카드(승인 문구 1~5)
+    upcomingTitle: "다가오는 우리 가족 일정",
+    upcomingEmpty: "앞으로 7일 안에 등록된 가족 일정이 없어요.",
+    upcomingAdd: "일정 추가하기",
+    upcomingMore: "캘린더에서 보기",
+    upcomingToday: "오늘",
+    upcomingTomorrow: "내일",
     periodTitle: "이번 달 기간 일정", // #9
     periodNote: "날짜는 아직 정해지지 않았어요.", // #10
     periodRow: (range) => `날짜 미정 · ${range}`, // #11
@@ -738,11 +745,67 @@
       : { [PICKER_PREFIXES.date]: f.eventDate, ...(f.multiDay ? { [PICKER_PREFIXES.end]: f.endDate } : {}) };
   }
 
+  // ── F1 홈 '다음 일정' 카드 (순수) ─────────────────────────────────────────────
+  const UPCOMING_DAYS = 7;
+  const UPCOMING_MAX = 3;
+  /** "14:30" → "오후 2:30", "09:05" → "오전 9:05", "00:00" → "오전 12:00", "12:10" → "오후 12:10". 형식이 다르면 "". */
+  function clock12(t) {
+    const m = /^(\d{2}):(\d{2})$/.exec(String(t || ""));
+    if (!m) return "";
+    const h = Number(m[1]);
+    return `${h < 12 ? "오전" : "오후"} ${h % 12 === 0 ? 12 : h % 12}:${m[2]}`;
+  }
+  /** 날짜 표기: 오늘 / 내일 / "10/5(일)". */
+  function upcomingWhen(date, todayIso) {
+    if (date === todayIso) return MSG.upcomingToday;
+    const next = getUS().addDays(todayIso, 1);
+    return date === next ? MSG.upcomingTomorrow : dayLabel(date).replace(/^(\d+)\/(\d+)/, "$1월 $2일"); // "10/5(일)" → "10월 5일(일)"
+  }
+  /**
+   * CalendarModel(오늘~+6일, showAuto:false) → 홈 카드용 항목. 앞으로 7일(오늘 포함) 안의 추가 일정만, 날짜순·같은 날은 모델 정렬(종일→시각→제목).
+   * 완료(DONE)·취소 회차·날짜 미정(기간) 일정은 뺀다. 여러 날 일정은 처음 보이는 날 한 번만. 최대 3개, 나머지 개수는 more.
+   */
+  function upcomingItems(model, opts) {
+    const todayIso = opts && opts.todayIso;
+    const links = (opts && opts.links) || [];
+    const out = [];
+    const seen = new Set();
+    let total = 0;
+    if (!model || !model.days || typeof todayIso !== "string") return { items: out, more: 0 };
+    const last = getUS().addDays(todayIso, UPCOMING_DAYS - 1);
+    for (const date of [...model.days.keys()].sort()) {
+      if (date < todayIso || date > last) continue;
+      for (const o of model.days.get(date).user) {
+        if (o.status === "DONE" || o.status === "CANCELLED" || o.dateKind === "PERIOD" || seen.has(o.key)) continue;
+        seen.add(o.key);
+        total++;
+        if (out.length < UPCOMING_MAX) out.push({ key: o.key, scheduleId: o.scheduleId, date, title: o.title, whenText: upcomingWhen(date, todayIso), timeText: o.allDay ? MSG.timeAllDay : clock12(o.startTime), tag: tagText(o), color: occurrenceColor(o, links) });
+      }
+    }
+    return { items: out, more: total - out.length };
+  }
+  /** 홈 카드. 일정이 없으면 빈 상태 안내와 추가 버튼, 있으면 줄 목록과 '캘린더에서 보기'. */
+  function renderUpcomingCard(data) {
+    const items = (data && data.items) || [];
+    const head = `<div class="home-sec-head"><h3>${esc(MSG.upcomingTitle)}</h3></div>`;
+    if (!items.length) {
+      return `<section class="home-sec sec-us-upcoming">${head}<p class="home-empty-line">${esc(MSG.upcomingEmpty)}</p><button type="button" class="home-more" data-act="us-add">${esc(MSG.upcomingAdd)}</button></section>`;
+    }
+    const rows = items
+      .map((it) => {
+        const sub = [it.whenText, it.timeText, it.tag].filter(Boolean).map(esc).join(" · ");
+        return `<button type="button" class="home-row" data-home-date="${esc(it.date)}"><span class="cat-dot" style="background:${safeColor(it.color)}"></span><span class="hr-body"><strong>${esc(it.title)}</strong><small>${sub}</small></span><span class="hr-chev">›</span></button>`;
+      })
+      .join("");
+    return `<section class="home-sec sec-us-upcoming">${head}${rows}<button type="button" class="home-more" data-act="us-cal">${esc(MSG.upcomingMore)}</button></section>`;
+  }
+
   return {
     MSG, CATEGORIES, CHILD_PALETTE, FAMILY_COLOR, PICKER_PREFIXES, HOURS, MINUTES,
     categoryLabel, childColor, childColors, occurrenceColor,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
+    clock12, upcomingItems, renderUpcomingCard,
     renderCard, detailView, renderDetail, renderDeleteConfirm, renderAddButton, renderPeriodSection,
     newForm, formFromSchedule, stripId, formToInput, validateForm, messagesFromErrors, prepareSave, changesFromForm, minuteOptions, splitTime,
     renderForm, pickerInitials, esc,

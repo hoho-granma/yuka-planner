@@ -52,6 +52,9 @@
     const y = today.getFullYear();
     const m = today.getMonth();
     const html = [pregnantBanner(ctx)];
+    // 가족 캘린더(가구)가 켜져 있을 때만 앞으로 7일의 추가 일정 카드가 붙는다. 꺼져 있거나 가구가 없으면 ""(홈 DOM 그대로).
+    const usCard = typeof ctx.usUpcomingHtml === "function" ? ctx.usUpcomingHtml() : "";
+    if (usCard) html.push(usCard);
 
     const cls = L.classifyHomeItems(events, completed, { today, birthDate: ctx.profile.birthDate, monthKeysOf: ctx.monthKeysOf, periodRangeOf: ctx.periodRangeOf });
     const ymText = (d) => `${d.getMonth() + 1}월`;
@@ -133,7 +136,16 @@
         else if (a === "subsidy") ctx.switchTab("subsidy");
         else if (a === "record") ctx.switchTab("record");
         else if (a === "cal-today") ctx.goCalendar(new Date());
+        else if (a === "us-cal") ctx.goCalendar(new Date());
+        else if (a === "us-add") ctx.usAddFromHome();
         else if (a === "cal-next") ctx.goCalendar(new Date(today.getFullYear(), today.getMonth() + 1, 1));
+      })
+    );
+    // 다가오는 가족 일정 줄: 캘린더의 그 날짜로 이동한다.
+    wrap.querySelectorAll("[data-home-date]").forEach((b) =>
+      b.addEventListener("click", () => {
+        const [y, mo, d] = b.dataset.homeDate.split("-").map(Number);
+        ctx.goCalendar(new Date(y, mo - 1, d));
       })
     );
     // 카테고리 줄을 누르면 체크리스트로 가지 않고, 그 카테고리의 이번 달 항목만 팝업으로 보여준다.

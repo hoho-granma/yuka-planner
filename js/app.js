@@ -2672,7 +2672,25 @@
       user: { schedules: usDocs(), childLinks: usLinks(), members: usMembers() },
     });
   }
+  /** 홈 '다가오는 가족 일정' 카드(F1). 플래그 OFF·가구 없음이면 "" — 홈은 기존 그대로. AUTO 일정은 섞지 않는다(showAuto:false). */
+  function usHomeCardHtml() {
+    if (!hhEnabled() || !usActive()) return "";
+    try {
+      const todayIso = toISODate(new Date());
+      const model = usBuildModel(todayIso, UserSchedule.addDays(todayIso, 6), { scope: "ALL", showAuto: false });
+      return UserScheduleView.renderUpcomingCard(UserScheduleView.upcomingItems(model, { todayIso, links: usLinks() }));
+    } catch (e) {
+      console.error("홈 가족 일정 카드 실패", e);
+      return "";
+    }
+  }
+  /** 가구 데이터·일정이 바뀐 뒤 홈 카드가 달라졌을 때만 홈을 다시 그린다(같으면 건너뜀 — 중복 호출 가드). */
+  function usRefreshHome() {
+    if (!profile || !hhEnabled()) return;
+    if (usHomeCardHtml() !== (us.homeSig || "")) renderHome();
+  }
   function usRefreshCalendar() {
+    usRefreshHome();
     if (!profile || !hhEnabled() || el("view-calendar").classList.contains("hidden")) return;
     renderCalendar();
     renderSelectedDayPanel();
@@ -3251,6 +3269,11 @@
         syncCompletedChanges(before);
         renderHome();
         renderRecordTab();
+      },
+      usUpcomingHtml: () => (us.homeSig = usHomeCardHtml()),
+      usAddFromHome() {
+        selectedCalendarDate = new Date();
+        usOpenForm(null);
       },
       openDetail,
       openProfile: showProfileSheet,
