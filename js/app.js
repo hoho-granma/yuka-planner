@@ -588,141 +588,28 @@
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }
 
-  let dpViewDate = new Date();
-  dpViewDate.setDate(1);
-  let dpSelectedDate = null;
+  // 생년월일 달력 팝업은 js/date-picker.js 가 담당한다(온보딩과 아이 정보 수정이 같은 동작·모양).
+  // 연도 하한은 ChildTimeline.SERVICE_RANGE.pickerYearsBack(올해 초등 6학년의 출생연도)이고, 임신 중은 오늘~+300일.
+  let birthPicker = null;
+  const datePickerOpts = (getStage) => ({ getStage, yearsBack: ChildTimeline.SERVICE_RANGE.pickerYearsBack, format: formatDateKR, placeholder: "날짜를 선택해주세요" });
 
   function setBirthDatePicker(date) {
-    dpSelectedDate = date;
-    dpViewDate = new Date(date.getFullYear(), date.getMonth(), 1);
-    el("birthDate").value = toISODate(date);
-    const display = el("birthDateDisplay");
-    display.textContent = formatDateKR(date);
-    display.classList.remove("placeholder");
+    birthPicker.set(date);
   }
 
   function resetBirthDatePicker() {
-    dpSelectedDate = null;
-    el("birthDate").value = "";
-    const display = el("birthDateDisplay");
-    display.textContent = "날짜를 선택해주세요";
-    display.classList.add("placeholder");
-  }
-
-  function dpPopulateYearMonth() {
-    const yearSelect = el("dp-year");
-    const monthSelect = el("dp-month");
-    yearSelect.innerHTML = "";
-    const thisYear = new Date().getFullYear();
-    const years = [];
-    if (landingStage === "pregnant") years.push(thisYear + 1, thisYear);
-    else for (let y = thisYear; y >= thisYear - ChildTimeline.SERVICE_RANGE.pickerYearsBack; y--) years.push(y);
-    for (const y of years) {
-      const opt = document.createElement("option");
-      opt.value = y;
-      opt.textContent = `${y}년`;
-      yearSelect.appendChild(opt);
-    }
-    monthSelect.innerHTML = "";
-    for (let m = 1; m <= 12; m++) {
-      const opt = document.createElement("option");
-      opt.value = m - 1;
-      opt.textContent = `${m}월`;
-      monthSelect.appendChild(opt);
-    }
-  }
-
-  function dpSyncSelects() {
-    el("dp-year").value = dpViewDate.getFullYear();
-    el("dp-month").value = dpViewDate.getMonth();
-  }
-
-  function dpRenderGrid() {
-    const year = dpViewDate.getFullYear();
-    const month = dpViewDate.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const grid = el("dp-grid");
-    grid.innerHTML = "";
-    for (let i = 0; i < firstDay; i++) {
-      const cell = document.createElement("span");
-      cell.className = "dp-cell dp-empty";
-      grid.appendChild(cell);
-    }
-    for (let d = 1; d <= daysInMonth; d++) {
-      const date = new Date(year, month, d);
-      const cell = document.createElement("button");
-      cell.type = "button";
-      cell.className = "dp-cell dp-day";
-      cell.textContent = d;
-      const maxDue = new Date(today.getTime() + 300 * 86400000);
-      const outOfRange = landingStage === "pregnant" ? date < today || date > maxDue : date > today;
-      if (outOfRange) {
-        cell.disabled = true;
-        cell.classList.add("dp-disabled");
-      }
-      if (dpSelectedDate && sameDay(date, dpSelectedDate)) cell.classList.add("dp-selected");
-      cell.addEventListener("click", () => {
-        setBirthDatePicker(date);
-        dpClosePopup();
-      });
-      grid.appendChild(cell);
-    }
-  }
-
-  function dpOpenPopup() {
-    dpPopulateYearMonth();
-    dpSyncSelects();
-    dpRenderGrid();
-    el("birthDatePopup").classList.remove("hidden");
-  }
-
-  function dpClosePopup() {
-    el("birthDatePopup").classList.add("hidden");
+    birthPicker.reset();
   }
 
   function initBirthDatePicker() {
-    el("birthDateBtn").addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      if (el("birthDatePopup").classList.contains("hidden")) dpOpenPopup();
-      else dpClosePopup();
-    });
-    document.addEventListener("click", (ev) => {
-      const popup = el("birthDatePopup");
-      if (!popup.classList.contains("hidden") && !popup.contains(ev.target) && ev.target !== el("birthDateBtn")) {
-        dpClosePopup();
-      }
-    });
-    el("dp-prev-month").addEventListener("click", () => {
-      dpViewDate.setMonth(dpViewDate.getMonth() - 1);
-      dpSyncSelects();
-      dpRenderGrid();
-    });
-    el("dp-next-month").addEventListener("click", () => {
-      dpViewDate.setMonth(dpViewDate.getMonth() + 1);
-      dpSyncSelects();
-      dpRenderGrid();
-    });
-    el("dp-prev-year").addEventListener("click", () => {
-      dpViewDate.setFullYear(dpViewDate.getFullYear() - 1);
-      dpSyncSelects();
-      dpRenderGrid();
-    });
-    el("dp-next-year").addEventListener("click", () => {
-      dpViewDate.setFullYear(dpViewDate.getFullYear() + 1);
-      dpSyncSelects();
-      dpRenderGrid();
-    });
-    el("dp-year").addEventListener("change", (ev) => {
-      dpViewDate.setFullYear(Number(ev.target.value));
-      dpRenderGrid();
-    });
-    el("dp-month").addEventListener("change", (ev) => {
-      dpViewDate.setMonth(Number(ev.target.value));
-      dpRenderGrid();
-    });
+    birthPicker = HNDatePicker.bind(
+      {
+        btn: el("birthDateBtn"), display: el("birthDateDisplay"), hidden: el("birthDate"), popup: el("birthDatePopup"),
+        prevYear: el("dp-prev-year"), prevMonth: el("dp-prev-month"), nextMonth: el("dp-next-month"), nextYear: el("dp-next-year"),
+        yearSel: el("dp-year"), monthSel: el("dp-month"), grid: el("dp-grid"),
+      },
+      datePickerOpts(() => landingStage)
+    );
   }
 
   function renderFilterChips() {
@@ -914,14 +801,12 @@
   function showEditProfileSheet() {
     modalMode = "profile";
     const preg = isPregnant();
-    const todayIso = toISODate(new Date());
-    const maxDate = preg ? toISODate(new Date(Date.now() + 300 * 86400000)) : todayIso;
     const orders = [["first", "첫째"], ["second", "둘째"], ["third", "셋째"], ["fourthPlus", "넷째 이상"]];
     let order = profile.birthOrder || "";
     el("modal-content").innerHTML = `
       <h3>${preg ? "임신 정보 수정" : "아이 정보 수정"}</h3>
       <div class="rv-field"><label for="ep-name">${preg ? "태명 또는 별칭" : "이름 또는 별칭"}</label><input type="text" id="ep-name" maxlength="12" value="${esc(profile.name || "")}" /></div>
-      <div class="rv-field"><label for="ep-date">${preg ? "출산 예정일" : "생년월일"}</label><input type="date" id="ep-date" max="${maxDate}" value="${toISODate(profile.birthDate)}" /></div>
+      <div class="rv-field"><label for="ep-dp-btn">${preg ? "출산 예정일" : "생년월일"}</label>${HNDatePicker.markup("ep")}</div>
       <div class="rv-field"><label>몇째</label><div class="rv-cats" id="ep-orders">${orders
         .map(([v, l]) => `<button type="button" class="chip rv-cat ${order === v ? "active" : ""}" data-v="${v}">${l}</button>`)
         .join("")}</div></div>
@@ -933,6 +818,8 @@
       <button class="btn-complete" id="ep-save">저장</button>
       <button class="btn-close" id="ep-cancel">취소</button>
     `;
+    const epPicker = HNDatePicker.bindById("ep", datePickerOpts(() => (preg ? "pregnant" : "born")));
+    epPicker.set(profile.birthDate);
     const fillDistricts = (selected) => {
       const pv = regionsData.provinces.find((x) => x.code === el("ep-province").value);
       el("ep-district").innerHTML = (pv ? pv.districts : [])
@@ -1981,10 +1868,12 @@
     el("modal-content").innerHTML = `
       <h3>출산을 축하드려요!</h3>
       <p class="fine-print">아이가 태어난 날을 알려주세요. 입력한 날짜 기준으로 검진·접종·혜택 기간이 다시 계산돼요.</p>
-      <input type="date" id="born-date" class="born-switch-date" max="${todayIso}" value="${dueIso > todayIso ? todayIso : dueIso}" />
+      <div style="margin:8px 0 14px">${HNDatePicker.markup("born")}</div>
       <button class="btn-complete" id="btn-confirm-born">아이 정보로 바꾸기</button>
       <button class="btn-close" id="btn-cancel-born">취소</button>
     `;
+    // 출산 예정일이 아직 오지 않았으면 오늘을 기본값으로 둔다(기존 동작 그대로). 값은 hidden 입력 #born-date 에 YYYY-MM-DD 로 들어간다.
+    HNDatePicker.bindById("born", datePickerOpts(() => "born")).set(dueIso > todayIso ? new Date() : profile.birthDate);
     el("btn-cancel-born").addEventListener("click", closeDetail);
     el("btn-confirm-born").addEventListener("click", async () => {
       const v = el("born-date").value;

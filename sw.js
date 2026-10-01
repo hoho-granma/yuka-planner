@@ -30,6 +30,7 @@ const SHELL_ASSETS = [
   "./js/records.js",
   "./js/home.js",
   "./js/subsidy-view.js",
+  "./js/date-picker.js",
   "./js/records-view.js",
   "./js/app.js",
   "./manifest.json",

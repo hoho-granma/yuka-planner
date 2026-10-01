@@ -15,7 +15,9 @@
 })(typeof window !== "undefined" ? window : global, function () {
   "use strict";
 
-  const SERVICE_RANGE = Object.freeze({ maxMonths: 36, pickerYearsBack: 8 });
+  // pickerYearsBack: 생년월일 선택기의 연도 하한 = 올해 − 11 = 올해 초등 6학년의 출생연도(예: 2026년 → 2015년생).
+  // 근거: 출생연도 기준 6년 뒤에 초1 입학 → 초6 = 출생연도 + 11. 취학 기준의 공식 확인(설계 Q-C)은 별도이며 이 값은 입력 가능한 연도 범위일 뿐 일정 계산에 쓰지 않는다.
+  const SERVICE_RANGE = Object.freeze({ maxMonths: 36, pickerYearsBack: 11 });
 
   const CHECKLIST_BUCKETS = Object.freeze([
     Object.freeze({ start: 13, end: 17, label: "만 1세 (13~17개월)" }),

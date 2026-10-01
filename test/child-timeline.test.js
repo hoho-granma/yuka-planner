@@ -60,7 +60,7 @@ test("isWithinServiceRange = 기존 공식 ageInMonths(birth, date) <= 36 (전 �
 });
 
 test("SERVICE_RANGE는 현재 값(36개월, 선택기 8년)이며 변경 불가", () => {
-  assert.deepStrictEqual({ ...CT.SERVICE_RANGE }, { maxMonths: 36, pickerYearsBack: 8 });
+  assert.deepStrictEqual({ ...CT.SERVICE_RANGE }, { maxMonths: 36, pickerYearsBack: 11 });
   assert.ok(Object.isFrozen(CT.SERVICE_RANGE) && Object.isFrozen(CT.CHECKLIST_BUCKETS));
 });
 
