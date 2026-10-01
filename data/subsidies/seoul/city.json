@@ -164,7 +164,8 @@
       "statusOriginal": "확정시행",
       "auditNotes": {
         "sourceName": "서울특별시 뉴스(news.seoul.go.kr) — WebFetch로 원문 직접 확인"
-      }
+      },
+      "conditionLabel": "2자녀 이상"
     },
     {
       "id": "SEOUL-P01",
@@ -572,7 +573,8 @@
           "endText": "출생일로부터 2년",
           "note": "자동 가입. 청구는 사고 후 3년 이내"
         }
-      ]
+      ],
+      "conditionLabel": "다태아"
     },
     {
       "id": "SEOUL-N03",

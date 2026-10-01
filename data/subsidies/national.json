@@ -151,8 +151,8 @@
       "maxAgeMonths": 24,
       "amountText": "기저귀 월 9만원. 조제분유 해당자는 월 11만원 추가(기저귀+조제분유 합계 월 20만원). 조제분유만 단독 지원되지 않음",
       "paymentMethod": "바우처(국민행복카드 포인트, 3개월 단위 일괄 충전)",
-      "deadlineType": "birth_relative_days",
-      "deadlineValue": 60,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
       "residencyRequirement": "없음(영아 주민등록 주소지 관할 보건소/주민센터에서 신청)",
       "additionalConditions": "출생 후 60일 이내 신청 시 만 2세 전날까지 24개월분 전액 지원, 60일 이후 신청 시 소급 없이 신청일부터 지원",
       "officialUrl": "https://www.ydp.go.kr/health/contents.do?key=3538",
@@ -160,7 +160,7 @@
       "lastVerified": "2026-09-29",
       "status": "확인완료",
       "verified": true,
-      "notes": "2026-09-29 재검증: 기존 '조제분유만 월 11만원' 표현은 오류(조제분유는 모유수유 불가 사유가 있는 기저귀 대상자에게만 추가 지급)로 수정.",
+      "notes": "2026-09-29 재검증: 기존 '조제분유만 월 11만원' 표현은 오류(조제분유는 모유수유 불가 사유가 있는 기저귀 대상자에게만 추가 지급)로 수정. [2026-10-01] 출생 후 60일이 지나도 신청일부터 지원받을 수 있어(소급 없음) 60일 마감으로 계산하면 기한 지남으로 잘못 분류돼 deadlineType을 ongoing으로 정정(연령 상한 24개월은 그대로).",
       "statusOriginal": "확정시행",
       "auditNotes": {
         "sourceName": "영등포구보건소(공식 go.kr) — WebFetch로 원문 직접 확인, 전국 공통 소득기준 사업"
@@ -848,7 +848,8 @@
       "verified": true,
       "notes": "2026-09-29 사용자가 공식 기준으로 확인한 값 반영. 이전에 21만/33만원 등으로 엇갈렸던 값은 이 기준으로 정리됨.",
       "lastVerified": "2026-09-29",
-      "statusOriginal": "확정시행"
+      "statusOriginal": "확정시행",
+      "conditionLabel": "한부모 가족"
     },
     {
       "id": "NAT-018",
@@ -957,7 +958,8 @@
       "statusOriginal": "확정시행",
       "auditNotes": {
         "sourceName": "복지로 장애아동수당 상세(서비스내용 탭 직접 확인) + 보건복지부 정책 페이지"
-      }
+      },
+      "conditionLabel": "등록 장애아동"
     },
     {
       "id": "NAT-022",
@@ -1292,7 +1294,8 @@
       "verified": true,
       "notes": "국가(복지부) 사업. 신청기한은 퇴원일 기준이라 maxAgeMonths 30은 근사값(선천성이상아 2세 이내 입원 + 6개월). 2026년 상향(미숙아 1,000→2,000만원, 선천성이상아 500→700만원)의 정확한 시행일·소급 여부는 원문 미확인. 서울시 임신·출산 정보센터 페이지는 합산 규정 누락, '(보청기)' 오기 있음 — 복지부 기준 사용. 생활법령의 500만원 문구는 옛 정보. 서울시 자체 추가 지원은 원문에 없음.",
       "lastVerified": "2026-09-30",
-      "statusOriginal": "확정시행"
+      "statusOriginal": "확정시행",
+      "conditionLabel": "미숙아·선천성이상"
     }
   ]
 }
