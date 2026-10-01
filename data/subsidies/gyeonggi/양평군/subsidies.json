@@ -10,28 +10,74 @@
       "applicableRegions": [
         "경기도:양평군"
       ],
-      "target": "양평군 출생아, 출생 6개월 전부터 거주",
+      "target": "출생일(출생신고일 아님) 이전 6개월 이상 양평군에 주민등록을 두고 거주하는 부 또는 모(대상 자녀는 주민등록상 동일 세대)",
       "minAgeMonths": 0,
       "maxAgeMonths": 60,
-      "amountText": "첫째 500만원 / 둘째 500만원 / 셋째 1,000만원 / 넷째 이상 2,000만원 (4~5년 분할 지급)",
+      "amountText": "첫째 500만원(125만원씩 4년) / 둘째 500만원(125만원씩 4년) / 셋째 1,000만원(250만원씩 4년) / 넷째 이상 2,000만원(400만원씩 5년). 다태아는 출생 순위에 따라 각각 지급",
       "amountByBirthOrder": {
         "first": 5000000,
         "second": 5000000,
         "third": 10000000,
         "fourthPlus": 20000000
       },
-      "paymentMethod": "분할 지급(첫째·둘째 125만원×4년 등)",
+      "paymentMethod": "신청계좌 입금: 신청한 달 1회 지급, 이후 매년 생일이 속한 달에 지급",
       "deadlineType": "birth_relative_months",
       "deadlineValue": 1,
-      "residencyRequirement": "출생 6개월 전부터 양평군 거주",
-      "additionalConditions": "출산 1개월 이내 신청, 전출 시 잔여분 중단",
+      "residencyRequirement": "출생일 이전 6개월 이상 양평군 주민등록·거주(6개월 미만이면 양평군 전입 후 출생한 경우에 한해 6개월 경과 후 자동 지급)",
+      "additionalConditions": "출산 후 1개월 이내 읍·면사무소 '출산서비스 통합처리' 또는 정부24 행복출산원스톱 신청. 거주 여부 확인 후 지급, 전출 및 관외 전출 후 재전입 시 지원 대상에서 제외. 방문 조사 등으로 지원 중단·환수될 수 있음. 문의 보건소 모자보건실 031-770-3538",
       "officialUrl": "https://www.yp21.go.kr/www/contents.do?key=2141",
-      "sourceName": "양평군청 공식 홈페이지",
-      "lastVerified": "2026-09-01",
+      "sourceName": "양평군청 출산장려금 페이지(수정일 2026-03-06)",
+      "lastVerified": "2026-10-01",
       "status": "확인완료",
       "verified": true,
-      "notes": "신청기한이 1개월로 매우 짧음 — 놓치기 쉬운 제도",
+      "notes": "[2026-10-01 재열람] 신청기한이 1개월로 매우 짧아 놓치기 쉬운 제도. 금액·기한·지급수단은 원문과 일치, 동일 세대·전출 제한·다태아 문구를 보완.",
       "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-YANGPYEONG-02",
+      "name": "양평군 산후조리비 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:양평군"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "target": "출생일(출생신고일 아님) 이전 6개월 이상 양평군에 주민등록을 두고 거주하는 부 또는 모",
+      "amountText": "출생아 1인당 산후조리비 50만원 현금(다태아는 출생아 수만큼 50만원의 배수)",
+      "paymentMethod": "신청계좌 현금 지급",
+      "residencyRequirement": "출생일 이전 6개월 이상 양평군 주민등록·거주",
+      "additionalConditions": "출산 후 1년 이내 읍·면사무소 또는 정부24 행복출산원스톱 신청",
+      "officialUrl": "https://www.yp21.go.kr/www/contents.do?key=4055",
+      "sourceName": "양평군청 산후조리비 지원 페이지(수정일 2026-08-24)",
+      "notes": "[2026-10-01 신규] 같은 페이지에 6개월 요건이 '전입일이 출생일 기준 6개월 미만이면 지원 제외'와 '6개월 경과 후 자동 지급(2026-07-01 출생아부터 변경 적용)'으로 함께 있어 충돌, 최신 변경 문구를 채택하되 반영 시 재확인 필요. 종료 공지 없음."
+    },
+    {
+      "id": "GGM-YANGPYEONG-03",
+      "name": "양평군 모유수유용품(유축기) 무상대여",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:양평군"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "target": "양평군에 주소를 두고 양평군보건소에 등록한 임신·출산·수유부",
+      "amountText": "개인 전동식 유축기 3개월 무상대여",
+      "paymentMethod": "보건소 모자보건실 방문 대여(현물)",
+      "residencyRequirement": "양평군 주소 보유(거주 기간은 원문에 없음)",
+      "additionalConditions": "보건소 모자보건실 방문. 신청기간은 원문에 없음",
+      "officialUrl": "https://www.yp21.go.kr/www/contents.do?key=2155",
+      "sourceName": "양평군청 모유수유용품 무상대여 페이지(수정일 2026-02-23)",
+      "notes": "[2026-10-01 신규] 원문: '개인 전동식 유축기 3개월 무상대여'. 금액은 해당 없음."
     }
   ]
 }

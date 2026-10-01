@@ -12,23 +12,72 @@
       ],
       "target": "수원시 출생아, 180일 이상 거주",
       "minAgeMonths": 0,
-      "maxAgeMonths": 60,
-      "amountText": "첫째 50만원 / 둘째 100만원 / 셋째 이상 확인 필요 (2026.1.1 출생아부터 첫째 신설·둘째 인상)",
+      "maxAgeMonths": 12,
+      "amountText": "첫째 50만원 / 둘째 100만원 / 셋째 200만원 / 넷째 500만원 / 다섯째 이상 1,000만원 (분할: 신청 시 600만원, 신청 1년 후 분기별 100만원씩)",
       "amountByBirthOrder": {
         "first": 500000,
-        "second": 1000000
+        "second": 1000000,
+        "third": 2000000,
+        "fourthPlus": 5000000
       },
-      "paymentMethod": "확인 필요",
+      "paymentMethod": "신청인 예금통장 입금 (조례 제7조③)",
       "deadlineType": "birth_relative_months",
       "deadlineValue": 12,
       "residencyRequirement": "180일 이상 거주",
-      "additionalConditions": "1년 이내 신청",
+      "additionalConditions": "2026-01-01 이후 출산·입양 자녀부터 적용(이전 출생은 종전 규정). 세쌍둥이 이상은 출산지원금에 500만원 추가. 출생·입양일부터 1년 이내 주소지 동 행정복지센터 신청",
       "officialUrl": "https://www.suwon.go.kr/sw-www/deptHome/dep_welfare/welfare14/welfare14-01/welfare14-01-10.jsp",
-      "sourceName": "수원시청 공식 홈페이지",
-      "lastVerified": "2026-09-01",
-      "status": "확인필요",
-      "verified": false,
-      "notes": "셋째 이상 금액 미확인"
+      "sourceName": "수원시청 자녀 출산·입양 지원금 페이지, 수원시 조례(시행 2026-01-01, 제4785호)",
+      "lastVerified": "2026-10-01",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-01 재열람] 시청 페이지와 조례 원문 일치."
+    },
+    {
+      "id": "GGM-SUWON-02",
+      "name": "수원시 유축기 대여 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:수원시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 1,
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 1,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "target": "출산 후 1개월 이내 산모(부 또는 모가 수원시 주민등록)",
+      "amountText": "유축기 1개월 대여(금액 표기 없음)",
+      "paymentMethod": "현물(업체가 산모 주소지로 택배 발송)",
+      "residencyRequirement": "부 또는 모의 수원시 주민등록",
+      "additionalConditions": "신청 자격이 출산 후 1개월 이내",
+      "officialUrl": "https://www.suwon.go.kr/sw-www/deptHome/dep_welfare/welfare14/welfare14-01/welfare14-01-08.jsp",
+      "sourceName": "수원시청 임신·출산 '유축기 대여 지원' 페이지",
+      "notes": "[2026-10-01 신규] 원문: '출산 후 1개월 이내 산모 대상으로 유축기 대여(1개월) 지원'. 상세 페이지에 수정일 표기 없음."
+    },
+    {
+      "id": "GGM-SUWON-03",
+      "name": "수원시 장애인가정 출산지원금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:수원시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "conditionLabel": "장애인 가정",
+      "target": "등록 장애인 가정의 신생아",
+      "amountText": "신생아 1인 기준 120만원",
+      "paymentMethod": "원문에 없음(통장 사본 제출)",
+      "residencyRequirement": "출생일 기준 6개월 전부터 신청일까지, 또는 출생일 6개월 이후 계속 수원시 거주",
+      "additionalConditions": "출생일로부터 1년 이내, 접수는 연중. 장애인이 부인지 모인지는 상세 페이지에 없고 총정리 쪽에는 '신생아의 부(夫)가 장애인'으로 적혀 있어 표현이 다름",
+      "officialUrl": "https://www.suwon.go.kr/sw-www/deptHome/dep_welfare/welfare14/welfare14-01/welfare14-01-11.jsp",
+      "sourceName": "수원시청 임신·출산 '장애인가정 출산지원금' 페이지(수정일 2026-03-03)",
+      "notes": "[2026-10-01 신규] 원문: '신생아 1인 기준 120만원 지원'. 종료 공지 없음."
     }
   ]
 }

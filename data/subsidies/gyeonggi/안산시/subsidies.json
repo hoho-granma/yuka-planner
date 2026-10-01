@@ -32,6 +32,102 @@
       "verified": true,
       "notes": "2027-01-01 이후 출생아부터 첫째 200만원(일시금), 둘째 300만원(150+150 분할), 셋째 이상 500만원(150+350 분할)로 변경(언론 2026-07). 공식 페이지 본문은 현행 100/300/500 기준.",
       "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-ANSAN-02",
+      "name": "안산시 임신부 100원 행복택시",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:안산시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "prenatalOnly": true,
+      "target": "안산시 주민등록 임신부",
+      "amountText": "산부인과 진료 시 이용요금 100원, 월 왕복 2회·편도 4회(월 2회 초과 시 기본요금 1,700원/10km, 추가 5km당 100원)",
+      "paymentMethod": "택시 이용요금 감면",
+      "residencyRequirement": "안산시 주민등록",
+      "additionalConditions": "신청기간은 원문에 없음. 하모니콜센터 1588-5410 문의",
+      "officialUrl": "https://www.ansan.go.kr/iloveyou/sub/contents.do?c1=2&c3=13",
+      "sourceName": "안산시 아이LOVEYOU 임신부 100원 행복택시 페이지",
+      "notes": "[2026-10-01 신규] 원문: '산부인과 진료 시 이용요금 100원으로 월 왕복2회, 편도4회 이용'. 임신부 대상이라 prenatalOnly 지정."
+    },
+    {
+      "id": "GGM-ANSAN-03",
+      "name": "안산시 임산부 친환경 농산물 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:안산시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "postpartumOk": true,
+      "target": "관내 주민등록 거주, 2025-01-01 이후 출산한 산모 또는 신청일 현재 임산부(영양플러스·농식품바우처 수급자와 거주지 불분명 외국인 제외)",
+      "amountText": "임산부 1인당 연 24만원 상당(보조 19.2만원, 본인부담 4.8만원)",
+      "paymentMethod": "친환경 농산물 현물 공급",
+      "residencyRequirement": "관내 주민등록",
+      "additionalConditions": "신청기간은 원문에 없음",
+      "officialUrl": "https://www.ansan.go.kr/iloveyou/sub/contents.do?c1=2&c3=105",
+      "sourceName": "안산시 아이LOVEYOU 임산부 친환경 농산물 지원 페이지",
+      "notes": "[2026-10-01 신규] 원문: '친환경 농산물 공급(임산부 1인당 연 24만원) ※ 보조 19.2만, 본인 부담금 4.8만원'. 재원(시·도)과 신청기한은 원문에 없음."
+    },
+    {
+      "id": "GGM-ANSAN-04",
+      "name": "안산시 전동유축기 무료 대여",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:안산시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 3,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "conditionLabel": "셋째·쌍생아·미숙아·장애인 산모",
+      "target": "관내 저체중아·조산아·선천성이상아·셋째아·쌍생아 이상 출산 산모, 장애인 산모",
+      "amountText": "전동유축기 1개월 무료 대여",
+      "paymentMethod": "현물 대여",
+      "residencyRequirement": "관내(거주 기간은 원문에 없음)",
+      "additionalConditions": "쌍태아·셋째아 이상·장애인 산모는 출산 후 3개월 이내, 미숙아·선천성이상아 산모는 퇴원일 기준 1개월 이내(단원보건소 페이지 기준)",
+      "officialUrl": "https://www.ansan.go.kr/iloveyou/sub/contents.do?c1=3&c2=20&c3=25",
+      "sourceName": "안산시 아이LOVEYOU 전동유축기 대여 페이지, 단원보건소 임산부 페이지",
+      "notes": "[2026-10-01 신규] 원문: '전동유축기 1개월 무료 대여'. 두 페이지 내용 일치."
+    },
+    {
+      "id": "GGM-ANSAN-05",
+      "name": "안산시 장애인가정 출산지원금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:안산시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "conditionLabel": "장애인 가정",
+      "target": "출생일 기준 부 또는 모가 관내 6개월 이상 계속 거주한 장애인가정 또는 상이 1~7급 국가유공자로 구성된 세대",
+      "amountText": "출생아 1인당 100만원",
+      "paymentMethod": "원문에 없음(신청서류에 통장사본)",
+      "residencyRequirement": "출생일 기준 6개월 이상 계속 거주",
+      "additionalConditions": "출생일로부터 1년 이내 신청. 장애인출산지원금과 중복 신청 가능",
+      "officialUrl": "https://www.ansan.go.kr/iloveyou/sub/contents.do?c1=3&c3=19",
+      "sourceName": "안산시 아이LOVEYOU 장애인가정 출산지원금 페이지",
+      "notes": "[2026-10-01 신규] 원문: '출생아 1인당 100만원 지원', '출생일로부터 1년 이내 신청'. 행복출산 원스톱 페이지(C0001052)에도 같은 항목이 있음."
     }
   ]
 }

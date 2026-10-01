@@ -59,6 +59,54 @@
       "verified": true,
       "notes": "",
       "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-ICHEON-03",
+      "name": "이천시 1인 자영업자 등 출산급여 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:이천시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "conditionLabel": "고용보험 미적용 출산여성",
+      "target": "1인 자영업자·프리랜서·특수형태근로자·농업인 등 고용보험 출산휴가급여를 받을 수 없는 출산여성(유·사산 포함), 고용노동부 '고용보험 미적용자 출산급여' 수혜자",
+      "amountText": "90만원(월 30만원×3개월), 다태아 170만원. 유·사산은 임신기간별 18~90만원(다태아 66~170만원)",
+      "paymentMethod": "현금 일시금, 출산여성 본인 계좌",
+      "residencyRequirement": "출산일과 신청일 현재 출산여성이 이천시 주민등록·거주, 신청일 현재 출생자녀도 이천시 주민등록·거주, 이천시에 출생신고",
+      "additionalConditions": "영아 출생일(유·사산일)부터 1년 이내 정부24 또는 보건소 방문 신청. 2026-01-01 이후 출산부터 지원",
+      "officialUrl": "https://www.icheon.go.kr/depart/contents.do?mid=0604070207",
+      "sourceName": "이천시 보건소 1인 자영업자 등 출산급여 지원 페이지",
+      "notes": "[2026-10-01 신규] 원문: '출산급여 90만원(월30만원×3개월) 현금 일시금 지원 / 다태아 출산 시 : 170만원'. 종료 공지는 원문에 없음."
+    },
+    {
+      "id": "GGM-ICHEON-04",
+      "name": "이천시 산모·신생아 건강관리 서비스 본인부담금 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:이천시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "conditionLabel": "서비스 이용자",
+      "target": "신생아 출생일 기준 6개월 전부터 신청일까지 계속 이천시에 주민등록을 두고 실제 거주하는 산모(정부지원 서비스 이용자)",
+      "amountText": "서비스 본인부담금의 90%(유형별 표 있음, 예: 단태아 첫째 표준형 269.1천원, 둘째 표준형 361.8천원)",
+      "paymentMethod": "적합 시 신청일로부터 20일 이내(주말 제외) 신청 계좌 입금",
+      "residencyRequirement": "출생일 기준 6개월 전부터 신청일까지 계속 이천시 주민등록·실거주",
+      "additionalConditions": "정부지원 서비스 종료 후 60일 이내 보건소 방문 신청, 소급 불가",
+      "officialUrl": "https://www.icheon.go.kr/depart/contents.do?mid=0604070102",
+      "sourceName": "이천시 보건소 산모·신생아 건강관리 본인부담금 지원 페이지",
+      "notes": "[2026-10-01 신규] 원문: '산모·신생아 건강관리 서비스 비용 중 본인부담금 90% 지원'. 같은 메뉴 '산모·신생아 건강관리 지원' 페이지에 추가형(중위소득 150% 초과) 2026-10-01 종료·'본인부담금 일부 환급(전환형, 추가형 공통)은 유지' 안내가 있어 이 항목에 미치는 영향은 확인 필요."
     }
   ]
 }

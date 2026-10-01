@@ -5,7 +5,7 @@
   "subsidies": [
     {
       "id": "GGM-POCHEON-01",
-      "name": "포천시 출산장려금",
+      "name": "포천시 출산축하금",
       "scope": "municipal",
       "applicableRegions": [
         "경기도:포천시"
@@ -13,24 +13,24 @@
       "target": "포천시 출생아, 영아와 주민등록상 동일세대인 부 또는 모",
       "minAgeMonths": 0,
       "maxAgeMonths": 12,
-      "amountText": "첫째 100만원 / 둘째 300만원 / 셋째 500만원(2년 분할) / 넷째 이상 1,000만원(4년 분할)",
+      "amountText": "첫째 100만원 / 둘째 300만원 / 셋째 500만원(2년 분할) / 넷째 이상 1,000만원(4년 분할) (조례: 예산의 범위에서 이하로 지급)",
       "amountByBirthOrder": {
         "first": 1000000,
         "second": 3000000,
         "third": 5000000,
         "fourthPlus": 10000000
       },
-      "paymentMethod": "확인 필요(분할지급 명시)",
+      "paymentMethod": "신청대상자 계좌 입금. 분할분은 매년 출생아 생일이 속한 달에 지급",
       "deadlineType": "birth_relative_months",
       "deadlineValue": 12,
-      "residencyRequirement": "출생일 기준 부모 1년 이상 포천시 주민등록",
-      "additionalConditions": "출생 후 1년 이내 읍면동 행정복지센터 방문 신청. 거주 1년 미만이면 1년 경과 후 1년 이내",
-      "officialUrl": "https://www.pocheon.go.kr/welfare/contents.do?key=13443",
-      "sourceName": "포천시 복지포털 / 경기교육신문 보도(2021 조례개정) / 육아생활",
-      "lastVerified": "2026-09-29",
-      "status": "확인필요",
-      "verified": false,
-      "notes": "금액은 2021년 조례개정 보도 기반이며 2026년 현재 유지 여부 미확인(정리 사이트는 셋째 500만원만 표기). 공식 페이지 본문 취득 실패."
+      "residencyRequirement": "영아 출생일 기준 1년 전부터 신청일까지 포천시 주민등록을 두고 계속 거주한 부 또는 모, 영아와 주민등록상 동일세대(1년 미만이면 1년 경과일부터 1년 이내 신청)",
+      "additionalConditions": "출생일부터 1년 이내, 연중 신청. 방문(주소지 읍면동 행정복지센터) 또는 온라인(복지로·정부24)",
+      "officialUrl": "https://www.pocheon.go.kr/welfare/contents.do?key=9816",
+      "sourceName": "포천시 복지포털 출산축하금 지원 페이지, 포천시 출산축하 지원에 관한 조례(시행 2021-09-29, 제1368호)",
+      "lastVerified": "2026-10-01",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-01 재열람] 기존 URL(key=13443)은 메인으로 리다이렉트돼 본문이 없어 key=9816으로 교체. 열람한 조례는 시행 2021-09-29본이며 이후 개정 여부는 확정 못 함. 포털 본문에 수정일 표기 없음."
     },
     {
       "id": "GGM-POCHEON-02",
@@ -42,18 +42,18 @@
       "target": "2026-01-01 이후 출생아를 포천시에 출생등록한 가정",
       "minAgeMonths": 0,
       "maxAgeMonths": 12,
-      "amountText": "산모 1인당 최대 100만원 (지역화폐). 공공산후조리원 이용 감면액(30%/50%)은 제외하고 지급",
-      "paymentMethod": "지역화폐, 신청 익월 20일 지급",
+      "amountText": "산모 1인당 100만원 포천사랑상품권(조례: 지원할 수 있음·예산 범위). 경기포천공공산후조리원 감면 시 감면액을 차감한 금액 지원",
+      "paymentMethod": "포천사랑상품권(지역화폐)",
       "deadlineType": "birth_relative_months",
       "deadlineValue": 12,
-      "residencyRequirement": "신청일 기준 포천시 1년 이상 주민등록",
-      "additionalConditions": "영아 출생일 기준 12개월 이내, 주소지 행정복지센터 방문 신청",
-      "officialUrl": "https://news.nate.com/view/20260112n29094",
-      "sourceName": "천지일보·스마트에프엔 보도 (2026-01)",
-      "lastVerified": "2026-09-29",
-      "status": "확인필요",
-      "verified": false,
-      "notes": "경기도 산후조리비(GG-001)와 별도인 시 자체 사업으로 보도. 도 사업 10/1 종료와의 중복 지급 여부 확인 필요.",
+      "residencyRequirement": "신청일 현재 포천시 주민등록을 두고 계속 거주한 기간이 1년 이상인 부 또는 모, 포천시에서 출생신고",
+      "additionalConditions": "출생일 기준 1년 이내 출생신고한 관할 읍면동 행정복지센터 방문 신청. 출산서비스 통합처리 신청서와 경기포천공공산후조리원 이용확인서 또는 예약확인서 제출(조례 제5조, 보건소 페이지에는 없음). 2026-01-01 출생아부터 적용. 다태아 중복지급 불가",
+      "officialUrl": "https://www.pocheon.go.kr/pbhlth/contents.do?key=47662",
+      "sourceName": "포천시 보건소 산후조리비 지원사업 페이지, 포천시 산후조리비 지원에 관한 조례(시행 2026-01-01, 제1813호), 보건소 공지(2026-09-14)",
+      "lastVerified": "2026-10-01",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-01 재열람] 기존 URL(Nate 기사)을 공식 페이지로 교체. 보건소 공지(2026-09-14)가 종료로 안내한 것은 경기도 산후조리비 등 도 사업이고 시 자체 사업은 종료 대상 아님. '신청 다음 달 20일 지급'은 기사에만 있어 삭제(공식 근거 없음). 도 사업(GG-001)과의 중복 여부는 공식 확인 불가이나 도 사업이 9/30 종료돼 신규 신청에서는 사실상 해소.",
       "statusOriginal": "확정시행"
     },
     {
@@ -65,19 +65,19 @@
       ],
       "target": "부모 중 1인이 장애인인 포천시 가정",
       "minAgeMonths": 0,
-      "maxAgeMonths": 24,
-      "amountText": "100만원 (출생 순위 무관)",
-      "paymentMethod": "확인 필요",
+      "maxAgeMonths": 12,
+      "amountText": "신생아 1명당 100만원(쌍생아는 추가 신생아 1명마다 지원금의 50% 가산)",
+      "paymentMethod": "현금(복지로 제공유형 현금지급)",
       "deadlineType": "birth_relative_months",
-      "deadlineValue": 24,
-      "residencyRequirement": "신생아 출생일 6개월 전부터 신청일까지 계속 포천시 거주",
-      "additionalConditions": "읍면동 주민센터 신청",
-      "officialUrl": "https://lifewithbaby.co.kr/money/48/3",
-      "sourceName": "육아생활(포천시 정리)",
-      "lastVerified": "2026-09-29",
-      "status": "확인필요",
-      "verified": false,
-      "notes": "신청기한(출생 후 24개월)은 미확인 추정값. 재확인 필요."
+      "deadlineValue": 12,
+      "residencyRequirement": "신생아 출생일 기준 6개월 전부터 신청일 현재까지 포천시에 주민등록을 두고 계속 거주하는 장애인가정의 부 또는 모",
+      "additionalConditions": "신생아 출생일로부터 1년 이내 방문 신청(시행규칙 제4조②). 여성장애인 출산비용 지원사업(국도비)과 중복 지급 불가, 부모 모두 장애인이어도 중복 지급 불가",
+      "officialUrl": "https://www.bokjiro.go.kr/ssis-teu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00003909",
+      "sourceName": "복지로 지자체 복지서비스 상세(최종수정 2026-08-13), 포천시 장애인복지증진을 위한 기본 조례 시행규칙(시행 2021-12-01, 제505호)",
+      "lastVerified": "2026-10-01",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-01 재열람] 신청기한 24개월은 오류라 출생일부터 1년 이내(12개월)로 정정. 기존 출처(육아생활 셋째 아이 페이지)에는 해당 내용이 없음."
     },
     {
       "id": "GGM-POCHEON-04",
@@ -86,21 +86,25 @@
       "applicableRegions": [
         "경기도:포천시"
       ],
-      "target": "둘째 이상 1세 미만 출생아",
+      "target": "관내 출생아동 중 둘째아 이상 만 1세 미만 아동(보험 최초가입일 현재 1세 미만)",
       "minAgeMonths": 0,
       "maxAgeMonths": 12,
-      "amountText": "월 19,950원 보험료 지원 (확인 필요)",
-      "paymentMethod": "보험료 지원(현금 수령 아님)",
+      "amountText": "출생아 건강보험료를 시가 대납: 1인당 월 2만원 이내, 5년간 납입(무료), 10년 보장",
+      "paymentMethod": "보험료 대납(현금 수령 아님). 보험수익자는 출생아의 부모·보호자, 해약환급금은 시 금고로 환급",
       "deadlineType": "age_window",
-      "deadlineValue": "0~12개월",
-      "residencyRequirement": "확인 필요",
-      "additionalConditions": "확인 필요",
-      "officialUrl": "https://lifewithbaby.co.kr/money/48/3",
-      "sourceName": "육아생활(포천시 정리)",
-      "lastVerified": "2026-09-29",
-      "status": "확인필요",
-      "verified": false,
-      "notes": "정리 사이트 1건 기반."
+      "deadlineValue": {
+        "minMonths": 0,
+        "maxMonths": 12
+      },
+      "residencyRequirement": "부 또는 모가 포천시에 주민등록을 두고 포천시에 출생신고 및 전입신고를 마침(5년 이내 타 지역 전출 시 보험 해지)",
+      "additionalConditions": "해당 주소지 읍면동사무소에 신청하면 보험회사 직원이 개별 방문해 가입. 둘째아 이상만 해당",
+      "officialUrl": "https://www.pocheon.go.kr/welfare/contents.do?key=9818",
+      "sourceName": "포천시 복지포털 출생아 건강보험 가입 신청 안내, 포천시 출생아 건강보험 가입 지원에 관한 조례(시행 2023-06-28, 제1528호)",
+      "lastVerified": "2026-10-01",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-01 재열람] 기존 금액 '월 19,950원'은 공식 근거가 없어 '월 2만원 이내(조례 제4조), 5년간, 10년 보장'으로 정정. 시가 보험료를 대납하는 방식이라 부모가 현금을 받지는 않으나 부모가 신청하는 제도로 보고 사용자 결정(2026-10-01)에 따라 승격. 포털 본문에 수정일 표기 없음. 종료·변경 공지는 못 찾음.",
+      "conditionLabel": "둘째 이상"
     }
   ]
 }

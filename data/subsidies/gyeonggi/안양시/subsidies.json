@@ -13,28 +13,25 @@
       "target": "안양시 출생아 (2023-01-01 이후 출생)",
       "minAgeMonths": 0,
       "maxAgeMonths": 12,
-      "amountText": "첫째 200만원 / 둘째 400만원 / 셋째 이상 1,000만원",
+      "amountText": "첫째 200만원(매년 100만원씩 2회) / 둘째 400만원(매년 200만원씩 2회) / 셋째 이상 1,000만원(매년 250만원씩 4회) 분할 지급",
       "amountByBirthOrder": {
         "first": 2000000,
         "second": 4000000,
         "third": 10000000,
         "fourthPlus": 10000000
       },
-      "paymentMethod": "",
+      "paymentMethod": "신청계좌 입금. 첫 지급은 신청 다음 달 20일, 이후 12개월마다 주민등록 거주지 확인 후 지급",
       "deadlineType": "birth_relative_months",
       "deadlineValue": 12,
       "residencyRequirement": "출산일 기준 12개월 전부터 신청일까지 계속 안양시 주민등록",
-      "additionalConditions": "출산 후 신청",
+      "additionalConditions": "출생신고일부터 12개월 이내 신청. 안양시에 출생신고한 경우만 해당, 2023-01-01 이후 출생아부터 적용. 쌍생아 이상은 출생순위별로 각각 지급",
       "officialUrl": "https://www.anyang.go.kr/health/contents.do?key=1343",
-      "sourceName": "안양시 보건소 임신·출산 지원 페이지",
-      "lastVerified": "2026-09-29",
+      "sourceName": "안양시 보건소 임신·출산 지원 페이지, 안양시 출산 지원에 관한 조례(시행 2025-10-13)",
+      "lastVerified": "2026-10-01",
       "status": "확인완료",
       "verified": true,
-      "notes": "지급 횟수·분할 여부 미확인.",
-      "statusOriginal": "확정시행",
-      "auditNotes": {
-        "paymentMethod": "확인 필요(분할지급 보도 있음)"
-      }
+      "notes": "[2026-10-01 재열람] 분할 지급 중 타 지역으로 전출하면 지급 중단(조례 제7조④). 개정안(2027-01-01 시행 예정, 입법예고 2026-09-21)은 금액·분할 조항을 바꾸지 않음.",
+      "statusOriginal": "확정시행"
     },
     {
       "id": "GGM-ANYANG-02",
@@ -46,22 +43,19 @@
       "target": "안양시 임신부",
       "minAgeMonths": 0,
       "maxAgeMonths": 12,
-      "amountText": "10만원",
-      "paymentMethod": "",
+      "amountText": "10만원(현금 또는 안양사랑상품권, 신청한 달 익월 10일까지 지급)",
+      "paymentMethod": "현금 또는 안양사랑상품권(산모 명의 통장사본 제출)",
       "deadlineType": "birth_relative_months",
       "deadlineValue": 0,
       "residencyRequirement": "신청일 이전부터 3개월 이상 안양시 주민등록·거주",
-      "additionalConditions": "임신 확인 후 출산 전까지 신청",
+      "additionalConditions": "임신 확인 시부터 출산 전까지 보건소 모자보건실 방문 신청(출산 후 신청 불가). 신분증, 임신확인서, 산모 명의 통장사본 필요",
       "officialUrl": "https://www.anyang.go.kr/health/contents.do?key=1343",
-      "sourceName": "안양시 보건소 임신·출산 지원 페이지",
-      "lastVerified": "2026-09-29",
-      "status": "확인완료",
-      "verified": true,
-      "notes": "지급수단 미확인. [2026-10-01] 임신 중에만 신청·이용 가능한 제도라 prenatalOnly 지정(출산 후 화면에서 숨김).",
+      "sourceName": "안양시 보건소 임신·출산 지원 페이지, 안양시 출산 지원에 관한 조례, 입법예고 공고 제2026-1529호(2026-09-21)",
+      "lastVerified": "2026-10-01",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "[2026-10-01 점검] 입법예고(공고 제2026-1529호, 2026-09-21)에 임신축하금 사업 종료가 명시돼 확인필요로 강등. 개정안 부칙상 2026-12-31까지 신청분은 종전 규정 적용, 시행일 2027-01-01. 조례 개정 확정 전이라 의견제출 마감(2026-10-12) 이후 재확인. [2026-10-01] 임신 중에만 신청·이용 가능한 제도라 prenatalOnly 지정(출산 후 화면에서 숨김).",
       "statusOriginal": "확정시행",
-      "auditNotes": {
-        "paymentMethod": "확인 필요"
-      },
       "prenatalOnly": true
     },
     {
@@ -71,27 +65,27 @@
       "applicableRegions": [
         "경기도:안양시"
       ],
-      "target": "안양시 주민등록 부 또는 모가 관내 출생신고한 출산가정 (분만예정일 30일 전부터 신청)",
+      "target": "안양시 주민등록 부 또는 모가 관내 출생신고한 출산가정 또는 출산예정일 30일 전 임산부 가정",
       "minAgeMonths": 0,
       "maxAgeMonths": 12,
-      "amountText": "첫째 20만원 / 둘째 30만원 / 셋째 이상 40만원 상당 육아용품 (약 200종 중 선택)",
+      "amountText": "첫째 20만 / 둘째 30만 / 셋째 이상 40만 포인트. 400여 종의 육아용품 중 선택해 택배로 신청, 포인트 사용기간 2026-12-31까지",
       "amountByBirthOrder": {
         "first": 200000,
         "second": 300000,
         "third": 400000,
         "fourthPlus": 400000
       },
-      "paymentMethod": "온라인 쇼핑몰 포인트로 선택 후 택배 배송",
+      "paymentMethod": "포인트(현금 아님)",
       "deadlineType": "birth_relative_months",
       "deadlineValue": 12,
       "residencyRequirement": "부 또는 모 안양시 주민등록",
-      "additionalConditions": "동행정복지센터에서 수령자 등록 후 온라인 신청. 문의 1544-2673",
+      "additionalConditions": "동행정복지센터 방문 → 수혜자 등록(인증번호) → 온라인 본인인증 → 품목 선택 → 택배 신청. 문의 1544-2673",
       "officialUrl": "https://www.anyang.go.kr/youth/contents.do?key=3620",
-      "sourceName": "안양시청 아이좋아 행복꾸러미 페이지",
-      "lastVerified": "2026-09-29",
+      "sourceName": "안양시청 아이좋아 행복꾸러미 페이지, 공식 운영 사이트(anyangijoa.com)",
+      "lastVerified": "2026-10-01",
       "status": "확인완료",
       "verified": true,
-      "notes": "신청 마감기한 미확인.",
+      "notes": "[2026-10-01 재열람] 신청 마감기한은 두 공식 페이지 어디에도 없어 확인불가. 2026-12-31은 포인트 사용기간이며 신청 마감이 아님. anyangijoa.kr은 인증서 오류로 미열람.",
       "statusOriginal": "확정시행"
     },
     {

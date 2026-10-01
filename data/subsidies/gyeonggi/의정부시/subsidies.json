@@ -20,17 +20,17 @@
         "third": 1000000,
         "fourthPlus": 1000000
       },
-      "paymentMethod": "동 주민센터 신청, 매월 5일까지 신청 시 익월 20일 지급",
+      "paymentMethod": "계좌이체 또는 지역화폐(조례 제7조③). 통장사본 제출, 익월 20일까지 지급",
       "deadlineType": "birth_relative_months",
       "deadlineValue": 60,
-      "residencyRequirement": "부 또는 모가 의정부시에 주민등록·실거주",
-      "additionalConditions": "출생일(입양일)로부터 5년 이내 신청",
+      "residencyRequirement": "자녀 출생신고일 현재 의정부시 주민등록·거주, 자녀와 주민등록상 동일 세대원",
+      "additionalConditions": "출생일(입양일)로부터 5년 이내 신청(조례 제6조③, 시 페이지에는 기한 문구 없음). 다른 지자체에서 이미 지급받은 경우 지급하지 않음",
       "officialUrl": "https://www.ui4u.go.kr/depart/contents.do?mId=0901020000",
-      "sourceName": "의정부시청 출산장려금 페이지(검색 요약)·블로그",
-      "lastVerified": "2026-09-29",
-      "status": "확인필요",
-      "verified": false,
-      "notes": "공식 페이지 SSL 오류로 본문 직접 확인 못함. 지급 형태(현금/지역화폐) 확인 필요",
+      "sourceName": "의정부시청 출산장려금 페이지, 의정부시 조례(시행 2026-01-09)",
+      "lastVerified": "2026-10-01",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-01 재열람] 2026-01-09 조례 개정은 여성장애인 출산지원금을 흡수한 것으로 일반 출산장려금 금액·기한은 변경 없음.",
       "statusOriginal": "확정시행"
     }
   ]

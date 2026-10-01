@@ -10,7 +10,7 @@
       "applicableRegions": [
         "경기도:연천군"
       ],
-      "target": "연천군 출생아, 출생 3개월 전부터 거주",
+      "target": "180일 이상 연천군에 거주한 세대(부모 중 1명)의 출생아를 연천군에 출산등록한 가정",
       "minAgeMonths": 0,
       "maxAgeMonths": 60,
       "amountText": "첫째 100만원 / 둘째 200만원 / 셋째 500만원 / 넷째 이상 1,000만원",
@@ -20,21 +20,88 @@
         "third": 5000000,
         "fourthPlus": 10000000
       },
-      "paymentMethod": "",
+      "paymentMethod": "분할지급(지급 방식은 원문에 없음)",
       "deadlineType": "birth_relative_days",
       "deadlineValue": 180,
-      "residencyRequirement": "출생 3개월 전부터 연천군 거주",
-      "additionalConditions": "출생 후 180일 이내 신청",
+      "residencyRequirement": "180일 이상 연천군 거주(부모 중 1명)",
+      "additionalConditions": "출산 후 180일 이내 거주지 읍·면사무소(맞춤형 복지팀) 신청. 문의 사회복지과 031-839-2265",
       "officialUrl": "https://www.yeoncheon.go.kr/www/contents.do?key=3310",
-      "sourceName": "연천군청 공식 홈페이지",
-      "lastVerified": "2026-09-01",
+      "sourceName": "연천군청 인구유입시책 페이지(key=3310), 연천군 자체 지원사업 안내(key=4764)",
+      "lastVerified": "2026-10-01",
       "status": "확인완료",
       "verified": true,
-      "notes": "",
-      "statusOriginal": "확정시행",
-      "auditNotes": {
-        "paymentMethod": "확인 필요"
-      }
+      "notes": "[2026-10-01 재열람] 기존 거주요건 '출생 3개월 전부터'는 같은 페이지의 출산용품 지원 문구와 섞인 값이라 원문 '180일 이상 거주 세대'로 정정.",
+      "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-YEONCHEON-02",
+      "name": "연천군 외국인여성 출산가사 돌보미 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:연천군"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "conditionLabel": "외국인주민 가정",
+      "target": "관내 거주 외국인주민(다문화가정)으로 자녀를 출생한 사람",
+      "amountText": "출생아 1인당 60만원",
+      "paymentMethod": "원문에 없음",
+      "residencyRequirement": "관내 거주 외국인주민(거주 기간은 원문에 없음)",
+      "additionalConditions": "각 읍·면 행정복지센터 맞춤형 복지팀 신청. 신청기간은 원문에 없음",
+      "officialUrl": "https://www.yeoncheon.go.kr/www/contents.do?key=4764",
+      "sourceName": "연천군청 연천군 자체 지원사업 안내 페이지",
+      "notes": "[2026-10-01 신규] 원문: '사업명: 외국인여성 출산가사 돌보미 지원사업 / 지원내용: 출생아 1인당 60만원 지원'. 외국인주민 대상이라 conditionLabel 지정."
+    },
+    {
+      "id": "GGM-YEONCHEON-03",
+      "name": "연천군 출산용품 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:연천군"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "target": "출생 3개월 전부터 연천군에 주민등록을 두고 출생신고를 한 가정",
+      "amountText": "출산용품(베이비로션·바스·방수요·내의세트·후드타올 등, 금액은 원문에 없음)",
+      "paymentMethod": "현물(보건의료원)",
+      "residencyRequirement": "출생 3개월 전부터 연천군 주민등록",
+      "additionalConditions": "신청기관은 보건의료원. 물품 소진 시 변경될 수 있음. 신청기간은 원문에 없음",
+      "officialUrl": "https://www.yeoncheon.go.kr/www/contents.do?key=3310",
+      "sourceName": "연천군청 인구유입시책 페이지(key=3310), 보건의료원 모자보건 페이지(key=3729)",
+      "notes": "[2026-10-01 신규] 두 페이지의 대상 표현이 조금 다름(key=3729는 '연천관내 주민등록 출생등록 신생아'). 출산장려금의 '3개월 전' 문구는 이 항목에서 온 값."
+    },
+    {
+      "id": "GGM-YEONCHEON-04",
+      "name": "연천군 유축기 대여",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:연천군"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "target": "연천관내 주민등록 거주 출산 산모",
+      "amountText": "유축기 출산 후 1개월 대여",
+      "paymentMethod": "보건의료원 방문 대여(현물)",
+      "residencyRequirement": "연천군 주민등록 거주",
+      "additionalConditions": "신청기간은 원문에 없음",
+      "officialUrl": "https://www.yeoncheon.go.kr/health/contents.do?key=3729",
+      "sourceName": "연천군 보건의료원 모자보건 페이지",
+      "notes": "[2026-10-01 신규] 원문: 출산 후 1개월 대여. 사업 주체(군 자체 여부)는 페이지에 명시 없음."
     }
   ]
 }

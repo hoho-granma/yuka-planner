@@ -90,6 +90,55 @@
       "notes": "deadlineValue는 서비스 종료 후 60일 이내(개월 단위 아님) 신청기한은 서비스 종료 후 60일(개월 단위 아님)이라 ongoing으로 표기.",
       "statusOriginal": "확정시행",
       "conditionLabel": "서비스 이용자"
+    },
+    {
+      "id": "GGM-GWANGJU-04",
+      "name": "광주시 다태임신 임산부 교통비 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:광주시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 5,
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 5,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "postpartumOk": true,
+      "conditionLabel": "다태임신",
+      "target": "6개월 이상 광주시에 주민등록 된 다태임신 임산부",
+      "amountText": "임신 12주부터 분만 후 3개월까지 산부인과 진료 교통비 최대 50만원 실비(1회 진료당 5만원 한도)",
+      "paymentMethod": "계좌이체",
+      "residencyRequirement": "광주시 주민등록 6개월 이상(광주시에 주민등록을 둔 날의 진료 건만 지원)",
+      "additionalConditions": "분만 후 5개월까지 신청. 2026년 신규사업, 2026-01 이후 진료 건부터 지원",
+      "officialUrl": "https://www.gjcity.go.kr/depart/contents.do?mId=0805071700",
+      "sourceName": "광주시청 다태임신 임산부 교통비 지원 페이지(수정일 2026-09-29)",
+      "notes": "[2026-10-01 신규] 원문: '임신 12주부터 분만 후 3개월까지 … 교통비 최대 50만원까지 실비지원(1회 진료당 5만원 한도)'. 종료 공지 없음."
+    },
+    {
+      "id": "GGM-GWANGJU-05",
+      "name": "광주시 기형아 검사비 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:광주시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "prenatalOnly": true,
+      "target": "신청일 기준 주민등록상 광주시민인 임산부",
+      "amountText": "최고 3만원 범위 내 실비",
+      "paymentMethod": "원문에 없음(구비서류에 산모 명의 통장사본)",
+      "residencyRequirement": "광주시 주민등록",
+      "additionalConditions": "검사일로부터 6개월 이내 신청. 지원 검사: 임신 11~20주 사이 1·2차 기형아검사(생애주기 페이지는 12~20주로 표기해 두 페이지가 다름)",
+      "officialUrl": "https://www.gjcity.go.kr/depart/contents.do?mId=0805060100",
+      "sourceName": "광주시 보건소 모자보건 페이지(수정일 2026-09-21), 생애주기별 맞춤형 지원사업 페이지",
+      "notes": "[2026-10-01 신규] 원문: '지원금액: 최고지원금 3만원 범위 내 실비지급'. 임신 중 검사 지원이라 prenatalOnly 지정. 검사 주수 11주/12주 표기 충돌."
     }
   ]
 }

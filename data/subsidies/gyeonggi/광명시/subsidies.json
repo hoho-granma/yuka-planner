@@ -10,30 +10,29 @@
       "applicableRegions": [
         "경기도:광명시"
       ],
-      "target": "광명시 출생아(출생 순위 무관)",
+      "target": "출산일 기준 광명시에 1년 이상 주민등록을 두고 실제 거주하는 영아의 부 또는 모",
       "minAgeMonths": 0,
       "maxAgeMonths": 12,
-      "amountText": "출생아 1인당 70만원",
+      "amountText": "출생아 1인당 70만원 계좌입금(신청한 달의 다음 달 지급). 조례상 70만원 이내(예산 범위)",
       "amountByBirthOrder": {
         "first": 700000,
         "second": 700000,
         "third": 700000,
         "fourthPlus": 700000
       },
-      "paymentMethod": "신청 후 지급",
+      "paymentMethod": "계좌입금",
       "deadlineType": "birth_relative_months",
       "deadlineValue": 12,
-      "residencyRequirement": "출생일 기준 1년 이상 광명시 주민등록·실거주",
-      "additionalConditions": "주민센터 또는 정부24 신청.",
+      "residencyRequirement": "출산일 기준 1년 이상 주민등록·실제 거주. 1년 미만이면 1년이 지난 시점에 신청 가능(최종 전입일 기준)",
+      "additionalConditions": "주소지 동 행정복지센터 방문 또는 정부24 행복출산 원스톱서비스 신청. 지원 대상이 되는 날부터 1년 이내 신청, 지급 대상은 만 12개월 미만.",
       "officialUrl": "https://www.gm.go.kr/pt/partInfo/wf/wf03/PTMN781.jsp",
-      "sourceName": "광명시 뉴스포털(출산·양육·교육 지원 정책 정리)",
-      "lastVerified": "2026-09-29",
+      "sourceName": "광명시 출산축하금 사업 페이지, 광명시 출산축하금 지원에 관한 조례(시행 2021-04-16)",
+      "lastVerified": "2026-10-01",
       "status": "확인완료",
       "verified": true,
-      "notes": "신청기한·지급수단은 원문에서 미확인",
+      "notes": "[2026-10-01 재열람] 조례 제5조①(대상이 되는 날부터 1년 이내 신청)·제3조(70만원 이내)와 사업 페이지로 신청기한·지급수단 확인. 문의 여성가족과 02-2680-6164.",
       "statusOriginal": "확정시행",
       "auditNotes": {
-        "paymentMethod": "신청 후 지급(지급수단 확인 필요)",
         "additionalConditions": "주민센터 또는 정부24 신청. 신청기한은 출생 후 12개월로 추정, 확인 필요"
       }
     },
@@ -74,27 +73,30 @@
       "applicableRegions": [
         "경기도:광명시"
       ],
-      "target": "광명시 2025년생 이후 출생아, 첫돌 이후 지급",
+      "target": "출생일부터 첫돌까지 대상 자녀와 함께 거주하는 부 또는 모(대상 자녀와 주민등록상 동일세대원, 광명시에서 출생한 자녀만 해당)",
       "minAgeMonths": 12,
       "maxAgeMonths": 24,
-      "amountText": "첫째 60만원 / 둘째 80만원 / 셋째 이상 100만원 (2026년 상향, 2025년생부터 적용)",
+      "amountText": "첫째 60만원 / 둘째 80만원 / 셋째 이상 100만원 (2025년생은 자녀 수에 따라 60~100만원, 2024년생은 50~70만원)",
       "amountByBirthOrder": {
         "first": 600000,
         "second": 800000,
         "third": 1000000,
         "fourthPlus": 1000000
       },
-      "paymentMethod": "지역화폐",
+      "paymentMethod": "지역화폐, 신청한 달의 다음 달 25일 지급",
       "deadlineType": "age_window",
-      "deadlineValue": 24,
-      "residencyRequirement": "광명시 주민등록",
-      "additionalConditions": "신청기간: 생후 첫돌부터 2세 전날까지",
+      "deadlineValue": {
+        "minMonths": 12,
+        "maxMonths": 24
+      },
+      "residencyRequirement": "출생일부터 신청일까지 계속 광명시에 주민등록을 두고 실제 거주",
+      "additionalConditions": "생후 첫 번째 생일부터 두 번째 생일 전날까지 신청. 주민등록상 주소지 동 행정복지센터 방문 신청",
       "officialUrl": "https://www.gm.go.kr/pt/partInfo/wf/wf03/PTMN781.jsp",
-      "sourceName": "광명시 뉴스포털, 아시아경제, 경기일보",
-      "lastVerified": "2026-09-29",
-      "status": "확인필요",
-      "verified": false,
-      "notes": "거주기간 요건 원문 미확인",
+      "sourceName": "광명시 아이조아 첫돌 축하금 안내 페이지",
+      "lastVerified": "2026-10-01",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-01 재열람] 2024년생(50~70만원)도 대상이며 원문에 '2026년 상향' 문구는 없음. 복지로 상세는 검색 발췌로만 확인(직접 열람 안 함).",
       "statusOriginal": "확정시행"
     },
     {
@@ -111,14 +113,14 @@
       "paymentMethod": "현물(차량 서비스)",
       "deadlineType": "ongoing",
       "deadlineValue": null,
-      "residencyRequirement": "광명시 거주",
-      "additionalConditions": "임산부 또는 36개월 이하 영유아 동반",
+      "residencyRequirement": "광명시 주민등록을 둔 임산부 및 36개월 이하 영유아 양육가정",
+      "additionalConditions": "아이조아붕붕카 홈페이지 가입 → 이용심사 신청서·신분증·주민등록등본·임신사실확인서 등 서류 제출 → 승인 후 예약(3일 전~당일 1시간 전). 1인당 연 15회 이용권",
       "officialUrl": "https://www.gm.go.kr/pt/partInfo/wf/wf03/PTMN781.jsp",
-      "sourceName": "광명시 뉴스포털, 뉴스핌",
-      "lastVerified": "2026-09-29",
-      "status": "확인필요",
-      "verified": false,
-      "notes": "이용 신청 방법 원문 미확인",
+      "sourceName": "광명시 안내 페이지, 아이조아붕붕카 운영 사이트(izoa.kr, 시 보조금으로 위탁 운영)",
+      "lastVerified": "2026-10-01",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-01 재열람] 현물 서비스라 지급수단 없음. 부모가 가입·신청해 이용하는 서비스로 범위 안으로 판단. 2026-09-29 공지(10월 휴무 안내)로 운영 확인. 시청 페이지가 아닌 운영 사이트 근거 병행.",
       "statusOriginal": "확정시행"
     },
     {
@@ -143,6 +145,52 @@
       "status": "확인필요",
       "verified": false,
       "notes": "요약만 확인. 대상·자격 미확인"
+    },
+    {
+      "id": "GGM-GWANGMYEONG-06",
+      "name": "광명시 출산가정 쓰레기봉투 무상지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:광명시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "target": "2024-01-01 이후 광명시에 주민등록을 두고 출생신고하거나 1년 미만 영아를 입양신고한 세대",
+      "amountText": "종량제봉투 20리터 100매 1회(금액 환산은 원문에 없음)",
+      "paymentMethod": "현물(종량제봉투)",
+      "residencyRequirement": "광명시 주민등록",
+      "additionalConditions": "동 행정복지센터 방문 또는 복지로·정부24 신청. 신청기간은 원문에 없음",
+      "officialUrl": "https://www.gm.go.kr/pt/partInfo/wf/wf03/PTMN781.jsp",
+      "sourceName": "광명시청 출산/양육 지원 페이지",
+      "notes": "[2026-10-01 신규] 원문: '종량제봉투 20리터 100매 1회 지급'. 종료 공지 없음."
+    },
+    {
+      "id": "GGM-GWANGMYEONG-07",
+      "name": "광명시 유축기 대여",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:광명시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 2,
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 2,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "target": "광명시 주민등록 출산 2개월 이내 산모",
+      "amountText": "대여비용 무료(이용기간 1개월, 호스·깔때기는 본인 구입)",
+      "paymentMethod": "현물 대여",
+      "residencyRequirement": "광명시 주민등록",
+      "additionalConditions": "전화 예약 필수. 신청기간은 원문에 없음(출산 2개월 이내가 대상)",
+      "officialUrl": "https://www.gm.go.kr/health/helthBsns/mhrhlHelth/mhrsmNrsgEncrg.jsp",
+      "sourceName": "광명시 보건소 모유수유장려사업 페이지",
+      "notes": "[2026-10-01 신규] 원문: '대상 : 광명시 주민등록 출산 2개월 이내 산모 … 대여비용 : 무료'. 종료 공지 없음."
     }
   ]
 }

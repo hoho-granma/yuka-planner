@@ -32,6 +32,78 @@
       "verified": true,
       "notes": "2026년 첫째·둘째까지 확대. 언론은 넷째 이상 400만원으로 표기, 공식페이지 700만원 기준. 거주 1년 미만은 1년 경과 후 지급.",
       "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-BUCHEON-02",
+      "name": "부천시 맘(Mom)편한 택시",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:부천시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "postpartumOk": true,
+      "target": "부천시 주민등록 임산부(수혜기간 임신~출산 후 1년)",
+      "amountText": "관내 병원 이용 시 택시요금 지원(본인부담: 기본요금 1,700원 + 택시비 13,000원 초과분)",
+      "paymentMethod": "택시 이용 시 요금 지원(계좌 지급은 원문에 없음)",
+      "residencyRequirement": "부천시 주민등록",
+      "additionalConditions": "부천시교통약자이동지원센터(1588-3815)에 임산부 증명자료 제출. 사업기간 '2023. 5. ~', 종료일은 원문에 없음",
+      "officialUrl": "https://www.bucheon.go.kr/site/program/board/basicboard/list?boardtypeid=28004&menuid=148006011&boardtext1=01",
+      "sourceName": "부천시청 맞춤형복지 '맘(Mom)편한 택시' 페이지(작성일 2023-08-07)",
+      "notes": "[2026-10-01 신규] 목록 페이지 URL(상세 encid 주소는 미저장). 원문: '임산부(Mom)가 안전하고 마음 편히 병원에 갈 수 있도록 일반택시 이용 시 비용을 지원해 주는 정책'. 첨부 2026년 홍보자료(hwp)는 미열람."
+    },
+    {
+      "id": "GGM-BUCHEON-03",
+      "name": "부천시 다자녀가정 종량제봉투 무상 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:부천시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 1,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "conditionLabel": "두 자녀 이상",
+      "target": "부천시에서 출생(입양) 신고한 두 자녀 이상 가정",
+      "amountText": "20리터 종량제봉투 50매 일시 지급",
+      "paymentMethod": "현물 배송(신청 다음 달)",
+      "residencyRequirement": "부천시에서 출생(입양) 신고",
+      "additionalConditions": "동 행정복지센터에서 출생(입양) 신고 시 신청하면 익월 자택으로 배송, 연중",
+      "officialUrl": "https://www.bucheon.go.kr/site/program/board/basicboard/list?boardtypeid=28004&menuid=148006011&boardtext1=01",
+      "sourceName": "부천시청 맞춤형복지 '다자녀가정 종량제봉투 무상 지원' 페이지(작성일 2023-10-23)",
+      "notes": "[2026-10-01 신규] 목록 페이지 URL(상세 encid 주소는 미저장). 원문: '일반생활쓰레기 종량제봉투 20리터 50매 일시 지급'."
+    },
+    {
+      "id": "GGM-BUCHEON-04",
+      "name": "부천시 장애인 출산비용 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:부천시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "conditionLabel": "장애인 가정",
+      "target": "등록장애인 여성이 출산한 가정(신생아 출산일 기준 12개월 전부터 계속 부천시 주민등록·거주)",
+      "amountText": "부 또는 모가 심한 장애이면 250만원, 심하지 않은 장애이면 150만원(국가 여성장애인 출산비용 120만원은 별도)",
+      "paymentMethod": "통장 사본 제출, 시가 지급(계좌 입금 표현은 원문에 없음)",
+      "residencyRequirement": "신생아 출산일 기준 12개월 전부터 계속 부천시 주민등록·거주(1년 미만이면 1년 경과일부터 지원)",
+      "additionalConditions": "출생일로부터 1년 이내 행정복지센터를 거쳐 신청. 부천시 다자녀 출산지원금 대상 장애인가정은 중복 지급 가능",
+      "officialUrl": "https://www.bucheon.go.kr/site/program/board/basicboard/list?boardtypeid=28004&menuid=148006011&boardtext1=01",
+      "sourceName": "부천시청 맞춤형복지 '장애인 출산비용 지원' 페이지",
+      "notes": "[2026-10-01 신규] 목록 페이지 URL(상세 encid 주소는 미저장). 원문: '부천시 다자녀 출산지원금 지원대상인 장애인가정은 중복 지급 가능'. 국가 여성장애인 출산비용과 같은 사업인지는 원문에 구분 없음."
     }
   ]
 }

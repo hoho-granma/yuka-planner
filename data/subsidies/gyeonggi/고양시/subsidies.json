@@ -12,7 +12,7 @@
       ],
       "target": "고양시 출생아",
       "minAgeMonths": 0,
-      "maxAgeMonths": 60,
+      "maxAgeMonths": 12,
       "amountText": "첫째 100만원 / 둘째 200만원 / 셋째 300만원 / 넷째 500만원 / 다섯째 이상 1,000만원",
       "amountByBirthOrder": {
         "first": 1000000,
@@ -20,17 +20,87 @@
         "third": 3000000,
         "fourthPlus": 5000000
       },
-      "paymentMethod": "확인 필요",
-      "deadlineType": "unconfirmed",
-      "deadlineValue": null,
-      "residencyRequirement": "고양시 거주",
-      "additionalConditions": "",
+      "paymentMethod": "신청 계좌 입금 (친권자·후견인·출생아 명의 계좌만 가능)",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "출생신고일 기준 1년 이전부터 고양시에 주민등록을 두고 계속 거주 (미충족 시 자격 취득일부터 1년 이내 신청)",
+      "additionalConditions": "2024-01-01 이후 출생 자녀부터 적용. 넷째·다섯째 이상은 최초 300만원 지급 후 1년 뒤부터 분기별 분할 지급. 동 행정복지센터 또는 정부24 신청",
       "officialUrl": "https://www.goyang.go.kr/www/www03/www03_8/www03_8_6/www03_8_6_tab7.jsp",
-      "sourceName": "고양시청 공식 홈페이지",
-      "lastVerified": "2026-09-01",
-      "status": "확인필요",
-      "verified": false,
-      "notes": "신청기한 미확인"
+      "sourceName": "고양시청 출산·양육지원 페이지, 고양시 보도자료(2026-01-16)",
+      "lastVerified": "2026-10-01",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-01 재열람] 2026-01-16 보도자료도 같은 금액 유지."
+    },
+    {
+      "id": "GGM-GOYANG-02",
+      "name": "고양시 탄생축하 쌀 케이크 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:고양시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 3,
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 3,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "target": "고양시에 주민등록을 두고 계속 거주하는 모든 출산가정",
+      "amountText": "금액은 원문에 없음. 케이크·쿠키류 13종 중 1개 + 고양 가와지쌀 150g(현물)",
+      "paymentMethod": "현물(케이크류는 관내 배송만, 쿠키류는 전국 배송)",
+      "residencyRequirement": "출생신고일 기준 부 또는 모가 고양시에 주민등록, 출생신고를 고양시에서 함(거주 기간 조건은 원문에 없음)",
+      "additionalConditions": "출생 자녀의 출생신고일로부터 3개월 이내 동 행정복지센터 또는 정부24 신청",
+      "officialUrl": "https://www.goyang.go.kr/www/www03/www03_8/www03_8_6/www03_8_6_tab7.jsp",
+      "sourceName": "고양시청 출산·양육지원 페이지",
+      "notes": "[2026-10-01 신규] 원문: '신청기한 : 출생 자녀의 출생신고일로부터 3개월 이내'. 종료·변경 공지 없음."
+    },
+    {
+      "id": "GGM-GOYANG-03",
+      "name": "고양시 다복꾸러미 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:고양시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 3,
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 3,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "conditionLabel": "셋째 이상",
+      "target": "셋째 이상 자녀를 출산한 고양시 거주 출산가정",
+      "amountText": "금액은 원문에 없음. 패키지 4종(A 플레이매트 세트, B 오가닉 아기옷 세트, C 들기름·담요 세트, D 큰 담요) 중 1개(현물)",
+      "paymentMethod": "현물",
+      "residencyRequirement": "출생신고일 기준 부 또는 모가 고양시에 주민등록, 출생신고를 고양시에서 함",
+      "additionalConditions": "출생신고일로부터 3개월 이내 신청",
+      "officialUrl": "https://www.goyang.go.kr/www/www03/www03_8/www03_8_6/www03_8_6_tab7.jsp",
+      "sourceName": "고양시청 출산·양육지원 페이지",
+      "notes": "[2026-10-01 신규] 원문: '신청대상 : 셋째이상 자녀를 출산한 고양시 거주 출산가정'. 종료·변경 공지 없음."
+    },
+    {
+      "id": "GGM-GOYANG-04",
+      "name": "고양시 유축기 대여",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:고양시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "target": "주민등록상 주소지가 관할구인 산모(부부 모두 외국인이면 대여 불가)",
+      "amountText": "무료(1인 1회 1개월, 연장 불가). 유축기 본체만 대여, 소모품은 별도 구매",
+      "paymentMethod": "현물 대여",
+      "residencyRequirement": "주민등록상 주소지가 관할구",
+      "additionalConditions": "출산 후 전화 예약 후 순번대로 대여(출산 전 예약 불가)",
+      "officialUrl": "https://www.goyang.go.kr/health/health02/health02_4/health02_4_2/health02_4_2_tab1.jsp",
+      "sourceName": "고양시 보건소 임산부 등록·지원 페이지",
+      "notes": "[2026-10-01 신규] 원문: '비용 : 무료'. 시 자체 사업인지 국비 사업인지는 원문에 구분이 없음."
     }
   ]
 }

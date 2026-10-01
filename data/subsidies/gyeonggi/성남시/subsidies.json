@@ -20,17 +20,88 @@
         "third": 1000000,
         "fourthPlus": 2000000
       },
-      "paymentMethod": "첫째·둘째는 카드형 지역화폐(아동수당 체크카드 필수)",
-      "deadlineType": "unconfirmed",
-      "deadlineValue": null,
+      "paymentMethod": "현금 지급, 매월 20일 (2025-07-01 이후 출생아부터). 조례상 첫째·둘째는 상품권·체크카드 지급도 허용",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 36,
       "residencyRequirement": "180일 이상 거주",
-      "additionalConditions": "",
-      "officialUrl": "https://www.seongnam.go.kr/city/1000647/16/10485/subTabCont.do",
-      "sourceName": "성남시청 공식 홈페이지",
-      "lastVerified": "2026-09-01",
-      "status": "확인필요",
-      "verified": false,
-      "notes": "신청기한 미확인"
+      "additionalConditions": "타 지자체에서 지원금을 받은 경우 제외(조례 제3조③). 180일 미충족자는 180일 경과일부터 3년 이내 신청. 출생신고일부터 3년 이내 신청",
+      "officialUrl": "https://www.jungwongu.go.kr:10008/mobile/sub/content.asp?cIdx=300",
+      "sourceName": "중원구청·수정구청 출산장려 지원 페이지, 성남시 출산장려 조례(시행 2024-02-19), 정부24 보조금24(최종수정 2026-08-14)",
+      "lastVerified": "2026-10-01",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-01 재열람] 기존 성남시청 URL은 '페이지를 찾을 수 없음'이라 중원구청 페이지로 교체. 수정구청 페이지는 첫째·둘째를 체크카드 포인트로 안내해 구형 안내와 충돌하나, 최신인 중원구 페이지·조례(제6조③)의 현금 지급을 채택."
+    },
+    {
+      "id": "GGM-SEONGNAM-02",
+      "name": "성남시 산후조리비 지원",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:성남시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 6,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "conditionLabel": "소득 80% 이하",
+      "target": "출생일 기준 6개월 전부터 성남시 주민등록이고 신청일 현재 거주하는 부 또는 모, 기준중위소득 80% 이하 출산가구",
+      "amountText": "산후조리원 또는 산모·신생아 건강관리 본인부담금의 90%, 최대 50만원",
+      "paymentMethod": "신청인 통장사본 제출(지급방식 문구는 원문에 없음)",
+      "residencyRequirement": "출생일 기준 6개월 전부터 성남시 주민등록, 신청일 현재 거주",
+      "additionalConditions": "출생일로부터 6개월 이내 보건소 임산부실 방문 신청, 사업기간 상시",
+      "officialUrl": "https://www.seongnam.go.kr/wf-pm020101/12070",
+      "sourceName": "성남시청 복지사업 '성남시 산후조리비 지원' 페이지",
+      "notes": "[2026-10-01 신규] 원문: '성남시 6개월이상 거주 기준중위소득 80%이하 출산가구에게 산후조리비용 지원(최대50만원)'. 종료 공지 없음."
+    },
+    {
+      "id": "GGM-SEONGNAM-03",
+      "name": "성남시 유축기 대여",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:성남시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 3,
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 3,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "target": "부부 중 1명 이상 성남시 주소지인 출산가정의 출산일로부터 3개월 이내 산모",
+      "amountText": "전동유축기 1개월(30일) 대여, 택배 배송(비용은 원문에 없음)",
+      "paymentMethod": "현물 대여",
+      "residencyRequirement": "부부 중 1명 이상 성남시 주소지",
+      "additionalConditions": "사업기간 연중. 방문 예약 또는 Fax 신청",
+      "officialUrl": "https://www.seongnam.go.kr/wf-pm020101/11009",
+      "sourceName": "성남시청 복지사업 '유축기 대여' 페이지",
+      "notes": "[2026-10-01 신규] 원문: '출산가정에 출산일로부터 3개월이내의 산모를 대상으로 1개월간 유축기 대여'. 종료 공지 없음."
+    },
+    {
+      "id": "GGM-SEONGNAM-04",
+      "name": "성남시 장애인가정 출산장려금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:성남시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 36,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "conditionLabel": "장애인 가정",
+      "target": "출생일 기준 부 또는 모가 등록장애인이고 성남시에 주민등록을 둔 가정",
+      "amountText": "영유아 1인 100만원(쌍생아 이상은 50% 가산)",
+      "paymentMethod": "통장사본 제출(지급방식 문구는 원문에 없음)",
+      "residencyRequirement": "출생일 기준 성남시 주민등록 180일 이상 거주(180일 미만이면 출생신고일 이후 180일 이상 거주 시 지급)",
+      "additionalConditions": "사업기간 연중, 동 행정복지센터 신청. 별도 페이지(23005)에는 '출생등록 후 3년 이내'로 적혀 있으나 국비 여성장애인 출산비용과 섞여 있어 기한은 확정하지 않음",
+      "officialUrl": "https://www.seongnam.go.kr/wf-pm020101/21003",
+      "sourceName": "성남시청 복지사업 '장애인가정 출산장려금' 페이지",
+      "notes": "[2026-10-01 신규] 원문: '장애인가정 영유아 1인 100만원 지급 / 쌍생아 이상 일 시 50% 가산지원'. 신청기한이 페이지마다 달라 ongoing으로 두고 조건에 기록."
     }
   ]
 }

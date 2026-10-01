@@ -32,6 +32,30 @@
       "verified": true,
       "notes": "",
       "statusOriginal": "확정시행"
+    },
+    {
+      "id": "GGM-YONGIN-02",
+      "name": "용인시 임신지원금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:용인시"
+      ],
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "status": "확인완료",
+      "verified": true,
+      "lastVerified": "2026-10-01",
+      "prenatalOnly": true,
+      "target": "신청일 기준 용인시에 주민등록을 두고 거주하는 임신 20주 이상 임신부(외국인은 용인시 체류지를 두고 대한민국 국적 배우자가 있어야 함)",
+      "amountText": "태아 당 30만원(지역화폐), 신청한 다음 달 20일 지급",
+      "paymentMethod": "지역화폐",
+      "residencyRequirement": "신청일 기준 용인시 주민등록 거주",
+      "additionalConditions": "임신 20주 이후부터 출산 전까지 신청(출산 후 신청 불가). 행정복지센터 또는 정부24",
+      "officialUrl": "https://www.yongin.go.kr/home/www/www18/www18_05/www18_05_02/www18_05_02_03.jsp",
+      "sourceName": "용인시청 출산지원 '임신지원금' 페이지",
+      "notes": "[2026-10-01 신규] 원문: '지원내용 : 태아 당 30만원(지역화폐) 지급', '신청기간 : 임신 20주 이후부터 출산 전까지 (출산 후 신청 불가)'. 종료 공지 없음. 임신 중에만 신청 가능해 prenatalOnly 지정."
     }
   ]
 }
