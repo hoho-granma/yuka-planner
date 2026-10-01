@@ -1,0 +1,20 @@
+{
+  "completed": {
+    "SF-01__default": {
+      "done": true,
+      "occurrenceKey": "default",
+      "recordType": "TODO_COMPLETED",
+      "recordedAt": "2026-09-29T05:04:48.538Z",
+      "todo_id": "SF-01"
+    }
+  },
+  "profile": {
+    "birthDate": "2026-06-20",
+    "birthOrder": "first",
+    "district": "구로구",
+    "name": "테스트아이",
+    "province": "서울특별시",
+    "stage": "born"
+  },
+  "updatedAt": { "_timestamp": "2026-09-29T05:04:48Z" }
+}
