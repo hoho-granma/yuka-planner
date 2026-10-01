@@ -2263,6 +2263,7 @@
   // 아이 문서(families/{코드})에는 쓰지 않는다. 가구 ID 는 이 기기 localStorage(hannun_household_id)에만 둔다(R1).
   const HH_ID_KEY = "hannun_household_id";
   const hh = { view: "none", hid: null, code: null, notice: null, rulesUnavailable: false, lifecycle: false };
+  let hhJoining = false; // 가족 코드 참여 진행 중 — 시트를 닫았다 다시 열어도 중복 호출을 막고 'joining' 뷰를 유지한다
   const hhEnabled = () => typeof HouseholdView !== "undefined" && HouseholdView.isEnabled(window.FEATURES);
 
   function hhLoadSaved() {
@@ -2272,11 +2273,13 @@
     } catch (e) {
       hh.hid = null;
     }
-    hh.view = hh.code && hh.hid ? "active" : "none";
+    hh.view = hhJoining ? "joining" : hh.code && hh.hid ? "active" : "none";
   }
   function hhState() {
     const st = hh.hid ? HouseholdSync.getStatus(hh.hid) : { pending: 0, permissionDenied: false };
-    return { enabled: true, view: hh.view, childName: childDisplayName(), code: hh.code, pending: st.pending, permissionDenied: st.permissionDenied, rulesUnavailable: hh.rulesUnavailable, notice: hh.notice };
+    // 아이 전환 진입점: 가구가 있거나, 가구가 없어도 이 기기에 저장된 아이가 2명 이상일 때.
+    const showChildSwitch = !!(hh.hid && hh.code) || loadChildren().length >= 2;
+    return { enabled: true, view: hh.view, childName: childDisplayName(), code: hh.code, pending: st.pending, permissionDenied: st.permissionDenied, rulesUnavailable: hh.rulesUnavailable, notice: hh.notice, joinInput: hh.joinInput, showChildSwitch };
   }
   function hhRender() {
     const slot = el("hh-slot");
@@ -2324,6 +2327,7 @@
   function hhOpenSection() {
     hhLoadSaved();
     hh.notice = null;
+    hh.joinInput = "";
     hhRender();
     const slot = el("hh-slot");
     if (slot) slot.addEventListener("click", hhOnClick);
@@ -2351,6 +2355,41 @@
         if (probe === "denied") hh.rulesUnavailable = true;
         else if (probe === "error") hh.notice = { kind: "error", text: HouseholdView.failMessage(null) };
         hh.view = probe === "ok" ? "consent" : "none";
+      } else if (action === "join") {
+        // 가족 코드로 참여 — 가구 가입만 한다. 이 기기의 현재 아이·profile·completed·familyCode 는 바꾸지 않는다(핫픽스 설계 A).
+        if (hhJoining) {
+          hh.view = "joining"; // 이미 진행 중 — 두 번째 호출을 보내지 않는다
+        } else {
+        const slot = el("hh-slot");
+        const inp = slot && slot.querySelector('[data-hh-input="join-code"]');
+        const typed = inp ? inp.value : "";
+        hh.joinInput = typed;
+        const cls = HouseholdView.classifyCode(typed);
+        if (cls.kind !== "household") {
+          hh.notice = { kind: "error", text: HouseholdView.MSG.joinNotFound };
+        } else {
+          hh.view = "joining";
+          hhJoining = true;
+          hhRender();
+          let r;
+          try {
+            r = await HouseholdSync.joinHousehold(cls.code);
+          } finally {
+            hhJoining = false;
+          }
+          if (!r.ok) {
+            hh.notice = { kind: "error", text: HouseholdView.joinMessage(r) };
+            hh.view = "none";
+          } else {
+            hhSetJoined(r.householdId, cls.code);
+            hh.joinInput = "";
+            hh.notice = { kind: "joinOk", text: HouseholdView.joinMessage(r) };
+          }
+        }
+        }
+      } else if (action === "child-switch") {
+        showChildSwitchSheet();
+        return;
       } else if (action === "cancel-create") {
         hh.view = "none";
       } else if (action === "confirm-create") {

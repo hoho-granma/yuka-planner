@@ -46,7 +46,7 @@ const model = (schedules, filter) =>
 console.log("승인 문구");
 test("#1~#59 주요 문구가 승인본과 같다(#39·#42·#55 는 수정본)", () => {
   assert.strictEqual(M.addButton, "＋ 일정 추가");
-  assert.strictEqual(M.needHousehold, '일정을 추가하려면 프로필의 "가족 캘린더"를 먼저 만들어 주세요.');
+  assert.strictEqual(M.needHousehold, "일정을 추가하려면 프로필에서 가족 캘린더를 만들거나, 가족에게 받은 코드로 참여해 주세요.");
   assert.strictEqual(M.monthSummary(3, 1), "이번 달 추가 일정 3개 (완료 1)");
   assert.strictEqual(M.monthEmpty, "이번 달에 추가한 일정이 없어요.");
   assert.deepStrictEqual([M.groupAdded, M.groupBenefit, M.groupPlanned], ["추가한 일정", "혜택 신청 시작", "추천 항목 (정해진 날이 아니에요)"]);

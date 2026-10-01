@@ -923,6 +923,8 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .hh-btn.hh-primary { background: #ffeadb; color: #b4552a; border-color: #f8cdb0; }
 .hh-btn:active { background: #ffdfc9; }
 .hh-landing { margin: 10px 0 4px; }
+.hh-join { margin-top: 16px; padding-top: 12px; border-top: 1px dashed #f0d9c8; }
+.hh-input { box-sizing: border-box; width: 100%; margin-top: 8px; padding: 11px 12px; border: 1px solid #f0d9c8; border-radius: 10px; font-family: inherit; font-size: 16px; letter-spacing: 2px; text-transform: uppercase; background: #fff; }
 
 /* 가족 캘린더: 추가한 일정(js/user-schedule-view.js) — 막대 표식·필터·카드·입력 시트. 플래그 OFF 또는 가구가 없으면 이 마크업은 만들어지지 않는다. */
 .cal-bar { display: inline-block; width: 14px; height: 4px; border-radius: 2px; margin: 0 1px; vertical-align: middle; }

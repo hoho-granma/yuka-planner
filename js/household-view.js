@@ -68,6 +68,12 @@
     betaConfirmOff: "가족 캘린더를 끌까요? 가족 캘린더 화면이 숨겨져요. 저장된 일정은 지워지지 않아요.",
     betaLandingAsk: "가족 캘린더 코드(8자리)가 있나요? 베타 기능을 켜면 입력할 수 있어요.",
     betaLandingButton: "가족 캘린더(베타) 켜기",
+    // 가족 코드로 참여 · 시작 안내 · 아이 전환(핫픽스, 승인본)
+    startHint: "시작하려면 가족 캘린더를 만들거나, 가족에게 받은 코드로 참여하세요.",
+    joinDesc: "가족이 만든 가족 캘린더가 있나요? 받은 코드 8자리를 입력하면 일정을 함께 볼 수 있어요.",
+    joinPlaceholder: "가족 코드 8자리",
+    joinButton: "참여하기",
+    switchChildButton: "아이 전환",
   });
 
   const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -163,7 +169,7 @@
   /** 알림 한 줄(생성 완료·복사·재발급·실패). state.notice = {kind, text?} */
   function renderNotice(n) {
     if (!n) return "";
-    const map = { created: [MSG.created, ""], copied: [MSG.copyDone, ""], copyFailed: [MSG.copyFail, "hh-warn"], reissued: [MSG.reissued, ""], flushed: [MSG.flushed, ""], error: [n.text || MSG.failNetwork, "hh-warn"] };
+    const map = { joinOk: [n.text || "", ""], created: [MSG.created, ""], copied: [MSG.copyDone, ""], copyFailed: [MSG.copyFail, "hh-warn"], reissued: [MSG.reissued, ""], flushed: [MSG.flushed, ""], error: [n.text || MSG.failNetwork, "hh-warn"] };
     const m = map[n.kind];
     return m ? note(m[0], m[1]) : "";
   }
@@ -189,6 +195,9 @@
       case "creating":
         body = note(MSG.creating);
         break;
+      case "joining":
+        body = note(MSG.joining);
+        break;
       case "reissue-confirm":
         body = `<p class="hh-consent-title">${esc(MSG.reissueTitle)}</p><p class="hh-consent-body">${lines(MSG.reissueBody)}</p>
           <div class="hh-actions">${btn("confirm-reissue", MSG.reissueConfirm, "hh-primary")}${btn("cancel-reissue", MSG.reissueCancel)}</div>`;
@@ -202,9 +211,15 @@
           <div class="hh-actions">${btn("copy", MSG.copyButton)}${btn("reissue", MSG.reissueButton)}</div>`;
         break;
       default: // "none"
-        body = `${note(MSG.noHouseholdDesc)}<div class="hh-actions">${btn("create", MSG.createButton, "hh-primary")}</div>`;
+        body = `${note(MSG.startHint)}${note(MSG.noHouseholdDesc)}<div class="hh-actions">${btn("create", MSG.createButton, "hh-primary")}</div>
+          <div class="hh-join"><p class="hh-note">${esc(MSG.joinDesc)}</p>
+          <input type="text" class="hh-input" data-hh-input="join-code" maxlength="8" inputmode="latin" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="${esc(MSG.joinPlaceholder)}" value="${esc(state.joinInput || "")}" />
+          <div class="hh-actions">${btn("join", MSG.joinButton, "hh-primary")}</div></div>`;
     }
-    return `<section class="hh-section" data-hh="${esc(state.view || "none")}">${head}${notice}${body}${status}</section>`;
+    // 아이 전환 진입점(핫픽스): 가구가 있거나 이 기기 아이가 2명 이상일 때 app.js 가 showChildSwitch 를 켠다. 확인·입력 단계에서는 숨긴다.
+    const canSwitch = state.showChildSwitch === true && ["none", "active"].includes(state.view || "none");
+    const switchRow = canSwitch ? `<div class="hh-actions">${btn("child-switch", MSG.switchChildButton)}</div>` : "";
+    return `<section class="hh-section" data-hh="${esc(state.view || "none")}">${head}${notice}${body}${switchRow}${status}</section>`;
   }
 
   // ── 베타 켜기 스위치 (플래그와 무관하게 항상 그린다 — 이 두 함수만 OFF 에서도 렌더되는 예외) ──────────
