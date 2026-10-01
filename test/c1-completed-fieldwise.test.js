@@ -15,6 +15,8 @@ const vm = require("vm");
 const { execFileSync } = require("child_process");
 
 const ROOT = path.join(__dirname, "..");
+// "변경 전" 기준은 C1-a 커밋(7ec0392)의 부모다 — HEAD 로 두면 커밋 뒤에는 변경 후 코드와 같아져 비교가 무의미해진다.
+const C1_BASE = "7ec0392^";
 let passed = 0;
 async function test(name, fn) {
   try { await fn(); passed++; console.log("  ok  - " + name); } catch (e) { process.exitCode = 1; console.log("  FAIL- " + name + "\n      " + (e.stack || e).split("\n").slice(0, 6).join("\n      ")); }
@@ -157,7 +159,7 @@ const KEY = "VX-DTAP__dose-5";
     return src.slice(i, j + 1);
   }
   const NEW_SRC = fs.readFileSync(path.join(ROOT, "js/app.js"), "utf8");
-  const OLD_SRC = execFileSync("git", ["show", "HEAD:js/app.js"], { cwd: ROOT, maxBuffer: 1 << 26 }).toString("utf8");
+  const OLD_SRC = execFileSync("git", ["show", C1_BASE + ":js/app.js"], { cwd: ROOT, maxBuffer: 1 << 26 }).toString("utf8");
 
   /** src 의 호출부 4곳(+ saveCompleted/syncCompletedChanges)을 스텁 환경에 올려 시나리오를 돌린다. */
   function makeEnv(src, { milestoneIds = [], familyCode = "FAM234", legacySync = false } = {}) {
@@ -358,7 +360,7 @@ const KEY = "VX-DTAP__dose-5";
 
   await test("읽는 쪽·로컬 저장·createFamily·rules 는 변경하지 않았다(소스 해시: 변경 전 HEAD 와 같은 부분)", () => {
     const body = (s) => s.slice(s.indexOf("async function createFamily"), s.indexOf("async function fetchFamily"));
-    const oldSync = execFileSync("git", ["show", "HEAD:js/sync.js"], { cwd: ROOT }).toString("utf8");
+    const oldSync = execFileSync("git", ["show", C1_BASE + ":js/sync.js"], { cwd: ROOT }).toString("utf8");
     const newSync = fs.readFileSync(path.join(ROOT, "js/sync.js"), "utf8");
     assert.strictEqual(body(newSync), body(oldSync));
     // 기존 updateCompleted·updateRecord·listen 본문도 그대로
