@@ -9,15 +9,26 @@
  *
  * 지원하는 trigger/reference: AGE_WINDOW, DATE_FROM_BIRTH, RELATIVE_TO_EVENT,
  * MILESTONE_EVENT, REFERENCE, eligibilityCondition, variants — 전부 기존 문서에
- * 정의된 것만 쓴다. 새 trigger type은 추가하지 않았다.
+ * 정의된 것만 쓴다.
+ *
+ * A5 확장(확장 설계 2단계 §13-5 / Q-G 승인 — "새 trigger type 추가 금지" 원칙의 승인된 예외, docs/한눈육아-A5-설계서.md):
+ *   - 정의의 선택 필드 basis: "LEGACY_30D"(미지정 기본 = 지금 동작, 1개월=30일) | "CALENDAR"(달력 기반, 말일 보정).
+ *     적용 범위는 AGE_WINDOW 의 startMonth/endMonth 뿐이다. CALENDAR 는 정수 월만 표현한다.
+ *   - 새 trigger AGE_CALENDAR_WINDOW { start:{years,months}, end:{years,months}|null } — 정수 월에서는 AGE_WINDOW+CALENDAR 와 같은 결과를 내는 얇은 별칭.
+ *   - 새 trigger SCHOOL_TERM_WINDOW { anchor:"ENROLLMENT", yearOffset, startMonth, endMonth } — 입력 timeline.school.enrollmentYear 가 필요하다.
+ *     timeline/학교 정보가 없으면 계산하지 않고 status:null + eligibility:"UNKNOWN" 인스턴스를 돌려준다(schedule.js 가 이미 화면에서 제외하는 경로).
+ *   - eligibilityCondition.requiredValues:[…] — 선언값이 목록에 있으면 통과. requiredValue(단일)는 그대로 동작한다.
+ *   - 입력 timeline(선택): ChildTimeline.compute 결과. 없으면 이전과 완전히 동일하게 동작한다.
+ *   기존 정의 데이터는 위 필드를 하나도 쓰지 않는다(정적 테스트로 고정) — 새 코드 경로는 새 필드가 있을 때만 실행된다.
+ *   정의 오류(알 수 없는 basis, CALENDAR+비정수 월, 잘못된 새 트리거 파라미터, requiredValue 와 requiredValues 동시 지정 등)는 그 항목만 건너뛰고 console.warn 한다.
  */
 (function (root, factory) {
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = factory();
+    module.exports = factory(() => require("./date-calc.js"));
   } else {
-    root.TodoEngine = factory();
+    root.TodoEngine = factory(() => root.DateCalc);
   }
-})(typeof window !== "undefined" ? window : global, function () {
+})(typeof window !== "undefined" ? window : global, function (getDateCalc) {
   "use strict";
 
   const DAY_MS = 24 * 60 * 60 * 1000;
@@ -36,6 +47,43 @@
   }
   function ageInMonths(birthDate, today) {
     return (today.getTime() - birthDate.getTime()) / DAY_MS / MONTH_DAYS;
+  }
+
+  // ── A5: 정의 오류 / 달력 기반 월 계산 ────────────────────────────────────────────────
+  /** 정의(데이터) 오류 — calculateTodoInstances 가 그 항목만 건너뛰고 경고한다. 그 외 오류(알 수 없는 trigger.type 등)는 예전처럼 그대로 던진다. */
+  class TodoDefinitionError extends Error {
+    constructor(message) {
+      super(message);
+      this.name = "TodoDefinitionError";
+    }
+  }
+  const BASES = Object.freeze(["LEGACY_30D", "CALENDAR"]);
+  const isInt = (n) => typeof n === "number" && Number.isInteger(n);
+  /** 출생일 + n개월(정수, 말일 보정). DateCalc 의 RangeError 는 정의 오류로 바꾼다. */
+  function addCalendarMonths(date, n) {
+    if (!isInt(n) || n < 0) throw new TodoDefinitionError(`달력 기반(CALENDAR) 월 값은 0 이상의 정수여야 합니다: ${String(n)}`);
+    try {
+      return getDateCalc().addMonthsClamped(date, n);
+    } catch (e) {
+      if (e instanceof RangeError) throw new TodoDefinitionError(e.message);
+      throw e;
+    }
+  }
+  function ymPair(v, label) {
+    if (!v || typeof v !== "object" || !isInt(v.years) || !isInt(v.months) || v.years < 0 || v.months < 0) {
+      throw new TodoDefinitionError(`AGE_CALENDAR_WINDOW ${label} 는 {years, months}(0 이상 정수)여야 합니다`);
+    }
+    return v.years * 12 + v.months;
+  }
+  function validateBasis(td) {
+    if (td.basis !== undefined && !BASES.includes(td.basis)) throw new TodoDefinitionError(`알 수 없는 basis: ${String(td.basis)}`);
+  }
+  const warned = new Set();
+  function warnOnce(td, e) {
+    const key = `${td.todo_id}|${e.message}`;
+    if (warned.has(key)) return;
+    warned.add(key);
+    if (typeof console !== "undefined" && console.warn) console.warn(`[TodoEngine] 정의 오류로 건너뜀: ${td.todo_id} — ${e.message}`);
   }
 
   function toDate(v) {
@@ -91,10 +139,31 @@
     const { birthDate, previousCompletionDate, completions, absoluteCapMonth } = ctx;
     switch (trigger.type) {
       case "AGE_WINDOW":
+        if (ctx.basis === "CALENDAR") {
+          return {
+            windowStart: addCalendarMonths(birthDate, trigger.startMonth),
+            windowEnd: trigger.endMonth == null ? null : addCalendarMonths(birthDate, trigger.endMonth),
+          };
+        }
         return {
           windowStart: addMonths(birthDate, trigger.startMonth),
           windowEnd: trigger.endMonth == null ? null : addMonths(birthDate, trigger.endMonth),
         };
+      case "AGE_CALENDAR_WINDOW": // basis 와 무관하게 항상 달력 기반
+        return {
+          windowStart: addCalendarMonths(birthDate, ymPair(trigger.start, "start")),
+          windowEnd: trigger.end == null ? null : addCalendarMonths(birthDate, ymPair(trigger.end, "end")),
+        };
+      case "SCHOOL_TERM_WINDOW": {
+        // computeStandardInstance 가 timeline.school 이 없는 경우를 먼저 걸러낸다. 여기서는 올바른 파라미터만 확인한다.
+        const { anchor, yearOffset, startMonth, endMonth } = trigger;
+        if (anchor !== "ENROLLMENT" || !isInt(yearOffset) || !isInt(startMonth) || !isInt(endMonth) || startMonth < 1 || startMonth > 12 || endMonth < 1 || endMonth > 12) {
+          throw new TodoDefinitionError("SCHOOL_TERM_WINDOW 는 {anchor:'ENROLLMENT', yearOffset(정수), startMonth(1~12), endMonth(1~12)} 여야 합니다");
+        }
+        const year = ctx.timeline.school.enrollmentYear + yearOffset;
+        // 시작월 1일 ~ 끝월 말일(끝월이 시작월보다 앞서면 다음 해 끝월)
+        return { windowStart: new Date(year, startMonth - 1, 1), windowEnd: new Date(endMonth >= startMonth ? year : year + 1, endMonth, 0) };
+      }
       case "DATE_FROM_BIRTH":
         return {
           windowStart: addDays(birthDate, trigger.offsetDays),
@@ -163,11 +232,20 @@
 
   /** AGE_WINDOW/DATE_FROM_BIRTH/RELATIVE_TO_EVENT 계열 occurrence 하나를 계산한다. */
   function computeStandardInstance(td, occurrenceKey, trigger, ctx, previousCompletionDate) {
+    if (trigger.type === "SCHOOL_TERM_WINDOW") {
+      const school = ctx.timeline && ctx.timeline.school;
+      // 학교 정보(정책이 확인된 timeline)가 없으면 날짜를 만들지 않는다 — status:null 은 schedule.js 가 화면에서 제외한다.
+      if (!school || !isInt(school.enrollmentYear)) {
+        return Object.assign(baseInstance(td, occurrenceKey, { status: null, windowStart: null, windowEnd: null }), { eligibility: "UNKNOWN" });
+      }
+    }
     const { windowStart, windowEnd } = computeWindow(trigger, {
       birthDate: ctx.birthDate,
       previousCompletionDate,
       completions: ctx.completions,
       absoluteCapMonth: td.absoluteCapMonth,
+      basis: td.basis,
+      timeline: ctx.timeline,
     });
     const done = findRecord(ctx.completions, td.todo_id, occurrenceKey, "TODO_COMPLETED");
     const status = computeStatus({
@@ -240,6 +318,7 @@
 
   /** TodoDefinition 하나(및 그 occurrence/variant 전개)를 TodoInstance 배열로 계산한다. */
   function calculateOne(td, ctx) {
+    validateBasis(td);
     // 1) 지역 필터
     if (!regionMatches(td.regionCondition, ctx.province, ctx.district)) return [];
     // 1-1) 출생일 범위 필터(제도 개편 전/후)
@@ -268,6 +347,11 @@
 
     // 3) 자격속성 필터(eligibilityCondition) — trigger와 무관한 별도 필터
     if (td.eligibilityCondition) {
+      const ec = td.eligibilityCondition;
+      if (ec.requiredValues !== undefined) {
+        if (ec.requiredValue !== undefined) throw new TodoDefinitionError("eligibilityCondition 에 requiredValue 와 requiredValues 를 함께 쓸 수 없습니다");
+        if (!Array.isArray(ec.requiredValues) || ec.requiredValues.length === 0) throw new TodoDefinitionError("eligibilityCondition.requiredValues 는 비어 있지 않은 배열이어야 합니다");
+      }
       const attrValue = ctx.familyDeclaredAttributes[td.eligibilityCondition.attribute];
       if (attrValue === undefined) {
         return [
@@ -276,7 +360,8 @@
           }),
         ];
       }
-      if (attrValue !== td.eligibilityCondition.requiredValue) {
+      const passes = ec.requiredValues !== undefined ? ec.requiredValues.includes(attrValue) : attrValue === td.eligibilityCondition.requiredValue;
+      if (!passes) {
         return []; // FAIL — 목록에서 완전 제외
       }
       // PASS — 아래에서 정상 계산 계속
@@ -373,10 +458,16 @@
       district: input.region ? input.region.district : undefined,
       familyDeclaredAttributes: input.familyDeclaredAttributes || {},
       completions: input.completions || [],
+      timeline: input.timeline || null, // 선택(A5). ChildTimeline.compute 결과 — 없으면 이전과 동일하게 동작
     };
     const result = [];
     for (const td of input.todoDefinitions) {
-      result.push(...calculateOne(td, ctx));
+      try {
+        result.push(...calculateOne(td, ctx));
+      } catch (e) {
+        if (!(e instanceof TodoDefinitionError)) throw e; // 정의 오류만 그 항목을 건너뛴다. 나머지 오류는 예전과 같이 전파
+        warnOnce(td, e);
+      }
     }
     return result;
   }
@@ -389,6 +480,8 @@
   return {
     calculateTodoInstances,
     selectOverdue,
+    TodoDefinitionError,
+    BASES,
     // 아래는 테스트/디버깅 편의를 위해 노출(엔진 사용자는 보통 calculateTodoInstances만 쓰면 된다)
     ageInMonths,
     addMonths,

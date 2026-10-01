@@ -94,4 +94,132 @@ test("의존성 없음: 다른 모듈을 require/참조하지 않는다(엔진·
   assert.ok(!/require\(|DateCalc|TodoEngine/.test(src));
 });
 
+// ── A5-1: 학교·학년(정책 주입형) ─────────────────────────────────────────────────────────
+// 아래 정책 값은 **테스트 전용 가정**이다(실제 정책 데이터는 없고, 공식 확인 전). 제품 코드에는 이 값이 없다.
+const T_POLICY = {
+  enrollmentOffsetYears: { value: 7, verificationStatus: "확인됨", source: "테스트 전용" },
+  schoolYearStartMonth: { value: 3, verificationStatus: "확인됨", source: "테스트 전용" },
+  preElementaryYearsBefore: { value: 1, verificationStatus: "확인됨", source: "테스트 전용" },
+};
+const deepFreeze = (o) => (Object.values(o).forEach((v) => v && typeof v === "object" && deepFreeze(v)), Object.freeze(o));
+const sch = (b, a, over = {}) => CT.compute({ birthDate: b, asOf: a, stage: "born", policy: T_POLICY, ...over }).school;
+
+test("A5-1 불변: 정책이 없거나 확인되지 않으면 compute 결과는 기존과 키·값까지 같다(school: null)", () => {
+  const unverified = { ...T_POLICY, enrollmentOffsetYears: { value: 7, verificationStatus: "확인필요", source: "x" } };
+  for (const b of [D(2026, 6, 20), D(2023, 8, 30), D(2024, 2, 29), D(2025, 1, 31)]) {
+    for (let m = 0; m <= 40; m++) {
+      const asOf = new Date(b.getFullYear(), b.getMonth() + m, 15);
+      const base = CT.compute({ birthDate: b, asOf, stage: "born" });
+      const total = CT.completedMonths(b, asOf);
+      assert.deepStrictEqual(base, { age: { years: Math.floor(total / 12), months: total % 12, totalMonths: total }, label: `생후 ${total}개월`, school: null });
+      assert.deepStrictEqual(Object.keys(base), ["age", "label", "school"]);
+      for (const policy of [undefined, null, {}, unverified, { ...T_POLICY, schoolYearStartMonth: { value: 13, verificationStatus: "확인됨" } }, { ...T_POLICY, preElementaryYearsBefore: undefined }]) {
+        assert.deepStrictEqual(CT.compute({ birthDate: b, asOf, stage: "born", policy }), base);
+      }
+    }
+  }
+});
+
+test("A5-1 입학 학년도 = 출생연도 + 정책 오프셋. 1/1생·12/31생·윤일생이 같은 학년도 코호트", () => {
+  for (const b of [D(2020, 1, 1), D(2020, 5, 10), D(2020, 12, 31), D(2020, 2, 29)]) assert.strictEqual(sch(b, D(2026, 10, 1)).enrollmentYear, 2027);
+  // 설계 §13-7 예: 같은 만 6세, 다른 단계 (가정 오프셋 7)
+  const a = sch(D(2019, 12, 5), D(2026, 10, 1)); // 입학 학년도 2026 → 초1
+  const b = sch(D(2020, 5, 10), D(2026, 10, 1)); // 입학 학년도 2027 → 예비초등
+  assert.deepStrictEqual([a.grade, a.stageBand, a.gradeLabel], [1, "ELEMENTARY_LOW", "초1"]);
+  assert.deepStrictEqual([b.grade, b.stageBand, b.gradeLabel, b.yearsToEnrollment], ["PRESCHOOL", "PRE_ELEMENTARY", null, 1]);
+});
+
+test("A5-1 학년도 경계: 시작월(3월) 직전 2/28(윤년 2/29)과 3/1", () => {
+  const b = D(2020, 5, 10); // 입학 학년도 2027
+  const before = sch(b, D(2027, 2, 28));
+  const after = sch(b, D(2027, 3, 1));
+  assert.deepStrictEqual([before.schoolYear, before.grade, before.stageBand], [2026, "PRESCHOOL", "PRE_ELEMENTARY"]);
+  assert.deepStrictEqual([after.schoolYear, after.grade, after.gradeLabel], [2027, 1, "초1"]);
+  assert.strictEqual(sch(D(2016, 1, 1), D(2024, 2, 29)).schoolYear, 2023); // 윤일(2/29)도 3월 이전 → 전년도
+  assert.strictEqual(sch(D(2016, 1, 1), D(2024, 3, 1)).schoolYear, 2024);
+  // 다른 시작월 정책(9월): 8/31 vs 9/1
+  const p9 = { ...T_POLICY, schoolYearStartMonth: { value: 9, verificationStatus: "확인됨", source: "테스트 전용" } };
+  assert.strictEqual(sch(b, D(2026, 8, 31), { policy: p9 }).schoolYear, 2025);
+  assert.strictEqual(sch(b, D(2026, 9, 1), { policy: p9 }).schoolYear, 2026);
+});
+
+test("A5-1 학년 구간: 초1~초6, 졸업 후, 영유아/취학 전/예비초등 구분 (월 단위 경계 포함)", () => {
+  const b = D(2020, 5, 10);
+  assert.deepStrictEqual([1, 2, 3, 4, 5, 6].map((n) => sch(b, D(2026 + n, 3, 1)).gradeLabel), ["초1", "초2", "초3", "초4", "초5", "초6"]);
+  assert.deepStrictEqual([1, 2, 3, 4, 5, 6].map((n) => sch(b, D(2026 + n, 3, 1)).stageBand), ["ELEMENTARY_LOW", "ELEMENTARY_LOW", "ELEMENTARY_LOW", "ELEMENTARY_HIGH", "ELEMENTARY_HIGH", "ELEMENTARY_HIGH"]);
+  const after = sch(b, D(2033, 3, 1));
+  assert.deepStrictEqual([after.grade, after.stageBand, after.gradeLabel], ["AFTER_ELEMENTARY", null, null]);
+  assert.strictEqual(sch(b, D(2033, 2, 28)).grade, 6); // 초6 마지막 날까지
+  // 2024-06-01생: 36개월(2027-06-01)까지 INFANT_TODDLER, 37개월부터 PRESCHOOL
+  const c = D(2024, 6, 1);
+  assert.strictEqual(sch(c, D(2026, 5, 1)).stageBand, "INFANT_TODDLER");
+  assert.strictEqual(sch(c, D(2027, 6, 1)).stageBand, "INFANT_TODDLER");
+  assert.strictEqual(sch(c, D(2027, 7, 1)).stageBand, "PRESCHOOL");
+  assert.deepStrictEqual([sch(c, D(2029, 10, 1)).yearsToEnrollment, sch(c, D(2029, 10, 1)).stageBand], [2, "PRESCHOOL"]); // 2029-10: 입학(2031) 2년 전
+  assert.strictEqual(sch(c, D(2030, 10, 1)).stageBand, "PRE_ELEMENTARY"); // 입학 직전 학년도(2030)
+});
+
+test("A5-1 enrollmentYearOverride(조기입학·유예): 정책 오프셋 없이도 계산, 정수가 아니면 null", () => {
+  const noOffset = { schoolYearStartMonth: T_POLICY.schoolYearStartMonth, preElementaryYearsBefore: T_POLICY.preElementaryYearsBefore };
+  const s = sch(D(2020, 5, 10), D(2027, 10, 1), { policy: noOffset, enrollmentYearOverride: 2028 });
+  assert.deepStrictEqual([s.enrollmentYear, s.grade, s.stageBand], [2028, "PRESCHOOL", "PRE_ELEMENTARY"]);
+  assert.strictEqual(sch(D(2020, 5, 10), D(2027, 10, 1), { policy: noOffset }), null, "오프셋도 override 도 없으면 계산 안 함");
+  assert.strictEqual(sch(D(2020, 5, 10), D(2027, 10, 1), { enrollmentYearOverride: 2027.5 }), null);
+  assert.strictEqual(sch(D(2020, 5, 10), D(2027, 10, 1), { enrollmentYearOverride: "2027" }), null);
+  assert.strictEqual(sch(D(2020, 5, 10), D(2027, 10, 1), { enrollmentYearOverride: 2026 }).grade, 2, "조기입학: override 가 오프셋보다 우선");
+});
+
+test("A5-1 정책 검증: 키 누락·확인필요·범위 밖 값은 계산하지 않는다(null) — 확정 표시 금지", () => {
+  const b = D(2020, 5, 10), a = D(2027, 3, 1);
+  const without = (k) => { const p = { ...T_POLICY }; delete p[k]; return p; };
+  for (const k of Object.keys(T_POLICY)) {
+    assert.strictEqual(sch(b, a, { policy: without(k) }), null, `${k} 없음`);
+    assert.strictEqual(sch(b, a, { policy: { ...T_POLICY, [k]: { ...T_POLICY[k], verificationStatus: "확인필요" } } }), null, `${k} 확인필요`);
+    assert.strictEqual(sch(b, a, { policy: { ...T_POLICY, [k]: { ...T_POLICY[k], verificationStatus: undefined } } }), null, `${k} 상태 없음`);
+  }
+  for (const bad of [0, 13, 2.5, "3", null]) assert.strictEqual(sch(b, a, { policy: { ...T_POLICY, schoolYearStartMonth: { value: bad, verificationStatus: "확인됨" } } }), null, `시작월 ${bad}`);
+  for (const bad of [0, -1, 7.5, "7"]) assert.strictEqual(sch(b, a, { policy: { ...T_POLICY, enrollmentOffsetYears: { value: bad, verificationStatus: "확인됨" } } }), null, `오프셋 ${bad}`);
+});
+
+test("A5-1 임신 중(birthDate = 출산 예정일)에는 정책이 있어도 school null, label null", () => {
+  const p = CT.compute({ birthDate: D(2026, 12, 31), asOf: D(2026, 9, 30), stage: "pregnant", policy: T_POLICY });
+  assert.strictEqual(p.school, null);
+  assert.strictEqual(p.label, null);
+});
+
+test("A5-1 스윕: 출생 2015~2025 × 기준일(2~2년 간격) — 입학 학년도 = 출생연도 + 7, 학년은 시간이 지나도 줄지 않고 1씩만 오른다", () => {
+  const order = (g) => (g === "PRESCHOOL" ? 0 : g === "AFTER_ELEMENTARY" ? 7 : g);
+  for (let y = 2015; y <= 2025; y++) {
+    for (const [m, d] of [[1, 1], [2, 29 > 28 ? 28 : 29], [5, 10], [12, 31]]) {
+      const b = D(y, m, d);
+      let prev = -1;
+      for (let t = D(y, 1, 1); t.getTime() <= D(y + 16, 12, 31).getTime(); t = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 5)) {
+        const s = sch(b, t);
+        assert.strictEqual(s.enrollmentYear, y + 7);
+        const o = order(s.grade);
+        assert.ok(o >= prev && o - prev <= 7, `${b.toDateString()} ${t.toDateString()}`);
+        if (typeof s.grade === "number") assert.strictEqual(s.schoolYear - s.enrollmentYear + 1, s.grade);
+        prev = o;
+      }
+    }
+  }
+});
+
+test("A5-1 순수성: 입력(날짜·정책)을 변경하지 않는다(deep freeze), 같은 입력 → 같은 출력", () => {
+  const policy = deepFreeze(JSON.parse(JSON.stringify(T_POLICY)));
+  const b = D(2020, 5, 10), a = D(2027, 3, 1);
+  const bT = b.getTime(), aT = a.getTime();
+  const s1 = CT.computeSchool(b, a, policy, {});
+  const s2 = CT.computeSchool(b, a, policy, {});
+  assert.deepStrictEqual(s1, s2);
+  assert.strictEqual(b.getTime(), bT);
+  assert.strictEqual(a.getTime(), aT);
+  assert.strictEqual(CT.computeSchool(b, a, undefined, {}), null);
+});
+
+test("A5-1 의존성: 다른 모듈을 require/참조하지 않고 날짜 문자열 변환(toISOString)을 쓰지 않는다", () => {
+  const src = fs.readFileSync(path.join(ROOT, "js/child-timeline.js"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+  assert.ok(!/require\(|DateCalc|TodoEngine|toISOString|localStorage|firebase/.test(src));
+});
+
 console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);

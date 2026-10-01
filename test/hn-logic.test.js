@@ -428,8 +428,11 @@ test("Q-A 혜택 날짜: 28일 이하 출생은 수정 전(setMonth)과 동일 �
   }
 });
 
-test("Q-A 엔진 무접촉: todo-engine.js는 DateCalc를 쓰지 않고, 1/31생의 엔진 창은 30일 근사 그대로(HC-01: 출생+0.47×30일)", () => {
-  assert.ok(!/DateCalc/.test(fs.readFileSync(path.join(ROOT, "js/todo-engine.js"), "utf8")));
+test("Q-A 엔진 무접촉(A5 갱신): 기존 LEGACY 계산은 DateCalc를 쓰지 않고(주입 getter 로만 CALENDAR 경로에서 사용), 1/31생의 엔진 창은 30일 근사 그대로(HC-01: 출생+0.47×30일)", () => {
+  // A5(Q-G 승인)부터 엔진은 basis:"CALENDAR"·새 트리거 경로에서만 DateCalc 를 쓴다. 직접 호출(DateCalc.)이 없고 getDateCalc() 로만 접근해야 한다.
+  const engineSrc = fs.readFileSync(path.join(ROOT, "js/todo-engine.js"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+  assert.ok(!/DateCalc\./.test(engineSrc));
+  assert.ok(/getDateCalc\(\)\.addMonthsClamped/.test(engineSrc));
   const b = new Date(2026, 0, 31);
   const profile = { birthDate: b, province: "서울특별시", district: "구로구", gender: null, birthOrder: "first", stage: "born" };
   const ev = __buildSchedule(profile, { todoDefinitions, subsidy: { subsidies: [] } }, []).find((e) => e.id === "HC-01__default");
