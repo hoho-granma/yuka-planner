@@ -205,13 +205,139 @@ test("기존 familyCodes/families 블록은 기준 커밋(3ad690d)과 한 글자
   assert.strictEqual(cur.slice(0, start) + cur.slice(end), base);
 });
 
-test("B1 블록에는 schedules 규칙이 없고, delete 는 전부 금지다", () => {
+test("B1 블록(→[B2] 직전까지)에는 schedules 규칙이 없고, delete 는 전부 금지다", () => {
   const cur = require("fs").readFileSync(require("path").join(__dirname, "..", "firestore.rules"), "utf8");
-  const b1 = cur.slice(cur.indexOf("// [B1]"), cur.indexOf("    // 그 외 모든 경로: 기본 거부"));
-  assert(!/match \/schedules/.test(b1));
+  const b1 = cur.slice(cur.indexOf("// [B1]"), cur.indexOf("// [B2]"));
+  assert(!/match \/schedules/.test(b1) && !/schedules\/\{/.test(b1));
   assert.strictEqual((b1.match(/allow delete: if false;/g) || []).length, 4);
   assert(!/allow delete: if true/.test(b1));
   assert(!/allow list: if true/.test(b1.split("match /children")[0]), "households 최상위 list 허용 금지");
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// [B2] schedules 블록 — firestore.rules 의 scheduleOk 를 JS 로 재현하고, js/user-schedule.js 가 만든 실제 문서/패치로 검증한다.
+// ---------------------------------------------------------------------------------------------------------------
+const US = require("../js/user-schedule.js");
+const has = (d, k) => k in d && d[k] !== null && d[k] !== undefined;
+const dOk = (s) => typeof s === "string" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(s);
+const tOk = (s) => typeof s === "string" && /^[0-2][0-9]:[0-5][0-9]$/.test(s);
+const R_ALLOWED = ["v", "sourceType", "title", "category", "scope", "dateKind", "allDay", "createdAt", "updatedAt", "tags", "childKeys", "eventDate", "endDate", "periodStart", "periodEnd", "startTime", "endTime", "recurrence", "exceptions", "assigneeMemberId", "needsAssignee", "status", "location", "memo", "provenance", "deletedAt", "authorLabel", "splitFromScheduleId"];
+const R_REQUIRED = ["v", "sourceType", "title", "category", "scope", "dateKind", "allDay", "createdAt", "updatedAt"];
+function schedKeysOk(d) { return R_REQUIRED.every((k) => k in d) && Object.keys(d).every((k) => R_ALLOWED.includes(k)); }
+function schedBasicsOk(d) {
+  return d.v === 1 && ["MANUAL", "OCR", "VOICE", "IMPORT"].includes(d.sourceType) && ["LESSON", "INSTITUTION", "MEDICAL", "FAMILY", "ETC"].includes(d.category) &&
+    ["CHILD", "FAMILY"].includes(d.scope) && ["FIXED", "PERIOD"].includes(d.dateKind) && typeof d.allDay === "boolean" && typeof d.createdAt === "number" && typeof d.updatedAt === "number" &&
+    typeof d.title === "string" && d.title.length >= 1 && d.title.length <= 100 &&
+    (!has(d, "memo") || (typeof d.memo === "string" && d.memo.length <= 500)) && (!has(d, "location") || (typeof d.location === "string" && d.location.length <= 100)) &&
+    (!has(d, "tags") || (Array.isArray(d.tags) && d.tags.length <= 10)) && (!has(d, "status") || ["TODO", "DONE", "CANCELLED", "RESCHEDULED"].includes(d.status)) &&
+    (!has(d, "deletedAt") || typeof d.deletedAt === "number") && (!has(d, "exceptions") || (typeof d.exceptions === "object" && !Array.isArray(d.exceptions) && Object.keys(d.exceptions).length <= 200)) &&
+    (!has(d, "assigneeMemberId") || typeof d.assigneeMemberId === "string");
+}
+const schedScopeOk = (d) => (d.scope === "CHILD" && has(d, "childKeys") && Array.isArray(d.childKeys) && d.childKeys.length >= 1 && d.childKeys.length <= 10) || (d.scope === "FAMILY" && (!has(d, "childKeys") || (Array.isArray(d.childKeys) && d.childKeys.length === 0)));
+function schedDatesOk(d) {
+  if (has(d, "recurrence")) return d.dateKind === "FIXED" && typeof d.recurrence === "object" && d.recurrence.freq === "WEEKLY" && !has(d, "eventDate") && !has(d, "periodStart") && !has(d, "periodEnd") && !has(d, "endDate") && !has(d, "status");
+  if (d.dateKind === "FIXED") return has(d, "eventDate") && dOk(d.eventDate) && !has(d, "periodStart") && !has(d, "periodEnd") && (!has(d, "endDate") || (dOk(d.endDate) && d.endDate >= d.eventDate));
+  return has(d, "periodStart") && has(d, "periodEnd") && dOk(d.periodStart) && dOk(d.periodEnd) && d.periodStart <= d.periodEnd && !has(d, "eventDate") && !has(d, "endDate");
+}
+const schedTimesOk = (d) => (d.allDay ? !has(d, "startTime") && !has(d, "endTime") : has(d, "startTime") && tOk(d.startTime) && (!has(d, "endTime") || (tOk(d.endTime) && d.endTime > d.startTime)));
+const schedProvOk = (d) => d.sourceType === "MANUAL" || (has(d, "provenance") && typeof d.provenance === "object" && d.provenance.confirmedByUser === true);
+const schedOk = (d) => schedKeysOk(d) && schedBasicsOk(d) && schedScopeOk(d) && schedDatesOk(d) && schedTimesOk(d) && schedProvOk(d);
+const schedUpdateOk = (before, after) => schedOk(after) && after.v === before.v && after.createdAt === before.createdAt && after.sourceType === before.sourceType;
+
+const NOW = 1790000000000;
+const base = { sourceType: "MANUAL", title: "피아노", category: "LESSON", scope: "CHILD", childKeys: ["c1"], allDay: false, startTime: "16:00", endTime: "16:50", dateKind: "FIXED", eventDate: "2026-10-06" };
+const samples = {
+  "FIXED 시각": base,
+  "FIXED 종일+endDate": { ...base, allDay: true, startTime: undefined, endTime: undefined, endDate: "2026-10-08", title: "캠프" },
+  "PERIOD": { ...base, dateKind: "PERIOD", eventDate: undefined, periodStart: "2026-10-01", periodEnd: "2026-10-31", allDay: true, startTime: undefined, endTime: undefined, title: "부모 상담" },
+  "FAMILY": { ...base, scope: "FAMILY", childKeys: undefined, category: "FAMILY" },
+  "반복": { ...base, eventDate: undefined, recurrence: { freq: "WEEKLY", interval: 1, byDay: ["TU", "TH"], startDate: "2026-10-06", until: null }, exceptions: { "2026-10-08": { status: "CANCELLED", note: "휴강" } } },
+  "OCR 확인됨": { ...base, sourceType: "OCR", provenance: { confirmedByUser: true } },
+};
+
+console.log("\n[B2] schedules 블록 — user-schedule 실제 문서 기준");
+for (const [name, input] of Object.entries(samples)) {
+  test(`create 허용: ${name} (UserSchedule.buildCreateDoc 결과가 validate·규칙 재현 모두 통과)`, () => {
+    const r = US.buildCreateDoc(input, NOW);
+    assert.strictEqual(r.ok, true, JSON.stringify(r.errors));
+    assert.strictEqual(schedOk(r.doc), true);
+  });
+}
+const mk = (name) => US.buildCreateDoc(samples[name], NOW).doc;
+const rejects = {
+  "displayDate 필드(I12)": (d) => ({ ...d, displayDate: "2026-10-06" }),
+  "허용되지 않은 필드": (d) => ({ ...d, hacked: 1 }),
+  "빈 제목": (d) => ({ ...d, title: "" }),
+  "제목 101자": (d) => ({ ...d, title: "가".repeat(101) }),
+  "memo 501자": (d) => ({ ...d, memo: "a".repeat(501) }),
+  "childKeys 11개": (d) => ({ ...d, childKeys: Array.from({ length: 11 }, (_, i) => "c" + i) }),
+  "scope=CHILD 인데 childKeys 없음(I7)": (d) => ({ ...d, childKeys: [] }),
+  "tags 11개": (d) => ({ ...d, tags: Array.from({ length: 11 }, (_, i) => "t" + i) }),
+  "enum category 오류": (d) => ({ ...d, category: "BOSS" }),
+  "FIXED 인데 eventDate 없음(I1)": (d) => ({ ...d, eventDate: undefined }),
+  "endDate < eventDate(I4)": (d) => ({ ...d, endDate: "2026-10-01" }),
+  "날짜 형식 오류": (d) => ({ ...d, eventDate: "2026/10/06" }),
+  "allDay=false 인데 startTime 없음(I5)": (d) => ({ ...d, startTime: undefined }),
+  "endTime ≤ startTime(I5)": (d) => ({ ...d, endTime: "15:00" }),
+  "allDay=true 인데 시각 있음(I6)": (d) => ({ ...d, allDay: true }),
+  "OCR 인데 확인 없음(I8)": (d) => ({ ...d, sourceType: "OCR" }),
+};
+for (const [name, mut] of Object.entries(rejects)) {
+  test(`create 거부: ${name} — 규칙 재현과 validate 모두 거부`, () => {
+    const d = JSON.parse(JSON.stringify(mut(mk("FIXED 시각"))));
+    Object.keys(d).forEach((k) => d[k] === undefined && delete d[k]);
+    const bad = mut(mk("FIXED 시각"));
+    Object.keys(bad).forEach((k) => bad[k] === undefined && delete bad[k]);
+    assert.strictEqual(schedOk(bad), false, "규칙 재현이 허용함");
+    assert.strictEqual(US.validate(bad).ok, false, "validate 가 허용함");
+  });
+}
+test("PERIOD 에 eventDate(I2)·반복에 eventDate/status(I3) 거부", () => {
+  assert.strictEqual(schedOk({ ...mk("PERIOD"), eventDate: "2026-10-05" }), false);
+  assert.strictEqual(schedOk({ ...mk("PERIOD"), periodStart: "2026-11-01" }), false);
+  assert.strictEqual(schedOk({ ...mk("반복"), eventDate: "2026-10-06" }), false);
+  assert.strictEqual(schedOk({ ...mk("반복"), status: "DONE" }), false);
+  assert.strictEqual(schedOk({ ...mk("반복"), recurrence: { freq: "MONTHLY" } }), false);
+});
+test("exceptions 201개 거부", () => {
+  const ex = {};
+  for (let i = 0; i < 201; i++) ex[US.addDays("2026-10-06", i)] = { status: "CANCELLED" };
+  assert.strictEqual(schedOk({ ...mk("반복"), exceptions: ex }), false);
+});
+
+test("update 허용: 완료(DONE)·소프트 삭제·예외 추가/제거·담당자 지정 패치 적용 결과", () => {
+  const b = mk("FIXED 시각"), r = mk("반복");
+  assert.strictEqual(schedUpdateOk(b, US.markDone(b, NOW + 1).after), true);
+  assert.strictEqual(schedUpdateOk(b, US.softDelete(b, NOW + 2).after), true);
+  assert.strictEqual(schedUpdateOk(r, US.markDone(r, NOW + 3, { date: "2026-10-13" }).after), true);
+  const added = US.buildPatch(r, { exceptions: { "2026-10-15": { status: "CANCELLED" } }, assigneeMemberId: "m1" }, NOW + 4);
+  assert.strictEqual(added.ok, true);
+  assert.strictEqual(schedUpdateOk(r, added.after), true);
+  assert.strictEqual(Object.keys(added.patch).includes("exceptions.2026-10-15"), true);
+  const removed = US.buildPatch(added.after, { exceptions: { "2026-10-15": null } }, NOW + 5);
+  assert.strictEqual(removed.patch["exceptions.2026-10-15"], null);
+  assert.strictEqual(schedUpdateOk(r, removed.after), true);
+});
+test("update 거부(immutable): v / createdAt / sourceType 변경", () => {
+  const b = mk("FIXED 시각");
+  assert.strictEqual(schedUpdateOk(b, { ...b, createdAt: b.createdAt + 1 }), false);
+  assert.strictEqual(schedUpdateOk(b, { ...b, v: 2 }), false);
+  assert.strictEqual(schedUpdateOk(b, { ...b, sourceType: "OCR", provenance: { confirmedByUser: true } }), false);
+  ["createdAt", "v", "sourceType"].forEach((k) => assert.strictEqual(US.buildPatch(b, { [k]: b[k] === 1 ? 2 : "x" }, NOW + 1).ok, false, k + " 패치가 허용됨"));
+});
+test("규칙 텍스트와 UserSchedule 상수 일치: 허용 키·필수 키·한도·불변 필드·delete 금지", () => {
+  const cur = require("fs").readFileSync(require("path").join(__dirname, "..", "firestore.rules"), "utf8");
+  const b2 = cur.slice(cur.indexOf("// [B2]"), cur.indexOf("    // 그 외 모든 경로: 기본 거부"));
+  const listOf = (re) => [...b2.match(re)[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  assert.deepStrictEqual(listOf(/hasAll\(\[([^\]]+)\]/).sort(), [...US.REQUIRED_KEYS].sort());
+  assert.deepStrictEqual(listOf(/hasOnly\(\[([^\]]+)\]/).sort(), [...US.ALLOWED_KEYS].sort());
+  assert.deepStrictEqual(R_ALLOWED.slice().sort(), [...US.ALLOWED_KEYS].sort());
+  assert(/d\.title\.size\(\) >= 1 && d\.title\.size\(\) <= 100/.test(b2) && /d\.memo\.size\(\) <= 500/.test(b2) && /d\.location\.size\(\) <= 100/.test(b2));
+  assert(/d\.exceptions\.size\(\) <= 200/.test(b2) && /d\.tags\.size\(\) <= 10/.test(b2) && /d\.childKeys\.size\(\) <= 10/.test(b2));
+  ["v", "createdAt", "sourceType"].forEach((k) => assert(new RegExp(`request\\.resource\\.data\\.${k} == resource\\.data\\.${k}`).test(b2), k));
+  assert.deepStrictEqual([...US.IMMUTABLE_KEYS].sort(), ["createdAt", "sourceType", "v"]);
+  assert(/allow delete: if false;/.test(b2) && !/allow delete: if true/.test(b2));
+  assert(!/displayDate/.test(b2.replace(/\/\/.*$/gm, "")), "규칙 코드에 displayDate 허용 없음");
 });
 
 console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);
