@@ -323,6 +323,7 @@
       familyCode = await FamilySync.createFamily(profileToPlain(profile), completed);
       HNRecords.adopt(familyCode);
       rememberChild();
+      hhLinkNewChild();
       startListeningFamily();
       renderProfileHeader();
     } catch (e) {
@@ -850,12 +851,13 @@
              </div>`
           : ""
       }
-      ${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
+      ${hhEnabled() ? '<div id="hh-slot"></div>' : ""}${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
       ${changed ? `<button class="btn-complete btn-photo-save" id="btn-photo-save">저장</button>` : ""}
       <button class="btn-close" id="btn-close-modal">닫기</button>
     `;
     el("detail-modal").classList.remove("hidden");
     el("btn-close-modal").addEventListener("click", closeDetail);
+    if (hhEnabled()) hhOpenSection();
     el("btn-open-reset").addEventListener("click", showEditProfileSheet);
     const switchBtn = el("btn-switch-born");
     if (switchBtn) switchBtn.addEventListener("click", showBornSwitchSheet);
@@ -2057,6 +2059,10 @@
     const code = input.value.trim().toUpperCase();
     el("code-error").classList.add("hidden");
     if (!code) return;
+    if (hhEnabled()) {
+      hhResetEntryMessage();
+      if (HouseholdView.classifyCode(code).kind === "household") return hhJoinFromEntry(code);
+    }
     try {
       const data = await FamilySync.fetchFamily(code);
       if (!data || !data.profile) {
@@ -2241,16 +2247,195 @@
     }
   }
 
+  // ── 가족 캘린더(가구) — 문구·마크업 js/household-view.js, Firestore I/O 는 js/household-sync.js 만 한다. ──
+  // 플래그(FEATURES.household)가 꺼져 있으면 아래 함수는 호출되지 않거나 즉시 반환한다(기존 화면·동작 그대로).
+  // 아이 문서(families/{코드})에는 쓰지 않는다. 가구 ID 는 이 기기 localStorage(hannun_household_id)에만 둔다(R1).
+  const HH_ID_KEY = "hannun_household_id";
+  const hh = { view: "none", hid: null, code: null, notice: null, rulesUnavailable: false, lifecycle: false };
+  const hhEnabled = () => typeof HouseholdView !== "undefined" && HouseholdView.isEnabled(window.FEATURES);
+
+  function hhLoadSaved() {
+    hh.code = HouseholdSync.getSavedCode();
+    try {
+      hh.hid = localStorage.getItem(HH_ID_KEY);
+    } catch (e) {
+      hh.hid = null;
+    }
+    hh.view = hh.code && hh.hid ? "active" : "none";
+  }
+  function hhState() {
+    const st = hh.hid ? HouseholdSync.getStatus(hh.hid) : { pending: 0, permissionDenied: false };
+    return { enabled: true, view: hh.view, childName: childDisplayName(), code: hh.code, pending: st.pending, permissionDenied: st.permissionDenied, rulesUnavailable: hh.rulesUnavailable, notice: hh.notice };
+  }
+  function hhRender() {
+    const slot = el("hh-slot");
+    if (slot) slot.innerHTML = HouseholdView.renderSection(hhState());
+  }
+  /** 앱 시작·online·앱으로 돌아올 때 대기열을 다시 보내고, 끝나면 화면 상태 줄을 갱신한다(household-sync.attachLifecycle 은 화면 갱신 콜백이 없어 쓰지 않는다). */
+  function hhAttachLifecycle() {
+    if (hh.lifecycle) return;
+    hh.lifecycle = true;
+    const go = async () => {
+      if (!hh.hid) return;
+      try {
+        await HouseholdSync.flush(hh.hid);
+      } catch (e) {
+        console.error("가족 캘린더 재전송 실패", e);
+      }
+      hhRender();
+    };
+    window.addEventListener("online", go);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") go();
+    });
+    go();
+  }
+  function hhStart() {
+    if (!hh.hid) return;
+    HouseholdSync.startListening(hh.hid, hhRender);
+    hhAttachLifecycle();
+  }
+  function hhSetJoined(hid, code) {
+    hh.hid = hid;
+    hh.code = code;
+    hh.view = "active";
+    try {
+      localStorage.setItem(HH_ID_KEY, hid);
+    } catch (e) {}
+    hhStart();
+  }
+  /** 프로필 시트가 열릴 때: 이 기기의 가구 정보를 읽고 슬롯을 그린다. */
+  function hhOpenSection() {
+    hhLoadSaved();
+    hh.notice = null;
+    hhRender();
+    const slot = el("hh-slot");
+    if (slot) slot.addEventListener("click", hhOnClick);
+  }
+  /** 쓰기 없는 읽기 탐지: 규칙이 배포돼 있으면 없는 코드도 not-found 로 돌아오고, 미배포면 permission-denied 로 막힌다. */
+  async function hhProbeRules() {
+    try {
+      await HouseholdSync.joinHousehold("ZZZZZZZZ");
+      return "ok";
+    } catch (e) {
+      return e && e.code === "permission-denied" ? "denied" : "error";
+    }
+  }
+  async function hhOnClick(ev) {
+    const b = ev.target.closest("[data-hh-action]");
+    if (!b) return;
+    ev.stopPropagation();
+    const action = b.getAttribute("data-hh-action");
+    hh.notice = null;
+    try {
+      if (action === "create") {
+        hh.view = "creating";
+        hhRender();
+        const probe = await hhProbeRules();
+        if (probe === "denied") hh.rulesUnavailable = true;
+        else if (probe === "error") hh.notice = { kind: "error", text: HouseholdView.failMessage(null) };
+        hh.view = probe === "ok" ? "consent" : "none";
+      } else if (action === "cancel-create") {
+        hh.view = "none";
+      } else if (action === "confirm-create") {
+        hh.view = "creating";
+        hhRender();
+        const r = await HouseholdSync.createHousehold({ firstChild: familyCode ? { familyCode, displayName: childDisplayName() } : undefined });
+        if (!r.ok) throw new Error(r.reason || "create-failed");
+        hhSetJoined(r.householdId, r.code);
+        hh.notice = { kind: "created" };
+      } else if (action === "copy") {
+        try {
+          await navigator.clipboard.writeText(hh.code);
+          hh.notice = { kind: "copied" };
+        } catch (e) {
+          hh.notice = { kind: "copyFailed" };
+        }
+      } else if (action === "reissue") {
+        hh.view = "reissue-confirm";
+      } else if (action === "cancel-reissue") {
+        hh.view = "active";
+      } else if (action === "confirm-reissue") {
+        hh.view = "reissuing";
+        hhRender();
+        try {
+          const r = await HouseholdSync.reissueCode(hh.hid, hh.code);
+          if (!r.ok) throw new Error(r.reason || "reissue-failed");
+          hh.code = r.code;
+          hh.notice = { kind: "reissued" };
+        } catch (e) {
+          hh.notice = { kind: "error", text: HouseholdView.failMessage(e, "reissue") };
+        }
+        hh.view = "active";
+      }
+    } catch (e) {
+      console.error("가족 캘린더 처리 실패", e);
+      hh.notice = { kind: "error", text: HouseholdView.failMessage(e) };
+      hh.view = hh.hid && hh.code ? "active" : "none";
+    }
+    hhRender();
+  }
+  /** 앱 시작: 이 기기에 가구가 있으면 미러·리스너·대기열 재시도를 시작한다. 실패해도 기존 가족코드 흐름은 막지 않는다. */
+  async function hhInit() {
+    if (!hhEnabled()) return;
+    const hint = el("hh-code-hint");
+    if (hint) hint.innerHTML = HouseholdView.renderCodeEntryHint({ enabled: true });
+    hhLoadSaved();
+    if (!hh.hid || !hh.code) return;
+    hhStart();
+    try {
+      await HouseholdSync.joinHousehold(hh.code);
+      hhRender();
+    } catch (e) {
+      if (e && e.code === "permission-denied") hh.rulesUnavailable = true;
+    }
+  }
+  /** 새 아이를 만들었고 활성 가구가 있으면 그 가구에 링크를 만든다(아이 문서는 건드리지 않는다). */
+  function hhLinkNewChild() {
+    if (!hhEnabled() || !familyCode) return;
+    if (!hh.hid) hhLoadSaved();
+    if (!hh.hid) return;
+    const m = HouseholdSync.getMirror(hh.hid);
+    const order = Object.keys((m && m.children) || {}).length + 1;
+    HouseholdSync.addChild(hh.hid, { familyCode, displayName: childDisplayName(), order }).catch((e) => console.error("아이 링크 생성 실패", e));
+  }
+  function hhSetEntryMessage(text) {
+    const e = el("code-error");
+    if (!e.dataset.hhDefault) e.dataset.hhDefault = e.textContent;
+    e.textContent = text;
+    e.classList.remove("hidden");
+  }
+  function hhResetEntryMessage() {
+    const e = el("code-error");
+    if (e.dataset.hhDefault) e.textContent = e.dataset.hhDefault;
+  }
+  /** code-entry 에 8자리 가족 코드를 넣었을 때: 가구로 참여한 뒤 첫 번째 아이를 기존 경로로 불러온다. */
+  async function hhJoinFromEntry(code) {
+    try {
+      const r = await HouseholdSync.joinHousehold(code);
+      if (!r.ok) return hhSetEntryMessage(HouseholdView.joinMessage(r));
+      hhSetJoined(r.householdId, code);
+      const kids = HouseholdView.mergeChildren([], r.mirror, null).filter((c) => !c.removed);
+      if (!kids.length) return hhSetEntryMessage(HouseholdView.joinMessage(r));
+      el("familyCodeInput").value = kids[0].code;
+      await handleLoadCode();
+    } catch (e) {
+      console.error("가족 캘린더 참여 실패", e);
+      hhSetEntryMessage(HouseholdView.failMessage(e));
+    }
+  }
+
   function showChildSwitchSheet() {
     modalMode = "profile";
     rememberChild();
-    const list = loadChildren();
+    const hhOn = hhEnabled();
+    const list = hhOn ? HouseholdView.mergeChildren(loadChildren(), hh.hid ? HouseholdSync.getMirror(hh.hid) : null, familyCode) : loadChildren();
     const person = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>';
     const check = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
     const plus = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
     el("modal-content").innerHTML = `
       <h3 class="cs-title">아이 전환</h3>
-      <p class="cs-sub">이 기기에서 열어 본 아이예요. 눌러서 바꿔 볼 수 있어요.</p>
+      <p class="cs-sub">${hhOn && hh.hid ? HouseholdView.switchSubText(true) : "이 기기에서 열어 본 아이예요. 눌러서 바꿔 볼 수 있어요."}</p>
       <div class="cs-list">${
         list.length
           ? list
@@ -2259,7 +2444,7 @@
                 const photo = now && profile && profile.photoDataUrl ? `<img src="${profile.photoDataUrl}" alt="" />` : person;
                 return `<button type="button" class="cs-item${now ? " current" : ""}" data-code="${esc(c.code)}">
                   <span class="cs-avatar">${photo}</span>
-                  <span class="cs-info"><strong>${esc(c.name)}</strong><small>${c.stage === "pregnant" ? "임신 중 · " : ""}가족코드 ${esc(c.code)}</small></span>
+                  <span class="cs-info"><strong>${esc(c.name)}</strong><small>${hhOn ? esc(HouseholdView.childSubtitle(c)) : `${c.stage === "pregnant" ? "임신 중 · " : ""}가족코드 ${esc(c.code)}`}</small></span>
                   ${now ? `<span class="cs-now">${check}보는 중</span>` : `<span class="cs-go">›</span>`}
                 </button>`;
               })
@@ -2490,6 +2675,7 @@
     } else if (profile) {
       ensureFamilyCode();
     }
+    hhInit();
 
     if (profile) {
       populateDistricts(profile.province, profile.district);

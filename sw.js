@@ -23,6 +23,7 @@ const SHELL_ASSETS = [
   "./js/sync.js",
   "./js/feature-flags.js",
   "./js/household-sync.js",
+  "./js/household-view.js",
   "./js/todo-engine.js",
   "./js/schedule.js",
   "./js/hn-logic.js",

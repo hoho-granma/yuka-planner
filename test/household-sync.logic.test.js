@@ -117,6 +117,9 @@ const mk = (flag, extra = {}) => {
     vm.runInContext(FEATURES_SRC, sb);
     assert.strictEqual(sb.FEATURES.household, false);
     assert.deepStrictEqual(Object.keys(sb.FEATURES), ["household"]);
+    // 플래그 파일은 개발용 override 키 하나만 읽는다. 그 이후(household-sync 로드·호출)에는 localStorage 접근이 0건이어야 한다.
+    assert.deepStrictEqual(sb.localStorage.calls, [["get", "hannun_feature_household"]]);
+    const afterFlags = sb.localStorage.calls.length;
     // 브라우저 경로: window 에 HouseholdSync 기본 인스턴스가 만들어진다
     const code = fs.readFileSync(path.join(__dirname, "..", "js", "household-sync.js"), "utf8");
     vm.runInContext(code, sb);
@@ -124,7 +127,24 @@ const mk = (flag, extra = {}) => {
     await sb.HouseholdSync.joinHousehold("ABCD2345");
     assert.strictEqual(r.reason, "disabled");
     assert.strictEqual(firestoreCalls, 0);
-    assert.strictEqual(sb.localStorage.calls.length, 0);
+    assert.strictEqual(sb.localStorage.calls.length, afterFlags);
+  });
+
+  await test("개발용 override: localStorage hannun_feature_household 가 정확히 '1' 일 때만 ON", async () => {
+    const load = (val) => {
+      const sb = { console, localStorage: { getItem: () => val } };
+      sb.window = sb;
+      vm.createContext(sb);
+      vm.runInContext(FEATURES_SRC, sb);
+      return sb.FEATURES.household;
+    };
+    assert.strictEqual(load("1"), true);
+    ["0", "true", "yes", "", null, undefined, 1].forEach((v) => assert.strictEqual(load(v), false, String(v)));
+    const throwing = { console, localStorage: { getItem() { throw new Error("blocked"); } } };
+    throwing.window = throwing;
+    vm.createContext(throwing);
+    vm.runInContext(FEATURES_SRC, throwing);
+    assert.strictEqual(throwing.FEATURES.household, false, "저장소 접근이 막혀도 OFF");
   });
 
   console.log("\n플래그 ON — 가짜 어댑터");
