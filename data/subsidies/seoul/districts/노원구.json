@@ -9,12 +9,12 @@
   "subsidies": [
     {
       "id": "NOWON-001",
-      "name": "노원구 둘째아 이상 출산축하용품(키트) 지원",
+      "name": "노원구 다자녀가정 출산축하용품 지원",
       "scope": "municipal",
       "applicableRegions": [
         "서울특별시:노원구"
       ],
-      "target": "노원구 거주 가정의 해당 연도 출생 둘째아 이상(2026년은 2026.1.1~12.31 출생, 신청기간 2026.1.1~12.31). 쌍둥이는 출생순서별 각각 신청 가능",
+      "target": "노원구에 출생신고한 둘째아 이상 출산가구(2024년 출생아부터)",
       "minAgeMonths": 0,
       "maxAgeMonths": 12,
       "amountText": "20만원 상당 출산축하용품(키트)",
@@ -28,13 +28,13 @@
       "deadlineType": "birth_relative_months",
       "deadlineValue": 12,
       "residencyRequirement": "노원구 주소지로 출생신고",
-      "additionalConditions": "(공식 사업사이트 FAQ 확인: 2026년에 둘째 이상 출산한 노원구 거주 가정이 2026.1.1~12.31 내 신청. 거주 기준은 둘째 이상 자녀 출생일. '출생 후 1년 이내'는 구 보도 기준으로 현행 아님)",
-      "officialUrl": "https://nowonmom.kr/m/bbs/faq.php",
-      "sourceName": "서울Pn(2025-08-20) 노원구 보도 + 육아생활(2026-09 기준 페이지)",
-      "lastVerified": "2026-09-29",
-      "status": "확인완료",
-      "verified": true,
-      "notes": "금액 20만원 상당은 육아생활 요약 출처, 서울Pn 기사에는 금액 없이 대상·기한만 있음. 노원구청 공식 원문은 열람하지 못함. 첫째아용 지원은 확인되지 않음. 2026-09-29: 연도 단위(해당 연도 출생·해당 연도 내 신청) — 기존 스키마에 calendar_year 유형이 있으면 그것으로 교체, 없으면 12개월 유지하고 notes에 명시",
+      "additionalConditions": "주소지 동주민센터 방문 신청",
+      "officialUrl": "https://www.nowon.kr/www/info/info2/info2_05/info2_05_04/info2_05_04_01.jsp",
+      "sourceName": "노원구청 누리집 2026년 저출생 종합계획(보육가족과 02-2116-3721) 직접 열람",
+      "lastVerified": "2026-10-01",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "[2026-10-01 공식 열람] 대상·20만원 상당·동주민센터 신청 확인(nowon.kr). 확인필요 유지: 신청기간·기한이 공식 원문에 없어 §2-2 미충족. 기존 deadlineValue 12는 2차 자료 근거. 같은 사이트 info2_05_05_01은 2023년 현황 표라 참고만. (이전 메모) 금액 20만원 상당은 육아생활 요약 출처, 서울Pn 기사에는 금액 없이 대상·기한만 있음. 노원구청 공식 원문은 열람하지 못함. 첫째아용 지원은 확인되지 않음. 2026-09-29: 연도 단위(해당 연도 출생·해당 연도 내 신청) — 기존 스키마에 calendar_year 유형이 있으면 그것으로 교체, 없으면 12개월 유지하고 notes에 명시",
       "statusOriginal": "확정시행",
       "auditNotes": {
         "residencyRequirement": "노원구 주소지로 출생신고(세부 거주요건은 원문에서 확인 못함)",
@@ -43,26 +43,26 @@
     },
     {
       "id": "NOWON-002",
-      "name": "노원구 다자녀(셋째 이상) 문화상품권",
+      "name": "노원구 세자녀이상 가정 문화상품권 지원",
       "scope": "municipal",
       "applicableRegions": [
         "서울특별시:노원구"
       ],
-      "target": "신청일 현재 노원구에 3개월 이상 주민등록을 두고 자녀 3명 이상을 양육하는 가구(자녀 연령 기준이 기사별 '20세 미만'/'18세 이하'로 상이)",
+      "target": "노원구에 3개월 이상 거주, 세 자녀 이상 양육 가정(자녀 만 18세 이하)",
       "minAgeMonths": 0,
       "maxAgeMonths": 216,
-      "amountText": "연 1회 가구원 1인당 2만원 상당 문화상품권",
+      "amountText": "가구원 1인당 연 1회 모바일상품권 2만원",
       "paymentMethod": "문화상품권",
       "deadlineType": "ongoing",
       "deadlineValue": null,
       "residencyRequirement": "신청일 현재 노원구 3개월 이상 주민등록",
-      "additionalConditions": "동주민센터 신청, 연 1회. 자녀 연령 상한 18세 이하/20세 미만 중 어느 쪽인지 미확인",
-      "officialUrl": "https://go.seoul.co.kr/news/newsView.php?id=20250820500110",
-      "sourceName": "서울Pn(2025-08-20) + 육아생활(2026-09 기준)",
-      "lastVerified": "2026-09-29",
+      "additionalConditions": "동주민센터 방문 신청, 가구원 1인당 모바일문화상품권 2만원권",
+      "officialUrl": "https://www.nowon.kr/www/info/info2/info2_05/info2_05_04/info2_05_04_02.jsp",
+      "sourceName": "노원구청 누리집 2024년 저출생 종합계획 가족 탭(보육가족과 02-2116-3721) 직접 열람",
+      "lastVerified": "2026-10-01",
       "status": "확인필요",
       "verified": false,
-      "notes": "자녀 연령기준 불일치와 구청 원문 미확인으로 verified false. 셋째 이상 가정에만 해당하며 영유아 출생 직후 1회성 신청 제도가 아님.",
+      "notes": "[2026-10-01 공식 열람] 현재 안내는 3개월 이상 거주·만 18세 이하, 2023년 현황 표는 만 20세 미만으로 기준이 다름. 표 제목이 2024년이라 최신 개정 여부 확인불가. 확인필요 유지: 신청기간·기한이 공식 원문에 없어 §2-2 미충족.  (이전 메모) 자녀 연령기준 불일치와 구청 원문 미확인으로 verified false. 셋째 이상 가정에만 해당하며 영유아 출생 직후 1회성 신청 제도가 아님.",
       "statusOriginal": "확정시행"
     }
   ]

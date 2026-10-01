@@ -1,0 +1,322 @@
+{
+  "_meta": {
+    "설명": "서울시 공통 지원사업 중 앱에 싣지 않기로 한 항목 보관용(앱이 읽지 않는 파일). 임신 전(난임·임신 준비) 제도라 서비스 범위(임신~36개월) 밖이어서 national-pending.json PREG-009와 같은 기준으로 제외. 원문 확인은 끝났으므로 범위를 넓히면 city.json으로 옮기면 된다. 2026-09-30 추가: 종료된 사업(P02·P03·M07)과 국가 사업과 병존하는 N04를 서울 공통 목록에서 제외해 이곳에 보관(사업이 다시 열리면 city.json으로 복귀). 2026-10-01 추가: 서울시 공통으로 부적합하거나 혜택이 아닌 P05(구 단위 이관 대상)·N05·N09를 city.json에서 이곳으로 이동.",
+    "조사일": "2026-09-30"
+  },
+  "subsidies": [
+    {
+      "id": "SEOUL-PRE-001",
+      "name": "서울시 난임부부 시술비 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "서울시 거주 모든 난임부부(사실혼 포함). 거주는 여성 난임자의 주민등록 기준. 소득기준 원문에 없음",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "출산당 25회(시술별 구분 없이). 1회 상한 신선배아 110만원, 동결배아 50만원, 인공수정 30만원. 시술 중단 의료비도 시술별 지원액과 동일 지원",
+      "paymentMethod": "검사·시술비 지원(청구)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "서울시 거주(주민등록)",
+      "additionalConditions": "정부24·e보건소 온라인 또는 주소지 보건소 방문. 지원결정통지서 유효 3개월, 시술 후 1개월 이내 청구. 25회는 보조생식술 시작일 2024.11.1 이후 적용, 시술 중단 의료비는 결정통지서 발급일 2025.1.1 이후",
+      "officialUrl": "https://seoul-agi.seoul.go.kr/ifc-csp",
+      "sourceName": "서울시 임신·출산 정보센터 원문(2026-09-30)",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "문의 02-120, 자치구 보건소. 2026 변경점은 서울시 페이지에 명시 없음.",
+      "audience": "mother"
+    },
+    {
+      "id": "SEOUL-PRE-002",
+      "name": "서울 난자동결 시술비용 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "20~49세 여성, 서울시 6개월 이상 계속 거주, 난소기능수치(AMH) 1.5ng/ml 이하이면서 중위소득 180% 이하(둘 다 충족), 대한민국 국적",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "사전 검사비와 시술비의 50%, 최대 200만원(생애 1회)",
+      "paymentMethod": "시술비 지원(청구)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "서울시 거주(주민등록)",
+      "additionalConditions": "온라인 접수만 가능. 2026-02-02 시행, 접수 2026-02-02~12-31. 지원결정 후 6개월 내 시술, 시술 후 3개월 내 청구. 2025년 내 시술 완료자도 신청 가능",
+      "officialUrl": "https://seoul-agi.seoul.go.kr/sofp-csp",
+      "sourceName": "서울시 임신·출산 정보센터 + 몽땅정보통 원문(2026-09-30)",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "문의 02-120, 서울시여성가족재단 02-3280-2049.",
+      "audience": "mother"
+    },
+    {
+      "id": "SEOUL-PRE-003",
+      "name": "서울시 한의약 난임치료 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "원인불명 난임 진단 부부. 여성 출생일 기준 만 45세 이하, 서울시 주민등록, 혼인·사실혼. 국가·서울시 난임부부 시술비 지원과 중복 불가",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "3개월 첩약비의 90% 지원, 상한 120만원. 수급자·차상위 100%. 1인 최대 2회(연 1회), 최소 1개월 이상 참여",
+      "paymentMethod": "한약 치료비 지원",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "서울시 거주(주민등록)",
+      "additionalConditions": "서울시 임신·출산 정보센터 온라인 또는 주소지·직장소재지 보건소 방문. 결정통지서 유효 2주, 치료 3개월+관찰 2개월",
+      "officialUrl": "https://seoul-agi.seoul.go.kr/infertility-treatment-support",
+      "sourceName": "서울시 임신·출산 정보센터 원문(2026-09-30)",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "신청기간·시행일·문의처는 페이지에 없음(사이트 공통 02-2133-9489).",
+      "audience": "mother"
+    },
+    {
+      "id": "SEOUL-PRE-004",
+      "name": "정·난관 복원 시술비 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "영구피임시술(정관·난관 절제술·결찰술)을 받은 후 임신·출산을 위해 복원 시술을 받은 서울시민. 2026년 기준 남성 1970.1.1 이후 출생, 여성 1976.1.1 이후 출생. 대한민국 국적, 소득기준 원문에 없음",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "요양급여 본인부담금(검사비·시술비) 최대 100만원(생애 1회)",
+      "paymentMethod": "시술비 지원(청구)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "서울시 거주(주민등록)",
+      "additionalConditions": "시술받은 해 안에 신청(12월 시술은 다음 해 1월 말까지). 온라인 회원등록 후 자치구 보건소 방문",
+      "officialUrl": "https://seoul-agi.seoul.go.kr/coffin-restore",
+      "sourceName": "서울시 임신·출산 정보센터 원문(2026-09-30)",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "문의 02-120, 자치구 보건소.",
+      "audience": "mother"
+    },
+    {
+      "id": "SEOUL-P02",
+      "name": "서울시 임산부 친환경농산물 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "신청일 기준 서울시 거주 임신부 및 2025-01-01 이후 출산한 산모(2026년 사업). 영양플러스·농식품바우처(임산부 유형) 대상자는 제외",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "연 최대 24만원 상당 친환경농산물(서울시 80% 19.2만원 지원 + 본인 20% 4.8만원 부담)",
+      "paymentMethod": "바우처(에코이몰 등 친환경농산물몰, 현물 배송)",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "연 1회 공모, 선정 후 이용",
+      "officialUrl": "https://news.seoul.go.kr/economy/archives/573440",
+      "sourceName": "서울시 보도자료(news.seoul.go.kr) WebFetch 원문 확인",
+      "status": "종료",
+      "verified": false,
+      "notes": "[2026-09-30 서울 공통 목록에서 제외] 2026년 권역별 접수가 7/13~8/2에 마감. 강북·송파 9월 추가 접수는 실제 여부 미확인(조사 제외). 2027 일정 미공지. 내년 접수 시 city.json으로 복귀. || 이전 메모: 2026년은 연 1회 공모형으로 자치구별 7/13~8/2에 접수 완료(송파 9월 접수 예정, 강북 9월 추가 접수 예정 — 실제 접수 여부 미확인). 2027년 일정은 미공지. 양천구·구로구는 구별 기사로 동일 사업 확인(YANGCHEON-001 참고). 신청: 에코이몰 온라인 또는 동주민센터. 문의 서울시 농수산유통과 02-2133-4461·다산콜 120. 2026-09-29: 2026년 유효 확인(사용자 제공 검토표).",
+      "lastVerified": "2026-09-30",
+      "periods": [
+        {
+          "label": "신청(2026 공모)",
+          "startDays": null,
+          "startText": "2026-07-13~08-02(자치구별 상이, 송파·강북 9월 추가)",
+          "endDays": null,
+          "endText": "2026년 접수 마감(2027년 일정 미공지)",
+          "note": "임신 중이면 신청 가능, 출산 후에도 2025-01-01 이후 출산 산모는 신청 가능"
+        },
+        {
+          "label": "이용",
+          "startDays": null,
+          "startText": "선정 후",
+          "endDays": null,
+          "endText": "2026-12-15(양천구 기준, 서울시 전체 미확인)",
+          "note": ""
+        }
+      ],
+      "audience": "mother"
+    },
+    {
+      "id": "SEOUL-P03",
+      "name": "서울형 가사서비스 지원(임산부·맞벌이·다자녀 — 임산부 유형)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "기준중위소득 180% 이하 임산부 가구(임신 3개월~출산 후 1년 이내). 맞벌이·다자녀 가정도 별도 유형",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "연 70만원 상당 가사서비스 바우처(신용·체크카드 지급, 고용노동부 인증 가사서비스 업체 사용)",
+      "paymentMethod": "바우처(카드 포인트)",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "연도별 사업(2027 일정 미공지)",
+      "officialUrl": "https://bokji.gangnam.go.kr/board/BBS_NEWS/1307/view.do?mid=ID01_02",
+      "sourceName": "강남구 스마트복지관 공지(서울시 사업 안내) WebFetch + 머니투데이 보도",
+      "status": "종료",
+      "verified": false,
+      "notes": "[2026-09-30 서울 공통 목록에서 제외] 2026년도 신청 마감(사업 페이지 '2026년도 마감', 사용기한 2026.3.30~11.30). 내년 모집 시 복귀. || 이전 메모: 2026-03-30부터 예산 소진 시까지 접수(현재 마감 여부 미확인). 이용은 11월까지, 미사용 바우처는 연말 소멸(보도 기준). 신청: 탄생육아 몽땅정보통 온라인 + 증빙서류. 성동구 임산부 가사돌봄(SEONGDONG-P01) 등 유사 사업과 중복 지원 불가.",
+      "lastVerified": "2026-09-30",
+      "periods": [
+        {
+          "label": "신청 가능",
+          "startDays": null,
+          "startText": "임신 3개월 이후",
+          "endDays": 365,
+          "endText": "출산 후 1년 이내(예산 소진 시 마감)",
+          "note": "2026-03-30 접수 시작, 예산 소진 시까지"
+        },
+        {
+          "label": "이용",
+          "startDays": null,
+          "startText": "선정 후",
+          "endDays": null,
+          "endText": "2026-11월까지(연말 소멸)",
+          "note": "보도 기준"
+        }
+      ],
+      "audience": "mother"
+    },
+    {
+      "id": "SEOUL-M07",
+      "name": "소상공인 민간 아이돌봄 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "서울시 소상공인 및 워라밸 포인트제 기업 근로자 가정의 3개월~12세 이하 자녀",
+      "minAgeMonths": 3,
+      "maxAgeMonths": 144,
+      "amountText": "민간 아이돌봄서비스 이용 시 본인부담금의 2/3 지원",
+      "paymentMethod": "미확인",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "서울시 거주(상세 미확인)",
+      "additionalConditions": "",
+      "officialUrl": "https://umppa.seoul.go.kr/hmpg/sprt/bzin/bzmgComtDetail.do?biz_mng_no=E9FF6E0FEFF74EBCA2E954130EAA7C74",
+      "sourceName": "서울시 탄생육아 몽땅정보통 지원사업 목록(umppa.seoul.go.kr/hmpg/sprt/bzin/bzmgComtList.do) 소개 문구",
+      "status": "종료",
+      "verified": false,
+      "notes": "[2026-09-30 서울 공통 목록에서 제외] 4차 접수(2026-09-03~09-18) 마감, 몽땅정보통·재단 공지(9/29·9/23까지)에서 5차 공고 미발견. 공고 이력 3차 5/26·4차 9/3이라 이후 차수가 뜰 가능성은 배제 못 함. 새 공고 시 복귀. || 이전 메모: 몽땅정보통 목록 소개 문구만 반영. 대상·금액·기한·신청방법은 상세 페이지 확인 필요. 나이 범위는 임시값.",
+      "lastVerified": "2026-09-30",
+      "periods": []
+    },
+    {
+      "id": "SEOUL-N04",
+      "name": "서울아기 건강 첫걸음 사업",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "출산한 모든 임산부와 신생아(서울시민). 지속방문은 건강 위험요인이 있는 가정 대상",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 24,
+      "amountText": "간호사 등 전문인력 가정방문 건강관리: 출산 후 4주 이내(최대 6주 이내) 보편방문, 위험요인이 있으면 신생아가 2세가 될 때까지 지속방문(최소 25회). 부모모임·연계서비스·교육 제공. 이용요금 표기 없음",
+      "paymentMethod": "미확인",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "서울시민",
+      "additionalConditions": "온라인 신청(건강설문 후) → 자치구 보건소 접수 → 담당자 전화상담. 임신 중에도 '현 상황'을 임신/출산·육아로 설정하면 신청 가능",
+      "officialUrl": "https://seoul-agi.seoul.go.kr/health-first-step",
+      "sourceName": "서울시 임신·출산 정보센터(seoul-agi.seoul.go.kr) 원문 직접 확인(health-first-step 및 하위 3페이지)",
+      "lastVerified": "2026-09-30",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "[2026-09-30 서울 공통 목록에서 제외] 국가 '생애초기 건강관리사업'(2020 전국 확대)과 병존하는 서울 운영판이라 전국 사업으로 분류해 서울 공통에서 제외(national-pending NAT-025와 통합 검토 대상). 확인 내용: 서울시민 임산부·만 2세 이하, 소득 제한 없음, 임신 중 신청 가능·연중, 6개 구 보건소 페이지에 '무료'. 방문 횟수(25/25~29/29 등)와 보편방문 시기(4주·6주·8주)는 자료마다 달라 단정 불가. 문의 건강관리과 02-2133-9782, 센터 02-2133-9489. || 이전 메모: 확인필요 사유(원문에 없음): 이용요금(무료 여부), 소득 조건, 지속방문 선정 기준, 신청기간, 사업 전용 문의처, 2026년 계속 여부 명시. 방문횟수 표기가 '25회'/'최소 25회'로 페이지마다 다름. 사이트 공통 문의 02-2133-9489.",
+      "periods": [],
+      "audience": "mother"
+    },
+    {
+      "id": "SEOUL-P05",
+      "name": "서울시 유축기 대여 사업",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "현재 상황이 [임신] 또는 [출산·육아]로 체크된 서울시 임신·출산 정보센터 회원(서울시 페이지 기준). 거주요건·소득은 서울시 페이지에 없고 자치구별로 다름",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 6,
+      "amountText": "임산부·산모 유축기 대여. 대여 기간·비용은 자치구별로 다름(4주~최대 3개월, 무료 명시 구는 강남·구로·마포·서대문·영등포·광진·노원)",
+      "paymentMethod": "현물 대여",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "없음",
+      "additionalConditions": "센터 온라인 신청 → 자치구 보건소 접수 → 재고 확인 후 결과 등록 → 이용자가 보건소에서 수령·반납(구별로 전화·온라인 예약·택배 수령이 섞여 있음). 출산 후에만 받는 구가 많음(강동·노원·동작·은평 등)",
+      "officialUrl": "https://seoul-agi.seoul.go.kr/compactor-rental-application",
+      "sourceName": "서울시 임신·출산 정보센터 + 자치구 보건소 안내 24곳(2026-09-30 확인)",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "확인필요 사유: 서울시 공통 대상·기간·비용·시행일이 없고 구마다 조건이 달라 서울시 공통으로 확정 불가 — 자치구 단계에서 구별 데이터로 처리 권장. 용산구는 현행 안내를 못 찾음. 광진구는 2026 메델라 택배 신청이 마감(2027-01 재개). 센터 문의 02-2133-9489.",
+      "lastVerified": "2026-09-30",
+      "periods": [
+        {
+          "label": "신청 가능",
+          "startDays": null,
+          "startText": "임신 중(임신 확인 후)",
+          "endDays": null,
+          "endText": "출산·육아 중(기한 확인필요)",
+          "note": "대여기간·비용 확인 못함"
+        }
+      ],
+      "audience": "mother",
+      "excludeReason": "서울시 공통 조건(대상·기간·비용)이 없고 구마다 달라 서울시 공통 항목으로 부적합. 신청 접수만 센터에서 통합하고 접수·재고·대여·반납은 자치구 보건소가 처리. 자치구별 데이터로 이관 필요(2026-10-01 판정)."
+    },
+    {
+      "id": "SEOUL-N05",
+      "name": "서울키즈 오케이존",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "이용 측: 영유아·아이 동반 양육자(소득 제한 없음, 대상 월령·거주요건은 원문에 없음). 지정 대상은 서울시 소재 아이 동반 손님 이용 식음료 매장",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 144,
+      "amountText": "부모가 신청·수령하는 혜택 없음. 매장에 유아의자·식기 등 환대 환경이 갖춰져 있음(업소에 물품지원비 30만원, 1회성, 시비 100%)",
+      "paymentMethod": "해당 없음",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "서울시",
+      "additionalConditions": "이용은 신청 없이 방문 — 스마트서울맵 '서울키즈 오케이존', 몽땅정보통 업체 목록, 네이버·카카오지도 검색으로 찾음. 신청은 업소(사업주)가 몽땅정보통에서 온라인으로 하고 자치구 1차·서울시 최종 승인",
+      "officialUrl": "https://umppa.seoul.go.kr/hmpg/sprt/bzin/bzmgComtDetail.do?biz_mng_no=99341E4FE02244FFA897EF1BF7678DD1",
+      "sourceName": "몽땅정보통 사업 페이지 + 서울시 정책 아카이브 + 서대문구·성북구 공지(2026-07-15)",
+      "lastVerified": "2026-09-30",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "확인필요 사유: 부모 대상 혜택·신청 절차가 없는 업소 지원사업이라 '혜택'으로 노출 불가 — 노출한다면 '아이 동반 환영 매장 찾기' 정보 카드로만. 2026 공식 개소 수는 못 찾음(시기별 700→800 등 상이, 몽땅정보통 목록 집계 661곳은 비공식). 문의 저출생담당관 02-2133-5030.",
+      "periods": [],
+      "excludeReason": "부모가 신청·수령하는 급여·서비스가 아니라 서울시 지정 시설·공간 정보(업소 지원사업). 혜택으로 노출 불가(2026-10-01 판정)."
+    },
+    {
+      "id": "SEOUL-N09",
+      "name": "서울형 키즈카페",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "서울시민·서울생활권자(서울 소재 직장인·학생 등). 상시형 이용 연령은 시설별로 다르고(서울시 보도자료 0~9세, 시설별 상이) 여기저기는 연나이 4~9세. 보호자 동반 원칙",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 144,
+      "amountText": "상시형(시립·구립): 시립 5천원 이내·구립 3천원 이내(아동 1인+보호자). 기초수급·한부모·장애인·다둥이 등 감면(서울생활권자는 다둥이 감면 제외). 여기저기(주말 야외형): 아동 1인 5,000원·보호자 무료",
+      "paymentMethod": "이용요금 할인",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "서울시",
+      "additionalConditions": "우리동네키움포털(umppa.seoul.go.kr/icare) 시설별 사전예약 — 상시형은 매주 화요일 다음 주 이용분이 자치구 그룹별 09·11·13·15시로 순차 개시, 여기저기는 매주 월요일 10시(사전 80%·현장 20%). 노쇼 시 30일간 서울형 키즈카페 전체 이용 불가. 시립 서울숲점(초록초록)은 무료·상시·예약 불필요",
+      "officialUrl": "https://umppa.seoul.go.kr/icare/dolbomMENU5/dolbomMENU5_1.jsp",
+      "sourceName": "우리동네키움포털 + 서울시 보도자료(2026-02-05, 2026-03-09) + 서울시 뉴스(579652 수정 2026-09-17)",
+      "lastVerified": "2026-09-30",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "확인필요 사유: 시설 이용 서비스라 부모가 신청·수령하는 '혜택'이 아니고, 서울시 공식 페이지에 규모별 연령표가 없으며 임신 중 이용 가능 여부도 없음 — 노출한다면 시설 안내로만. 포털 목록은 141곳(시립 15·구립 126, 2026-09-30 집계)이고 공식 목표는 '연내 4백여 개 선정(누적)'. '300개소'는 공식 도메인 근거 없음(기사만). 여기저기는 상반기(4~6월) 종료, 하반기 2026-09-19~11-15(30개소) 운영 중. 문의 아이돌봄담당관 02-2133-4934, 시설별 전화.",
+      "periods": [],
+      "excludeReason": "시설 이용·예약 서비스로 부모에게 지급되는 지원사업이 아님(2026-10-01 판정)."
+    }
+  ]
+}

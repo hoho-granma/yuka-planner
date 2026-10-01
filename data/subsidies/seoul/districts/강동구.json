@@ -41,7 +41,7 @@
       "applicableRegions": [
         "서울특별시:강동구"
       ],
-      "target": "강동구에 출생신고한 신생아 가정",
+      "target": "2025.1.1 이후 출생아",
       "minAgeMonths": 0,
       "maxAgeMonths": 12,
       "amountText": "신생아용 기저귀 1팩 + 20L 종량제봉투 30매 (현물 1회)",
@@ -49,13 +49,13 @@
       "deadlineType": "birth_relative_months",
       "deadlineValue": 12,
       "residencyRequirement": "강동구 출생신고(세부 거주기간 요건 미확인)",
-      "additionalConditions": "출생신고 시 동주민센터에서 현장 수령하거나 온라인 신고 시 이후 방문 수령. 2025년 1월 이후 출생신고분부터 제공(2025-02 기사·e-강동구소식). 신청 기한: 출생일로부터 1년 이내",
+      "additionalConditions": "출생신고 시 동주민센터에서 즉시 지급",
       "officialUrl": "https://egangdong.kr/vol583/sub_02.html",
-      "sourceName": "e-강동구소식 '2025 달라지는 제도' + 시정일보 2025-02-13 보도 — WebFetch로 확인",
-      "lastVerified": "2026-09-29",
-      "status": "확인필요",
-      "verified": false,
-      "notes": "2026년 보도에서 모든 출산 가구에 기저귀·종량제봉투 지원 및 동주민센터 제공 확인(공식 원문 미열람이라 verified 유지)"
+      "sourceName": "강동구 공식 소식지(egangdong.kr)",
+      "lastVerified": "2026-10-01",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-01 검증 반영] 2025.1.1 이후 출생아, 기저귀 1팩+종량제봉투 30매, 출생신고 시 동주민센터 즉시 지급 확인."
     },
     {
       "id": "GANGDONG-004",

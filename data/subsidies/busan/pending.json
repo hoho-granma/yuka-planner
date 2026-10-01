@@ -1,0 +1,54 @@
+{
+  "_meta": {
+    "설명": "부산광역시 확인필요 항목(앱에 노출하지 않음). 확인 후 city.json으로 이동.",
+    "갱신": "2026-09-30"
+  },
+  "subsidies": [
+    {
+      "id": "BS-007",
+      "name": "한방 난임지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "신청일 기준 여성의 주민등록상 거주지가 부산시인 난임부부. 의사 또는 한의사의 난임진단서 제출. 부부 중 최소 1명이 대한민국 국적자이고 부부 모두 건강보험 가입 확인",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "지정 한의원에서 4개월간 한약 및 침구 치료 지원. 구체적인 금액 환산액은 확인 필요",
+      "paymentMethod": "현물/의료서비스",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "여성 신청자의 주민등록상 주소지가 부산시",
+      "additionalConditions": "매년 1월 1일부터 예산 소진·마감 시까지 신청. 대상자 최종 확정 후 지정 한의원에서 치료하고 치료 종료 후 6개월 임신 여부 추적관리",
+      "officialUrl": "https://www.busan.go.kr/depart/ahlifepeople0103",
+      "sourceName": "부산광역시 한방난임지원",
+      "lastVerified": "2026-09-30",
+      "status": "확인필요",
+      "verified": true,
+      "notes": "부산시 자체사업 및 조례 근거는 공식 페이지에서 확인했으나 2026년 지원금액을 원 단위로 확인하지 못해 금액은 추정하지 않음."
+    },
+    {
+      "id": "BS-008",
+      "name": "가임력 보존 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "항암 등으로 가임력 손상이 우려되는 질병·질환이 있는 기혼 또는 사실혼 여성",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "배아 생성 및 동결보관 비용 최대 200만원 지원",
+      "paymentMethod": "의료비 지원",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "부산시 지원 대상 요건 확인 필요",
+      "additionalConditions": "주소지 관할 보건소 문의·신청",
+      "officialUrl": "https://www.busan.go.kr/briefing/1745607",
+      "sourceName": "부산광역시 2026년 7월 인구정책브리핑",
+      "lastVerified": "2026-09-30",
+      "status": "확인필요",
+      "verified": true,
+      "notes": "2026년 7월 공식 인구정책브리핑에서 최대 200만원 지원을 확인. 세부 연령·거주기간·신청기한은 별도 확인 필요."
+    }
+  ]
+}

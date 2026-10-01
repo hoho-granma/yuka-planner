@@ -1,108 +1,501 @@
 {
   "_meta": {
     "설명": "부산광역시 전체 공통 또는 여러 시군구에 걸쳐 적용되는 지원금. 시군구 전용 항목은 data/subsidies/busan/{시군구명}/subsidies.json 에 둔다.",
-    "갱신": "2026-09-29 조사 부산 4건. 산후조리경비 공식 본문 미열람, 구·군 자체 사업 제외."
+    "갱신": "2026-09-30 확인완료 항목만 수록(20건). 확인필요 항목은 pending.json. verified는 ChatGPT 자체 표기, 직접 재확인 전. BS-023(전국 제도) 제외."
   },
   "subsidies": [
     {
       "id": "BS-001",
-      "name": "부산형 산후조리경비 지원",
+      "name": "부산시 둘째 이후 출산지원금",
       "scope": "provincial",
       "applicableRegions": [
         "부산광역시:ALL"
       ],
-      "target": "부산시 출생신고 출생아(소득기준 없음)",
-      "minAgeMonths": 0,
-      "maxAgeMonths": 12,
-      "amountText": "출생아 1인당 최대 100만원 (쌍둥이 최대 200만원, 3태아 이상 최대 300만원)",
-      "paymentMethod": "영수증 제출 후 지급(정부24 온라인 또는 보건소 방문)",
-      "deadlineType": "birth_relative_months",
-      "deadlineValue": 12,
-      "residencyRequirement": "출산일·신청일 기준 출생아와 부 또는 모가 부산시 주민등록",
-      "additionalConditions": "사용처: 산모·신생아 건강관리 서비스 본인부담금, 산후조리원비, 산후 병의원 진료비 등. 출산 후 6개월 이내 사용분 증빙",
-      "officialUrl": "https://www.busan.go.kr/depart/ahlifepeople0304",
-      "sourceName": "부산광역시 보도자료(2025) / 구·군 보건소 안내",
-      "lastVerified": "2026-09-29",
-      "status": "확정시행",
-      "verified": false,
-      "notes": "공식 페이지 본문 열람 실패, 2025 보도자료·구청 안내 기반. 2026 금액 동일 여부 보건소 확인 필요."
-    },
-    {
-      "id": "BS-002",
-      "name": "부산형 출산지원금 (둘째 이후 추가 100만원)",
-      "scope": "provincial",
-      "applicableRegions": [
-        "부산광역시:ALL"
-      ],
-      "target": "부산시 둘째 이후 출생아",
+      "target": "2026년도 부산광역시 출생아 중 둘째 이후 자녀. 출생신고 및 주민등록 등재 필요. 출생신고일 현재 부 또는 모와 둘째 이후 출생아가 부산시에 같은 주민등록지로 등재·거주해야 함",
       "minAgeMonths": 0,
       "maxAgeMonths": 3,
-      "amountText": "둘째 이후 출생아 시비 100만원 일시금(현금) 추가 (첫만남이용권 300만원과 별도)",
-      "paymentMethod": "현금 일시금, 신청 다음 달 지급",
-      "deadlineType": "birth_relative_months",
-      "deadlineValue": 3,
-      "residencyRequirement": "부 또는 모와 둘째 이후 자녀가 출생신고일 현재 부산시 같은 주민등록지에 등재·거주",
-      "additionalConditions": "출생일로부터 3개월 이내 행정복지센터 또는 정부24 신청",
-      "officialUrl": "https://www.busan.go.kr/childcare/childcare010101",
-      "sourceName": "부산광역시 '당신처럼 애지중지' 출산지원금",
-      "lastVerified": "2026-09-29",
-      "status": "확정시행",
-      "verified": true,
-      "notes": "2026년 출생아 대상. 첫째아는 첫만남이용권(전국)만 해당. 구·군 자체 출산지원금과 별개.",
+      "amountText": "둘째 이후 출생아 1인당 100만원 일시금 현금. 첫째아는 부산시 자체 출산지원금 없음",
       "amountByBirthOrder": {
         "second": 1000000,
         "third": 1000000,
         "fourthPlus": 1000000
-      }
+      },
+      "paymentMethod": "현금",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 3,
+      "residencyRequirement": "출생신고일 현재 부산광역시에 부 또는 모와 출생아가 같은 주민등록지로 등재·거주",
+      "additionalConditions": "거주지 읍·면·동 행정복지센터 또는 정부24에서 신청. 신청 다음달 10일 보호자 계좌로 지급. 지급 전 타 시·도로 전출하면 지급 제외",
+      "officialUrl": "https://www.busan.go.kr/childcare/childcare010101",
+      "sourceName": "부산광역시 출산지원금 페이지 + 2026년 7월 부산광역시 인구정책브리핑",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2026년 모든 출생아 대상 페이지에서 둘째 이후 부산시 자체 지원금 100만원을 확인. 첫만남이용권은 국가·시·구군 사업이므로 자체 지원금과 분리함."
+    },
+    {
+      "id": "BS-002",
+      "name": "부산형 산후조리경비 지원사업",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "2025년 출생아 중 자격요건을 충족하는 미신청자 및 2026년 출생아",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "출생아 1인당 최대 100만원. 단태아 100만원, 쌍태아 200만원, 삼태아 이상 300만원. 국내에서 이용한 산후조리 관련 비용, 산모·신생아 건강관리서비스 본인부담금, 산후조리원비, 병·의원비 등에 사용",
+      "paymentMethod": "확인 필요",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 0,
+        "maxMonths": 12
+      },
+      "residencyRequirement": "부산시 거주 및 사업 세부 자격요건 충족 필요",
+      "additionalConditions": "주소지 관할 구·군 보건소에서 신청. 세부 신청기한 및 인정 비용은 보건소 확인 필요",
+      "officialUrl": "https://www.busan.go.kr/briefing/1745607",
+      "sourceName": "부산광역시 2026년 7월 인구정책브리핑",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2026년 출생아 지원 및 2025년 출생아 미신청자 지원을 공식 브리핑에서 확인. 세부 신청기한은 별도 확인 필요."
     },
     {
       "id": "BS-003",
+      "name": "임산부 친환경농산물 꾸러미 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "신청일 현재 임산부 또는 전년도 출산한 산모. 부산시 사업 대상자로 선정된 자",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 12,
+      "amountText": "친환경농산물 구매금액의 80% 지원. 최대 구매액 48만원, 자부담 20%(9만6천원 포함). 2026년 하반기 정부사업 재개에 따라 부산시 자체 지원금은 24만원으로 조정",
+      "paymentMethod": "현물",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "부산광역시 거주",
+      "additionalConditions": "대상자 선정 후 지정 친환경농산물 쇼핑몰에서 구매. 2026년 사업은 3~12월 추진",
+      "officialUrl": "https://www.busan.go.kr/expdetail/view?schDbiz=6260000202230028&schYear=2026",
+      "sourceName": "부산광역시 2026년도 세부사업별 지출내역 + 2026년 7월 인구정책브리핑",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2025년 자료의 48만원 자체지원과 달리 2026년에는 하반기 정부사업 재개로 부산시 자체사업 규모가 1인 24만원으로 감액됨. 부산시 공식 예산자료에 8,800명×24만원으로 명시. 2027년 정부사업 추진 시 부산시 자체사업 종결 예정."
+    },
+    {
+      "id": "BS-004",
+      "name": "임산부 콜택시 마마콜",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "부산시에 주민등록을 한 임산부",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "월 4만원 한도 내 택시 할인액 지원. 이용 횟수 제한 없음",
+      "paymentMethod": "교통비 지원",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "부산시에 주민등록",
+      "additionalConditions": "임신등록일부터 출산일 후 1년까지 이용. 두리발 앱에서 이용자 등록 후 사용",
+      "officialUrl": "https://www.busan.go.kr/news/totalnews01/view?dataNo=72726",
+      "sourceName": "부산시보 2026년 출산·보육 정책 안내",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2026년 7월 부산시 인구정책브리핑에서도 월 4만원, 임신등록일부터 출산일+1년 지원을 재확인."
+    },
+    {
+      "id": "BS-005",
+      "name": "임산부 공영주차장 주차요금 감면",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "임산부 자동차 표지를 부착한 차량에 임산부가 탑승한 경우",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "부산시 공영주차장 주차요금 50% 감면",
+      "paymentMethod": "요금감면",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "부산시 임산부 지원 대상",
+      "additionalConditions": "임산부 자동차 표지 부착 및 임산부 탑승·증빙 필요. 관할 구·군 또는 부산시설공단에 확인",
+      "officialUrl": "https://www.busan.go.kr/briefing/1690983",
+      "sourceName": "부산광역시 인구정책브리핑",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "금전 지급이 아닌 부산시 자체 주차요금 감면 사업."
+    },
+    {
+      "id": "BS-006",
+      "name": "산모·신생아 건강관리 부산시 자체지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "부산시 거주 출산가정. 특히 첫째아 기준중위소득 150% 초과 가정의 부산시 자체 예외지원 및 둘째아 이상, 쌍생아 이상, 미숙아 등 부산시 예외지원 대상",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 2,
+      "amountText": "산모·신생아 건강관리사를 이용하는 서비스형 지원. 2026년 기준 첫째아 기준중위소득 150% 초과 가정은 단축·표준형 자체지원. 둘째아 이상은 5~20일, 첫째아 150% 초과는 5~10일 등 태아 유형·출산순위별 차등 지원",
+      "paymentMethod": "서비스 지원",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 2,
+      "residencyRequirement": "신청일 현재 주민등록상 부산시 거주",
+      "additionalConditions": "출산예정일 40일 전부터 출산일로부터 60일까지 신청. 미숙아·선천성이상아 입원 시 신생아 퇴원일로부터 30일 이내. 주소지 관할 보건소 또는 복지로 신청",
+      "officialUrl": "https://www.busan.go.kr/depart/ahlifepeople0202",
+      "sourceName": "부산광역시 산모·신생아 건강관리 지원 페이지, 2026-08-18 업데이트",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "국가 산모·신생아 건강관리 사업 자체가 아니라 부산시가 첫째아 소득 150% 초과 가정 등을 추가로 지원하는 부분을 대상으로 함. 2026년 서비스 가격표에서 정부지원금과 본인부담금이 유형별로 제시됨."
+    },
+    {
+      "id": "BS-009",
+      "name": "부산형 365열린시간제 어린이집",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "부산시 거주 6개월 이상~6세 이하 미취학 아동(1·2월생은 7세 포함). 가정양육 또는 어린이집·유치원 재원 여부와 관계없이 이용 가능",
+      "minAgeMonths": 6,
+      "maxAgeMonths": 84,
+      "amountText": "시간당 보육료 4,000원 중 부산시 3,000원 지원. 이용자 부담 시간당 1,000원. 월 최대 80시간",
+      "paymentMethod": "서비스 이용료 지원",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 6,
+        "maxMonths": 84
+      },
+      "residencyRequirement": "부산시 거주",
+      "additionalConditions": "2026년 4월 기준 13개소. 주말·공휴일 09:00~18:00, 평일 야간 18:00~24:00. 부산이즈굿 동백전 앱 필요. 이용일 14일 전부터 1일 전까지 예약",
+      "officialUrl": "https://www.busan.go.kr/childcare/everycare0101",
+      "sourceName": "부산광역시 부산형 365열린시간제 어린이집, 2026-04-15 업데이트",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "부산시 자체 돌봄사업. 2026년 4월 기준 13개소 운영."
+    },
+    {
+      "id": "BS-010",
+      "name": "입원아동 돌봄서비스",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "부산 지역 내 3개월~12세 이하 입원아동 중 정부지원 아이돌봄서비스 신청 및 등급판정을 받은 가정",
+      "minAgeMonths": 3,
+      "maxAgeMonths": 144,
+      "amountText": "시간당 서비스 단가 16,000원. 기준중위소득 75% 이하 90%(14,400원), 120% 이하 70%(11,200원), 150% 이하 60%(9,600원), 250% 이하 및 초과 50%(8,000원) 부산시 지원",
+      "paymentMethod": "서비스 이용료 지원",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 3,
+        "maxMonths": 144
+      },
+      "residencyRequirement": "부산 지역 내 입원아동",
+      "additionalConditions": "동 행정복지센터에서 아이돌봄 지원서비스 신청·등급판정 후 수행기관에 신청. 이용자 본인부담금 선납 후 이용",
+      "officialUrl": "https://www.busan.go.kr/childcare/everycare0008",
+      "sourceName": "부산광역시 입원아동서비스, 2026-06-24 업데이트",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "부산시 자체 입원아동 돌봄서비스. 2026년 성평등가족부 아이돌봄서비스 기준중위소득 기준을 준용."
+    },
+    {
+      "id": "BS-011",
+      "name": "어린이집 필요경비 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "부산시 소재 어린이집 이용 영유아 2~5세. 현장학습비는 2~5세, 특별활동비·부모부담행사비·특성화비용은 3~5세",
+      "minAgeMonths": 24,
+      "maxAgeMonths": 71,
+      "amountText": "2026년 1~12월 지원. 현장학습비 2~5세 분기 5만원, 특별활동비 3~5세 월 8만원, 부모부담행사비 3~5세 월 1만원, 특성화비용 3~5세 월 3만원",
+      "paymentMethod": "보육비 지원",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "부산시 소재 어린이집 이용",
+      "additionalConditions": "어린이집이 구·군에 신청하며 보호자는 별도 신청하지 않음. 어린이집에서 동의서 등 서류 징구",
+      "officialUrl": "https://www.busan.go.kr/childcare/childcare010214",
+      "sourceName": "부산광역시 어린이집 필요경비 지원, 2026-01-29 업데이트",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2026년 3월부터 특성화비용 지원이 추가됨."
+    },
+    {
+      "id": "BS-012",
+      "name": "기관보육료지원 어린이집 3~5세 부모부담보육료 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "기관보육료지원 어린이집을 이용하는 3~5세 유아",
+      "minAgeMonths": 36,
+      "maxAgeMonths": 71,
+      "amountText": "3~5세 부모부담보육료와 부산시 보육료 수납한도액의 차액 지원. 2026년 3월~2027년 2월 기준 3세 월 109,000원, 4~5세 월 94,000원",
+      "paymentMethod": "보육료 지원",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 36,
+        "maxMonths": 71
+      },
+      "residencyRequirement": "부산시 소재 해당 어린이집 이용",
+      "additionalConditions": "재원 어린이집을 통해 신청·처리",
+      "officialUrl": "https://www.busan.go.kr/briefing/1745607",
+      "sourceName": "부산광역시 2026년 7월 인구정책브리핑",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2026년 3월부터 2027년 2월까지 적용되는 금액을 공식 브리핑에서 확인."
+    },
+    {
+      "id": "BS-013",
+      "name": "어린이집 외국국적 유아 보육료 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "부산시 어린이집을 이용하는 외국국적 3~5세 유아. 부산 관내에 90일 초과하여 거주할 목적으로 체류하는 외국인주민",
+      "minAgeMonths": 36,
+      "maxAgeMonths": 71,
+      "amountText": "보육료 월 10만원 지원",
+      "paymentMethod": "카드포인트",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 36,
+        "maxMonths": 71
+      },
+      "residencyRequirement": "부산 관내 90일 초과 거주 목적의 외국인주민",
+      "additionalConditions": "보호자가 어린이집에 신청서 및 외국인등록증 사본 등 제출. 국민행복카드 결제 방식",
+      "officialUrl": "https://www.busan.go.kr/childcare/childcare010215",
+      "sourceName": "부산광역시 어린이집 외국국적 유아 보육료 지원, 2026-01-29 업데이트",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2026년도 신학기 기준 3세 2022년생, 4세 2021년생, 5세 2020년생."
+    },
+    {
+      "id": "BS-014",
       "name": "부산 다자녀 교육지원포인트",
       "scope": "provincial",
       "applicableRegions": [
         "부산광역시:ALL"
       ],
-      "target": "자녀 1명 이상이 2008~2019년생인 부산시 다자녀 가정(소득·재산 기준 없음)",
-      "minAgeMonths": 72,
-      "maxAgeMonths": 228,
-      "amountText": "2자녀 30만원 / 3자녀 이상 50만원 (연 1회)",
-      "paymentMethod": "동백전 포인트(동백전 앱 '정책자금신청')",
-      "deadlineType": "age_window",
-      "deadlineValue": {
-        "minMonths": 72,
-        "maxMonths": 228
+      "target": "2008~2019년생 자녀 중 1명 이상을 둔 부산시 다자녀가정. 신청자격은 3개월 이상 부산시 거주 및 자녀 1명 이상과 주민등록상 함께 거주",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 216,
+      "amountText": "2자녀 가정 연 30만원, 3자녀 이상 가정 연 50만원을 동백전 정책지원금으로 지급",
+      "amountByBirthOrder": {
+        "second": 300000,
+        "third": 500000,
+        "fourthPlus": 500000
       },
-      "residencyRequirement": "신청인 및 자녀 함께 주민등록, 부산시 3개월 이상 거주",
-      "additionalConditions": "2026.3.23~12.11 신청, 사용기한 2026.12.31. 서점·독서실·예체능·문구·안경원 등 사용",
+      "paymentMethod": "지역화폐",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "신청일 기준 부산시 3개월 이상 거주, 자녀 1명 이상과 주민등록상 함께 거주",
+      "additionalConditions": "2026년 신청기간 3월 23일~12월 11일. 사용기한 2026년 12월 31일. 동백전 앱에서 신청. 지역서점·온라인 지정서점·독서실·스터디카페·예체능교육시설·안경점·문구점 등에서 사용",
       "officialUrl": "https://www.busan.go.kr/childcare/prtszero0105",
-      "sourceName": "부산광역시 '당신처럼 애지중지'",
-      "lastVerified": "2026-09-29",
-      "status": "확정시행",
+      "sourceName": "부산광역시 다자녀교육지원포인트 지원",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
       "verified": true,
-      "notes": "영유아가 아닌 학령기 자녀 대상. 2027년 이후 계속 여부 확인 필요."
+      "notes": "2026년 공식 페이지 기준 금액과 신청기간 확인."
     },
     {
-      "id": "BS-004",
-      "name": "임산부 전용 택시(마마콜) 요금 할인",
+      "id": "BS-015",
+      "name": "어린이 대중교통 요금 무료화",
       "scope": "provincial",
       "applicableRegions": [
         "부산광역시:ALL"
       ],
-      "target": "부산시 등록 임산부 (임신 확인일~출산 후 1년)",
+      "target": "만 6세~만 12세 어린이. 외국인 포함",
+      "minAgeMonths": 72,
+      "maxAgeMonths": 155,
+      "amountText": "부산 등록 시내·마을버스 및 도시철도 이용요금 무료",
+      "paymentMethod": "교통비 감면",
+      "deadlineType": "age_window",
+      "deadlineValue": {
+        "minMonths": 72,
+        "maxMonths": 155
+      },
+      "residencyRequirement": "부산 대중교통 이용",
+      "additionalConditions": "어린이 교통카드에 생년월일 등록 필요. 현금 승차는 무료 대상이 아님. 동해선 및 2000번 시외구간 제외",
+      "officialUrl": "https://www.busan.go.kr/childcare/prtszero0106",
+      "sourceName": "부산광역시 어린이 대중교통 요금 무료화",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2023년 10월 시행 후 2026년에도 공식 페이지에 시행사업으로 유지."
+    },
+    {
+      "id": "BS-016",
+      "name": "다자녀가정 도시철도 요금 할인",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "부산시 다자녀가정 중 3자녀 이상 가정의 대상 세대원",
       "minAgeMonths": 0,
-      "maxAgeMonths": 12,
-      "amountText": "택시요금 65% 할인, 월 최대 4만원",
-      "paymentMethod": "마마콜(두리발) 앱 호출·결제 시 할인",
-      "deadlineType": "birth_relative_months",
-      "deadlineValue": 12,
-      "residencyRequirement": "부산시 거주 임산부",
-      "additionalConditions": "두리발 앱/홈페이지 회원가입 후 임신확인 서류 제출",
-      "officialUrl": "https://www.busan.go.kr/childcare/childcare0603/1424395",
-      "sourceName": "부산광역시 정책 게시판 / 언론",
-      "lastVerified": "2026-09-29",
-      "status": "확인필요",
-      "verified": false,
-      "notes": "할인율·한도는 2024.3.1 기준 언론 정리. 2026 현재 유효 여부 확인 필요. 2026.5 신임 시장 공약(임산부 대중교통 무료화)은 미시행 공약이라 등록하지 않음."
+      "maxAgeMonths": 216,
+      "amountText": "부산 도시철도 성인요금 기준 50% 감면",
+      "paymentMethod": "교통비 감면",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "부산시에 주민등록을 둔 다자녀가정",
+      "additionalConditions": "모바일 가족사랑교통카드 등을 이용. 가족사랑카드 및 별도 교통카드 요건 확인 필요",
+      "officialUrl": "https://www.busan.go.kr/childcare/childcare0602",
+      "sourceName": "부산광역시 다자녀 가정 주요 혜택, 2026-03-19 기준",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2자녀 가정은 해당 도시철도 50% 감면 대상이 아님."
+    },
+    {
+      "id": "BS-017",
+      "name": "다자녀가정 공영주차장 주차요금 감면",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "부산시 다자녀가정. 2자녀 및 3자녀 이상 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 216,
+      "amountText": "부산지역 공영주차장 주차요금 50% 할인",
+      "paymentMethod": "요금감면",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "부산시 다자녀가정",
+      "additionalConditions": "다자녀가정 우대 차량스티커 부착 확인. 주차장별 확인절차가 다를 수 있음",
+      "officialUrl": "https://www.busan.go.kr/childcare/childcare0602",
+      "sourceName": "부산광역시 다자녀 가정 주요 혜택, 2026-03-19 기준",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "부산시 및 각 구·군 공영주차장 대상."
+    },
+    {
+      "id": "BS-018",
+      "name": "다자녀가정 광안대교 통행료 감면",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "부산시에 주민등록을 두고 둘 이상의 자녀를 출산 또는 입양하여 양육하며 자녀 중 1명 이상이 19세 미만인 가정의 비사업용 차량",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 227,
+      "amountText": "3자녀 이상 가정 광안대교 통행료 면제, 2자녀 가정 50% 할인",
+      "paymentMethod": "통행료 감면",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "부산시 주민등록 다자녀가정",
+      "additionalConditions": "다자녀가정 우대 차량스티커 발급 후 광안대교 홈페이지 차량 사전등록. 2자녀 50% 감면은 2026년 5월 15일부터 시행",
+      "officialUrl": "https://www.busan.go.kr/childcare/faq/1720230",
+      "sourceName": "부산광역시 광안대교 통행료 감면 FAQ, 2026-02-26",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2026년 5월 15일부터 2자녀 가정까지 확대."
+    },
+    {
+      "id": "BS-019",
+      "name": "다자녀가정 자동차 취득세 감면",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "18세 미만 자녀 2명 이상을 양육하며 자동차를 취득하는 사람",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 215,
+      "amountText": "6인 이하 승용차: 3자녀 이상 취득세 면제(140만원 한도), 2자녀 이상 50% 감면(140만원 이하인 경우). 7~10인승 승용·15인승 이하 승합·1톤 이하 화물·250cc 이하 이륜차: 3자녀 이상 면제, 2자녀 이상 50% 감면",
+      "paymentMethod": "세금감면",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "18세 미만 자녀 2명 이상 양육",
+      "additionalConditions": "먼저 감면 신청하는 자동차 1대에 적용. 2027년 12월 31일까지 적용되는 제도. 자동차 등록일부터 1년 이내 소유권 이전 시 추징 가능",
+      "officialUrl": "https://www.busan.go.kr/childcare/faq",
+      "sourceName": "부산광역시 다자녀가정 FAQ",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "부산시 자체 현금지원은 아니지만 부산시가 안내하는 다자녀 지원·감면으로 포함."
+    },
+    {
+      "id": "BS-020",
+      "name": "전기자동차 구매 다자녀가정 추가 보조금",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "승용 전기자동차 구매 가정 중 18세 이하 자녀 2명 이상 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 227,
+      "amountText": "2자녀 100만원, 3자녀 200만원, 4자녀 이상 300만원 추가 지원",
+      "amountByBirthOrder": {
+        "second": 1000000,
+        "third": 2000000,
+        "fourthPlus": 3000000
+      },
+      "paymentMethod": "현금성 보조금",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "부산시 전기자동차 구매보조금 대상 가정",
+      "additionalConditions": "승용 전기자동차 구매 시 신청. 개인사업자·법인은 제외. 전기차 구매보조금 사업의 차량·출고 등 세부요건 충족 필요",
+      "officialUrl": "https://www.busan.go.kr/briefing/1745607",
+      "sourceName": "부산광역시 2026년 7월 인구정책브리핑",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "다자녀 전기차 구매 추가지원과 부산청년 EV드림은 별도 사업이므로 분리함."
+    },
+    {
+      "id": "BS-021",
+      "name": "부산청년 EV드림",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "2025년 1월 1일 이후 출산한 승용 전기자동차 구매 가정의 부모",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 21,
+      "amountText": "출산가정 승용 전기자동차 구매비용 150만원 추가 지원. 부산시 100만원 + 참여 제작·수입사 50만원",
+      "paymentMethod": "구매보조금",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "부산시 지원요건 충족",
+      "additionalConditions": "사업 개시일부터 예산 소진 시까지. 매월 30세대 선착순. 참여 제작·수입사 차량에 한정",
+      "officialUrl": "https://www.busan.go.kr/childcare/spprt0008",
+      "sourceName": "부산광역시 부산청년 EV드림, 2026-01-28 업데이트",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2026년 사업 페이지 기준 150만원. 2025년 이전 출생 여부가 아닌 2025년 1월 1일 이후 출산 여부가 기준."
+    },
+    {
+      "id": "BS-022",
+      "name": "신혼부부 주택융자 및 대출이자 지원",
+      "scope": "provincial",
+      "applicableRegions": [
+        "부산광역시:ALL"
+      ],
+      "target": "부산시 거주 무주택 신혼부부. 혼인예정 3개월~혼인신고일 기준 7년 이내, 부부합산 연소득 1억3천만원 이하",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "전세자금 대출 최대 2억원(임차보증금의 90% 이내), 대출금리 연 3.5% 중 부산시가 연소득에 따라 최대 2% 지원. 연 최대 400만원 이자 지원",
+      "paymentMethod": "대출이자 지원",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "부산시 거주",
+      "additionalConditions": "2026년 사업기간 1~12월. 2026년 7월 변경계획 기준 신청기간 7월 1일~11월 30일 16:00, 예산 소진 시 조기 마감 가능. 대출실행 7월 29일~12월 31일",
+      "officialUrl": "https://www.busan.go.kr/childcare/childcare010105",
+      "sourceName": "부산광역시 신혼부부 주택융자 및 대출이자 지원사업, 2026-06-10 업데이트 및 2026-06-17 변경공고",
+      "lastVerified": "2026-09-30",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "2026년 7월 변경공고 기준으로 별도 선정 절차 없이 신청기간 내 수시 접수. 자녀 임신·출산 시 지원기간 1명당 2년 연장 가능."
     }
   ]
 }

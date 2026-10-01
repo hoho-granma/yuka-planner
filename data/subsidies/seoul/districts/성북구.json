@@ -34,7 +34,7 @@
       "sourceName": "찾기쉬운 생활법령정보(법제처, 성북구 조례정보)",
       "status": "확인완료",
       "verified": true,
-      "notes": "조례 구버전(자치법규정보시스템, 개정 2023-12-28)은 첫째 20만/둘째 40만/셋째 80만/넷째 100만/다섯째 150만원으로 다르게 나옴. 생활법령(현행 표기)과 2차 자료가 일치해 셋째 이상 100/150/200만원으로 기재했으나 구청 확인 권장.",
+      "notes": "조례 구버전(자치법규정보시스템, 개정 2023-12-28)은 첫째 20만/둘째 40만/셋째 80만/넷째 100만/다섯째 150만원으로 다르게 나옴. 채택 근거: 법제처 생활법령정보의 현행 표기(셋째 100·넷째 150·다섯째 이상 200만원). 구버전 조례 표기와 다른 점은 위 수치 차이 참고.",
       "lastVerified": "2026-09-29",
       "statusOriginal": "확정시행",
       "auditNotes": {
@@ -44,26 +44,26 @@
     },
     {
       "id": "SEONGBUK-P02",
-      "name": "성북구 장애인가정 출산지원금",
+      "name": "성북구 장애인 출산지원금",
       "scope": "municipal",
       "applicableRegions": [
         "서울특별시:성북구"
       ],
-      "target": "장애 정도가 심한 장애인(구 1~3급) 부모의 출산 가정(구 2차 자료 기준)",
+      "target": "등록장애인 중 본인이 출산한 여성 또는 배우자가 출산한 남성(임신 4개월 이상 유산·사산 포함). 구비 추가분은 심한 장애인으로 출생일 이전부터 신청일까지 성북구에 연속 1년 이상 거주(유산·사산 제외)",
       "minAgeMonths": 0,
       "maxAgeMonths": 12,
-      "amountText": "50만원(2차 자료)",
-      "paymentMethod": "계좌입금 추정",
-      "deadlineType": "unconfirmed",
-      "deadlineValue": null,
-      "residencyRequirement": "신청일 현재까지 1년 이상 성북구 주민등록(2차 자료)",
-      "additionalConditions": "신청기한 미확인. 동주민센터 신청(2차 자료).",
-      "officialUrl": "https://lifewithbaby.co.kr/money/15/3",
-      "sourceName": "육아생활·모두의혜택(servedream) 2차 요약 — 공식 원문 미열람",
-      "lastVerified": "2026-09-29",
+      "amountText": "태아 1인당 120만원(국·시비), 심한 장애는 구비 50만원 추가",
+      "paymentMethod": "계좌입금",
+      "deadlineType": "birth_relative_months",
+      "deadlineValue": 12,
+      "residencyRequirement": "구비 추가분: 신생아 출생일 이전부터 신청일까지 성북구 연속 거주 1년 이상",
+      "additionalConditions": "장애인 본인·가족이 주민등록지 동주민센터에 신청",
+      "officialUrl": "https://sb.go.kr/www/selectBbsNttView.do?key=5927&bbsNo=91&nttNo=9502204",
+      "sourceName": "성북구청 누리집 장애인 출산지원금(02-2241-2512, 최종수정 2025-08-12) 직접 열람",
+      "lastVerified": "2026-10-01",
       "status": "확인필요",
       "verified": false,
-      "notes": "조례 본문을 열람하지 못해 대상·기한 미검증.",
+      "notes": "[2026-10-01 공식 열람] 대상·금액(일반 120만, 심한 장애 170만) 확인. 확인필요 유지: 신청기간·기한이 공식 원문에 없어 §2-2 미충족. 기존 deadlineValue 12는 2차 자료 근거. 2026년 갱신 여부 확인불가. (이전 메모) 조례 본문을 열람하지 못해 대상·기한 미검증.",
       "periods": []
     }
   ]
