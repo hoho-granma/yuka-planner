@@ -164,6 +164,20 @@
    * 날짜가 없는 항목(그때그때 확인·마일스톤 대기)은 어디에도 넣지 않는다 — 임의로 날짜를 만들지 않는다.
    * 완료 처리하거나 삭제하지 않고 분류만 한다.
    */
+  /** 정의에서 이 이벤트 인스턴스의 trigger(회차 occurrence → 변종 occurrence → 정의 triggerParams 순). 읽기만 한다. */
+  function periodTriggerOf(def, inst) {
+    const key = inst && inst.occurrenceKey;
+    if (key && key !== "default") {
+      const lists = [];
+      if (Array.isArray(def.occurrences)) lists.push(def.occurrences);
+      if (def.variants && Array.isArray(def.variants.options)) def.variants.options.forEach((o) => o && Array.isArray(o.occurrences) && lists.push(o.occurrences));
+      for (const l of lists) { const o = l.find((x) => x && x.occurrenceKey === key); if (o && o.trigger) return o.trigger; }
+      return null;
+    }
+    if (Array.isArray(def.occurrences)) { const o = def.occurrences.find((x) => x && x.occurrenceKey === "default"); if (o && o.trigger) return o.trigger; }
+    return def.triggerType ? { type: def.triggerType, ...(def.triggerParams || {}) } : null;
+  }
+
   /**
    * 기간형 AUTO (§14) — 시작 월령이 guardMonths(36)를 넘는 monthly 엔진 항목(예: 4~6세 추가접종).
    * 월 칸·추천일(달력 점)에 올리지 않고 "시작 월령이 속한 달 ~ 서비스 상한(maxMonths=72) 월령이 끝나는 날"을 하나의 기간으로 본다.
@@ -176,6 +190,9 @@
     if (e.isLegacySubsidy || e.category === "행정·지원금") return null;
     const def = e.detail && e.detail.definition;
     if (!def || def.schoolGroup) return null;
+    // 정해진 시기가 있는 항목(엔진 window 의 끝 월령이 서비스 상한보다 이르다, 예: 검진 6차 42~48)은 기간형이 아니다 — 월령 칸 항목으로 둔다.
+    const trig = periodTriggerOf(def, e.detail.instance);
+    if (trig && trig.type === "AGE_WINDOW" && typeof trig.endMonth === "number" && trig.endMonth < opts.maxMonths) return null;
     const keys = opts.monthKeysOf(e).filter((k) => typeof k === "number");
     if (!keys.length) return null;
     const startKey = Math.min(...keys);

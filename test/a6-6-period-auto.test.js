@@ -71,6 +71,19 @@ test("기간형 대상은 정확히 4~6세 추가접종 3건(시작 월령 48, �
   for (const e of vis.filter((x) => TARGET.includes(x.id))) assert.strictEqual(periodRangeOf(e).startKey, 48);
 });
 
+test("검진 6~8차(HC-07~09, 엔진 window 끝 월령 48/60/71 < 서비스 상한 72)는 기간형이 아니다 — periodRangeOf null, 월령 칸 분류에 들어간다, 기존 3건은 그대로", () => {
+  const hc = vis.filter((e) => /^HC-0[789]__/.test(e.id));
+  assert.deepStrictEqual(hc.map((e) => e.id).sort(), ["HC-07__default", "HC-08__default", "HC-09__default"]);
+  hc.forEach((e) => assert.strictEqual(periodRangeOf(e), null, e.id));
+  assert.deepStrictEqual(vis.filter((e) => periodRangeOf(e)).map((e) => e.id).sort(), [...TARGET].sort()); // 기존 3건 불변
+  // 월령 칸 분류: 창 안(HC-07 42~48개월)에서는 thisMonth, 시작 전은 upcoming, 지나면 past, period 에는 한 번도 안 들어간다.
+  const where = (m, id) => { const c = classify(m); return ["thisMonth", "upcoming", "past", "period"].filter((k) => c[k].some((x) => x.e.id === id)); };
+  assert.ok(where(44, "HC-07__default").includes("thisMonth"), "44개월 HC-07 thisMonth");
+  assert.deepStrictEqual(where(30, "HC-07__default"), ["upcoming"]);
+  assert.deepStrictEqual(where(66, "HC-07__default"), ["past"]);
+  for (const m of [30, 42, 44, 54, 60, 66, 71, 72]) for (const id of ["HC-07__default", "HC-08__default", "HC-09__default"]) assert.ok(!where(m, id).includes("period"), `${m}개월 ${id}`);
+});
+
 test("기간: 시작 = 출생일+48개월, 끝 = 72개월이 끝나는 날(isEventVisible 의 completedMonths<=72 와 같은 기준)", () => {
   const r = periodRangeOf(vis.find((e) => e.id === TARGET[0]));
   assert.strictEqual(ymd(r.start), "2025-06-15");

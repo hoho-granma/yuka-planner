@@ -49,20 +49,21 @@ test("지원금 분류: NAT-007·018·020 은 '신청 가능'이 아니라 조�
   }
 });
 
-test("HC-04/05: '동시 진행' 표현이 없고 구강검진 포함·검진기관 확인으로 안내한다('치과의사 실시'는 공식 근거 확인불가라 쓰지 않는다)", () => {
+test("HC-04/05: '동시 진행' 표현이 없고 구강검진은 별도 검진(18~29/30~41개월)·구강검진기관 안내이며 '치과의사 실시'는 쓰지 않는다(공식 근거 확인불가)", () => {
   for (const id of ["HC-04", "HC-05"]) {
     const t = defs.find((d) => d.todo_id === id);
     assert.ok(!/동시/.test(t.parentAction + t.about), id);
-    assert.ok(/구강검진/.test(t.parentAction) && !/치과의사/.test(t.parentAction) && /구강검진 날짜·기관은 검진기관에 확인/.test(t.parentAction), id);
+    assert.ok(/구강검진/.test(t.parentAction) && !/치과의사/.test(t.parentAction) && /별도로 구강검진기관에서 받아요/.test(t.parentAction), id);
+    assert.ok(t.parentAction.includes(id === "HC-04" ? "구강검진(18~29개월)" : "구강검진(30~41개월)"), id);
     assert.deepStrictEqual([t.triggerParams.startMonth, t.triggerParams.endMonth], id === "HC-04" ? [18, 24] : [30, 36]); // 시기·ID 불변
   }
 });
 
-test("VX-JEV 사백신: 2차 = 1차 후 28~30일, 3차 = 2차 후 335일 이상(11개월), 나머지 회차·키 불변", () => {
+test("VX-JEV 사백신: 2차 = 1차 후 28일 이상(상한 없음), 3차 = 2차 후 335일 이상(11개월), 나머지 회차·키 불변", () => {
   const jev = defs.find((d) => d.todo_id === "VX-JEV");
   const occ = jev.variants.options.find((o) => o.variantId === "사백신").occurrences;
   assert.deepStrictEqual(occ.map((o) => o.occurrenceKey), ["dose-1", "dose-2", "dose-3", "dose-4", "dose-5"]);
-  assert.deepStrictEqual([occ[1].trigger.minOffsetDays, occ[1].trigger.maxOffsetDays], [28, 30]);
+  assert.deepStrictEqual([occ[1].trigger.minOffsetDays, occ[1].trigger.maxOffsetDays], [28, null]);
   assert.deepStrictEqual([occ[2].trigger.minOffsetDays, occ[2].trigger.maxOffsetDays], [335, null]);
   assert.deepStrictEqual([occ[0].trigger.startMonth, occ[0].trigger.endMonth], [12, 24]);
   assert.deepStrictEqual([occ[3].trigger.startMonth, occ[4].trigger.startMonth], [72, 144]);

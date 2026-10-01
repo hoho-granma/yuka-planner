@@ -389,7 +389,7 @@ test("6) 첫니 8개월 → 마감은 12개월(절대상한이 첫니+6=14보다
 });
 
 // 7. 일본뇌염 사백신 2차 접종 간격 — KDCA 2026 지침 130~131쪽: 표준 1개월 간격, 최소 4주(7일은 가속접종 예외)
-test("7) VX-JEV(사백신) 2차: 1차완료+28일부터 DUE(+7일은 아직 아님), +30일까지 DUE, +31일이면 OVERDUE_CATCHUP", () => {
+test("7) VX-JEV(사백신) 2차: 1차완료+28일부터 DUE(+7일은 아직 아님), +30일 이후에도 상한 없이 DUE 유지(+31일·+60일, KDCA 지침: 지연 시 즉시 접종)", () => {
   const jev = findTodo("VX-JEV");
   const dose1 = Engine.addMonths(birthDate, 12);
   const completions = [{ todo_id: "VX-JEV", occurrenceKey: "dose-1", recordType: "TODO_COMPLETED", recordedAt: dose1 }];
@@ -402,7 +402,8 @@ test("7) VX-JEV(사백신) 2차: 1차완료+28일부터 DUE(+7일은 아직 아�
   assert.notStrictEqual(at(7), "DUE");
   assert.strictEqual(at(28), "DUE");
   assert.strictEqual(at(30), "DUE");
-  assert.strictEqual(at(31), "OVERDUE_CATCHUP");
+  assert.strictEqual(at(31), "DUE");
+  assert.strictEqual(at(60), "DUE");
 });
 
 // 8. 인플루엔자 최초 시즌 2회 접종

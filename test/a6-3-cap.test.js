@@ -74,7 +74,7 @@ test("effectiveMaxMonths: 엔진 이벤트는 정의 규칙, 엔진이 아닌 �
 // ── 2. 가시성: 기존 0~36개월 결과 불변, 신규 노출은 Todo 4건뿐 ─────────────────────────────────
 const BIRTHS = [D(2026, 6, 20), D(2026, 1, 31), D(2024, 2, 29), D(2023, 9, 30), D(2023, 6, 20), D(2021, 3, 15), D(2020, 7, 31), D(2018, 1, 15), D(2015, 5, 5)];
 
-test("모든 출생일·지역: 기존(날짜 월령 ≤ 36) 노출은 그대로이고, 새로 노출되는 것은 월령 > 36 인 Todo 회차 4건뿐(지원금 0건)", () => {
+test("모든 출생일·지역: 기존(날짜 월령 ≤ 36) 노출은 그대로이고, 새로 노출되는 것은 월령 > 36 인 Todo 회차 7건뿐(다회차 4 + 검진 HC-07~09, 지원금 0건)", () => {
   for (const region of Object.keys(REGIONS)) {
     for (const b of BIRTHS) {
       const ev = build(b, region);
@@ -84,7 +84,7 @@ test("모든 출생일·지역: 기존(날짜 월령 ≤ 36) 노출은 그대로
       const added = ev.filter((e) => newVis.has(e.id) && !oldVis.has(e.id));
       added.forEach((e) => assert.ok(cm(b, e.date) > 36 && cm(b, e.date) <= 72, `${e.id} 월령 ${cm(b, e.date)}`));
       assert.deepStrictEqual(added.filter((e) => !e.isEngineEvent).map((e) => e.id), [], `지원금 신규 노출: ${region}`);
-      assert.deepStrictEqual(added.map(evKey).sort(), ["VX-DTAP__dose-5", "VX-IPV__dose-4", "VX-JEV__dose-4", "VX-MMR__dose-2"], `${region} ${b.toDateString()}`);
+      assert.deepStrictEqual(added.map(evKey).sort(), ["HC-07", "HC-08", "HC-09", "VX-DTAP__dose-5", "VX-IPV__dose-4", "VX-JEV__dose-4", "VX-MMR__dose-2"], `${region} ${b.toDateString()}`);
     }
   }
 });
@@ -158,11 +158,11 @@ function rows(b, region, mode) {
   return { cal, chk, per, n: vis.length };
 }
 
-test("신규 노출 Todo 4건 / SF-01 달력 +36 / LF-02 달력 +12 / 달력 총 +52 / 체크리스트 +9, 그 밖의 항목 행 수는 불변", () => {
+test("신규 노출 Todo 7건(다회차 4 + 검진 HC-07~09) / SF-01 달력 +36 / LF-02 달력 +12 / HC-07·08 달력 +7·HC-09 +6 / 달력 총 +72 / 체크리스트 +14, 그 밖의 항목 행 수는 불변", () => {
   for (const region of Object.keys(REGIONS)) {
     const b = D(2026, 6, 20);
     const A = rows(b, region, "legacy"), N = rows(b, region, "new");
-    assert.strictEqual(N.n - A.n, 4, `${region} 신규 이벤트`);
+    assert.strictEqual(N.n - A.n, 7, `${region} 신규 이벤트`);
     const diff = {};
     for (const k of new Set([...Object.keys(A.per), ...Object.keys(N.per)])) {
       const a = A.per[k] || { c: 0, g: 0 }, n = N.per[k] || { c: 0, g: 0 };
@@ -170,10 +170,11 @@ test("신규 노출 Todo 4건 / SF-01 달력 +36 / LF-02 달력 +12 / 달력 총
     }
     assert.deepStrictEqual(diff, {
       "SF-01": { c: 36, g: 3 }, "LF-02": { c: 12, g: 2 },
+      "HC-07": { c: 7, g: 2 }, "HC-08": { c: 7, g: 2 }, "HC-09": { c: 6, g: 1 }, // 6·7·8차 검진(창 42~48/54~60/66~71) — 기간형이 아니라 월령 칸 항목
       "VX-DTAP__dose-5": { c: 1, g: 1 }, "VX-IPV__dose-4": { c: 1, g: 1 }, "VX-MMR__dose-2": { c: 1, g: 1 }, "VX-JEV__dose-4": { c: 1, g: 1 },
     }, region);
-    assert.strictEqual(N.cal - A.cal, 52, `${region} 달력`);
-    assert.strictEqual(N.chk - A.chk, 9, `${region} 체크리스트`);
+    assert.strictEqual(N.cal - A.cal, 72, `${region} 달력`);
+    assert.strictEqual(N.chk - A.chk, 14, `${region} 체크리스트`);
   }
 });
 

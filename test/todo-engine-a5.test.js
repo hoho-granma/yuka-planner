@@ -58,6 +58,15 @@ const GOLDEN = require("./fixtures/todo-engine-legacy-windows.json");
 // 골든은 data/todos 를 파일명 순으로 읽어 만들었다 — 정의 로드 순서와 무관하게 비교하려고 행을 (id, 회차)로 정렬한다.
 const sortRows = (rows) => rows.slice().sort((a, b) => (a[0] + "|" + a[1] < b[0] + "|" + b[1] ? -1 : 1));
 for (const p of Object.values(GOLDEN.windows)) for (const k of Object.keys(p)) p[k] = sortRows(p[k]);
+// 골든 비교는 "골든에 있는 정의 ∩ 현재 DEFS" 로 한정한다(양쪽 같은 id 집합). 골든은 VX-RSV 포함 78건 시점에 만들어졌고, 이후 정의가 추가(예: HC-07~09)돼도 골든 대상이 아니다.
+const LEGACY_IDS = new Set();
+for (const p of Object.values(GOLDEN.windows)) for (const rows of Object.values(p)) for (const r of rows) LEGACY_IDS.add(r[0]);
+const DEF_IDS = new Set(DEFS.map((t) => t.todo_id));
+const DEFS_LEGACY = DEFS.filter((t) => LEGACY_IDS.has(t.todo_id));
+const GOLDEN_CMP = {};
+for (const [pn, p] of Object.entries(GOLDEN.windows)) { GOLDEN_CMP[pn] = {}; for (const [k, rows] of Object.entries(p)) GOLDEN_CMP[pn][k] = rows.filter((r) => DEF_IDS.has(r[0])); }
+// 골든에는 있으나 DEFS 에 없어도 되는 id — VX-RSV 는 미커밋 보류 중이라 커밋된 data 에는 없을 수 있다. (VX-RSV 처리 결정 시 이 목록에서 제거)
+const ALLOWED_MISSING_FROM_DEFS = ["VX-RSV"];
 function snapshot(defs, extra) {
   const out = {};
   for (const [pn, [y, m, d]] of Object.entries(GOLDEN.meta.profiles)) {
@@ -78,15 +87,21 @@ function snapshot(defs, extra) {
   return out;
 }
 
-test("골든: 기존 정의 78건 × 프로필 4종 × 기준일 3개 = 1200행이 A5 이전 엔진 결과와 한 칸도 다르지 않다", () => {
-  assert.strictEqual(DEFS.length, GOLDEN.meta.definitions);
-  assert.deepStrictEqual(snapshot(DEFS), GOLDEN.windows);
+test("골든: 골든에 있는 기존 정의(현재 DEFS 와의 교집합) × 프로필 4종 × 기준일 3개가 A5 이전 엔진 결과와 한 칸도 다르지 않다", () => {
+  // 골든 정의 중 DEFS 에 없는 것은 허용 목록(VX-RSV 미커밋 보류)뿐이어야 한다 — 다른 정의가 사라지면 실패.
+  const missing = [...LEGACY_IDS].filter((id) => !DEF_IDS.has(id)).sort();
+  assert.ok(missing.every((id) => ALLOWED_MISSING_FROM_DEFS.includes(id)), `골든에는 있으나 DEFS 에 없는 정의: ${missing.join(",")}`);
+  // 골든에 없는 새 정의(예: HC-07~09)는 골든 비교 대상이 아니다 — DEFS_LEGACY 에 들어가지 않는다.
+  const fresh = DEFS.filter((t) => !LEGACY_IDS.has(t.todo_id)).map((t) => t.todo_id);
+  assert.ok(DEFS_LEGACY.every((t) => LEGACY_IDS.has(t.todo_id)) && fresh.every((id) => !DEFS_LEGACY.some((t) => t.todo_id === id)));
+  assert.strictEqual(DEFS_LEGACY.length + missing.length, GOLDEN.meta.definitions);
+  assert.deepStrictEqual(snapshot(DEFS_LEGACY), GOLDEN_CMP);
 });
 
 test("골든: 모든 정의에 basis:\"LEGACY_30D\" 를 명시하고 빈 timeline 을 줘도 결과가 같다(명시 기본값 = 미지정)", () => {
-  const explicit = DEFS.map((t) => ({ ...t, basis: "LEGACY_30D" }));
-  assert.deepStrictEqual(snapshot(explicit, { timeline: { school: null } }), GOLDEN.windows);
-  assert.deepStrictEqual(snapshot(DEFS, { timeline: CT.compute({ birthDate: D(2026, 6, 20), asOf: D(2026, 10, 1), stage: "born" }) }), GOLDEN.windows);
+  const explicit = DEFS_LEGACY.map((t) => ({ ...t, basis: "LEGACY_30D" }));
+  assert.deepStrictEqual(snapshot(explicit, { timeline: { school: null } }), GOLDEN_CMP);
+  assert.deepStrictEqual(snapshot(DEFS_LEGACY, { timeline: CT.compute({ birthDate: D(2026, 6, 20), asOf: D(2026, 10, 1), stage: "born" }) }), GOLDEN_CMP);
 });
 
 test("정적: 기존 정의 78건은 basis·requiredValues·새 트리거를 하나도 쓰지 않는다. eligibilityCondition 은 단일 requiredValue 형식만 쓴다(새 코드 경로가 실행되지 않음)", () => {
@@ -319,8 +334,8 @@ test("timeline 입력은 선택: 없을 때와 있을 때 모두 LEGACY 항목 �
 
 test("건너뛴(정의 오류) 항목이 있어도 나머지 78건 결과는 골든과 같다", () => {
   const bad = td({ triggerType: "AGE_WINDOW", triggerParams: { startMonth: 0.5, endMonth: 1 }, basis: "CALENDAR" });
-  const { result } = captureWarn(() => snapshot([...DEFS, bad]));
-  assert.deepStrictEqual(result, GOLDEN.windows);
+  const { result } = captureWarn(() => snapshot([...DEFS_LEGACY, bad]));
+  assert.deepStrictEqual(result, GOLDEN_CMP);
 });
 
 console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);

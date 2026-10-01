@@ -418,7 +418,7 @@
                   "type": "RELATIVE_TO_EVENT",
                   "referenceEvent": "previous_occurrence_completion",
                   "minOffsetDays": 28,
-                  "maxOffsetDays": 30
+                  "maxOffsetDays": null
                 }
               },
               {
@@ -475,7 +475,7 @@
       "priority": 2,
       "leadDays": 14,
       "source": "질병관리청 NIP",
-      "verificationStatus": "확인됨(KDCA 2026 국가예방접종 지침 130~131쪽 대조: 사백신 2차 1개월 간격·최소 4주(7일은 가속접종 예외), 3차 2차 후 11개월·최소 6개월)",
+      "verificationStatus": "확인됨(KDCA 2026 국가예방접종 지침 130~131쪽 대조: 사백신 2차 1개월 간격·최소 4주(7일은 가속접종 예외)·상한 없음(지연 시 즉시 접종, 처음부터 다시 하지 않음), 3차 2차 후 11개월·최소 6개월)",
       "displayMonth": 12,
       "displayMonthLabel": "12개월",
       "displayMonthBasis": "제품별 접종 일정 중 가장 이른 첫 접종 월령",

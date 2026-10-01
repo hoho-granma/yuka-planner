@@ -1,6 +1,6 @@
 {
   "category": "HC",
-  "count": 6,
+  "count": 9,
   "todos": [
     {
       "todo_id": "HC-01",
@@ -110,8 +110,8 @@
     {
       "todo_id": "HC-04",
       "category": "HC",
-      "title": "4차 건강검진(구강검진 포함)",
-      "parentAction": "신체계측+구강검진+K-DST. 구강검진 날짜·기관은 검진기관에 확인",
+      "title": "4차 건강검진",
+      "parentAction": "신체계측+진찰+K-DST 발달선별검사 상담. 구강검진(18~29개월)은 별도로 구강검진기관에서 받아요. 기관은 건보공단 누리집·The건강보험 앱에서 확인해요.",
       "completionCriteria": "방문 완료",
       "exposureLevel": "MUST",
       "triggerType": "AGE_WINDOW",
@@ -128,12 +128,12 @@
       "displayMonthLabel": "만 1세 (18~23개월)",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "영유아검진",
-      "about": "생후 18~24개월에 받는 영유아 건강검진이에요. 구강검진이 포함돼 있어요.",
+      "about": "생후 18~24개월에 받는 영유아 건강검진이에요. 구강검진은 생후 18~29개월에 따로 받는 별도 검진이에요.",
       "why": "언어·사회성이 크게 자라는 시기라 발달을 다시 점검하고, 치아가 나면서 생기는 충치를 예방해요.",
       "observationGuide": [
         "신체 성장(키·몸무게·머리둘레)",
         "K-DST 발달선별검사(언어·인지·사회성 등)",
-        "구강검진(충치 여부, 칫솔질·불소 사용 상담)",
+        "구강검진(별도 검진, 18~29개월): 구강문진·진찰과 보호자 구강보건교육(충치·치아 이상 확인)",
         "식습관·수면·안전 상담"
       ],
       "abnormalSigns": [
@@ -145,8 +145,8 @@
     {
       "todo_id": "HC-05",
       "category": "HC",
-      "title": "5차 건강검진(구강검진 포함)",
-      "parentAction": "신체계측+구강검진+K-DST. 구강검진 날짜·기관은 검진기관에 확인",
+      "title": "5차 건강검진",
+      "parentAction": "신체계측+진찰+K-DST 발달선별검사 상담. 구강검진(30~41개월)은 별도로 구강검진기관에서 받아요. 기관은 건보공단 누리집·The건강보험 앱에서 확인해요.",
       "completionCriteria": "방문 완료",
       "exposureLevel": "MUST",
       "triggerType": "AGE_WINDOW",
@@ -163,12 +163,12 @@
       "displayMonthLabel": "만 2세 (24~36개월)",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "영유아검진",
-      "about": "생후 30~36개월에 받는 영유아 건강검진이에요. 구강검진이 포함돼 있어요.",
+      "about": "생후 30~36개월에 받는 영유아 건강검진이에요. 구강검진은 생후 30~41개월에 따로 받는 별도 검진이에요.",
       "why": "취학 전 발달·성장·구강 상태를 종합 점검해요.",
       "observationGuide": [
         "신체 성장(키·몸무게·머리둘레·비만도)",
         "K-DST 발달선별검사",
-        "구강검진(충치, 불소, 칫솔질 상담)",
+        "구강검진(별도 검진, 30~41개월): 구강문진·진찰과 보호자 구강보건교육(충치·치아 이상 확인)",
         "시력·청력·식습관 등 상담"
       ],
       "abnormalSigns": [
@@ -206,6 +206,95 @@
       "abnormalSigns": [
         "헤모글로빈이 정상 기준(일반적으로 11.0g/dL 이상)보다 낮으면 빈혈로 봐요. 정확한 기준·판정은 의료진 판단이 우선이에요.",
         "수치가 낮으면 철분제·식이 조절과 재검을 안내받아요."
+      ]
+    },
+    {
+      "todo_id": "HC-07",
+      "category": "HC",
+      "title": "6차 건강검진",
+      "parentAction": "신체계측+진찰(귓속말검사)+K-DST 발달선별검사 상담. 구강검진(42~53개월)은 별도로 구강검진기관에서 받아요. 기관은 건보공단 누리집·The건강보험 앱에서 확인해요.",
+      "completionCriteria": "방문 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 42,
+        "endMonth": 48
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "source": "국민건강보험공단 영유아 건강검진 안내(https://www.nhis.or.kr/nhis/healthin/wbhaca04800m01.do, 2026-10-01 확인)",
+      "verificationStatus": "확인됨(2026-10-01 건보공단 영유아 건강검진 안내 대조)",
+      "displayMonth": 42,
+      "displayMonthLabel": "만 3세 (42~47개월)",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "영유아검진",
+      "about": "생후 42~48개월에 받는 영유아 건강검진이에요. 구강검진은 생후 42~53개월에 따로 받는 별도 검진이에요.",
+      "observationGuide": [
+        "문진 및 진찰(귓속말검사 포함)",
+        "신체계측",
+        "K-DST 발달선별검사 및 상담",
+        "건강교육",
+        "구강검진(별도 검진, 42~53개월): 구강문진·진찰과 보호자 구강보건교육(충치·치아 이상 확인)"
+      ]
+    },
+    {
+      "todo_id": "HC-08",
+      "category": "HC",
+      "title": "7차 건강검진",
+      "parentAction": "신체계측+진찰+K-DST 발달선별검사 상담. 구강검진(54~65개월)은 별도로 구강검진기관에서 받아요. 기관은 건보공단 누리집·The건강보험 앱에서 확인해요.",
+      "completionCriteria": "방문 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 54,
+        "endMonth": 60
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "source": "국민건강보험공단 영유아 건강검진 안내(https://www.nhis.or.kr/nhis/healthin/wbhaca04800m01.do, 2026-10-01 확인)",
+      "verificationStatus": "확인됨(2026-10-01 건보공단 영유아 건강검진 안내 대조)",
+      "displayMonth": 54,
+      "displayMonthLabel": "만 4세 (54~59개월)",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "영유아검진",
+      "about": "생후 54~60개월에 받는 영유아 건강검진이에요. 구강검진은 생후 54~65개월에 따로 받는 별도 검진이에요.",
+      "observationGuide": [
+        "문진 및 진찰",
+        "신체계측",
+        "K-DST 발달선별검사 및 상담",
+        "건강교육",
+        "구강검진(별도 검진, 54~65개월): 구강문진·진찰과 보호자 구강보건교육(충치·치아 이상 확인)"
+      ]
+    },
+    {
+      "todo_id": "HC-09",
+      "category": "HC",
+      "title": "8차 건강검진",
+      "parentAction": "신체계측+진찰(예방접종 확인)+K-DST 발달선별검사 상담.",
+      "completionCriteria": "방문 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 66,
+        "endMonth": 71
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 30,
+      "source": "국민건강보험공단 영유아 건강검진 안내(https://www.nhis.or.kr/nhis/healthin/wbhaca04800m01.do, 2026-10-01 확인)",
+      "verificationStatus": "확인됨(2026-10-01 건보공단 영유아 건강검진 안내 대조)",
+      "displayMonth": 66,
+      "displayMonthLabel": "만 5세 (66~71개월)",
+      "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
+      "categoryGroup": "영유아검진",
+      "about": "생후 66~71개월에 받는 영유아 건강검진이에요.",
+      "observationGuide": [
+        "문진 및 진찰(예방접종 확인 포함)",
+        "신체계측",
+        "K-DST 발달선별검사 및 상담",
+        "건강교육"
       ]
     }
   ]
