@@ -48,6 +48,10 @@
     categoryLabel: "분류", // #19
     targetLabel: "대상", // #21
     targetFamily: "가족 전체", // #22
+    assigneeLabel: "담당", // B6-lite (승인본)
+    assigneeNone: "정하지 않음",
+    assigneeHint: "담당을 고르면 카드에 이름이 함께 보여요.",
+    deletedAssignee: "(삭제된 담당자)", // calendar-model.js 와 같은 문구
     dateLabel: "날짜", // #23
     kindFixed: "날짜 정함", // #24
     kindPeriod: "날짜 미정 (기간)", // #24
@@ -261,7 +265,15 @@
     return o.endDate && o.endDate !== o.date ? MSG.dateRange(md(o.date), md(o.endDate)) : "";
   }
   /** 칸·카드의 대상 표시: 가족 일정이면 "가족 일정", 아이 일정이면 아이 이름들("A · B"). 분리된 아이는 "(분리된 아이)". */
+  /** 카드 태그. 담당(assigneeLabel)이 있으면 FAMILY 일정은 '가족' 대신 그 라벨, CHILD 일정은 아이 배지 뒤에 " · 담당". 없으면 기존 표기. */
   function tagText(o) {
+    const who = o.assigneeLabel || "";
+    if (o.scope === "FAMILY") return who || MSG.cardFamily;
+    const kids = (o.badges || []).map((b) => (b.removed ? MSG.removedChild : b.displayName)).join(" · ");
+    return who ? [kids, who].filter(Boolean).join(" · ") : kids;
+  }
+  /** 상세의 '대상' 줄: 담당과 별도로 대상만(가족 / 아이 이름들). */
+  function targetText(o) {
     if (o.scope === "FAMILY") return MSG.cardFamily;
     return (o.badges || []).map((b) => (b.removed ? MSG.removedChild : b.displayName)).join(" · ");
   }
@@ -279,6 +291,8 @@
       timeText: occ.dateKind === "PERIOD" ? "" : timeText(occ),
       dateText: dateText(occ),
       tag: tagText(occ),
+      targetText: targetText(occ),
+      assigneeText: occ.assigneeLabel || "",
       color: occurrenceColor(occ, links),
       done,
       doneLabel: done ? MSG.done : "",
@@ -379,7 +393,8 @@
       [MSG.categoryLabel, v.categoryLabel],
       [MSG.dateLabel, v.recurring ? [v.dayLabel, v.timeText].filter(Boolean).join(" · ") : [v.dateText, v.timeText].filter(Boolean).join(" · ")],
       ...(v.recurring ? [[MSG.repeatLabel, v.repeatSummary], ["", v.movedText]] : []),
-      [MSG.targetLabel, v.tag],
+      [MSG.targetLabel, v.targetText !== undefined ? v.targetText : v.tag],
+      [MSG.assigneeLabel, v.assigneeText],
       [MSG.locationLabel.replace(/ \(선택\)$/, ""), v.location],
       [MSG.memoLabel.replace(/ \(선택\)$/, ""), v.memo],
     ]
@@ -447,10 +462,10 @@
   const minuteOptions = (current) => (current && !MINUTES.includes(current) ? [...MINUTES, current].sort() : MINUTES.slice());
 
   /** 새 일정 폼. date: 선택한 날짜("YYYY-MM-DD"), 대상 기본값 = 지금 보는 아이(가구에 링크돼 있을 때) 아니면 가족 전체. */
-  function newForm({ date, activeChildKey, links }) {
+  function newForm({ date, activeChildKey, links, defaultAssigneeId }) {
     const active = activeLinks(links).some((l) => linkKey(l) === activeChildKey);
     return {
-      mode: "create", scheduleId: null, title: "", category: "", scope: active ? "CHILD" : "FAMILY", childKeys: active ? [activeChildKey] : [],
+      mode: "create", scheduleId: null, title: "", category: "", scope: active ? "CHILD" : "FAMILY", childKeys: active ? [activeChildKey] : [], assigneeMemberId: defaultAssigneeId || "",
       dateKind: "FIXED", eventDate: date || "", multiDay: false, endDate: "", periodStart: "", periodEnd: "", allDay: true, startTime: "", endTime: "", location: "", memo: "",
       repeat: "NONE", byDay: [], untilMode: "NONE", until: "", wasRecurring: false,
     };
@@ -468,7 +483,7 @@
       : { repeat: "NONE", byDay: [], untilMode: "NONE", until: "", wasRecurring: false };
     return {
       ...repeatFields,
-      mode: "edit", scheduleId: doc.id || null, title: doc.title || "", category: doc.category || "", scope: doc.scope, childKeys: (doc.childKeys || []).slice(),
+      mode: "edit", scheduleId: doc.id || null, title: doc.title || "", category: doc.category || "", scope: doc.scope, childKeys: (doc.childKeys || []).slice(), assigneeMemberId: typeof doc.assigneeMemberId === "string" ? doc.assigneeMemberId : "",
       dateKind: doc.dateKind, eventDate: rec ? rec.startDate || "" : doc.eventDate || "", multiDay: !!doc.endDate, endDate: doc.endDate || "", periodStart: doc.periodStart || "", periodEnd: doc.periodEnd || "",
       allDay: doc.allDay !== false, startTime: doc.startTime || "", endTime: doc.endTime || "", location: doc.location || "", memo: doc.memo || "",
     };
@@ -478,6 +493,7 @@
   function formToInput(f) {
     const input = { sourceType: "MANUAL", title: String(f.title || "").trim(), category: f.category, scope: f.scope, dateKind: f.dateKind, allDay: !!f.allDay };
     if (f.scope === "CHILD") input.childKeys = (f.childKeys || []).slice();
+    if (f.assigneeMemberId) input.assigneeMemberId = f.assigneeMemberId; // 미지정이면 필드 생략(규칙은 null 을 허용하지 않는다)
     if (isRepeating(f)) {
       // 반복: 첫 날은 recurrence.startDate 에 둔다(eventDate·endDate 없음 — I3·I4). 키 순서는 설계서 §6-1 과 같다.
       input.dateKind = "FIXED";
@@ -564,7 +580,7 @@
     }
     return { ok: true, input, messages: [] };
   }
-  const PATCH_FIELDS = Object.freeze(["title", "category", "scope", "childKeys", "dateKind", "eventDate", "endDate", "periodStart", "periodEnd", "allDay", "startTime", "endTime", "location", "memo"]);
+  const PATCH_FIELDS = Object.freeze(["title", "category", "scope", "childKeys", "dateKind", "eventDate", "endDate", "periodStart", "periodEnd", "allDay", "startTime", "endTime", "location", "memo", "assigneeMemberId"]);
   /** 규칙 비교(키 순서·interval 생략 무시): 같은 규칙이면 true. Firestore 는 맵 키를 정렬해 돌려줄 수 있어 JSON 문자열 비교를 쓰지 않는다. */
   function sameRule(a, b) {
     if (!a || !b) return !a && !b;
@@ -655,6 +671,13 @@
     const targets =
       kids.map((l) => chip("", `data-us-target="${esc(linkKey(l))}"`, l.displayName || "", f.scope === "CHILD" && (f.childKeys || []).includes(linkKey(l)), colors[linkKey(l)])).join("") +
       chip("", 'data-us-target="FAMILY"', MSG.targetFamily, f.scope === "FAMILY");
+    // 담당(B6-lite): 구성원이 있을 때만. 단일 선택, 다시 누르면 해제(정하지 않음). 저장된 담당이 삭제된 구성원이면 그 사실을 칩으로 보여 준다.
+    const hasMembers = Array.isArray(o.members); // 호출부가 구성원 목록을 주지 않으면(옛 호출) 담당 영역을 그리지 않는다
+    const members = hasMembers ? o.members : [];
+    const staleAssignee = hasMembers && f.assigneeMemberId && !members.some((m) => m.memberId === f.assigneeMemberId);
+    const assignee = hasMembers && (members.length || staleAssignee)
+      ? `<div class="us-field"><label>${esc(MSG.assigneeLabel)}</label><div class="us-chips">${members.map((m) => chip("", `data-us-assignee="${esc(m.memberId)}"`, m.label || "", f.assigneeMemberId === m.memberId)).join("")}${staleAssignee ? chip("", `data-us-assignee="${esc(f.assigneeMemberId)}"`, MSG.deletedAssignee, true) : ""}${chip("", 'data-us-assignee=""', MSG.assigneeNone, !f.assigneeMemberId)}</div><p class="us-note">${esc(MSG.assigneeHint)}</p></div>`
+      : "";
     const fixed = f.dateKind !== "PERIOD";
     const repeating = fixed && isRepeating(f);
     const repeatBlock = !fixed
@@ -682,6 +705,7 @@
       <div class="us-field"><label for="us-title">${esc(MSG.titleLabel)}</label><input type="text" id="us-title" maxlength="100" placeholder="${esc(MSG.titleHint)}" value="${esc(f.title)}" /></div>
       <div class="us-field"><label>${esc(MSG.categoryLabel)}</label><div class="us-chips">${cats}</div></div>
       <div class="us-field"><label>${esc(MSG.targetLabel)}</label><div class="us-chips">${targets}</div></div>
+      ${assignee}
       <div class="us-field"><label>${esc(MSG.dateLabel)}</label><div class="us-chips">${chip("", 'data-us-kind="FIXED"', MSG.kindFixed, fixed)}${repeating ? `<button type="button" class="us-chip" disabled>${esc(MSG.kindPeriod)}</button>` : chip("", 'data-us-kind="PERIOD"', MSG.kindPeriod, !fixed)}</div></div>
       ${dates}
       <div class="us-field"><label for="us-location">${esc(MSG.locationLabel)}</label><input type="text" id="us-location" maxlength="100" placeholder="${esc(MSG.locationHint)}" value="${esc(f.location)}" /></div>

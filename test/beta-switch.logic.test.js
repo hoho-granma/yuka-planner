@@ -151,7 +151,7 @@ test("스위치 코드(beta*)는 FamilySync·HouseholdSync·Firestore·fetch 를
   assert.ok(/const BETA_FLAG_KEY = "hannun_feature_household"/.test(block));
 });
 test("프로필 시트에 #beta-slot 이 항상 들어간다(가구 슬롯 아래, 플래그와 무관) · index.html 에 #beta-landing-slot 이 있다", () => {
-  assert.ok(/\$\{hhEnabled\(\) \? '<div id="hh-slot"><\/div>' : ""\}<div id="beta-slot"><\/div>/.test(APP));
+  assert.ok(/\$\{hhEnabled\(\) \? '<div id="hh-slot"><\/div>(<div id="members-slot"><\/div>)?' : ""\}<div id="beta-slot"><\/div>/.test(APP)); // 구성원 슬롯(B6-lite)은 플래그 ON 일 때만 hh-slot 옆에 추가됨
   assert.ok(/<div id="beta-landing-slot"><\/div>/.test(read("index.html")));
 });
 

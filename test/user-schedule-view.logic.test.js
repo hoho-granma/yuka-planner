@@ -540,7 +540,7 @@ test("반복 회차 cardData: 배지·요약·원래 날짜·취소·이동 / �
   const done = V.cardData(cell("2026-10-15").user[0], LINKS);
   assert(done.done && done.doneLabel === "완료" && !done.cancelled);
   const single = V.cardData(model([sched({})]).days.get("2026-10-06").user[0], LINKS);
-  assert.deepStrictEqual(Object.keys(single).sort(), ["categoryKey", "categoryLabel", "color", "dateText", "done", "doneLabel", "isPeriod", "key", "location", "memo", "scheduleId", "scope", "tag", "timeText", "title"]);
+  assert.deepStrictEqual(Object.keys(single).sort(), ["assigneeText", "categoryKey", "categoryLabel", "color", "dateText", "done", "doneLabel", "isPeriod", "key", "location", "memo", "scheduleId", "scope", "tag", "targetText", "timeText", "title"]);
 });
 test("renderCard: 반복 카드는 data-us-date·반복 배지, 취소 카드는 .cancelled+취소됨, 이동 카드는 옮겨 왔어요 / 단일 카드에는 반복 흔적이 없다", () => {
   const d = recDoc({ exceptions: { "2026-10-08": { status: "CANCELLED" }, "2026-10-13": { status: "RESCHEDULED", movedTo: { date: "2026-10-14" } } } });

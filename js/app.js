@@ -798,7 +798,7 @@
              </div>`
           : ""
       }
-      ${hhEnabled() ? '<div id="hh-slot"></div>' : ""}<div id="beta-slot"></div>${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
+      ${hhEnabled() ? '<div id="hh-slot"></div><div id="members-slot"></div>' : ""}<div id="beta-slot"></div>${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
       ${changed ? `<button class="btn-complete btn-photo-save" id="btn-photo-save">저장</button>` : ""}
       <button class="btn-close" id="btn-close-modal">닫기</button>
     `;
@@ -2284,6 +2284,7 @@
   function hhRender() {
     const slot = el("hh-slot");
     if (slot) slot.innerHTML = HouseholdView.renderSection(hhState());
+    memRender(); // 가구 상태(가입·생성)가 바뀌면 구성원 영역도 다시 그린다
   }
   /** 앱 시작·online·앱으로 돌아올 때 대기열을 다시 보내고, 끝나면 화면 상태 줄을 갱신한다(household-sync.attachLifecycle 은 화면 갱신 콜백이 없어 쓰지 않는다). */
   function hhAttachLifecycle() {
@@ -2328,9 +2329,12 @@
     hhLoadSaved();
     hh.notice = null;
     hh.joinInput = "";
+    mem.view = "list"; mem.form = null; mem.deleteId = null;
     hhRender();
     const slot = el("hh-slot");
     if (slot) slot.addEventListener("click", hhOnClick);
+    const mslot = el("members-slot");
+    if (mslot) mslot.addEventListener("click", memOnClick);
   }
   /** 쓰기 없는 읽기 탐지: 규칙이 배포돼 있으면 없는 코드도 not-found 로 돌아오고, 미배포면 permission-denied 로 막힌다. */
   async function hhProbeRules() {
@@ -2431,6 +2435,122 @@
     hhRender();
     usRefreshCalendar();
   }
+  // ── 구성원(B6-lite): 이름·역할 수정/추가/삭제(soft)와 "이 기기를 쓰는 사람" ───────────────────────────
+  // 서버 쓰기는 HouseholdSync.upsertMember / removeMember 뿐이다(규칙·스키마 변경 없음). 이 기기 사용자는 localStorage 에만 저장하고 표시용이다(본인 확인 아님).
+  const ACTIVE_MEMBER_KEY = "hannun_active_member";
+  const mem = { view: "list", form: null, deleteId: null, saving: false }; // saving: 저장·삭제 진행 중(중복 클릭 방지, finally 에서 해제)
+  function memActiveId() {
+    let id = "";
+    try {
+      id = localStorage.getItem(ACTIVE_MEMBER_KEY) || "";
+    } catch (e) {}
+    return HouseholdView.activeMemberOf(usMembers(), id); // 삭제됐거나 목록에 없으면 미지정
+  }
+  function memSetActive(id) {
+    try {
+      if (id) localStorage.setItem(ACTIVE_MEMBER_KEY, id);
+      else localStorage.removeItem(ACTIVE_MEMBER_KEY);
+    } catch (e) {
+      console.warn("이 기기 사용자를 저장하지 못했어요(저장소 사용 불가).", e);
+    }
+  }
+  const memState = () => ({ enabled: hhEnabled(), hasHousehold: !!(hh.hid && hh.code), members: usMembers(), activeMemberId: memActiveId(), view: mem.view, form: mem.form, deleteId: mem.deleteId, saving: mem.saving });
+  function memRender() {
+    const slot = el("members-slot");
+    if (!slot || !hhEnabled()) return;
+    // 이름 입력 중에 다시 그려지면(가구 섹션 클릭·서버 스냅샷) 입력창이 옛 값으로 되돌아가므로, 그리기 전에 지금 입력값을 폼에 반영한다.
+    if (mem.view === "form" && mem.form) mem.form.label = memReadLabel();
+    slot.innerHTML = HouseholdView.renderMembers(memState());
+  }
+  function memReadLabel() {
+    const slot = el("members-slot");
+    const inp = slot && slot.querySelector('[data-mem-input="label"]');
+    return inp ? inp.value : mem.form ? mem.form.label : "";
+  }
+  async function memOnClick(ev) {
+    const roleBtn = ev.target.closest("[data-mem-role]");
+    if (roleBtn && mem.form && !mem.saving) {
+      ev.stopPropagation();
+      mem.form.label = memReadLabel(); // 역할을 바꿔도 입력 중이던 이름은 유지한다
+      mem.form.role = roleBtn.getAttribute("data-mem-role");
+      mem.form.error = null;
+      memRender();
+      return;
+    }
+    const b = ev.target.closest("[data-mem-action]");
+    if (!b) return;
+    ev.stopPropagation();
+    const action = b.getAttribute("data-mem-action");
+    const id = b.getAttribute("data-member-id") || "";
+    const visible = HouseholdView.visibleMembers(usMembers());
+    try {
+      if (action === "set-active") {
+        memSetActive(id);
+      } else if (action === "clear-active") {
+        memSetActive("");
+      } else if (action === "add") {
+        if (visible.length >= HouseholdView.MEMBER_MAX) return;
+        mem.form = { memberId: null, role: "OTHER", label: "", error: null };
+        mem.view = "form";
+      } else if (action === "edit") {
+        const m = visible.find((x) => x.memberId === id);
+        if (!m) return;
+        mem.form = { memberId: id, role: m.role, label: m.label, error: null };
+        mem.view = "form";
+      } else if (action === "ask-delete") {
+        mem.deleteId = id;
+        mem.view = "delete";
+      } else if (action === "cancel") {
+        mem.view = "list"; mem.form = null; mem.deleteId = null;
+      } else if (action === "save") {
+        const form = mem.form;
+        if (!form || mem.saving) return; // 저장 중에는 두 번째 클릭을 무시한다
+        form.label = memReadLabel();
+        const v = HouseholdView.validateMemberForm(form);
+        if (!v.ok) {
+          form.error = v.error;
+        } else if (!form.memberId && visible.length >= HouseholdView.MEMBER_MAX) {
+          form.error = HouseholdView.MSG.memMax;
+        } else {
+          const all = usMembers();
+          const old = form.memberId ? all.find((x) => x.memberId === form.memberId) : null;
+          mem.saving = true;
+          memRender(); // 저장 버튼을 잠근 상태로 다시 그린다
+          try {
+            const r = await HouseholdSync.upsertMember(hh.hid, { memberId: form.memberId || undefined, role: v.role, label: v.label, order: old ? old.order || 1 : HouseholdView.nextMemberOrder(all) });
+            if (!r || !r.ok) throw new Error((r && r.reason) || "member-save-failed");
+            mem.view = "list"; mem.form = null;
+          } catch (e) {
+            console.error("구성원 저장 실패", e);
+            form.error = HouseholdView.MSG.failNetwork;
+          } finally {
+            mem.saving = false;
+          }
+        }
+      } else if (action === "confirm-delete") {
+        if (mem.saving) return; // 삭제 진행 중 연속 클릭 무시
+        mem.saving = true;
+        memRender();
+        try {
+          const r = await HouseholdSync.removeMember(hh.hid, id);
+          if (!r || !r.ok) throw new Error((r && r.reason) || "member-delete-failed");
+          let saved = "";
+          try { saved = localStorage.getItem(ACTIVE_MEMBER_KEY) || ""; } catch (e) {}
+          if (saved === id) memSetActive(""); // 지운 구성원이 이 기기 사용자였다면 지정을 푼다
+        } catch (e) {
+          console.error("구성원 삭제 실패", e);
+        } finally {
+          mem.saving = false;
+        }
+        mem.view = "list"; mem.deleteId = null;
+      }
+    } catch (e) {
+      console.error("구성원 처리 실패", e);
+    }
+    memRender();
+    usRefreshCalendar();
+  }
+
   // ── 가족 캘린더 베타 켜기 스위치 ─────────────────────────────────────────────────────────
   // 이 기기의 localStorage "hannun_feature_household" 값만 바꾸고 새로고침한다(플래그는 페이지 로드 때 js/feature-flags.js 가 한 번 읽는다).
   // 가구 생성·서버 호출·쓰기는 하지 않는다 — 스위치는 화면을 보이게 할 뿐이다. 기본은 계속 꺼짐.
@@ -2638,7 +2758,7 @@
   }
   function usOpenForm(id) {
     const doc = id ? usDocById(id) : null;
-    us.form = doc ? UserScheduleView.formFromSchedule(doc) : UserScheduleView.newForm({ date: toISODate(selectedCalendarDate), activeChildKey: usActiveChildKey(), links: usLinks() });
+    us.form = doc ? UserScheduleView.formFromSchedule(doc) : UserScheduleView.newForm({ date: toISODate(selectedCalendarDate), activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: memActiveId() });
     us.messages = [];
     us.saving = false;
     us.dayForm = null;
@@ -2647,7 +2767,7 @@
   }
   function usShowForm() {
     modalMode = "profile";
-    el("modal-content").innerHTML = UserScheduleView.renderForm(us.form, usLinks(), { messages: us.messages, saving: us.saving });
+    el("modal-content").innerHTML = UserScheduleView.renderForm(us.form, usLinks(), { messages: us.messages, saving: us.saving, members: HouseholdView.visibleMembers(usMembers()) });
     el("detail-modal").classList.remove("hidden");
     usBindPickers();
   }
@@ -2936,6 +3056,13 @@
         const k = x.getAttribute("data-us-target");
         x.classList.toggle("active", k === "FAMILY" ? us.form.scope === "FAMILY" : us.form.scope === "CHILD" && us.form.childKeys.includes(k));
       });
+      return;
+    }
+    const asg = ev.target.closest("[data-us-assignee]");
+    if (asg) {
+      const v = asg.getAttribute("data-us-assignee") || "";
+      us.form.assigneeMemberId = us.form.assigneeMemberId === v ? "" : v; // 같은 칩을 다시 누르면 해제(정하지 않음)
+      root.querySelectorAll("[data-us-assignee]").forEach((x) => x.classList.toggle("active", (x.getAttribute("data-us-assignee") || "") === (us.form.assigneeMemberId || "")));
       return;
     }
     const rep = ev.target.closest("[data-us-repeat]");
