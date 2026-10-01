@@ -798,13 +798,15 @@
              </div>`
           : ""
       }
-      ${hhEnabled() ? '<div id="hh-slot"></div>' : ""}${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
+      ${hhEnabled() ? '<div id="hh-slot"></div>' : ""}<div id="beta-slot"></div>${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
       ${changed ? `<button class="btn-complete btn-photo-save" id="btn-photo-save">저장</button>` : ""}
       <button class="btn-close" id="btn-close-modal">닫기</button>
     `;
     el("detail-modal").classList.remove("hidden");
     el("btn-close-modal").addEventListener("click", closeDetail);
     if (hhEnabled()) hhOpenSection();
+    betaConfirming = false;
+    betaOpenSlot("beta-slot", "renderBetaSwitch");
     el("btn-open-reset").addEventListener("click", showEditProfileSheet);
     const switchBtn = el("btn-switch-born");
     if (switchBtn) switchBtn.addEventListener("click", showBornSwitchSheet);
@@ -2390,6 +2392,49 @@
     hhRender();
     usRefreshCalendar();
   }
+  // ── 가족 캘린더 베타 켜기 스위치 ─────────────────────────────────────────────────────────
+  // 이 기기의 localStorage "hannun_feature_household" 값만 바꾸고 새로고침한다(플래그는 페이지 로드 때 js/feature-flags.js 가 한 번 읽는다).
+  // 가구 생성·서버 호출·쓰기는 하지 않는다 — 스위치는 화면을 보이게 할 뿐이다. 기본은 계속 꺼짐.
+  const BETA_FLAG_KEY = "hannun_feature_household";
+  let betaConfirming = false;
+  const betaState = () => ({ enabled: hhEnabled(), confirming: betaConfirming });
+  /** 슬롯을 그리고 클릭을 연결한다. 슬롯 요소는 새로 그려질 때마다 새 요소라 리스너가 쌓이지 않는다(랜딩 슬롯은 한 번만 연결). */
+  function betaOpenSlot(slotId, renderName) {
+    const slot = el(slotId);
+    if (!slot || typeof HouseholdView === "undefined" || typeof HouseholdView[renderName] !== "function") return;
+    slot.innerHTML = HouseholdView[renderName](betaState());
+    if (!slot.dataset.betaBound) {
+      slot.dataset.betaBound = "1";
+      slot.addEventListener("click", betaOnClick);
+    }
+  }
+  function betaRenderAll() {
+    betaOpenSlot("beta-slot", "renderBetaSwitch");
+    betaOpenSlot("beta-landing-slot", "renderBetaSwitchLanding");
+  }
+  function betaOnClick(ev) {
+    const b = ev.target.closest("[data-beta-action]");
+    if (!b) return;
+    ev.stopPropagation();
+    const action = b.getAttribute("data-beta-action");
+    if (action === "ask-on" || action === "ask-off") {
+      betaConfirming = true;
+      betaRenderAll();
+    } else if (action === "cancel") {
+      betaConfirming = false;
+      betaRenderAll();
+    } else if (action === "confirm-on" || action === "confirm-off") {
+      try {
+        if (action === "confirm-on") localStorage.setItem(BETA_FLAG_KEY, "1");
+        else localStorage.removeItem(BETA_FLAG_KEY);
+      } catch (e) {
+        console.warn("가족 캘린더 베타 설정을 저장하지 못했어요(저장소 사용 불가) — 상태를 그대로 둡니다.", e);
+        return;
+      }
+      location.reload();
+    }
+  }
+
   /** 앱 시작: 이 기기에 가구가 있으면 미러·리스너·대기열 재시도를 시작한다. 실패해도 기존 가족코드 흐름은 막지 않는다. */
   async function hhInit() {
     if (!hhEnabled()) return;
@@ -3191,6 +3236,7 @@
     } else if (profile) {
       ensureFamilyCode();
     }
+    betaOpenSlot("beta-landing-slot", "renderBetaSwitchLanding");
     hhInit();
     usInit();
 

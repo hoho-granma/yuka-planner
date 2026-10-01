@@ -5,8 +5,10 @@
  * 원칙
  *   - DOM·Firestore·localStorage·다른 모듈에 의존하지 않는다. 문자열(HTML)만 만들고, 이벤트 연결·저장은 app.js 가 한다(B3 2단계).
  *   - 플래그가 꺼져 있으면(state.enabled !== true) 모든 render* 는 빈 문자열 "" 을 돌려준다 → 기존 화면에 아무것도 추가되지 않는다.
+ *     예외: renderBetaSwitch / renderBetaSwitchLanding — 플래그를 켜고 끄는 스위치라서 꺼져 있을 때도 그린다(enabled 는 "지금 켜져 있는지"를 뜻한다).
  *   - 가구 코드·이름 같은 동적 값은 전부 이스케이프한다. 코드를 아이 문서에 쓰지 않는다(R1) — 이 모듈은 쓰기 자체를 하지 않는다.
  *   - 버튼은 data-hh-action 속성으로 의도를 표시한다(create · confirm-create · cancel-create · copy · reissue · confirm-reissue · cancel-reissue).
+ *     베타 스위치 버튼은 data-beta-action(ask-on · confirm-on · ask-off · confirm-off · cancel).
  */
 (function (root, factory) {
   const mod = factory();
@@ -55,6 +57,17 @@
     reissueCancel: "취소", // #34
     reissued: "새 코드를 만들었어요. 가족에게 새 코드를 알려 주세요.", // #35
     reissueFail: "코드를 다시 만들지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.", // #36
+    // 베타 켜기 스위치(승인본 — 바꾸려면 사용자 확인이 필요하다)
+    betaSectionTitle: "실험 기능",
+    betaItem: "가족 캘린더 (베타)",
+    betaDesc: "아이와 가족 일정을 가족이 함께 볼 수 있는 기능이에요. 켜면 일정이 서버에 저장되고, 가족 코드를 아는 사람은 누구나 볼 수 있어요.",
+    betaOn: "켜기",
+    betaOff: "끄기",
+    betaCancel: "취소",
+    betaConfirmOn: "가족 캘린더(베타)를 켤까요? 켜면 이 기기에서 가족 캘린더 화면이 나타나요.",
+    betaConfirmOff: "가족 캘린더를 끌까요? 가족 캘린더 화면이 숨겨져요. 저장된 일정은 지워지지 않아요.",
+    betaLandingAsk: "가족 캘린더 코드(8자리)가 있나요? 베타 기능을 켜면 입력할 수 있어요.",
+    betaLandingButton: "가족 캘린더(베타) 켜기",
   });
 
   const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -194,11 +207,45 @@
     return `<section class="hh-section" data-hh="${esc(state.view || "none")}">${head}${notice}${body}${status}</section>`;
   }
 
+  // ── 베타 켜기 스위치 (플래그와 무관하게 항상 그린다 — 이 두 함수만 OFF 에서도 렌더되는 예외) ──────────
+  const betaBtn = (action, label, cls) => `<button type="button" class="hh-btn${cls ? " " + cls : ""}" data-beta-action="${action}">${esc(label)}</button>`;
+
+  /**
+   * 프로필 시트의 "실험 기능" 섹션. state: { enabled, confirming } — enabled = 지금 켜져 있는지, confirming = 켜기/끄기 확인 단계인지.
+   * 이 함수는 저장·이동을 하지 않는다. 버튼 의도(data-beta-action)만 표시하고 처리는 app.js 가 한다.
+   */
+  function renderBetaSwitch(state) {
+    const enabled = !!state && state.enabled === true;
+    const confirming = !!state && state.confirming === true;
+    const head = `<h4 class="hh-title">${esc(MSG.betaSectionTitle)}</h4>`;
+    let body;
+    if (confirming) {
+      body = `<p class="hh-consent-title">${esc(enabled ? MSG.betaConfirmOff : MSG.betaConfirmOn)}</p>
+          <div class="hh-actions">${betaBtn(enabled ? "confirm-off" : "confirm-on", enabled ? MSG.betaOff : MSG.betaOn, "hh-primary")}${betaBtn("cancel", MSG.betaCancel)}</div>`;
+    } else {
+      body = `<p class="hh-consent-title">${esc(MSG.betaItem)}</p>${note(MSG.betaDesc)}
+          <div class="hh-actions">${betaBtn(enabled ? "ask-off" : "ask-on", enabled ? MSG.betaOff : MSG.betaOn, enabled ? "" : "hh-primary")}</div>`;
+    }
+    return `<section class="hh-section" data-beta="${confirming ? "confirm-" + (enabled ? "off" : "on") : enabled ? "on" : "off"}">${head}${body}</section>`;
+  }
+
+  /** 가족코드 입력 화면의 한 줄 변형. 켜져 있으면 "" (이미 켜져 있으면 코드 입력 안내가 따로 나온다). 켜기 확인 단계는 위와 같은 문구를 쓴다. */
+  function renderBetaSwitchLanding(state) {
+    const enabled = !!state && state.enabled === true;
+    const confirming = !!state && state.confirming === true;
+    if (enabled) return "";
+    if (confirming) {
+      return `<div class="hh-landing" data-beta="confirm-on"><p class="hh-consent-title">${esc(MSG.betaConfirmOn)}</p>
+          <div class="hh-actions">${betaBtn("confirm-on", MSG.betaOn, "hh-primary")}${betaBtn("cancel", MSG.betaCancel)}</div></div>`;
+    }
+    return `<div class="hh-landing" data-beta="off">${note(MSG.betaLandingAsk)}<div class="hh-actions">${betaBtn("ask-on", MSG.betaLandingButton)}</div></div>`;
+  }
+
   /** code-entry 화면의 입력 안내(#19 + #20). 플래그 OFF → "" (기존 화면 유지). */
   function renderCodeEntryHint(state) {
     if (!on(state)) return "";
     return `<p class="hh-note">${esc(MSG.codeEntryHint)}</p><p class="hh-note">${esc(MSG.joinInfo)}</p>`;
   }
 
-  return { MSG, isEnabled, classifyCode, mergeChildren, childSubtitle, switchSubText, statusLine, failMessage, joinMessage, renderNotice, renderSection, renderCodeEntryHint };
+  return { MSG, isEnabled, classifyCode, mergeChildren, childSubtitle, switchSubText, statusLine, failMessage, joinMessage, renderNotice, renderSection, renderCodeEntryHint, renderBetaSwitch, renderBetaSwitchLanding };
 });
