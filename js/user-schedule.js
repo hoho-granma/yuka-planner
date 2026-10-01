@@ -64,6 +64,30 @@
 
   const isRecurring = (doc) => !nil(doc && doc.recurrence);
 
+  // ── 반복 규칙(B5): 매주 / N주마다. 주는 월요일 시작, 첫 날(startDate)이 속한 주가 0번째 주 ──────────────
+  const DOW_CODE = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"]; // Date.getDay() 순서
+  const EXCEPTION_WARN_AT = 180;
+  function weekdayOf(s) {
+    const [y, m, d] = s.split("-").map(Number);
+    return DOW_CODE[new Date(y, m - 1, d).getDay()];
+  }
+  const mondayOf = (s) => addDays(s, -WEEKDAYS.indexOf(weekdayOf(s)));
+  /** 전개할 수 있는 규칙인가(WEEKLY + 올바른 필드). 검증을 통과하지 못한 문서가 전개에서 예외를 던지지 않게 하는 방어선. */
+  function recurrenceUsable(rec) {
+    return !!rec && typeof rec === "object" && !Array.isArray(rec) && rec.freq === "WEEKLY" && isDateStr(rec.startDate)
+      && Array.isArray(rec.byDay) && rec.byDay.length > 0 && rec.byDay.every((d) => WEEKDAYS.includes(d))
+      && (nil(rec.interval) || (Number.isInteger(rec.interval) && rec.interval >= 1)) && (nil(rec.until) || isDateStr(rec.until));
+  }
+  /** 그 날짜가 반복 규칙이 만드는 회차의 "원래 날짜"인가. 문서(doc) 또는 규칙(rec) 둘 다 받는다. */
+  function isRuleDate(docOrRec, date) {
+    const rec = docOrRec && docOrRec.recurrence !== undefined ? docOrRec.recurrence : docOrRec;
+    if (!recurrenceUsable(rec) || !isDateStr(date)) return false;
+    if (date < rec.startDate || (!nil(rec.until) && date > rec.until)) return false;
+    if (!rec.byDay.includes(weekdayOf(date))) return false;
+    return (dayDiff(mondayOf(rec.startDate), mondayOf(date)) / 7) % (rec.interval || 1) === 0;
+  }
+  const exceptionCount = (doc) => Object.keys((doc && doc.exceptions) || {}).length;
+
   // ── 검증 ─────────────────────────────────────────────────────────────
   /** 불변식 I1~I12 + 스키마. { ok, errors: [{code, field, message}] } */
   function validate(doc) {
@@ -148,6 +172,11 @@
           else {
             if (!nil(ex.status) && !STATUSES.includes(ex.status)) err("I10", `exceptions.${k}.status`, "status enum");
             if (!nil(ex.movedTo) && !(ex.movedTo && isDateStr(ex.movedTo.date))) err("I10", `exceptions.${k}.movedTo`, "movedTo.date 는 YYYY-MM-DD");
+            else if (!nil(ex.movedTo)) {
+              const mv = ex.movedTo;
+              if (!nil(mv.startTime) && !isTimeStr(mv.startTime)) err("I10", `exceptions.${k}.movedTo.startTime`, "HH:mm");
+              if (!nil(mv.endTime) && (nil(mv.startTime) || !isTimeStr(mv.endTime) || mv.endTime <= mv.startTime)) err("I10", `exceptions.${k}.movedTo.endTime`, "endTime 은 startTime 이 있고 그보다 늦어야 한다");
+            }
           }
         }
       }
@@ -240,12 +269,13 @@
   /**
    * 화면 범위 [rangeStart, rangeEnd] 와 겹치는 비반복 일정을 Occurrence 로 바꾼다.
    *   FIXED: date=eventDate(endDate 가 있으면 확정 연속 기간), PERIOD: date=null(날짜 점 없음 — 기간 목록용).
-   *   deletedAt 이 있는 문서와 반복 문서(B5 에서 전개)는 건너뛴다. 범위가 MAX_EXPANSION_DAYS 를 넘으면 RangeError.
+   *   deletedAt 이 있는 문서는 건너뛴다. 반복 문서는 expandRecurring 이 회차로 전개한다. 범위가 MAX_EXPANSION_DAYS 를 넘으면 RangeError.
    */
   function expandOccurrences(doc, rangeStart, rangeEnd) {
     if (!isDateStr(rangeStart) || !isDateStr(rangeEnd) || rangeEnd < rangeStart) throw new RangeError("범위가 올바르지 않다");
     if (dayDiff(rangeStart, rangeEnd) + 1 > MAX_EXPANSION_DAYS) throw new RangeError(`전개 범위는 ${MAX_EXPANSION_DAYS}일 이하`);
-    if (!doc || !nil(doc.deletedAt) || isRecurring(doc)) return [];
+    if (!doc || !nil(doc.deletedAt)) return [];
+    if (isRecurring(doc)) return expandRecurring(doc, rangeStart, rangeEnd);
     const common = {
       origin: "USER", sourceType: doc.sourceType, scheduleId: doc.id || null, childKeys: doc.childKeys || [], scope: doc.scope, category: doc.category,
       title: doc.title, allDay: doc.allDay, startTime: doc.startTime || null, endTime: doc.endTime || null, assigneeMemberId: doc.assigneeMemberId || null,
@@ -260,6 +290,130 @@
     const o = { ...common, key: `u:${common.scheduleId}@${doc.eventDate}`, date: doc.eventDate, originalDate: doc.eventDate };
     if (doc.endDate) o.endDate = doc.endDate;
     return [o];
+  }
+
+  /**
+   * 반복 문서 → 화면 범위의 회차들. 회차는 저장하지 않는다(규칙 + exceptions[원래 날짜]).
+   *   key=u:<id>@<원래 날짜>, date=표시 날짜(이동했으면 movedTo.date), originalDate=규칙상 날짜.
+   *   CANCELLED 는 원래 날짜에 status:"CANCELLED" 로 포함한다(표식·집계에서 빼는 것은 CalendarModel). DONE 은 status:"DONE".
+   *   이동한 회차는 "원래 날짜"에는 나타나지 않고 이동한 날짜에만 나타난다(rescheduled:true, movedFrom). 원래 날짜가 범위 밖이어도 이동 후 날짜가 범위 안이면 포함한다.
+   *   규칙에 맞지 않는 날짜의 예외는 무시. 사용할 수 없는 규칙(freq 등)은 [] — CalendarModel 이 skipped 로 남긴다.
+   */
+  function expandRecurring(doc, rangeStart, rangeEnd) {
+    const rec = doc.recurrence;
+    if (!recurrenceUsable(rec)) return [];
+    const exs = doc.exceptions || {};
+    const cand = new Set();
+    const from = rec.startDate > rangeStart ? rec.startDate : rangeStart;
+    const to = !nil(rec.until) && rec.until < rangeEnd ? rec.until : rangeEnd;
+    for (let d = from; d <= to; d = addDays(d, 1)) if (isRuleDate(rec, d)) cand.add(d);
+    for (const k of Object.keys(exs)) if (isRuleDate(rec, k)) cand.add(k); // 범위 밖 원래 날짜에서 범위 안으로 옮겨진 회차
+    const out = [];
+    for (const orig of [...cand].sort()) {
+      const ex = exs[orig] && typeof exs[orig] === "object" ? exs[orig] : {};
+      const cancelled = ex.status === "CANCELLED";
+      const mv = ex.movedTo && isDateStr(ex.movedTo.date) ? ex.movedTo : null;
+      const moved = !cancelled && !!mv;
+      const date = moved ? mv.date : orig;
+      if (date < rangeStart || date > rangeEnd) continue;
+      let allDay = doc.allDay, startTime = doc.startTime || null, endTime = doc.endTime || null;
+      if (moved && !nil(mv.startTime)) {
+        allDay = false;
+        startTime = mv.startTime;
+        endTime = mv.endTime || null;
+      }
+      const o = {
+        origin: "USER", sourceType: doc.sourceType, scheduleId: doc.id || null, childKeys: doc.childKeys || [], scope: doc.scope, category: doc.category,
+        title: doc.title, allDay, startTime, endTime, assigneeMemberId: doc.assigneeMemberId || null,
+        status: cancelled ? "CANCELLED" : ex.status === "DONE" ? "DONE" : "TODO", memo: doc.memo || "", location: doc.location || "", tags: doc.tags || [], dateKind: "FIXED",
+        key: `u:${doc.id || null}@${orig}`, date, originalDate: orig, recurring: true, rescheduled: moved,
+      };
+      if (moved && mv.date !== orig) o.movedFrom = orig;
+      out.push(o);
+    }
+    return out;
+  }
+
+  // ── 반복 일정의 "이 날만" / "전체" 편집 (순수 — 패치를 만들어 돌려줄 뿐 저장은 호출자) ──────────────────
+  function occurrenceGuard(before, date) {
+    if (!isRecurring(before)) return [{ code: "I10", field: "date", message: "반복 일정이 아니다" }];
+    if (!isDateStr(date) || !isRuleDate(before, date)) return [{ code: "I10", field: "date", message: "반복 규칙에 없는 날짜다" }];
+    return [];
+  }
+  const fail = (errors) => ({ ok: false, patch: null, after: null, errors });
+  const exOf = (before, date) => (before.exceptions && before.exceptions[date]) || {};
+  const exOrNull = (ex) => (Object.keys(ex).length ? ex : null);
+
+  /** 이 날만 취소(status CANCELLED). 이동 정보(movedTo)가 있어도 그대로 두어 되돌릴 때 복원된다. */
+  function cancelOccurrence(before, date, now) {
+    const g = occurrenceGuard(before, date);
+    if (g.length) return fail(g);
+    return buildPatch(before, { exceptions: { [date]: { ...exOf(before, date), status: "CANCELLED" } } }, now);
+  }
+  /** 취소 또는 완료를 되돌린다: 이동한 회차는 RESCHEDULED 로, 아니면 status 를 지운다(남는 것이 없으면 예외 자체를 삭제). */
+  function restoreOccurrence(before, date, now) {
+    const g = occurrenceGuard(before, date);
+    if (g.length) return fail(g);
+    const prev = { ...exOf(before, date) };
+    if (prev.status !== "CANCELLED" && prev.status !== "DONE") return fail([{ code: "I10", field: "date", message: "되돌릴 상태가 없다" }]);
+    if (prev.movedTo) prev.status = "RESCHEDULED";
+    else delete prev.status;
+    return buildPatch(before, { exceptions: { [date]: exOrNull(prev) } }, now);
+  }
+  /** 이 날만 날짜/시간 바꾸기. to={date, startTime?, endTime?}. 원래 날짜·시각 그대로면 이동을 해제한다. 취소된 회차는 먼저 되돌려야 한다. */
+  function moveOccurrence(before, date, to, now) {
+    const g = occurrenceGuard(before, date);
+    if (g.length) return fail(g);
+    const prev = { ...exOf(before, date) };
+    if (prev.status === "CANCELLED") return fail([{ code: "I10", field: "date", message: "취소된 회차는 먼저 되돌려야 한다" }]);
+    if (!to || !isDateStr(to.date)) return fail([{ code: "I10", field: "movedTo.date", message: "옮길 날짜가 올바르지 않다" }]);
+    const timed = !nil(to.startTime);
+    if (to.date === date && !timed) {
+      delete prev.movedTo;
+      if (prev.status === "RESCHEDULED") delete prev.status;
+      return buildPatch(before, { exceptions: { [date]: exOrNull(prev) } }, now);
+    }
+    const movedTo = { date: to.date };
+    if (timed) {
+      movedTo.startTime = to.startTime;
+      if (!nil(to.endTime)) movedTo.endTime = to.endTime;
+    }
+    return buildPatch(before, { exceptions: { [date]: { ...prev, movedTo, status: prev.status === "DONE" ? "DONE" : "RESCHEDULED" } } }, now);
+  }
+  /** 새 규칙에서 쓸모없어지는 예외 [{date, effective}] — effective 는 지금 규칙에서는 화면에 영향을 주던 예외(사용자가 잃게 되는 기록). */
+  function exceptionsToPrune(before, newRec) {
+    return Object.keys(before.exceptions || {})
+      .filter((d) => !isRuleDate(newRec, d))
+      .sort()
+      .map((d) => ({ date: d, effective: isRecurring(before) && isRuleDate(before, d) }));
+  }
+  /**
+   * 전체 수정. buildPatch 와 같은 반환 + { pruned:[{date,effective}], prunedEffective:n }.
+   *   - 규칙(recurrence)이 바뀌면 새 규칙에서도 유효한 예외는 그대로 두고, 맞지 않게 된 예외만 "exceptions.<날짜>": null 로 정리한다.
+   *     정리는 날짜별 dot-path 라서 오프라인 상태에서 보내도 서버에 새로 생긴 다른 날짜의 예외를 덮어쓰지 않는다.
+   *   - 단일 → 반복, 반복 → 단일 전환도 같은 길로 처리한다(반복 → 단일이면 모든 예외 정리, eventDate 는 changes 가 준다).
+   */
+  function editAll(before, changes, now) {
+    const c = { ...(changes || {}) };
+    const wasRec = isRecurring(before);
+    const hasRec = Object.prototype.hasOwnProperty.call(c, "recurrence");
+    const newRec = hasRec ? (nil(c.recurrence) ? null : c.recurrence) : wasRec ? before.recurrence : null;
+    let pruned = [];
+    if (!wasRec && newRec) {
+      Object.assign(c, { dateKind: "FIXED", eventDate: null, endDate: null, periodStart: null, periodEnd: null, status: null });
+    } else if (wasRec && !newRec) {
+      pruned = exceptionsToPrune(before, null);
+      if (nil(c.status)) c.status = "TODO";
+    } else if (wasRec && hasRec) {
+      if (JSON.stringify(c.recurrence) === JSON.stringify(before.recurrence)) delete c.recurrence;
+      else pruned = exceptionsToPrune(before, newRec);
+    }
+    if (pruned.length) {
+      c.exceptions = { ...(c.exceptions || {}) };
+      for (const p of pruned) if (!(p.date in c.exceptions)) c.exceptions[p.date] = null;
+    }
+    const r = buildPatch(before, c, now);
+    return { ...r, pruned, prunedEffective: pruned.filter((p) => p.effective).length };
   }
 
   /**
@@ -294,6 +448,7 @@
   return {
     SOURCE_TYPES, CATEGORIES, SCOPES, DATE_KINDS, STATUSES, WEEKDAYS, LIMITS, MAX_EXPANSION_DAYS, REQUIRED_KEYS, OPTIONAL_KEYS, ALLOWED_KEYS, IMMUTABLE_KEYS,
     validate, buildCreateDoc, buildPatch, setStatus, markDone, softDelete, expandOccurrences, normalizeFromCandidate,
-    isDateStr, isTimeStr, addDays, dayDiff, isRecurring,
+    isDateStr, isTimeStr, addDays, dayDiff, isRecurring, recurrenceUsable, isRuleDate, weekdayOf, exceptionCount, EXCEPTION_WARN_AT,
+    cancelOccurrence, restoreOccurrence, moveOccurrence, exceptionsToPrune, editAll,
   };
 });

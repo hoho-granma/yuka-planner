@@ -66,8 +66,9 @@ test("범위와 겹치지 않는 일정·soft-deleted 는 제외", () => {
   const m = model([sched({ eventDate: "2026-12-01" }), { ...del, deletedAt: NOW + 1 }]);
   assert.strictEqual(m.counts.userItems, 0);
 });
-test("반복 일정은 B2 에서 전개하지 않고 skipped 로 남긴다", () => {
-  const m = model([sched({ eventDate: undefined, recurrence: { freq: "WEEKLY", interval: 1, byDay: ["TU"], startDate: "2026-10-06", until: null } })]);
+test("전개할 수 없는 반복 규칙(예: MONTHLY)은 전개하지 않고 skipped 로 남긴다", () => {
+  const rec = sched({ eventDate: undefined, recurrence: { freq: "WEEKLY", interval: 1, byDay: ["TU"], startDate: "2026-10-06", until: null } });
+  const m = model([{ ...rec, recurrence: { ...rec.recurrence, freq: "MONTHLY" } }]);
   assert.strictEqual(m.skipped.length, 1);
   assert.strictEqual(m.skipped[0].reason, "recurrence-not-expanded");
   assert.strictEqual(m.counts.userItems, 0);
@@ -140,7 +141,81 @@ test("range 검증: 역순·400일 초과는 RangeError", () => {
 test("정적 확인: 자동 일정 생성·추천일 배치·완료 쓰기를 호출하지 않는다", () => {
   const src = fs.readFileSync(path.join(__dirname, "..", "js", "calendar-model.js"), "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
   ["TodoEngine", "buildSchedule", "assignDisplayDays", "localStorage", "firebase", "toISOString"].forEach((w) => assert(!src.includes(w), w));
-  assert(!/\.sort\(/.test(src.replace(/d\.user\.sort|periodList\.sort/g, "")), "AUTO 입력 배열을 정렬하지 않는다");
+  assert(!/\.sort\(/.test(src.replace(/d\.user\.sort|d\.cancelled\.sort|periodList\.sort/g, "")), "AUTO 입력 배열을 정렬하지 않는다");
+});
+
+console.log("\n반복 일정 (B5)");
+const REC = { freq: "WEEKLY", interval: 1, byDay: ["TU", "TH"], startDate: "2026-10-06", until: null };
+const recS = (over = {}) => sched({ eventDate: undefined, recurrence: REC, ...over });
+test("반복 일정이 회차마다 칸에 들어가고 집계는 회차 수(D3)", () => {
+  const m = model([recS()]);
+  assert.strictEqual(m.skipped.length, 0);
+  assert.strictEqual(m.counts.userItems, 8);
+  ["2026-10-06", "2026-10-08", "2026-10-29"].forEach((k) => assert.strictEqual(m.days.get(k).user.length, 1));
+  assert.strictEqual(m.days.get("2026-10-07").user.length, 0);
+  assert.strictEqual(m.days.get("2026-10-06").user[0].key.endsWith("@2026-10-06"), true);
+});
+test("취소 회차: 표식·집계·total 에서 빠지고 days[날짜].cancelled 로만 나간다 / 되돌리면 다시 표식", () => {
+  const d = recS({ exceptions: { "2026-10-08": { status: "CANCELLED" } } });
+  const m = model([d]);
+  const cell = m.days.get("2026-10-08");
+  assert.strictEqual(cell.user.length, 0);
+  assert.strictEqual(cell.cancelled.length, 1);
+  assert.strictEqual(cell.cancelled[0].status, "CANCELLED");
+  assert(cell.marks.every((x) => x.kind !== "user"));
+  assert.strictEqual(m.counts.userItems, 7);
+  const back = { ...d };
+  delete back.exceptions;
+  assert.strictEqual(model([back]).days.get("2026-10-08").cancelled.length, 0);
+});
+test("완료 회차는 userDone, 이동 회차는 이동한 날짜 칸에만(원래 날짜 칸은 비어 있음)", () => {
+  const d = recS({ exceptions: { "2026-10-15": { status: "DONE" }, "2026-10-13": { status: "RESCHEDULED", movedTo: { date: "2026-10-14", startTime: "17:00" } } } });
+  const m = model([d]);
+  assert.strictEqual(m.counts.userDone, 1);
+  assert.strictEqual(m.days.get("2026-10-13").user.length, 0);
+  assert.strictEqual(m.days.get("2026-10-13").cancelled.length, 0, "이동은 원래 날짜에 아무 표시도 없다(R36)");
+  const mv = m.days.get("2026-10-14").user;
+  assert(mv.length === 1 && mv[0].originalDate === "2026-10-13" && mv[0].startTime === "17:00");
+  assert.strictEqual(m.counts.userItems, 8);
+});
+test("필터: 가족 일정 반복은 FAMILY/ALL 에서만, 아이 반복은 그 아이 CHILD 에서만, 삭제된 반복은 안 나온다", () => {
+  const fam = recS({ scope: "FAMILY", childKeys: undefined });
+  const kid = recS({ childKeys: ["c1"] });
+  const gone = { ...recS(), deletedAt: NOW + 1 };
+  const f = (filter) => model([fam, kid, gone], { filter: { ...filter, showAuto: false } }).counts.userItems;
+  assert.strictEqual(f({ scope: "ALL" }), 16);
+  assert.strictEqual(f({ scope: "FAMILY" }), 8);
+  assert.strictEqual(f({ scope: "CHILD", childKey: "c1" }), 8);
+  assert.strictEqual(f({ scope: "CHILD", childKey: "c2" }), 0);
+});
+test("범위 밖 날짜: 칸이 없는 날(월 밖)으로 옮긴 회차·취소는 모델에 들어가지 않는다", () => {
+  const d = recS({ exceptions: { "2026-10-27": { status: "RESCHEDULED", movedTo: { date: "2026-11-02" } }, "2026-10-29": { status: "CANCELLED" } } });
+  const m = model([d]);
+  assert.strictEqual(m.counts.userItems, 6);
+  assert.strictEqual(m.days.size, 31);
+});
+test("AUTO 출력은 반복 일정이 있어도 동일(같은 배열 객체, benefit/planned 값 동일)", () => {
+  const base = model([sched({})]);
+  const withRec = model([sched({}), recS({ exceptions: { "2026-10-08": { status: "CANCELLED" } } }), recS({ scope: "FAMILY", childKeys: undefined })]);
+  for (const [k, cell] of base.days) {
+    assert.deepStrictEqual(withRec.days.get(k).benefit, cell.benefit);
+    assert.deepStrictEqual(withRec.days.get(k).planned, cell.planned);
+  }
+  assert.strictEqual(withRec.counts.benefit, base.counts.benefit);
+  assert.strictEqual(withRec.counts.planned, base.counts.planned);
+});
+test("입력(반복 문서·링크·AUTO)을 변경하지 않는다", () => {
+  const frozen = JSON.parse(JSON.stringify(recS({ exceptions: { "2026-10-08": { status: "CANCELLED" }, "2026-10-13": { status: "RESCHEDULED", movedTo: { date: "2026-10-14" } } } })));
+  const df = (o) => (Object.values(o).forEach((v) => v && typeof v === "object" && df(v)), Object.freeze(o));
+  df(frozen);
+  assert.doesNotThrow(() => model([frozen]));
+});
+test("비반복 일정의 칸 구조는 B4 와 같다(cancelled 는 빈 배열이 추가될 뿐)", () => {
+  const m = model([sched({ eventDate: "2026-10-12" })]);
+  const c = m.days.get("2026-10-12");
+  assert.deepStrictEqual(Object.keys(c).sort(), ["benefit", "cancelled", "marks", "more", "planned", "total", "user"]);
+  assert.strictEqual(c.user.length, 1);
+  assert.deepStrictEqual(c.cancelled, []);
 });
 
 console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);

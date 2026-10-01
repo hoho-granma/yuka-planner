@@ -961,3 +961,12 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .us-time label { flex: 0 0 100%; }
 .us-time select { flex: 1; min-width: 0; width: auto; }
 .us-error { margin: 6px 0 0; font-size: 13px; color: #e0524e; }
+.us-card.cancelled { opacity: .55; }
+.us-card.cancelled .us-title { text-decoration: line-through; }
+.us-cancelled { align-self: center; padding: 2px 8px; border-radius: 999px; background: #eeeeee; color: #6b6b6b; font-size: 11px; font-weight: 800; }
+.us-card .us-repeat, .us-detail .us-repeat { align-self: flex-start; padding: 1px 7px; border-radius: 999px; background: #fff1e8; color: #b4552a; font-size: 11px; font-weight: 800; }
+.us-scope-sheet h3 { margin: 0 0 4px; }
+.us-scope { display: flex; flex-direction: column; gap: 4px; width: 100%; margin: 8px 0 0; padding: 12px 14px; border: 1px solid #f0d9c8; border-radius: 12px; background: #fff; text-align: left; font-family: inherit; cursor: pointer; }
+.us-scope strong { font-size: 15px; }
+.us-scope span { font-size: 12px; line-height: 1.5; color: var(--text-muted); }
+.us-scope.us-danger strong { color: #c0392b; }

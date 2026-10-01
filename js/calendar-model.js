@@ -7,7 +7,7 @@
  *   - AUTO 판정은 기존 앱과 같은 함수를 그대로 쓴다: benefit = HNLogic.coversDay(fixed), planned = HNLogic.plannedOnDay — 앱의 calendarDayItems 공식과 동일.
  *   - USER 는 UserSchedule.expandOccurrences 결과만 쓴다. USER 완료는 completed 와 무관(문서 status / exceptions)이며 진행률(%)에 섞지 않는다.
  *   - 월/주 구분은 range 로만 표현한다(같은 구조). 주 화면의 종일 행·기간 띠·추천 접힘 같은 표시 방식은 UI(B4).
- *   - 반복 일정은 B2 에서 전개하지 않는다 → skipped 에 사유를 남긴다(B5).
+ *   - 반복 일정(WEEKLY)은 UserSchedule.expandOccurrences 가 회차로 전개한다(B5). 취소 회차는 days[날짜].cancelled 로만 나가고 표식·집계에서 빠진다. 전개할 수 없는 규칙만 skipped 에 남긴다.
  *
  * 의존성(없으면 Node 에서 ./hn-logic.js, ./user-schedule.js 를 require, 브라우저에서는 전역 HNLogic, UserSchedule). deps 로 주입 가능.
  */
@@ -79,14 +79,14 @@
     };
 
     const dayKeys = eachDay(US, range.start, range.end);
-    const days = new Map(dayKeys.map((k) => [k, { user: [], benefit: [], planned: [], marks: [], more: 0, total: 0 }]));
+    const days = new Map(dayKeys.map((k) => [k, { user: [], benefit: [], planned: [], marks: [], more: 0, total: 0, cancelled: [] }]));
 
     // ── USER ──
     const periodList = [];
     const skipped = [];
     for (const doc of user.schedules || []) {
       if (!doc || !passesUserFilter(doc, filter)) continue;
-      if (US.isRecurring(doc) && !doc.deletedAt) {
+      if (US.isRecurring(doc) && !doc.deletedAt && !US.recurrenceUsable(doc.recurrence)) {
         skipped.push({ scheduleId: doc.id || null, reason: "recurrence-not-expanded" });
         continue;
       }
@@ -96,11 +96,18 @@
           periodList.push(occ);
           continue;
         }
+        if (occ.status === "CANCELLED") {
+          if (days.has(occ.date)) days.get(occ.date).cancelled.push(occ); // 취소한 회차: 표식·집계에서는 빠지고 그날 패널에서만 보인다
+          continue;
+        }
         const last = occ.endDate || occ.date;
         for (const k of dayKeys) if (k >= occ.date && k <= last) days.get(k).user.push(occ);
       }
     }
-    for (const d of days.values()) d.user.sort(byTimeThenTitle);
+    for (const d of days.values()) {
+      d.user.sort(byTimeThenTitle);
+      d.cancelled.sort(byTimeThenTitle);
+    }
     periodList.sort((a, b) => (a.periodEnd !== b.periodEnd ? (a.periodEnd < b.periodEnd ? -1 : 1) : a.title < b.title ? -1 : a.title > b.title ? 1 : 0));
 
     // ── AUTO (읽기 전용 — 기존 calendarDayItems 공식과 동일) ──

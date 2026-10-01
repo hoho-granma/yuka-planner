@@ -447,5 +447,104 @@ const mk = (flag, extra = {}) => {
     assert.strictEqual(sent.updatedAt, 5);
   });
 
+  console.log("\n반복 일정 예외 정리 × 오프라인 (B5 D6)");
+  /** Firestore update 의미를 따르는 어댑터: "a.b.c" dot-path 로 중첩 필드를 쓰고 null 은 필드 삭제로 받는다(실제 어댑터는 null→FieldValue.delete()). */
+  const pathAwareUpdate = (adapter) => {
+    adapter.update = async (p, d) => {
+      adapter.calls.push(["update", p, d]);
+      if (adapter.fail) throw Object.assign(new Error(adapter.fail), { code: adapter.fail });
+      const cur = JSON.parse(JSON.stringify(adapter.docs.get(p)));
+      for (const [key, val] of Object.entries(d)) {
+        const parts = key.split(".");
+        let o = cur;
+        for (let i = 0; i < parts.length - 1; i++) o = o[parts[i]] = o[parts[i]] || {};
+        if (val === null) delete o[parts[parts.length - 1]];
+        else o[parts[parts.length - 1]] = val;
+      }
+      adapter.docs.set(p, cur);
+    };
+  };
+  const REC2 = { freq: "WEEKLY", interval: 1, byDay: ["TU", "TH"], startDate: "2026-10-06", until: null };
+
+  await test("D6: 오프라인에서 보낸 '예외 정리' 패치는 서버에 새로 생긴 다른 날짜 예외를 덮어쓰지 않는다(날짜별 dot-path)", async () => {
+    const A = mk(true);
+    pathAwareUpdate(A.adapter);
+    const doc = mkDoc({ eventDate: undefined, recurrence: REC2, exceptions: { "2026-10-08": { status: "CANCELLED" }, "2026-10-13": { status: "DONE" } } });
+    const { scheduleId } = await A.hs.createSchedule("h1", doc);
+    const P = `households/h1/schedules/${scheduleId}`;
+    // A: 오프라인으로 전환 → 요일을 화로 바꾼다(목요일 예외 10/8 정리)
+    A.adapter.fail = "unavailable";
+    const r = US.editAll(doc, { recurrence: { ...REC2, byDay: ["TU"] } }, 2000);
+    assert(r.ok && r.pruned.length === 1);
+    const res = await A.hs.patchSchedule("h1", scheduleId, r.patch);
+    assert.strictEqual(res.pending, true);
+    // 그 사이 다른 기기가 서버에 예외를 추가: 새 규칙에서도 유효한 10/20(화) 취소, 옛 규칙에서만 유효한 10/22(목) 취소
+    const server = JSON.parse(JSON.stringify(A.adapter.docs.get(P)));
+    server.exceptions["2026-10-20"] = { status: "CANCELLED" };
+    server.exceptions["2026-10-22"] = { status: "CANCELLED" };
+    A.adapter.docs.set(P, server);
+    // 복구 후 flush
+    A.adapter.fail = null;
+    const f = await A.hs.flush("h1");
+    assert.strictEqual(f.remaining, 0);
+    const got = A.adapter.docs.get(P);
+    assert.deepStrictEqual(got.recurrence.byDay, ["TU"], "규칙 변경은 서버에 반영");
+    assert.deepStrictEqual(got.exceptions["2026-10-13"], { status: "DONE" }, "유효한 예외는 그대로");
+    assert(!("2026-10-08" in got.exceptions), "정리 대상 날짜 예외만 삭제");
+    assert.deepStrictEqual(got.exceptions["2026-10-20"], { status: "CANCELLED" }, "다른 기기가 새로 만든 유효 예외는 살아남는다");
+    assert.deepStrictEqual(got.exceptions["2026-10-22"], { status: "CANCELLED" }, "내가 몰랐던 옛 규칙 예외는 무효가 되어 무시될 뿐 삭제되지 않는다");
+    const occ = US.expandOccurrences({ ...got, id: scheduleId }, "2026-10-01", "2026-10-31");
+    assert(occ.some((o) => o.originalDate === "2026-10-20" && o.status === "CANCELLED"));
+    assert(!occ.some((o) => o.originalDate === "2026-10-22"), "화요일 규칙에서 22일(목)은 회차가 아니다");
+    // 패치에 쓴 키는 정리한 날짜뿐(문서 전체 교체가 아님)
+    const sent = A.adapter.writes().filter((c) => c[0] === "update").pop()[2];
+    assert.deepStrictEqual(Object.keys(sent).sort(), ["exceptions.2026-10-08", "recurrence", "updatedAt"]);
+  });
+
+  await test("오프라인 이 날만 취소/이동은 서로 다른 날짜끼리 합쳐진다(두 기기가 각자 다른 날을 바꿔도 둘 다 남음)", async () => {
+    const A = mk(true);
+    pathAwareUpdate(A.adapter);
+    const doc = mkDoc({ eventDate: undefined, recurrence: REC2 });
+    const { scheduleId } = await A.hs.createSchedule("h1", doc);
+    const P = `households/h1/schedules/${scheduleId}`;
+    A.adapter.fail = "unavailable";
+    const c = US.cancelOccurrence(doc, "2026-10-13", 2000);
+    await A.hs.patchSchedule("h1", scheduleId, c.patch);
+    const mv = US.moveOccurrence(c.after, "2026-10-15", { date: "2026-10-16", startTime: "10:00" }, 2001);
+    await A.hs.patchSchedule("h1", scheduleId, mv.patch);
+    assert.strictEqual(A.hs.getStatus("h1").pending, 2);
+    const mine = US.expandOccurrences({ ...A.hs.getSchedules("h1")[0] }, "2026-10-01", "2026-10-31");
+    assert(mine.some((o) => o.originalDate === "2026-10-13" && o.status === "CANCELLED") && mine.some((o) => o.originalDate === "2026-10-15" && o.date === "2026-10-16"), "오프라인 중에도 로컬 화면에 즉시 반영");
+    const server = JSON.parse(JSON.stringify(A.adapter.docs.get(P)));
+    server.exceptions = { "2026-10-20": { status: "DONE" } };           // 다른 기기가 같은 시각에 10/20 을 완료
+    A.adapter.docs.set(P, server);
+    A.adapter.fail = null;
+    await A.hs.flush("h1");
+    const got = A.adapter.docs.get(P).exceptions;
+    assert.deepStrictEqual(Object.keys(got).sort(), ["2026-10-13", "2026-10-15", "2026-10-20"]);
+    assert.strictEqual(got["2026-10-20"].status, "DONE");
+  });
+
+  await test("(한계 기록) 대기열에 있는 동안 미러는 로컬 문서를 그대로 보여 준다 — 서버의 새 예외는 flush 후 스냅샷에서 보인다(데이터 유실 아님)", async () => {
+    const A = mk(true);
+    pathAwareUpdate(A.adapter);
+    const doc = mkDoc({ eventDate: undefined, recurrence: REC2 });
+    const { scheduleId } = await A.hs.createSchedule("h1", doc);
+    const P = `households/h1/schedules/${scheduleId}`;
+    A.adapter.fail = "unavailable";
+    await A.hs.patchSchedule("h1", scheduleId, US.cancelOccurrence(doc, "2026-10-13", 2000).patch);
+    A.hs.startListening("h1");
+    const l = A.adapter.listeners.find((x) => x.p.endsWith("/schedules"));
+    l.onData([{ id: scheduleId, data: { ...doc, exceptions: { "2026-10-20": { status: "DONE" } } } }]);
+    const during = A.hs.getSchedules("h1")[0];
+    assert(during.exceptions["2026-10-13"] && !during.exceptions["2026-10-20"], "대기 중에는 로컬 문서만 보인다");
+    A.adapter.fail = null;
+    A.adapter.docs.set(P, { ...doc, exceptions: { "2026-10-20": { status: "DONE" } } });
+    await A.hs.flush("h1");
+    l.onData([{ id: scheduleId, data: A.adapter.docs.get(P) }]);
+    const after = A.hs.getSchedules("h1")[0];
+    assert(after.exceptions["2026-10-13"] && after.exceptions["2026-10-20"], "flush 후 스냅샷에서는 둘 다 보인다");
+  });
+
   console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);
 })();

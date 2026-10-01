@@ -2337,7 +2337,8 @@
   // 문구·마크업·폼 변환: js/user-schedule-view.js / 검증·패치: js/user-schedule.js / 월 집계: js/calendar-model.js / 저장·미러·대기열: js/household-sync.js.
   // 가구가 있고 플래그(FEATURES.household)가 켜졌을 때만 동작한다. 자동 일정(autoEvents·displayDate·visibleSchedule·completed·진행률)은 읽기만 하고 바꾸지 않는다.
   // 추가한 일정의 완료는 일정 문서의 status 에만 기록한다(completed 와 분리). 캘린더는 하나이며 scope 는 CHILD / FAMILY 두 가지뿐이다.
-  const us = { selection: "ALL", showAuto: true, form: null, messages: [], saving: false, detailId: null };
+  // detailKey/detailOcc: 열려 있는 상세의 회차(반복 일정은 같은 문서에서 회차가 여럿이라 id 만으로는 부족), dayForm: "이 날만 수정", plan: 규칙 변경 확인 대기 중인 전체 수정 계획.
+  const us = { selection: "ALL", showAuto: true, form: null, messages: [], saving: false, detailId: null, detailKey: null, detailOcc: null, dayForm: null, plan: null };
   const usReady = () => typeof UserScheduleView !== "undefined" && typeof UserSchedule !== "undefined" && typeof CalendarModel !== "undefined";
   const usActive = () => hhEnabled() && usReady() && !!hh.hid && !!hh.code;
   const usMirror = () => (hh.hid ? HouseholdSync.getMirror(hh.hid) : null);
@@ -2400,7 +2401,7 @@
     }
     const iso = toISODate(date);
     const day = usBuildModel(iso, iso).days.get(iso);
-    const panel = UserScheduleView.dayPanel(day, usLinks());
+    const panel = UserScheduleView.dayPanel(day, usLinks(), { docById: usDocById });
     const group = (title) => `<h4 class="us-group">${esc(title)}</h4>`;
     el("selected-day-list").innerHTML =
       group(panel.added.title) +
@@ -2423,13 +2424,25 @@
     const m = usBuildModel(startIso, startIso, { scope: "ALL", showAuto: false });
     return doc.dateKind === "PERIOD" ? m.periodList.find((o) => o.scheduleId === doc.id) : (m.days.get(startIso) || { user: [] }).user.find((o) => o.scheduleId === doc.id);
   }
-  function usOpenDetail(id) {
+  /** 반복 일정: 선택한 날짜 패널에서 눌린 회차(key = u:<id>@<원래 날짜>)를 찾는다. 취소된 회차도 포함. */
+  function usFindRecurringOccurrence(doc, key) {
+    const iso = toISODate(selectedCalendarDate);
+    const d = usBuildModel(iso, iso, { scope: "ALL", showAuto: false }).days.get(iso);
+    return d ? d.user.concat(d.cancelled).find((o) => o.scheduleId === doc.id && o.key === key) || null : null;
+  }
+  function usOpenDetail(id, key) {
     const doc = usDocById(id);
-    const occ = doc && usOccurrenceOf(doc);
+    const occ = doc && (UserSchedule.isRecurring(doc) ? usFindRecurringOccurrence(doc, key) : usOccurrenceOf(doc));
     if (!occ) return;
     us.detailId = id;
+    us.detailKey = occ.key;
+    us.detailOcc = occ;
+    us.form = null;
+    us.dayForm = null;
+    us.plan = null;
     modalMode = "profile";
-    el("modal-content").innerHTML = UserScheduleView.renderDetail(UserScheduleView.cardData(occ, usLinks()));
+    const extra = occ.recurring ? { recurrence: doc.recurrence, exceptionCount: UserSchedule.exceptionCount(doc) } : undefined;
+    el("modal-content").innerHTML = UserScheduleView.renderDetail(UserScheduleView.cardData(occ, usLinks(), extra));
     el("detail-modal").classList.remove("hidden");
   }
   function usOpenForm(id) {
@@ -2437,6 +2450,8 @@
     us.form = doc ? UserScheduleView.formFromSchedule(doc) : UserScheduleView.newForm({ date: toISODate(selectedCalendarDate), activeChildKey: usActiveChildKey(), links: usLinks() });
     us.messages = [];
     us.saving = false;
+    us.dayForm = null;
+    us.plan = null;
     usShowForm();
   }
   function usShowForm() {
@@ -2445,9 +2460,10 @@
     el("detail-modal").classList.remove("hidden");
     usBindPickers();
   }
-  /** 폼에 들어 있는 날짜 칸(최대 2개)에 공통 달력(HNDatePicker, 일정용 범위)을 연결한다. */
+  /** 폼에 들어 있는 날짜 칸에 공통 달력(HNDatePicker, 일정용 범위)을 연결한다. "이 날만 수정" 중이면 그 폼의 날짜 칸. */
   function usBindPickers() {
     const P = UserScheduleView.PICKER_PREFIXES;
+    const form = us.dayForm || us.form;
     const parse = (iso) => (iso ? new Date(`${iso}T00:00:00`) : null);
     const bind = (prefix, field, minField) => {
       if (!el(`${prefix}-dp-btn`)) return;
@@ -2455,18 +2471,20 @@
         getStage: () => "schedule",
         format: formatDateKR,
         placeholder: "날짜를 선택해주세요",
-        getMinDate: minField ? () => parse(us.form[minField]) : undefined,
+        getMinDate: minField ? () => parse(form[minField]) : undefined,
         onChange: (d) => {
-          us.form[field] = toISODate(d);
+          form[field] = toISODate(d);
         },
       });
-      const v = parse(us.form[field]);
+      const v = parse(form[field]);
       if (v) picker.set(v);
     };
     bind(P.date, "eventDate");
     bind(P.end, "endDate", "eventDate");
     bind(P.periodStart, "periodStart");
     bind(P.periodEnd, "periodEnd", "periodStart");
+    bind(P.until, "until", "eventDate");
+    bind(P.day, "date");
   }
   function usReadTime(group) {
     const h = el(`${group}-h`).value;
@@ -2488,7 +2506,26 @@
     us.messages = [];
     usShowForm();
     try {
-      if (us.form.mode === "edit") {
+      if (us.form.mode === "edit" && (us.form.wasRecurring || UserScheduleView.isRepeating(us.form))) {
+        // 반복 일정의 "전체 수정"(또는 단일 ↔ 반복 전환): 계획을 만들고, 반복 규칙이 바뀌면 확인창(R30)을 거친다.
+        const before = UserScheduleView.stripId(usDocById(us.form.scheduleId));
+        const plan = UserScheduleView.planFullEdit(us.form, before, now);
+        if (!plan.ok) {
+          us.saving = false;
+          us.messages = plan.messages;
+          return usShowForm();
+        }
+        if (plan.confirm) {
+          us.saving = false;
+          us.plan = plan;
+          el("modal-content").innerHTML = UserScheduleView.renderRuleChangeConfirm(plan.prunedEffective);
+          return;
+        }
+        if (Object.keys(plan.changes).length) {
+          const res = await HouseholdSync.patchSchedule(hh.hid, us.form.scheduleId, plan.patch);
+          if (!res.ok) throw new Error(res.reason || "patch-failed");
+        }
+      } else if (us.form.mode === "edit") {
         const before = UserScheduleView.stripId(usDocById(us.form.scheduleId));
         const changes = UserScheduleView.changesFromForm(us.form, before);
         if (Object.keys(changes).length) {
@@ -2522,20 +2559,89 @@
       usShowForm();
     }
   }
+  /** 규칙 변경 확인창(R30)에서 "바꾸기"를 눌렀을 때: 확인 전에 만들어 둔 계획의 패치를 저장한다. */
+  async function usCommitPlan() {
+    const plan = us.plan;
+    if (!plan || !us.form) return;
+    try {
+      const res = await HouseholdSync.patchSchedule(hh.hid, us.form.scheduleId, plan.patch);
+      if (!res.ok) throw new Error(res.reason || "patch-failed");
+      us.plan = null;
+      us.form = null;
+      closeDetail();
+      usRefreshCalendar();
+    } catch (e) {
+      console.error("반복 일정 저장 실패", e);
+      usModalNote(UserScheduleView.MSG.saveFail);
+    }
+  }
+  /** "이 날만 수정": 폼을 열고 / 저장하면 그 회차의 예외(moveOccurrence)만 쓴다. */
+  function usShowDayForm() {
+    modalMode = "profile";
+    el("modal-content").innerHTML = UserScheduleView.renderDayForm(us.dayForm, { messages: us.messages, saving: us.saving });
+    el("detail-modal").classList.remove("hidden");
+    usBindPickers();
+  }
+  function usOpenDayForm() {
+    const doc = usDocById(us.detailId);
+    if (!doc || !us.detailOcc) return;
+    us.form = null;
+    us.plan = null;
+    us.dayForm = UserScheduleView.dayFormFromOccurrence(us.detailOcc, doc);
+    us.messages = [];
+    us.saving = false;
+    usShowDayForm();
+  }
+  async function usSaveDay() {
+    const f = us.dayForm;
+    if (!f || us.saving) return;
+    const v = UserScheduleView.validateDayForm(f);
+    if (!v.ok) {
+      us.messages = v.errors.map((e) => e.message);
+      return usShowDayForm();
+    }
+    const before = UserScheduleView.stripId(usDocById(us.detailId));
+    const r = UserSchedule.moveOccurrence(before, f.originalDate, UserScheduleView.dayFormToMove(f, before), Date.now());
+    if (!r.ok) {
+      us.messages = UserScheduleView.messagesFromErrors(r.errors);
+      return usShowDayForm();
+    }
+    us.saving = true;
+    us.messages = [];
+    usShowDayForm();
+    try {
+      const res = await HouseholdSync.patchSchedule(hh.hid, us.detailId, r.patch);
+      if (!res.ok) throw new Error(res.reason || "patch-failed");
+      us.saving = false;
+      us.dayForm = null;
+      closeDetail();
+      usRefreshCalendar();
+    } catch (e) {
+      console.error("이 날만 수정 실패", e);
+      us.saving = false;
+      us.messages = [UserScheduleView.MSG.saveFail];
+      usShowDayForm();
+    }
+  }
   /** 완료/완료 취소 · 삭제(소프트). 추가한 일정의 완료는 일정 문서의 status 에만 기록한다. */
   async function usPatchAction(id, build) {
     const doc = usDocById(id);
     if (!doc) return;
     try {
       const r = build(UserScheduleView.stripId(doc), Date.now());
-      if (!r.ok) throw new Error("invalid-patch");
+      if (!r.ok) {
+        const full = UserScheduleView.MSG.exceptionsFull; // 날짜별 변경 200개 상한(R17)만 따로 알리고, 나머지는 기존 #57
+        const err = new Error("invalid-patch");
+        err.note = (UserScheduleView.messagesFromErrors(r.errors || []).includes(full) && full) || null;
+        throw err;
+      }
       const res = await HouseholdSync.patchSchedule(hh.hid, id, r.patch);
       if (!res.ok) throw new Error(res.reason || "patch-failed");
       closeDetail();
       usRefreshCalendar();
     } catch (e) {
       console.error("일정 처리 실패", e);
-      usModalNote(UserScheduleView.MSG.actionFail);
+      usModalNote((e && e.note) || UserScheduleView.MSG.actionFail);
     }
   }
   function usOnCalendarClick(ev) {
@@ -2555,30 +2661,64 @@
       if (act === "add") return usOpenForm(null);
     }
     const c = ev.target.closest(".us-card");
-    if (c) usOpenDetail(c.getAttribute("data-us-id"));
+    if (c) usOpenDetail(c.getAttribute("data-us-id"), c.getAttribute("data-us-key"));
   }
   function usOnModalClick(ev) {
     if (!usActive()) return;
-    const root = ev.target.closest(".us-form, .us-detail, .us-confirm");
+    const root = ev.target.closest(".us-form, .us-detail, .us-confirm, .us-scope-sheet");
     if (!root) return;
     const a = ev.target.closest("[data-us-action]");
     if (a) {
       const act = a.getAttribute("data-us-action");
       const id = us.detailId;
+      const occ = us.detailOcc;
+      const rec = !!(occ && occ.recurring); // 반복 일정의 한 회차를 열어 둔 경우
       if (act === "save") return usSave();
+      if (act === "save-day") return usSaveDay();
       if (act === "cancel") {
         us.form = null;
+        us.dayForm = null;
+        us.plan = null;
         return closeDetail();
       }
       if (act === "close") return closeDetail();
-      if (act === "toggle-done") return usPatchAction(id, (before, now) => (before.status === "DONE" ? UserSchedule.setStatus(before, "TODO", now) : UserSchedule.markDone(before, now)));
-      if (act === "edit") return usOpenForm(id);
-      if (act === "delete") {
-        el("modal-content").innerHTML = UserScheduleView.renderDeleteConfirm();
+      if (act === "toggle-done") {
+        if (rec) return usPatchAction(id, (before, now) => (occ.status === "DONE" ? UserSchedule.restoreOccurrence(before, occ.originalDate, now) : UserSchedule.markDone(before, now, { date: occ.originalDate })));
+        return usPatchAction(id, (before, now) => (before.status === "DONE" ? UserSchedule.setStatus(before, "TODO", now) : UserSchedule.markDone(before, now)));
+      }
+      if (act === "restore") return usPatchAction(id, (before, now) => UserSchedule.restoreOccurrence(before, occ.originalDate, now));
+      if (act === "edit") {
+        if (rec) el("modal-content").innerHTML = UserScheduleView.renderEditScopeSheet(occ.originalDate);
+        else usOpenForm(id);
         return;
       }
-      if (act === "cancel-delete") return usOpenDetail(id);
+      if (act === "delete") {
+        el("modal-content").innerHTML = rec ? UserScheduleView.renderDeleteScopeSheet(occ.originalDate) : UserScheduleView.renderDeleteConfirm();
+        return;
+      }
+      if (act === "cancel-delete") return usOpenDetail(id, us.detailKey);
       if (act === "confirm-delete") return usPatchAction(id, (before, now) => UserSchedule.softDelete(before, now));
+      // 반복 일정: 범위 선택 시트(R20·R24)와 확인창(R28·R29·R30). 범위는 "이 날만" / "전체" 두 가지뿐.
+      if (act === "scope-back") {
+        if (us.plan) {
+          us.plan = null;
+          return usShowForm();
+        }
+        return usOpenDetail(id, us.detailKey);
+      }
+      if (act === "edit-day") return usOpenDayForm();
+      if (act === "edit-all") return usOpenForm(id);
+      if (act === "cancel-day") {
+        el("modal-content").innerHTML = UserScheduleView.renderCancelDayConfirm(occ.originalDate);
+        return;
+      }
+      if (act === "confirm-cancel-day") return usPatchAction(id, (before, now) => UserSchedule.cancelOccurrence(before, occ.originalDate, now));
+      if (act === "delete-all") {
+        el("modal-content").innerHTML = UserScheduleView.renderDeleteAllConfirm();
+        return;
+      }
+      if (act === "confirm-delete-all") return usPatchAction(id, (before, now) => UserSchedule.softDelete(before, now));
+      if (act === "confirm-rule-change") return usCommitPlan();
       return;
     }
     if (!us.form) return;
@@ -2607,6 +2747,35 @@
       });
       return;
     }
+    const rep = ev.target.closest("[data-us-repeat]");
+    if (rep) {
+      us.form.repeat = rep.getAttribute("data-us-repeat");
+      if (UserScheduleView.isRepeating(us.form)) {
+        // 반복 일정은 날짜 정함(FIXED)이고 여러 날에 걸치지 않는다(R10).
+        us.form.dateKind = "FIXED";
+        us.form.multiDay = false;
+        us.form.endDate = "";
+      }
+      usShowForm();
+      return;
+    }
+    const dayChip = ev.target.closest("[data-us-day]");
+    if (dayChip) {
+      const k = dayChip.getAttribute("data-us-day");
+      const set = new Set(us.form.byDay || []);
+      if (set.has(k)) set.delete(k);
+      else set.add(k);
+      us.form.byDay = [...set];
+      root.querySelectorAll("[data-us-day]").forEach((x) => x.classList.toggle("active", us.form.byDay.includes(x.getAttribute("data-us-day"))));
+      return;
+    }
+    const untilChip = ev.target.closest("[data-us-until]");
+    if (untilChip) {
+      us.form.untilMode = untilChip.getAttribute("data-us-until");
+      if (us.form.untilMode !== "DATE") us.form.until = "";
+      usShowForm();
+      return;
+    }
     const kind = ev.target.closest("[data-us-kind]");
     if (kind) {
       us.form.dateKind = kind.getAttribute("data-us-kind");
@@ -2622,8 +2791,20 @@
     }
   }
   function usOnModalChange(ev) {
-    if (!usActive() || !us.form || !ev.target.closest(".us-form")) return;
+    if (!usActive() || !ev.target.closest(".us-form")) return;
     const t = ev.target;
+    if (us.dayForm) {
+      // "이 날만 수정": 종일(시각 없는 문서일 때만 보임)과 시각 선택
+      if (t.id === "us-allday") {
+        us.dayForm.allDay = t.checked;
+        usShowDayForm();
+      } else if (t.getAttribute("data-us-time")) {
+        us.dayForm.startTime = el("us-start-h") ? usReadTime("us-start") : "";
+        us.dayForm.endTime = el("us-end-h") ? usReadTime("us-end") : "";
+      }
+      return;
+    }
+    if (!us.form) return;
     if (t.id === "us-multi") {
       us.form.multiDay = t.checked;
       if (!t.checked) us.form.endDate = "";
