@@ -46,8 +46,11 @@
     ]
       .map(([k, label, n]) => `<button type="button" class="seg-tab ${statusTab === k ? "active" : ""}" data-st="${k}">${label} <span class="seg-n">${n}</span></button>`)
       .join("");
-    const natN = ctx.events.filter((e) => e.category === "행정·지원금" && isNational(ctx, e)).length;
-    const regN = ctx.events.filter((e) => e.category === "행정·지원금" && !isNational(ctx, e)).length;
+    // 칩 숫자는 지금 선택한 상태 탭(신청 가능/예정/완료)의 목록 기준이다 — 화면에 보이는 목록 개수와 같아야 헷갈리지 않는다.
+    // (조건 해당자 접이식·기한 지난 혜택은 목록 밖이라 세지 않는다)
+    const tabList = statusTab === "available" ? all.available : statusTab === "upcoming" ? all.upcoming : all.applied;
+    const natN = tabList.filter((e) => isNational(ctx, e)).length;
+    const regN = tabList.length - natN;
     chips.innerHTML = [
       ["all", `전체 ${natN + regN}`],
       ["national", `전국 공통 ${natN}`],
