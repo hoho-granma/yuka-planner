@@ -701,6 +701,7 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .sub-link { display: inline-block; margin: 6px 4px 0; font-size: 12px; font-weight: 700; color: var(--accent-dark); text-decoration: none; padding: 4px 2px; }
 .sub-expired-toggle { display: block; width: 100%; margin: 18px 0 8px; padding: 12px; border: 1px dashed var(--border); border-radius: 12px; background: none; color: var(--text-muted); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
 .sub-expired { opacity: .75; }
+.sub-cond-toggle { margin-top: 12px; }
 
 /* 기록 탭 */
 .record-filter { position: sticky; top: 0; background: var(--bg); padding: 4px 0 8px; margin-bottom: 4px; z-index: 5; }

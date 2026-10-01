@@ -157,10 +157,21 @@ test("오늘의 할 일: 지원금 제외·미완료만·DUE/OVERDUE_CATCHUP만"
   }
 });
 
+test("지원금 분류: 조건 해당자만 받는 제도(conditionLabel)는 신청 가능이 아니라 conditional로 따로 모인다", () => {
+  const b = L.subsidyBuckets(events, {}, ctx, 30);
+  assert.ok(b.conditional.length > 0, "conditional 없음");
+  for (const e of b.conditional) assert.ok(e.detail && e.detail.conditionLabel, e.id);
+  for (const e of b.available) assert.ok(!(e.isLegacySubsidy && e.detail && e.detail.conditionLabel), e.id + " 가 신청 가능에 섞임");
+  const id = b.conditional[0].id;
+  const b2 = L.subsidyBuckets(events, { [id]: { done: true } }, ctx, 30);
+  assert.strictEqual(b2.conditional.length, b.conditional.length - 1);
+  assert.ok(b2.applied.some((e) => e.id === id), "완료한 conditional 항목이 applied로 가야 한다");
+});
+
 test("지원금 분류: 모든 지원금이 정확히 한 상태에 들어가고, 완료하면 applied로 이동", () => {
   const b = L.subsidyBuckets(events, {}, ctx, 30);
   const total = events.filter((e) => e.category === "행정·지원금").length;
-  assert.strictEqual(b.available.length + b.upcoming.length + b.expired.length + b.applied.length, total);
+  assert.strictEqual(b.available.length + b.upcoming.length + b.expired.length + b.applied.length + b.conditional.length, total);
   assert.strictEqual(b.applied.length, 0);
   assert.ok(b.available.length > 0, "신청 가능 지원금 없음");
   const id = b.available[0].id;

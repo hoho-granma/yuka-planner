@@ -338,12 +338,20 @@
     return left !== null && left >= 0 && left <= (thresholdDays || 30);
   }
 
-  /** 지원금 탭 분류. urgent는 available의 부분집합(상단 고정용). */
+  /**
+   * 지원금 탭 분류. urgent는 available의 부분집합(상단 고정용).
+   * conditional: 신청 가능 상태지만 소득·직종·질환 등 해당자만 받는 제도(data의 conditionLabel) —
+   * 모두에게 "신청 가능"으로 세지 않도록 available에서 빼고 따로 모은다(신청 완료·예정·기한 지남은 그대로).
+   */
   function subsidyBuckets(events, completed, ctx, thresholdDays) {
     const subs = events.filter((e) => e.category === "행정·지원금");
-    const out = { available: [], upcoming: [], applied: [], expired: [], urgent: [] };
+    const out = { available: [], upcoming: [], applied: [], expired: [], urgent: [], conditional: [] };
     for (const e of subs) {
       const st = subsidyStatus(e, completed, ctx);
+      if (st === "available" && e.isLegacySubsidy && e.detail && e.detail.conditionLabel) {
+        out.conditional.push(e);
+        continue;
+      }
       out[st].push(e);
       if (st === "available" && isUrgent(e, completed, ctx, thresholdDays)) out.urgent.push(e);
     }
@@ -353,6 +361,7 @@
       return (da ? da.getTime() : Infinity) - (db ? db.getTime() : Infinity);
     };
     out.available.sort(byDeadline);
+    out.conditional.sort(byDeadline);
     out.urgent.sort(byDeadline);
     return out;
   }

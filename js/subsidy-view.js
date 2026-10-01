@@ -10,6 +10,7 @@
   let statusTab = "available"; // available | upcoming | applied
   let scope = "all"; // all | national | regional
   let expiredOpen = false;
+  let conditionalOpen = false;
 
   const isNational = (ctx, e) => {
     const p = ctx.subsidyProvider(e);
@@ -35,6 +36,7 @@
       upcoming: all.upcoming.filter(inScope),
       applied: all.applied.filter(inScope),
       expired: all.expired.filter(inScope),
+      conditional: all.conditional.filter(inScope),
     };
 
     seg.innerHTML = [
@@ -63,6 +65,10 @@
         html += b.available.map((e) => cardHtml(ctx, e)).join("");
       }
       if (!b.available.length) html += `<p class="empty">지금 신청할 수 있는 혜택이 없어요.</p>`;
+      if (b.conditional.length) {
+        html += `<button type="button" class="sub-expired-toggle sub-cond-toggle" data-act="conditional">조건에 해당하면 신청할 수 있는 혜택 ${b.conditional.length}개 ${conditionalOpen ? "접기" : "보기"}</button>`;
+        if (conditionalOpen) html += `<div class="sub-conditional">${b.conditional.map((e) => cardHtml(ctx, e)).join("")}</div>`;
+      }
       if (b.expired.length) {
         html += `<button type="button" class="sub-expired-toggle" data-act="expired">기한이 지난 혜택 ${b.expired.length}개 ${expiredOpen ? "접기" : "보기"}</button>`;
         if (expiredOpen) html += `<div class="sub-expired">${b.expired.map((e) => cardHtml(ctx, e)).join("")}</div>`;
@@ -84,6 +90,8 @@
 
     body.innerHTML = html;
     ctx.bindOpen(body);
+    const togCond = body.querySelector("[data-act='conditional']");
+    if (togCond) togCond.addEventListener("click", () => { conditionalOpen = !conditionalOpen; render(ctx); });
     const tog = body.querySelector("[data-act='expired']");
     if (tog) tog.addEventListener("click", () => { expiredOpen = !expiredOpen; render(ctx); });
     seg.querySelectorAll("[data-st]").forEach((btn) => btn.addEventListener("click", () => { statusTab = btn.dataset.st; render(ctx); window.scrollTo(0, 0); }));
