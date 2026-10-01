@@ -164,13 +164,42 @@
    * 날짜가 없는 항목(그때그때 확인·마일스톤 대기)은 어디에도 넣지 않는다 — 임의로 날짜를 만들지 않는다.
    * 완료 처리하거나 삭제하지 않고 분류만 한다.
    */
+  /**
+   * 기간형 AUTO (§14) — 시작 월령이 guardMonths(36)를 넘는 monthly 엔진 항목(예: 4~6세 추가접종).
+   * 월 칸·추천일(달력 점)에 올리지 않고 "시작 월령이 속한 달 ~ 서비스 상한(maxMonths=72) 월령이 끝나는 날"을 하나의 기간으로 본다.
+   * 엔진 window 가 30일 개월 계산 때문에 먼저 끝나도(OVERDUE_CATCHUP) 이 기간은 서비스 상한까지 이어진다. 기간 끝은 isEventVisible 의 "completedMonths <= 72" 와 같은 기준이다.
+   * 계산만 하고 저장하지 않는다 — 날짜 필드·완료 키를 만들지 않는다. 해당하지 않으면 null.
+   * opts: { birthDate, monthKeysOf, guardMonths, maxMonths }
+   */
+  function periodRangeOf(e, opts) {
+    if (!e || !e.isEngineEvent || e.scheduleKind !== "monthly") return null;
+    if (e.isLegacySubsidy || e.category === "행정·지원금") return null;
+    const def = e.detail && e.detail.definition;
+    if (!def || def.schoolGroup) return null;
+    const keys = opts.monthKeysOf(e).filter((k) => typeof k === "number");
+    if (!keys.length) return null;
+    const startKey = Math.min(...keys);
+    if (startKey <= opts.guardMonths) return null;
+    const start = sod(addMonthsD(opts.birthDate, startKey));
+    const end = addDaysD(sod(addMonthsD(opts.birthDate, opts.maxMonths + 1)), -1);
+    if (end < start) return null;
+    return { startKey, start, end };
+  }
+
   function classifyHomeItems(events, completed, opts) {
     const today = opts.today;
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
     const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const out = { thisMonth: [], upcoming: [], past: [] };
+    const out = { thisMonth: [], upcoming: [], past: [], period: [] };
     for (const e of events) {
       if (e.category === "행정·지원금") continue;
+      // 기간형 AUTO: 이번 달이 기간과 겹치고 미완료일 때만 period 로(시작 전·완료 후는 홈에 없다). 월령 칸 분류(thisMonth/upcoming/past)에는 넣지 않는다.
+      const pr = opts.periodRangeOf ? opts.periodRangeOf(e) : null;
+      if (pr) {
+        // 끝은 "오늘" 기준(서비스 상한 월령이 끝난 다음 날부터 사라진다) — 달력 월 겹침으로 보면 끝나는 달 내내 남는다. 시작은 시작 월령이 속한 달부터.
+        if (!isDone(completed, e.id) && pr.start <= monthEnd && sod(today) <= pr.end) out.period.push({ e, start: pr.start, end: pr.end, done: false });
+        continue;
+      }
       const periods = [];
       if (e.scheduleKind === "window" && e.windowStart) {
         const s = sod(e.windowStart);
@@ -197,6 +226,7 @@
         if (last) out.past.push({ e, start: last.start, end: last.end, done });
       }
     }
+    out.period.sort((a, b) => a.start - b.start || priorityOf(a.e) - priorityOf(b.e) || (a.e.id < b.e.id ? -1 : 1));
     out.thisMonth.sort((a, b) => a.done - b.done || priorityOf(a.e) - priorityOf(b.e) || a.end - b.end || (a.e.id < b.e.id ? -1 : 1));
     out.upcoming.sort((a, b) => a.start - b.start || priorityOf(a.e) - priorityOf(b.e) || (a.e.id < b.e.id ? -1 : 1));
     out.past.sort((a, b) => b.end - a.end || priorityOf(a.e) - priorityOf(b.e) || (a.e.id < b.e.id ? -1 : 1));
@@ -490,6 +520,7 @@
     dayRange,
     periodText,
     assignDisplayDays,
+    periodRangeOf,
     classifyHomeItems,
     plannedOnDay,
     plannedInMonth,

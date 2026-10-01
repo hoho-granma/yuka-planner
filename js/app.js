@@ -688,6 +688,43 @@
     return visibleSchedule(true);
   }
 
+  /** 기간형 AUTO(§14, hn-logic periodRangeOf): 시작 월령 > 36 인 monthly 엔진 항목. 해당하면 {startKey,start,end}, 아니면 null. 계산만 하고 저장하지 않는다. */
+  function periodRangeOf(e) {
+    return HNLogic.periodRangeOf(e, {
+      birthDate: profile.birthDate,
+      monthKeysOf,
+      guardMonths: ChildTimeline.LEGACY_TODO_CAP_MONTHS,
+      maxMonths: ChildTimeline.SERVICE_RANGE.maxMonths,
+    });
+  }
+  /** 달력 칸(점·추천일·진행현황·월령 체크)에 올리는 항목 — 기간형 AUTO 는 칸에 찍지 않으므로 뺀다. */
+  function calendarDotSchedule() {
+    return calendarSchedule().filter((e) => !periodRangeOf(e));
+  }
+  /** 이 달(연·월)과 기간이 겹치고 아직 완료하지 않은 기간형 AUTO. 시작 월령이 속한 달부터 서비스 상한까지 완료 전까지 계속 나온다. */
+  function periodAutoInMonth(year, month) {
+    const first = new Date(year, month, 1);
+    const last = new Date(year, month + 1, 0);
+    const out = [];
+    for (const e of calendarSchedule()) {
+      const r = periodRangeOf(e);
+      if (r && !completed[e.id] && r.start <= last && r.end >= first) out.push({ e, range: r });
+    }
+    return out.sort((a, b) => a.range.start - b.range.start || (a.e.id < b.e.id ? -1 : 1));
+  }
+  /** 기간형 AUTO 의 기간 문구 — 엔진 window 가 먼저 끝나도 화면의 기간(시작 월령~서비스 상한)과 어긋나지 않게 만 나이 범위로 말한다. 기간형이 아니면 null. */
+  function periodAutoText(e) {
+    const r = periodRangeOf(e);
+    return r ? `만 ${Math.floor(r.startKey / 12)}~${Math.floor(ChildTimeline.SERVICE_RANGE.maxMonths / 12)}세 사이` : null;
+  }
+  /** 기간형 항목 묶음 이름 — "4~6세 추가접종". 시작 월령~서비스 상한의 만 나이 범위 + 접종이면 "추가접종". */
+  function periodGroupLabel(e, range) {
+    const from = Math.floor(range.startKey / 12);
+    const to = Math.floor(ChildTimeline.SERVICE_RANGE.maxMonths / 12);
+    const meta = CATEGORY_META[e.category];
+    return `${from}~${to}세 ${e.category === "예방접종" ? "추가접종" : meta ? meta.label : e.category}`;
+  }
+
   function sameDay(a, b) {
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   }
@@ -886,12 +923,12 @@
   // (완료 여부와 무관하고 결과가 결정적이라 완료 처리해도 다른 항목 위치가 바뀌지 않는다).
   let calDisplayDays = new Map();
   function computeCalendarDays() {
-    calDisplayDays = HNLogic.assignDisplayDays(calendarSchedule(), { birthDate: profile.birthDate, monthKeysOf });
+    calDisplayDays = HNLogic.assignDisplayDays(calendarDotSchedule(), { birthDate: profile.birthDate, monthKeysOf });
   }
 
   /** 그 날짜에 달력에 표시할 항목: 지원금 신청 시작(fixed) + 그날로 추천된 항목. */
   function calendarDayItems(date) {
-    const cal = calendarSchedule();
+    const cal = calendarDotSchedule();
     const fixed = cal.filter((e) => e.scheduleKind === "fixed" && HNLogic.coversDay(e, date));
     const planned = HNLogic.plannedOnDay(cal, calDisplayDays, date);
     return { fixed, planned };
@@ -900,7 +937,7 @@
   /** 진행현황 카드 — 그 달 달력에 표시되는 항목(지원금 신청 시작 + 추천일 배치) 중 실제로 완료 처리한 수. */
   function renderCalendarProgress() {
     const month = viewMonth.getMonth();
-    const { total, done, percent } = HNLogic.calendarMonthProgress(calendarSchedule(), calDisplayDays, completed, viewMonth.getFullYear(), month);
+    const { total, done, percent } = HNLogic.calendarMonthProgress(calendarDotSchedule(), calDisplayDays, completed, viewMonth.getFullYear(), month);
     el("cal-progress-summary").innerHTML = `<span style="display:block;font-size:.8em;font-weight:500;opacity:.75">${month + 1}월에 확인할 항목</span>${month + 1}월 · ${total}개 중 ${done}개 확인`;
     el("cal-progress-bar-fill").style.width = `${percent}%`;
     el("cal-progress-bar-label").textContent = total ? `${percent}%` : "";
@@ -974,6 +1011,37 @@
       grid.appendChild(cell);
     }
     usRenderCalendarSlots(usModel);
+    renderAutoPeriodSlot();
+  }
+
+  /**
+   * 달력 아래 "이 기간에 챙겨볼 것" — 기간형 AUTO(시작 월령 > 36, 4~6세 추가접종 등) 중 이 달과 겹치고 아직 완료하지 않은 것.
+   * 날짜 칸에는 찍지 않는다. 사용자가 추가한 "이번 달 기간 일정"(us-period-slot, USER periodList)과는 데이터도 영역도 따로 둔다.
+   */
+  function renderAutoPeriodSlot() {
+    const slot = el("auto-period-slot");
+    if (!slot) return;
+    const list = periodAutoInMonth(viewMonth.getFullYear(), viewMonth.getMonth());
+    if (!list.length) {
+      slot.innerHTML = "";
+      return;
+    }
+    const groups = new Map();
+    for (const { e, range } of list) {
+      const label = periodGroupLabel(e, range);
+      if (!groups.has(label)) groups.set(label, { e, items: [] });
+      groups.get(label).items.push(e);
+    }
+    const body = [...groups.entries()]
+      .map(([label, g]) => `<div class="ap-group"><strong>${g.e.category === "예방접종" ? "💉 " : ""}${esc(label)}</strong><div class="remaining-grid">${g.items.map(remainingItemHtml).join("")}</div></div>`)
+      .join("");
+    slot.innerHTML = `<div class="card auto-period-card"><h3>이 기간에 챙겨볼 것</h3><p class="us-note">날짜가 정해진 일정이 아니에요. 아직 완료하지 않았다면 확인해보세요.</p>${body}</div>`;
+    slot.querySelectorAll(".remaining-item").forEach((item) => {
+      item.addEventListener("click", () => {
+        const e = schedule.find((x) => x.id === item.getAttribute("data-id"));
+        if (e) openDetail(e);
+      });
+    });
   }
 
   /** 선택한 날짜 패널 — "이 날 신청 시작하는 지원금"과 "이 날 추천 항목"을 나눠 보여준다. */
@@ -1003,7 +1071,7 @@
   /** "이 달 월령 체크" — 특정 날짜가 없는 월령별 항목(달력 칸에는 찍지 않는다). 미완료를 먼저 보여준다. */
   function renderRemainingList() {
     if (!el("remaining-grid")) return; // 월령 체크는 달력 추천일로 통합돼 목록 카드가 없다
-    const items = HNLogic.monthlyInMonth(calendarSchedule(), viewMonth.getFullYear(), viewMonth.getMonth(), eventInCalendarMonth)
+    const items = HNLogic.monthlyInMonth(calendarDotSchedule(), viewMonth.getFullYear(), viewMonth.getMonth(), eventInCalendarMonth)
       .slice()
       .sort((a, b) => !!completed[a.id] - !!completed[b.id]);
     el("remaining-grid").innerHTML = items.map(remainingItemHtml).join("");
@@ -1069,7 +1137,7 @@
   function vaccinationPeriodDateLine(e) {
     const inst = e.detail.instance;
     if (inst.status === "DONE") return doneWords(e.category).state;
-    const period = periodTextFromWindow(inst.windowStart, inst.windowEnd);
+    const period = periodAutoText(e) || periodTextFromWindow(inst.windowStart, inst.windowEnd);
     return period || "";
   }
 
@@ -1377,6 +1445,7 @@
     document.querySelectorAll("#status-filter-checklist .sf-btn").forEach((b) => b.classList.toggle("active", b.dataset.status === checklistStatus));
     const scoped = !!checklistScope;
     const nowAgeKey = nowAge;
+    const todaySod = HNLogic.sod(new Date());
     // 그룹 안 정렬: 미완료(카테고리 순으로 묶음) → 완료(맨 아래, 한 줄). 같은 카테고리 안에서는 기존(날짜) 순서를 유지한다.
     const CAT_ORDER = Object.keys(CATEGORY_META);
     const catOrder = (e) => {
@@ -1391,6 +1460,11 @@
       // 이번 달 보기: 홈은 "기간이 이번 달과 겹치는지"로 골랐는데 전체 할 일은 항목마다 정해진 대표 월령(예: DTaP 2차=생후 2개월)으로
       // 묶어서, 이번 달 항목이 접힌 다른 월령 그룹에 숨는 문제가 있었다. 홈과 같은 기준으로 지금 월령 한 그룹에 모아 보여준다.
       if (checklistScope && checklistScope.flat) ks = [nowAgeKey];
+      // 기간형 AUTO(§14): 시작 월령 그룹에 항상 두고, 기간 안이고 미완료인 동안은 현재 월령 그룹에도 함께 보인다(같은 항목·같은 completion key).
+      if (!checklistScope && !completed[e.id]) {
+        const pr = periodRangeOf(e);
+        if (pr && todaySod >= pr.start && todaySod <= pr.end) ks = [...ks, nowAgeKey];
+      }
       new Set(ks.map((k) => (k === NEED_CHECK_GROUP ? k : checklistBucket(k)))).forEach((key) => {
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(e);
@@ -1660,7 +1734,7 @@
       // 상태 라벨("지금 챙기세요")과 "완료 기준" 대신, 무엇을 관찰하면 되는지와 정상/비정상
       // 기준(+ 소아과·응급실 방문 시점)을 보여준다.
       const isObservationType = e.category === "발달관찰" || e.category === "생활·수유" || e.category === "안전·돌봄";
-      const period = isVaccineOrCheckup ? periodTextFromWindow(inst.windowStart, inst.windowEnd) : null;
+      const period = isVaccineOrCheckup ? periodAutoText(e) || periodTextFromWindow(inst.windowStart, inst.windowEnd) : null;
       if (isObservationType) {
         return `
           ${completed[e.id] ? `<div class="detail-row"><div class="label">현재 상태</div>${doneWords(e.category).state}</div>` : ""}
@@ -2376,7 +2450,7 @@
       view: "month",
       range: { start: startIso, end: endIso },
       filter: filterOverride || UserScheduleView.toModelFilter(us.selection, us.showAuto, usLinks()),
-      auto: { events: calendarSchedule(), displayDates: calDisplayDays, completed, childKey: usActiveChildKey() },
+      auto: { events: calendarDotSchedule(), displayDates: calDisplayDays, completed, childKey: usActiveChildKey() },
       user: { schedules: usDocs(), childLinks: usLinks(), members: usMembers() },
     });
   }
@@ -2956,6 +3030,8 @@
       openProfile: showProfileSheet,
       switchTab,
       monthKeysOf,
+      periodRangeOf,
+      periodGroupLabel,
       /** 접종·검진의 권장 기간 문구("2026년 7월~2026년 9월 사이" / "2026년 9월 중") — 카드·상세와 같은 표기. */
       monthPeriodText: (e) => periodTextFromWindow(e.windowStart, e.windowEnd),
       /** scope = { label, ids[], status? } 이면 그 항목들만, 없으면 전체 할 일. */

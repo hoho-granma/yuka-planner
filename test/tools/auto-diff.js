@@ -231,10 +231,13 @@ function snapshot(P, [birthStr, stage, region]) {
     const dateStable = !e.isEngineEvent || !!e.windowStart; // windowStart 없는 엔진 항목의 date 는 "지금"이라 시간 의존 → 제외
     evs[e.id] = { kind: e.scheduleKind, category: e.category, date: dateStable ? ds(e.date) : null, fixedDate: ds(e.fixedDate), windowStart: ds(e.windowStart), windowEnd: ds(e.windowEnd), entryDate: ds(e.entryDate), deadlineDate: ds(e.deadlineDate) };
   }
-  const dd = P.L.assignDisplayDays(visible, { birthDate: birth, monthKeysOf });
+  // §14 기간형 AUTO: "후"(hn-logic 에 periodRangeOf 가 있을 때)만 app.js 처럼 달력 점 대상에서 빼고 홈에 periodRangeOf 를 넘긴다. 기준선에는 없으므로 "전"은 그대로.
+  const periodRangeOf = P.L.periodRangeOf ? (e) => P.L.periodRangeOf(e, { birthDate: birth, monthKeysOf: fullKeysOf, guardMonths: 36, maxMonths: 72 }) : null;
+  const dotEvents = periodRangeOf ? visible.filter((e) => !periodRangeOf(e)) : visible;
+  const dd = P.L.assignDisplayDays(dotEvents, { birthDate: birth, monthKeysOf });
   const displayDays = {};
   for (const [id, days] of dd) displayDays[id] = days.map(ds).sort();
-  const home = P.L.classifyHomeItems(visible, {}, { today: TODAY, birthDate: birth, monthKeysOf });
+  const home = P.L.classifyHomeItems(visible, {}, { today: TODAY, birthDate: birth, monthKeysOf, ...(periodRangeOf ? { periodRangeOf } : {}) });
   const homeOut = {};
   for (const k of ["thisMonth", "upcoming", "past"]) homeOut[k] = home[k].map((x) => `${x.e.id}|${ds(x.start)}|${ds(x.end)}|${x.done}`).sort();
   const checklist = {};

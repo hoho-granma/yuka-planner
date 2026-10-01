@@ -53,7 +53,7 @@
     const m = today.getMonth();
     const html = [pregnantBanner(ctx)];
 
-    const cls = L.classifyHomeItems(events, completed, { today, birthDate: ctx.profile.birthDate, monthKeysOf: ctx.monthKeysOf });
+    const cls = L.classifyHomeItems(events, completed, { today, birthDate: ctx.profile.birthDate, monthKeysOf: ctx.monthKeysOf, periodRangeOf: ctx.periodRangeOf });
     const ymText = (d) => `${d.getMonth() + 1}월`;
 
     // 1. 이번 달 챙길 것 — 기간이 이번 달과 겹치는 항목을 카테고리별로 한 줄씩 요약한다(항목 이름은 체크리스트에서).
@@ -83,6 +83,23 @@
         "sec-today"
       )
     );
+
+    // 2. 이 기간에 챙겨볼 것 — 기간형 AUTO(4~6세 추가접종 등)를 같은 성격끼리 카드 하나로 묶는다(항목·완료는 개별 그대로). 미완료만, 완료하면 빠진다.
+    const pGroups = new Map();
+    for (const x of cls.period) {
+      const label = ctx.periodGroupLabel(x.e, { startKey: Math.min(...ctx.monthKeysOf(x.e).filter((k) => typeof k === "number")) });
+      if (!pGroups.has(label)) pGroups.set(label, { cat: x.e.category, list: [] });
+      pGroups.get(label).list.push(x);
+    }
+    if (pGroups.size) {
+      const cards = [...pGroups.entries()]
+        .map(
+          ([label, g], i) =>
+            `<button type="button" class="home-row" data-period-group="${i}"><span class="hr-body"><strong>${g.cat === "예방접종" ? "💉 " : ""}${ctx.esc(label)}</strong><small>${g.list.length}건 · 아직 완료하지 않았다면 확인해보세요</small></span><span class="hr-chev">›</span></button>`
+        )
+        .join("");
+      html.push(section("이 기간에 챙겨볼 것", `${cls.period.length}건`, `${cards}<p class="home-note">정확한 시기는 질병관리청·보건소 등 공식 안내를 확인하세요.</p>`, "sec-period"));
+    }
 
     // 3. 신청 가능한 지원금 (마감 임박은 일반 일정과 다른 색으로 강조)
     const sctx = { today, ageNow: ctx.ageNow, pregnant: ctx.pregnant };
@@ -132,6 +149,18 @@
         const box = document.getElementById("modal-content");
         ctx.bindOpen(box);
         document.getElementById("cat-close").addEventListener("click", ctx.closeModal);
+      })
+    );
+    const pGroupList = [...pGroups.entries()];
+    wrap.querySelectorAll("[data-period-group]").forEach((b) =>
+      b.addEventListener("click", () => {
+        const [label, g] = pGroupList[Number(b.dataset.periodGroup)];
+        ctx.showModal(
+          `<h3>${ctx.esc(label)}</h3><p class="fine-print ns-note">항목을 누르면 자세한 내용을 볼 수 있어요.</p><div class="event-list">${g.list.map((x) => ctx.eventItemHtml(x.e, { compact: true })).join("")}</div><button class="btn-close" id="period-close">닫기</button>`,
+          "category"
+        );
+        ctx.bindOpen(document.getElementById("modal-content"));
+        document.getElementById("period-close").addEventListener("click", ctx.closeModal);
       })
     );
     wrap.querySelectorAll("[data-rec]").forEach((b) => b.addEventListener("click", () => HNRecordsView.openDetail(ctx, b.dataset.rec)));
