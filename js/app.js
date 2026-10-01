@@ -2774,9 +2774,9 @@
     el("modal-content").innerHTML = UserScheduleView.renderDetail(UserScheduleView.cardData(occ, usLinks(), extra));
     el("detail-modal").classList.remove("hidden");
   }
-  function usOpenForm(id) {
+  function usOpenForm(id, dateIso) {
     const doc = id ? usDocById(id) : null;
-    us.form = doc ? UserScheduleView.formFromSchedule(doc) : UserScheduleView.newForm({ date: toISODate(selectedCalendarDate), activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: memActiveId() });
+    us.form = doc ? UserScheduleView.formFromSchedule(doc) : UserScheduleView.newForm({ date: dateIso || toISODate(selectedCalendarDate), activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: memActiveId() });
     us.messages = [];
     us.saving = false;
     us.dayForm = null;
@@ -3051,6 +3051,18 @@
       return;
     }
     if (!us.form) return;
+    const quick = ev.target.closest("[data-us-quick]");
+    if (quick) {
+      // 빠른 추가 칩: 폼을 다시 그리지 않고 제목 칸·분류 칩만 갱신한다(입력 중인 시간·장소·메모 보존). 제목은 비어 있을 때만 채운다.
+      const next = UserScheduleView.applyTemplate(us.form, quick.getAttribute("data-us-quick"));
+      if (!next) return;
+      us.form.title = next.title;
+      us.form.category = next.category;
+      const titleInput = root.querySelector("#us-title");
+      if (titleInput) titleInput.value = next.title;
+      root.querySelectorAll("[data-us-cat]").forEach((x) => x.classList.toggle("active", x.getAttribute("data-us-cat") === next.category));
+      return;
+    }
     const cat = ev.target.closest("[data-us-cat]");
     if (cat) {
       us.form.category = cat.getAttribute("data-us-cat");
@@ -3272,8 +3284,7 @@
       },
       usUpcomingHtml: () => (us.homeSig = usHomeCardHtml()),
       usAddFromHome() {
-        selectedCalendarDate = new Date();
-        usOpenForm(null);
+        usOpenForm(null, toISODate(new Date())); // 캘린더 선택일은 바꾸지 않는다(폼 날짜만 오늘)
       },
       openDetail,
       openProfile: showProfileSheet,

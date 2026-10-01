@@ -250,11 +250,11 @@ test("연결: usRefreshCalendar 는 캘린더가 숨겨져 있어도 홈 갱신�
   const body = slice("  function usRefreshCalendar()", "  /** 캘린더 위");
   assert.ok(/^\s*function usRefreshCalendar\(\) \{\n\s*usRefreshHome\(\);\n\s*if \(!profile/.test(body));
   const ctxSrc = slice("      usUpcomingHtml:", "      openDetail,");
-  assert.ok(/us\.homeSig = usHomeCardHtml\(\)/.test(ctxSrc) && /selectedCalendarDate = new Date\(\);\s*usOpenForm\(null\)/.test(ctxSrc));
+  assert.ok(/us\.homeSig = usHomeCardHtml\(\)/.test(ctxSrc) && /usOpenForm\(null, toISODate\(new Date\(\)\)\)/.test(ctxSrc));
 });
 test("버전 쿼리: home.js·user-schedule-view.js·app.js 스크립트 태그가 올라갔다", () => {
   const idx = read("index.html");
-  assert.ok(/home\.js\?v=22/.test(idx) && /user-schedule-view\.js\?v=5/.test(idx) && /app\.js\?v=60/.test(idx));
+  assert.ok(/home\.js\?v=22/.test(idx) && /user-schedule-view\.js\?v=6/.test(idx) && /app\.js\?v=61/.test(idx));
 });
 test("스키마·규칙·AUTO 계산 파일은 건드리지 않았다(작업본 diff 에 없음)", () => {
   const changed = execSync("git status --porcelain", { cwd: ROOT, encoding: "utf8" });

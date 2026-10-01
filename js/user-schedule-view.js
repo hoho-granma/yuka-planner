@@ -40,6 +40,8 @@
     upcomingMore: "캘린더에서 보기",
     upcomingToday: "오늘",
     upcomingTomorrow: "내일",
+    // F3 빠른 추가 칩(승인 문구 10~12)
+    quickLabel: "자주 쓰는 일정",
     periodTitle: "이번 달 기간 일정", // #9
     periodNote: "날짜는 아직 정해지지 않았어요.", // #10
     periodRow: (range) => `날짜 미정 · ${range}`, // #11
@@ -709,6 +711,7 @@
     const errors = (o.messages || []).map((m) => `<p class="us-error">${esc(m)}</p>`).join("");
     return `<div class="us-form" data-us-mode="${esc(f.mode)}">
       <h3>${esc(f.wasRecurring && f.mode === "edit" ? MSG.editAllTitle : f.mode === "edit" ? MSG.sheetEdit : MSG.sheetAdd)}</h3>${f.wasRecurring && f.mode === "edit" ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
+      ${renderQuickChips(f)}
       <div class="us-field"><label for="us-title">${esc(MSG.titleLabel)}</label><input type="text" id="us-title" maxlength="100" placeholder="${esc(MSG.titleHint)}" value="${esc(f.title)}" /></div>
       <div class="us-field"><label>${esc(MSG.categoryLabel)}</label><div class="us-chips">${cats}</div></div>
       <div class="us-field"><label>${esc(MSG.targetLabel)}</label><div class="us-chips">${targets}</div></div>
@@ -743,6 +746,27 @@
     return f.dateKind === "PERIOD"
       ? { [PICKER_PREFIXES.periodStart]: f.periodStart, [PICKER_PREFIXES.periodEnd]: f.periodEnd }
       : { [PICKER_PREFIXES.date]: f.eventDate, ...(f.multiDay ? { [PICKER_PREFIXES.end]: f.endDate } : {}) };
+  }
+
+  // ── F3 빠른 추가 칩 (순수) ───────────────────────────────────────────────────
+  /** 칩 → 제목·분류만 채운다(종일·날짜·담당·대상은 건드리지 않는다). 분류는 기존 CATEGORIES 값만 쓴다. */
+  const QUICK_TEMPLATES = Object.freeze([
+    Object.freeze({ key: "hospital", label: "병원 예약", title: "병원 예약", category: "MEDICAL" }),
+    Object.freeze({ key: "vaccine", label: "예방접종", title: "예방접종 병원 예약", category: "MEDICAL" }),
+    Object.freeze({ key: "dental", label: "치과", title: "치과 진료", category: "MEDICAL" }),
+    Object.freeze({ key: "daycare", label: "어린이집 행사", title: "어린이집 행사", category: "INSTITUTION" }),
+    Object.freeze({ key: "outing", label: "가족 외출", title: "가족 외출", category: "FAMILY" }),
+  ]);
+  /** 폼 + 칩 키 → 바뀐 제목·분류. 제목은 비어 있을 때만 채우고(입력한 제목은 보존) 분류는 항상 칩을 따른다. 모르는 키면 null. 폼은 바꾸지 않는다. */
+  function applyTemplate(f, key) {
+    const t = QUICK_TEMPLATES.find((x) => x.key === key);
+    if (!t || !f) return null;
+    return { title: String(f.title || "").trim() ? f.title : t.title, category: t.category };
+  }
+  /** 추가 모드 폼의 칩 줄. 수정·반복 편집 폼에는 그리지 않는다(""). */
+  function renderQuickChips(f) {
+    if (!f || f.mode !== "create") return "";
+    return `<div class="us-field us-quick"><label>${esc(MSG.quickLabel)}</label><div class="us-chips">${QUICK_TEMPLATES.map((t) => chip("", `data-us-quick="${t.key}"`, t.label, false)).join("")}</div></div>`;
   }
 
   // ── F1 홈 '다음 일정' 카드 (순수) ─────────────────────────────────────────────
@@ -805,7 +829,7 @@
     categoryLabel, childColor, childColors, occurrenceColor,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
-    clock12, upcomingItems, renderUpcomingCard,
+    clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, applyTemplate, renderQuickChips,
     renderCard, detailView, renderDetail, renderDeleteConfirm, renderAddButton, renderPeriodSection,
     newForm, formFromSchedule, stripId, formToInput, validateForm, messagesFromErrors, prepareSave, changesFromForm, minuteOptions, splitTime,
     renderForm, pickerInitials, esc,
