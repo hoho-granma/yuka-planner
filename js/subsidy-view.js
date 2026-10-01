@@ -54,9 +54,7 @@
       .map(([k, label]) => `<button type="button" class="chip scope-chip ${scope === k ? "active" : ""}" data-scope="${k}">${label}</button>`)
       .join("");
 
-    // 이름에 '임산부'가 들어간 제도 중 출산 후에도 신청할 수 있는 것이 많다 — 출산한 가정이 지나치지 않게 한 줄 안내한다.
-    const postpartumNote = ctx.pregnant ? "" : `<br>제목에 '임산부'가 있어도 신청 기간이 남아 있으면 출산 후에 신청할 수 있어요. 해당 제도에는 <span class="aud-tag aud-ok">출산 후에도 신청 가능</span> 표시를 달아뒀어요.`;
-    let html = `<p class="sub-region-note">📍 ${ctx.esc(ctx.profile.province)} ${ctx.esc(ctx.profile.district)} 기준이에요.${ctx.pregnant ? " 출산 예정일 기준으로 계산했어요." : ""}${postpartumNote}</p>`;
+    let html = `<p class="sub-region-note">📍 ${ctx.esc(ctx.profile.province)} ${ctx.esc(ctx.profile.district)} 기준이에요.${ctx.pregnant ? " 출산 예정일 기준으로 계산했어요." : ""}</p>`;
 
     if (statusTab === "available") {
       // 마감 임박 구분·뱃지는 두지 않는다 — 신청 가능 항목을 마감일이 가까운 순으로 나열한다.
