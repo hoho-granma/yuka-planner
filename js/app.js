@@ -2432,7 +2432,6 @@
         renderChecklistTab();
       })
     );
-    el("btn-add-record").addEventListener("click", () => window.HNRecordsView && HNRecordsView.openEditor(hnCtx()));
     el("btn-profile-card").addEventListener("click", showProfileSheet);
     el("btn-add-child").addEventListener("click", showNewChildSheet);
     setupRefreshButton();
