@@ -77,6 +77,61 @@
   }
 
   /**
+   * 완료 상태를 키 단위로 갱신한다(C1) — completed 맵 전체를 교체하지 않고 바뀐 키만 `completed` 안의 필드 경로로 쓴다.
+   * 두 기기가 서로 다른 키를 체크해도 서로 덮어쓰지 않는다. 키에 하이픈·`__`가 있어(`VX-DTAP__dose-5`) "completed."+key 문자열을
+   * 이어 붙이지 않고 FieldPath 객체를 쓴다. 한 번의 update 로 set·remove 를 함께 보낸다(원자적, 호출부당 쓰기 1회).
+   *   changes = { set: { 키: 값 }, remove: [키, …] }
+   * - 빈 변경(set·remove 모두 비어 있음)은 아무것도 보내지 않는다.
+   * - 같은 키가 set 과 remove 에 모두 있으면 거부한다(어느 쪽이 맞는지 알 수 없다). 키는 비어 있지 않은 문자열, 값은 undefined 가 아니어야 한다.
+   * 문서가 아직 없으면 update 가 not-found 로 실패하므로 set({merge:true})로 만든다(updateRecord 와 같은 방식, 이때 삭제할 키는 없다).
+   * 기존 updateCompleted(맵 통째 교체)는 옛 호출 호환을 위해 그대로 둔다.
+   */
+  async function updateCompletedEntries(code, changes) {
+    const setMap = (changes && changes.set) || {};
+    const removeList = (changes && changes.remove) || [];
+    const setKeys = Object.keys(setMap);
+    const isKey = (k) => typeof k === "string" && k.length > 0;
+    if (!setKeys.every(isKey) || !removeList.every(isKey)) throw new Error("completed 키는 비어 있지 않은 문자열이어야 합니다");
+    if (setKeys.some((k) => setMap[k] === undefined)) throw new Error("completed 값은 undefined 일 수 없습니다");
+    const overlap = removeList.filter((k) => Object.prototype.hasOwnProperty.call(setMap, k));
+    if (overlap.length) throw new Error("같은 키를 set 과 remove 에 함께 둘 수 없습니다: " + overlap.join(","));
+    const removeKeys = Array.from(new Set(removeList));
+    if (!setKeys.length && !removeKeys.length) return;
+    const ref = db.collection("families").doc(code);
+    const stamp = firebase.firestore.FieldValue.serverTimestamp();
+    const del = firebase.firestore.FieldValue.delete();
+    const args = [];
+    for (const k of setKeys) args.push(new firebase.firestore.FieldPath("completed", k), setMap[k]);
+    for (const k of removeKeys) args.push(new firebase.firestore.FieldPath("completed", k), del);
+    args.push("updatedAt", stamp);
+    try {
+      await ref.update(...args);
+    } catch (e) {
+      if (e && e.code === "not-found") await ref.set({ completed: { ...setMap }, updatedAt: stamp }, { merge: true });
+      else throw e;
+    }
+  }
+  /**
+   * 변경 전·후 completed 맵을 비교해 실제 바뀐 키만 { set, remove } 로 돌려준다(순수 함수, 서버 호출 없음).
+   * set = 값이 새로 생겼거나 다른 객체로 바뀐 키, remove = 변경 후 사라진 키. updateCompletedEntries 에 그대로 넘긴다.
+   */
+  function diffCompleted(before, after) {
+    const b = before || {};
+    const a = after || {};
+    const set = {};
+    const remove = [];
+    for (const k of Object.keys(a)) if (b[k] !== a[k]) set[k] = a[k];
+    for (const k of Object.keys(b)) if (!Object.prototype.hasOwnProperty.call(a, k)) remove.push(k);
+    return { set, remove };
+  }
+  function setCompletedEntry(code, key, entry) {
+    return updateCompletedEntries(code, { set: { [key]: entry } });
+  }
+  function removeCompletedEntry(code, key) {
+    return updateCompletedEntries(code, { remove: [key] });
+  }
+
+  /**
    * 직접 작성한 기록 하나만 갱신한다 — records 맵 전체를 교체하지 않고 "records.<id>" 필드 하나만 쓰므로
    * 두 기기가 서로 다른 기록을 동시에 써도 서로 덮어쓰지 않는다(completed 맵과 다른 점).
    * id에는 점(.)이 들어가지 않는다(js/records.js newId).
@@ -112,6 +167,10 @@
     fetchFamily,
     updateProfile,
     updateCompleted,
+    updateCompletedEntries,
+    diffCompleted,
+    setCompletedEntry,
+    removeCompletedEntry,
     updateRecord,
     listen,
   };

@@ -245,6 +245,17 @@
     localStorage.setItem(COMPLETED_KEY, JSON.stringify(completed));
   }
 
+  /** 가족코드가 있으면 이번 조작에서 바뀐 completed 키만 한 번의 update 로 보낸다(맵 통째 교체 아님, C1). before = 변경 전 `{ ...completed }`. */
+  function syncCompletedChanges(before) {
+    if (!familyCode) return;
+    // 옛 sync.js 와 새 app.js 가 섞여 서빙되면(캐시 혼재) 새 함수가 없다 — 예외를 던지지 말고 옛 동작(맵 통째 교체)으로 폴백한다.
+    if (typeof FamilySync.updateCompletedEntries !== "function" || typeof FamilySync.diffCompleted !== "function") {
+      FamilySync.updateCompleted(familyCode, completed).catch((e) => console.error(e));
+      return;
+    }
+    FamilySync.updateCompletedEntries(familyCode, FamilySync.diffCompleted(before, completed)).catch((e) => console.error(e));
+  }
+
   function profileToPlain(p) {
     return {
       name: p.name || "",
@@ -671,6 +682,7 @@
     return !!completed[id + NA_SUFFIX];
   }
   function setNotApplicable(id, on) {
+    const before = { ...completed };
     if (on) {
       delete completed[id];
       completed[id + NA_SUFFIX] = { done: true, todo_id: id.split("__")[0], occurrenceKey: "default", recordType: "NOT_APPLICABLE", recordedAt: new Date().toISOString() };
@@ -678,7 +690,7 @@
       delete completed[id + NA_SUFFIX];
     }
     saveCompleted();
-    if (familyCode) FamilySync.updateCompleted(familyCode, completed).catch((e) => console.error(e));
+    syncCompletedChanges(before);
     closeDetail();
     refreshSchedule();
   }
@@ -1553,6 +1565,7 @@
   }
 
   function toggleComplete(id) {
+    const before = { ...completed };
     const wasDone = !!completed[id];
     delete completed[id + NA_SUFFIX];
     if (wasDone) {
@@ -1572,7 +1585,7 @@
       }
     }
     saveCompleted();
-    if (familyCode) FamilySync.updateCompleted(familyCode, completed).catch((e) => console.error(e));
+    syncCompletedChanges(before);
     // 완료 여부가 다른 Todo(다음 접종 회차 등)의 계산에도 영향을 줄 수 있어 전체를 다시 계산한다.
     refreshSchedule();
     if (!el("detail-modal").classList.contains("hidden")) {
@@ -1637,11 +1650,12 @@
     if (!completed[id] || !dateStr) return;
     const [y, m, d] = dateStr.split("-").map(Number);
     if (!y || !m || !d) return;
+    const before = { ...completed };
     const iso = new Date(y, m - 1, d, 12, 0, 0).toISOString();
     completed[id] = { ...completed[id], recordedAt: iso };
     if (completed[`${id}__milestone`]) completed[`${id}__milestone`] = { ...completed[`${id}__milestone`], recordedAt: iso };
     saveCompleted();
-    if (familyCode) FamilySync.updateCompleted(familyCode, completed).catch((err) => console.error(err));
+    syncCompletedChanges(before);
     refreshSchedule();
     if (!el("detail-modal").classList.contains("hidden")) {
       const e = schedule.find((x) => x.id === id);
@@ -3016,13 +3030,14 @@
       /** 완료한 할 일에 부모 메모를 붙인다(completed[id].memo). 비우면 필드를 지운다(Firestore는 undefined 값을 거부). */
       setCompletionMemo(id, memo) {
         if (!completed[id]) return;
+        const before = { ...completed };
         const next = { ...completed[id] };
         const t = String(memo || "").trim();
         if (t) next.memo = t;
         else delete next.memo;
         completed[id] = next;
         saveCompleted();
-        if (familyCode) FamilySync.updateCompleted(familyCode, completed).catch((err) => console.error(err));
+        syncCompletedChanges(before);
         renderHome();
         renderRecordTab();
       },
