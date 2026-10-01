@@ -62,7 +62,10 @@
       "amountText": "연회비 1만원(카드결제, 환불불가). 기초수급·한부모·둘째 이상 자녀(다둥이행복카드)·장애인·국가유공자·위탁가정은 무료",
       "paymentMethod": "서비스(대여)",
       "deadlineType": "age_window",
-      "deadlineValue": 24,
+      "deadlineValue": {
+        "minMonths": 0,
+        "maxMonths": 24
+      },
       "residencyRequirement": "양천구 거주 또는 생활권(직장·사업장·학교)",
       "additionalConditions": "대여 30일, 1회 연장 시 최대 60일",
       "officialUrl": "https://www.ychccic.or.kr/bptoy/infobp_haenuri.php",
@@ -70,7 +73,7 @@
       "lastVerified": "2026-10-01",
       "status": "확인완료",
       "verified": true,
-      "notes": "[2026-10-01 검증 반영] 2026 신설. 0~24개월, 연회비 1만원, 30일+1회 연장=최대 60일 확인.",
+      "notes": "[2026-10-01 검증 반영] 2026 신설. 0~24개월, 연회비 1만원, 30일+1회 연장=최대 60일 확인. [2026-10-01] age_window의 deadlineValue 형식 오류(24)를 {minMonths:0,maxMonths:24}로 정정.",
       "periods": [],
       "statusOriginal": "확정시행",
       "auditNotes": {
