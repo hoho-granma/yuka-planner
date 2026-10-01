@@ -122,6 +122,65 @@ service cloud.firestore {
       }
     }
 
+    // ===============================================================
+    // [B1] 가구(household) 블록 — 추가만 한다. 위의 familyCodes/families 블록은 수정하지 않았다.
+    //   설계: docs/한눈육아-확장설계-2단계-상세.md §2, §11-3.
+    //   - 가구 코드(householdCodes)는 가구 전체의 마스터 키다. 코드→householdId 조회만 get 허용, 목록 열람 금지.
+    //   - 아이 링크(children)는 families/{코드}의 코드를 가리키는 링크일 뿐 프로필 복사본이 아니다.
+    //   - 모든 삭제 금지(소프트 삭제: removedAt/deletedAt/active=false).
+    //   - schedules 는 B2에서 필드 확정 후 추가한다(이번에 넣지 않음).
+    // ===============================================================
+
+    // householdCodes/{code} — 코드→householdId 조회 전용(재발급 가능). familyCodes 와 같은 방식.
+    match /householdCodes/{code} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if request.resource.data.keys().hasOnly(['householdId', 'active', 'createdAt', 'revokedAt'])
+                    && request.resource.data.keys().hasAll(['householdId', 'active', 'createdAt'])
+                    && request.resource.data.active == true
+                    && request.resource.data.householdId is string;
+      // 재발급 시 이전 코드를 비활성화하는 것만 허용. householdId 는 바꿀 수 없다.
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'revokedAt'])
+                    && request.resource.data.householdId == resource.data.householdId;
+      allow delete: if false;
+    }
+
+    // households/{householdId}
+    match /households/{householdId} {
+      allow get: if true;
+      allow list: if false; // 전체 가구 목록 열람 금지
+      allow create: if request.resource.data.keys().hasOnly(['v', 'name', 'createdAt', 'updatedAt'])
+                    && request.resource.data.keys().hasAll(['v', 'createdAt', 'updatedAt'])
+                    && request.resource.data.v == 1;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'updatedAt']);
+      allow delete: if false;
+
+      // 이 가구에 속한 아이 링크 — 이미 householdId 를 아는 경로이므로 list 허용.
+      match /children/{childKey} {
+        allow get, list: if true;
+        allow create, update: if request.resource.data.keys().hasOnly(['v', 'familyCode', 'displayName', 'order', 'colorKey', 'addedAt', 'removedAt'])
+                              && request.resource.data.keys().hasAll(['v', 'familyCode', 'displayName', 'order', 'addedAt'])
+                              && request.resource.data.v == 1
+                              && request.resource.data.familyCode is string
+                              && request.resource.data.familyCode.size() <= 8
+                              && request.resource.data.displayName is string
+                              && request.resource.data.displayName.size() <= 40;
+        allow delete: if false;
+      }
+
+      // 담당자가 될 수 있는 사람들(계정이 아니라 표시 라벨).
+      match /members/{memberId} {
+        allow get, list: if true;
+        allow create, update: if request.resource.data.keys().hasOnly(['v', 'role', 'label', 'order', 'colorKey', 'createdAt', 'updatedAt', 'deletedAt'])
+                              && request.resource.data.keys().hasAll(['v', 'role', 'label', 'order', 'createdAt', 'updatedAt'])
+                              && request.resource.data.v == 1
+                              && request.resource.data.role in ['MOM', 'DAD', 'GRANDPARENT', 'CAREGIVER', 'OTHER']
+                              && request.resource.data.label is string
+                              && request.resource.data.label.size() <= 20;
+        allow delete: if false;
+      }
+    }
+
     // 그 외 모든 경로: 기본 거부(명시하지 않으면 Firestore 규칙은 기본적으로 거부한다).
     // TodoDefinition/지역/지원금 데이터는 Firestore에 두지 않으므로 여기에 규칙이 없다
     // (docs/Firestore-스키마-설계.md 섹션 7).

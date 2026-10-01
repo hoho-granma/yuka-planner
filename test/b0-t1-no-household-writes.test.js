@@ -38,6 +38,24 @@ const topKey = (k) => k.split(".")[0];
   }
   console.log(`  ok  - 기존 동기화 쓰기 ${writes.length}건 모두 허용 집합(${ALLOWED.join(",")}) 안`);
 
+  // B1: 플래그 OFF 에서 household-sync 가 로드돼도 families/** 쓰기·Firestore 접근이 늘지 않는다.
+  const before = writes.length;
+  let dbCalls = 0;
+  const origFirestore = sandbox.firebase.firestore;
+  sandbox.firebase.firestore = Object.assign(() => (dbCalls++, origFirestore()), origFirestore);
+  const load = (f) => vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "js", f), "utf8"), sandbox);
+  load("feature-flags.js");
+  load("household-sync.js");
+  assert.strictEqual(sandbox.FEATURES.household, false);
+  const HSY = sandbox.HouseholdSync;
+  await HSY.createHousehold({ firstChild: { familyCode: "3DQEVM", displayName: "x" } });
+  await HSY.joinHousehold("ABCD2345");
+  await HSY.addChild("h1", { familyCode: "3DQEVM", displayName: "x" });
+  await HSY.flush("h1");
+  assert.strictEqual(writes.length, before, "OFF 인데 쓰기 발생");
+  assert.strictEqual(dbCalls, 0, "OFF 인데 firebase.firestore() 호출");
+  console.log("  ok  - 플래그 OFF: household-sync 로드·호출 후에도 쓰기 0건, firestore() 접근 0건");
+
   const fx = path.join(__dirname, "fixtures", "family-doc.json");
   if (fs.existsSync(fx)) {
     const d = JSON.parse(fs.readFileSync(fx, "utf8"));
