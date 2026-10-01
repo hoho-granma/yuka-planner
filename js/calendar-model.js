@@ -36,6 +36,46 @@
     return a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
   };
 
+  /**
+   * C2: autoRef 연결 색인(순수, 읽기 전용). childKey 의 아이에게 연결된(autoRef 가 있고 삭제·취소되지 않은 비반복) 일정을 AUTO 항목 id 별로 모은다.
+   *   childKey 가 없으면 빈 Map(어느 아이의 AUTO 인지 모르면 연결을 적용하지 않는다). aliases: { 옛 id: 새 id } — 데이터 수정으로 AUTO id 가 바뀐 경우의 해석.
+   *   한 AUTO 에 일정이 여럿이면 '현재 예약' 하나: 미완료 중 날짜가 가장 이른 것, 미완료가 없으면 가장 최근 완료. count 는 연결 일정 수.
+   *   값: { autoId, scheduleId, date, status, count }. date 는 eventDate(없으면 periodStart).
+   */
+  function linksByAutoId(schedules, childKey, aliases) {
+    const out = new Map();
+    if (childKey == null) return out;
+    const al = aliases && typeof aliases === "object" ? aliases : {};
+    const dateOf = (d) => d.eventDate || d.periodStart || "";
+    const groups = new Map();
+    for (const d of schedules || []) {
+      if (!d || typeof d.autoRef !== "string" || d.deletedAt != null || d.status === "CANCELLED") continue;
+      if (!Array.isArray(d.childKeys) || d.childKeys[0] !== childKey) continue;
+      const id = Object.prototype.hasOwnProperty.call(al, d.autoRef) ? al[d.autoRef] : d.autoRef;
+      if (!groups.has(id)) groups.set(id, []);
+      groups.get(id).push(d);
+    }
+    const cmp = (a, b) => (dateOf(a) < dateOf(b) ? -1 : dateOf(a) > dateOf(b) ? 1 : String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0);
+    for (const [id, list] of groups) {
+      const open = list.filter((d) => d.status !== "DONE");
+      open.sort(cmp);
+      const all = list.slice();
+      all.sort(cmp);
+      const cur = open.length ? open[0] : all[all.length - 1];
+      out.set(id, { autoId: id, scheduleId: cur.id || null, date: dateOf(cur), status: cur.status || "TODO", count: list.length });
+    }
+    return out;
+  }
+
+  /** C2 1차 연결 대상(MEDICAL 성격 AUTO): 예방접종(VX)·영유아검진(HC) 정의, 그리고 치과 OR-03(첫 치과 방문)·OR-04(정기 치과검진). 이벤트의 detail.definition 으로 판정(읽기만). */
+  const LINKABLE_CODES = Object.freeze(["VX", "HC"]);
+  const LINKABLE_TODO_IDS = Object.freeze(["OR-03", "OR-04"]);
+  function isLinkableAuto(event) {
+    const def = event && event.detail && event.detail.definition;
+    if (!def || typeof def.todo_id !== "string") return false;
+    return LINKABLE_CODES.includes(def.category) || LINKABLE_TODO_IDS.includes(def.todo_id);
+  }
+
   /** USER 문서가 필터를 통과하는가 (§7-2). */
   function passesUserFilter(doc, filter) {
     if (filter.scope === "FAMILY") return doc.scope === "FAMILY";
@@ -114,11 +154,14 @@
     if (autoVisible(filter, auto)) {
       const events = auto.events || [];
       const displayDates = auto.displayDates || new Map();
+      const hiddenAutoIds = new Set(linksByAutoId(user.schedules, auto.childKey, auto.autoIdAliases).keys());
       for (const k of dayKeys) {
         const date = toDate(k);
         const cell = days.get(k);
         cell.benefit = events.filter((e) => e.scheduleKind === "fixed" && HN.coversDay(e, date));
         cell.planned = HN.plannedOnDay(events, displayDates, date);
+        // C2: 연결된(예약이 있는) AUTO 항목의 추천일 표식은 숨긴다. events/displayDates 는 그대로, 이 칸의 표시 목록에서만 뺀다. 아이를 모르면(childKey 없음) 숨기지 않는다.
+        if (hiddenAutoIds.size && cell.planned.length) cell.planned = cell.planned.filter((e) => !hiddenAutoIds.has(e.id));
       }
     }
 
@@ -143,5 +186,5 @@
     return { view, range: { start: range.start, end: range.end }, days, periodList, counts, skipped };
   }
 
-  return { buildCalendarModel, MAX_MARKS };
+  return { buildCalendarModel, linksByAutoId, isLinkableAuto, MAX_MARKS };
 });

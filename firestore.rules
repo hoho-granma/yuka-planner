@@ -202,7 +202,7 @@ service cloud.firestore {
             && d.keys().hasOnly(['v', 'sourceType', 'title', 'category', 'scope', 'dateKind', 'allDay', 'createdAt', 'updatedAt',
                                  'tags', 'childKeys', 'eventDate', 'endDate', 'periodStart', 'periodEnd', 'startTime', 'endTime',
                                  'recurrence', 'exceptions', 'assigneeMemberId', 'needsAssignee', 'status', 'location', 'memo',
-                                 'provenance', 'deletedAt', 'authorLabel', 'splitFromScheduleId']);
+                                 'provenance', 'deletedAt', 'authorLabel', 'splitFromScheduleId', 'autoRef']);
       }
 
       function basicsOk(d) {
@@ -227,6 +227,15 @@ service cloud.firestore {
       function scopeOk(d) {
         return (d.scope == 'CHILD' && has(d, 'childKeys') && d.childKeys is list && d.childKeys.size() >= 1 && d.childKeys.size() <= 10)
             || (d.scope == 'FAMILY' && (!has(d, 'childKeys') || (d.childKeys is list && d.childKeys.size() == 0)));
+      }
+
+      // C2: autoRef — AUTO 항목 연결(선택). 있으면 아이 1명 일정·단일(비반복) 일정이어야 한다.
+      //   규칙으로 검증할 수 없는 것: 대상 todo_id/occurrenceKey 의 실존, childKeys[0] 이 그 가구의 실제 아이 링크인지(클라이언트 UserSchedule.validate 가 담당).
+      function autoRefOk(d) {
+        return !has(d, 'autoRef')
+          || (d.autoRef is string && d.autoRef.size() <= 80 && d.autoRef.matches('^[A-Za-z0-9-]+__[A-Za-z0-9-]+$')
+              && d.scope == 'CHILD' && has(d, 'childKeys') && d.childKeys is list && d.childKeys.size() == 1
+              && !has(d, 'recurrence'));
       }
 
       // I1~I4: 날짜 종류별 필드 일관성
@@ -254,14 +263,15 @@ service cloud.firestore {
       }
 
       function scheduleOk(d) {
-        return keysOk(d) && basicsOk(d) && scopeOk(d) && datesOk(d) && timesOk(d) && provenanceOk(d);
+        return keysOk(d) && basicsOk(d) && scopeOk(d) && datesOk(d) && timesOk(d) && provenanceOk(d) && autoRefOk(d);
       }
 
       allow create: if scheduleOk(request.resource.data);
       allow update: if scheduleOk(request.resource.data)
                     && request.resource.data.v == resource.data.v
                     && request.resource.data.createdAt == resource.data.createdAt
-                    && request.resource.data.sourceType == resource.data.sourceType;
+                    && request.resource.data.sourceType == resource.data.sourceType
+                    && request.resource.data.get('autoRef', null) == resource.data.get('autoRef', null); // C2: 연결은 생성 때만 정한다
       allow delete: if false; // 소프트 삭제(deletedAt)만
     }
 

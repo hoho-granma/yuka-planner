@@ -135,7 +135,7 @@ test("제목·태그는 이스케이프되고 색은 고정 팔레트(스타일 
 });
 
 console.log("홈 골든(플래그 OFF·가구 없음에서 홈 DOM 불변)");
-const headHome = execSync("git show HEAD:js/home.js", { cwd: ROOT, encoding: "utf8" });
+const headHome = execSync("git show 0badff5:js/home.js", { cwd: ROOT, encoding: "utf8" });
 (function () {
   const run = (src, extra) => {
     const out = { html: null };
@@ -256,8 +256,8 @@ test("버전 쿼리: home.js·user-schedule-view.js·app.js 스크립트 태그�
   const idx = read("index.html");
   assert.ok(/home\.js\?v=(2[2-9]|[3-9]\d)\b/.test(idx) && /user-schedule-view\.js\?v=([6-9]|\d{2})\b/.test(idx) && /app\.js\?v=(6[1-9]|[7-9]\d)\b/.test(idx));
 });
-test("스키마·규칙·AUTO 계산 파일은 건드리지 않았다(작업본 diff 에 없음)", () => {
-  const changed = execSync("git status --porcelain", { cwd: ROOT, encoding: "utf8" });
+test("스키마·규칙·AUTO 계산 파일은 F1 커밋 구간(0badff5..672d21b)에서 건드리지 않았다", () => {
+  const changed = execSync("git diff --name-only 0badff5 672d21b", { cwd: ROOT, encoding: "utf8" });
   ["firestore.rules", "js/user-schedule.js", "js/calendar-model.js", "js/hn-logic.js", "js/todo-engine.js", "js/schedule.js", "js/sync.js"].forEach((f) => assert.ok(!changed.includes(f), f));
 });
 

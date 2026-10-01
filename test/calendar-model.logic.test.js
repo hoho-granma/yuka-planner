@@ -141,7 +141,7 @@ test("range 검증: 역순·400일 초과는 RangeError", () => {
 test("정적 확인: 자동 일정 생성·추천일 배치·완료 쓰기를 호출하지 않는다", () => {
   const src = fs.readFileSync(path.join(__dirname, "..", "js", "calendar-model.js"), "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
   ["TodoEngine", "buildSchedule", "assignDisplayDays", "localStorage", "firebase", "toISOString"].forEach((w) => assert(!src.includes(w), w));
-  assert(!/\.sort\(/.test(src.replace(/d\.user\.sort|d\.cancelled\.sort|periodList\.sort/g, "")), "AUTO 입력 배열을 정렬하지 않는다");
+  assert(!/\.sort\(/.test(src.replace(/d\.user\.sort|d\.cancelled\.sort|periodList\.sort|open\.sort\(cmp\)|all\.sort\(cmp\)/g, "") /* 마지막 둘은 C2 linksByAutoId 가 USER 일정 복사본을 정렬 */), "AUTO 입력 배열을 정렬하지 않는다");
 });
 
 console.log("\n반복 일정 (B5)");

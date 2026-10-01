@@ -23,7 +23,7 @@ function test(name, fn) {
 process.on("exit", () => { if (started !== finished) { console.log(`FAIL- 끝나지 않은 테스트 ${started - finished}개`); process.exitCode = 1; } });
 
 const app = read("js/app.js");
-const head = execSync("git show HEAD:js/app.js", { cwd: ROOT, encoding: "utf8" });
+const head = execSync("git show 78efed3:js/app.js", { cwd: ROOT, encoding: "utf8" }); // F2 직전(F3 커밋) — F2 가 월 경로에 더한 변경만 비교한다
 const fnSrc = (src, name) => { // "  function name(" 부터 다음 "\n  }\n" 까지
   const a = src.indexOf(`  function ${name}(`);
   assert.ok(a >= 0, name);
@@ -233,8 +233,8 @@ test("calendar-week.js 는 calendar-model.js 뒤·app.js 앞에서 로드되고,
   assert.ok(read("sw.js").includes("const CACHE_NAME = `hannun-shell-v${self.APP_VERSION}`;"));
   assert.ok(/self\.APP_VERSION = "\d+\.\d+\.\d+"/.test(read("js/version.js")));
 });
-test("규칙·스키마·AUTO 계산·모델 파일은 건드리지 않았다(작업본 diff 에 없음)", () => {
-  const changed = execSync("git status --porcelain", { cwd: ROOT, encoding: "utf8" });
+test("규칙·스키마·AUTO 계산·모델 파일은 F2 커밋 구간(78efed3..604d5e5)에서 건드리지 않았다", () => {
+  const changed = execSync("git diff --name-only 78efed3 604d5e5", { cwd: ROOT, encoding: "utf8" });
   ["firestore.rules", "js/user-schedule.js", "js/calendar-model.js", "js/hn-logic.js", "js/todo-engine.js", "js/schedule.js", "js/sync.js", "js/household-sync.js"].forEach((f) => assert.ok(!changed.includes(f), f));
 });
 

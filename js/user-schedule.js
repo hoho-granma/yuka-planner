@@ -23,17 +23,20 @@
   const STATUSES = ["TODO", "DONE", "CANCELLED", "RESCHEDULED"];
   const WEEKDAYS = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"];
 
-  const LIMITS = Object.freeze({ titleMin: 1, titleMax: 100, memoMax: 500, locationMax: 100, exceptionsMax: 200, childKeysMax: 10, tagsMax: 10 });
+  const LIMITS = Object.freeze({ titleMin: 1, titleMax: 100, memoMax: 500, locationMax: 100, exceptionsMax: 200, childKeysMax: 10, tagsMax: 10, autoRefMax: 80 });
+  /** C2: AUTO 항목 연결 키 — AUTO 완료 키와 같은 형식 "<todo_id>__<occurrenceKey>"(예: VX-DTAP__dose-1). */
+  const AUTO_REF_RE = /^[A-Za-z0-9-]+__[A-Za-z0-9-]+$/;
+  const isAutoRef = (s) => typeof s === "string" && s.length <= LIMITS.autoRefMax && AUTO_REF_RE.test(s);
   const MAX_EXPANSION_DAYS = 400;
 
   const REQUIRED_KEYS = Object.freeze(["v", "sourceType", "title", "category", "scope", "dateKind", "allDay", "createdAt", "updatedAt"]);
   const OPTIONAL_KEYS = Object.freeze([
     "tags", "childKeys", "eventDate", "endDate", "periodStart", "periodEnd", "startTime", "endTime", "recurrence", "exceptions",
-    "assigneeMemberId", "needsAssignee", "status", "location", "memo", "provenance", "deletedAt", "authorLabel", "splitFromScheduleId",
+    "assigneeMemberId", "needsAssignee", "status", "location", "memo", "provenance", "deletedAt", "authorLabel", "splitFromScheduleId", "autoRef",
   ]);
   const ALLOWED_KEYS = Object.freeze([...REQUIRED_KEYS, ...OPTIONAL_KEYS]);
   /** 한 번 정해지면 수정 패치로 바꿀 수 없는 필드(규칙에서도 불변). */
-  const IMMUTABLE_KEYS = Object.freeze(["v", "createdAt", "sourceType"]);
+  const IMMUTABLE_KEYS = Object.freeze(["v", "createdAt", "sourceType", "autoRef"]);
 
   // ── 날짜·시각 문자열 ─────────────────────────────────────────────────
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -121,6 +124,13 @@
     if (!nil(ck) && (!Array.isArray(ck) || ck.length > LIMITS.childKeysMax || ck.some((c) => typeof c !== "string"))) err("SCHEMA", "childKeys", `childKeys 문자열 배열 ≤${LIMITS.childKeysMax}`);
     else if (doc.scope === "CHILD" && !(Array.isArray(ck) && ck.length >= 1)) err("I7", "childKeys", "scope=CHILD 는 childKeys 1개 이상");
     else if (doc.scope === "FAMILY" && Array.isArray(ck) && ck.length > 0) err("I7", "childKeys", "scope=FAMILY 는 childKeys 가 비어야 한다");
+
+    // I13 autoRef(C2): AUTO 항목 연결은 아이 1명의 단일(비반복) 일정에만 둔다. 생성 후 변경 불가(IMMUTABLE_KEYS).
+    if (!nil(doc.autoRef)) {
+      if (!isAutoRef(doc.autoRef)) err("I13", "autoRef", `autoRef 는 "<todo_id>__<occurrenceKey>" 형식, ${LIMITS.autoRefMax}자 이하`);
+      if (doc.scope !== "CHILD" || !Array.isArray(ck) || ck.length !== 1) err("I13", "autoRef", "autoRef 는 scope=CHILD 이고 childKeys 가 정확히 1개일 때만 쓴다");
+      if (isRecurring(doc)) err("I13", "autoRef", "반복 일정에는 autoRef 를 쓰지 않는다");
+    }
 
     // 날짜 문자열 형식(I11)
     for (const k of ["eventDate", "endDate", "periodStart", "periodEnd"]) if (!nil(doc[k]) && !isDateStr(doc[k])) err("I11", k, `${k} 는 실제 존재하는 YYYY-MM-DD`);
@@ -281,6 +291,7 @@
       title: doc.title, allDay: doc.allDay, startTime: doc.startTime || null, endTime: doc.endTime || null, assigneeMemberId: doc.assigneeMemberId || null,
       status: doc.status || "TODO", memo: doc.memo || "", location: doc.location || "", tags: doc.tags || [], dateKind: doc.dateKind,
     };
+    if (!nil(doc.autoRef)) common.autoRef = doc.autoRef; // C2: 연결된 AUTO 항목(없으면 필드 자체를 만들지 않아 기존 출력 불변)
     if (doc.dateKind === "PERIOD") {
       if (doc.periodEnd < rangeStart || doc.periodStart > rangeEnd) return [];
       return [{ ...common, key: `u:${common.scheduleId}@period`, date: null, originalDate: null, periodStart: doc.periodStart, periodEnd: doc.periodEnd }];
@@ -446,7 +457,7 @@
   }
 
   return {
-    SOURCE_TYPES, CATEGORIES, SCOPES, DATE_KINDS, STATUSES, WEEKDAYS, LIMITS, MAX_EXPANSION_DAYS, REQUIRED_KEYS, OPTIONAL_KEYS, ALLOWED_KEYS, IMMUTABLE_KEYS,
+    SOURCE_TYPES, CATEGORIES, SCOPES, DATE_KINDS, STATUSES, WEEKDAYS, LIMITS, AUTO_REF_RE, isAutoRef, MAX_EXPANSION_DAYS, REQUIRED_KEYS, OPTIONAL_KEYS, ALLOWED_KEYS, IMMUTABLE_KEYS,
     validate, buildCreateDoc, buildPatch, setStatus, markDone, softDelete, expandOccurrences, normalizeFromCandidate,
     isDateStr, isTimeStr, addDays, dayDiff, isRecurring, recurrenceUsable, isRuleDate, weekdayOf, exceptionCount, EXCEPTION_WARN_AT,
     cancelOccurrence, restoreOccurrence, moveOccurrence, exceptionsToPrune, editAll,

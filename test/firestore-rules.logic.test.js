@@ -221,7 +221,7 @@ const US = require("../js/user-schedule.js");
 const has = (d, k) => k in d && d[k] !== null && d[k] !== undefined;
 const dOk = (s) => typeof s === "string" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(s);
 const tOk = (s) => typeof s === "string" && /^[0-2][0-9]:[0-5][0-9]$/.test(s);
-const R_ALLOWED = ["v", "sourceType", "title", "category", "scope", "dateKind", "allDay", "createdAt", "updatedAt", "tags", "childKeys", "eventDate", "endDate", "periodStart", "periodEnd", "startTime", "endTime", "recurrence", "exceptions", "assigneeMemberId", "needsAssignee", "status", "location", "memo", "provenance", "deletedAt", "authorLabel", "splitFromScheduleId"];
+const R_ALLOWED = ["v", "sourceType", "title", "category", "scope", "dateKind", "allDay", "createdAt", "updatedAt", "tags", "childKeys", "eventDate", "endDate", "periodStart", "periodEnd", "startTime", "endTime", "recurrence", "exceptions", "assigneeMemberId", "needsAssignee", "status", "location", "memo", "provenance", "deletedAt", "authorLabel", "splitFromScheduleId", "autoRef"];
 const R_REQUIRED = ["v", "sourceType", "title", "category", "scope", "dateKind", "allDay", "createdAt", "updatedAt"];
 function schedKeysOk(d) { return R_REQUIRED.every((k) => k in d) && Object.keys(d).every((k) => R_ALLOWED.includes(k)); }
 function schedBasicsOk(d) {
@@ -241,8 +241,10 @@ function schedDatesOk(d) {
 }
 const schedTimesOk = (d) => (d.allDay ? !has(d, "startTime") && !has(d, "endTime") : has(d, "startTime") && tOk(d.startTime) && (!has(d, "endTime") || (tOk(d.endTime) && d.endTime > d.startTime)));
 const schedProvOk = (d) => d.sourceType === "MANUAL" || (has(d, "provenance") && typeof d.provenance === "object" && d.provenance.confirmedByUser === true);
-const schedOk = (d) => schedKeysOk(d) && schedBasicsOk(d) && schedScopeOk(d) && schedDatesOk(d) && schedTimesOk(d) && schedProvOk(d);
-const schedUpdateOk = (before, after) => schedOk(after) && after.v === before.v && after.createdAt === before.createdAt && after.sourceType === before.sourceType;
+// C2 autoRef: 있으면 "<todo_id>__<occurrenceKey>"(≤80자)·scope=CHILD·childKeys 정확히 1개·반복 아님
+const schedAutoRefOk = (d) => !has(d, "autoRef") || (typeof d.autoRef === "string" && d.autoRef.length <= 80 && /^[A-Za-z0-9-]+__[A-Za-z0-9-]+$/.test(d.autoRef) && d.scope === "CHILD" && has(d, "childKeys") && Array.isArray(d.childKeys) && d.childKeys.length === 1 && !has(d, "recurrence"));
+const schedOk = (d) => schedKeysOk(d) && schedBasicsOk(d) && schedScopeOk(d) && schedDatesOk(d) && schedTimesOk(d) && schedProvOk(d) && schedAutoRefOk(d);
+const schedUpdateOk = (before, after) => schedOk(after) && after.v === before.v && after.createdAt === before.createdAt && after.sourceType === before.sourceType && (after.autoRef ?? null) === (before.autoRef ?? null);
 
 const NOW = 1790000000000;
 const base = { sourceType: "MANUAL", title: "피아노", category: "LESSON", scope: "CHILD", childKeys: ["c1"], allDay: false, startTime: "16:00", endTime: "16:50", dateKind: "FIXED", eventDate: "2026-10-06" };
@@ -335,10 +337,65 @@ test("규칙 텍스트와 UserSchedule 상수 일치: 허용 키·필수 키·�
   assert(/d\.title\.size\(\) >= 1 && d\.title\.size\(\) <= 100/.test(b2) && /d\.memo\.size\(\) <= 500/.test(b2) && /d\.location\.size\(\) <= 100/.test(b2));
   assert(/d\.exceptions\.size\(\) <= 200/.test(b2) && /d\.tags\.size\(\) <= 10/.test(b2) && /d\.childKeys\.size\(\) <= 10/.test(b2));
   ["v", "createdAt", "sourceType"].forEach((k) => assert(new RegExp(`request\\.resource\\.data\\.${k} == resource\\.data\\.${k}`).test(b2), k));
-  assert.deepStrictEqual([...US.IMMUTABLE_KEYS].sort(), ["createdAt", "sourceType", "v"]);
+  assert.deepStrictEqual([...US.IMMUTABLE_KEYS].sort(), ["autoRef", "createdAt", "sourceType", "v"]);
+  assert(/request\.resource\.data\.get\('autoRef', null\) == resource\.data\.get\('autoRef', null\)/.test(b2), "autoRef 불변 조건");
+  assert(/function autoRefOk\(d\)/.test(b2) && /scopeOk\(d\) && datesOk\(d\) && timesOk\(d\) && provenanceOk\(d\) && autoRefOk\(d\)/.test(b2));
+  assert(/d\.autoRef\.size\(\) <= 80/.test(b2) && /\^\[A-Za-z0-9-\]\+__\[A-Za-z0-9-\]\+\$/.test(b2) && /d\.childKeys\.size\(\) == 1/.test(b2) && /!has\(d, 'recurrence'\)/.test(b2));
   assert(/allow delete: if false;/.test(b2) && !/allow delete: if true/.test(b2));
   assert(!/displayDate/.test(b2.replace(/\/\/.*$/gm, "")), "규칙 코드에 displayDate 허용 없음");
 });
+
+console.log("\n[C2] autoRef — 규칙 재현(schedOk/schedUpdateOk)과 validate 가 같은 판정을 한다");
+{
+  const linked = (over) => { const o = { ...base, allDay: true, startTime: undefined, endTime: undefined, title: "예방접종 병원 예약", category: "MEDICAL", autoRef: "VX-DTAP__dose-1", ...over }; Object.keys(o).forEach((k) => o[k] === undefined && delete o[k]); return o; };
+  const both = (doc) => ({ rule: schedOk(doc), client: US.validate(doc).ok });
+  test("create 허용: 연결 일정(MEDICAL·CHILD·childKeys 1개·단일) — 규칙 재현·validate 모두 통과, 예방접종·검진·치과 id 형태", () => {
+    for (const ref of ["VX-DTAP__dose-1", "HC-01__default", "OR-04__occ-1", "VX-FLU__season-1-dose-1"]) {
+      const r = US.buildCreateDoc(linked({ autoRef: ref }), NOW);
+      assert.strictEqual(r.ok, true, ref);
+      assert.deepStrictEqual(both(r.doc), { rule: true, client: true });
+    }
+  });
+  const bad = {
+    "scope=FAMILY": { scope: "FAMILY", childKeys: undefined, category: "FAMILY" },
+    "childKeys 2개": { childKeys: ["c1", "c2"] },
+    "반복 일정": { eventDate: undefined, recurrence: { freq: "WEEKLY", interval: 1, byDay: ["TU"], startDate: "2026-10-06", until: null } },
+    "형식 오류(구분자 하나)": { autoRef: "VX-DTAP_dose-1" },
+    "형식 오류(공백)": { autoRef: "VX DTAP__dose-1" },
+    "81자": { autoRef: "A".repeat(40) + "__" + "b".repeat(39) },
+    "빈 문자열": { autoRef: "" },
+    "숫자": { autoRef: 5 },
+  };
+  for (const [name, over] of Object.entries(bad)) {
+    test(`create 거부: autoRef + ${name} — 규칙 재현과 validate 모두 거부`, () => {
+      const d = linked(over);
+      if (name === "반복 일정") d.exceptions = undefined;
+      Object.keys(d).forEach((k) => d[k] === undefined && delete d[k]);
+      const doc = { ...d, v: 1, createdAt: NOW, updatedAt: NOW, ...(d.recurrence ? {} : { status: "TODO" }) };
+      assert.deepStrictEqual(both(doc), { rule: false, client: false });
+      const { autoRef, ...withoutRef } = doc; // autoRef 만 빼면 같은 문서가 통과해야 거부 이유가 autoRef 임이 보장된다
+      assert.deepStrictEqual(both(withoutRef), { rule: true, client: true }, "autoRef 외의 이유로 거부되고 있다");
+    });
+  }
+  test("정확히 80자는 허용, autoRef 없는 기존 문서는 그대로 허용(상위 호환)", () => {
+    assert.deepStrictEqual(both(US.buildCreateDoc(linked({ autoRef: "A".repeat(39) + "__" + "b".repeat(39) }), NOW).doc), { rule: true, client: true });
+    const plain = US.buildCreateDoc(linked({ autoRef: undefined }), NOW).doc;
+    assert.deepStrictEqual(both(plain), { rule: true, client: true });
+    assert.strictEqual(schedKeysOk(plain), true);
+  });
+  test("update: autoRef 를 유지한 완료·삭제·수정은 허용, autoRef 변경·삭제·새로 추가는 거부", () => {
+    const b = US.buildCreateDoc(linked(), NOW).doc;
+    assert.strictEqual(schedUpdateOk(b, US.markDone(b, NOW + 1).after), true);
+    assert.strictEqual(schedUpdateOk(b, US.softDelete(b, NOW + 2).after), true);
+    assert.strictEqual(schedUpdateOk(b, US.buildPatch(b, { title: "수정", memo: "m" }, NOW + 3).after), true);
+    assert.strictEqual(schedUpdateOk(b, { ...b, autoRef: "HC-01__default" }), false);
+    const { autoRef, ...removed } = b;
+    assert.strictEqual(schedUpdateOk(b, removed), false);
+    const plain = US.buildCreateDoc(linked({ autoRef: undefined }), NOW).doc;
+    assert.strictEqual(schedUpdateOk(plain, { ...plain, autoRef: "VX-DTAP__dose-1" }), false, "기존 일정에 연결을 나중에 붙일 수 없다");
+    assert.strictEqual(US.buildPatch(b, { autoRef: "HC-01__default" }, NOW + 4).ok, false);
+  });
+}
 
 console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);
 console.log(
