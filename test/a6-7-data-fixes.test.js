@@ -80,9 +80,14 @@ test("VX-FLU: 접종 이력 조건이 문구·firstSeasonRule 에 반영되고 �
   assert.deepStrictEqual(flu.triggerParams, { startMonth: 6, endMonth: null });
 });
 
-test("SF-08: 견과류 '갈아서'가 아니라 '3세까지 먹이지 않기'(식품안전나라), 시기·ID 불변", () => {
+test("SF-08: 견과류는 '알레르기 확인 후 잘게 부수고 으깨거나 얇게 썰기'(식약처 2025-08-07), 연령 단정·'갈아' 없음, 시기·ID 불변", () => {
   const sf = defs.find((d) => d.todo_id === "SF-08");
-  assert.ok(/견과류는 3세까지 먹이지 않기/.test(sf.parentAction));
+  assert.ok(/견과류는 알레르기 확인 후 잘게 부수고 으깨거나 얇게 썰어서 먹이기/.test(sf.parentAction));
+  assert.ok(/포도·방울토마토는 세로로 작게 썰거나 2~4등분/.test(sf.parentAction));
+  assert.ok(/알레르기 확인 후 잘게 부수고 으깨거나 얇게 썰기/.test(sf.observationGuide[0]));
+  assert.ok(/세로로 작게 썰거나 2~4등분/.test(sf.observationGuide[0]));
+  assert.ok(!/3세까지|세부터|세 이후|\d+개월부터/.test(sf.parentAction + JSON.stringify(sf.observationGuide || [])));
+  assert.ok(/식품의약품안전처/.test(sf.source) && /2025-08-07/.test(sf.source));
   assert.ok(!/갈아/.test(sf.parentAction + JSON.stringify(sf.observationGuide || [])));
   assert.deepStrictEqual([sf.triggerParams.startMonth, sf.triggerParams.endMonth], [6, 36]);
 });

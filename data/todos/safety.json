@@ -204,7 +204,7 @@
       "todo_id": "SF-08",
       "category": "SF",
       "title": "질식 위험 식품 형태 조정",
-      "parentAction": "견과류는 3세까지 먹이지 않기, 포도·방울토마토는 4등분 등",
+      "parentAction": "견과류는 알레르기 확인 후 잘게 부수고 으깨거나 얇게 썰어서 먹이기, 포도·방울토마토는 세로로 작게 썰거나 2~4등분 등",
       "completionCriteria": "습관 정착",
       "exposureLevel": "MUST",
       "triggerType": "AGE_WINDOW",
@@ -215,14 +215,14 @@
       "catchUp": "NOT_APPLICABLE",
       "priority": 2,
       "leadDays": 14,
-      "source": "농식품정보누리 「음식 섭취로 인한 어린이 질식사고」(2014-12-12 등록)",
-      "verificationStatus": "확인됨(원칙)",
+      "source": "식품의약품안전처·식품안전나라 「우리 아이 식사 안전하게!」(2025-08-07)",
+      "verificationStatus": "확인됨(식약처 2025-08-07 자료 대조; 연령 명시는 자료에 없음)",
       "displayMonth": 6,
       "displayMonthLabel": "6개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "안전·돌봄",
       "observationGuide": [
-        "견과류(3세까지 먹이지 않기)·포도·방울토마토 등을 아이 월령에 맞게 잘랐는지 매번 확인"
+        "견과류(알레르기 확인 후 잘게 부수고 으깨거나 얇게 썰기)·포도·방울토마토(세로로 작게 썰거나 2~4등분) 등을 아이 월령에 맞게 잘랐는지 매번 확인"
       ],
       "abnormalSigns": [
         "갑자기 기침도 소리도 못 내고 얼굴이 파래짐 — 기도폐쇄 응급상황",
