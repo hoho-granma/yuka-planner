@@ -95,7 +95,10 @@
       "amountText": "출생 후 36개월간 가정용 10㎥ 감면",
       "paymentMethod": "요금 감면",
       "deadlineType": "age_window",
-      "deadlineValue": 36,
+      "deadlineValue": {
+        "minMonths": 0,
+        "maxMonths": 36
+      },
       "residencyRequirement": "양주시 거주",
       "additionalConditions": "읍면동 신청",
       "officialUrl": "https://www.yangju.go.kr/www/contents.do?key=2455",

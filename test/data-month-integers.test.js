@@ -35,10 +35,8 @@ function walk(dir) {
   return out;
 }
 
-const KNOWN_VIOLATIONS = new Map([
-  ["data/subsidies/gyeonggi/과천시/subsidies.json#GGM-GWACHEON-03", "I-4"], // age_window인데 deadlineValue가 문자열
-  ["data/subsidies/gyeonggi/양주시/subsidies.json#GGM-YANGJU-04", "I-4"], // age_window인데 deadlineValue가 숫자(객체 아님)
-]);
+// 비어 있다 — I-4(GGM-GWACHEON-03·GGM-YANGJU-04)는 데이터가 {minMonths,maxMonths}로 고쳐져 허용 목록에서 지웠다. 이제 어떤 확인완료 항목도 위반하면 실패한다.
+const KNOWN_VIOLATIONS = new Map([]);
 const knownSeen = new Set();
 const known = []; // 알려진 위반(허용)
 const bad = []; // 화면에 노출되는데 addMonths가 거부할 값(알려진 위반 제외)
@@ -102,4 +100,6 @@ info.forEach((x) => console.log("  참고:", x));
 for (const key of KNOWN_VIOLATIONS.keys()) if (!knownSeen.has(key)) console.log(`  안내: 알려진 위반 ${key}가 더는 발견되지 않습니다 — KNOWN_VIOLATIONS에서 지워 주세요`);
 assert.ok(checked > 500, "검사 대상이 비정상적으로 적습니다(경로·모양 변경 확인)");
 assert.deepStrictEqual(bad, [], `화면에 노출되는 항목의 월 값이 정수가 아닙니다 — 알려진 위반 목록에 없는 새 위반(${bad.length}개):\n  ${bad.join("\n  ")}`);
-console.log("  ok  - 알려진 위반(I-4) 2건을 제외하면 화면에 노출되는 항목의 월 값은 전부 정수(age_window는 {minMonths,maxMonths} 객체)");
+assert.strictEqual(KNOWN_VIOLATIONS.size, 0, "허용 목록이 비어 있어야 한다(위반은 허용하지 않고 데이터를 고친다)");
+assert.deepStrictEqual(known, [], "허용된 위반이 없어야 한다");
+console.log("  ok  - 화면에 노출되는(확인완료) 항목의 월 값은 전부 정수이고 age_window 의 deadlineValue 는 {minMonths,maxMonths} 정수 객체다(허용 목록 없음)");
