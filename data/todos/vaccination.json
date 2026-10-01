@@ -417,8 +417,8 @@
                 "trigger": {
                   "type": "RELATIVE_TO_EVENT",
                   "referenceEvent": "previous_occurrence_completion",
-                  "minOffsetDays": 7,
-                  "maxOffsetDays": 7
+                  "minOffsetDays": 28,
+                  "maxOffsetDays": 30
                 }
               },
               {
@@ -426,7 +426,7 @@
                 "trigger": {
                   "type": "RELATIVE_TO_EVENT",
                   "referenceEvent": "previous_occurrence_completion",
-                  "minOffsetDays": 365,
+                  "minOffsetDays": 335,
                   "maxOffsetDays": null
                 }
               },
@@ -475,7 +475,7 @@
       "priority": 2,
       "leadDays": 14,
       "source": "질병관리청 NIP",
-      "verificationStatus": "확인됨(2차 간격 1주(7일) 고정으로 수정)",
+      "verificationStatus": "확인됨(KDCA 2026 국가예방접종 지침 130~131쪽 대조: 사백신 2차 1개월 간격·최소 4주(7일은 가속접종 예외), 3차 2차 후 11개월·최소 6개월)",
       "displayMonth": 12,
       "displayMonthLabel": "12개월",
       "displayMonthBasis": "제품별 접종 일정 중 가장 이른 첫 접종 월령",
@@ -561,7 +561,7 @@
       "todo_id": "VX-FLU",
       "category": "VX",
       "title": "인플루엔자",
-      "parentAction": "생후 6개월부터 매년 접종. 생애 최초 시즌은 4주 간격 2회, 이후 매 시즌 1회(정확한 시즌 시작 시점은 확인 필요)",
+      "parentAction": "생후 6개월부터 매년 접종. 생후 6개월~9세 미만은 접종 이력이 없거나 누적 1회면 최소 4주 간격 2회, 그 외에는 매 시즌 1회(정확한 시즌 시작 시점은 확인 필요)",
       "completionCriteria": "해당 시즌 접종 완료",
       "exposureLevel": "MUST",
       "triggerType": "AGE_WINDOW",
@@ -576,10 +576,11 @@
       "priority": 3,
       "leadDays": 30,
       "source": "질병관리청 NIP",
-      "verificationStatus": "확인됨(최초시즌 2회 규칙)/확인필요(이후 시즌 정확한 시기)",
+      "verificationStatus": "확인됨(KDCA 2026 국가예방접종 지침 133쪽 대조: 6개월~9세 미만 중 과거 접종 0~1회는 최소 4주 간격 2회)/확인필요(이후 시즌 정확한 시기)",
       "firstSeasonRule": {
         "doseCount": 2,
-        "intervalDays": 28
+        "intervalDays": 28,
+        "appliesTo": "생후 6개월~9세 미만, 과거 접종 이력이 없거나 누적 1회(누적 2회 이상은 매 시즌 1회)"
       },
       "displayMonth": 6,
       "displayMonthLabel": "6개월",
