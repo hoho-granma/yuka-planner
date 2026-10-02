@@ -177,19 +177,20 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     assert.ok(/function acctInit\(\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
     assert.ok(/async function acctOnClick\(ev\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
     assert.ok(/function acctRenderLanding\(\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
-    assert.ok(!/FamilySync|HouseholdSync\.(create|join|add|update|upsert|patch|remove|reissue|flush)|firebase\.firestore/.test(blk));
+    // D2: 서버 읽기(lookupHousehold·joinHousehold)와 AccountSync(계정 문서·가구 생성)만 허용 — 아이·일정·완료에는 쓰지 않는다
+    assert.ok(!/FamilySync|HouseholdSync\.(create|add|update|upsert|patch|remove|reissue|flush)/.test(blk));
     assert.ok(blk.includes("localStorage.setItem(ACCT_INTENT_KEY, JSON.stringify(v.intent));") && !/setItem\([^)]*password/i.test(blk));
     assert.ok(APP.includes("    usInit();\n    acctInit();") && APP.includes("${acctEnabled() ? '<div id=\"acct-slot\"></div>' : \"\"}") && APP.includes("if (acctEnabled()) acctOpenSlot();"));
   });
   await test("로그아웃 최소: Auth 로그아웃 + 가입 의도 삭제만, 가구·아이 로컬 데이터는 건드리지 않는다(D2·D4에서 확장)", () => {
     const blk = APP.slice(APP.indexOf('if (action === "confirm-logout")'), APP.indexOf('if (action === "submit-signup")'));
-    assert.ok(blk.includes("acct.svc.signOut()") && blk.includes("localStorage.removeItem(ACCT_INTENT_KEY)"));
+    assert.ok(blk.includes("acct.svc.signOut()") && blk.includes("if (linked) acctClearIntent();"));
     assert.ok(!/leaveLocal|HH_ID_KEY|removeItem\([^)]*(PROFILE|COMPLETED|CHILDREN)|clearCode|saveCompleted|saveProfile/.test(blk));
   });
   await test("OFF 불변: index.html 에 정적 계정 마크업·Auth SDK 스크립트가 없다(플래그 ON 일 때 동적 로드), sw.js 에는 새 스크립트만 추가", () => {
     const html = read("index.html");
     assert.ok(!/firebase-auth-compat/.test(html) && !/acct-/.test(html));
-    assert.ok(html.includes('<script src="js/auth-service.js?v=1"></script>') && html.includes('<script src="js/account-view.js?v=1"></script>'));
+    assert.ok(html.includes('<script src="js/auth-service.js?v=2"></script>') && html.includes('<script src="js/account-view.js?v=1"></script>'));
     const sw = read("sw.js");
     assert.ok(sw.includes('"./js/auth-service.js"') && sw.includes('"./js/account-view.js"') && !sw.includes("firebase-auth-compat"));
     assert.ok(AS.SDK_URL === "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js");

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>D2 계정 규칙 — Firestore·Auth 수동 서버 검증</title>
+<style>
+  body { font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; max-width: 900px; margin: 24px auto; padding: 0 16px; line-height: 1.6; color: #222; }
+  h1 { font-size: 22px; } h2 { font-size: 17px; margin-top: 28px; }
+  .danger { background: #ffe3e3; border: 2px solid #d9480f; padding: 14px 16px; border-radius: 8px; font-weight: 600; }
+  .info { background: #e7f5ff; border: 1px solid #74c0fc; padding: 10px 14px; border-radius: 8px; font-size: 14px; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; }
+  button { font-size: 16px; padding: 12px 18px; border-radius: 8px; border: 0; background: #d9480f; color: #fff; cursor: pointer; }
+  button:disabled { background: #bbb; cursor: not-allowed; }
+  label.confirm { display: block; margin: 14px 0; font-size: 15px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { border: 1px solid #ccc; padding: 6px 8px; vertical-align: top; text-align: left; }
+  th { background: #f1f3f5; }
+  .PASS { color: #2b8a3e; font-weight: 700; } .FAIL { color: #c92a2a; font-weight: 700; } .ERROR { color: #e8590c; font-weight: 700; }
+  #docpath { font-size: 16px; font-weight: 700; background: #fff3bf; padding: 12px; border-radius: 8px; word-break: break-all; }
+  textarea { width: 100%; height: 220px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>D2 계정 규칙 — Firestore·Auth 수동 서버 검증</h1>
+
+<div class="danger">
+  ⚠️ 이 페이지는 <b>운영 Firebase(프로젝트 yuka-planner)에 일회용 계정 2개와 일회용 문서를 실제로 만듭니다.</b><br />
+  · 사전 조건: ① Firebase 콘솔 Authentication 에서 <b>이메일/비밀번호</b> 사용 설정 ② 새 규칙(<code>firestore.rules</code> 의 [D2] accounts 블록·members uid)을 <b>배포한 뒤</b> 실행합니다.<br />
+  · 일회용 값만 씁니다: 이메일 <code>zz-hannun-test-…@example.com</code> 2개(실행이 끝나면 페이지가 두 계정을 지웁니다), 문서는 <code>accounts/&lt;테스트 uid&gt;</code> 와 <code>households/zz-acct-…/members/*</code>. 실제 가구·가족 코드는 쓰지 않습니다.<br />
+  · <b>보안 규칙상 문서 삭제는 불가(<code>delete: false</code>)</b>하므로 끝난 뒤 아래에 표시되는 문서를 <b>Firebase 콘솔에서 직접 삭제</b>해야 합니다.<br />
+  · 페이지를 연다고 자동 실행되지 않습니다. 아래 확인란에 체크하고 [실행]을 눌러야 시작합니다. 전부 PASS 여야 <code>hannun_feature_accounts</code> 플래그를 켤 수 있습니다.
+</div>
+
+<h2>실행 방법</h2>
+<div class="info">
+  1. 규칙 배포(<code>firebase deploy --only firestore:rules</code>) → 2. 프로젝트 폴더에서 <code>python3 -m http.server 8765</code> → 3. <code>http://127.0.0.1:8765/test/firestore-account-manual-test.html</code> (localhost 는 Auth 승인된 도메인에 기본 포함) → 4. 체크 → [실행] → 5. 결과 JSON 복사 전달 → 6. 콘솔에서 표시된 문서 삭제.
+</div>
+
+<h2>시작</h2>
+<label class="confirm"><input type="checkbox" id="ack" /> 운영 Firebase 에 일회용 계정·문서가 만들어지고, 문서는 내가 콘솔에서 직접 삭제해야 한다는 것을 이해했습니다.</label>
+<button id="run" disabled>실행 (운영 Firebase 에 씁니다)</button>
+<span id="status" style="margin-left:12px;color:#555;"></span>
+
+<h2>검증 대상</h2>
+<div class="info">
+  기대: 허용 = 쓰기 성공, 거부 = <code>permission-denied</code>. 항목: accounts 는 본인 uid 만 읽기·쓰기(목록·삭제 금지, 키·역할 제한, v·createdAt 불변) / members 의 <code>uid</code> 는 본인만 새로 달 수 있고 이미 달린 uid 는 가로채기·위조 불가 / 비인증 기존 쓰기(uid 없는 구성원 생성·수정)는 그대로 허용 / role <code>CHILD</code> 허용.
+</div>
+
+<h2>결과</h2>
+<div id="summary"></div>
+<table id="results"><thead><tr><th style="width:36px">#</th><th>시나리오 / 판정 기준</th><th style="width:70px">판정</th><th>상세</th></tr></thead><tbody></tbody></table>
+
+<h2>생성된 일회용 문서 (콘솔에서 삭제)</h2>
+<div id="docpath">(아직 없음)</div>
+<div id="cleanup" class="info" style="display:none;margin-top:8px;"></div>
+
+<h2>복사용 결과 (JSON)</h2>
+<textarea id="out" readonly placeholder="실행이 끝나면 여기에 결과가 채워집니다."></textarea>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<!-- sync.js 는 로드 시 firebase.initializeApp(설정)만 호출한다(쓰기 없음). -->
+<script src="../js/sync.js"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const results = [];
+  const created = { accounts: [], members: [], hid: null };
+  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const errInfo = (e) => ({ code: e && e.code ? e.code : null, message: e && e.message ? e.message : String(e) });
+  const NOW = Date.now();
+  const auth = () => firebase.auth();
+  const db = () => firebase.firestore();
+
+  function addRow(r) {
+    results.push(r);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${esc(r.id)}</td><td><b>${esc(r.title)}</b><br /><span style="color:#555">기준: ${esc(r.criteria)}</span></td><td class="${r.status}">${esc(r.status)}</td><td>${esc(r.detail || "")}</td>`;
+    $("results").tBodies[0].appendChild(tr);
+  }
+  async function attempt(fn) {
+    try { await fn(); return { outcome: "allowed" }; } catch (e) { const i = errInfo(e); return { outcome: i.code === "permission-denied" ? "denied" : "other", error: i }; }
+  }
+  async function step(id, title, criteria, fn) {
+    $("status").textContent = `실행 중: ${id} ${title}`;
+    try { const r = await fn(); addRow({ id, title, criteria, status: r.pass ? "PASS" : "FAIL", detail: r.detail }); return r; }
+    catch (e) { addRow({ id, title, criteria, status: "ERROR", detail: "예외: " + JSON.stringify(errInfo(e)) }); return { pass: false }; }
+  }
+  const rnd = () => Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
+  const acc = (uid) => db().collection("accounts").doc(uid);
+  const accDoc = (over) => ({ v: 1, displayName: "수동 검증", role: "MOM", institution: "NONE", createdAt: NOW, updatedAt: NOW, ...over });
+  const mem = (HID, id) => db().collection("households").doc(HID).collection("members").doc(id);
+  const memDoc = (over) => ({ v: 1, role: "DAD", label: "아빠", order: 2, createdAt: NOW, updatedAt: NOW, ...over });
+  const pw = "Zz-" + Math.random().toString(36).slice(2, 12);
+
+  async function run() {
+    const HID = "zz-acct-" + rnd();
+    created.hid = HID;
+    $("docpath").textContent = "accounts/<테스트 uid 2개> · households/" + HID + "/members/*";
+    $("cleanup").style.display = "block";
+    const ua = await auth().createUserWithEmailAndPassword(`zz-hannun-test-${rnd()}@example.com`, pw);
+    const A = ua.user.uid; created.accounts.push(A);
+    await step("0", "일회용 계정 A 생성(이메일/비밀번호 사용 설정 확인)", "가입 성공", async () => ({ pass: !!A, detail: "uid " + A }));
+
+    await step("1", "허용: 본인 accounts 문서 생성", "허용(본인 uid, 키·역할 규칙 준수)", async () => { const r = await attempt(() => acc(A).set(accDoc({}))); return { pass: r.outcome === "allowed", detail: JSON.stringify(r) }; });
+    await step("2", "허용: 본인 accounts 읽기 / 가구·코드·구성원 연결 갱신(merge)", "허용", async () => {
+      const g = await attempt(async () => { const d = await acc(A).get({ source: "server" }); if (!d.exists) throw new Error("없음"); });
+      const u = await attempt(() => acc(A).set({ householdId: HID, householdCode: "ZZTEST22", memberId: "m-test", updatedAt: NOW + 1 }, { merge: true }));
+      return { pass: g.outcome === "allowed" && u.outcome === "allowed", detail: JSON.stringify({ get: g.outcome, update: u.outcome, e: u.error }) };
+    });
+    await step("3", "거부: 다른 uid 의 accounts 문서 생성", "permission-denied", async () => { const r = await attempt(() => acc("zz-other-" + rnd()).set(accDoc({}))); return { pass: r.outcome === "denied", detail: JSON.stringify(r) }; });
+    await step("4", "거부: accounts 목록 열람", "permission-denied(list: false)", async () => { const r = await attempt(() => db().collection("accounts").get()); return { pass: r.outcome === "denied", detail: JSON.stringify(r) }; });
+    await step("5", "거부: accounts 삭제", "permission-denied(delete: false)", async () => { const r = await attempt(() => acc(A).delete()); return { pass: r.outcome === "denied", detail: JSON.stringify(r) }; });
+    await step("6", "거부: createdAt 변경 / 허용: updatedAt 변경", "createdAt permission-denied, updatedAt 허용", async () => {
+      const bad = await attempt(() => acc(A).set({ createdAt: NOW + 99 }, { merge: true }));
+      const ok = await attempt(() => acc(A).set({ updatedAt: NOW + 2 }, { merge: true }));
+      return { pass: bad.outcome === "denied" && ok.outcome === "allowed", detail: JSON.stringify({ createdAt: bad.outcome, updatedAt: ok.outcome }) };
+    });
+    await step("7", "거부: 허용 목록 밖 키·잘못된 role·빈 이름", "각각 permission-denied", async () => {
+      const k = await attempt(() => acc(A).set({ extra: 1, updatedAt: NOW + 3 }, { merge: true }));
+      const r = await attempt(() => acc(A).set({ role: "BOSS", updatedAt: NOW + 3 }, { merge: true }));
+      const n = await attempt(() => acc(A).set({ displayName: "", updatedAt: NOW + 3 }, { merge: true }));
+      return { pass: k.outcome === "denied" && r.outcome === "denied" && n.outcome === "denied", detail: JSON.stringify({ key: k.outcome, role: r.outcome, name: n.outcome }) };
+    });
+
+    // 구성원 uid
+    await step("8", "허용: 내 uid 를 단 구성원 생성 + role CHILD", "허용", async () => {
+      created.members.push("mA", "mC");
+      const a = await attempt(() => mem(HID, "mA").set(memDoc({ role: "MOM", label: "엄마", order: 1, uid: A })));
+      const c = await attempt(() => mem(HID, "mC").set(memDoc({ role: "CHILD", label: "자녀", order: 3 })));
+      return { pass: a.outcome === "allowed" && c.outcome === "allowed", detail: JSON.stringify({ mine: a.outcome, child: c.outcome, e: a.error }) };
+    });
+    await step("9", "거부: 남의 uid(위조)를 단 구성원 생성", "permission-denied", async () => { created.members.push("mX"); const r = await attempt(() => mem(HID, "mX").set(memDoc({ uid: "zz-not-me" }))); return { pass: r.outcome === "denied", detail: JSON.stringify(r) }; });
+    await step("10", "허용: 이미 uid 가 달린 구성원의 라벨 수정(uid 그대로, merge)", "허용", async () => { const r = await attempt(() => mem(HID, "mA").set({ label: "엄마(수정)", updatedAt: NOW + 4 }, { merge: true })); return { pass: r.outcome === "allowed", detail: JSON.stringify(r) }; });
+
+    await step("10b", "거부: uid 가 달린 구성원을 uid 없이 전체 교체(set, merge 없음) — 2단계 가로채기의 1단계", "permission-denied, uid 유지", async () => {
+      const r = await attempt(() => mem(HID, "mA").set(memDoc({ role: "MOM", label: "엄마", order: 1 })));
+      const s = (await mem(HID, "mA").get({ source: "server" })).data();
+      return { pass: r.outcome === "denied" && s.uid === A, detail: JSON.stringify({ replace: r.outcome, uidKept: s.uid === A, e: r.error }) };
+    });
+
+    // 두 번째 계정 B
+    await auth().signOut();
+    const ub = await auth().createUserWithEmailAndPassword(`zz-hannun-test-${rnd()}@example.com`, pw);
+    const B = ub.user.uid; created.accounts.push(B);
+    await step("11", "거부: 계정 B 가 A 가 확보한 구성원의 uid 를 가로채기", "permission-denied", async () => { const r = await attempt(() => mem(HID, "mA").set({ uid: B, updatedAt: NOW + 5 }, { merge: true })); return { pass: r.outcome === "denied", detail: JSON.stringify(r) }; });
+    await step("12", "허용: 계정 B 가 uid 없는 시드 구성원을 확보", "허용", async () => {
+      created.members.push("mD");
+      await mem(HID, "mD").set(memDoc({ role: "DAD", label: "아빠", order: 2 })); // 인증 상태에서 uid 없이 생성(기존 쓰기 형태)
+      const r = await attempt(() => mem(HID, "mD").set({ uid: B, updatedAt: NOW + 6 }, { merge: true }));
+      return { pass: r.outcome === "allowed", detail: JSON.stringify(r) };
+    });
+    await step("13", "거부: 계정 B 가 A 의 accounts 문서를 읽기", "permission-denied", async () => { const r = await attempt(() => acc(A).get({ source: "server" })); return { pass: r.outcome === "denied", detail: JSON.stringify(r) }; });
+
+    // 비인증
+    await ub.user.delete(); // B 삭제(현재 로그인 B)
+    await step("14", "비인증: uid 없는 구성원 생성·수정은 기존처럼 허용(하위호환)", "허용", async () => {
+      created.members.push("mU");
+      const c = await attempt(() => mem(HID, "mU").set(memDoc({ role: "GRANDPARENT", label: "할머니", order: 4 })));
+      const u = await attempt(() => mem(HID, "mU").set({ label: "할머니2", updatedAt: NOW + 7 }, { merge: true }));
+      const uidSet = await attempt(() => mem(HID, "mU").set({ uid: "zz-anon", updatedAt: NOW + 8 }, { merge: true }));
+      const wipe = await attempt(() => mem(HID, "mA").set(memDoc({ role: "MOM", label: "엄마", order: 1 }))); // 비인증이 uid 가 달린 구성원을 전체 교체
+      return { pass: c.outcome === "allowed" && u.outcome === "allowed" && uidSet.outcome === "denied" && wipe.outcome === "denied", detail: JSON.stringify({ create: c.outcome, update: u.outcome, uidWithoutAuth: uidSet.outcome, anonymousFullReplaceOfClaimed: wipe.outcome }) };
+    });
+    await step("15", "비인증: accounts 읽기·쓰기 거부", "permission-denied", async () => {
+      const g = await attempt(() => acc(A).get({ source: "server" }));
+      const w = await attempt(() => acc("zz-anon-" + rnd()).set(accDoc({})));
+      return { pass: g.outcome === "denied" && w.outcome === "denied", detail: JSON.stringify({ get: g.outcome, set: w.outcome }) };
+    });
+    // 정리: 일회용 계정 A 도 지운다(로그인 필요)
+    try {
+      const cred = await auth().signInWithEmailAndPassword(ua.user.email, pw);
+      await cred.user.delete();
+      addRow({ id: "-", title: "일회용 Auth 계정 정리", criteria: "A·B 계정 삭제", status: "PASS", detail: "A 삭제 완료(B 는 13단계 뒤 삭제)" });
+    } catch (e) { addRow({ id: "-", title: "일회용 Auth 계정 정리", criteria: "A·B 계정 삭제", status: "ERROR", detail: "콘솔 Authentication → Users 에서 zz-hannun-test- 계정을 직접 삭제하세요. " + JSON.stringify(errInfo(e)) }); }
+    $("cleanup").innerHTML = `Firebase 콘솔 → Firestore Database 에서 삭제: <code>accounts/${esc(created.accounts.join(", accounts/"))}</code> 와 <code>households/${esc(HID)}/members</code> 의 문서(${esc(created.members.join(", "))}). (규칙상 앱·페이지에서는 삭제 불가)`;
+  }
+
+  $("ack").addEventListener("change", () => { $("run").disabled = !$("ack").checked; });
+  $("run").addEventListener("click", async () => {
+    $("run").disabled = true; $("ack").disabled = true;
+    try { await run(); } catch (e) { addRow({ id: "-", title: "실행 중단", criteria: "-", status: "ERROR", detail: JSON.stringify(errInfo(e)) }); }
+    const c = (s) => results.filter((r) => r.status === s).length;
+    $("status").textContent = "끝났습니다.";
+    $("summary").innerHTML = `<b>PASS ${c("PASS")} · FAIL ${c("FAIL")} · ERROR ${c("ERROR")}</b> — 전부 PASS 여야 accounts 플래그를 켤 수 있습니다.`;
+    $("out").value = JSON.stringify({ page: "firestore-account-manual-test", at: new Date().toISOString(), created, results }, null, 2);
+  });
+})();
+</script>
+</body>
+</html>

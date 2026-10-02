@@ -3888,14 +3888,17 @@
   // 플래그 OFF 면 이 블록의 어떤 함수도 DOM·SDK 를 건드리지 않는다(acctInit 이 맨 앞에서 반환).
   const acctEnabled = () => typeof AccountView !== "undefined" && typeof AuthService !== "undefined" && !!window.FEATURES && window.FEATURES.accounts === true;
   const ACCT_INTENT_KEY = "hannun_account_intent";
-  const acct = { svc: null, user: null, form: {}, errors: {}, error: null, busy: false, notice: null, mode: null };
+  const acct = { svc: null, sync: null, user: null, form: {}, errors: {}, error: null, busy: false, completing: false, restoring: false, notice: null, mode: null };
   function acctInit() {
     if (!acctEnabled()) return;
     acct.svc = AuthService.create();
+    // D2: accounts 문서·가구 연결(가짜 어댑터로 테스트 가능). 같은 Firestore 어댑터를 쓰되 계정 문서 쓰기는 이 서비스만 한다.
+    if (typeof AccountSync !== "undefined") acct.sync = AccountSync.create({ adapter: HouseholdSync.firestoreAdapter(() => firebase.firestore()), household: HouseholdSync });
     acct.svc.onChange((u) => {
       acct.user = u;
       acctRenderLanding();
       acctRenderSlot();
+      if (u) acctRestore(u); // 로그인 상태가 되면(다른 기기 로그인·앱 재시작) 계정 가구를 이 기기에 복원한다
     });
     acctRenderLanding();
   }
@@ -3949,6 +3952,107 @@
       }
     });
   }
+  const ACCT_DENIED = (e) => !!e && e.code === "permission-denied";
+  const acctReadIntent = () => {
+    try {
+      return JSON.parse(localStorage.getItem(ACCT_INTENT_KEY) || "null");
+    } catch (e) {
+      return null;
+    }
+  };
+  const acctClearIntent = () => {
+    try {
+      localStorage.removeItem(ACCT_INTENT_KEY);
+    } catch (e) {}
+  };
+  /** 이 계정의 가구 연결이 끝났는가(accounts 에 householdCode 가 기록됨). 계정 동기화가 없거나(D1) 연결 완료가 확인되면 true, 확인 못 하면 false(의도를 남긴다). */
+  async function acctIsLinked(uid) {
+    if (!acct.sync) return true;
+    if (!uid) return false;
+    const r = await acct.sync.restore(uid);
+    return !!(r.ok && r.account && r.account.householdCode);
+  }
+  /** 가입 마무리: accounts 문서 → 가구 생성/합류 → 구성원 uid 연결. rollback=true(방금 가입)면 서버 규칙이 없을 때 Auth 사용자를 지우고 가입 전 상태로 돌린다. */
+  async function acctFinishSignup(intent, rollback) {
+    acct.completing = true;
+    let res;
+    try {
+      res = await acct.sync.completeSignup({ user: acct.user, intent });
+    } finally {
+      acct.completing = false;
+    }
+    if (!res.ok) {
+      if (rollback && (res.reason === "rules-unavailable" || res.reason === "not-found")) {
+        await acct.svc.deleteCurrentUser();
+        acctClearIntent();
+        acct.user = null;
+        acct.error = res.reason === "not-found" ? AuthService.MSG.codeNotFound : AuthService.MSG.serverNotReady;
+        acct.mode = "signup";
+        acctRenderLanding();
+        acctRenderSlot();
+        return { ok: false, rolledBack: true };
+      }
+      // 일시 오류(네트워크 등): 로그인 상태와 가입 의도를 남겨 다음 로그인·앱 시작 때 이어서 연결한다.
+      acct.error = res.reason === "rules-unavailable" ? AuthService.MSG.serverNotReady : AuthService.MSG.linkFailed;
+      return { ok: false, rolledBack: false };
+    }
+    hhSetJoined(res.householdId, res.householdCode);
+    await acctAfterHousehold(intent, res);
+    return { ok: true };
+  }
+  /** 가구가 정해진 뒤: 신규 가족이면 기존 아이 입력 화면(이름·생년월일/예정일 미리 채움 — 지역·출생순서만 추가로 물음), 합류면 가구의 첫 아이를 불러온다. */
+  async function acctAfterHousehold(intent, res) {
+    if (profile) {
+      acctClearIntent(); // 이 기기에 이미 아이가 있으면 건드리지 않는다(기존 데이터 연결은 D4)
+      return;
+    }
+    if (res.created) {
+      const stage = intent.situation === "PREGNANT" ? "pregnant" : "born";
+      showLandingView();
+      setLandingStage(stage);
+      el("childName").value = stage === "born" ? intent.childName || "" : "";
+      const iso = stage === "born" ? intent.birthDate : intent.dueDate;
+      if (iso) setBirthDatePicker(new Date(iso + "T00:00:00"));
+      acctClearIntent();
+      return;
+    }
+    const m = HouseholdSync.getMirror(res.householdId);
+    const kids = HouseholdView.mergeChildren([], m, null).filter((c) => !c.removed);
+    acctClearIntent();
+    if (kids.length) {
+      el("familyCodeInput").value = kids[0].code;
+      await handleLoadCode();
+    }
+  }
+  /** 로그인 상태가 됐을 때: 끝나지 않은 가입이 있으면 이어서 마무리, 아니면 계정 가구를 이 기기에 복원(이 기기에 다른 가구가 있으면 건드리지 않는다 — D4). */
+  async function acctRestore(u) {
+    if (!acct.sync || acct.busy || acct.completing || acct.restoring) return;
+    acct.restoring = true;
+    try {
+      let intent = acctReadIntent();
+      const r = await acct.sync.restore(u.uid);
+      if (!r.ok) return; // 규칙 미배포·오프라인: 조용히 넘어간다
+      // 복구 경로: 계정 문서만 있고 가구 연결이 없는데 가입 의도가 없으면(로그아웃·앱 데이터 삭제 등) 계정 문서의 정보로 새 가족을 만들어 연결한다.
+      if (!intent && r.account && !r.account.householdCode) {
+        intent = { email: u.email || "", displayName: r.account.displayName, role: r.account.role, joiningCode: null, ...(r.account.institution ? { institution: r.account.institution } : {}) };
+      }
+      if (intent && (!r.account || !r.account.householdCode)) {
+        await acctFinishSignup(intent, false);
+        return;
+      }
+      const acc = r.account;
+      if (!acc || !acc.householdCode || hh.code) return;
+      const j = await HouseholdSync.joinHousehold(acc.householdCode);
+      if (!j.ok) return;
+      hhSetJoined(j.householdId, acc.householdCode);
+      await acctAfterHousehold({}, { created: false, householdId: j.householdId });
+    } catch (e) {
+      console.error("계정 복원 실패", e);
+    } finally {
+      acct.restoring = false;
+    }
+  }
+
   async function acctOnClick(ev) {
     if (!acctEnabled()) return;
     const radio = ev.target.closest("[data-acct-radio]");
@@ -3973,6 +4077,8 @@
       return acctShowSheet("logout");
     }
     if (action === "confirm-logout") {
+      // 가입 의도는 가구 연결이 끝난 계정에서만 지운다. 연결이 안 끝났으면(일시 오류 등) 남겨 두어 다시 로그인할 때 이어서 연결한다.
+      const linked = await acctIsLinked(acct.user && acct.user.uid);
       const r = await acct.svc.signOut();
       if (!r.ok) {
         acct.mode = "login";
@@ -3980,9 +4086,7 @@
         return acctShowSheet();
       }
       // D1: 가구는 아직 계정에 묶이지 않았으므로 가구·아이 로컬 데이터는 그대로 둔다(정리 범위는 D2·D4에서 확장).
-      try {
-        localStorage.removeItem(ACCT_INTENT_KEY);
-      } catch (e) {}
+      if (linked) acctClearIntent();
       acct.user = null;
       acct.form = {};
       acct.notice = AccountView.MSG.loggedOut;
@@ -3998,16 +4102,33 @@
       if (!v.ok) return acctShowSheet();
       acct.busy = true;
       acctShowSheet();
+      // 코드 사전 확인(읽기만): 잘못된 코드면 계정을 만들기 전에 막는다(신규 가족으로 몰래 만들지 않는다).
+      if (v.intent.joiningCode) {
+        let look;
+        try {
+          look = await HouseholdSync.lookupHousehold(v.intent.joiningCode);
+        } catch (e) {
+          look = { ok: false, reason: ACCT_DENIED(e) ? "denied" : "network" };
+        }
+        if (!look.ok) {
+          acct.busy = false;
+          acct.errors = { familyCode: look.reason === "not-found" ? AuthService.MSG.codeNotFound : look.reason === "denied" ? AuthService.MSG.serverNotReady : AuthService.MSG.network };
+          return acctShowSheet();
+        }
+      }
       const r = await acct.svc.signUp({ email: acct.form.email, password: acct.form.password, displayName: acct.form.displayName });
-      acct.busy = false;
       if (!r.ok) {
+        acct.busy = false;
         acct.error = r.message || AuthService.MSG.generic;
         return acctShowSheet();
       }
+      acct.user = r.user;
       try {
         localStorage.setItem(ACCT_INTENT_KEY, JSON.stringify(v.intent));
       } catch (e) {}
-      acct.user = r.user;
+      const fin = acct.sync ? await acctFinishSignup(v.intent, true) : { ok: true };
+      acct.busy = false;
+      if (!fin.ok) return acctShowSheet();
       acct.form = {};
       acct.notice = AccountView.MSG.signupDone;
       closeDetail();

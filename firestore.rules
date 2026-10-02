@@ -171,12 +171,22 @@ service cloud.firestore {
       // 담당자가 될 수 있는 사람들(계정이 아니라 표시 라벨).
       match /members/{memberId} {
         allow get, list: if true;
-        allow create, update: if request.resource.data.keys().hasOnly(['v', 'role', 'label', 'order', 'colorKey', 'createdAt', 'updatedAt', 'deletedAt'])
+        // D2: 선택 필드 uid(이 구성원을 맡은 계정)와 role CHILD 추가.
+        //  - 이미 uid 가 달린 문서: 쓰기 결과에도 같은 uid 가 반드시 남아 있어야 한다(제거·변경·전체 교체로 지우기 불가 → 2단계 가로채기 차단).
+        //  - uid 가 없는 문서(또는 새 문서): uid 없이 쓰거나, 본인(request.auth.uid)의 uid 를 처음 다는 것만 허용.
+        // 인증 없는 기존 사용자의 쓰기(uid 를 건드리지 않는 merge 수정, uid 없는 구성원 생성)는 그대로 허용된다.
+        function uidOk() {
+          return (resource != null && ('uid' in resource.data))
+              ? (('uid' in request.resource.data) && request.resource.data.uid == resource.data.uid)
+              : (!('uid' in request.resource.data) || (request.auth != null && request.resource.data.uid == request.auth.uid));
+        }
+        allow create, update: if request.resource.data.keys().hasOnly(['v', 'role', 'label', 'order', 'colorKey', 'uid', 'createdAt', 'updatedAt', 'deletedAt'])
                               && request.resource.data.keys().hasAll(['v', 'role', 'label', 'order', 'createdAt', 'updatedAt'])
                               && request.resource.data.v == 1
-                              && request.resource.data.role in ['MOM', 'DAD', 'GRANDPARENT', 'CAREGIVER', 'OTHER']
+                              && request.resource.data.role in ['MOM', 'DAD', 'GRANDPARENT', 'CAREGIVER', 'OTHER', 'CHILD']
                               && request.resource.data.label is string
-                              && request.resource.data.label.size() <= 20;
+                              && request.resource.data.label.size() <= 20
+                              && uidOk();
         allow delete: if false;
       }
     }
@@ -273,6 +283,33 @@ service cloud.firestore {
                     && request.resource.data.sourceType == resource.data.sourceType
                     && request.resource.data.get('autoRef', null) == resource.data.get('autoRef', null); // C2: 연결은 생성 때만 정한다
       allow delete: if false; // 소프트 삭제(deletedAt)만
+    }
+
+    // ===============================================================
+    // [D2] 계정(accounts) 블록 — 추가만 한다(위 블록은 members 의 uid·role CHILD 허용 외에는 수정하지 않았다).
+    //   설계: docs/한눈육아-D1-계정설계.md §1·§2. accounts/{uid} = 로그인한 사람 1명이 속한 가구·구성원을 가리키는 문서.
+    //   - 본인(request.auth.uid == uid)만 읽고 쓴다. 목록 열람·삭제 금지. v·createdAt 은 생성 후 불변.
+    //   - 기존 비인증 사용자의 규칙(가구·아이·일정·완료)은 그대로다(구성원 전용 읽기 강화는 후속).
+    // ===============================================================
+    match /accounts/{uid} {
+      function accountOk(d) {
+        return d.keys().hasOnly(['v', 'displayName', 'role', 'institution', 'householdId', 'householdCode', 'memberId', 'createdAt', 'updatedAt'])
+            && d.keys().hasAll(['v', 'displayName', 'role', 'createdAt', 'updatedAt'])
+            && d.v == 1
+            && d.displayName is string && d.displayName.size() >= 1 && d.displayName.size() <= 20
+            && d.role in ['MOM', 'DAD', 'CHILD', 'CAREGIVER']
+            && (!('institution' in d) || d.institution == null || d.institution in ['DAYCARE', 'KINDERGARTEN', 'ELEMENTARY', 'NONE'])
+            && (!('householdId' in d) || d.householdId == null || (d.householdId is string && d.householdId.size() <= 60))
+            && (!('householdCode' in d) || d.householdCode == null || (d.householdCode is string && d.householdCode.size() <= 8))
+            && (!('memberId' in d) || d.memberId == null || (d.memberId is string && d.memberId.size() <= 60));
+      }
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list: if false;
+      allow create: if request.auth != null && request.auth.uid == uid && accountOk(request.resource.data);
+      allow update: if request.auth != null && request.auth.uid == uid && accountOk(request.resource.data)
+                    && request.resource.data.v == resource.data.v
+                    && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
     }
 
     // 그 외 모든 경로: 기본 거부(명시하지 않으면 Firestore 규칙은 기본적으로 거부한다).

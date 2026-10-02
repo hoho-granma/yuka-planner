@@ -20,6 +20,9 @@
     network: "인터넷 연결을 확인하고 다시 시도해 주세요.",
     tooMany: "시도가 너무 많아요. 잠시 후 다시 시도해 주세요.",
     notReady: "로그인 기능이 아직 준비되지 않았어요.",
+    serverNotReady: "계정 서버 설정이 아직 준비되지 않았어요. 잠시 후 다시 시도해 주세요.",
+    codeNotFound: "가족 캘린더 코드를 찾을 수 없어요. 코드를 다시 확인해 주세요.",
+    linkFailed: "가족 캘린더를 연결하지 못했어요. 인터넷 연결을 확인하고 다시 로그인해 주세요.",
     generic: "처리하지 못했어요. 잠시 후 다시 시도해 주세요.",
     resetSent: "비밀번호 재설정 메일을 보냈어요. 메일함을 확인해 주세요.",
   });
@@ -62,6 +65,7 @@
       async createUser(email, password) { return pick((await auth.createUserWithEmailAndPassword(email, password)).user); },
       async signIn(email, password) { return pick((await auth.signInWithEmailAndPassword(email, password)).user); },
       async signOut() { await auth.signOut(); },
+      async deleteUser() { if (auth.currentUser) await auth.currentUser.delete(); },
       async sendReset(email) { await auth.sendPasswordResetEmail(email); },
       async updateDisplayName(user, name) { if (auth.currentUser) await auth.currentUser.updateProfile({ displayName: name }); return { ...user, displayName: name }; },
       onChange(cb) { return auth.onAuthStateChanged((u) => cb(pick(u))); },
@@ -135,6 +139,14 @@
         return { ok: true };
       });
     }
+    /** 방금 만든 계정을 지운다(가입 중 서버 설정이 안 된 경우의 롤백). */
+    function deleteCurrentUser() {
+      return run(async (a) => {
+        await a.deleteUser();
+        user = null;
+        return { ok: true };
+      });
+    }
     function sendPasswordReset(email) {
       if (!enabled()) return Promise.resolve(DISABLED);
       if (!EMAIL_RE.test(normEmail(email))) return Promise.resolve({ ok: false, code: "auth/invalid-email", message: MSG.invalidEmail });
@@ -153,7 +165,7 @@
       }).catch(() => cb(null));
       return () => { dead = true; if (off) off(); };
     }
-    return { isEnabled: enabled, signUp, signIn, signOut, sendPasswordReset, onChange, currentUser: () => user };
+    return { isEnabled: enabled, signUp, signIn, signOut, deleteCurrentUser, sendPasswordReset, onChange, currentUser: () => user };
   }
 
   return { create, errorMessage, validateCredentials, firebaseAdapter, MSG, PASSWORD_MIN, SDK_URL };

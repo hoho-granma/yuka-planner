@@ -27,6 +27,7 @@ const SHELL_ASSETS = [
   "./js/household-view.js",
   "./js/auth-service.js",
   "./js/account-view.js",
+  "./js/account-sync.js",
   "./js/todo-engine.js",
   "./js/schedule.js",
   "./js/hn-logic.js",

@@ -252,6 +252,18 @@
       return { ok: true, householdId: hid, code, childKey };
     }
 
+    /** 코드 사전 확인(D2 가입): 읽기만 한다 — 로컬 저장소·미러를 건드리지 않는다. { ok:true, householdId } | { ok:false, reason:"not-found" } (서버 오류는 던진다) */
+    async function lookupHousehold(code) {
+      if (!enabled()) return DISABLED;
+      code = String(code || "").trim().toUpperCase();
+      const a = getAdapter();
+      const c = await a.get("householdCodes/" + code);
+      if (!c.exists || !c.data || c.data.active !== true) return { ok: false, reason: "not-found" };
+      const h = await a.get("households/" + c.data.householdId);
+      if (!h.exists) return { ok: false, reason: "not-found" };
+      return { ok: true, householdId: c.data.householdId };
+    }
+
     // ── 참여(새 기기) ─────────────────────────────────────────────────
     async function joinHousehold(code) {
       if (!enabled()) return DISABLED;
@@ -310,13 +322,14 @@
       if (!enabled()) return DISABLED;
       return write(hid, { op: "set", merge: true, path: `households/${hid}/children/${childKey}`, payload: { removedAt: now() } });
     }
-    async function upsertMember(hid, { memberId, role, label, order, colorKey }) {
+    async function upsertMember(hid, { memberId, role, label, order, colorKey, uid }) {
       if (!enabled()) return DISABLED;
       const id = memberId || newId("m");
       const t = now();
       const existing = loadMirror(hid).members[id];
       const payload = { v: 1, role, label, order: order || 1, createdAt: existing ? existing.createdAt : t, updatedAt: t };
       if (colorKey) payload.colorKey = colorKey;
+      if (uid) payload.uid = uid; // D2: 이 구성원을 맡은 계정(없으면 필드를 건드리지 않는다)
       const r = await write(hid, { op: "set", merge: true, path: `households/${hid}/members/${id}`, payload });
       return { ...r, memberId: id };
     }
@@ -444,6 +457,8 @@
       getStatus,
       createHousehold,
       joinHousehold,
+      lookupHousehold,
+      firestoreAdapter, // 계정(D2)이 accounts 문서에 같은 어댑터를 쓴다(쓰기 경로 제한은 이 모듈의 write() 에만 적용된다)
       addChild,
       updateChild,
       removeChild,
