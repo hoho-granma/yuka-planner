@@ -2133,7 +2133,16 @@
     let list = Places.filterPlaces(valid, { province: sameProvince ? eff.province : null, district: sameProvince ? eff.district : null, ageMonths: age, category: placesCat, ...placesFilters });
     if (placesBrowse) list = list.filter((p) => p.province === placesBrowse.province && (!placesBrowse.district || p.district === placesBrowse.district)); // 둘러보기로 고른 지역만
     const fallback = preparing ? { regions: Places.regionsOf(valid), current: placesBrowse, coverage: d.coverage } : null;
-    return PlacesView.render({ places: list, child, region, category: placesCat, status: d.status, filters: placesFilters, showNoReserve: Places.hasNoReserve(valid), fallback });
+    // G4: 내 시군구에 장소가 있고 둘러보기·폴백이 아니면 두 묶음('우리 동네'·'가까운 지역')으로 나눈다(필터·분류는 두 묶음 모두에 적용됨 — list 가 이미 걸러져 있다).
+    let groups = null;
+    if (!preparing && !placesBrowse && region && region.province && region.district) {
+      const T = PlacesView.TEXT;
+      groups = [
+        { title: T.groupMine(region.district), places: list.filter((p) => p.province === region.province && p.district === region.district) },
+        { title: T.groupNear(region.province), places: list.filter((p) => !(p.province === region.province && p.district === region.district)) },
+      ];
+    }
+    return PlacesView.render({ places: list, groups, child, region, category: placesCat, status: d.status, filters: placesFilters, showNoReserve: Places.hasNoReserve(valid), fallback });
   }
   async function renderPlacesTab() {
     const body = el("places-body");

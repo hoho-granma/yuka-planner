@@ -26,6 +26,8 @@
     fallbackPrefix: "아직 이 지역은 준비 중이에요. 지금은 ",
     fallbackSuffix: " 장소를 보여 드려요.",
     browse: "다른 지역 둘러보기",
+    groupMine: (district) => `우리 동네 · ${district}`,
+    groupNear: (province) => `가까운 지역 · ${province}`,
     notice: "방문 전 공식 링크에서 운영 여부를 확인하세요",
     unknown: "방문 전 확인",
     stale: "확인 오래됨",
@@ -160,6 +162,7 @@
   function renderCard(p, today) {
     const stale = Places.isStale(p, today);
     const badges = [`<span class="places-badge places-badge-cat">${esc(lookup(Places.CATEGORIES, p.category) || "")}</span>`];
+    if (typeof p.district === "string" && p.district) badges.push(`<span class="places-badge places-badge-district">${esc(p.district)}</span>`); // G4: 시·군·구 작은 표기
     if (p.example === true) badges.push(`<span class="places-badge places-badge-example">${esc(TEXT.example)}</span>`);
     if (stale) badges.push(`<span class="places-badge places-badge-stale">${esc(TEXT.stale)}</span>`);
     const link = Places.isHttpsUrl(p.officialUrl)
@@ -202,8 +205,13 @@
       `<span class="places-label">${esc(TEXT.label)}</span>` +
       (opts.status ? `<span class="places-status">${esc(opts.status)}</span>` : "") +
       `</div>`;
-    const body = list.length
-      ? `<div class="places-list">${list.map((p) => renderCard(p, today)).join("")}</div><p class="places-notice">${esc(TEXT.notice)}</p>`
+    // G4: groups([{title, places}])가 있으면 소제목 묶음으로(0곳인 묶음은 숨김), 없으면 places 한 목록.
+    const groups = Array.isArray(opts.groups) ? opts.groups.map((g) => ({ title: g && g.title, places: Array.isArray(g && g.places) ? g.places.filter((p) => p && typeof p === "object" && typeof p.id === "string") : [] })).filter((g) => g.places.length) : null;
+    const total = groups ? groups.reduce((n, g) => n + g.places.length, 0) : list.length;
+    const body = total
+      ? (groups
+          ? groups.map((g) => `<h4 class="places-group-title">${esc(g.title || "")}</h4><div class="places-list">${g.places.map((p) => renderCard(p, today)).join("")}</div>`).join("")
+          : `<div class="places-list">${list.map((p) => renderCard(p, today)).join("")}</div>`) + `<p class="places-notice">${esc(TEXT.notice)}</p>`
       : `<div class="places-empty"><p>${esc(filterOn ? TEXT.emptyFilter : catOn ? TEXT.emptyCategory : TEXT.empty)}</p></div>`;
     const fb = opts.fallback && Array.isArray(opts.fallback.regions) && opts.fallback.regions.length ? fallbackBox(opts.fallback) : "";
     return `<section class="places-view">${contextRow(opts.child, opts.region)}${fb}${chipRow(opts.category)}${filterRow(f, opts.showNoReserve === true)}${head}${body}</section>`;
