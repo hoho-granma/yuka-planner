@@ -87,7 +87,9 @@ test("autoRef 없는 폼 렌더(추가·수정·기간·반복·다자녀)는 �
     V.formFromSchedule({ id: "s1", title: "수업", category: "LESSON", scope: "CHILD", childKeys: ["c1", "c2"], dateKind: "FIXED", eventDate: "2026-10-06", allDay: false, startTime: "16:00", endTime: "16:50" }),
   ];
   const opts = { members: [{ memberId: "m1", label: "엄마" }], messages: ["x"], saving: false };
-  forms.forEach((f, i) => assert.strictEqual(V.renderForm(f, LINKS, opts), RECOLOR(OLD.renderForm(f, LINKS, opts)), "form " + i));
+  // E(1-4) 로 늘어난 빠른 추가 칩 줄·담당 영역 강조 마크업은 비교에서 뺀다(그 밖의 글자는 같아야 한다).
+  const NORM = (h) => h.replace(/<div class="us-field us-quick">.*?<\/div><\/div>/s, "").replace(" us-assignee-field", "").replace(" data-us-assignee-field", "").replace(/<p class="us-emph-note"[^>]*>[^<]*<\/p>/, "");
+  forms.forEach((f, i) => assert.strictEqual(NORM(V.renderForm(f, LINKS, opts)), NORM(RECOLOR(OLD.renderForm(f, LINKS, opts))), "form " + i));
 });
 test("저장: 날짜를 넣으면 prepareSave 통과·autoRef 포함 입력, 날짜 없으면 거부, scope/childKeys 가 어긋나면 거부(I13)", () => {
   const f = af();

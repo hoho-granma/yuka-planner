@@ -3010,8 +3010,8 @@
     return usMembers().some((m) => m.memberId === acct.account.memberId && !m.deletedAt) ? acct.account.memberId : null;
   };
   const usSelOpts = () => ({ memberMode: !!usMeId(), meId: usMeId() });
-  /** 현재 선택: 사용자가 칩을 누르기 전에는 '나' 하나(세션마다 초기화, 저장하지 않음), 누른 뒤에는 그 선택. */
-  const usSel = () => (us.selTouched || !usMeId() ? us.selection : [`MEMBER:${usMeId()}`]);
+  /** 현재 선택: 기본은 '전체'(E 1-1 — 내 일정만 보려면 '나' 칩 한 번). 칩을 누른 뒤에는 그 선택. 저장하지 않는다. */
+  const usSel = () => us.selection;
   const usSelectionMode = () => UserScheduleView.selectionMode(UserScheduleView.normalizeSelection(usSel(), usLinks(), usMembers(), usSelOpts()));
   /** 월/일 범위의 캘린더 모델(자동 일정은 읽기 전용 입력). */
   function usBuildModel(startIso, endIso, filterOverride, view) {
@@ -3141,6 +3141,15 @@
     us.linkPrompt = null;
     if (!p || p.kind !== "toUser") return closeDetail();
     return usPatchAction(p.scheduleId, (before, now) => UserSchedule.markDone(before, now));
+  }
+  /** E(1-4): 담당이 필요한 빠른 추가 칩을 눌렀는데 담당이 비어 있으면 담당 영역을 강조하고 안내 한 줄을 보인다(폼은 다시 그리지 않는다). */
+  function usRefreshAssigneeEmph(root) {
+    const field = root && root.querySelector ? root.querySelector("[data-us-assignee-field]") : null;
+    if (!field) return;
+    const on = UserScheduleView.assigneeEmphasis(us.form);
+    field.classList.toggle("us-emph", on);
+    const note = field.querySelector("[data-us-assignee-note]");
+    if (note) note.hidden = !on;
   }
   /** 홈 '다가오는 가족 일정' 카드(F1). 플래그 OFF·가구 없음이면 "" — 홈은 기존 그대로. AUTO 일정은 섞지 않는다(showAuto:false). */
   function usHomeCardHtml() {
@@ -3624,6 +3633,8 @@
       if (!next) return;
       us.form.title = next.title;
       us.form.category = next.category;
+      us.form.quickKey = quick.getAttribute("data-us-quick");
+      usRefreshAssigneeEmph(root);
       const titleInput = root.querySelector("#us-title");
       if (titleInput) titleInput.value = next.title;
       root.querySelectorAll("[data-us-cat]").forEach((x) => x.classList.toggle("active", x.getAttribute("data-us-cat") === next.category));
@@ -3659,6 +3670,7 @@
       const v = asg.getAttribute("data-us-assignee") || "";
       us.form.assigneeMemberId = us.form.assigneeMemberId === v ? "" : v; // 같은 칩을 다시 누르면 해제(정하지 않음)
       root.querySelectorAll("[data-us-assignee]").forEach((x) => x.classList.toggle("active", (x.getAttribute("data-us-assignee") || "") === (us.form.assigneeMemberId || "")));
+      usRefreshAssigneeEmph(root);
       return;
     }
     const rep = ev.target.closest("[data-us-repeat]");

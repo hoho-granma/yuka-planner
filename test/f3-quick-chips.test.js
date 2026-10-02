@@ -21,15 +21,17 @@ process.on("exit", () => { if (started !== finished) { console.log(`FAIL- 끝나
 
 const LINKS = [{ childKey: "c1", displayName: "은찬", order: 1, familyCode: "AAA111" }];
 const form = (over) => ({ ...V.newForm({ date: "2026-10-06", activeChildKey: "c1", links: LINKS, defaultAssigneeId: "m1" }), ...over });
-const KEYS = ["hospital", "vaccine", "dental", "daycare", "outing"];
+const KEYS = ["hospital", "vaccine", "dental", "daycare", "outing", "pickup", "ride"];
 
 console.log("승인 문구·매핑");
-test("영역 라벨과 칩 5개의 라벨·제목·분류가 확정본과 같다", () => {
+test("영역 라벨과 칩 7개(기존 5 + 픽업·라이딩)의 라벨·제목·분류가 확정본과 같다", () => {
   assert.strictEqual(V.MSG.quickLabel, "자주 쓰는 일정");
   assert.deepStrictEqual(V.QUICK_TEMPLATES.map((t) => [t.key, t.label, t.title, t.category]), [
     ["hospital", "병원 예약", "병원 예약", "MEDICAL"], ["vaccine", "예방접종", "예방접종 병원 예약", "MEDICAL"], ["dental", "치과", "치과 진료", "MEDICAL"],
     ["daycare", "어린이집 행사", "어린이집 행사", "INSTITUTION"], ["outing", "가족 외출", "가족 외출", "FAMILY"],
+    ["pickup", "등원·하원 픽업", "등원·하원 픽업", "INSTITUTION"], ["ride", "학원 라이딩", "학원 라이딩", "LESSON"], // E(1-4)
   ]);
+  assert.deepStrictEqual(V.QUICK_TEMPLATES.filter((t) => t.needsAssignee).map((t) => t.key), ["pickup", "ride"]);
   assert.ok(Object.isFrozen(V.QUICK_TEMPLATES) && V.QUICK_TEMPLATES.every((t) => Object.isFrozen(t)));
 });
 test("모든 칩의 분류가 기존 스키마 값(UserSchedule.CATEGORIES·화면 CATEGORIES)이다", () => {
@@ -73,7 +75,7 @@ test("추가 모드 폼에만 칩 줄이 있고 제목 입력 위에 놓인다(5
   const h = rf(form());
   assert.ok(h.includes("자주 쓰는 일정"));
   KEYS.forEach((k) => assert.ok(h.includes(`data-us-quick="${k}"`), k));
-  assert.strictEqual((h.match(/data-us-quick=/g) || []).length, 5);
+  assert.strictEqual((h.match(/data-us-quick=/g) || []).length, 7);
   assert.ok(h.indexOf("data-us-quick") < h.indexOf('id="us-title"'));
 });
 test("수정 모드·반복 일정 편집 폼에는 칩이 없다", () => {
@@ -90,6 +92,7 @@ test("칩 줄을 빼면 추가 폼 마크업은 변경 전과 같다(다른 부�
 
 console.log("app.js 칩 핸들러");
 const app = read("js/app.js");
+const app0 = app;
 const a = app.indexOf("    const quick = ev.target.closest");
 const b = app.indexOf("    const cat = ev.target.closest(\"[data-us-cat]\");", a);
 assert.ok(a > 0 && b > a);
@@ -101,7 +104,7 @@ function run(f, key, titleInput) {
   const root = { querySelector: (s) => (s === "#us-title" ? input : null), querySelectorAll: (s) => (s === "[data-us-cat]" ? cats : []) };
   const ev = { target: { closest: (s) => (s === "[data-us-quick]" ? { getAttribute: () => key } : null) } };
   const us = { form: f };
-  const sandbox = { UserScheduleView: V, ev, root, us, result: null };
+  const sandbox = { UserScheduleView: V, ev, root, us, result: null, usRefreshAssigneeEmph: () => {} };
   vm.createContext(sandbox);
   vm.runInContext(`(function(){\n${handlerSrc}\n result = "continued"; })()`, sandbox);
   return { us, input, cats, handled: sandbox.result === null };
@@ -119,7 +122,7 @@ test("입력한 제목은 덮어쓰지 않고 시간·장소·메모·날짜·�
   const f = form({ title: "내 제목", allDay: false, startTime: "14:30", endTime: "15:00", location: "OO병원", memo: "메모", eventDate: "2026-10-09" });
   const before = JSON.stringify(f);
   run(f, "outing");
-  const exp = { ...JSON.parse(before), category: "FAMILY" };
+  const exp = { ...JSON.parse(before), category: "FAMILY", quickKey: "outing" };
   assert.deepStrictEqual(JSON.parse(JSON.stringify(f)), exp);
   assert.strictEqual(f.title, "내 제목");
 });
@@ -146,6 +149,42 @@ test("폼 날짜만 오늘로 열고 캘린더 선택일(selectedCalendarDate)�
   assert.ok(/usOpenForm\(null, toISODate\(new Date\(\)\)\)/.test(s) && !/selectedCalendarDate/.test(s));
   const open = app.slice(app.indexOf("  function usOpenForm("), app.indexOf("  function usShowForm()"));
   assert.ok(/date: dateIso \|\| toISODate\(selectedCalendarDate\)/.test(open));
+});
+
+console.log("E(1-4) 담당 강조");
+const EM_MEMBERS = [{ memberId: "m1", label: "엄마" }, { memberId: "m2", label: "아빠" }];
+const emRender = (f) => V.renderForm(f, [], { members: EM_MEMBERS, messages: [], saving: false });
+test("픽업·라이딩 칩 + 담당 미지정이면 담당 영역이 강조되고 안내 한 줄이 보이며, 담당을 고르거나 다른 칩이면 숨는다", () => {
+  for (const key of ["pickup", "ride"]) {
+    const on = emRender(form({ quickKey: key, assigneeMemberId: "" }));
+    assert.ok(on.includes("us-assignee-field us-emph") && /<p class="us-emph-note" data-us-assignee-note>누가 맡을지 골라 주세요/.test(on), key);
+    const picked = emRender(form({ quickKey: key, assigneeMemberId: "m1" }));
+    assert.ok(!picked.includes("us-emph\"") && /data-us-assignee-note hidden>/.test(picked), key + " 담당 지정");
+  }
+  for (const key of [undefined, "hospital", "outing"]) assert.ok(!emRender(form({ quickKey: key })).includes("us-assignee-field us-emph"), String(key));
+  assert.ok(!V.renderForm(form({ quickKey: "pickup" }), [], { messages: [] }).includes("us-emph"), "구성원 목록이 없으면 담당 영역 자체가 없다(불변)");
+  assert.strictEqual(V.assigneeEmphasis(null), false);
+});
+test("usRefreshAssigneeEmph: 강조 클래스·안내 hidden 만 토글하고 폼을 다시 그리지 않는다 · 담당 칩 클릭 뒤에도 호출", () => {
+  const a = app0.indexOf("  function usRefreshAssigneeEmph(root) {");
+  const src = app0.slice(a, app0.indexOf("\n  }\n", a) + 5);
+  const run = (f, field) => { const sb = { UserScheduleView: V, us: { form: f } }; vm.createContext(sb); vm.runInContext(src + ";globalThis.fn = usRefreshAssigneeEmph;", sb); sb.fn({ querySelector: () => field }); };
+  const mk = () => { const note = { hidden: true }; const field = { cls: new Set(), classList: { toggle: (n, on) => (on ? field.cls.add(n) : field.cls.delete(n)) }, querySelector: () => note }; return { field, note }; };
+  const x = mk(); run(form({ quickKey: "ride", assigneeMemberId: "" }), x.field);
+  assert.deepStrictEqual([x.field.cls.has("us-emph"), x.note.hidden], [true, false]);
+  run(form({ quickKey: "ride", assigneeMemberId: "m2" }), x.field);
+  assert.deepStrictEqual([x.field.cls.has("us-emph"), x.note.hidden], [false, true]);
+  assert.doesNotThrow(() => run(form({ quickKey: "ride" }), null));
+  assert.ok(app0.includes('      usRefreshAssigneeEmph(root);\n      return;\n    }\n    const rep = '), "담당 칩 클릭 핸들러에서 호출");
+});
+test("칩 핸들러가 us.form.quickKey 를 기록하고(분류·제목 규칙은 그대로) 모르는 키는 기록하지 않는다", () => {
+  const f = form({ title: "" });
+  const r = run(f, "pickup");
+  assert.deepStrictEqual([f.quickKey, f.title, f.category], ["pickup", "등원·하원 픽업", "INSTITUTION"]);
+  const g = form({ title: "" });
+  run(g, "nope");
+  assert.strictEqual(g.quickKey, undefined);
+  void r;
 });
 
 console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);

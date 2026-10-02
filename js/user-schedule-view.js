@@ -78,6 +78,7 @@
     assigneeLabel: "담당", // B6-lite (승인본)
     assigneeNone: "정하지 않음",
     assigneeHint: "담당을 고르면 카드에 이름이 함께 보여요.",
+    assigneeEmph: "누가 맡을지 골라 주세요. 담당을 정해 두면 가족 모두가 알 수 있어요.",
     deletedAssignee: "(삭제된 담당자)", // calendar-model.js 와 같은 문구
     dateLabel: "날짜", // #23
     kindFixed: "날짜 정함", // #24
@@ -792,7 +793,7 @@
     const members = hasMembers ? o.members : [];
     const staleAssignee = hasMembers && f.assigneeMemberId && !members.some((m) => m.memberId === f.assigneeMemberId);
     const assignee = hasMembers && (members.length || staleAssignee)
-      ? `<div class="us-field"><label>${esc(MSG.assigneeLabel)}</label><div class="us-chips">${members.map((m) => chip("", `data-us-assignee="${esc(m.memberId)}"`, m.label || "", f.assigneeMemberId === m.memberId)).join("")}${staleAssignee ? chip("", `data-us-assignee="${esc(f.assigneeMemberId)}"`, MSG.deletedAssignee, true) : ""}${chip("", 'data-us-assignee=""', MSG.assigneeNone, !f.assigneeMemberId)}</div><p class="us-note">${esc(MSG.assigneeHint)}</p></div>`
+      ? `<div class="us-field us-assignee-field${assigneeEmphasis(f) ? " us-emph" : ""}" data-us-assignee-field><label>${esc(MSG.assigneeLabel)}</label><div class="us-chips">${members.map((m) => chip("", `data-us-assignee="${esc(m.memberId)}"`, m.label || "", f.assigneeMemberId === m.memberId)).join("")}${staleAssignee ? chip("", `data-us-assignee="${esc(f.assigneeMemberId)}"`, MSG.deletedAssignee, true) : ""}${chip("", 'data-us-assignee=""', MSG.assigneeNone, !f.assigneeMemberId)}</div><p class="us-note">${esc(MSG.assigneeHint)}</p><p class="us-emph-note" data-us-assignee-note${assigneeEmphasis(f) ? "" : " hidden"}>${esc(MSG.assigneeEmph)}</p></div>`
       : "";
     const locked = !!f.autoRef; // C2: 연결된 AUTO 예약은 대상(아이 1명)·날짜 종류(날짜 정함)·반복을 바꿀 수 없다
     const fixed = f.dateKind !== "PERIOD";
@@ -906,7 +907,15 @@
     Object.freeze({ key: "dental", label: "치과", title: "치과 진료", category: "MEDICAL" }),
     Object.freeze({ key: "daycare", label: "어린이집 행사", title: "어린이집 행사", category: "INSTITUTION" }),
     Object.freeze({ key: "outing", label: "가족 외출", title: "가족 외출", category: "FAMILY" }),
+    // E(1-4): 누가 맡는지가 핵심인 일정 — 칩을 누르고 담당이 비어 있으면 담당 영역을 강조해 안내한다(분류·제목만 채우는 규칙은 그대로).
+    Object.freeze({ key: "pickup", label: "등원·하원 픽업", title: "등원·하원 픽업", category: "INSTITUTION", needsAssignee: true }),
+    Object.freeze({ key: "ride", label: "학원 라이딩", title: "학원 라이딩", category: "LESSON", needsAssignee: true }),
   ]);
+  /** 폼에서 담당 영역을 강조해야 하는가: 담당이 필요한 빠른 추가 칩을 눌렀고 아직 담당을 고르지 않았을 때. */
+  function assigneeEmphasis(f) {
+    const t = f && QUICK_TEMPLATES.find((x) => x.key === f.quickKey);
+    return !!(t && t.needsAssignee && !f.assigneeMemberId);
+  }
   /** 폼 + 칩 키 → 바뀐 제목·분류. 제목은 비어 있을 때만 채우고(입력한 제목은 보존) 분류는 항상 칩을 따른다. 모르는 키면 null. 폼은 바꾸지 않는다. */
   function applyTemplate(f, key) {
     const t = QUICK_TEMPLATES.find((x) => x.key === key);
@@ -979,7 +988,7 @@
     categoryLabel, childColor, childColors, occurrenceColor, MEMBER_COLORS, ROLE_LABELS, CATEGORY_COLORS, autoCategoryGroup, selectionMode, toggleSelection, cellChips,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
-    linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, applyTemplate, renderQuickChips,
+    linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, assigneeEmphasis, applyTemplate, renderQuickChips,
     renderCard, detailView, renderDetail, renderDeleteConfirm, renderAddButton, renderPeriodSection,
     newForm, formFromSchedule, stripId, formToInput, validateForm, messagesFromErrors, prepareSave, changesFromForm, minuteOptions, splitTime,
     renderForm, pickerInitials, esc,

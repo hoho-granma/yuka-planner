@@ -74,9 +74,10 @@ function selEnv(over) {
   vm.runInContext(APP.slice(a, b) + "\n;Object.assign(globalThis, { usMeId, usSelOpts, usSel, usSelectionMode });", sb);
   return sb;
 }
-test("'나' 기본 선택: 계정 모드·내 구성원 확인 시 [나] 하나, 칩을 누른 뒤에는 사용자의 선택, 구성원을 못 찾으면 기존 동작", () => {
+test("기본 선택은 '전체'(E 1-1): 계정 모드에서도 [] , 내 구성원(usMeId)은 알고 있어 '나' 칩 한 번으로 나만 보기, 칩을 누른 뒤에는 사용자의 선택, 구성원을 못 찾으면 기존 동작", () => {
   const e = selEnv();
-  assert.deepStrictEqual([e.usMeId(), JSON.parse(JSON.stringify(e.usSel())), e.usSelectionMode()], ["m1", ["MEMBER:m1"], "member"]);
+  assert.deepStrictEqual([e.usMeId(), JSON.parse(JSON.stringify(e.usSel())), e.usSelectionMode()], ["m1", [], "all"]);
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(V.toggleSelection(e.usSel(), "MEMBER:m1", LINKS, MEMBERS, ME))), ["MEMBER:m1"], "'나' 칩 한 번으로 나만");
   const touched = selEnv({ touched: true, selection: ["CHILD:c1"] });
   assert.deepStrictEqual([JSON.parse(JSON.stringify(touched.usSel())), touched.usSelectionMode()], [["CHILD:c1"], "kids"]);
   const touchedAll = selEnv({ touched: true, selection: [] });
