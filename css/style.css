@@ -1101,3 +1101,10 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 #view-landing.acct-hidecard #acct-landing-slot { display: none; }
 #beta-preview-slot { margin: 10px 0; }
 #beta-preview-slot:empty { display: none; }
+
+/* G6: 캘린더 칩 편집(지우기) */
+.us-chip-edit { align-self: center; margin-left: auto; padding: 4px 10px; border: 0; background: transparent; color: var(--text-muted); font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.us-chip-edit[aria-pressed="true"] { color: var(--accent-dark); }
+.us-chip-wrap { display: inline-flex; align-items: center; gap: 2px; }
+.us-chip-x { width: 24px; height: 24px; border: 1px solid var(--border); border-radius: 50%; background: #fff; color: var(--accent-dark); font-size: 12px; line-height: 1; cursor: pointer; padding: 0; }
+.us-chipdel-warn { color: var(--accent-dark); font-weight: 700; }

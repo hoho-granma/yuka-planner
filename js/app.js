@@ -3275,7 +3275,7 @@
   // detailKey/detailOcc: 열려 있는 상세의 회차(반복 일정은 같은 문서에서 회차가 여럿이라 id 만으로는 부족), dayForm: "이 날만 수정", plan: 규칙 변경 확인 대기 중인 전체 수정 계획.
   // 칩 달력 개편: selection=복수 선택 배열(비어 있으면 전체), onlyUser=직접 등록한 일정만 보기(아이만 선택했을 때만 효력, 기본 꺼짐), catColor=카테고리별 색(기본 꺼짐, 이 기기에 보존)
   const CAL_CATCOLOR_KEY = "hannun_cal_catcolor";
-  const us = { selection: [], selTouched: false, onlyUser: false, catColor: (() => { try { return localStorage.getItem(CAL_CATCOLOR_KEY) === "1"; } catch (e) { return false; } })(), form: null, messages: [], saving: false, detailId: null, detailKey: null, detailOcc: null, dayForm: null, plan: null, autoLabel: null, linkPrompt: null };
+  const us = { selection: [], selTouched: false, onlyUser: false, catColor: (() => { try { return localStorage.getItem(CAL_CATCOLOR_KEY) === "1"; } catch (e) { return false; } })(), form: null, messages: [], saving: false, detailId: null, detailKey: null, detailOcc: null, dayForm: null, plan: null, autoLabel: null, linkPrompt: null, chipEdit: false, chipDel: null };
   const usReady = () => typeof UserScheduleView !== "undefined" && typeof UserSchedule !== "undefined" && typeof CalendarModel !== "undefined";
   const usActive = () => hhEnabled() && usReady() && !!hh.hid && !!hh.code;
   const usMirror = () => (hh.hid ? HouseholdSync.getMirror(hh.hid) : null);
@@ -3566,7 +3566,7 @@
     const counts = { userItems: model.counts.userItems + model.counts.periodItems, userDone: model.counts.userDone + periodDone };
     top.innerHTML =
       `<div class="card us-top"><p class="us-summary">${esc(UserScheduleView.monthSummary(counts))}</p>` +
-      UserScheduleView.renderFilterChips(UserScheduleView.filterChips(links, usSel(), usMembers(), usSelOpts()), { mode: usSelectionMode(), onlyUser: us.onlyUser, catColor: us.catColor }) +
+      UserScheduleView.renderFilterChips(UserScheduleView.filterChips(links, usSel(), usMembers(), usSelOpts()), { mode: usSelectionMode(), onlyUser: us.onlyUser, catColor: us.catColor, canEdit: true, edit: us.chipEdit, deletable: usDeletableChips() }) +
       `<p class="us-note">${esc(UserScheduleView.MSG.legend)}</p></div>`;
     const skipped = UserScheduleView.skippedNote(model.skipped);
     const period = UserScheduleView.renderPeriodSection(UserScheduleView.periodSection(model.periodList, links));
@@ -3828,8 +3828,69 @@
       usModalNote((e && e.note) || UserScheduleView.MSG.actionFail);
     }
   }
+  // ── G6 칩 지우기: 편집 모드에서 지울 수 있는 칩(구성원: 나 제외, 아이)에 ✕ → 확인 시트 → 기존 소프트 삭제 경로(removeMember deletedAt / removeChild removedAt, 서버 규칙 변경 없음) ──
+  function usDeletableChips() {
+    const ids = [];
+    const meId = usMeId();
+    if (meId) for (const m of HouseholdView.visibleMembers(usMembers())) if (m.memberId !== meId) ids.push(`MEMBER:${m.memberId}`); // 계정 모드의 구성원 칩만(역할 칩 MOM/DAD 는 사람이 아니라 역할)
+    for (const l of usLinks()) if (!l.removedAt) ids.push(`CHILD:${l.childKey}`);
+    return ids;
+  }
+  function usChipDelShow() {
+    const d = us.chipDel;
+    modalMode = "profile";
+    el("modal-content").innerHTML = UserScheduleView.renderChipDeleteConfirm(d);
+    el("detail-modal").classList.remove("hidden");
+    const root = el("modal-content").querySelector("[data-us-chipdel]");
+    if (root) root.addEventListener("click", usChipDelClick);
+  }
+  function usChipDelAsk(id) {
+    const [kind, key] = String(id || "").split(":");
+    if (kind === "MEMBER") {
+      const m = usMembers().find((x) => x.memberId === key && !x.deletedAt);
+      if (!m) return;
+      us.chipDel = { kind: "MEMBER", id: key, name: m.label || "", uidWarn: !!m.uid && !(acct.user && acct.user.uid === m.uid) };
+    } else if (kind === "CHILD") {
+      const l = usLinks().find((x) => x.childKey === key && !x.removedAt);
+      if (!l) return;
+      us.chipDel = { kind: "CHILD", id: key, name: l.displayName || "", blocked: usActiveChildKey() === key };
+    } else return;
+    usChipDelShow();
+  }
+  async function usChipDelClick(ev) {
+    const b = ev.target.closest("[data-us-chipdel-act]");
+    const d = us.chipDel;
+    if (!b || !d) return;
+    if (b.getAttribute("data-us-chipdel-act") === "cancel") { us.chipDel = null; return closeDetail(); }
+    if (d.busy || d.blocked) return;
+    d.busy = true; d.error = "";
+    usChipDelShow();
+    try {
+      const r = d.kind === "MEMBER" ? await HouseholdSync.removeMember(hh.hid, d.id) : await HouseholdSync.removeChild(hh.hid, d.id);
+      if (!r || !r.ok) throw new Error((r && r.reason) || "chip-delete-failed");
+      const cid = `${d.kind}:${d.id}`;
+      us.selection = us.selection.filter((x) => x !== cid); // 지운 칩이 선택돼 있었다면 선택에서도 뺀다
+      if (d.kind === "MEMBER") {
+        let saved = "";
+        try { saved = localStorage.getItem(ACTIVE_MEMBER_KEY) || ""; } catch (e) {}
+        if (saved === d.id) memSetActive("");
+      }
+      us.chipDel = null;
+      if (!usDeletableChips().length) us.chipEdit = false;
+      closeDetail();
+      hhRender();
+      usRefreshCalendar();
+    } catch (e) {
+      console.error("칩 지우기 실패", e);
+      d.busy = false;
+      d.error = UserScheduleView.MSG.actionFail;
+      usChipDelShow();
+    }
+  }
   function usOnCalendarClick(ev) {
     if (!usActive()) return;
+    const del = ev.target.closest("[data-us-chip-del]");
+    if (del) return usChipDelAsk(del.getAttribute("data-us-chip-del"));
     const f = ev.target.closest("[data-us-filter]");
     if (f) {
       us.selection = UserScheduleView.toggleSelection(usSel(), f.getAttribute("data-us-filter"), usLinks(), usMembers(), usSelOpts());
@@ -3839,6 +3900,10 @@
     const a = ev.target.closest("[data-us-action]");
     if (a) {
       const act = a.getAttribute("data-us-action");
+      if (act === "chip-edit") {
+        us.chipEdit = !us.chipEdit;
+        return usRefreshCalendar();
+      }
       if (act === "toggle-only-user") {
         us.onlyUser = !us.onlyUser;
         return usRefreshCalendar();

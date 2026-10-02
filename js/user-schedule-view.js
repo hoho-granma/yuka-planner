@@ -24,6 +24,13 @@
   "use strict";
 
   // ── 승인된 문구 (번호는 B4 문구 목록 #) ─────────────────────────────────────
+  /** 이름 + 목적격 조사: 마지막 글자가 받침 있는 한글이면 '을', 없으면 '를', 한글이 아니면 '을(를)'. */
+  function withObjectParticle(name) {
+    const t = String(name == null ? "" : name);
+    const code = t.length ? t.charCodeAt(t.length - 1) : 0;
+    if (code < 0xac00 || code > 0xd7a3) return `${t}을(를)`;
+    return `${t}${(code - 0xac00) % 28 === 0 ? "를" : "을"}`;
+  }
   const MSG = Object.freeze({
     addButton: "＋ 일정 추가", // #1
     needHousehold: "일정을 추가하려면 프로필에서 가족 캘린더를 만들거나, 가족에게 받은 코드로 참여해 주세요.", // #2 (핫픽스로 교체)
@@ -128,6 +135,20 @@
     deleteBody: "삭제하면 가족 모두의 캘린더에서 사라져요. 지금은 복구할 수 없어요.", // #55 (수정 승인)
     deleteConfirm: "삭제", // #56
     deleteCancel: "취소", // #56
+    // G6: 칩 편집(지우기)
+    chipEdit: "편집",
+    chipEditDone: "완료",
+    chipDelAria: (name) => `${name} 지우기`,
+    chipDelMemberTitle: (name) => `${withObjectParticle(name)} 가족 캘린더 구성원에서 지울까요?`,
+    chipDelMemberBody: "이 사람이 맡은 일정은 남고 담당은 “(삭제된 담당자)”로 보여요.",
+    chipDelUidWarn: "이 사람은 가족 계정으로 로그인 중이에요. 지우면 그 사람 화면에서 “나” 표시와 기본 담당이 풀려요. 가족 캘린더 연결은 그대로예요.",
+    chipDelChildTitle: (name) => `${withObjectParticle(name)} 가족 캘린더에서 뺄까요?`,
+    chipDelChildBody: "아이 기록과 체크리스트는 지워지지 않고, 가족 캘린더에서만 보이지 않아요.",
+    chipDelChildBlocked: "지금 보고 있는 아이는 뺄 수 없어요. 다른 아이로 바꾼 뒤 빼 주세요.",
+    chipDelMember: "지우기",
+    chipDelChild: "빼기",
+    chipDelCancel: "취소",
+    chipDelClose: "닫기",
     actionFail: "처리하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.", // #57
     // #58·#59(오프라인 대기·쓰기 거부)는 B3 의 HouseholdView.MSG.pending / denied 를 그대로 재사용한다.
 
@@ -307,12 +328,27 @@
   /** opts: { mode, onlyUser, catColor } — 토글 칩 2개는 아이만 선택했을 때(mode "kids")만 필터 칩 아래 한 줄에 나란히(role=switch, 라벨만) 보인다. */
   function renderFilterChips(chips, opts) {
     const o = opts || {};
+    const del = new Set(Array.isArray(o.deletable) ? o.deletable : []);
+    const edit = o.canEdit === true && o.edit === true;
     const items = chips
-      .map((c) => `<button type="button" class="us-chip${c.selected ? " active" : ""}" aria-pressed="${c.selected ? "true" : "false"}" data-us-filter="${esc(c.id)}"${c.color ? ` style="--us-color:${safeColor(c.color)}"` : ""}>${esc(c.label)}</button>`)
+      .map((c) => {
+        const btn = `<button type="button" class="us-chip${c.selected ? " active" : ""}" aria-pressed="${c.selected ? "true" : "false"}" data-us-filter="${esc(c.id)}"${c.color ? ` style="--us-color:${safeColor(c.color)}"` : ""}>${esc(c.label)}</button>`;
+        // G6: 편집 모드에서 지울 수 있는 칩(전체·가족·나 자신은 제외 — 호출부가 deletable 로 알려 준다)에 ✕
+        return edit && del.has(c.id) ? `<span class="us-chip-wrap">${btn}<button type="button" class="us-chip-x" data-us-chip-del="${esc(c.id)}" aria-label="${esc(MSG.chipDelAria(c.label))}">✕</button></span>` : btn;
+      })
       .join("");
+    const editBtn = o.canEdit === true && (del.size > 0 || edit) ? `<button type="button" class="us-chip-edit" data-us-action="chip-edit" aria-pressed="${edit ? "true" : "false"}">${esc(edit ? MSG.chipEditDone : MSG.chipEdit)}</button>` : "";
     const sw = (action, label, on) => `<button type="button" class="us-tchip" role="switch" aria-checked="${on ? "true" : "false"}" data-us-action="${action}">${esc(label)}</button>`;
     const switches = o.mode === "kids" ? `<div class="us-optrows">${sw("toggle-only-user", MSG.onlyUserSwitch, o.onlyUser === true)}${sw("toggle-cat-color", MSG.catColorSwitch, o.catColor === true)}</div>` : "";
-    return `<div class="us-filter">${items}</div>${switches}`;
+    return `<div class="us-filter">${items}${editBtn}</div>${switches}`;
+  }
+  /** 칩 지우기 확인 시트. d: { kind:"MEMBER"|"CHILD", id, name, uidWarn?, blocked?, busy?, error? } — 버튼 data-us-chipdel-act(confirm|cancel). */
+  function renderChipDeleteConfirm(d) {
+    const x = d || {};
+    const name = x.name || "";
+    const isChild = x.kind === "CHILD";
+    if (x.blocked) return `<div class="us-chipdel" data-us-chipdel><h3>${esc(MSG.chipDelChildTitle(name))}</h3><p class="fine-print">${esc(MSG.chipDelChildBlocked)}</p><button type="button" class="btn-close" data-us-chipdel-act="cancel">${esc(MSG.chipDelClose)}</button></div>`;
+    return `<div class="us-chipdel" data-us-chipdel><h3>${esc(isChild ? MSG.chipDelChildTitle(name) : MSG.chipDelMemberTitle(name))}</h3><p class="fine-print">${esc(isChild ? MSG.chipDelChildBody : MSG.chipDelMemberBody)}</p>${!isChild && x.uidWarn ? `<p class="us-note us-chipdel-warn">${esc(MSG.chipDelUidWarn)}</p>` : ""}${x.error ? `<p class="us-note">${esc(x.error)}</p>` : ""}<button type="button" class="btn-complete" data-us-chipdel-act="confirm"${x.busy ? " disabled" : ""}>${esc(isChild ? MSG.chipDelChild : MSG.chipDelMember)}</button><button type="button" class="btn-close" data-us-chipdel-act="cancel"${x.busy ? " disabled" : ""}>${esc(MSG.chipDelCancel)}</button></div>`;
   }
   /**
    * 월 달력 날짜 칸의 제목 칩(최대 2개 + 나머지 +N). items: [{ t:"u", occ } | { t:"a", title, category, done }] 를 직접 등록 → 자동 순으로 받는다.
@@ -1037,7 +1073,7 @@
     categoryLabel, childColor, childColors, occurrenceColor, MEMBER_COLORS, ROLE_LABELS, CATEGORY_COLORS, autoCategoryGroup, selectionMode, toggleSelection, cellChips,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
-    linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, renderTodoLine, todoDeadlineText, TODO_LIMIT, TODO_MSG, assigneeEmphasis, applyTemplate, renderQuickChips,
+    linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, renderChipDeleteConfirm, withObjectParticle, renderTodoLine, todoDeadlineText, TODO_LIMIT, TODO_MSG, assigneeEmphasis, applyTemplate, renderQuickChips,
     renderCard, detailView, renderDetail, renderDeleteConfirm, renderAddButton, renderPeriodSection,
     newForm, formFromSchedule, stripId, formToInput, validateForm, messagesFromErrors, prepareSave, changesFromForm, minuteOptions, splitTime,
     renderForm, pickerInitials, esc,
