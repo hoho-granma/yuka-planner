@@ -35,6 +35,7 @@
     dayEmpty: "이 날 추가한 일정이 없어요.", // #8
     // F1 홈 '다음 일정' 카드(승인 문구 1~5)
     upcomingTitle: "다가오는 우리 가족 일정",
+    upcomingTitleFamily: "오늘·이번 주 우리 가족", // E(1-3): 36개월 이상 아이의 홈에서 이 카드가 먼저 올 때의 제목
     upcomingEmpty: "앞으로 7일 안에 등록된 가족 일정이 없어요.",
     upcomingAdd: "일정 추가하기",
     upcomingMore: "캘린더에서 보기",
@@ -1003,9 +1004,9 @@
     return { items: out, more: total - out.length };
   }
   /** 홈 카드. 일정이 없으면 빈 상태 안내와 추가 버튼, 있으면 줄 목록과 '캘린더에서 보기'. */
-  function renderUpcomingCard(data) {
+  function renderUpcomingCard(data, opts) {
     const items = (data && data.items) || [];
-    const head = `<div class="home-sec-head"><h3>${esc(MSG.upcomingTitle)}</h3></div>`;
+    const head = `<div class="home-sec-head"><h3>${esc(opts && opts.family === true ? MSG.upcomingTitleFamily : MSG.upcomingTitle)}</h3></div>`;
     if (!items.length) {
       return `<section class="home-sec sec-us-upcoming">${head}<p class="home-empty-line">${esc(MSG.upcomingEmpty)}</p><button type="button" class="home-more" data-act="us-add">${esc(MSG.upcomingAdd)}</button></section>`;
     }

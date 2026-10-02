@@ -196,7 +196,7 @@ test("data-act us-cal/us-add, 줄 탭이 각각 goCalendar/usAddFromHome 으로 
 console.log("app.js 연결(갱신 훅·가드)");
 const app = read("js/app.js");
 const slice = (from, to) => { const a = app.indexOf(from); const b = app.indexOf(to, a); assert.ok(a > 0 && b > a, from); return app.slice(a, b); };
-const hookSrc = slice("  function usHomeCardHtml()", "  function usRefreshCalendar()");
+const hookSrc = slice("  function usHomeCardHtml(", "  function usRefreshCalendar()");
 function hookEnv(opts) {
   const log = { render: 0, build: 0 };
   const st = { enabled: true, active: true, docsHtml: "A", ...opts };
@@ -263,7 +263,7 @@ test("연결: usRefreshCalendar 는 캘린더가 숨겨져 있어도 홈 갱신�
   const body = slice("  function usRefreshCalendar()", "  /** 캘린더 위");
   assert.ok(/^\s*function usRefreshCalendar\(\) \{\n\s*usRefreshHome\(\);\n\s*if \(!profile/.test(body));
   const ctxSrc = slice("      usUpcomingHtml:", "      openDetail,");
-  assert.ok(/us\.homeSig = h \+ usAutoLinkSig\(\)/.test(ctxSrc) && /const h = usHomeCardHtml\(\);/.test(ctxSrc) && /usOpenForm\(null, toISODate\(new Date\(\)\)\)/.test(ctxSrc));
+  assert.ok(/us\.homeSig = h \+ usAutoLinkSig\(\)/.test(ctxSrc) && /const h = usHomeCardHtml\(opts\);/.test(ctxSrc) && /usOpenForm\(null, toISODate\(new Date\(\)\)\)/.test(ctxSrc));
 });
 test("버전 쿼리: home.js·user-schedule-view.js·app.js 스크립트 태그가 올라갔다", () => {
   const idx = read("index.html");

@@ -72,8 +72,9 @@ test("NAT-007·NAT-018 등 다른 지원금 항목과 NAT-020 의 구조(키 집
   for (const s of nat) {
     const h = head.find((x) => x.id === s.id);
     assert.ok(h, s.id + " 가 HEAD 에 있다");
-    assert.deepStrictEqual(Object.keys(s).filter((k) => k !== "applyUrl" && k !== "applyLabel").sort(), Object.keys(h).sort(), s.id + " 키 집합"); // E(1-2): 신청용 링크 두 필드만 추가될 수 있다
-    if (s.id !== "NAT-020") { const { applyUrl, applyLabel, ...rest } = s; assert.deepStrictEqual(rest, h, s.id + " 는 변경 없음(신청용 링크 두 필드 제외)"); }
+    const nk = (o) => Object.keys(o).filter((k) => k !== "applyUrl" && k !== "applyLabel").sort();
+    assert.deepStrictEqual(nk(s), nk(h), s.id + " 키 집합"); // E(1-2): 신청용 링크 두 필드만 추가될 수 있다
+    if (s.id !== "NAT-020") { const strip = ({ applyUrl, applyLabel, ...r }) => r; assert.deepStrictEqual(strip(s), strip(h), s.id + " 는 변경 없음(신청용 링크 두 필드 제외)"); }
   }
   assert.strictEqual(nat.length, head.length);
   assert.strictEqual(nat020.conditionLabel, "유치원 이용 시");

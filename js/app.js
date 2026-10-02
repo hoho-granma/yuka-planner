@@ -729,6 +729,24 @@
   function calendarDotSchedule() {
     return calendarSchedule().filter((e) => !periodRangeOf(e));
   }
+  // ── E(1-3) 홈 순서용: 이 기기 아이들의 생년월일(가장 어린 아이 판단). 가구 플래그가 켜진 기기에서만 기록한다. ──
+  const CHILD_BIRTHS_KEY = "hannun_child_births";
+  function rememberChildBirth() {
+    if (!hhEnabled() || !familyCode || !profile || isPregnant()) return;
+    try {
+      const m = JSON.parse(localStorage.getItem(CHILD_BIRTHS_KEY) || "{}") || {};
+      m[familyCode] = toISODate(profile.birthDate);
+      localStorage.setItem(CHILD_BIRTHS_KEY, JSON.stringify(m));
+    } catch (e) {}
+  }
+  /** 이 기기 아이들 [{ birthDate, stage }] — 지금 아이 + 기억해 둔 다른 아이(생년월일을 모르면 빠진다). */
+  function homeKids() {
+    let births = {};
+    try { births = JSON.parse(localStorage.getItem(CHILD_BIRTHS_KEY) || "{}") || {}; } catch (e) {}
+    const kids = loadChildren().filter((c) => c && c.code !== familyCode).map((c) => ({ birthDate: births[c.code], stage: c.stage }));
+    if (profile) kids.push({ birthDate: profile.birthDate, stage: isPregnant() ? "pregnant" : "born" });
+    return kids;
+  }
   /** 이 달(연·월)과 기간이 겹치고 아직 완료하지 않은 기간형 AUTO. 시작 월령이 속한 달부터 서비스 상한까지 완료 전까지 계속 나온다. */
   function periodAutoInMonth(year, month) {
     const first = new Date(year, month, 1);
@@ -2099,6 +2117,7 @@
     await ensureRegionSubsidyLoaded();
     schedule = buildSchedule({ ...profile, schoolPolicy }, dataset, completionsForEngine());
     rememberChild();
+    rememberChildBirth();
     viewMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     selectedCalendarDate = new Date();
     renderFilterChips();
@@ -3219,12 +3238,12 @@
     if (note) note.hidden = !on;
   }
   /** 홈 '다가오는 가족 일정' 카드(F1). 플래그 OFF·가구 없음이면 "" — 홈은 기존 그대로. AUTO 일정은 섞지 않는다(showAuto:false). */
-  function usHomeCardHtml() {
+  function usHomeCardHtml(opts) {
     if (!hhEnabled() || !usActive()) return "";
     try {
       const todayIso = toISODate(new Date());
       const model = usBuildModel(todayIso, UserSchedule.addDays(todayIso, 6), { scope: "ALL", showAuto: false });
-      return UserScheduleView.renderUpcomingCard(UserScheduleView.upcomingItems(model, { todayIso, links: usLinks() }));
+      return UserScheduleView.renderUpcomingCard(UserScheduleView.upcomingItems(model, { todayIso, links: usLinks() }), opts);
     } catch (e) {
       console.error("홈 가족 일정 카드 실패", e);
       return "";
@@ -3233,7 +3252,8 @@
   /** 가구 데이터·일정이 바뀐 뒤 홈 카드가 달라졌을 때만 홈을 다시 그린다(같으면 건너뜀 — 중복 호출 가드). */
   function usRefreshHome() {
     if (!profile || !hhEnabled()) return;
-    if (usHomeCardHtml() + usAutoLinkSig() !== (us.homeSig || "")) {
+    const ord = usActive() && typeof HomeOrder !== "undefined" ? HomeOrder.homeSectionOrder({ children: homeKids(), pregnant: isPregnant(), asOf: new Date() }) : null;
+    if (usHomeCardHtml(ord ? { family: ord[0] === "family" } : undefined) + usAutoLinkSig() !== (us.homeSig || "")) {
       renderHome();
       if (autoLinkOn() && typeof renderChecklistTab === "function") renderChecklistTab(); // 체크리스트 카드의 '예약됨' 보조 문구도 함께 갱신
     }
@@ -3930,11 +3950,13 @@
         renderHome();
         renderRecordTab();
       },
-      usUpcomingHtml: () => {
-        const h = usHomeCardHtml();
+      usUpcomingHtml: (opts) => {
+        const h = usHomeCardHtml(opts);
         us.homeSig = h + usAutoLinkSig();
         return h;
       },
+      // E(1-3): 가구가 활성일 때만 홈 섹션 순서를 아이 나이로 정한다(꺼져 있으면 null → 이전 순서 그대로)
+      homeOrder: () => (usActive() && typeof HomeOrder !== "undefined" ? HomeOrder.homeSectionOrder({ children: homeKids(), pregnant: isPregnant(), asOf: new Date() }) : null),
       autoLinkText: (e) => {
         const m = autoLinks();
         return m ? UserScheduleView.autoLinkNote(m.get(e.id)) : "";

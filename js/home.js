@@ -53,8 +53,11 @@
     const m = today.getMonth();
     const html = [pregnantBanner(ctx)];
     // 가족 캘린더(가구)가 켜져 있을 때만 앞으로 7일의 추가 일정 카드가 붙는다. 꺼져 있거나 가구가 없으면 ""(홈 DOM 그대로).
-    const usCard = typeof ctx.usUpcomingHtml === "function" ? ctx.usUpcomingHtml() : "";
-    if (usCard) html.push(usCard);
+    // E(1-3): 가구가 활성이면 ctx.homeOrder()(["todo","family"] | ["family","todo"])가 '이번 달 챙길 것'과 이 카드의 순서만 정한다(내용 불변). 36개월 이상(family 먼저)이면 카드 제목이 '오늘·이번 주 우리 가족'.
+    const order = typeof ctx.homeOrder === "function" ? ctx.homeOrder() : null;
+    const todoFirst = !!order && order[0] === "todo";
+    const usCard = typeof ctx.usUpcomingHtml === "function" ? ctx.usUpcomingHtml(order ? { family: !todoFirst } : undefined) : "";
+    if (usCard && !todoFirst) html.push(usCard);
 
     const cls = L.classifyHomeItems(events, completed, { today, birthDate: ctx.profile.birthDate, monthKeysOf: ctx.monthKeysOf, periodRangeOf: ctx.periodRangeOf });
     const ymText = (d) => `${d.getMonth() + 1}월`;
@@ -86,6 +89,7 @@
         "sec-today"
       )
     );
+    if (usCard && todoFirst) html.push(usCard); // 챙길 것 먼저(36개월 미만·임신 중): 가족 일정 카드는 그 아래
 
     // 2. 이 기간에 챙겨볼 것 — 기간형 AUTO(4~6세 추가접종 등)를 같은 성격끼리 카드 하나로 묶는다(항목·완료는 개별 그대로). 미완료만, 완료하면 빠진다.
     const pGroups = new Map();
