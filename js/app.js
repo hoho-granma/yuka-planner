@@ -2139,30 +2139,108 @@
       el("places-body").innerHTML = placesViewHtml();
       return;
     }
+    const find = (id) => ((placesData && placesData.places) || []).find((p) => p.id === id);
     const add = ev.target.closest("[data-places-add]");
     if (add) {
-      const place = ((placesData && placesData.places) || []).find((p) => p.id === add.getAttribute("data-places-add"));
-      if (place) placesAddSchedule(place);
+      const place = find(add.getAttribute("data-places-add"));
+      if (place) placesDetailOpen(place, "register");
       return;
     }
-    if (ev.target.closest('[data-places-action="change"]') && profile) showProfileSheet();
+    if (ev.target.closest('[data-places-action="change"]')) {
+      if (profile) showProfileSheet();
+      return;
+    }
+    if (ev.target.closest("a")) return; // 카드 안 외부 링크는 그대로 열린다
+    const card = ev.target.closest("[data-places-open]");
+    if (card) {
+      const place = find(card.getAttribute("data-places-open"));
+      if (place) placesDetailOpen(place, "info");
+    }
   }
-  /** [일정 추가]: 장소 이름·주소를 채운 일정 폼(날짜는 사용자가 고른다). 가족 캘린더(가구)가 없으면 안내만. */
-  function placesAddSchedule(place) {
-    if (!usActive()) {
-      modalMode = "profile";
-      el("modal-content").innerHTML = `<h3>${esc(PlacesView.TEXT.add)}</h3><p class="fine-print">${esc(ADD_MENU_MSG.needHousehold)}</p><button class="btn-close" id="btn-places-close">${esc(ADD_MENU_MSG.close)}</button>`;
-      el("detail-modal").classList.remove("hidden");
-      el("btn-places-close").addEventListener("click", closeDetail);
+  // ── G2 장소 상세 시트 + 같은 시트 안 일정 등록(기존 buildCreateDoc/저장 경로 재사용, 새 일정 폼은 열지 않는다) ──
+  const placesReg = { place: null, mode: "info", date: "", allDay: true, startTime: "", endTime: "", assignee: "", scope: "FAMILY", childKeys: [], saving: false, error: "", doneLabel: "", doneDate: "" };
+  function placesDetailOpen(place, mode) {
+    // 가구가 없으면 등록 단계 없이 상세만(안내 문구)
+    Object.assign(placesReg, { place, mode: mode === "register" && usActive() ? "register" : "info", date: PlacesView.defaultVisitDate(new Date()), allDay: true, startTime: "", endTime: "", assignee: memActiveId() || "", scope: "FAMILY", childKeys: [], saving: false, error: "", doneLabel: "", doneDate: "" });
+    placesDetailRender();
+  }
+  function placesDetailRender() {
+    modalMode = "profile";
+    const r = placesReg;
+    const kids = usLinks().filter((l) => !l.removedAt).map((l) => ({ childKey: l.childKey, name: l.displayName || "" }));
+    el("modal-content").innerHTML = PlacesView.renderDetail(r.place, { mode: r.mode, canRegister: usActive(), today: new Date(), reg: r, members: usActive() ? HouseholdView.visibleMembers(usMembers()).map((m) => ({ memberId: m.memberId, label: m.label })) : [], kids, doneLabel: r.doneLabel, pickerHtml: r.mode === "register" ? HNDatePicker.markup("plr") : "" });
+    el("detail-modal").classList.remove("hidden");
+    const root = el("modal-content").querySelector("[data-places-detail]");
+    if (root) root.addEventListener("click", placesDetailClick);
+    if (r.mode === "register" && el("plr-dp-btn")) {
+      const picker = HNDatePicker.bindById("plr", { getStage: () => "schedule", format: formatDateKR, placeholder: "날짜를 선택해주세요", onChange: (d) => { r.date = toISODate(d); } });
+      if (r.date) picker.set(new Date(`${r.date}T00:00:00`));
+    }
+  }
+  function placesReadTimes() {
+    const rd = (id) => {
+      const h = el(`${id}-h`) && el(`${id}-h`).value;
+      let m = el(`${id}-m`) && el(`${id}-m`).value;
+      if (!h) return "";
+      return `${h}:${m || "00"}`;
+    };
+    if (placesReg.allDay === false && el("plr-start-h")) { placesReg.startTime = rd("plr-start"); placesReg.endTime = rd("plr-end"); }
+  }
+  async function placesDetailClick(ev) {
+    const t = ev.target;
+    const r = placesReg;
+    if (t.closest("[data-places-close]")) return closeDetail();
+    if (t.closest("[data-places-copy]")) {
+      try { await navigator.clipboard.writeText(t.closest("[data-places-copy]").getAttribute("data-places-copy")); t.closest("[data-places-copy]").textContent = PlacesView.TEXT.copied; } catch (e) {}
       return;
     }
-    us.autoLabel = null;
-    us.form = { ...UserScheduleView.newForm({ date: "", activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: memActiveId(), defaultScope: "FAMILY" }), ...PlacesView.scheduleDraftFor(place) };
-    us.messages = [];
-    us.saving = false;
-    us.dayForm = null;
-    us.plan = null;
-    usShowForm();
+    if (t.closest("[data-places-reg-open]")) { r.mode = "register"; r.error = ""; return placesDetailRender(); }
+    if (t.closest("[data-places-back]")) { placesReadTimes(); r.mode = "info"; return placesDetailRender(); }
+    if (t.closest("[data-places-allday]")) { placesReadTimes(); r.allDay = !r.allDay; return placesDetailRender(); }
+    const asg = t.closest("[data-places-assignee]");
+    if (asg) { placesReadTimes(); const v = asg.getAttribute("data-places-assignee"); r.assignee = r.assignee === v ? "" : v; return placesDetailRender(); }
+    const tg = t.closest("[data-places-target]");
+    if (tg) { placesReadTimes(); const v = tg.getAttribute("data-places-target"); r.scope = v === "FAMILY" ? "FAMILY" : "CHILD"; r.childKeys = v === "FAMILY" ? [] : [v]; return placesDetailRender(); }
+    if (t.closest("[data-places-view-cal]")) {
+      closeDetail();
+      const d = new Date(`${r.doneDate}T00:00:00`);
+      viewMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+      selectedCalendarDate = d;
+      switchTab("calendar");
+      renderCalendar();
+      renderSelectedDayPanel();
+      attachListHandlers();
+      return;
+    }
+    if (t.closest("[data-places-save]")) return placesSave();
+  }
+  async function placesSave() {
+    const r = placesReg;
+    if (r.saving || !r.place || !usActive()) return;
+    placesReadTimes();
+    const form = { ...UserScheduleView.newForm({ date: r.date, activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: r.assignee, defaultScope: "FAMILY" }), ...PlacesView.scheduleDraftFor(r.place), scope: r.scope, childKeys: r.scope === "CHILD" ? r.childKeys.slice() : [], assigneeMemberId: r.assignee || "", allDay: r.allDay !== false, startTime: r.allDay === false ? r.startTime : "", endTime: r.allDay === false ? r.endTime : "", memo: PlacesView.memoFor(r.place) };
+    const now = Date.now();
+    const prep = UserScheduleView.prepareSave(form, now);
+    if (!prep.ok) { r.error = prep.messages[0] || PlacesView.TEXT.saveFail; return placesDetailRender(); }
+    const built = UserSchedule.buildCreateDoc(prep.input, now);
+    if (!built.ok) { r.error = UserScheduleView.messagesFromErrors(built.errors)[0] || PlacesView.TEXT.saveFail; return placesDetailRender(); }
+    r.saving = true; r.error = "";
+    placesDetailRender();
+    try {
+      const res = await HouseholdSync.createSchedule(hh.hid, built.doc);
+      if (!res.ok) throw new Error(res.reason || "create-failed");
+      r.saving = false;
+      r.mode = "done";
+      r.doneDate = r.date;
+      r.doneLabel = PlacesView.dateLabel(r.date);
+      usRefreshCalendar();
+      placesDetailRender();
+    } catch (e) {
+      console.error("장소 일정 등록 실패", e);
+      r.saving = false;
+      r.error = PlacesView.TEXT.saveFail;
+      placesDetailRender();
+    }
   }
 
   function switchTab(name) {

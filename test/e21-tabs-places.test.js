@@ -35,7 +35,7 @@ test("index.html: 어디갈까 nav(기본 hidden, 라벨 '어디갈까' 물음�
 console.log("탭 레이아웃·기록 보기·어디갈까 동작");
 function env(o) {
   const a = APP.indexOf("  // ── E(2-1·2-2) 하단 탭 교체"), b = APP.indexOf("  function switchTab(name) {");
-  const mkEl = (hidden) => ({ hidden, classList: { toggle(n, on) { this.owner.hidden = on; }, remove(n) { this.owner.hidden = false; }, add(n) { this.owner.hidden = true; }, owner: null }, innerHTML: "", listeners: {} });
+  const mkEl = (hidden) => ({ hidden, classList: { toggle(n, on) { this.owner.hidden = on; }, remove(n) { this.owner.hidden = false; }, add(n) { this.owner.hidden = true; }, owner: null }, innerHTML: "", listeners: {}, querySelector: () => null });
   const nodes = { rec: mkEl(false), pl: mkEl(true), back: mkEl(true), body: mkEl(false), modal: mkEl(true), content: mkEl(false), close: mkEl(false) };
   Object.values(nodes).forEach((n) => (n.classList.owner = n));
   nodes.close.addEventListener = (t, f) => (nodes.close.listeners[t] = f);
@@ -46,10 +46,11 @@ function env(o) {
     el: (id) => ({ "btn-record-back": nodes.back, "places-body": nodes.body, "modal-content": nodes.content, "detail-modal": nodes.modal, "btn-places-close": nodes.close }[id] || null),
     hhEnabled: () => o.on, usActive: () => o.active !== false, usActiveChildKey: () => "c1", usLinks: () => [{ childKey: "c1", displayName: "수아", order: 1 }], memActiveId: () => "m1", usShowForm: () => { log.shown++; log.form = { ...sb.us.form }; },
     esc: (x) => String(x), ADD_MENU_MSG: { needHousehold: "가족 캘린더를 만들어 주세요", close: "닫기" }, closeDetail: () => { log.closed++; }, showProfileSheet: () => { log.profileSheet++; },
+    HNDatePicker: { markup: () => '<div id="plr-dp-btn"></div>', bindById: () => ({ set() {} }) }, usMembers: () => [{ memberId: 'm1', role: 'MOM', label: '엄마', order: 1 }], HouseholdView: require('../js/household-view.js'), formatDateKR: () => '', toISODate: () => '2026-10-03', UserSchedule: require('../js/user-schedule.js'), HouseholdSync: {}, usRefreshCalendar() {},
     switchTab: (n) => { log.switched.push(n); sb.currentTab = n; }, currentTab: o.tab || "home", modalMode: null, loadJsonOrNull: async () => PLACES,
     profile: o.profile === undefined ? { name: "수아", province: "서울특별시", district: "구로구", birthDate: new Date(2026, 2, 2) } : o.profile, isPregnant: () => false, childDisplayName: () => "수아", ageInMonths: () => 7 };
   vm.createContext(sb);
-  vm.runInContext(APP.slice(a, b).replace(/^  let (\w+) =/gm, "var $1 =").replace(/^  const (\w+) =/gm, "var $1 =") + "\n;globalThis.__t = { applyTabLayout, openRecordView, renderPlacesTab, placesOnClick, placesAddSchedule, placesViewHtml, get recordReturnTab() { return recordReturnTab; }, get placesCat() { return placesCat; } };", sb);
+  vm.runInContext(APP.slice(a, b).replace(/^  let (\w+) =/gm, "var $1 =").replace(/^  const (\w+) =/gm, "var $1 =") + "\n;globalThis.__t = { applyTabLayout, openRecordView, renderPlacesTab, placesOnClick, placesViewHtml, get recordReturnTab() { return recordReturnTab; }, get placesCat() { return placesCat; } };", sb);
   return { sb, nodes, log, t: sb.__t, us };
 }
 test("applyTabLayout: ON 이면 기록 nav 숨김·어디갈까 nav 표시·돌아가기 표시 / OFF 면 기록 nav 그대로·어디갈까 숨김(불변)", () => {
@@ -82,18 +83,17 @@ test("어디갈까 렌더: places.json 을 읽어 내 지역·월령으로 거�
   const none = env({ on: true, tab: "places", profile: null }); await none.t.renderPlacesTab();
   assert.ok(none.nodes.body.innerHTML.includes("아이와 지역을 등록하면"), "프로필 없음 → 등록 안내");
 });
-test("[일정 추가]: 가구 활성이면 장소 이름·주소·분류·가족 대상으로 채운 일정 폼(날짜 비움, 담당 기본값 유지), 가구 없으면 안내 시트만", async () => {
+test("[일정 추가](G2): 장소 상세 시트의 일정 등록 단계가 바로 열린다(기존 일정 폼은 열지 않음), 가구 없으면 등록 없이 상세+안내, 바꾸기는 프로필 시트", async () => {
   const e = env({ on: true, tab: "places" });
   await e.t.renderPlacesTab();
   const pl = PLACES.places[0];
   e.t.placesOnClick({ target: { closest: (s) => (s === "[data-places-add]" ? { getAttribute: () => pl.id } : null) } });
-  assert.strictEqual(e.log.shown, 1);
-  assert.deepStrictEqual([e.log.form.title, e.log.form.location, e.log.form.category, e.log.form.scope, e.log.form.eventDate, e.log.form.assigneeMemberId, e.log.form.mode], [pl.name.slice(0, 100), String(pl.address || "").slice(0, 100), "FAMILY", "FAMILY", "", "m1", "create"]);
-  assert.deepStrictEqual([e.us.saving, e.us.messages.length], [false, 0]);
+  assert.strictEqual(e.log.shown, 0, "일정 폼(usShowForm)은 열지 않는다");
+  assert.ok(e.nodes.content.innerHTML.includes('data-places-detail="register"') && e.nodes.content.innerHTML.includes(pl.name));
   const nh = env({ on: true, tab: "places", active: false });
   await nh.t.renderPlacesTab();
   nh.t.placesOnClick({ target: { closest: (s) => (s === "[data-places-add]" ? { getAttribute: () => pl.id } : null) } });
-  assert.ok(nh.log.shown === 0 && nh.nodes.content.innerHTML.includes("가족 캘린더를 만들어 주세요") && nh.nodes.modal.hidden === false);
+  assert.ok(nh.log.shown === 0 && nh.nodes.content.innerHTML.includes('data-places-detail="info"') && nh.nodes.content.innerHTML.includes("가족 캘린더를 만들면 일정으로 등록할 수 있어요") && !nh.nodes.content.innerHTML.includes("data-places-reg-open"));
   e.t.placesOnClick({ target: { closest: (s) => (s === '[data-places-action="change"]' ? {} : null) } });
   assert.strictEqual(e.log.profileSheet, 1);
 });

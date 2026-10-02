@@ -25,7 +25,60 @@
     add: "일정 추가",
     link: "공식 링크",
     change: "바꾸기",
+    // G2 장소 상세 시트·일정 등록
+    copy: "주소 복사",
+    copied: "복사했어요",
+    homepage: "공식 홈페이지",
+    map: "지도에서 보기",
+    register: "일정 등록하기",
+    needHousehold: "가족 캘린더를 만들면 일정으로 등록할 수 있어요",
+    reservationRequired: "예약이 필요한 곳이에요. 공식 홈페이지에서 먼저 예약하세요.",
+    reservationPartly: "일부는 예약이 필요해요. 공식 홈페이지에서 확인하세요.",
+    regTitle: "일정 등록",
+    dateLabel: "날짜",
+    timeLabel: "시간",
+    allDay: "종일",
+    startLabel: "시작",
+    endLabel: "끝 (선택)",
+    assigneeLabel: "담당",
+    targetLabel: "대상",
+    targetFamily: "가족 전체",
+    save: "캘린더에 등록",
+    saving: "등록하는 중이에요…",
+    back: "뒤로",
+    close: "닫기",
+    saveFail: "일정을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.",
+    viewCalendar: "캘린더에서 보기",
+    registered: (label) => `${label} 캘린더에 등록했어요`,
+    memoPrefix: "공식 홈페이지: ",
+    mapBase: "https://map.kakao.com/link/search/",
   });
+  const DOW = Object.freeze(["일", "월", "화", "수", "목", "금", "토"]);
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const isoOf = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  const dateOfIso = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || "")); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+  /** 다가오는 토요일(오늘이 토요일이면 오늘)의 YYYY-MM-DD. today: Date. */
+  function defaultVisitDate(today) {
+    const t = today instanceof Date && !isNaN(today.getTime()) ? today : new Date();
+    const add = (6 - t.getDay() + 7) % 7;
+    return isoOf(new Date(t.getFullYear(), t.getMonth(), t.getDate() + add));
+  }
+  /** "2026-10-10" → "10/10(토)". 잘못된 값은 "". */
+  function dateLabel(iso) {
+    const d = dateOfIso(iso);
+    return d ? `${d.getMonth() + 1}/${d.getDate()}(${DOW[d.getDay()]})` : "";
+  }
+  /** 지도 검색 링크(키·SDK 없이 링크만): 주소가 있으면 주소, 없으면 시·도·시군구·이름으로 검색. */
+  function mapUrl(place) {
+    const p = place || {};
+    const q = p.address || [p.province, p.district, p.name].filter((x) => typeof x === "string" && x).join(" ");
+    return TEXT.mapBase + encodeURIComponent(q);
+  }
+  /** 일정 메모: 공식 홈페이지 주소(https 만). 없으면 "". */
+  function memoFor(place) {
+    return place && Places.isHttpsUrl(place.officialUrl) ? (TEXT.memoPrefix + place.officialUrl).slice(0, 500) : "";
+  }
+
   /** 일정 문서 길이 제한(js/user-schedule.js LIMITS.titleMax·locationMax 와 같은 값). */
   const SCHEDULE_LIMITS = Object.freeze({ titleMax: 100, locationMax: 100 });
 
@@ -91,7 +144,7 @@
       : "";
     const where = [p.province, p.district].filter((s) => typeof s === "string" && s).join(" ");
     return (
-      `<article class="places-card" data-places-id="${esc(p.id)}">` +
+      `<article class="places-card" data-places-id="${esc(p.id)}" data-places-open="${esc(p.id)}">` +
       `<div class="places-badges">${badges.join("")}</div>` +
       `<h3 class="places-name">${esc(p.name)}</h3>` +
       (p.summary ? `<p class="places-summary">${esc(p.summary)}</p>` : "") +
@@ -129,6 +182,70 @@
     return `<section class="places-view">${contextRow(opts.child, opts.region)}${chipRow(opts.category)}${head}${body}</section>`;
   }
 
+  const HOUR_OPTS = Array.from({ length: 24 }, (_, i) => pad2(i));
+  const MIN_OPTS = ["00", "10", "20", "30", "40", "50"];
+  const chipBtn = (attrs, label, active) => `<button type="button" class="places-chip${active ? " active" : ""}" aria-pressed="${active ? "true" : "false"}" ${attrs}>${esc(label)}</button>`;
+  const splitHm = (v) => { const m = /^(\d{2}):(\d{2})$/.exec(v || ""); return m ? { h: m[1], m: m[2] } : { h: "", m: "" }; };
+  function timeSel(id, value, label) {
+    const t = splitHm(value);
+    const sel = (suffix, opts, cur) => `<select id="${id}-${suffix}" class="places-time-sel" aria-label="${esc(label)}"><option value="">--</option>${opts.map((o) => `<option value="${o}"${cur === o ? " selected" : ""}>${o}</option>`).join("")}</select>`;
+    return `<span class="places-time"><label>${esc(label)}</label>${sel("h", HOUR_OPTS, t.h)}${sel("m", MIN_OPTS, t.m)}</span>`;
+  }
+  /**
+   * 장소 상세 시트(G2). o: { mode: "info"|"register"|"done", canRegister, today, reg:{date,allDay,startTime,endTime,assignee,scope,childKeys,saving,error}, pickerHtml, members:[{memberId,label}], kids:[{childKey,name}], doneLabel }
+   * 이벤트 속성: data-places-copy · data-places-reg-open · data-places-save · data-places-back · data-places-allday · data-places-assignee · data-places-target · data-places-view-cal · data-places-close
+   */
+  function renderDetail(place, o) {
+    const p = place || {};
+    const opts = o || {};
+    const mode = opts.mode === "register" || opts.mode === "done" ? opts.mode : "info";
+    const where = [p.province, p.district].filter((x) => typeof x === "string" && x).join(" ");
+    const closeBtn = `<button type="button" class="btn-close" data-places-close>${esc(TEXT.close)}</button>`;
+    if (mode === "done") {
+      return `<div class="places-detail" data-places-detail="done"><h3>${esc(TEXT.registered(opts.doneLabel || ""))}</h3><p class="fine-print">${esc(p.name || "")}</p><button type="button" class="btn-complete" data-places-view-cal>${esc(TEXT.viewCalendar)}</button>${closeBtn}</div>`;
+    }
+    if (mode === "register") {
+      const r = opts.reg || {};
+      const members = Array.isArray(opts.members) ? opts.members : [];
+      const kids = Array.isArray(opts.kids) ? opts.kids : [];
+      const assignee = members.length
+        ? `<div class="places-reg-field"><label>${esc(TEXT.assigneeLabel)}</label><div class="places-chips-wrap">${members.map((m) => chipBtn(`data-places-assignee="${esc(m.memberId)}"`, m.label || "", r.assignee === m.memberId)).join("")}</div></div>`
+        : "";
+      const targets = `<div class="places-reg-field"><label>${esc(TEXT.targetLabel)}</label><div class="places-chips-wrap">${chipBtn('data-places-target="FAMILY"', TEXT.targetFamily, r.scope !== "CHILD")}${kids.map((k) => chipBtn(`data-places-target="${esc(k.childKey)}"`, k.name || "", r.scope === "CHILD" && (r.childKeys || [])[0] === k.childKey)).join("")}</div></div>`;
+      const times = r.allDay === false ? `<div class="places-times">${timeSel("plr-start", r.startTime, TEXT.startLabel)}${timeSel("plr-end", r.endTime, TEXT.endLabel)}</div>` : "";
+      return (
+        `<div class="places-detail" data-places-detail="register"><h3>${esc(TEXT.regTitle)}</h3><p class="fine-print">${esc(p.name || "")}</p>` +
+        `<div class="places-reg-field"><label>${esc(TEXT.dateLabel)}</label>${opts.pickerHtml || ""}</div>` +
+        `<div class="places-reg-field"><label>${esc(TEXT.timeLabel)}</label><div class="places-chips-wrap">${chipBtn("data-places-allday", TEXT.allDay, r.allDay !== false)}</div>${times}</div>` +
+        assignee + targets +
+        (r.error ? `<p class="places-reg-err">${esc(r.error)}</p>` : "") +
+        `<button type="button" class="btn-complete" data-places-save${r.saving ? " disabled" : ""}>${esc(r.saving ? TEXT.saving : TEXT.save)}</button>` +
+        `<button type="button" class="btn-text" data-places-back${r.saving ? " disabled" : ""}>${esc(TEXT.back)}</button></div>`
+      );
+    }
+    const badges = [`<span class="places-badge places-badge-cat">${esc(lookup(Places.CATEGORIES, p.category) || "")}</span>`, `<span class="places-badge">${esc(TEXT.label)}</span>`];
+    if (p.example === true) badges.push(`<span class="places-badge places-badge-example">${esc(TEXT.example)}</span>`);
+    const stale = Places.isStale(p, opts.today === undefined ? new Date() : opts.today);
+    if (stale) badges.push(`<span class="places-badge places-badge-stale">${esc(TEXT.stale)}</span>`);
+    const addr = p.address || where;
+    const addrRow = addr ? `<div class="places-detail-addr"><span>${esc(addr)}</span>${p.address ? `<button type="button" class="btn-close" data-places-copy="${esc(p.address)}">${esc(TEXT.copy)}</button>` : ""}</div>` : "";
+    const hasHome = Places.isHttpsUrl(p.officialUrl);
+    const links = `<div class="places-actions">${hasHome ? `<a class="places-link" href="${esc(p.officialUrl)}" target="_blank" rel="noopener noreferrer">${esc(TEXT.homepage)}</a>` : ""}<a class="places-link" href="${esc(mapUrl(p))}" target="_blank" rel="noopener noreferrer">${esc(TEXT.map)}</a></div>`;
+    const resv = p.reservation === "REQUIRED" ? `<p class="places-reserve-note">${esc(TEXT.reservationRequired)}</p>` : p.reservation === "PARTLY" ? `<p class="places-reserve-note">${esc(TEXT.reservationPartly)}</p>` : "";
+    return (
+      `<div class="places-detail" data-places-detail="info"><div class="places-badges">${badges.join("")}</div>` +
+      `<h3 class="places-name">${esc(p.name || "")}</h3>` +
+      (p.summary ? `<p class="places-summary">${esc(p.summary)}</p>` : "") +
+      addrRow +
+      `<ul class="places-meta">${metaItem("권장 나이", ageText(p.ageMonths))}${metaItem("실내·실외", lookup(Places.INDOOR, p.indoor))}${metaItem("비용", lookup(Places.COST, p.cost))}${metaItem("예약", lookup(Places.RESERVATION, p.reservation))}</ul>` +
+      resv +
+      `<p class="places-checked">${p.checkedAt ? esc(p.checkedAt) + " 확인" : esc(TEXT.unknown)}</p>` +
+      links + `<p class="places-notice">${esc(TEXT.notice)}</p>` +
+      (opts.canRegister ? `<button type="button" class="btn-complete" data-places-reg-open>${esc(TEXT.register)}</button>` : `<p class="fine-print">${esc(TEXT.needHousehold)}</p>`) +
+      closeBtn + `</div>`
+    );
+  }
+
   /**
    * [일정 추가] → 일정 폼 초기값. 기존 일정 구조(js/user-schedule.js: category FAMILY, scope FAMILY)에 맞춘다. 날짜는 사용자가 고른다.
    */
@@ -142,5 +259,5 @@
     };
   }
 
-  return { TEXT, SCHEDULE_LIMITS, esc, ageText, render, renderCard, scheduleDraftFor };
+  return { TEXT, SCHEDULE_LIMITS, esc, ageText, render, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, memoFor, scheduleDraftFor };
 });
