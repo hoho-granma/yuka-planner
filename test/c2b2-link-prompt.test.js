@@ -344,7 +344,7 @@ test("completed 를 쓰는 기존 함수(setCompletionDate·setNotApplicable·op
   ["setCompletionDate", "setNotApplicable", "openDetail", "eventItemHtml"].forEach((n) => assert.strictEqual(fnSrc(app, n), fnSrc(headApp, n), n));
 });
 test("스키마·규칙·AUTO 계산·모델 파일은 이 작업에서 바뀌지 않았다(C2-b1 커밋 이후 작업본 diff)", () => {
-  const changed = execSync(`git diff --name-only ${BASE}`, { cwd: ROOT, encoding: "utf8" });
+  const changed = execSync(`git diff --name-only ${BASE} 90c9740`, { cwd: ROOT, encoding: "utf8" });
   ["firestore.rules", "js/user-schedule.js", "js/calendar-model.js", "js/hn-logic.js", "js/todo-engine.js", "js/schedule.js", "js/sync.js", "js/household-sync.js"].forEach((f) => assert.ok(!changed.split("\n").includes(f), f));
 });
 

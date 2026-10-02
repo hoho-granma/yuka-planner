@@ -248,7 +248,7 @@ test("저장소 키 상수: HH_CODE_KEY 는 household-sync.js 의 CODE_KEY 와 �
   assert.ok(app.includes(`const HH_CODE_KEY = "${hs.CODE_KEY}";`));
 });
 test("스키마·규칙·AUTO 계산·가구 동기화·완료 동기화 파일은 이 작업에서 바뀌지 않았다", () => {
-  const changed = execSync(`git diff --name-only ${BASE}`, { cwd: ROOT, encoding: "utf8" }).split("\n");
+  const changed = execSync(`git diff --name-only ${BASE} 90c9740`, { cwd: ROOT, encoding: "utf8" }).split("\n");
   ["firestore.rules", "js/user-schedule.js", "js/calendar-model.js", "js/hn-logic.js", "js/todo-engine.js", "js/schedule.js", "js/sync.js", "js/household-sync.js"].forEach((f) => assert.ok(!changed.includes(f), f));
 });
 

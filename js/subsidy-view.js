@@ -27,7 +27,7 @@
     const body = document.getElementById("subsidy-body");
     if (!seg || !chips || !body) return;
 
-    const sctx = { today: ctx.today, ageNow: ctx.ageNow, pregnant: ctx.pregnant };
+    const sctx = { today: ctx.today, ageNow: ctx.ageNow, pregnant: ctx.pregnant, birthDate: ctx.profile && ctx.profile.birthDate };
     const all = L.subsidyBuckets(ctx.events, ctx.completed, sctx, 30);
     const inScope = (e) => (scope === "national" ? isNational(ctx, e) : scope === "regional" ? !isNational(ctx, e) : true);
     const b = {

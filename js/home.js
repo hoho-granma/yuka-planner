@@ -105,7 +105,7 @@
     }
 
     // 3. 신청 가능한 지원금 (마감 임박은 일반 일정과 다른 색으로 강조)
-    const sctx = { today, ageNow: ctx.ageNow, pregnant: ctx.pregnant };
+    const sctx = { today, ageNow: ctx.ageNow, pregnant: ctx.pregnant, birthDate: ctx.profile && ctx.profile.birthDate };
     const buckets = L.subsidyBuckets(events, completed, sctx, 30);
     const subList = buckets.available.slice(0, SUB_MAX);
     const subRows = subList

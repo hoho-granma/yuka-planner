@@ -98,6 +98,12 @@
         "startMonth": 0,
         "endMonth": 108
       },
+      "ageCap": {
+        "_설명": "연도별 신청 가능 나이 상한(만 개월, 해당 연도 오늘 기준 이 값 이하). 표 밖 연도는 가장 가까운 연도 값을 쓴다. exceptions는 해당 출생연도 아동을 fromYear~toYear 동안 상한과 무관하게 신청 가능으로 본다.",
+        "maxMonthsByYear": { "2026": 107, "2027": 119, "2028": 131, "2029": 143, "2030": 155 },
+        "exceptions": [{ "birthYear": 2017, "fromYear": 2026, "toYear": 2029 }],
+        "source": "아동수당법 제4조·부칙 제2조, 보건복지부 2026-04-23 보도자료(hn-research 조사, 열람일 2026-10-02)"
+      },
       "catchUp": "ALLOWED",
       "priority": 1,
       "leadDays": 30,

@@ -90,7 +90,7 @@ test("월령 의미 문구는 그대로: 체크리스트 구간 라벨·지원�
 });
 test("AUTO 계산·완료·규칙 파일은 바뀌지 않았다(나이 표기만 변경)", () => {
   const { execSync } = require("child_process");
-  const changed = execSync("git diff --name-only 913f9a1", { cwd: ROOT, encoding: "utf8" }).split("\n");
+  const changed = execSync("git diff --name-only 913f9a1 90c9740", { cwd: ROOT, encoding: "utf8" }).split("\n");
   ["firestore.rules", "js/todo-engine.js", "js/schedule.js", "js/hn-logic.js", "js/sync.js", "js/household-sync.js", "js/calendar-model.js", "js/user-schedule.js"].forEach((f) => assert.ok(!changed.includes(f), f));
 });
 

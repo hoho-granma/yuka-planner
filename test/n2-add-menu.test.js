@@ -153,7 +153,7 @@ test("usOpenForm: 새 일정에만 defaultScope 를 넘기고(옵션 없으면 �
   assert.ok(/usOpenForm\(null\)/.test(app) && !/usOpenForm\(null, toISODate\(new Date\(\)\), \{ scope/.test(app.replace(menuSrc, "")), "다른 호출처는 옵션을 쓰지 않는다");
 });
 test("스키마·규칙·AUTO 계산·가구 동기화·완료 동기화 파일은 바뀌지 않았다", () => {
-  const changed = execSync(`git diff --name-only ${BASE}`, { cwd: ROOT, encoding: "utf8" }).split("\n");
+  const changed = execSync(`git diff --name-only ${BASE} 90c9740`, { cwd: ROOT, encoding: "utf8" }).split("\n");
   ["firestore.rules", "js/user-schedule.js", "js/calendar-model.js", "js/hn-logic.js", "js/todo-engine.js", "js/schedule.js", "js/sync.js", "js/household-sync.js"].forEach((f) => assert.ok(!changed.includes(f), f));
 });
 

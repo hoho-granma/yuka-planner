@@ -345,8 +345,26 @@
   }
 
   /**
+   * 나이 상한이 있는 지원금(def.ageCap, 예: 아동수당 SB-04)의 상한 초과 여부. 상한은 today의 연도 기준(today 주입 가능).
+   * 초과면 true, 아니면(상한 없음·생일 모름·임신 중 포함) false — 판단할 수 없으면 기존 판정을 그대로 둔다.
+   */
+  function ageCapExceeded(def, birthDate, today) {
+    const cap = def && def.ageCap;
+    if (!cap || !cap.maxMonthsByYear || !(birthDate instanceof Date) || isNaN(birthDate.getTime()) || !(today instanceof Date)) return false;
+    const months = ChildTimeline.completedMonths(birthDate, today);
+    if (!(months >= 0)) return false;
+    const year = today.getFullYear();
+    const bYear = birthDate.getFullYear();
+    if ((cap.exceptions || []).some((x) => x.birthYear === bYear && year >= x.fromYear && year <= x.toYear)) return false;
+    const years = Object.keys(cap.maxMonthsByYear).map(Number).sort((a, b) => a - b);
+    if (!years.length) return false;
+    const key = year <= years[0] ? years[0] : year >= years[years.length - 1] ? years[years.length - 1] : year;
+    return months > cap.maxMonthsByYear[String(key)];
+  }
+
+  /**
    * 'applied'(신청 완료) | 'available'(신청 가능) | 'upcoming'(신청 예정) | 'expired'(기한 지남).
-   * ctx = { today: Date, ageNow: 개월, pregnant: bool }
+   * ctx = { today: Date, ageNow: 개월, pregnant: bool, birthDate?: Date(나이 상한 판정용 — 없으면 상한을 적용하지 않는다) }
    */
   function subsidyStatus(e, completed, ctx) {
     if (isDone(completed, e.id)) return "applied";
@@ -365,7 +383,7 @@
     switch (e.engineStatus) {
       case "DUE":
       case "OVERDUE_CATCHUP":
-        return "available";
+        return ageCapExceeded(e.detail && e.detail.definition, ctx.birthDate, today) ? "expired" : "available";
       case "OVERDUE_FINAL":
         return "expired";
       default:
@@ -550,6 +568,7 @@
     monthProgress,
     todayItems,
     subsidyDeadline,
+    ageCapExceeded,
     subsidyStatus,
     daysLeft,
     isUrgent,
