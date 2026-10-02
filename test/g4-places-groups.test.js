@@ -85,4 +85,35 @@ test("실제 places.json: 성남 사용자는 두 묶음(성남·용인) 순서�
   }
   assert.deepStrictEqual(P.validateData(data), []);
 });
+
+console.log("G5 다른 지역 둘러보기 칩 묶기");
+const R = (province, district) => ({ province, district });
+test("시·도에 시군구 3개 이상이면 시·도 칩 하나, 미만이면 시군구 칩(라벨은 시·도명/시군구명), 칩 수가 시군구 수만큼 늘지 않는다", () => {
+  const seoul = ["구로구", "강남구", "마포구", "송파구", "종로구", "중구"].map((d) => R("서울특별시", d));
+  const regions = [...seoul, R("경기도", "성남시"), R("경기도", "용인시")];
+  const h = PV.fallbackBox({ regions, current: null });
+  const chips = [...h.matchAll(/data-places-browse="([^"]*)"[^>]*>([^<]*)</g)].map((m) => [m[1], m[2]]);
+  assert.deepStrictEqual(chips.length, 3);
+  assert.deepStrictEqual(chips.sort().map((c) => c[1]).sort(), ["서울특별시", "성남시", "용인시"]);
+  assert.ok(h.includes('data-places-browse="서울특별시|"') && h.includes('data-places-browse="경기도|성남시"') && h.includes('data-places-browse="경기도|용인시"'));
+  const two = PV.fallbackBox({ regions: [R("서울특별시", "구로구"), R("서울특별시", "강남구")], current: null });
+  assert.ok(two.includes('data-places-browse="서울특별시|구로구"') && two.includes('data-places-browse="서울특별시|강남구"') && !two.includes('data-places-browse="서울특별시|"'), "2개 이하는 시군구 칩");
+  const three = PV.fallbackBox({ regions: ["가", "나", "다"].map((d) => R("부산광역시", d)), current: null });
+  assert.ok(three.includes('data-places-browse="부산광역시|"') && !three.includes("부산광역시|가"), "정확히 3개부터 묶음");
+  const noDist = PV.fallbackBox({ regions: [R("세종특별자치시", null)], current: null });
+  assert.ok(noDist.includes('data-places-browse="세종특별자치시|"') && noDist.includes(">세종특별자치시<"));
+  const act = PV.fallbackBox({ regions, current: { province: "서울특별시", district: null } });
+  assert.ok(/aria-pressed="true" data-places-browse="서울특별시\|"/.test(act) && /aria-pressed="false" data-places-browse="경기도\|성남시"/.test(act));
+});
+test("시·도 칩으로 보기: 그 시·도 전체를 소제목 없이(G4 규칙), 시군구 칩은 그 시군구만", () => {
+  const data = { places: ["구로구", "강남구", "마포구"].map((d, i) => mk("s" + i, { province: "서울특별시", district: d })).concat([mk("y1", { district: "용인시" })]) };
+  const e = env({ data, profile: { name: "수아", province: "부산광역시", district: "중구", birthDate: new Date(2026, 2, 2) } });
+  e.setBrowse({ province: "서울특별시", district: null });
+  const h = e.placesViewHtml();
+  assert.deepStrictEqual(order(h), ["s0", "s1", "s2"]);
+  assert.ok(!h.includes("places-group-title") && h.includes("아직 이 지역은 준비 중이에요") && h.includes('data-places-browse="서울특별시|"'));
+  e.setBrowse({ province: "서울특별시", district: "강남구" });
+  assert.deepStrictEqual(order(e.placesViewHtml()), ["s1"]);
+  assert.ok(/const \[province, district\] = \(br\.getAttribute\("data-places-browse"\) \|\| ""\)\.split\("\|"\);\n\s*placesBrowse = province \? \{ province, district: district \|\| null \} : null;/.test(APP), "빈 시군구는 시·도 전체(null)");
+});
 console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);

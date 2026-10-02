@@ -146,12 +146,22 @@
     return `<div class="places-filters" role="group" aria-label="${esc(TEXT.filterLabel)}">${items.map(([k, label]) => `<button type="button" class="places-chip places-filter${f[k] === true ? " active" : ""}" aria-pressed="${f[k] === true ? "true" : "false"}" data-places-filter="${k}">${esc(label)}</button>`).join("")}</div>`;
   }
   /** 지역이 준비 중일 때 안내 + 데이터에 있는 지역 선택 칩(보기용). fb: { regions:[{province,district}], current:{province,district}|null } */
+  const BROWSE_GROUP_MIN = 3; // 시·도에 시군구가 이 수 이상이면 시·도 칩으로 묶는다
   function fallbackBox(fb) {
     const regions = (fb && Array.isArray(fb.regions) ? fb.regions : []);
     const name = (r) => r.district || r.province;
     const names = fb && typeof fb.coverage === "string" && fb.coverage.trim() ? fb.coverage.trim() : regions.map(name).join("·");
     const cur = fb && fb.current;
-    const chips = regions.map((r) => chipBtn(`data-places-browse="${esc(r.province)}|${esc(r.district || "")}"`, name(r), !!cur && cur.province === r.province && (cur.district || "") === (r.district || ""))).join("");
+    // G5: 시·도에 시군구가 3개 이상이면 시·도 칩 하나(그 시·도 전체 보기), 아니면 시군구 칩. 칩이 시군구마다 늘어나지 않게 묶는다.
+    const byProv = new Map();
+    regions.forEach((r) => { if (!byProv.has(r.province)) byProv.set(r.province, []); byProv.get(r.province).push(r); });
+    const items = [];
+    byProv.forEach((list, province) => {
+      const districts = list.filter((r) => r.district);
+      if (districts.length >= BROWSE_GROUP_MIN) items.push({ province, district: "", label: province });
+      else list.forEach((r) => items.push({ province: r.province, district: r.district || "", label: name(r) }));
+    });
+    const chips = items.map((it) => chipBtn(`data-places-browse="${esc(it.province)}|${esc(it.district)}"`, it.label, !!cur && cur.province === it.province && (cur.district || "") === it.district)).join("");
     return `<div class="places-fallback"><p>${esc(TEXT.fallbackPrefix + names + TEXT.fallbackSuffix)}</p><p class="places-fallback-title">${esc(TEXT.browse)}</p><div class="places-chips-wrap">${chips}</div></div>`;
   }
   function metaItem(label, value) {
