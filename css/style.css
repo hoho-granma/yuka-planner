@@ -1077,3 +1077,27 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .cal-todo-note { flex-basis: 100%; font-size: 11px; color: var(--text-muted); }
 .cal-todo-done { padding: 0 14px 8px; }
 .cal-todo-done summary { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--text-muted); padding: 6px 0; }
+/* G1: 첫 화면(계정 ON) — 주 버튼·가족 코드 카드·텍스트 링크·간단 모드, 베타 미리 써 보기 카드 */
+.acct-landing .acct-main { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+.acct-title { margin: 0; font-size: 24px; line-height: 1.3; color: var(--text); text-wrap: balance; }
+.acct-landing .acct-sub { margin: 0 0 6px; font-size: 14px; font-weight: 500; line-height: 1.5; color: var(--text-muted); }
+.acct-btn-primary { box-sizing: border-box; width: 100%; min-height: 54px; padding: 0 18px; border: 0; border-radius: 16px; background: var(--accent); color: #fff; font-family: inherit; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 14px rgba(255, 138, 92, .3); transition: transform .12s, opacity .12s; }
+.acct-btn-primary:active { transform: scale(.98); opacity: .92; }
+.acct-btn-primary:disabled { opacity: .6; cursor: default; box-shadow: none; }
+.acct-btn-join, .acct-beta-card { box-sizing: border-box; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 16px; background: #fff; color: var(--text); font-family: inherit; text-align: left; cursor: pointer; transition: transform .12s, border-color .12s; }
+.acct-btn-join:active, .acct-beta-card:active { transform: scale(.98); }
+.acct-btn-join:hover, .acct-beta-card:hover { border-color: var(--accent); }
+.acct-btn-ico { flex: 0 0 40px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: #fff7f2; color: var(--accent-dark); }
+.acct-btn-txt { min-width: 0; }
+.acct-btn-txt strong { display: block; font-size: 15px; line-height: 1.3; }
+.acct-btn-txt small { display: block; margin-top: 2px; font-size: 12px; color: var(--text-muted); line-height: 1.35; }
+.acct-link { align-self: center; padding: 10px 8px; border: 0; background: transparent; color: var(--accent-dark); font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; }
+.acct-link-small { font-size: 12px; font-weight: 600; color: var(--text-muted); padding: 4px 8px; }
+.acct-btn-primary:focus-visible, .acct-btn-join:focus-visible, .acct-beta-card:focus-visible, .acct-link:focus-visible { outline: 3px solid var(--accent-dark); outline-offset: 2px; }
+.acct-landing .acct-back { display: none; }
+#view-landing.acct-browse .acct-back { display: inline-block; }
+#view-landing.acct-browse .acct-main { display: none; }
+#view-landing.acct-simple > .hero, #view-landing.acct-simple #stage-choice, #view-landing.acct-simple #query-form, #view-landing.acct-simple #btn-show-code-entry, #view-landing.acct-simple #code-entry { display: none !important; } /* 코드 열기 버튼은 인라인 display:block 이 있어 !important 필요 */
+#view-landing.acct-hidecard #acct-landing-slot { display: none; }
+#beta-preview-slot { margin: 10px 0; }
+#beta-preview-slot:empty { display: none; }

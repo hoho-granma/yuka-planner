@@ -12,6 +12,44 @@
 
   const MSG = Object.freeze({
     logo: "한눈육아",
+    // G1: 첫 화면(계정 기능 ON)·가입 없이 둘러보기·베타 미리 써 보기 — 문구는 여기 한곳에 모은다.
+    onboard: Object.freeze({
+      title: "우리 가족 일정, 한눈에",
+      sub: "접종·검진·지원금은 아이 월령에 맞춰 자동으로, 엄마·아빠 일정은 가족과 함께 한 캘린더에서.",
+      primary: "회원가입하고 시작하기",
+      joinTitle: "가족에게 받은 코드로 함께하기",
+      joinDesc: "가족 캘린더 코드를 받았다면 여기로",
+      login: "이미 계정이 있어요 · 로그인",
+      browse: "가입 없이 둘러보기",
+      browseBack: "‹ 회원가입·로그인으로 돌아가기",
+      betaOff: "이전 화면으로 돌아가기(베타 끄기)",
+      browseHeroTitle: "가입 없이 먼저 써 볼게요",
+      stageQuestion: "아이 상황을 알려 주세요",
+      stagePregnant: "임신 중이에요",
+      stagePregnantDesc: "출산 예정일로 임신 중 챙길 것과 혜택을 보여 드려요",
+      stageBorn: "아이가 태어났어요",
+      stageBornDesc: "생년월일로 접종·검진·혜택을 월령에 맞춰 챙겨 드려요",
+      bornSub: "아이 생년월일과 사는 지역을 알려 주시면 접종·검진·지원금을 월령에 맞춰 챙겨 드려요.",
+      pregnantSub: "출산 예정일과 사는 지역을 알려 주시면 임신 중 챙길 것과 혜택부터, 출산 후 접종·검진까지 이어서 챙겨 드려요.",
+      bornSubmit: "우리 아이 일정 만들기",
+      pregnantSubmit: "출산 전후 일정 만들기",
+      formNote: "가입하지 않아도 써 볼 수 있어요. 가족과 함께 쓰려면 나중에 회원가입하면 지금 기록이 그대로 이어져요.",
+      codeEntryOpen: "아이 기록 코드로 불러오기",
+      codeEntryLabel: "아이 기록 코드 입력",
+      joinSheetTitle: "가족과 함께하기",
+      joinSheetLead: "가족에게 받은 8자리 코드를 입력하면 같은 가족 캘린더로 합류해요. 아이 정보는 가족 캘린더에 이미 있어요.",
+      joinOff: "코드가 없어요 · 새 가족으로 시작하기",
+      errJoinCode: "가족에게 받은 8자리 코드를 입력해 주세요.",
+      betaCardTitle: "새 버전 미리 써 보기 (베타)",
+      betaCardDesc: "회원가입과 가족 캘린더가 있는 새 화면이에요",
+      betaOnTitle: "새 버전을 써 볼까요?",
+      betaOnBody: "첫 화면이 회원가입·가족 코드로 함께하기 중심으로 바뀌고, 하단에 ‘어디갈까’ 탭과 가족 캘린더가 생겨요.\n지금까지 입력한 아이 기록은 지워지지 않고, 언제든 이전 화면으로 돌아올 수 있어요.",
+      betaOnYes: "써 볼게요",
+      betaOffTitle: "이전 화면으로 돌아갈까요?",
+      betaOffBody: "첫 화면과 하단 탭이 예전 모습으로 돌아가요. 가입한 계정과 가족 캘린더는 그대로 남아 있어요.",
+      betaOffYes: "돌아갈게요",
+      cancel: "취소",
+    }),
     landingTitle: "우리 아이 일정, 놓치지 않게",
     landingSub: "접종·검진·지원금을 아이 월령에 맞춰 자동으로 챙기고, 가족과 한 캘린더로 함께 관리해요.",
     landingLead: "가족이 함께 쓰려면 회원가입해 주세요.",
@@ -138,14 +176,14 @@
   /** 가입 시트에서 지금 고를 수 있는 역할 선택지: 합류(코드 입력)면 전체, 아니면 자녀 유무에 따라(있어요=엄마·아빠·자녀 / 없어요=예비엄마·예비아빠 / 미선택=없음). */
   function roleOptions(form) {
     const f = form || {};
-    if (normCode(f.familyCode) !== "") return ROLES;
+    if (normCode(f.familyCode) !== "" || f.join === true) return ROLES;
     return f.situation === "HAS_CHILD" ? ROLES_HAS_CHILD : f.situation === "EXPECTING" ? ROLES_EXPECTING : [];
   }
   /** 폼의 서로 의존하는 값을 맞춘다(선택지에 없는 역할 지움, 합류면 자녀 유무·지역 지움, 시·도가 바뀌면 시·군·구 지움). 같은 객체를 돌려준다. */
   function syncForm(form, regions) {
     const f = form;
     if (!roleOptions(f).some(([k]) => k === f.role)) f.role = "";
-    if (normCode(f.familyCode) !== "") { f.situation = ""; f.province = ""; f.district = ""; }
+    if (normCode(f.familyCode) !== "" || f.join === true) { f.situation = ""; f.province = ""; f.district = ""; }
     if (f.district && regions) {
       const p = regions.find((x) => x.code === f.province);
       if (!p || !p.districts.includes(f.district)) f.district = "";
@@ -167,8 +205,8 @@
     const name = String(f.displayName || "").trim();
     if (!name || name.length > NAME_MAX) errors.displayName = MSG.errName;
     const code = normCode(f.familyCode);
-    const joining = code !== "";
-    if (joining && !CODE_RE.test(code)) errors.familyCode = MSG.errCode;
+    const joining = code !== "" || f.join === true;
+    if (joining && !CODE_RE.test(code)) errors.familyCode = f.join === true && code === "" ? MSG.onboard.errJoinCode : MSG.errCode;
     if (!joining && f.situation !== "HAS_CHILD" && f.situation !== "EXPECTING") errors.situation = MSG.errSituation;
     if (!roleOptions(f).some(([k]) => k === f.role)) errors.role = MSG.errRole;
     let province = "", district = "";
@@ -212,11 +250,30 @@
   const input = (k, label, type, value, extra) => `<div class="acct-field"><label>${esc(label)}</label><input type="${type}" class="acct-input" data-acct-input="${k}" value="${esc(value)}" autocomplete="off" ${extra || ""} /></div>`;
   const radios = (k, label, opts, cur, errors) => `<div class="acct-field"><label>${esc(label)}</label><div class="acct-radios" role="radiogroup" aria-label="${esc(label)}">${opts.map(([v, l]) => `<button type="button" role="radio" aria-checked="${cur === v ? "true" : "false"}" class="acct-radio" data-acct-radio="${k}" data-value="${esc(v)}">${esc(l)}</button>`).join("")}</div>${err(errors, k)}</div>`;
 
-  /** 랜딩의 계정 카드(로그아웃 상태): 로고 + 회원가입/로그인. */
+  const ICO_FAMILY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9.5" r="2.4"/><path d="M3.5 19c0-3.2 2.5-5.2 5.5-5.2s5.5 2 5.5 5.2"/><path d="M15.5 14.2c3 0 5 1.6 5 4.3"/></svg>';
+  /** 랜딩의 계정 카드(로그아웃 상태): 로고·제목·부제·[회원가입하고 시작하기]·[가족 코드로 함께하기]·로그인·가입 없이 둘러보기·베타 끄기. */
   function renderLanding(state) {
     const s = state || {};
+    const O = MSG.onboard;
     if (s.user) return `<div class="card acct-landing" id="acct-landing"><div class="acct-logo">${esc(MSG.logo)}</div><p class="fine-print">${esc(MSG.loggedInAs(s.user.displayName || s.user.email))}</p><div class="acct-actions"><button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div></div>`;
-    return `<div class="card acct-landing" id="acct-landing"><div class="acct-logo">${esc(MSG.logo)}</div><p class="acct-sub">${esc(MSG.landingSub)}</p><p class="fine-print">${esc(MSG.landingLead)}</p><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-signup">${esc(MSG.signup)}</button><button type="button" class="btn-close" data-acct-action="open-login">${esc(MSG.login)}</button></div><p class="fine-print">${esc(MSG.landingNote)}</p></div>`;
+    return `<div class="card acct-landing" id="acct-landing"><div class="acct-main"><div class="acct-logo">${esc(MSG.logo)}</div><h1 class="acct-title">${esc(O.title)}</h1><p class="acct-sub">${esc(O.sub)}</p>
+      <button type="button" class="acct-btn-primary" data-acct-action="open-signup">${esc(O.primary)}</button>
+      <button type="button" class="acct-btn-join" data-acct-action="open-join"><span class="acct-btn-ico">${ICO_FAMILY}</span><span class="acct-btn-txt"><strong>${esc(O.joinTitle)}</strong><small>${esc(O.joinDesc)}</small></span></button>
+      <button type="button" class="acct-link" data-acct-action="open-login">${esc(O.login)}</button>
+      <button type="button" class="acct-link acct-link-small" data-acct-action="browse">${esc(O.browse)}</button>
+      <button type="button" class="acct-link acct-link-small" data-acct-action="beta-off-ask">${esc(O.betaOff)}</button></div>
+      <button type="button" class="acct-link acct-back" data-acct-action="browse-close">${esc(O.browseBack)}</button></div>`;
+  }
+  /** OFF 첫 화면의 '새 버전 미리 써 보기 (베타)' 카드. */
+  function renderBetaPreviewCard() {
+    const O = MSG.onboard;
+    return `<button type="button" class="acct-beta-card" data-preview-action="ask"><span class="acct-btn-ico">${ICO_FAMILY}</span><span class="acct-btn-txt"><strong>${esc(O.betaCardTitle)}</strong><small>${esc(O.betaCardDesc)}</small></span></button>`;
+  }
+  /** 베타 켜기/끄기 확인 시트. on=true 켜기, false 끄기. 버튼은 data-preview-action(confirm|cancel). */
+  function renderBetaConfirm(on) {
+    const O = MSG.onboard;
+    return `<div class="acct-form" data-preview-form="${on ? "on" : "off"}"><h3>${esc(on ? O.betaOnTitle : O.betaOffTitle)}</h3><p class="fine-print">${lines(on ? O.betaOnBody : O.betaOffBody)}</p>
+      <button type="button" class="acct-btn-primary" data-preview-action="confirm">${esc(on ? O.betaOnYes : O.betaOffYes)}</button><button type="button" class="btn-close" data-preview-action="cancel">${esc(O.cancel)}</button></div>`;
   }
   const roleLabel = (r) => (ROLES.find(([k]) => k === r) || [])[1] || "";
   /** 프로필 시트의 계정 슬롯. s.account = { displayName, role }(accounts 문서)가 있으면 이름·역할을 보여준다. */
@@ -229,22 +286,26 @@
   /** state: { form, errors, error(서버 오류 문구), busy, regions: [{code,name,districts}] } */
   function renderSignup(state) {
     const s = state || {}, f = s.form || {}, e = s.errors || {};
-    const joining = normCode(f.familyCode) !== "";
+    const join = f.join === true;
+    const joining = join || normCode(f.familyCode) !== "";
     const regions = s.regions || [];
     const prov = regions.find((p) => p.code === f.province);
     const situation = joining ? "" : radios("situation", MSG.situationLabel, SITUATIONS, f.situation, e);
     const roles = roleOptions(f);
     const role = roles.length ? radios("role", MSG.roleLabel, roles, f.role, e) : "";
     const region = joining || !regions.length ? "" : `<div class="acct-field"><label>${esc(MSG.regionLabel)}</label>${select("province", MSG.provincePlaceholder, regions.map((p) => [p.code, p.name]), f.province || "")}${select("district", MSG.districtPlaceholder, (prov ? prov.districts : []).map((d) => [d, d]), f.district || "", !prov)}${err(e, "region")}<p class="fine-print acct-region-hint">${esc(MSG.regionHint)}</p></div>`;
-    return `<div class="acct-form" data-acct-form="signup"><h3>${esc(MSG.signupTitle)}</h3><p class="fine-print">${esc(MSG.signupLead)}</p>
+    const codeField = `<div class="acct-field"><label>${esc(join ? MSG.onboard.joinTitle : MSG.codeLabel)}</label><input type="text" class="acct-input acct-code" data-acct-input="familyCode" maxlength="8" placeholder="${esc(MSG.codePlaceholder)}" value="${esc(f.familyCode || "")}" autocapitalize="characters" autocomplete="off" spellcheck="false" />${join ? "" : `<p class="fine-print">${esc(MSG.codeHint)}</p>`}${err(e, "familyCode")}</div>`;
+    return `<div class="acct-form" data-acct-form="signup"><h3>${esc(join ? MSG.onboard.joinSheetTitle : MSG.signupTitle)}</h3><p class="fine-print">${esc(join ? MSG.onboard.joinSheetLead : MSG.signupLead)}</p>
+      ${join ? codeField : ""}
       ${input("email", MSG.emailLabel, "email", f.email || "", 'inputmode="email" autocapitalize="off"')}${err(e, "email")}
       ${input("password", MSG.passwordLabel, "password", f.password || "", 'autocomplete="new-password"')}${err(e, "password")}
       ${input("displayName", MSG.nameLabel, "text", f.displayName || "", 'maxlength="20"')}${err(e, "displayName")}
       ${situation}${role}
-      <div class="acct-field"><label>${esc(MSG.codeLabel)}</label><input type="text" class="acct-input acct-code" data-acct-input="familyCode" maxlength="8" placeholder="${esc(MSG.codePlaceholder)}" value="${esc(f.familyCode || "")}" autocapitalize="characters" autocomplete="off" spellcheck="false" /><p class="fine-print">${esc(MSG.codeHint)}</p>${err(e, "familyCode")}</div>
+      ${join ? "" : codeField}
       ${joining ? "" : region}
       ${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}
-      <button type="button" class="btn-complete" data-acct-action="submit-signup"${s.busy ? " disabled" : ""}>${esc(s.busy ? MSG.signingUp : MSG.submitSignup)}</button>
+      <button type="button" class="acct-btn-primary" data-acct-action="submit-signup"${s.busy ? " disabled" : ""}>${esc(s.busy ? MSG.signingUp : MSG.submitSignup)}</button>
+      ${join ? `<button type="button" class="acct-link" data-acct-action="join-off"${s.busy ? " disabled" : ""}>${esc(MSG.onboard.joinOff)}</button>` : ""}
       <button type="button" class="btn-close" data-acct-action="close"${s.busy ? " disabled" : ""}>${esc(MSG.cancel)}</button></div>`;
   }
   /** 내 정보 시트(아이가 없는 홈에서 열린다): 계정 슬롯 + 가족 캘린더 코드(있으면) + 닫기. */
@@ -307,5 +368,5 @@
       <button type="button" class="btn-complete" data-acct-action="confirm-logout">${esc(MSG.logout)}</button><button type="button" class="btn-close" data-acct-action="close">${esc(MSG.cancel)}</button></div>`;
   }
 
-  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, renderLanding, renderAccountSlot, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderMe, roleOptions, syncForm, SITUATIONS, esc };
+  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, renderLanding, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderMe, roleOptions, syncForm, SITUATIONS, esc };
 });

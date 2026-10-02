@@ -146,8 +146,8 @@ test("스위치 코드(beta*)는 FamilySync·HouseholdSync·Firestore·fetch 를
   assert.ok(block.length > 200);
   assert.ok(!/FamilySync|HouseholdSync|firebase|Firestore|fetch\(|\.set\(|\.update\(|createFamily|createHousehold/.test(block));
   const setCalls = block.match(/localStorage\.(setItem|removeItem)\([^)]*\)/g) || [];
-  assert.strictEqual(setCalls.length, 2);
-  assert.ok(setCalls.every((c) => c.includes("BETA_FLAG_KEY")));
+  assert.strictEqual(setCalls.length, 4); // G1: 회원가입(accounts) 플래그도 같은 스위치로 함께 켜고 끈다
+  assert.ok(setCalls.every((c) => c.includes("BETA_FLAG_KEY") || c.includes("hannun_feature_accounts")));
   assert.ok(/const BETA_FLAG_KEY = "hannun_feature_household"/.test(block));
 });
 test("프로필 시트에 #beta-slot 이 항상 들어간다(가구 슬롯 아래, 플래그와 무관) · index.html 에 #beta-landing-slot 이 있다", () => {
@@ -196,7 +196,7 @@ test("OFF → '켜기' → 확인 단계(슬롯만 다시 그림) → '켜기' �
   assert.deepStrictEqual(actions(e.slots["beta-slot"].innerHTML), [["confirm-on", "켜기"], ["cancel", "취소"]]);
   assert.deepStrictEqual(e.calls, []); assert.strictEqual(e.reloads(), 0); // 확인 전에는 아무것도 쓰지 않는다
   e.click("beta-slot", "confirm-on");
-  assert.deepStrictEqual(e.calls, [["set", "hannun_feature_household", "1"]]);
+  assert.deepStrictEqual(e.calls, [["set", "hannun_feature_household", "1"], ["set", "hannun_feature_accounts", "1"]]);
   assert.strictEqual(e.reloads(), 1);
 });
 test("확인 단계에서 '취소': 저장·새로고침 없이 평소 화면으로 돌아간다", () => {
@@ -212,7 +212,7 @@ test("ON → '끄기' → 확인 → removeItem(플래그 키) 후 새로고침(
   e.click("beta-slot", "ask-off");
   assert.deepStrictEqual(actions(e.slots["beta-slot"].innerHTML), [["confirm-off", "끄기"], ["cancel", "취소"]]);
   e.click("beta-slot", "confirm-off");
-  assert.deepStrictEqual(e.calls, [["remove", "hannun_feature_household"]]);
+  assert.deepStrictEqual(e.calls, [["remove", "hannun_feature_household"], ["remove", "hannun_feature_accounts"]]);
   assert.strictEqual(e.reloads(), 1);
 });
 test("랜딩 슬롯: OFF 에서 켜기 흐름이 같게 동작하고, ON 이면 슬롯이 비어 있다", () => {
@@ -220,7 +220,7 @@ test("랜딩 슬롯: OFF 에서 켜기 흐름이 같게 동작하고, ON 이면 
   off.t.open("beta-landing-slot", "renderBetaSwitchLanding");
   assert.deepStrictEqual(actions(off.slots["beta-landing-slot"].innerHTML), [["ask-on", "가족 캘린더(베타) 켜기"]]);
   off.click("beta-landing-slot", "ask-on"); off.click("beta-landing-slot", "confirm-on");
-  assert.deepStrictEqual(off.calls, [["set", "hannun_feature_household", "1"]]); assert.strictEqual(off.reloads(), 1);
+  assert.deepStrictEqual(off.calls, [["set", "hannun_feature_household", "1"], ["set", "hannun_feature_accounts", "1"]]); assert.strictEqual(off.reloads(), 1);
   const on = makeEnv({ flagOn: true });
   on.t.open("beta-landing-slot", "renderBetaSwitchLanding");
   assert.strictEqual(on.slots["beta-landing-slot"].innerHTML, "");

@@ -2221,6 +2221,8 @@
   function showLandingView() {
     el("view-calendar").classList.add("hidden");
     el("view-landing").classList.remove("hidden");
+    if (typeof acctApplyLandingMode === "function") acctApplyLandingMode(); // G1: 계정 ON 첫 화면 모드(OFF 는 아무 일도 하지 않는다)
+    if (typeof previewRender === "function") previewRender();
   }
 
   /** 임신 중 → 출산 후 전환: 실제 출생일을 입력받아 stage를 born으로 바꾼다. */
@@ -2272,7 +2274,11 @@
 
   function setLandingStage(stage) {
     landingStage = stage;
-    const t = STAGE_TEXT[stage || "born"];
+    const base = STAGE_TEXT[stage || "born"];
+    // G1: 계정 기능 ON 일 때만 새 문구(OFF 는 기존 문구 그대로)
+    const t = acctEnabled() ? { ...base, sub: AccountView.MSG.onboard[stage === "pregnant" ? "pregnantSub" : "bornSub"], submit: AccountView.MSG.onboard[stage === "pregnant" ? "pregnantSubmit" : "bornSubmit"] } : base;
+    const bp = el("beta-preview-slot");
+    if (bp) bp.classList.toggle("hidden", !!stage);
     el("hero-sub").innerHTML = t.sub;
     el("lbl-name").innerHTML = `${t.name} <span class="req">*</span>`;
     el("childName").placeholder = t.placeholder;
@@ -2987,8 +2993,9 @@
       betaRenderAll();
     } else if (action === "confirm-on" || action === "confirm-off") {
       try {
-        if (action === "confirm-on") localStorage.setItem(BETA_FLAG_KEY, "1");
-        else localStorage.removeItem(BETA_FLAG_KEY);
+        // G1: 회원가입 기능(accounts)도 같은 베타 스위치로 함께 켜고 끈다(켜면 가족 캘린더가 기본 구조).
+        if (action === "confirm-on") { localStorage.setItem(BETA_FLAG_KEY, "1"); localStorage.setItem("hannun_feature_accounts", "1"); }
+        else { localStorage.removeItem(BETA_FLAG_KEY); localStorage.removeItem("hannun_feature_accounts"); }
       } catch (e) {
         console.warn("가족 캘린더 베타 설정을 저장하지 못했어요(저장소 사용 불가) — 상태를 그대로 둡니다.", e);
         return;
@@ -4123,12 +4130,74 @@
       slot.addEventListener("click", acctOnClick);
     }
     slot.innerHTML = AccountView.renderLanding({ user: acct.user });
-    // D5: 계정 기능이 켜졌을 때만 랜딩 문구를 프로젝트 목적에 맞게 바꾼다(꺼져 있으면 기존 문구 그대로).
+    // G1: 계정 기능이 켜졌을 때만 옛 첫 화면의 문구를 새 톤으로 바꾸고(OFF 는 기존 그대로), 첫 화면 모드(간단/둘러보기)를 적용한다.
+    const O = AccountView.MSG.onboard;
     const title = el("hero-title");
-    if (title) title.innerHTML = `${AccountView.esc("우리 아이 일정,")}<br /><span class="hl">${AccountView.esc("놓치지 않게")}</span>`;
+    if (title) title.textContent = O.browseHeroTitle;
     const fine = el("entry-fine-print");
-    if (fine) fine.textContent = AccountView.MSG.entryFine;
+    if (fine) fine.textContent = O.formNote;
+    const q = el("view-landing").querySelector(".stage-question");
+    if (q) q.textContent = O.stageQuestion;
+    const sb = (k) => el("view-landing").querySelector(`.stage-btn[data-stage="${k}"]`);
+    for (const [k, t, d] of [["pregnant", O.stagePregnant, O.stagePregnantDesc], ["born", O.stageBorn, O.stageBornDesc]]) {
+      const b = sb(k);
+      if (b && b.querySelector("strong")) { b.querySelector("strong").textContent = t; b.querySelector("small").textContent = d; }
+    }
+    const co = el("btn-show-code-entry");
+    if (co) co.textContent = O.codeEntryOpen;
+    const cl = el("view-landing").querySelector('label[for="familyCodeInput"]');
+    if (cl) cl.textContent = O.codeEntryLabel;
+    acctApplyLandingMode();
   }
+  let acctBrowse = false; // '가입 없이 둘러보기'를 펼쳤는가(기본 접힘)
+  /** 첫 화면 모드: 간단(기본: 로고·가입·가족 코드·로그인만) / 둘러보기(옛 상황 선택·아이 입력 폼 펼침) / 새 아이 입력 중(카드 숨김). OFF 는 클래스를 건드리지 않는다. */
+  function acctApplyLandingMode() {
+    const v = el("view-landing");
+    if (!v || !acctEnabled() || !v.classList) return;
+    const simple = !acct.user && !acctBrowse && !newChildMode;
+    v.classList.toggle("acct-simple", simple);
+    v.classList.toggle("acct-browse", !simple && !acct.user && !newChildMode);
+    v.classList.toggle("acct-hidecard", !!newChildMode);
+  }
+  // ── G1 OFF 첫 화면의 '새 버전 미리 써 보기 (베타)': 회원가입·가족 캘린더 플래그(household·accounts)를 이 기기에서만 켠다(서버 호출 없음). 끄기는 두 키를 지운다(= OFF). ──
+  const PREVIEW_KEYS = ["hannun_feature_household", "hannun_feature_accounts"];
+  function previewRender() {
+    const slot = el("beta-preview-slot");
+    if (!slot || typeof AccountView === "undefined") return;
+    slot.innerHTML = !acctEnabled() && !newChildMode ? AccountView.renderBetaPreviewCard() : "";
+    if (!slot.dataset || slot.dataset.bound) return;
+    slot.dataset.bound = "1";
+    slot.addEventListener("click", previewOnClick);
+  }
+  function previewShowSheet(on) {
+    modalMode = "profile";
+    el("modal-content").innerHTML = AccountView.renderBetaConfirm(on);
+    el("detail-modal").classList.remove("hidden");
+    const root = el("modal-content").querySelector("[data-preview-form]");
+    if (root) root.addEventListener("click", previewOnClick);
+  }
+  function previewOnClick(ev) {
+    const b = ev.target.closest("[data-preview-action]");
+    if (!b) return;
+    ev.stopPropagation && ev.stopPropagation();
+    const action = b.getAttribute("data-preview-action");
+    if (action === "ask") return previewShowSheet(true);
+    if (action === "cancel") return closeDetail();
+    if (action !== "confirm") return;
+    const form = ev.target.closest("[data-preview-form]");
+    const on = !form || form.getAttribute("data-preview-form") === "on";
+    try {
+      for (const k of PREVIEW_KEYS) {
+        if (on) localStorage.setItem(k, "1");
+        else localStorage.removeItem(k);
+      }
+    } catch (e) {
+      console.warn("베타 설정을 저장하지 못했어요(저장소 사용 불가) — 상태를 그대로 둡니다.", e);
+      return;
+    }
+    location.reload();
+  }
+  /* (G1 구간 끝) */
   function acctRenderSlot() {
     const s = el("acct-slot");
     if (s) s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, account: acct.account, notice: acct.notice });
@@ -4156,6 +4225,11 @@
     const root = el("modal-content").querySelector("[data-acct-form]");
     if (!root) return;
     root.addEventListener("click", acctOnClick);
+    if (acct.joinFocus && root.querySelector) {
+      const codeEl = root.querySelector('[data-acct-input="familyCode"]');
+      if (codeEl && codeEl.focus) codeEl.focus();
+      acct.joinFocus = false;
+    }
     root.addEventListener("input", (ev) => {
       const k = ev.target && ev.target.getAttribute && ev.target.getAttribute("data-acct-input");
       if (!k) return;
@@ -4422,14 +4496,26 @@
     const b = ev.target.closest("[data-acct-action]");
     if (!b || acct.busy) return;
     const action = b.getAttribute("data-acct-action");
-    if (action === "open-signup" || action === "open-login") {
-      acct.mode = action === "open-signup" ? "signup" : "login";
-      acct.form = {};
+    if (action === "open-signup" || action === "open-login" || action === "open-join") {
+      acct.mode = action === "open-login" ? "login" : "signup";
+      acct.form = action === "open-join" ? { join: true } : {}; // G1: 가족 코드로 함께하기 = 가입 시트의 합류 모드(코드 칸 포커스)
+      acct.joinFocus = action === "open-join";
       acct.errors = {};
       acct.error = null;
       acct.notice = null;
       return acctShowSheet();
     }
+    if (action === "join-off") {
+      acct.form.join = false;
+      acct.form.familyCode = "";
+      acct.errors = {};
+      return acctShowSheet("signup");
+    }
+    if (action === "browse" || action === "browse-close") {
+      acctBrowse = action === "browse";
+      return acctApplyLandingMode();
+    }
+    if (action === "beta-off-ask") return previewShowSheet(false);
     if (action === "close") return closeDetail();
     if (action === "logout") {
       acct.pending = hh.hid ? HouseholdSync.getStatus(hh.hid).pending : 0;
@@ -4724,6 +4810,7 @@
     el("btn-profile-card").addEventListener("click", showProfileSheet);
     if (el("cal-todo-slot")) el("cal-todo-slot").addEventListener("click", calTodoOnClick);
     applyTabLayout();
+    previewRender();
     if (el("places-body")) el("places-body").addEventListener("click", placesOnClick);
     if (el("btn-record-back")) el("btn-record-back").addEventListener("click", () => switchTab(recordReturnTab || "home"));
     el("btn-add-child").addEventListener("click", showAddMenuSheet);

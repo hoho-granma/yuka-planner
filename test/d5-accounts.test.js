@@ -22,9 +22,9 @@ function test(name, fn) {
 
 function env({ flag = true, profile = null, account = null, user = null, emptyStart = false } = {}) {
   const store = {};
-  const cl = () => { const c = { hidden: false, add(n) { if (n === "hidden") c.hidden = true; }, remove(n) { if (n === "hidden") c.hidden = false; } }; return c; };
+  const cl = () => { const c = { hidden: false, add(n) { if (n === "hidden") c.hidden = true; }, remove(n) { if (n === "hidden") c.hidden = false; }, toggle(n, on) { c[n] = !!on; if (n === "hidden") c.hidden = !!on; } }; return c; };
   const sheet = { innerHTML: "", querySelector: () => null, classList: cl() };
-  const els = { "modal-content": sheet, "detail-modal": sheet, "view-landing": { querySelector: () => ({ insertAdjacentElement() {} }), classList: cl() }, "view-calendar": { classList: cl() }, "new-child-bar": { classList: cl() },
+  const els = { "modal-content": sheet, "detail-modal": sheet, "view-landing": { querySelector: () => ({ insertAdjacentElement() {}, querySelector: () => ({ textContent: "" }), textContent: "" }), classList: cl() }, "view-calendar": { classList: cl() }, "new-child-bar": { classList: cl() },
     "empty-panel": { innerHTML: "", classList: cl(), addEventListener() {} }, "hero-title": { innerHTML: "기존" }, "entry-fine-print": { textContent: "기존 문구" }, province: { value: "" }, district: { value: "" } };
   ["home", "calendar", "record", "subsidy", "checklist"].forEach((t) => { els["tab-" + t] = { classList: cl() }; });
   const log = { register: 0, landing: 0, districts: [], closed: 0 };
@@ -138,15 +138,16 @@ function env({ flag = true, profile = null, account = null, user = null, emptySt
     none.t.acctPrefillRegion();
     assert.strictEqual(none.els.province.value, "");
   });
-  await test("랜딩 문구: 계정 ON 일 때만 새 제목·안내로 바뀌고(OFF 는 기존 문구 그대로), 가입 시트·랜딩 카드에 새 안내", () => {
+  await test("랜딩(G1): 계정 ON 일 때만 옛 첫 화면 문구가 새 톤으로 바뀌고(OFF 는 기존 그대로), 카드에 새 첫 화면 문구", () => {
     const on = env();
     on.t.acctRenderLanding();
-    assert.ok(on.els["hero-title"].innerHTML.includes("우리 아이 일정,") && on.els["hero-title"].innerHTML.includes("놓치지 않게") && on.els["entry-fine-print"].textContent.includes("회원가입 없이도 바로 시작할 수 있어요"));
+    const O = AV.MSG.onboard;
+    assert.ok(on.els["hero-title"].textContent === O.browseHeroTitle && on.els["entry-fine-print"].textContent === O.formNote);
     const off = env({ flag: false });
     off.t.acctRenderLanding();
     assert.deepStrictEqual([off.els["hero-title"].innerHTML, off.els["entry-fine-print"].textContent], ["기존", "기존 문구"]);
     const card = AV.renderLanding({});
-    assert.ok(card.includes("접종·검진·지원금을 아이 월령에 맞춰 자동으로 챙기고, 가족과 한 캘린더로 함께 관리해요.") && card.includes("가족이 함께 쓰려면 회원가입해 주세요."));
+    for (const t of [O.title, O.sub, O.primary, O.joinTitle, O.joinDesc, O.login, O.browse, O.betaOff]) assert.ok(card.includes(t), t);
     assert.ok(read("index.html").includes('<p class="fine-print" id="entry-fine-print">회원가입 없이 바로 시작해요. 가족코드로 다른 기기에서도 이어볼 수 있어요.</p>'), "OFF 문구 원문 유지(id 만 추가)");
   });
   await Promise.all(pending);
