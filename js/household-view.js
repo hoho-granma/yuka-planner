@@ -56,6 +56,13 @@
     reissueConfirm: "다시 만들기", // #34
     reissueCancel: "취소", // #34
     reissued: "새 코드를 만들었어요. 가족에게 새 코드를 알려 주세요.", // #35
+    linkButton: "이 아이를 가족 캘린더에 연결", // 참여 후 현재 아이 연결
+    linkTitle: (name) => `${name}을(를) 가족 캘린더에 연결할까요?`,
+    linkBody: "가족 모두 이 아이의 일정을 함께 볼 수 있어요.",
+    linkConfirm: "연결하기",
+    linkCancel: "취소",
+    linkDone: "가족 캘린더에 연결했어요.",
+    linkJoinHint: "이 기기의 아이를 가족 캘린더에 연결할 수 있어요.",
     leaveButton: "이 기기에서 가족 캘린더 나가기", // N6
     leaveTitle: "이 기기에서 가족 캘린더를 나갈까요?",
     leaveBody: "나가면 이 기기에서 가족 일정이 보이지 않아요. 가족의 일정과 아이 정보는 지워지지 않고, 가족 코드로 다시 참여할 수 있어요.",
@@ -179,6 +186,14 @@
   }
 
   /** 에러(코드 속성 또는 문자열) → 생성/참여/재발급 실패 문구. */
+  /** 이 코드의 아이가 가구 링크 목록에 이미 있는가(분리된 링크 포함 — 같은 코드로 링크를 또 만들지 않는다). */
+  function isChildLinked(mirror, familyCode) {
+    const ch = mirror && mirror.children ? Object.values(mirror.children) : [];
+    return ch.some((l) => l && l.familyCode === familyCode);
+  }
+  /** 프로필 시트 가족 캘린더에 '이 아이를 가족 캘린더에 연결'을 보일지: 가구 활성 · 현재 아이 코드가 있음 · 아직 링크 없음 · 임신 중 아님. */
+  const canLinkCurrentChild = (o) => !!o && o.hasHousehold === true && !!o.familyCode && o.pregnant !== true && !isChildLinked(o.mirror, o.familyCode);
+
   function failMessage(err, kind) {
     const code = err && (err.code || err.reason || err);
     if (kind === "reissue") return MSG.reissueFail;
@@ -201,7 +216,7 @@
   /** 알림 한 줄(생성 완료·복사·재발급·실패). state.notice = {kind, text?} */
   function renderNotice(n) {
     if (!n) return "";
-    const map = { joinOk: [n.text || "", ""], created: [MSG.created, ""], copied: [MSG.copyDone, ""], copyFailed: [MSG.copyFail, "hh-warn"], reissued: [MSG.reissued, ""], left: [MSG.left, ""], flushed: [MSG.flushed, ""], error: [n.text || MSG.failNetwork, "hh-warn"] };
+    const map = { joinOk: [n.text || "", ""], created: [MSG.created, ""], copied: [MSG.copyDone, ""], copyFailed: [MSG.copyFail, "hh-warn"], reissued: [MSG.reissued, ""], left: [MSG.left, ""], linked: [MSG.linkDone, ""], flushed: [MSG.flushed, ""], error: [n.text || MSG.failNetwork, "hh-warn"] };
     const m = map[n.kind];
     return m ? note(m[0], m[1]) : "";
   }
@@ -237,6 +252,10 @@
       case "reissuing":
         body = note(MSG.creating);
         break;
+      case "link-confirm":
+        body = `<p class="hh-consent-title">${esc(MSG.linkTitle(state.childName || "아이"))}</p><p class="hh-consent-body">${lines(MSG.linkBody)}</p>
+          <div class="hh-actions">${btn("confirm-link-child", MSG.linkConfirm, "hh-primary")}${btn("cancel-link-child", MSG.linkCancel)}</div>`;
+        break;
       case "leave-confirm": {
         const pend = state.pending > 0 ? note(MSG.leavePending(state.pending), "hh-warn") : "";
         body = `<p class="hh-consent-title">${esc(MSG.leaveTitle)}</p><p class="hh-consent-body">${lines(MSG.leaveBody)}</p>${pend}
@@ -247,6 +266,7 @@
         body = `<div class="hh-code-box"><span class="hh-code-label">${esc(MSG.codeLabel)}</span><strong class="hh-code">${esc(state.code)}</strong></div>
           ${note(MSG.codeInfo)}${note(MSG.shareWarn, "hh-warn")}
           <div class="hh-actions">${btn("copy", MSG.copyButton)}${btn("reissue", MSG.reissueButton)}</div>
+          ${state.canLinkChild === true ? `<div class="hh-actions">${btn("link-child", MSG.linkButton)}</div>` : ""}
           <div class="hh-actions">${btn("leave", MSG.leaveButton, "hh-danger")}</div>`;
         break;
       default: // "none"
@@ -435,5 +455,5 @@
     return `<section class="hh-section" data-onb="${esc(st.step || "offer")}">${body}</section>`;
   }
 
-  return { MSG, isEnabled, classifyCode, mergeChildren, childSubtitle, switchSubText, statusLine, failMessage, joinMessage, renderNotice, renderSection, renderCodeEntryHint, renderBetaSwitch, renderBetaSwitchLanding, ROLE_NAMES, ROLES, MEMBER_MAX, MEMBER_NAME_MAX, visibleMembers, nextMemberOrder, activeMemberOf, validateMemberForm, renderMembers, ONB_MSG, shouldOfferOnboarding, onboardingNameUpdates, renderOnboarding };
+  return { MSG, isChildLinked, canLinkCurrentChild, isEnabled, classifyCode, mergeChildren, childSubtitle, switchSubText, statusLine, failMessage, joinMessage, renderNotice, renderSection, renderCodeEntryHint, renderBetaSwitch, renderBetaSwitchLanding, ROLE_NAMES, ROLES, MEMBER_MAX, MEMBER_NAME_MAX, visibleMembers, nextMemberOrder, activeMemberOf, validateMemberForm, renderMembers, ONB_MSG, shouldOfferOnboarding, onboardingNameUpdates, renderOnboarding };
 });

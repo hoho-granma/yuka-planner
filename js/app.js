@@ -278,6 +278,8 @@
       district: p.district,
       // null로 보내야 set({merge:true})가 서버의 기존 사진을 지운다(필드 생략하면 그대로 남음).
       photoDataUrl: p.photoDataUrl || null,
+      // 초등 입학 시기(조기입학·입학 연기). 기본이면 null 로 보내 서버 값을 지운다(위 사진과 같은 merge 규칙).
+      enrollmentYearOverride: Number.isInteger(p.enrollmentYearOverride) ? p.enrollmentYearOverride : null,
     };
   }
 
@@ -297,6 +299,7 @@
       district: p.district,
       // 사진도 가족 문서(profile.photoDataUrl)에 들어 있으므로 다른 기기에서 가족코드로 불러와도 함께 복원한다.
       ...(p.photoDataUrl ? { photoDataUrl: p.photoDataUrl } : {}),
+      ...(Number.isInteger(p.enrollmentYearOverride) ? { enrollmentYearOverride: p.enrollmentYearOverride } : {}),
     };
   }
 
@@ -773,6 +776,31 @@
    * pendingPhoto: undefined = 사진 변경 없음, null = 삭제 예정, 문자열 = 새로 고른 사진(미리보기).
    * 사진을 고르면 바로 이 팝업에서 미리 보이고, "저장"을 눌러야 실제로 적용된다.
    */
+  // 초등 입학 시기(조기입학·입학 연기) — 36개월 이상이고 학교 정책이 확인된 아이에게만 보인다. 기본이면 필드를 지운다.
+  const ENROLL_MSG = Object.freeze({
+    title: "초등 입학 시기",
+    chips: { default: "출생연도 기준(기본)", early: "한 해 일찍", late: "한 해 늦게" },
+    current: (y) => `입학 학년도 ${y}년`,
+    hint: "기본은 출생연도 기준이에요. 조기입학·입학 연기를 신청했다면 바꿔 주세요(신청 10/1~12/31).",
+  });
+  function enrollmentRowHtml() {
+    if (isPregnant() || ageInMonths(profile.birthDate, new Date()) < 36) return "";
+    const o = ChildTimeline.enrollmentOptions(profile.birthDate, new Date(), schoolPolicy, profile.enrollmentYearOverride);
+    if (!o) return "";
+    const chips = o.options.map((x) => `<button type="button" class="hh-chip${o.current === x.key ? " active" : ""}" data-enroll="${x.key}">${esc(ENROLL_MSG.chips[x.key])}</button>`).join("");
+    return `<div class="detail-row"><div class="label">${ENROLL_MSG.title}</div><div class="hh-chips">${chips}</div><p class="fine-print">${esc(ENROLL_MSG.current(o.currentYear))}<br />${esc(ENROLL_MSG.hint)}</p></div>`;
+  }
+  async function onEnrollChip(key) {
+    const o = ChildTimeline.enrollmentOptions(profile.birthDate, new Date(), schoolPolicy, profile.enrollmentYearOverride);
+    const pick = o && o.options.find((x) => x.key === key);
+    if (!pick) return;
+    if (key === "default") delete profile.enrollmentYearOverride;
+    else profile.enrollmentYearOverride = pick.year;
+    saveProfile(profile);
+    pushProfileToFamily();
+    await buildAndRender();
+    showProfileSheet();
+  }
   function showProfileSheet(pendingPhoto) {
     if (pendingPhoto && pendingPhoto.type) pendingPhoto = undefined; // 클릭 이벤트가 인자로 넘어온 경우
     modalMode = "profile";
@@ -801,6 +829,7 @@
           : `${formatDateKR(profile.birthDate)} · ${ChildTimeline.ageLabelAt(profile.birthDate, today)}`
       }</div>
       <div class="detail-row"><div class="label">거주 지역</div>${profile.province} ${profile.district}</div>
+      ${enrollmentRowHtml()}
       ${
         familyCode
           ? `<div class="detail-row">
@@ -820,6 +849,7 @@
     betaConfirming = false;
     betaOpenSlot("beta-slot", "renderBetaSwitch");
     el("btn-open-reset").addEventListener("click", showEditProfileSheet);
+    el("modal-content").querySelectorAll("[data-enroll]").forEach((b) => b.addEventListener("click", () => onEnrollChip(b.getAttribute("data-enroll"))));
     const switchBtn = el("btn-switch-born");
     if (switchBtn) switchBtn.addEventListener("click", showBornSwitchSheet);
     el("btn-photo-upload").addEventListener("click", (ev) => {
@@ -2424,11 +2454,13 @@
     }
     hh.view = hhJoining ? "joining" : hh.code && hh.hid ? "active" : "none";
   }
+  /** 현재 아이가 가구에 아직 링크되지 않았을 때만 '이 아이를 가족 캘린더에 연결'을 보인다(자동 연결·팝업 없음). */
+  const hhCanLinkChild = () => HouseholdView.canLinkCurrentChild({ hasHousehold: !!(hh.hid && hh.code), familyCode, pregnant: isPregnant(), mirror: hh.hid ? HouseholdSync.getMirror(hh.hid) : null });
   function hhState() {
     const st = hh.hid ? HouseholdSync.getStatus(hh.hid) : { pending: 0, permissionDenied: false };
     // 아이 전환 진입점: 가구가 있거나, 가구가 없어도 이 기기에 저장된 아이가 2명 이상일 때.
     const showChildSwitch = !!(hh.hid && hh.code) || loadChildren().length >= 2;
-    return { enabled: true, view: hh.view, childName: childDisplayName(), code: hh.code, pending: st.pending, permissionDenied: st.permissionDenied, rulesUnavailable: hh.rulesUnavailable, notice: hh.notice, joinInput: hh.joinInput, showChildSwitch };
+    return { enabled: true, view: hh.view, childName: childDisplayName(), code: hh.code, pending: st.pending, permissionDenied: st.permissionDenied, rulesUnavailable: hh.rulesUnavailable, notice: hh.notice, joinInput: hh.joinInput, showChildSwitch, canLinkChild: hhCanLinkChild() };
   }
   function hhRender() {
     const slot = el("hh-slot");
@@ -2550,7 +2582,7 @@
           } else {
             hhSetJoined(r.householdId, cls.code);
             hh.joinInput = "";
-            hh.notice = { kind: "joinOk", text: HouseholdView.joinMessage(r) };
+            hh.notice = { kind: "joinOk", text: HouseholdView.joinMessage(r) + (hhCanLinkChild() ? " " + HouseholdView.MSG.linkJoinHint : "") };
           }
         }
         }
@@ -2575,6 +2607,20 @@
         }
       } else if (action === "reissue") {
         hh.view = "reissue-confirm";
+      } else if (action === "link-child") {
+        hh.view = "link-confirm";
+      } else if (action === "cancel-link-child") {
+        hh.view = "active";
+      } else if (action === "confirm-link-child") {
+        // 서버 쓰기는 addChild 1건뿐(아이 문서는 건드리지 않는다). 이미 링크돼 있으면 아무것도 쓰지 않는다.
+        const m = HouseholdSync.getMirror(hh.hid);
+        if (familyCode && !HouseholdView.isChildLinked(m, familyCode)) {
+          const order = Object.keys((m && m.children) || {}).length + 1;
+          const w = await HouseholdSync.addChild(hh.hid, { familyCode, displayName: childDisplayName(), order });
+          if (!w.ok) throw new Error(w.reason || "link-failed");
+        }
+        hh.view = "active";
+        hh.notice = { kind: "linked" };
       } else if (action === "leave") {
         hh.view = "leave-confirm";
       } else if (action === "cancel-leave") {
@@ -3703,6 +3749,7 @@
   // 새 화면들은 app.js의 클로저 상태를 직접 만지지 않고 여기서 넘겨주는 값·동작만 쓴다.
   function hnCtx() {
     const today = new Date();
+    const linkIdx = autoLinks(); // autoLink 플래그 OFF·가구 없음이면 null (기록 화면 표시만 쓴다)
     const bindOpen = (container) => {
       if (!container) return;
       container.querySelectorAll(".event-item").forEach(bindEventItem);
@@ -3721,6 +3768,7 @@
       pregnant: isPregnant(),
       ageNow: ageInMonths(profile.birthDate, today),
       events: calendarSchedule(),
+      autoLinkedIds: linkIdx ? new Set(linkIdx.keys()) : null,
       allEvents: schedule,
       CATEGORY_META,
       esc,

@@ -187,6 +187,21 @@
   }
 
   /**
+   * 초등 입학 시기 선택지(프로필 시트): 기본(출생연도 기준)·한 해 일찍·한 해 늦게. 정책이 없거나 확인되지 않으면 null.
+   * 반환 { defaultYear, current: "early"|"default"|"late"|"custom", options: [{key, year}] } — 현재 값이 세 가지 밖이면 "custom"(입학 학년도는 current 연도로 표시).
+   * override 가 기본과 같으면 기본으로 본다. 입력은 바꾸지 않는다.
+   */
+  function enrollmentOptions(birthDate, asOf, policy, override) {
+    const base = computeSchool(birthDate, asOf, policy, {});
+    if (!base) return null;
+    const d = base.enrollmentYear;
+    const options = [{ key: "default", year: d }, { key: "early", year: d - 1 }, { key: "late", year: d + 1 }];
+    const has = override !== undefined && override !== null;
+    const hit = has ? options.find((o) => o.year === override) : null;
+    return { defaultYear: d, currentYear: has ? override : d, current: !has ? "default" : hit ? hit.key : "custom", options };
+  }
+
+  /**
    * 한 시점의 연령 요약. 임신 중(stage "pregnant")은 birthDate 가 출산 예정일이라 개월 수 표기를 만들지 않는다(label null, 기존 임신 표기는 app.js).
    * years/months 는 totalMonths 의 분해. days 는 넣지 않는다(말일 규칙 결정 전).
    */
@@ -200,5 +215,5 @@
     };
   }
 
-  return { SERVICE_RANGE, LEGACY_TODO_CAP_MONTHS, INFANT_TODDLER_MAX_MONTHS, CHECKLIST_BUCKETS, completedMonths, ageLabel, ageLabelAt, isWithinServiceRange, isLegacyCappedDefinition, isLegacyCapped, effectiveMaxMonths, isEventVisible, isSchoolTermDefinition, checklistBucket, checklistGroupLabel, computeSchool, compute };
+  return { SERVICE_RANGE, LEGACY_TODO_CAP_MONTHS, INFANT_TODDLER_MAX_MONTHS, CHECKLIST_BUCKETS, completedMonths, ageLabel, ageLabelAt, isWithinServiceRange, isLegacyCappedDefinition, isLegacyCapped, effectiveMaxMonths, isEventVisible, isSchoolTermDefinition, enrollmentOptions, checklistBucket, checklistGroupLabel, computeSchool, compute };
 });

@@ -14,6 +14,8 @@
   const pad = (n) => String(n).padStart(2, "0");
   const isoOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
+  const RECORD_LINK_LABEL = "예약 일정 연결";
+
   function allRecords(ctx) {
     const { records, orphanCount } = L.deriveAutoRecords(ctx.allEvents, ctx.completed, ctx.profile.birthDate);
     const manual = L.manualRecordList(HNRecords.getMap(), ctx.profile.birthDate);
@@ -63,9 +65,11 @@
         lastMonth = mk;
       }
       const meta = [ChildTimeline.ageLabelAt(ctx.profile.birthDate, r.date), r.category, r.source === "auto" ? "자동" : r.authorLabel ? `직접 · ${ctx.esc(r.authorLabel)}` : "직접"].join(" · ");
+      // C2-b3(표시만): 연결된 예약 일정이 있는 자동 기록에 보조 표시. autoLink 플래그 OFF 면 ctx.autoLinkedIds 가 null 이라 아무것도 더하지 않는다.
+      const linkedTag = r.source === "auto" && ctx.autoLinkedIds && ctx.autoLinkedIds.has(r.eventId) ? `<span class="rec-linked">${RECORD_LINK_LABEL}</span>` : "";
       html += `<button type="button" class="rec-row ${r.source}" data-rec="${ctx.esc(r.id)}">
         <span class="rec-day">${r.date.getMonth() + 1}/${r.date.getDate()}</span>
-        <span class="rec-main"><strong>${ctx.esc(r.title)}</strong><small>${meta}</small>${r.memo ? `<em>${ctx.esc(r.memo.length > 46 ? r.memo.slice(0, 46) + "…" : r.memo)}</em>` : ""}</span>
+        <span class="rec-main"><strong>${ctx.esc(r.title)}</strong><small>${meta}</small>${linkedTag}${r.memo ? `<em>${ctx.esc(r.memo.length > 46 ? r.memo.slice(0, 46) + "…" : r.memo)}</em>` : ""}</span>
         <span class="hr-chev">›</span>
       </button>`;
     }
