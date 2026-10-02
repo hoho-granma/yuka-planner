@@ -1,0 +1,73 @@
+/* 어디갈까(S8) 탭 전용 — js/places-view.js 마크업. .places- 접두사만 쓴다. 변수는 css/style.css(:root) 것을 그대로 읽는다. */
+.places-view { min-width: 0; max-width: 100%; overflow-x: hidden; }
+
+/* 아이·지역 줄 */
+.places-ctx {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 14px; margin-bottom: 12px;
+}
+.places-ctx-main { flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
+.places-ctx-sep { margin: 0 6px; color: var(--text-muted); font-weight: 400; }
+.places-ctx-hint { flex: 1 1 100%; order: 2; margin: 0; font-size: 13px; color: var(--text-muted); }
+.places-ctx-change {
+  flex: 0 0 auto; margin-left: auto; background: none; border: none; padding: 6px 4px; min-height: 32px;
+  color: var(--accent-dark, var(--accent)); font-size: 13px; font-weight: 600; cursor: pointer;
+}
+
+/* 분류 칩 — 한 줄 가로 스크롤 */
+.places-chips {
+  display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; margin: 0 0 12px; padding-bottom: 2px;
+}
+.places-chips::-webkit-scrollbar { display: none; }
+.places-chip {
+  flex: 0 0 auto; white-space: nowrap; min-height: 34px; padding: 6px 14px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--card-bg); color: var(--text-muted);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.places-chip.active { background: var(--accent); border-color: transparent; color: #fff; }
+
+/* 편집 추천 표기 */
+.places-head { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; }
+.places-label { font-size: 12px; font-weight: 700; color: var(--accent-dark, var(--accent)); }
+.places-status { font-size: 12px; color: var(--text-muted); }
+
+/* 장소 카드 */
+.places-list { display: flex; flex-direction: column; gap: 12px; }
+.places-card {
+  min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+.places-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.places-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--bg, #fff8f0); color: var(--text-muted); }
+.places-badge-cat { color: var(--accent-dark, var(--accent)); }
+.places-badge-example { border: 1px dashed var(--border); }
+.places-badge-stale { color: var(--warn, #e0a52e); }
+.places-name { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
+.places-summary { margin: 0 0 6px; font-size: 14px; color: var(--text); line-height: 1.45; overflow-wrap: anywhere; }
+.places-address { margin: 0 0 10px; font-size: 12px; color: var(--text-muted); overflow-wrap: anywhere; }
+.places-meta { list-style: none; margin: 0 0 10px; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; }
+.places-meta-item { display: flex; flex-direction: column; min-width: 0; }
+.places-meta-label { font-size: 11px; color: var(--text-muted); }
+.places-meta-value { font-size: 13px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.places-meta-item.unknown .places-meta-value { font-weight: 400; color: var(--text-muted); }
+.places-checked { margin: 0 0 10px; font-size: 11px; color: var(--text-muted); }
+.places-actions { display: flex; align-items: center; gap: 8px; }
+.places-link {
+  flex: 1 1 0; min-width: 0; min-height: 40px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; font-weight: 600; text-decoration: none;
+}
+.places-add {
+  flex: 1 1 0; min-width: 0; min-height: 40px; border: none; border-radius: 12px;
+  background: var(--accent); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.places-add:active { background: var(--accent-dark, var(--accent)); }
+
+/* 공통 안내·빈 상태 */
+.places-notice { margin: 12px 0 0; font-size: 12px; color: var(--text-muted); text-align: center; }
+.places-empty {
+  background: var(--card-bg); border: 1px dashed var(--border); border-radius: var(--radius);
+  padding: 28px 16px; text-align: center;
+}
+.places-empty p { margin: 0; font-size: 14px; color: var(--text-muted); line-height: 1.5; }
