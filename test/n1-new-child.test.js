@@ -60,6 +60,8 @@ function env(opts) {
     setLandingStage: (s) => { sb.landingStage = s; log.calls.push("stage:" + s); },
     showLandingView: () => log.shown.push("landing"), showCalendarView: () => log.shown.push("calendar"),
     closeDetail: () => log.calls.push("closeDetail"), rememberChild: () => log.calls.push("remember"),
+    loadChildren: () => [{}],
+    onbMaybeOffer: () => {},
     ensureFamilyCode: async () => { log.calls.push("ensureFamilyCode"); if (o.ensureOk) sb.familyCode = "NEW123"; },
     buildAndRender: async () => log.calls.push("build"), profileFromPlain: (p) => ({ ...p, birthDate: new Date(2025, 0, 1) }), startListeningFamily: () => log.calls.push("listen"),
     HouseholdView: { classifyCode: () => ({ kind: "family" }) },
@@ -240,7 +242,9 @@ test("handleReset 호출은 더 이상 없고, 두 진입점(새 아이 시트·
 });
 test("handleSubmit·handleLoadCode: 입력 모드 확인 한 줄씩만 추가됐다", () => {
   const strip = (s, re) => s.replace(re, "");
-  assert.strictEqual(strip(submitSrc, /    \/\/ N1:[^\n]*\n    if \(newChildMode\) finishNewChildEntry\(\);\n/), fnSrc(headApp, "handleSubmit", "  async function "));
+  // 온보딩 가족 단계 훅(첫 아이 기록 3줄·await·onbMaybeOffer)도 함께 걷어 낸 뒤 비교한다
+  const noOnb = strip(strip(strip(submitSrc, /    const wasNewChildMode = newChildMode;\n/), /    \/\/ 온보딩 가족 단계:[^\n]*\n    const onbFirstChild[^\n]*\n/), /\n    onbMaybeOffer\(!onbFirstChild\);/).replace("    await ensureFamilyCode();", "    ensureFamilyCode();");
+  assert.strictEqual(strip(noOnb, /    \/\/ N1:[^\n]*\n    if \(newChildMode\) finishNewChildEntry\(\);\n/), fnSrc(headApp, "handleSubmit", "  async function "));
   assert.strictEqual(strip(loadSrc, /      if \(newChildMode\) finishNewChildEntry\(\);[^\n]*\n/), fnSrc(headApp, "handleLoadCode", "  async function "));
 });
 test("저장소 키 상수: HH_CODE_KEY 는 household-sync.js 의 CODE_KEY 와 같다", () => {

@@ -499,7 +499,7 @@
     ],
     "SB-02": [RETRO60, { label: "0세 지급·신청 기간", start: M(0), end: M(12, -1), note: "60일 뒤에 신청해도 이 기간 안이면 신청한 달부터 받아요" }],
     "SB-03": [{ label: "1세 지급 기간", start: M(12), end: M(24, -1), note: "0세 부모급여를 신청했다면 자동 연장돼요" }],
-    "SB-04": [RETRO60, { label: "지급·신청 기간", start: M(0), end: M(108, -1), note: "만 9세 미만까지 — 60일 뒤 신청은 신청한 달부터 지급" }],
+    "SB-04": [RETRO60, { label: "지급·신청 기간", start: M(0), end: "만 9세 미만(연도별 상향)", note: "상한 나이는 연도별로 조금씩 올라가요 — 60일 뒤 신청은 신청한 달부터 지급" }],
     "SB-05": [
       { label: "소급 신청(24개월분 전액)", start: M(0), end: DAYS(60), note: "60일 이후 신청하면 신청일부터 지원" },
       { label: "지원 종료", start: null, end: M(24, -1), note: "만 2세 전날까지" },
@@ -2089,12 +2089,16 @@
     }
 
     // N1: '새 아이 추가' 중이었다면 이제서야(검증을 통과한 저장 시점에) 이전 아이의 로컬 상태를 비운다.
+    const wasNewChildMode = newChildMode;
     if (newChildMode) finishNewChildEntry();
+    // 온보딩 가족 단계: 이 기기에 저장된 아이가 하나도 없던 '첫 아이' 저장인지 저장 전에 기록한다(새 아이 추가·불러오기와 구분).
+    const onbFirstChild = !wasNewChildMode && loadChildren().length === 0;
     profile = { name, birthDate: new Date(birthDateStr + "T00:00:00"), birthOrder, stage: landingStage || "born", province, district };
     saveProfile(profile);
     await buildAndRender();
     showCalendarView();
-    ensureFamilyCode();
+    await ensureFamilyCode();
+    onbMaybeOffer(!onbFirstChild);
   }
 
   async function handleLoadCode() {
@@ -2760,6 +2764,104 @@
   }
 
   /** 앱 시작: 이 기기에 가구가 있으면 미러·리스너·대기열 재시도를 시작한다. 실패해도 기존 가족코드 흐름은 막지 않는다. */
+  // ── 온보딩 가족 단계: 첫 아이 저장 직후 '가족 캘린더를 만들어 볼까요?' → (생성) → 엄마·아빠 이름 → 코드 안내 ──────────────
+  // 서버 쓰기는 기존 HouseholdSync.createHousehold / upsertMember 뿐이다. 안내는 한 번만 보여 준다(보여준 시점에 seen 저장).
+  const ONB_SEEN_KEY = "hannun_onboard_family_seen";
+  const onb = { step: "offer", mom: "엄마", dad: "아빠", me: "", error: null, saving: false, code: null };
+  function onbMaybeOffer(hadChildren) {
+    if (!hhEnabled()) return;
+    hhLoadSaved();
+    let seen = false;
+    try {
+      seen = !!localStorage.getItem(ONB_SEEN_KEY);
+    } catch (e) {}
+    if (!HouseholdView.shouldOfferOnboarding({ enabled: true, hasHousehold: !!(hh.hid && hh.code), hadChildren, seen })) return;
+    try {
+      localStorage.setItem(ONB_SEEN_KEY, "1");
+    } catch (e) {}
+    Object.assign(onb, { step: "offer", mom: "엄마", dad: "아빠", me: "", error: null, saving: false, code: null });
+    onbShow();
+  }
+  function onbShow() {
+    modalMode = "onboarding-family";
+    el("modal-content").innerHTML = HouseholdView.renderOnboarding(onb);
+    el("detail-modal").classList.remove("hidden");
+    const sec = el("modal-content").querySelector("[data-onb]");
+    if (sec) sec.addEventListener("click", onbOnClick);
+  }
+  function onbReadInputs() {
+    const read = (r) => {
+      const i = el("modal-content").querySelector(`[data-onb-input="${r}"]`);
+      return i ? i.value : null;
+    };
+    const m = read("MOM"), d = read("DAD");
+    if (m !== null) onb.mom = m;
+    if (d !== null) onb.dad = d;
+  }
+  async function onbOnClick(ev) {
+    if (modalMode !== "onboarding-family") return;
+    const chip = ev.target.closest("[data-onb-me]");
+    if (chip) {
+      onbReadInputs();
+      onb.me = chip.getAttribute("data-onb-me");
+      return onbShow();
+    }
+    const b = ev.target.closest("[data-onb-action]");
+    if (!b || onb.saving) return;
+    const action = b.getAttribute("data-onb-action");
+    if (action === "later" || action === "done") {
+      closeDetail();
+      hhAfterSync();
+    } else if (action === "copy") {
+      try {
+        await navigator.clipboard.writeText(onb.code || hh.code);
+      } catch (e) {}
+    } else if (action === "create") {
+      onb.saving = true;
+      onb.error = null;
+      onb.step = "creating";
+      onbShow();
+      try {
+        const probe = await hhProbeRules();
+        if (probe !== "ok") throw Object.assign(new Error("probe"), { code: probe === "denied" ? "permission-denied" : "network" });
+        const r = await HouseholdSync.createHousehold({ firstChild: familyCode ? { familyCode, displayName: childDisplayName() } : undefined });
+        if (!r.ok) throw new Error(r.reason || "create-failed");
+        hhSetJoined(r.householdId, r.code);
+        onb.code = r.code;
+        onb.step = "names";
+      } catch (e) {
+        onb.step = "offer";
+        onb.error = HouseholdView.failMessage(e);
+      }
+      onb.saving = false;
+      onbShow();
+    } else if (action === "save-names" || action === "skip-names") {
+      onbReadInputs();
+      const members = usMembers();
+      const r = HouseholdView.onboardingNameUpdates(members, action === "skip-names" ? {} : { MOM: onb.mom, DAD: onb.dad });
+      if (!r.ok) {
+        onb.error = r.error;
+        return onbShow();
+      }
+      onb.saving = true;
+      onb.error = null;
+      try {
+        for (const u of r.updates) {
+          const old = members.find((x) => x.memberId === u.memberId);
+          const w = await HouseholdSync.upsertMember(hh.hid, { memberId: u.memberId, role: u.role, label: u.label, order: old ? old.order || 1 : 1 });
+          if (!w.ok) throw new Error(w.reason || "member-failed");
+        }
+        const me = onb.me && usMembers().find((x) => x.role === onb.me && !x.deletedAt);
+        memSetActive(me ? me.memberId : "");
+        onb.step = "code";
+      } catch (e) {
+        onb.error = HouseholdView.failMessage(e);
+      }
+      onb.saving = false;
+      onbShow();
+    }
+  }
+
   async function hhInit() {
     if (!hhEnabled()) return;
     const hint = el("hh-code-hint");

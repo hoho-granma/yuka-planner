@@ -363,5 +363,77 @@
     return `<p class="hh-note">${esc(MSG.codeEntryHint)}</p><p class="hh-note">${esc(MSG.joinInfo)}</p>`;
   }
 
-  return { MSG, isEnabled, classifyCode, mergeChildren, childSubtitle, switchSubText, statusLine, failMessage, joinMessage, renderNotice, renderSection, renderCodeEntryHint, renderBetaSwitch, renderBetaSwitchLanding, ROLE_NAMES, ROLES, MEMBER_MAX, MEMBER_NAME_MAX, visibleMembers, nextMemberOrder, activeMemberOf, validateMemberForm, renderMembers };
+
+  // ── 온보딩 가족 단계(첫 아이 입력 직후): 순수 판정·렌더. 새 문구라 사용자 승인 전 제안안이다. ─────────────────────
+  const ONB_MSG = Object.freeze({
+    offerTitle: "가족 캘린더를 만들어 볼까요?",
+    offerBody: "가족과 일정을 함께 보고 나눠 쓸 수 있어요.\n지금 만들지 않아도 나중에 프로필에서 만들 수 있어요.",
+    offerCreate: "만들어 볼게요",
+    offerLater: "나중에",
+    namesTitle: "가족 이름을 정해 주세요",
+    namesBody: "일정에 표시될 이름이에요. 그대로 써도 돼요.",
+    momLabel: "엄마 이름",
+    dadLabel: "아빠 이름",
+    meLabel: "이 기기를 쓰는 사람",
+    meNone: "선택 안 함",
+    namesSave: "저장",
+    namesSkip: "그대로 쓸게요",
+    codeTitle: "가족 캘린더가 만들어졌어요",
+    codeBody: "가족에게 이 코드를 알려 주면 함께 쓸 수 있어요.",
+    done: "완료",
+  });
+
+  /** 첫 아이 입력 직후 가족 단계를 보여줄지: 플래그 ON · 가구 없음 · 첫 아이(이전에 저장된 아이 없음) · 아직 안 봄. */
+  const shouldOfferOnboarding = (o) => !!o && o.enabled === true && !o.hasHousehold && o.hadChildren === false && !o.seen;
+
+  /**
+   * 기본 구성원(MOM·DAD) 이름 입력 → 바꿀 것만 골라낸다. 입력이 비면 현재 이름을 유지한다.
+   * { ok, error, updates:[{memberId, role, label}] } — 검증은 validateMemberForm(1~20자)과 같다.
+   */
+  function onboardingNameUpdates(members, input) {
+    const vis = visibleMembers(members);
+    const updates = [];
+    for (const role of ["MOM", "DAD"]) {
+      const m = vis.find((x) => x.role === role);
+      if (!m) continue;
+      const typed = String((input && input[role]) == null ? "" : input[role]).trim();
+      const label = typed || m.label;
+      const v = validateMemberForm({ label, role });
+      if (!v.ok) return { ok: false, error: v.error, updates: [] };
+      if (v.label !== m.label) updates.push({ memberId: m.memberId, role, label: v.label });
+    }
+    return { ok: true, error: null, updates };
+  }
+
+  /** state: { step: "offer"|"creating"|"names"|"code", code, mom, dad, me: "MOM"|"DAD"|"", error, saving } */
+  function renderOnboarding(state) {
+    const st = state || {};
+    const act = (a, label, cls) => `<button type="button" class="hh-btn${cls ? " " + cls : ""}" data-onb-action="${a}"${st.saving === true ? " disabled" : ""}>${esc(label)}</button>`;
+    let body;
+    switch (st.step) {
+      case "creating":
+        body = note(MSG.creating);
+        break;
+      case "names":
+        body = `<p class="hh-consent-title">${esc(ONB_MSG.namesTitle)}</p>${note(ONB_MSG.namesBody)}
+          <div class="hh-field"><label>${esc(ONB_MSG.momLabel)}</label><input type="text" class="hh-input" data-onb-input="MOM" maxlength="${MEMBER_NAME_MAX}" value="${esc(st.mom == null ? "엄마" : st.mom)}" /></div>
+          <div class="hh-field"><label>${esc(ONB_MSG.dadLabel)}</label><input type="text" class="hh-input" data-onb-input="DAD" maxlength="${MEMBER_NAME_MAX}" value="${esc(st.dad == null ? "아빠" : st.dad)}" /></div>
+          <div class="hh-field"><label>${esc(ONB_MSG.meLabel)}</label><div class="hh-chips">${[["", ONB_MSG.meNone], ["MOM", ROLE_NAMES.MOM], ["DAD", ROLE_NAMES.DAD]].map(([v, l]) => `<button type="button" class="hh-chip${(st.me || "") === v ? " active" : ""}" data-onb-me="${v}">${esc(l)}</button>`).join("")}</div></div>
+          ${st.error ? note(st.error, "hh-warn") : ""}
+          <div class="hh-actions">${act("save-names", ONB_MSG.namesSave, "hh-primary")}${act("skip-names", ONB_MSG.namesSkip)}</div>`;
+        break;
+      case "code":
+        body = `<p class="hh-consent-title">${esc(ONB_MSG.codeTitle)}</p>${note(ONB_MSG.codeBody)}
+          <div class="hh-code-box"><span class="hh-code-label">${esc(MSG.codeLabel)}</span><strong class="hh-code">${esc(st.code)}</strong></div>
+          <div class="hh-actions">${act("copy", MSG.copyButton)}${act("done", ONB_MSG.done, "hh-primary")}</div>`;
+        break;
+      default: // "offer"
+        body = `<p class="hh-consent-title">${esc(ONB_MSG.offerTitle)}</p><p class="hh-consent-body">${lines(ONB_MSG.offerBody)}</p>
+          ${st.error ? note(st.error, "hh-warn") : ""}
+          <div class="hh-actions">${act("create", ONB_MSG.offerCreate, "hh-primary")}${act("later", ONB_MSG.offerLater)}</div>`;
+    }
+    return `<section class="hh-section" data-onb="${esc(st.step || "offer")}">${body}</section>`;
+  }
+
+  return { MSG, isEnabled, classifyCode, mergeChildren, childSubtitle, switchSubText, statusLine, failMessage, joinMessage, renderNotice, renderSection, renderCodeEntryHint, renderBetaSwitch, renderBetaSwitchLanding, ROLE_NAMES, ROLES, MEMBER_MAX, MEMBER_NAME_MAX, visibleMembers, nextMemberOrder, activeMemberOf, validateMemberForm, renderMembers, ONB_MSG, shouldOfferOnboarding, onboardingNameUpdates, renderOnboarding };
 });
