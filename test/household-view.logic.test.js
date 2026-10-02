@@ -20,7 +20,7 @@ function test(name, fn) {
 }
 const M = HV.MSG;
 const ON = { enabled: true, childName: "은찬이", code: "ABCD2345", view: "active" };
-const VIEWS = ["none", "consent", "creating", "active", "reissue-confirm", "reissuing"];
+const VIEWS = ["none", "consent", "creating", "active", "reissue-confirm", "reissuing", "leave-confirm"];
 
 console.log("플래그 OFF → 빈 문자열");
 test("enabled 가 true 가 아니면 모든 render 가 정확히 빈 문자열(undefined·false·'true'·1·null state 포함)", () => {
@@ -200,10 +200,10 @@ test("동적 값 이스케이프: 이름·코드·알림 텍스트의 HTML 은 �
   assert(!html.includes("<img"), html);
   assert(html.includes("&lt;img"));
 });
-test("data-hh-action 은 정해진 8개만 쓴다(기본 상태에서 — child-switch 는 showChildSwitch 일 때만 추가로 나온다)", () => {
+test("data-hh-action 은 정해진 11개만 쓴다(기본 상태에서 — child-switch 는 showChildSwitch 일 때만 추가로 나온다)", () => {
   const all = VIEWS.map((view) => HV.renderSection({ ...ON, view })).join("");
   const acts = new Set([...all.matchAll(/data-hh-action="([^"]+)"/g)].map((m) => m[1]));
-  assert.deepStrictEqual([...acts].sort(), ["cancel-create", "cancel-reissue", "confirm-create", "confirm-reissue", "copy", "create", "join", "reissue"]);
+  assert.deepStrictEqual([...acts].sort(), ["cancel-create", "cancel-leave", "cancel-reissue", "confirm-create", "confirm-leave", "confirm-reissue", "copy", "create", "join", "leave", "reissue"]);
 });
 test("정적 확인: DOM·저장소·네트워크·Firestore 를 참조하지 않는다(순수)", () => {
   const src = fs.readFileSync(path.join(__dirname, "..", "js", "household-view.js"), "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");

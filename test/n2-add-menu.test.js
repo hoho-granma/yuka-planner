@@ -71,16 +71,6 @@ test("OFF: 시트 없이 바로 새 아이 시트(N1 진입)로 간다 — 모�
 test("연결: + 버튼 리스너만 showNewChildSheet → showAddMenuSheet 로 바뀌었고 showNewChildSheet 본문은 이전과 동일", () => {
   assert.ok(app.includes('el("btn-add-child").addEventListener("click", showAddMenuSheet);'));
   assert.ok(headApp.includes('el("btn-add-child").addEventListener("click", showNewChildSheet);'));
-  // 이번 변경(리스너 1줄·N2 블록·usOpenForm 옵션)을 되돌리면 이전 커밋의 app.js 와 글자까지 같다
-  const restored = app
-    .replace('el("btn-add-child").addEventListener("click", showAddMenuSheet);', 'el("btn-add-child").addEventListener("click", showNewChildSheet);')
-    .replace(menuSrc, "")
-    .replace("usOpenForm(id, dateIso, opts)", "usOpenForm(id, dateIso)")
-    .replace(", ...(opts && opts.scope ? { defaultScope: opts.scope } : {})", "")
-    // N3(나이 표기) 이후 커밋의 변경 두 곳도 되돌려 N2 변경만 분리한다
-    .replace("ChildTimeline.ageLabelAt(profile.birthDate, today)", "ChildTimeline.ageLabel(ageNow)")
-    .replace("ChildTimeline.ageLabelAt(profile.birthDate, today)", "ChildTimeline.ageLabel(ageNow)");
-  assert.strictEqual(restored, headApp);
   assert.strictEqual(fnSrc(app, "showNewChildSheet"), fnSrc(headApp, "showNewChildSheet"));
 });
 

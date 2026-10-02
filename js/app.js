@@ -2455,6 +2455,20 @@
     } catch (e) {}
     hhStart();
   }
+  /** N6: 이 기기에서만 가구를 나간다. 서버 쓰기 없음. 가구 코드·id·미러·대기열·이 기기 사용자 키만 지우고 아이·완료·기록은 건드리지 않는다. */
+  function hhLeaveLocal() {
+    const r = HouseholdSync.leaveLocal(hh.hid);
+    if (!r.ok) throw new Error(r.reason || "leave-failed");
+    try {
+      localStorage.removeItem(HH_ID_KEY);
+      localStorage.removeItem(ACTIVE_MEMBER_KEY);
+    } catch (e) {}
+    hh.hid = null;
+    hh.code = null;
+    hh.view = "none";
+    hh.notice = { kind: "left" };
+    mem.view = "list"; mem.form = null; mem.deleteId = null;
+  }
   /** 프로필 시트가 열릴 때: 이 기기의 가구 정보를 읽고 슬롯을 그린다. */
   function hhOpenSection() {
     hhLoadSaved();
@@ -2543,6 +2557,12 @@
         }
       } else if (action === "reissue") {
         hh.view = "reissue-confirm";
+      } else if (action === "leave") {
+        hh.view = "leave-confirm";
+      } else if (action === "cancel-leave") {
+        hh.view = "active";
+      } else if (action === "confirm-leave") {
+        hhLeaveLocal();
       } else if (action === "cancel-reissue") {
         hh.view = "active";
       } else if (action === "confirm-reissue") {

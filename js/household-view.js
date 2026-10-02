@@ -56,6 +56,14 @@
     reissueConfirm: "다시 만들기", // #34
     reissueCancel: "취소", // #34
     reissued: "새 코드를 만들었어요. 가족에게 새 코드를 알려 주세요.", // #35
+    leaveButton: "이 기기에서 가족 캘린더 나가기", // N6
+    leaveTitle: "이 기기에서 가족 캘린더를 나갈까요?",
+    leaveBody: "나가면 이 기기에서 가족 일정이 보이지 않아요. 가족의 일정과 아이 정보는 지워지지 않고, 가족 코드로 다시 참여할 수 있어요.",
+    leavePending: (n) => `아직 서버에 보내지 못한 변경 ${n}건은 나가면 사라져요.`,
+    leaveConfirm: "나가기",
+    leaveConfirmPending: "그래도 나가기",
+    leaveCancel: "취소",
+    left: "이 기기에서 가족 캘린더를 나왔어요.",
     reissueFail: "코드를 다시 만들지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.", // #36
     // 베타 켜기 스위치(승인본 — 바꾸려면 사용자 확인이 필요하다)
     betaSectionTitle: "실험 기능",
@@ -193,7 +201,7 @@
   /** 알림 한 줄(생성 완료·복사·재발급·실패). state.notice = {kind, text?} */
   function renderNotice(n) {
     if (!n) return "";
-    const map = { joinOk: [n.text || "", ""], created: [MSG.created, ""], copied: [MSG.copyDone, ""], copyFailed: [MSG.copyFail, "hh-warn"], reissued: [MSG.reissued, ""], flushed: [MSG.flushed, ""], error: [n.text || MSG.failNetwork, "hh-warn"] };
+    const map = { joinOk: [n.text || "", ""], created: [MSG.created, ""], copied: [MSG.copyDone, ""], copyFailed: [MSG.copyFail, "hh-warn"], reissued: [MSG.reissued, ""], left: [MSG.left, ""], flushed: [MSG.flushed, ""], error: [n.text || MSG.failNetwork, "hh-warn"] };
     const m = map[n.kind];
     return m ? note(m[0], m[1]) : "";
   }
@@ -229,10 +237,17 @@
       case "reissuing":
         body = note(MSG.creating);
         break;
+      case "leave-confirm": {
+        const pend = state.pending > 0 ? note(MSG.leavePending(state.pending), "hh-warn") : "";
+        body = `<p class="hh-consent-title">${esc(MSG.leaveTitle)}</p><p class="hh-consent-body">${lines(MSG.leaveBody)}</p>${pend}
+          <div class="hh-actions">${btn("confirm-leave", state.pending > 0 ? MSG.leaveConfirmPending : MSG.leaveConfirm, "hh-danger")}${btn("cancel-leave", MSG.leaveCancel)}</div>`;
+        break;
+      }
       case "active":
         body = `<div class="hh-code-box"><span class="hh-code-label">${esc(MSG.codeLabel)}</span><strong class="hh-code">${esc(state.code)}</strong></div>
           ${note(MSG.codeInfo)}${note(MSG.shareWarn, "hh-warn")}
-          <div class="hh-actions">${btn("copy", MSG.copyButton)}${btn("reissue", MSG.reissueButton)}</div>`;
+          <div class="hh-actions">${btn("copy", MSG.copyButton)}${btn("reissue", MSG.reissueButton)}</div>
+          <div class="hh-actions">${btn("leave", MSG.leaveButton, "hh-danger")}</div>`;
         break;
       default: // "none"
         body = `${note(MSG.startHint)}${note(MSG.noHouseholdDesc)}<div class="hh-actions">${btn("create", MSG.createButton, "hh-primary")}</div>

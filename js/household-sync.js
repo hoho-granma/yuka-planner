@@ -402,6 +402,31 @@
       return true;
     }
 
+    /**
+     * 이 기기에서만 가구를 나간다(N6). 서버에는 아무것도 쓰지 않는다(가구 문서·멤버·일정 그대로, 다른 가족 기기 영향 없음).
+     * 리스너를 끄고 이 기기의 가구 코드·미러·대기열을 지운다. 대기열(서버에 못 보낸 변경)은 버려지므로
+     * 호출 전에 getStatus(hid).pending 으로 건수를 알려 주는 건 호출부의 몫이다. 같은 코드로 다시 참여할 수 있다.
+     */
+    function leaveLocal(hid) {
+      if (!enabled()) return DISABLED;
+      const discarded = hid ? loadPending(hid).length : 0;
+      stopListening();
+      try {
+        if (storage) {
+          storage.removeItem(CODE_KEY);
+          if (hid) {
+            storage.removeItem(MIRROR_PREFIX + hid);
+            storage.removeItem(PENDING_PREFIX + hid);
+          }
+        }
+      } catch (e) {
+        state.lastError = e;
+        return { ok: false, reason: "storage" };
+      }
+      state.permissionDenied = false;
+      return { ok: true, discarded };
+    }
+
     function getStatus(hid) {
       return {
         enabled: enabled(),
@@ -428,6 +453,7 @@
       patchSchedule,
       getSchedules,
       reissueCode,
+      leaveLocal,
       flush,
       startListening,
       stopListening,

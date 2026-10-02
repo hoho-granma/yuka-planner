@@ -920,6 +920,7 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .hh-code { font-size: 20px; letter-spacing: 3px; font-weight: 800; color: #b4552a; }
 .hh-actions { display: flex; gap: 8px; margin-top: 12px; }
 .hh-btn { flex: 1; padding: 11px 8px; border: 1px solid #f0d9c8; border-radius: 10px; background: #fff; color: #7a4a2e; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.hh-btn.hh-danger { background: #fff; color: #b4552a; border-color: #e8b9a0; }
 .hh-btn.hh-primary { background: #ffeadb; color: #b4552a; border-color: #f8cdb0; }
 .hh-btn:active { background: #ffdfc9; }
 .hh-landing { margin: 10px 0 4px; }
