@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#ff8a5c" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
-<link rel="stylesheet" href="css/style.css?v=64" />
+<link rel="stylesheet" href="css/style.css?v=66" />
 </head>
 <body>
   <main id="app">
@@ -106,7 +106,7 @@
         </div>
 
         <button type="submit" class="btn-primary" id="btn-submit">우리 아이 맞춤 육아 일정 만들기</button>
-        <p class="fine-print">회원가입 없이 바로 시작해요. 가족코드로 다른 기기에서도 이어볼 수 있어요.</p>
+        <p class="fine-print" id="entry-fine-print">회원가입 없이 바로 시작해요. 가족코드로 다른 기기에서도 이어볼 수 있어요.</p>
       </form>
 
       <button type="button" id="btn-show-code-entry" class="btn-text" style="display:block;margin:4px auto 0;">이미 가족코드가 있으신가요?</button>
@@ -133,6 +133,9 @@
           <button type="button" class="btn-add-child" id="btn-add-child" aria-label="새 아이 추가">+</button>
         </div>
       </header>
+
+      <!-- 아이가 없는 홈(계정으로 가입한 뒤 아이를 아직 등록하지 않았을 때만 보인다) -->
+      <div id="empty-panel" class="tab-panel hidden"></div>
 
       <!-- 홈 -->
       <div id="tab-home" class="tab-panel">
@@ -263,8 +266,8 @@
   <script src="js/household-sync.js?v=3"></script>
   <script src="js/household-view.js?v=9"></script>
   <script src="js/auth-service.js?v=2"></script>
-  <script src="js/account-view.js?v=3"></script>
-  <script src="js/account-sync.js?v=1"></script>
+  <script src="js/account-view.js?v=4"></script>
+  <script src="js/account-sync.js?v=2"></script>
   <script src="js/version.js?v=1"></script>
   <script src="js/date-calc.js?v=1"></script>
   <script src="js/child-timeline.js?v=6"></script>
@@ -281,7 +284,7 @@
   <script src="js/calendar-week.js?v=1"></script>
   <script src="js/user-schedule-view.js?v=12"></script>
   <script src="js/records-view.js?v=7"></script>
-  <script src="js/app.js?v=80"></script>
+  <script src="js/app.js?v=81"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

@@ -1,7 +1,7 @@
 /*
  * 계정(D1) 화면 — 순수 문자열·검증. DOM·저장소·네트워크를 쓰지 않는다. 새 문구는 사용자 승인 전 제안안이다.
  * 가입 폼 값(form)은 app.js 가 들고 있고, 이 모듈은 검증(validateSignup)과 마크업만 만든다.
- *   form = { email, password, displayName, situation: "PREGNANT"|"HAS_CHILD", role, institution, familyCode, childName, birthDate, gender, dueDate }
+ *   form = { email, password, displayName, situation: "HAS_CHILD"|"EXPECTING", role, familyCode, province, district }  (D5: 아이 정보·기관은 가입에서 받지 않는다)
  * 서버 연결(accounts 문서·가구 생성/합류)은 D2 — 여기서는 가입 의도(intent)만 만든다.
  */
 (function (root, factory) {
@@ -12,8 +12,12 @@
 
   const MSG = Object.freeze({
     logo: "한눈육아",
-    landingLead: "가족과 함께 쓰려면 회원가입해 주세요.",
+    landingTitle: "우리 아이 일정, 놓치지 않게",
+    landingSub: "접종·검진·지원금을 아이 월령에 맞춰 자동으로 챙기고, 가족과 한 캘린더로 함께 관리해요.",
+    landingLead: "가족이 함께 쓰려면 회원가입해 주세요.",
     landingNote: "계정 없이 아래에서 바로 시작할 수도 있어요.",
+    entryFine: "회원가입 없이도 바로 시작할 수 있어요. 가족과 함께 쓰거나 다른 기기에서 이어 보려면 위에서 회원가입해 주세요.",
+    signupLead: "가족이 함께 쓰려면 회원가입해 주세요.",
     signup: "회원가입",
     login: "로그인",
     logout: "로그아웃",
@@ -27,10 +31,24 @@
     resetTitle: "비밀번호 재설정",
     resetBody: "가입한 이메일로 재설정 메일을 보내 드려요.",
     resetSend: "재설정 메일 보내기",
-    situationLabel: "지금 상황",
-    situationPregnant: "임산부예요",
-    situationChild: "아이가 있어요",
+    situationLabel: "현재 출생한 자녀가 있나요?",
+    situationYes: "있어요",
+    situationNo: "없어요",
     roleLabel: "가입하는 사람",
+    regionLabel: "사는 지역 (선택)",
+    provincePlaceholder: "시·도",
+    districtPlaceholder: "시·군·구",
+    regionHint: "📍 사는 지역(시·도, 시·군·구)을 알려 주시면 우리 동네 육아 지원금·혜택을 자동으로 찾아 캘린더에 표시해 신청 기한을 놓치지 않게 도와드려요. 선택 사항이고, 상세 주소는 받지 않아요.",
+    errRegion: "시·도와 시·군·구를 함께 골라 주세요.",
+    // D5: 아이가 없는 홈
+    emptyTitle: "아이를 등록하면 월령에 맞는 일정과 혜택이 나와요",
+    emptyTitleExpecting: "출산 예정일을 등록하면 임신 중 일정과 혜택이 나와요",
+    emptyBody: "아이 이름과 생년월일만 있으면 돼요. 가족에게 받은 코드가 있으면 내 정보에서 합류할 수도 있어요.",
+    emptyBodyExpecting: "출산 예정일과 사는 지역만 있으면 돼요. 아이가 태어나면 생년월일로 바꿀 수 있어요.",
+    emptyTab: { calendar: "아이를 등록하면 캘린더에 접종·검진·혜택 일정이 표시돼요.", checklist: "아이를 등록하면 월령별 체크리스트가 만들어져요.", subsidy: "아이를 등록하면 우리 동네 지원금·혜택을 찾아 드려요.", record: "아이를 등록하면 성장·접종 기록을 남길 수 있어요." },
+    myInfo: "내 정보",
+    emptyButton: "아이 등록하기",
+    emptyButtonExpecting: "출산 예정일 등록하기",
     nameLabel: "표시 이름",
     institutionLabel: "아이 돌봄 기관",
     codeLabel: "가족 캘린더 코드 (선택)",
@@ -56,7 +74,7 @@
     errEmail: "이메일 형식을 확인해 주세요.",
     errPassword: "비밀번호는 8자 이상으로 만들어 주세요.",
     errName: "표시 이름을 입력해 주세요(20자 이내).",
-    errSituation: "지금 상황을 골라 주세요.",
+    errSituation: "출생한 자녀가 있는지 골라 주세요.",
     errRole: "가입하는 사람을 골라 주세요.",
     errInstitution: "아이 돌봄 기관을 골라 주세요.",
     errCode: "가족 캘린더 코드는 8자리 영문·숫자예요. 비워 두면 새 가족으로 시작해요.",
@@ -94,6 +112,10 @@
     childCodeHint: "다른 기기에서 이 아이의 기록을 불러올 때 쓰는 코드예요. 가족을 초대할 땐 위의 가족 캘린더 코드(8자리)를 알려주세요.",
   });
   const ROLES = Object.freeze([["MOM", "엄마"], ["DAD", "아빠"], ["CHILD", "자녀"], ["CAREGIVER", "이모님(기타 돌봄)"]]);
+  const SITUATIONS = Object.freeze([["HAS_CHILD", "있어요"], ["EXPECTING", "없어요"]]);
+  const ROLES_HAS_CHILD = Object.freeze([["MOM", "엄마"], ["DAD", "아빠"], ["CHILD", "자녀"]]);
+  const ROLES_EXPECTING = Object.freeze([["MOM", "예비엄마"], ["DAD", "예비아빠"]]);
+  const REGION_MAX = 30;
   const INSTITUTIONS = Object.freeze([["DAYCARE", "어린이집"], ["KINDERGARTEN", "유치원"], ["ELEMENTARY", "초등학교"], ["NONE", "해당 없음"]]);
   const GENDERS = Object.freeze([["F", "여"], ["M", "남"], ["", "선택 안 함"]]);
   const NAME_MAX = 20, CHILD_NAME_MAX = 12, DUE_MAX_DAYS = 300;
@@ -113,13 +135,30 @@
   };
   const normCode = (c) => String(c == null ? "" : c).replace(/\s+/g, "").toUpperCase();
 
-  /**
-   * 가입 폼 검증. 코드를 입력하면(합류) 상황·기관·아이 정보는 요구하지 않는다(가구의 아이를 쓴다).
-   * today: Date(주입 가능). 반환 { ok, errors:{필드:문구}, intent } — intent 는 D2 가 서버 연결에 쓰는 정규화 값(비밀번호 제외).
-   */
-  function validateSignup(form, today) {
+  /** 가입 시트에서 지금 고를 수 있는 역할 선택지: 합류(코드 입력)면 전체, 아니면 자녀 유무에 따라(있어요=엄마·아빠·자녀 / 없어요=예비엄마·예비아빠 / 미선택=없음). */
+  function roleOptions(form) {
     const f = form || {};
-    const t = today instanceof Date ? today : new Date();
+    if (normCode(f.familyCode) !== "") return ROLES;
+    return f.situation === "HAS_CHILD" ? ROLES_HAS_CHILD : f.situation === "EXPECTING" ? ROLES_EXPECTING : [];
+  }
+  /** 폼의 서로 의존하는 값을 맞춘다(선택지에 없는 역할 지움, 합류면 자녀 유무·지역 지움, 시·도가 바뀌면 시·군·구 지움). 같은 객체를 돌려준다. */
+  function syncForm(form, regions) {
+    const f = form;
+    if (!roleOptions(f).some(([k]) => k === f.role)) f.role = "";
+    if (normCode(f.familyCode) !== "") { f.situation = ""; f.province = ""; f.district = ""; }
+    if (f.district && regions) {
+      const p = regions.find((x) => x.code === f.province);
+      if (!p || !p.districts.includes(f.district)) f.district = "";
+    }
+    return f;
+  }
+  /**
+   * 가입 폼 검증(D5). 코드를 입력하면(합류) 자녀 유무·지역은 요구하지 않고 역할은 전체 선택지(엄마·아빠·자녀·이모님).
+   * 새 가족이면 '출생한 자녀가 있나요'(HAS_CHILD/EXPECTING)와 그에 맞는 역할이 필수, 지역(시·도+시·군·구)은 선택 — 하나만 고르면 오류.
+   * regions: 있으면 지역 값을 목록으로 검증한다. 반환 { ok, errors, intent } — intent 는 서버 연결에 쓰는 정규화 값(비밀번호 제외).
+   */
+  function validateSignup(form, today, regions) {
+    const f = form || {};
     const errors = {};
     const email = String(f.email || "").trim();
     if (!email) errors.email = MSG.errEmailEmpty;
@@ -127,31 +166,23 @@
     if (typeof f.password !== "string" || f.password.length < 8) errors.password = MSG.errPassword;
     const name = String(f.displayName || "").trim();
     if (!name || name.length > NAME_MAX) errors.displayName = MSG.errName;
-    if (!ROLES.some(([k]) => k === f.role)) errors.role = MSG.errRole;
     const code = normCode(f.familyCode);
     const joining = code !== "";
     if (joining && !CODE_RE.test(code)) errors.familyCode = MSG.errCode;
-    let childPart = null;
+    if (!joining && f.situation !== "HAS_CHILD" && f.situation !== "EXPECTING") errors.situation = MSG.errSituation;
+    if (!roleOptions(f).some(([k]) => k === f.role)) errors.role = MSG.errRole;
+    let province = "", district = "";
     if (!joining) {
-      if (f.situation !== "PREGNANT" && f.situation !== "HAS_CHILD") errors.situation = MSG.errSituation;
-      if (!INSTITUTIONS.some(([k]) => k === f.institution)) errors.institution = MSG.errInstitution;
-      if (f.situation === "HAS_CHILD") {
-        const cn = String(f.childName || "").trim();
-        if (!cn || cn.length > CHILD_NAME_MAX) errors.childName = MSG.errChildName;
-        const bd = parseDate(f.birthDate);
-        const tod = new Date(t.getFullYear(), t.getMonth(), t.getDate());
-        if (!bd || bd > tod) errors.birthDate = MSG.errBirthDate;
-        childPart = { childName: cn, birthDate: f.birthDate || "", gender: ["F", "M"].includes(f.gender) ? f.gender : "" };
-      } else if (f.situation === "PREGNANT") {
-        const dd = parseDate(f.dueDate);
-        const tod = new Date(t.getFullYear(), t.getMonth(), t.getDate());
-        const max = new Date(tod.getFullYear(), tod.getMonth(), tod.getDate() + DUE_MAX_DAYS);
-        if (!dd || dd < tod || dd > max) errors.dueDate = MSG.errDueDate;
-        childPart = { dueDate: f.dueDate || "" };
+      province = String(f.province || "").trim();
+      district = String(f.district || "").trim();
+      if (province || district) {
+        const p = regions ? regions.find((x) => x.code === province) : null;
+        const known = regions ? !!p && p.districts.includes(district) : province.length <= REGION_MAX && district.length <= REGION_MAX;
+        if (!province || !district || !known) errors.region = MSG.errRegion;
       }
     }
     const ok = Object.keys(errors).length === 0;
-    const intent = ok ? { email, displayName: name, role: f.role, joiningCode: joining ? code : null, ...(joining ? {} : { situation: f.situation, institution: f.institution, ...childPart }) } : null;
+    const intent = ok ? { email, displayName: name, role: f.role, joiningCode: joining ? code : null, ...(joining ? {} : { situation: f.situation, ...(province ? { province, district } : {}) }) } : null;
     return { ok, errors, intent };
   }
   /** 연결 복구 폼 검증: 역할·표시 이름 필수, 합류(joining)면 8자리 코드 필수. intent 는 가입 의도와 같은 모양(상황·기관 없음). */
@@ -185,7 +216,7 @@
   function renderLanding(state) {
     const s = state || {};
     if (s.user) return `<div class="card acct-landing" id="acct-landing"><div class="acct-logo">${esc(MSG.logo)}</div><p class="fine-print">${esc(MSG.loggedInAs(s.user.displayName || s.user.email))}</p><div class="acct-actions"><button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div></div>`;
-    return `<div class="card acct-landing" id="acct-landing"><div class="acct-logo">${esc(MSG.logo)}</div><p class="fine-print">${esc(MSG.landingLead)}</p><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-signup">${esc(MSG.signup)}</button><button type="button" class="btn-close" data-acct-action="open-login">${esc(MSG.login)}</button></div><p class="fine-print">${esc(MSG.landingNote)}</p></div>`;
+    return `<div class="card acct-landing" id="acct-landing"><div class="acct-logo">${esc(MSG.logo)}</div><p class="acct-sub">${esc(MSG.landingSub)}</p><p class="fine-print">${esc(MSG.landingLead)}</p><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-signup">${esc(MSG.signup)}</button><button type="button" class="btn-close" data-acct-action="open-login">${esc(MSG.login)}</button></div><p class="fine-print">${esc(MSG.landingNote)}</p></div>`;
   }
   const roleLabel = (r) => (ROLES.find(([k]) => k === r) || [])[1] || "";
   /** 프로필 시트의 계정 슬롯. s.account = { displayName, role }(accounts 문서)가 있으면 이름·역할을 보여준다. */
@@ -194,25 +225,44 @@
     if (s.user) return `<div class="detail-row acct-slot"><div class="label">${esc(MSG.myAccount)}</div>${esc((s.account && s.account.displayName) || s.user.displayName || "")}${s.account && s.account.role ? ` · ${esc(MSG.myRole(roleLabel(s.account.role).replace(/\(.*\)/, "")))}` : ""}<br /><span class="fine-print">${esc(s.user.email)}</span><div class="acct-actions"><button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div>${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
     return `<div class="detail-row acct-slot"><div class="label">${esc(MSG.myAccount)}</div><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-signup">${esc(MSG.signup)}</button><button type="button" class="btn-close" data-acct-action="open-login">${esc(MSG.login)}</button></div>${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
   }
-  /** state: { form, errors, error(서버 오류 문구), busy } */
+  const select = (k, placeholder, opts, cur, disabled) => `<select class="acct-input acct-select" data-acct-input="${k}" aria-label="${esc(placeholder)}"${disabled ? " disabled" : ""}><option value="">${esc(placeholder)}</option>${opts.map(([v, l]) => `<option value="${esc(v)}"${cur === v ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
+  /** state: { form, errors, error(서버 오류 문구), busy, regions: [{code,name,districts}] } */
   function renderSignup(state) {
     const s = state || {}, f = s.form || {}, e = s.errors || {};
     const joining = normCode(f.familyCode) !== "";
-    const child = joining ? "" : f.situation === "HAS_CHILD"
-      ? `${input("childName", MSG.childNameLabel, "text", f.childName || "", 'maxlength="12"')}${err(e, "childName")}${input("birthDate", MSG.birthDateLabel, "date", f.birthDate || "")}${err(e, "birthDate")}${radios("gender", MSG.genderLabel, GENDERS, f.gender == null ? "" : f.gender, e)}`
-      : f.situation === "PREGNANT" ? `${input("dueDate", MSG.dueDateLabel, "date", f.dueDate || "")}${err(e, "dueDate")}` : "";
-    const situation = joining ? "" : radios("situation", MSG.situationLabel, [["PREGNANT", MSG.situationPregnant], ["HAS_CHILD", MSG.situationChild]], f.situation, e);
-    const institution = joining ? "" : radios("institution", MSG.institutionLabel, INSTITUTIONS, f.institution, e);
-    return `<div class="acct-form" data-acct-form="signup"><h3>${esc(MSG.signupTitle)}</h3>
+    const regions = s.regions || [];
+    const prov = regions.find((p) => p.code === f.province);
+    const situation = joining ? "" : radios("situation", MSG.situationLabel, SITUATIONS, f.situation, e);
+    const roles = roleOptions(f);
+    const role = roles.length ? radios("role", MSG.roleLabel, roles, f.role, e) : "";
+    const region = joining || !regions.length ? "" : `<div class="acct-field"><label>${esc(MSG.regionLabel)}</label>${select("province", MSG.provincePlaceholder, regions.map((p) => [p.code, p.name]), f.province || "")}${select("district", MSG.districtPlaceholder, (prov ? prov.districts : []).map((d) => [d, d]), f.district || "", !prov)}${err(e, "region")}<p class="fine-print acct-region-hint">${esc(MSG.regionHint)}</p></div>`;
+    return `<div class="acct-form" data-acct-form="signup"><h3>${esc(MSG.signupTitle)}</h3><p class="fine-print">${esc(MSG.signupLead)}</p>
       ${input("email", MSG.emailLabel, "email", f.email || "", 'inputmode="email" autocapitalize="off"')}${err(e, "email")}
       ${input("password", MSG.passwordLabel, "password", f.password || "", 'autocomplete="new-password"')}${err(e, "password")}
-      ${radios("role", MSG.roleLabel, ROLES, f.role, e)}
       ${input("displayName", MSG.nameLabel, "text", f.displayName || "", 'maxlength="20"')}${err(e, "displayName")}
+      ${situation}${role}
       <div class="acct-field"><label>${esc(MSG.codeLabel)}</label><input type="text" class="acct-input acct-code" data-acct-input="familyCode" maxlength="8" placeholder="${esc(MSG.codePlaceholder)}" value="${esc(f.familyCode || "")}" autocapitalize="characters" autocomplete="off" spellcheck="false" /><p class="fine-print">${esc(MSG.codeHint)}</p>${err(e, "familyCode")}</div>
-      ${situation}${institution}${child}
+      ${joining ? "" : region}
       ${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}
       <button type="button" class="btn-complete" data-acct-action="submit-signup"${s.busy ? " disabled" : ""}>${esc(s.busy ? MSG.signingUp : MSG.submitSignup)}</button>
       <button type="button" class="btn-close" data-acct-action="close"${s.busy ? " disabled" : ""}>${esc(MSG.cancel)}</button></div>`;
+  }
+  /** 내 정보 시트(아이가 없는 홈에서 열린다): 계정 슬롯 + 가족 캘린더 코드(있으면) + 닫기. */
+  function renderMe(state) {
+    const st = state || {};
+    const code = st.code ? `<div class="hh-code-box"><span class="hh-code-label">${esc(MSG.inviteCodeLabel)}</span><strong class="hh-code">${esc(st.code)}</strong></div><button type="button" class="btn-close" data-acct-action="copy-me">${esc(MSG.inviteCopy)}</button>` : "";
+    return `<div class="acct-form" data-acct-form="me">${renderAccountSlot(st)}${code}<button type="button" class="btn-close" data-acct-action="close">${esc(MSG.close)}</button></div>`;
+  }
+  /** 아이가 없는 홈(D5) 안내 카드. expecting=true 면 예비 부모 문구. */
+  function renderEmptyHome(state) {
+    const x = !!(state && state.expecting);
+    return `<div class="card acct-empty" id="acct-empty-home"><h3>${esc(x ? MSG.emptyTitleExpecting : MSG.emptyTitle)}</h3><p class="fine-print">${esc(x ? MSG.emptyBodyExpecting : MSG.emptyBody)}</p><button type="button" class="btn-complete" data-acct-action="empty-register">${esc(x ? MSG.emptyButtonExpecting : MSG.emptyButton)}</button><button type="button" class="btn-close" data-acct-action="empty-me">${esc(MSG.myInfo)}</button></div>`;
+  }
+  function renderEmptyTab(tab, state) {
+    const t = MSG.emptyTab[tab];
+    if (!t) return renderEmptyHome(state);
+    const x = !!(state && state.expecting);
+    return `<div class="card acct-empty"><p class="fine-print">${esc(t)}</p><button type="button" class="btn-complete" data-acct-action="empty-register">${esc(x ? MSG.emptyButtonExpecting : MSG.emptyButton)}</button></div>`;
   }
   function renderLogin(state) {
     const s = state || {}, f = s.form || {}, e = s.errors || {};
@@ -257,5 +307,5 @@
       <button type="button" class="btn-complete" data-acct-action="confirm-logout">${esc(MSG.logout)}</button><button type="button" class="btn-close" data-acct-action="close">${esc(MSG.cancel)}</button></div>`;
   }
 
-  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, renderLanding, renderAccountSlot, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderRecover, renderMigrate, esc };
+  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, renderLanding, renderAccountSlot, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderMe, roleOptions, syncForm, SITUATIONS, esc };
 });

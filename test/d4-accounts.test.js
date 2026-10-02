@@ -51,26 +51,28 @@ function appEnv({ w, local = {}, hhHid = null, hhCode = null, profile = null, fa
   const sheet = { innerHTML: "", querySelector: () => null, classList: { remove() {}, add() {} } };
   const log = { setJoined: [], left: 0, flushed: 0, closed: 0, loaded: [], sheets: [] };
   const hhObj = { hid: hhHid, code: hhCode };
-  const els = { "modal-content": sheet, "detail-modal": sheet, childName: { value: "" }, familyCodeInput: { value: "" }, "view-landing": { querySelector: () => null } };
+  const cl = () => ({ add() {}, remove() {} });
+  const els = { "modal-content": sheet, "detail-modal": sheet, childName: { value: "" }, familyCodeInput: { value: "" }, "view-landing": { querySelector: () => null, classList: cl() }, "view-calendar": { classList: cl() }, "new-child-bar": { classList: cl() }, "empty-panel": { innerHTML: "", classList: cl(), addEventListener() {} } };
+  ["home", "calendar", "record", "subsidy", "checklist"].forEach((t) => { els["tab-" + t] = { classList: cl() }; });
   const HSX = Object.assign(Object.create(w.hs), { firestoreAdapter: () => w.db,
     getStatus: (h) => ({ pending: pendingN, permissionDenied: false, ...(h ? {} : {}) }),
     flush: async (h) => { log.flushed++; return w.hs.flush(h); } });
-  const sb = { console, Date, JSON, Promise, firebase: { firestore: () => ({}) }, AccountView: AV, AccountSync: ASYNC, HouseholdView: HV, window: { FEATURES: { accounts: true } },
+  const sb = { console, Date, JSON, Promise, firebase: { firestore: () => ({}) }, AccountView: AV, AccountSync: ASYNC, HouseholdView: HV, window: { FEATURES: { accounts: true }, scrollTo() {} },
     AuthService: { create: () => AS.create({ features: () => ({ accounts: true }), adapter: authAd }), MSG: AS.MSG },
     HouseholdSync: HSX, el: (id) => els[id] || null, closeDetail: () => { log.closed++; }, hh: hhObj,
     hhSetJoined: (hid, code) => { log.setJoined.push([hid, code]); hhObj.hid = hid; hhObj.code = code; },
     hhLeaveLocal: () => { log.left++; hhObj.hid = null; hhObj.code = null; }, hhRender() {},
     showLandingView() {}, setLandingStage() {}, setBirthDatePicker() {}, handleLoadCode: async () => { log.loaded.push(els.familyCodeInput.value); },
     localStorage: { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = v; }, removeItem: (k) => { delete store[k]; } },
-    document: { createElement: () => ({ addEventListener() {} }) } };
+    document: { createElement: () => ({ addEventListener() {} }), querySelectorAll: () => [] } };
   vm.createContext(sb);
   const a = APP.indexOf("// ── D1 계정"), b = APP.indexOf("async function init()");
-  vm.runInContext(`let modalMode = null; let profile = ${JSON.stringify(profile)}; let familyCode = ${JSON.stringify(familyCode)}; const isPregnant = () => false; const childDisplayName = () => "수아"; const CHILDREN_KEY = "hannun_children";
+  vm.runInContext(`let modalMode = null; let profile = ${JSON.stringify(profile)}; let familyCode = ${JSON.stringify(familyCode)}; let regionsData = null; let currentTab = "home"; let newChildMode = false; const TAB_NAMES = ["home", "calendar", "record", "subsidy", "checklist"]; const isPregnant = () => false; const childDisplayName = () => "수아"; const CHILDREN_KEY = "hannun_children";
     const loadChildren = () => { try { return JSON.parse(localStorage.getItem(CHILDREN_KEY) || "[]"); } catch (e) { return []; } }; const us = { selection: ["CHILD:x"], selTouched: true }; function usRefreshCalendar() {}\n` + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick, acctInit, acctRestore };", sb);
   const click = (action) => sb.__t.acctOnClick({ target: { closest: (sel) => (sel === "[data-acct-radio]" ? null : { getAttribute: () => action }) } });
   return { sb, w, authAd, store, sheet, log, hhObj, acct: sb.__t.acct, click, init: () => sb.__t.acctInit(), restore: (u) => sb.__t.acctRestore(u) };
 }
-const form = (x) => ({ email: "m@x.co", password: "12345678", displayName: "지은", role: "MOM", situation: "HAS_CHILD", institution: "DAYCARE", childName: "수아", birthDate: "2026-01-02", ...x });
+const form = (x) => ({ email: "m@x.co", password: "12345678", displayName: "지은", role: "MOM", situation: "HAS_CHILD", ...x });
 const childrenOf = (w, hid) => [...w.db.docs.entries()].filter(([k]) => k.startsWith(`households/${hid}/children/`)).map(([, v]) => v);
 const householdsOf = (w) => [...w.db.docs.keys()].filter((k) => /^households\/[^/]+$/.test(k));
 async function mkHousehold(w) { const r = await w.hs.createHousehold({}); assert.ok(r.ok); return r; }

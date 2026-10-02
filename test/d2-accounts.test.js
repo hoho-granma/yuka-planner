@@ -43,7 +43,7 @@ function world(opts) {
   const sync = ASYNC.create({ adapter: db, household: hs, now: () => ++T });
   return { db, storage, hs, sync };
 }
-const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joiningCode: null, situation: "HAS_CHILD", institution: "DAYCARE", childName: "수아", birthDate: "2026-01-02", gender: "" };
+const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joiningCode: null, situation: "HAS_CHILD", province: "서울특별시", district: "구로구" };
 
 (async () => {
   console.log("chooseMember");
@@ -65,8 +65,8 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     const r = await w.sync.completeSignup({ user: { uid: "u1" }, intent: intentNew });
     assert.ok(r.ok && r.created && r.claimedSeed && r.householdCode.length === 8, JSON.stringify(r));
     const acc = w.db.docs.get("accounts/u1");
-    assert.deepStrictEqual(Object.keys(acc).sort(), ["createdAt", "displayName", "householdCode", "householdId", "institution", "memberId", "role", "updatedAt", "v"]);
-    assert.deepStrictEqual([acc.v, acc.displayName, acc.role, acc.institution, acc.householdId, acc.householdCode, acc.memberId], [1, "지은", "MOM", "DAYCARE", r.householdId, r.householdCode, r.memberId]);
+    assert.deepStrictEqual(Object.keys(acc).sort(), ["createdAt", "displayName", "district", "householdCode", "householdId", "memberId", "province", "role", "situation", "updatedAt", "v"]);
+    assert.deepStrictEqual([acc.v, acc.displayName, acc.role, acc.situation, acc.householdId, acc.householdCode, acc.memberId], [1, "지은", "MOM", "HAS_CHILD", r.householdId, r.householdCode, r.memberId]);
     const members = [...w.db.docs.entries()].filter(([k]) => k.startsWith(`households/${r.householdId}/members/`)).map(([k, v]) => ({ id: k.split("/").pop(), ...v }));
     assert.strictEqual(members.length, 2, "시드 2명 그대로(새 구성원 안 늘림)");
     const mom = members.find((m) => m.role === "MOM"), dad = members.find((m) => m.role === "DAD");
@@ -145,18 +145,18 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     return !!uidOk;
   };
   const accountOk = (d) => {
-    const allowed = ["v", "displayName", "role", "institution", "householdId", "householdCode", "memberId", "createdAt", "updatedAt"];
+    const allowed = ["v", "displayName", "role", "institution", "situation", "province", "district", "householdId", "householdCode", "memberId", "createdAt", "updatedAt"];
     if (!Object.keys(d).every((k) => allowed.includes(k)) || !["v", "displayName", "role", "createdAt", "updatedAt"].every((k) => has(d, k))) return false;
     const strOrNull = (k, max) => !has(d, k) || d[k] === null || (typeof d[k] === "string" && d[k].length <= max);
     return d.v === 1 && typeof d.displayName === "string" && d.displayName.length >= 1 && d.displayName.length <= 20 && ["MOM", "DAD", "CHILD", "CAREGIVER"].includes(d.role)
-      && (!has(d, "institution") || d.institution === null || ["DAYCARE", "KINDERGARTEN", "ELEMENTARY", "NONE"].includes(d.institution)) && strOrNull("householdId", 60) && strOrNull("householdCode", 8) && strOrNull("memberId", 60);
+      && (!has(d, "institution") || d.institution === null || ["DAYCARE", "KINDERGARTEN", "ELEMENTARY", "NONE"].includes(d.institution)) && (!has(d, "situation") || d.situation === null || ["HAS_CHILD", "EXPECTING"].includes(d.situation)) && strOrNull("province", 30) && strOrNull("district", 30) && strOrNull("householdId", 60) && strOrNull("householdCode", 8) && strOrNull("memberId", 60);
   };
   const accWrite = (uid, auth, nd, old) => !!auth && auth.uid === uid && accountOk(nd) && (!old || (nd.v === old.v && nd.createdAt === old.createdAt));
   await test("규칙 텍스트: accounts 블록(본인 uid만 get/create/update, list·delete 금지, v·createdAt 불변)과 members(uid·CHILD) 가 정의돼 있다", () => {
     assert.ok(/match \/accounts\/\{uid\} \{/.test(RULES) && /allow get: if request\.auth != null && request\.auth\.uid == uid;/.test(RULES) && /allow list: if false;/.test(RULES.slice(RULES.indexOf("match /accounts/"))));
     const acc = RULES.slice(RULES.indexOf("match /accounts/"), RULES.indexOf("// 그 외 모든 경로"));
     assert.ok(/allow create: if request\.auth != null && request\.auth\.uid == uid && accountOk\(request\.resource\.data\);/.test(acc) && /request\.resource\.data\.createdAt == resource\.data\.createdAt/.test(acc) && /allow delete: if false;/.test(acc));
-    assert.deepStrictEqual([...acc.match(/hasOnly\(\[([^\]]+)\]/)[1].matchAll(/'([^']+)'/g)].map((m) => m[1]), ["v", "displayName", "role", "institution", "householdId", "householdCode", "memberId", "createdAt", "updatedAt"]);
+    assert.deepStrictEqual([...acc.match(/hasOnly\(\[([^\]]+)\]/)[1].matchAll(/'([^']+)'/g)].map((m) => m[1]), ["v", "displayName", "role", "institution", "situation", "province", "district", "householdId", "householdCode", "memberId", "createdAt", "updatedAt"]);
     const mem = RULES.slice(RULES.indexOf("match /members/{memberId}"), RULES.indexOf("// [B2]"));
     assert.ok(mem.includes("'uid'") && mem.includes("'CHILD'") && /function uidOk\(\)/.test(mem) && /&& uidOk\(\);/.test(mem));
     assert.ok(/\(resource != null && \('uid' in resource\.data\)\)\s*\n\s*\? \(\('uid' in request\.resource\.data\) && request\.resource\.data\.uid == resource\.data\.uid\)/.test(mem), "uid 가 달린 문서는 결과에도 같은 uid 필수");
@@ -201,10 +201,12 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     const sheet = { innerHTML: "", querySelector: () => null, classList: { remove() {}, add() {} } };
     const log = { setJoined: [], stage: null, name: null, date: null, loaded: [], landing: 0, closed: 0 };
     const hhObj = { hid: null, code: hhCode };
-    const els = { "modal-content": sheet, "detail-modal": sheet, childName: { value: "" }, familyCodeInput: { value: "" }, "view-landing": { querySelector: () => null } };
+    const cl = () => ({ add() {}, remove() {} });
+    const els = { "modal-content": sheet, "detail-modal": sheet, childName: { value: "" }, familyCodeInput: { value: "" }, "view-landing": { querySelector: () => null, classList: cl() }, "view-calendar": { classList: cl() }, "new-child-bar": { classList: cl() }, "empty-panel": { innerHTML: "", classList: cl(), addEventListener() {} } };
+    ["home", "calendar", "record", "subsidy", "checklist"].forEach((t) => { els["tab-" + t] = { classList: cl() }; });
     const sb = {
       console, Date, JSON, Promise, firebase: { firestore: () => ({}) }, AccountView: AV, AccountSync: ASYNC, HouseholdView: HV,
-      window: { FEATURES: { accounts: flag } },
+      window: { FEATURES: { accounts: flag }, scrollTo() {} },
       AuthService: { create: () => AS.create({ features: () => ({ accounts: flag }), adapter: authAd }), MSG: AS.MSG },
       HouseholdSync: Object.assign(Object.create(w.hs), { firestoreAdapter: () => w.db, lookupHousehold: w.hs.lookupHousehold, joinHousehold: w.hs.joinHousehold, getMirror: w.hs.getMirror, getStatus: w.hs.getStatus }),
       el: (id) => els[id] || null, closeDetail: () => { log.closed++; }, hh: hhObj,
@@ -212,16 +214,16 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
       showLandingView: () => { log.landing++; }, setLandingStage: (s) => { log.stage = s; }, setBirthDatePicker: (d) => { log.date = d && `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; },
       handleLoadCode: async () => { log.loaded.push(els.familyCodeInput.value); },
       localStorage: { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = v; }, removeItem: (k) => { delete store[k]; } },
-      document: { createElement: () => ({ addEventListener() {} }) },
+      document: { createElement: () => ({ addEventListener() {} }), querySelectorAll: () => [] }, scrollTo() {},
     };
     vm.createContext(sb);
     const a = APP.indexOf("// ── D1 계정"), b = APP.indexOf("async function init()");
-    vm.runInContext(`let modalMode = null; let profile = ${JSON.stringify(profile)}; let familyCode = ${JSON.stringify(familyCode)}; const isPregnant = () => false; const childDisplayName = () => "수아"; const loadChildren = () => { try { return JSON.parse(localStorage.getItem("hannun_children") || "[]"); } catch (e) { return []; } }; const us = { selection: [], selTouched: false }; function hhRender() {} function hhLeaveLocal() { hh.hid = null; hh.code = null; }\n` + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick, acctInit, acctRestore };", sb);
+    vm.runInContext(`let modalMode = null; let profile = ${JSON.stringify(profile)}; let familyCode = ${JSON.stringify(familyCode)}; let regionsData = null; let currentTab = "home"; let newChildMode = false; const TAB_NAMES = ["home", "calendar", "record", "subsidy", "checklist"]; const isPregnant = () => false; const childDisplayName = () => "수아"; const loadChildren = () => { try { return JSON.parse(localStorage.getItem("hannun_children") || "[]"); } catch (e) { return []; } }; const us = { selection: [], selTouched: false }; function hhRender() {} function hhLeaveLocal() { hh.hid = null; hh.code = null; }\n` + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick, acctInit, acctRestore };", sb);
     const click = (attrs) => sb.__t.acctOnClick({ target: { closest: (sel) => (sel === "[data-acct-radio]" ? null : { getAttribute: () => attrs.action }) } });
     return { sb, w, authAd, store, sheet, log, hhObj, acct: sb.__t.acct, click, init: () => sb.__t.acctInit(), restore: (u) => sb.__t.acctRestore(u) };
   }
-  const signupForm = (extra) => ({ email: "m@x.co", password: "12345678", displayName: "지은", role: "MOM", situation: "HAS_CHILD", institution: "DAYCARE", childName: "수아", birthDate: "2026-01-02", ...extra });
-  await test("신규 가족 가입: Auth → accounts·가구·엄마 구성원 → 가구 연결 → 기존 아이 입력 화면(이름·생년월일 미리 채움), 가입 의도 정리", async () => {
+  const signupForm = (extra) => ({ email: "m@x.co", password: "12345678", displayName: "지은", role: "MOM", situation: "HAS_CHILD", province: "서울특별시", district: "구로구", ...extra });
+  await test("신규 가족 가입(D5): Auth → accounts(situation·지역)·가구·엄마 구성원 → 가구 연결 → 아이 입력 화면 없이 곧바로 홈(아이가 없는 홈), 가입 의도 정리", async () => {
     const e = appEnv();
     e.init();
     e.acct.mode = "signup";
@@ -230,18 +232,23 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     assert.ok(e.acct.user && e.acct.user.uid === "uNew" && !e.acct.busy);
     assert.strictEqual(e.log.setJoined.length, 1);
     const acc = e.w.db.docs.get("accounts/uNew");
-    assert.strictEqual(acc.householdId, e.log.setJoined[0][0]);
-    assert.deepStrictEqual([e.log.stage, e.sb.el("childName").value, e.log.date, e.log.landing], ["born", "수아", "2026-01-02", 1]);
+    assert.deepStrictEqual([acc.householdId, acc.situation, acc.province, acc.district], [e.log.setJoined[0][0], "HAS_CHILD", "서울특별시", "구로구"]);
+    assert.deepStrictEqual([e.log.stage, e.log.landing, e.sb.el("childName").value, e.log.date], [null, 0, "", null], "아이 입력 화면·미리 채움 없음");
+    const html = e.sb.el("empty-panel").innerHTML;
+    assert.ok(html.includes("아이를 등록하면 월령에 맞는 일정과 혜택이 나와요") && html.includes('data-acct-action="empty-register"'));
     assert.ok(!("hannun_account_intent" in e.store) && e.log.closed === 1 && !e.authAd.calls.includes("deleteUser"));
     assert.strictEqual(e.acct.notice, "가입했어요. 로그인 상태예요.");
   });
-  await test("임산부 가입: 출산 예정일로 입력 화면(pregnant) 미리 채움", async () => {
+  await test("예비 부모 가입: situation=EXPECTING 이 저장되고 빈 홈 문구는 '출산 예정일을 등록하면…'", async () => {
     const e = appEnv();
     e.init();
     e.acct.mode = "signup";
-    e.acct.form = signupForm({ situation: "PREGNANT", dueDate: "2027-03-01", childName: "", birthDate: "" });
+    e.acct.form = signupForm({ situation: "EXPECTING", role: "DAD", province: "", district: "" });
     await e.click({ action: "submit-signup" });
-    assert.deepStrictEqual([e.log.stage, e.sb.el("childName").value, e.log.date], ["pregnant", "", "2027-03-01"]);
+    const acc = e.w.db.docs.get("accounts/uNew");
+    assert.deepStrictEqual([acc.situation, acc.role, "province" in acc], ["EXPECTING", "DAD", false]);
+    const html = e.sb.el("empty-panel").innerHTML;
+    assert.ok(html.includes("출산 예정일을 등록하면 임신 중 일정과 혜택이 나와요") && html.includes("출산 예정일 등록하기") && e.log.landing === 0);
   });
   await test("잘못된 코드: 계정을 만들기 전에 막고(Auth 호출 0) 코드 입력란에 안내", async () => {
     const e = appEnv();
@@ -261,7 +268,7 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     const c = await e.w.hs.createHousehold({ firstChild: { familyCode: "ABC234", displayName: "수아" } });
     e.init();
     e.acct.mode = "signup";
-    e.acct.form = signupForm({ role: "DAD", displayName: "민수", familyCode: c.code, situation: undefined, institution: undefined });
+    e.acct.form = signupForm({ role: "DAD", displayName: "민수", familyCode: c.code, situation: undefined, province: undefined, district: undefined });
     await e.click({ action: "submit-signup" });
     assert.strictEqual(e.acct.user.uid, "uNew");
     assert.deepStrictEqual(e.log.loaded, ["ABC234"]);
@@ -283,7 +290,7 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
   await test("다른 기기 로그인: 계정 가구를 이 기기에 복원(가구 연결 + 아이 불러오기), 이 기기에 이미 가구가 있으면 건드리지 않는다", async () => {
     const e = appEnv();
     const c = await e.w.hs.createHousehold({ firstChild: { familyCode: "ABC234", displayName: "수아" } });
-    await e.w.sync.completeSignup({ user: { uid: "uOld" }, intent: { email: "m@x.co", displayName: "지은", role: "MOM", joiningCode: null, situation: "HAS_CHILD", institution: "NONE", childName: "수아", birthDate: "2026-01-02" } });
+    await e.w.sync.completeSignup({ user: { uid: "uOld" }, intent: { email: "m@x.co", displayName: "지은", role: "MOM", joiningCode: null, situation: "HAS_CHILD" } });
     // 위 호출은 새 가구를 또 만들므로, 계정 문서를 c 가구로 맞춘다
     e.w.db.docs.set("accounts/uOld", { v: 1, displayName: "지은", role: "MOM", householdId: c.householdId, householdCode: c.code, memberId: "m", createdAt: 1, updatedAt: 1 });
     e.init();
@@ -296,22 +303,22 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     assert.deepStrictEqual([e2.log.setJoined.length, e2.log.loaded.length], [0, 0]);
   });
   await test("끝나지 않은 가입 이어서 마무리: 가입 의도가 있고 계정에 가구가 없으면 로그인 때 다시 연결(롤백 없음)", async () => {
-    const e = appEnv({ local: { hannun_account_intent: JSON.stringify({ email: "m@x.co", displayName: "지은", role: "MOM", joiningCode: null, situation: "HAS_CHILD", institution: "NONE", childName: "수아", birthDate: "2026-01-02", gender: "" }) } });
+    const e = appEnv({ local: { hannun_account_intent: JSON.stringify({ email: "m@x.co", displayName: "지은", role: "MOM", joiningCode: null, situation: "HAS_CHILD" }) } });
     e.init();
     e.acct.user = { uid: "uNew", email: "m@x.co", displayName: "지은" };
     await e.restore(e.acct.user);
     assert.strictEqual(e.log.setJoined.length, 1);
     assert.ok(e.w.db.docs.get("accounts/uNew").householdId);
-    assert.ok(!("hannun_account_intent" in e.store) && e.log.stage === "born");
+    assert.ok(!("hannun_account_intent" in e.store) && e.sb.el("empty-panel").innerHTML.includes("아이 등록하기") && e.log.stage === null);
     // 규칙 미배포인 일시 상태에서는 로그인 사용자를 지우지 않는다
-    const off = appEnv({ rules: false, local: { hannun_account_intent: JSON.stringify({ email: "m@x.co", displayName: "지은", role: "MOM", joiningCode: null, situation: "HAS_CHILD", institution: "NONE", childName: "수아", birthDate: "2026-01-02" }) } });
+    const off = appEnv({ rules: false, local: { hannun_account_intent: JSON.stringify({ email: "m@x.co", displayName: "지은", role: "MOM", joiningCode: null, situation: "HAS_CHILD" }) } });
     off.init();
     off.acct.user = { uid: "uNew" };
     await off.restore(off.acct.user);
     assert.ok(!off.authAd.calls.includes("deleteUser"));
   });
   await test("일시 오류 후 로그아웃→재로그인: 연결 전에는 가입 의도를 유지하고, 같은 계정이 다시 로그인하면 이어서 가구를 연결한다", async () => {
-    const intent = JSON.stringify({ email: "m@x.co", displayName: "지은", role: "MOM", joiningCode: null, situation: "HAS_CHILD", institution: "NONE", childName: "수아", birthDate: "2026-01-02", gender: "" });
+    const intent = JSON.stringify({ email: "m@x.co", displayName: "지은", role: "MOM", joiningCode: null, situation: "HAS_CHILD" });
     const e = appEnv({ local: { hannun_account_intent: intent } });
     e.init();
     e.acct.user = { uid: "uNew", email: "m@x.co", displayName: "지은" };

@@ -59,6 +59,8 @@
           const t = now();
           const doc = { v: 1, displayName: intent.displayName, role: intent.role, createdAt: t, updatedAt: t };
           if (intent.institution) doc.institution = intent.institution;
+          if (intent.situation === "HAS_CHILD" || intent.situation === "EXPECTING") doc.situation = intent.situation;
+          if (intent.province && intent.district) { doc.province = intent.province; doc.district = intent.district; }
           await adapter.set(pathOf(uid), doc);
           acc = doc;
         }

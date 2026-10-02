@@ -105,32 +105,52 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
 
   console.log("account-view");
   const T = new Date(2026, 9, 2);
-  const base = { email: "mom@x.com", password: "12345678", displayName: "지은", role: "MOM", situation: "HAS_CHILD", institution: "DAYCARE", childName: "수아", birthDate: "2026-01-02", gender: "F" };
-  await test("가입 검증: 신규(아이가 있어요) 정상 · 필수 누락마다 필드별 한국어 오류", () => {
+  const base = { email: "mom@x.com", password: "12345678", displayName: "지은", role: "MOM", situation: "HAS_CHILD" };
+  const REGIONS = [{ code: "서울특별시", name: "서울특별시", districts: ["종로구", "구로구"] }, { code: "부산광역시", name: "부산광역시", districts: ["중구"] }];
+  await test("가입 검증(D5): 출생한 자녀 있음 정상 · 필수 누락마다 필드별 한국어 오류, 기관·아이 정보는 받지 않는다", () => {
     const r = AV.validateSignup(base, T);
     assert.ok(r.ok);
-    assert.deepStrictEqual(JSON.parse(JSON.stringify(r.intent)), { email: "mom@x.com", displayName: "지은", role: "MOM", joiningCode: null, situation: "HAS_CHILD", institution: "DAYCARE", childName: "수아", birthDate: "2026-01-02", gender: "F" });
+    assert.deepStrictEqual(JSON.parse(JSON.stringify(r.intent)), { email: "mom@x.com", displayName: "지은", role: "MOM", joiningCode: null, situation: "HAS_CHILD" });
     assert.ok(!("password" in r.intent), "비밀번호는 의도에 넣지 않는다");
     const empty = AV.validateSignup({}, T);
-    assert.deepStrictEqual(Object.keys(empty.errors).sort(), ["displayName", "email", "institution", "password", "role", "situation"]);
+    assert.deepStrictEqual(Object.keys(empty.errors).sort(), ["displayName", "email", "password", "role", "situation"]);
     assert.strictEqual(empty.errors.password, "비밀번호는 8자 이상으로 만들어 주세요.");
-    for (const [patch, key] of [[{ email: "x" }, "email"], [{ password: "short" }, "password"], [{ displayName: "가".repeat(21) }, "displayName"], [{ role: "BOSS" }, "role"], [{ institution: "x" }, "institution"], [{ childName: "" }, "childName"], [{ childName: "가".repeat(13) }, "childName"], [{ birthDate: "2027-01-01" }, "birthDate"], [{ birthDate: "2026-02-30" }, "birthDate"]])
+    for (const [patch, key] of [[{ email: "x" }, "email"], [{ password: "short" }, "password"], [{ displayName: "가".repeat(21) }, "displayName"], [{ role: "BOSS" }, "role"], [{ role: "CAREGIVER" }, "role"], [{ situation: "PREGNANT" }, "situation"]])
       assert.ok(AV.validateSignup({ ...base, ...patch }, T).errors[key], key);
   });
-  await test("임산부: 출산 예정일 필수(오늘~300일), 아이 입력은 요구 안 함", () => {
-    const p = { ...base, situation: "PREGNANT", childName: "", birthDate: "" };
-    assert.deepStrictEqual(Object.keys(AV.validateSignup(p, T).errors), ["dueDate"]);
-    assert.ok(AV.validateSignup({ ...p, dueDate: "2027-03-01" }, T).ok);
-    assert.strictEqual(AV.validateSignup({ ...p, dueDate: "2026-10-01" }, T).errors.dueDate, "출산 예정일을 확인해 주세요.");
-    assert.ok(AV.validateSignup({ ...p, dueDate: "2027-07-30" }, T).errors.dueDate, "300일 초과");
-    assert.strictEqual(AV.validateSignup({ ...p, dueDate: "2027-03-01" }, T).intent.dueDate, "2027-03-01");
+  await test("출생한 자녀 없음(예비 부모): 역할은 예비엄마·예비아빠(MOM/DAD)만, situation=EXPECTING 으로 구분", () => {
+    const p = { ...base, situation: "EXPECTING" };
+    const r = AV.validateSignup(p, T);
+    assert.ok(r.ok && r.intent.role === "MOM" && r.intent.situation === "EXPECTING");
+    assert.ok(AV.validateSignup({ ...p, role: "DAD" }, T).ok);
+    assert.ok(AV.validateSignup({ ...p, role: "CHILD" }, T).errors.role, "자녀는 예비 부모 선택지가 아니다");
+    assert.deepStrictEqual(AV.roleOptions(p), [["MOM", "예비엄마"], ["DAD", "예비아빠"]]);
+    assert.deepStrictEqual(AV.roleOptions(base), [["MOM", "엄마"], ["DAD", "아빠"], ["CHILD", "자녀"]]);
+    assert.deepStrictEqual(AV.roleOptions({}), []);
+    assert.strictEqual(AV.validateSignup({ ...base, role: "CHILD" }, T).intent.role, "CHILD");
+  });
+  await test("지역(선택): 비워도 가입 가능, 시·도+시·군·구가 함께 있으면 intent 에 포함, 하나만 고르거나 목록에 없으면 오류", () => {
+    assert.ok(AV.validateSignup(base, T, REGIONS).ok && !("province" in AV.validateSignup(base, T, REGIONS).intent));
+    const ok = AV.validateSignup({ ...base, province: "서울특별시", district: "구로구" }, T, REGIONS);
+    assert.ok(ok.ok);
+    assert.deepStrictEqual([ok.intent.province, ok.intent.district], ["서울특별시", "구로구"]);
+    for (const patch of [{ province: "서울특별시" }, { district: "구로구" }, { province: "서울특별시", district: "중구" }, { province: "없는시", district: "x" }])
+      assert.strictEqual(AV.validateSignup({ ...base, ...patch }, T, REGIONS).errors.region, "시·도와 시·군·구를 함께 골라 주세요.", JSON.stringify(patch));
+  });
+  await test("syncForm: 자녀 유무가 바뀌면 맞지 않는 역할을 지우고, 코드를 입력(합류)하면 자녀 유무·지역을 지우며 역할 전체 선택지, 시·도가 바뀌면 시·군·구 정리", () => {
+    assert.strictEqual(AV.syncForm({ situation: "EXPECTING", role: "CHILD" }).role, "");
+    assert.strictEqual(AV.syncForm({ situation: "EXPECTING", role: "DAD" }).role, "DAD");
+    const j = AV.syncForm({ situation: "HAS_CHILD", role: "CAREGIVER", familyCode: "abcd2345", province: "서울특별시", district: "구로구" });
+    assert.deepStrictEqual([j.situation, j.province, j.district, j.role], ["", "", "", "CAREGIVER"]);
+    assert.deepStrictEqual(AV.roleOptions({ familyCode: "ABCD2345" }).map((r) => r[0]), ["MOM", "DAD", "CHILD", "CAREGIVER"]);
+    assert.strictEqual(AV.syncForm({ situation: "HAS_CHILD", province: "부산광역시", district: "구로구" }, REGIONS).district, "");
   });
   await test("합류(코드 입력): 8자리 코드(소문자·공백 정규화)만 검증하고 상황·기관·아이는 요구하지 않는다, 잘못된 코드는 오류", () => {
     const join = { email: "dad@x.com", password: "12345678", displayName: "민수", role: "DAD", familyCode: " abcd 2345 " };
     const r = AV.validateSignup(join, T);
     assert.ok(r.ok, JSON.stringify(r.errors));
     assert.strictEqual(r.intent.joiningCode, "ABCD2345");
-    assert.ok(!("situation" in r.intent) && !("childName" in r.intent));
+    assert.ok(!("situation" in r.intent) && !("province" in r.intent));
     assert.strictEqual(AV.validateSignup({ ...join, familyCode: "ABC12" }, T).errors.familyCode, "가족 캘린더 코드는 8자리 영문·숫자예요. 비워 두면 새 가족으로 시작해요.");
   });
   await test("로그인 검증", () => {
@@ -143,13 +163,16 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     const li = AV.renderLanding({ user: { email: "a@b.co", displayName: '<b>x</b>' } });
     assert.ok(li.includes('data-acct-action="logout"') && !li.includes("<b>x</b>") && li.includes("&lt;b&gt;"));
     assert.ok(AV.renderAccountSlot({ user: { email: "a@b.co", displayName: "지은" } }).includes('data-acct-action="logout"') && AV.renderAccountSlot({}).includes("회원가입"));
-    const sign = AV.renderSignup({ form: { situation: "HAS_CHILD" } });
-    ["email", "password", "displayName", "familyCode", "childName", "birthDate"].forEach((k) => assert.ok(sign.includes(`data-acct-input="${k}"`), k));
-    ["role", "situation", "institution", "gender"].forEach((k) => assert.ok(sign.includes(`data-acct-radio="${k}"`), k));
-    assert.ok(!sign.includes('data-acct-input="dueDate"'));
-    assert.ok(AV.renderSignup({ form: { situation: "PREGNANT" } }).includes('data-acct-input="dueDate"'));
-    const joined = AV.renderSignup({ form: { familyCode: "ABCD2345" } });
-    assert.ok(!joined.includes('data-acct-radio="situation"') && !joined.includes('data-acct-radio="institution"') && !joined.includes("childName"));
+    const sign = AV.renderSignup({ form: { situation: "HAS_CHILD" }, regions: REGIONS });
+    ["email", "password", "displayName", "familyCode", "province", "district"].forEach((k) => assert.ok(sign.includes(`data-acct-input="${k}"`), k));
+    ["role", "situation"].forEach((k) => assert.ok(sign.includes(`data-acct-radio="${k}"`), k));
+    ["childName", "birthDate", "dueDate", "institution", "gender"].forEach((k) => assert.ok(!sign.includes(k), "D5: " + k + " 없음"));
+    assert.ok(sign.includes("현재 출생한 자녀가 있나요?") && sign.includes(">있어요<") && sign.includes(">없어요<") && sign.includes("가족이 함께 쓰려면 회원가입해 주세요.") && sign.includes("📍 사는 지역(시·도, 시·군·구)을 알려 주시면") && sign.includes("상세 주소는 받지 않아요"));
+    assert.ok(!AV.renderSignup({ form: {}, regions: REGIONS }).includes('data-acct-radio="role"'), "자녀 유무를 고르기 전에는 역할 선택지 없음");
+    assert.ok(AV.renderSignup({ form: { situation: "EXPECTING" }, regions: REGIONS }).includes(">예비엄마<"));
+    assert.ok(AV.renderSignup({ form: { situation: "HAS_CHILD", province: "서울특별시" }, regions: REGIONS }).includes("<option value=\"구로구\""));
+    const joined = AV.renderSignup({ form: { familyCode: "ABCD2345" }, regions: REGIONS });
+    assert.ok(!joined.includes('data-acct-radio="situation"') && !joined.includes('data-acct-input="province"') && joined.includes(">이모님(기타 돌봄)<") && joined.includes('data-acct-radio="role"'));
     const evil = AV.renderSignup({ form: { email: '"><img src=x>', displayName: "<script>" }, errors: { email: "<i>" }, error: "<u>" });
     assert.ok(!/<img|<script|<i>|<u>/.test(evil));
     assert.ok(AV.renderSignup({ busy: true }).includes("disabled") && AV.renderLogin({ form: {} }).includes('data-acct-action="reset-password"'));
@@ -190,7 +213,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
   await test("OFF 불변: index.html 에 정적 계정 마크업·Auth SDK 스크립트가 없다(플래그 ON 일 때 동적 로드), sw.js 에는 새 스크립트만 추가", () => {
     const html = read("index.html");
     assert.ok(!/firebase-auth-compat/.test(html) && !/acct-/.test(html));
-    assert.ok(html.includes('<script src="js/auth-service.js?v=2"></script>') && html.includes('<script src="js/account-view.js?v=3"></script>'));
+    assert.ok(html.includes('<script src="js/auth-service.js?v=2"></script>') && html.includes('<script src="js/account-view.js?v=4"></script>'));
     const sw = read("sw.js");
     assert.ok(sw.includes('"./js/auth-service.js"') && sw.includes('"./js/account-view.js"') && !sw.includes("firebase-auth-compat"));
     assert.ok(AS.SDK_URL === "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js");
@@ -210,11 +233,11 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
       document: { createElement: () => ({ addEventListener() {}, set innerHTML(v) {} }) },
     };
     vm.createContext(sb);
-    vm.runInContext("let modalMode = null; let profile = null; const us = { selection: [], selTouched: false }; function hhRender() {}\n" + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick };", sb);
+    vm.runInContext("let modalMode = null; let profile = null; let regionsData = null; const us = { selection: [], selTouched: false }; function hhRender() {}\n" + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick };", sb);
     const click = (attrs) => sb.__t.acctOnClick({ target: { closest: (sel) => (sel === "[data-acct-radio]" ? (attrs.radio ? { getAttribute: (n) => (n === "data-acct-radio" ? attrs.radio[0] : attrs.radio[1]) } : null) : { getAttribute: () => attrs.action } ) } });
     return { sb, ad, store, sheet, log, click, acct: sb.__t.acct };
   }
-  const goodForm = { email: "mom@x.com", password: "12345678", displayName: "지은", role: "MOM", situation: "HAS_CHILD", institution: "DAYCARE", childName: "수아", birthDate: "2026-01-02", gender: "F" };
+  const goodForm = { email: "mom@x.com", password: "12345678", displayName: "지은", role: "MOM", situation: "HAS_CHILD" };
   await test("가입 흐름: 검증 통과 → Auth 가입 → 가입 의도 저장(비밀번호 없음)·로그인 상태·시트 닫힘, 기존 로컬 데이터 불변", async () => {
     const e = appEnv();
     e.acct.svc = e.sb.AuthService.create();
@@ -223,7 +246,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     assert.strictEqual(e.acct.user.uid, "u1");
     assert.deepStrictEqual(e.ad.calls, ["createUser", "updateDisplayName"]);
     const intent = JSON.parse(e.store.hannun_account_intent);
-    assert.deepStrictEqual([intent.role, intent.childName, intent.joiningCode, "password" in intent], ["MOM", "수아", null, false]);
+    assert.deepStrictEqual([intent.role, intent.situation, intent.joiningCode, "password" in intent, "childName" in intent], ["MOM", "HAS_CHILD", null, false, false]);
     assert.ok(!JSON.stringify(e.store).includes("12345678"));
     assert.strictEqual(e.log.closed, 1);
     assert.deepStrictEqual([e.store.hannun_profile, e.store.hannun_household_id, e.store.hannun_children], ["keep", "h1", "[1]"]);

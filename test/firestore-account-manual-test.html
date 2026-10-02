@@ -126,6 +126,14 @@
       return { pass: k.outcome === "denied" && r.outcome === "denied" && n.outcome === "denied", detail: JSON.stringify({ key: k.outcome, role: r.outcome, name: n.outcome }) };
     });
 
+    await step("7b", "[D5] 허용: situation(HAS_CHILD/EXPECTING)·province·district 선택 필드 / 거부: 잘못된 situation·31자 이상 지역", "허용 2건, 거부 2건", async () => {
+      const ok1 = await attempt(() => acc(A).set({ situation: "EXPECTING", province: "서울특별시", district: "구로구", updatedAt: NOW + 4 }, { merge: true }));
+      const ok2 = await attempt(() => acc(A).set({ situation: "HAS_CHILD", updatedAt: NOW + 5 }, { merge: true }));
+      const bad1 = await attempt(() => acc(A).set({ situation: "PREGNANT", updatedAt: NOW + 6 }, { merge: true }));
+      const bad2 = await attempt(() => acc(A).set({ province: "가".repeat(31), updatedAt: NOW + 6 }, { merge: true }));
+      return { pass: ok1.outcome === "allowed" && ok2.outcome === "allowed" && bad1.outcome === "denied" && bad2.outcome === "denied", detail: JSON.stringify({ okA: ok1.outcome, okB: ok2.outcome, badSituation: bad1.outcome, longProvince: bad2.outcome }) };
+    });
+
     // 구성원 uid
     await step("8", "허용: 내 uid 를 단 구성원 생성 + role CHILD", "허용", async () => {
       created.members.push("mA", "mC");

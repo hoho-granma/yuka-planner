@@ -1,0 +1,154 @@
+/*
+ * D5 가입/온보딩 개편: 라디오 펼침(자녀 유무→역할)·가입 intent(situation/role/지역)·가입 후 아이 입력 없이 홈(아이가 없는 홈)·빈 상태 5탭·합류 시 숨김·지역 기본값 미리 채움·랜딩 문구(ON 일 때만).
+ * 실행: node test/d5-accounts.test.js
+ */
+const assert = require("assert");
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
+const AS = require("../js/auth-service.js");
+const AV = require("../js/account-view.js");
+const read = (f) => fs.readFileSync(path.join(__dirname, "..", f), "utf8");
+const APP = read("js/app.js");
+const REGIONS = JSON.parse(read("data/regions.json")).provinces;
+
+let passed = 0;
+const pending = [];
+function test(name, fn) {
+  const p = Promise.resolve().then(fn).then(() => { passed++; console.log("  ok  - " + name); }, (e) => { process.exitCode = 1; console.log("  FAIL- " + name + "\n      " + (e.stack || e).split("\n").slice(0, 6).join("\n      ")); });
+  pending.push(p);
+  return p;
+}
+
+function env({ flag = true, profile = null, account = null, user = null, emptyStart = false } = {}) {
+  const store = {};
+  const cl = () => { const c = { hidden: false, add(n) { if (n === "hidden") c.hidden = true; }, remove(n) { if (n === "hidden") c.hidden = false; } }; return c; };
+  const sheet = { innerHTML: "", querySelector: () => null, classList: cl() };
+  const els = { "modal-content": sheet, "detail-modal": sheet, "view-landing": { querySelector: () => ({ insertAdjacentElement() {} }), classList: cl() }, "view-calendar": { classList: cl() }, "new-child-bar": { classList: cl() },
+    "empty-panel": { innerHTML: "", classList: cl(), addEventListener() {} }, "hero-title": { innerHTML: "기존" }, "entry-fine-print": { textContent: "기존 문구" }, province: { value: "" }, district: { value: "" } };
+  ["home", "calendar", "record", "subsidy", "checklist"].forEach((t) => { els["tab-" + t] = { classList: cl() }; });
+  const log = { register: 0, landing: 0, districts: [], closed: 0 };
+  const authAd = { createUser: async (e) => ({ uid: "u1", email: e, displayName: "" }), signIn: async (e) => ({ uid: "u1", email: e }), signOut: async () => {}, sendReset: async () => {}, deleteUser: async () => {}, updateDisplayName: async (u, n) => ({ ...u, displayName: n }), onChange: () => () => {} };
+  const sb = { console, Date, JSON, Promise, window: { FEATURES: { accounts: flag }, scrollTo() {} }, AccountView: AV,
+    AuthService: { create: () => AS.create({ features: () => ({ accounts: true }), adapter: authAd }), MSG: AS.MSG },
+    HouseholdSync: { getStatus: () => ({ pending: 0 }), flush: async () => {}, getMirror: () => null, leaveLocal: () => ({ ok: true }) }, HouseholdView: { isChildLinked: () => false, mergeChildren: () => [] },
+    el: (id) => els[id] || null, closeDetail: () => { log.closed++; }, hh: { hid: null, code: null }, hhRender() {}, hhLeaveLocal() {}, hhSetJoined() {},
+    beginNewChildEntry: async () => { log.register++; }, showLandingView: () => { log.landing++; }, populateDistricts: (p, d) => { log.districts.push([p, d]); }, renderProvinceChips() {}, renderDistrictChips() {},
+    localStorage: { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = v; }, removeItem: (k) => { delete store[k]; } },
+    document: { createElement: () => ({ addEventListener() {} }), querySelectorAll: () => [] } };
+  vm.createContext(sb);
+  const a = APP.indexOf("// ── D1 계정"), b = APP.indexOf("async function init()");
+  vm.runInContext(`let modalMode = null; let profile = ${JSON.stringify(profile)}; let familyCode = null; let regionsData = { provinces: ${JSON.stringify(REGIONS)} }; let currentTab = "home"; let newChildMode = false; const TAB_NAMES = ["home", "calendar", "record", "subsidy", "checklist"]; const us = { selection: [], selTouched: false }; const isPregnant = () => false; const childDisplayName = () => "";
+    const loadChildren = () => []; function usRefreshCalendar() {}\n` + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick, acctInit, acctRenderLanding, showEmptyHome, emptyRender, acctPrefillRegion, get emptyHome() { return emptyHome; } };", sb);
+  const click = (attrs) => sb.__t.acctOnClick({ target: { closest: (sel) => (sel === "[data-acct-radio]" ? (attrs.radio ? { getAttribute: (n) => (n === "data-acct-radio" ? attrs.radio[0] : attrs.radio[1]) } : null) : { getAttribute: () => attrs.action } ) } });
+  sb.__t.acct.user = user; sb.__t.acct.account = account;
+  return { sb, els, store, sheet, log, click, acct: sb.__t.acct, t: sb.__t };
+}
+
+(async () => {
+  console.log("가입 시트 라디오 펼침");
+  await test("자녀 유무를 고르면 역할 선택지가 펼쳐지고(있어요=엄마·아빠·자녀 / 없어요=예비엄마·예비아빠), 맞지 않는 이전 역할 선택은 지운다", async () => {
+    const e = env();
+    e.acct.mode = "signup"; e.acct.form = {};
+    await e.click({ radio: ["situation", "HAS_CHILD"] });
+    assert.ok(e.sheet.innerHTML.includes(">엄마<") && e.sheet.innerHTML.includes(">자녀<") && !e.sheet.innerHTML.includes("예비엄마") && !e.sheet.innerHTML.includes("이모님"));
+    await e.click({ radio: ["role", "CHILD"] });
+    assert.strictEqual(e.acct.form.role, "CHILD");
+    await e.click({ radio: ["situation", "EXPECTING"] });
+    assert.strictEqual(e.acct.form.role, "", "자녀는 예비 부모 선택지에 없어 지워진다");
+    assert.ok(e.sheet.innerHTML.includes(">예비엄마<") && e.sheet.innerHTML.includes(">예비아빠<") && !e.sheet.innerHTML.includes(">자녀<"));
+    await e.click({ radio: ["role", "DAD"] });
+    assert.strictEqual(e.acct.form.role, "DAD");
+    await e.click({ radio: ["situation", "HAS_CHILD"] });
+    assert.strictEqual(e.acct.form.role, "DAD", "공통 역할은 유지");
+  });
+  await test("가입 시트에 시·도→시·군·구 2단 선택(실제 regions.json)과 주소 안내가 있고, 코드를 입력하면(합류) 자녀 유무·지역이 숨겨지고 역할은 전체 선택지", () => {
+    const html = AV.renderSignup({ form: { situation: "HAS_CHILD", province: "서울특별시" }, regions: REGIONS });
+    assert.ok(html.includes('data-acct-input="province"') && html.includes("구로구") && html.includes("상세 주소는 받지 않아요") && html.includes("신청 기한을 놓치지 않게"));
+    const joined = AV.renderSignup({ form: AV.syncForm({ familyCode: "abcd2345", situation: "HAS_CHILD", province: "서울특별시", district: "구로구" }), regions: REGIONS });
+    assert.ok(!joined.includes("province") && !joined.includes("현재 출생한 자녀") && joined.includes(">이모님(기타 돌봄)<") && joined.includes(">자녀<"));
+  });
+  console.log("가입 intent");
+  await test("가입 의도(저장값): situation·role·지역만 있고 아이 이름·생년월일·기관·비밀번호는 없다, 지역 없이도 가입된다", async () => {
+    const e = env();
+    e.acct.svc = e.sb.AuthService.create();
+    e.acct.mode = "signup";
+    e.acct.form = { email: "m@x.co", password: "12345678", displayName: "지은", situation: "EXPECTING", role: "MOM", province: "서울특별시", district: "구로구" };
+    await e.click({ action: "submit-signup" });
+    assert.deepStrictEqual(JSON.parse(e.store.hannun_account_intent), { email: "m@x.co", displayName: "지은", role: "MOM", joiningCode: null, situation: "EXPECTING", province: "서울특별시", district: "구로구" });
+    const n = env();
+    n.acct.svc = n.sb.AuthService.create(); n.acct.mode = "signup";
+    n.acct.form = { email: "m@x.co", password: "12345678", displayName: "지은", situation: "HAS_CHILD", role: "DAD" };
+    await n.click({ action: "submit-signup" });
+    assert.deepStrictEqual(Object.keys(JSON.parse(n.store.hannun_account_intent)).sort(), ["displayName", "email", "joiningCode", "role", "situation"]);
+  });
+  console.log("아이가 없는 홈");
+  await test("빈 홈: 홈은 안내 카드+[아이 등록하기]+[내 정보], 나머지 4탭도 각자 안내(크래시 0), 탭 패널은 숨기고 안내 패널만 보인다", () => {
+    const e = env({ account: { situation: "HAS_CHILD" }, user: { uid: "u1" } });
+    e.t.showEmptyHome();
+    assert.ok(e.t.emptyHome && e.els["view-calendar"].classList.hidden === false && e.els["view-landing"].classList.hidden === true && e.els["empty-panel"].classList.hidden === false);
+    assert.ok(["home", "calendar", "record", "subsidy", "checklist"].every((t) => e.els["tab-" + t].classList.hidden === true));
+    assert.ok(e.els["empty-panel"].innerHTML.includes("아이를 등록하면 월령에 맞는 일정과 혜택이 나와요") && e.els["empty-panel"].innerHTML.includes("아이 등록하기") && e.els["empty-panel"].innerHTML.includes('data-acct-action="empty-me"'));
+    const want = { calendar: "캘린더에", checklist: "체크리스트", subsidy: "지원금·혜택", record: "기록" };
+    for (const [tab, word] of Object.entries(want)) { e.t.emptyRender(tab); assert.ok(e.els["empty-panel"].innerHTML.includes(word) && e.els["empty-panel"].innerHTML.includes("empty-register"), tab); }
+    const x = env({ account: { situation: "EXPECTING" }, user: { uid: "u1" } });
+    x.t.showEmptyHome();
+    assert.ok(x.els["empty-panel"].innerHTML.includes("출산 예정일을 등록하면") && x.els["empty-panel"].innerHTML.includes("출산 예정일 등록하기"));
+  });
+  await test("프로필이 있으면(기존 이용자) 빈 홈으로 가지 않고, 계정 OFF 면 어떤 경우에도 가지 않는다", () => {
+    const withP = env({ profile: { name: "수아" }, user: { uid: "u1" } });
+    withP.t.showEmptyHome();
+    assert.ok(!withP.t.emptyHome && withP.els["empty-panel"].innerHTML === "");
+    const off = env({ flag: false, user: { uid: "u1" } });
+    off.t.showEmptyHome();
+    assert.ok(!off.t.emptyHome && off.els["empty-panel"].innerHTML === "");
+  });
+  await test("빈 홈의 [아이 등록하기]는 기존 아이 입력 흐름(beginNewChildEntry), [내 정보]는 계정·코드·로그아웃 시트, 로그아웃하면 처음 화면으로", async () => {
+    const e = env({ account: { situation: "HAS_CHILD", displayName: "지은", role: "MOM", householdCode: "ABCD2345" }, user: { uid: "u1", email: "m@x.co" } });
+    e.sb.hh.code = "ABCD2345";
+    e.acct.svc = e.sb.AuthService.create();
+    e.t.showEmptyHome();
+    await e.click({ action: "empty-register" });
+    assert.strictEqual(e.log.register, 1);
+    await e.click({ action: "empty-me" });
+    assert.ok(e.sheet.innerHTML.includes("지은") && e.sheet.innerHTML.includes("나(엄마)") && e.sheet.innerHTML.includes("ABCD2345") && e.sheet.innerHTML.includes('data-acct-action="logout"'));
+    await e.click({ action: "confirm-logout" });
+    assert.ok(!e.t.emptyHome && e.log.landing === 1 && e.els["empty-panel"].classList.hidden === true && e.acct.user === null);
+  });
+  await test("연결: 탭 전환은 빈 홈이면 안내만(switchTab 가드), 아이를 등록하면(buildAndRender) 빈 패널을 숨기고, 취소하고 돌아오면 빈 홈", () => {
+    assert.ok(/function switchTab\(name\) \{\n\s*if \(emptyHome && !profile\) return emptyRender\(name\);/.test(APP));
+    assert.ok(/async function buildAndRender\(\) \{\n\s*hideEmptyHome\(\);/.test(APP));
+    assert.ok(/if \(!profile && acctEnabled\(\)\) return showEmptyHome\(\);[^\n]*\n\s*showCalendarView\(\);/.test(APP));
+    assert.ok(/if \(typeof acctPrefillRegion === "function"\) acctPrefillRegion\(\);\n\s*showLandingView\(\);/.test(APP));
+    assert.ok(/if \(acct\.user && acct\.account && acct\.account\.householdCode && !profile && !newChildMode && !emptyHome\) showEmptyHome\(\);/.test(APP));
+  });
+  console.log("지역 기본값 · 문구");
+  await test("가입에서 받은 시·도·시군구는 아이 등록 화면 지역 기본값으로 미리 채워지고(이미 고른 값·잘못된 값은 건드리지 않음)", () => {
+    const e = env({ account: { province: "서울특별시", district: "구로구" }, user: { uid: "u1" } });
+    e.t.acctPrefillRegion();
+    assert.deepStrictEqual([e.els.province.value, e.els.district.value, e.log.districts], ["서울특별시", "구로구", [["서울특별시", "구로구"]]]);
+    const picked = env({ account: { province: "서울특별시", district: "구로구" }, user: { uid: "u1" } });
+    picked.els.province.value = "부산광역시";
+    picked.t.acctPrefillRegion();
+    assert.deepStrictEqual([picked.els.province.value, picked.log.districts], ["부산광역시", []]);
+    const bad = env({ account: { province: "서울특별시", district: "없는구" }, user: { uid: "u1" } });
+    bad.t.acctPrefillRegion();
+    assert.deepStrictEqual([bad.els.province.value, bad.log.districts], ["", []]);
+    const none = env({ account: {}, user: { uid: "u1" } });
+    none.t.acctPrefillRegion();
+    assert.strictEqual(none.els.province.value, "");
+  });
+  await test("랜딩 문구: 계정 ON 일 때만 새 제목·안내로 바뀌고(OFF 는 기존 문구 그대로), 가입 시트·랜딩 카드에 새 안내", () => {
+    const on = env();
+    on.t.acctRenderLanding();
+    assert.ok(on.els["hero-title"].innerHTML.includes("우리 아이 일정,") && on.els["hero-title"].innerHTML.includes("놓치지 않게") && on.els["entry-fine-print"].textContent.includes("회원가입 없이도 바로 시작할 수 있어요"));
+    const off = env({ flag: false });
+    off.t.acctRenderLanding();
+    assert.deepStrictEqual([off.els["hero-title"].innerHTML, off.els["entry-fine-print"].textContent], ["기존", "기존 문구"]);
+    const card = AV.renderLanding({});
+    assert.ok(card.includes("접종·검진·지원금을 아이 월령에 맞춰 자동으로 챙기고, 가족과 한 캘린더로 함께 관리해요.") && card.includes("가족이 함께 쓰려면 회원가입해 주세요."));
+    assert.ok(read("index.html").includes('<p class="fine-print" id="entry-fine-print">회원가입 없이 바로 시작해요. 가족코드로 다른 기기에서도 이어볼 수 있어요.</p>'), "OFF 문구 원문 유지(id 만 추가)");
+  });
+  await Promise.all(pending);
+  console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);
+})();

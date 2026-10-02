@@ -293,12 +293,15 @@ service cloud.firestore {
     // ===============================================================
     match /accounts/{uid} {
       function accountOk(d) {
-        return d.keys().hasOnly(['v', 'displayName', 'role', 'institution', 'householdId', 'householdCode', 'memberId', 'createdAt', 'updatedAt'])
+        return d.keys().hasOnly(['v', 'displayName', 'role', 'institution', 'situation', 'province', 'district', 'householdId', 'householdCode', 'memberId', 'createdAt', 'updatedAt'])
             && d.keys().hasAll(['v', 'displayName', 'role', 'createdAt', 'updatedAt'])
             && d.v == 1
             && d.displayName is string && d.displayName.size() >= 1 && d.displayName.size() <= 20
             && d.role in ['MOM', 'DAD', 'CHILD', 'CAREGIVER']
             && (!('institution' in d) || d.institution == null || d.institution in ['DAYCARE', 'KINDERGARTEN', 'ELEMENTARY', 'NONE'])
+            && (!('situation' in d) || d.situation == null || d.situation in ['HAS_CHILD', 'EXPECTING'])
+            && (!('province' in d) || d.province == null || (d.province is string && d.province.size() <= 30))
+            && (!('district' in d) || d.district == null || (d.district is string && d.district.size() <= 30))
             && (!('householdId' in d) || d.householdId == null || (d.householdId is string && d.householdId.size() <= 60))
             && (!('householdCode' in d) || d.householdCode == null || (d.householdCode is string && d.householdCode.size() <= 8))
             && (!('memberId' in d) || d.memberId == null || (d.memberId is string && d.memberId.size() <= 60));

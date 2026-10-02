@@ -2001,6 +2001,7 @@
 
   const TAB_NAMES = ["home", "calendar", "record", "subsidy", "checklist"];
   function switchTab(name) {
+    if (emptyHome && !profile) return emptyRender(name); // D5: 아이가 없는 홈에서는 탭마다 빈 상태 안내만
     // 체크리스트에서 특정 카테고리만 보다가 다른 탭으로 나가면, 돌아왔을 때 다시 전체 카테고리가 켜진 상태로 시작한다.
     if (currentTab === "checklist" && name !== "checklist" && Object.keys(CATEGORY_META).some((k) => !activeCats.has(k))) {
       activeCats = new Set(Object.keys(CATEGORY_META));
@@ -2027,6 +2028,7 @@
   }
 
   async function buildAndRender() {
+    hideEmptyHome();
     await ensureRegionSubsidyLoaded();
     schedule = buildSchedule({ ...profile, schoolPolicy }, dataset, completionsForEngine());
     rememberChild();
@@ -2234,6 +2236,7 @@
     el("btn-new-child-cancel").textContent = NEW_CHILD_MSG.cancel;
     el("new-child-note").textContent = NEW_CHILD_MSG.note;
     el("new-child-bar").classList.remove("hidden");
+    if (typeof acctPrefillRegion === "function") acctPrefillRegion();
     showLandingView();
   }
   /** 취소: 저장소·메모리 상태는 바꾸지 않고(입력 화면에서 참여한 가구 연결만 되돌림) 지금 아이 화면으로 돌아간다. */
@@ -2248,6 +2251,7 @@
     if (hhEnabled()) hhResetEntryMessage();
     hhRestoreSaved(snap);
     fillFormFromProfile();
+    if (!profile && acctEnabled()) return showEmptyHome(); // D5: 아이를 등록하지 않고 돌아오면 아이가 없는 홈
     showCalendarView();
   }
   /** 폼 입력칸을 지금 아이의 프로필로 다시 채운다(입력 화면에서 비웠던 칸 복원). */
@@ -3920,6 +3924,8 @@
       acctRenderSlot();
       if (u) acctRestore(u); // 로그인 상태가 되면(다른 기기 로그인·앱 재시작) 계정 가구를 이 기기에 복원한다
     });
+    const ep = el("empty-panel");
+    if (ep) ep.addEventListener("click", acctOnClick);
     acctRenderLanding();
   }
   /** 랜딩의 계정 카드(로고·회원가입·로그인). 기존 입력 화면은 그대로 아래에 둔다(계정 없이 시작하기). */
@@ -3935,6 +3941,11 @@
       slot.addEventListener("click", acctOnClick);
     }
     slot.innerHTML = AccountView.renderLanding({ user: acct.user });
+    // D5: 계정 기능이 켜졌을 때만 랜딩 문구를 프로젝트 목적에 맞게 바꾼다(꺼져 있으면 기존 문구 그대로).
+    const title = el("hero-title");
+    if (title) title.innerHTML = `${AccountView.esc("우리 아이 일정,")}<br /><span class="hl">${AccountView.esc("놓치지 않게")}</span>`;
+    const fine = el("entry-fine-print");
+    if (fine) fine.textContent = AccountView.MSG.entryFine;
   }
   function acctRenderSlot() {
     const s = el("acct-slot");
@@ -3950,10 +3961,11 @@
   function acctShowSheet(kind) {
     if (kind) acct.mode = kind;
     modalMode = "account";
-    const st = { form: acct.form, errors: acct.errors, error: acct.error, busy: acct.busy, notice: acct.notice };
+    const st = { form: acct.form, errors: acct.errors, error: acct.error, busy: acct.busy, notice: acct.notice, regions: regionsData ? regionsData.provinces : [] };
     el("modal-content").innerHTML =
       acct.mode === "signup" ? AccountView.renderSignup(st)
       : acct.mode === "login" ? AccountView.renderLogin(st)
+      : acct.mode === "me" ? AccountView.renderMe({ user: acct.user, account: acct.account, code: hh.code, notice: acct.notice })
       : acct.mode === "invite" ? AccountView.renderInvite({ code: hh.code, notice: acct.notice })
       : acct.mode === "migrate" ? AccountView.renderMigrate({ kids: acct.migrate && acct.migrate.kids, conflict: !!(acct.migrate && acct.migrate.switchTo), busy: acct.busy, error: acct.error })
       : acct.mode === "recover" ? AccountView.renderRecover({ ...st, joining: acct.joining })
@@ -3967,8 +3979,13 @@
       if (!k) return;
       const before = AccountView.normCode(acct.form.familyCode) !== "";
       acct.form[k] = ev.target.value;
+      if (k === "province") {
+        acct.form.district = ""; // 시·도가 바뀌면 시·군·구를 다시 고르게 한다
+        return acctShowSheet();
+      }
       // 가족 코드 입력 여부가 바뀌면(신규↔합류) 아래 항목이 달라지므로 다시 그리고 입력 위치를 되돌린다.
       if (k === "familyCode" && before !== (AccountView.normCode(acct.form.familyCode) !== "")) {
+        AccountView.syncForm(acct.form, regionsData && regionsData.provinces);
         acctShowSheet();
         const again = el("modal-content").querySelector('[data-acct-input="familyCode"]');
         if (again) {
@@ -4092,7 +4109,7 @@
       acct.error = res.reason === "rules-unavailable" ? AuthService.MSG.serverNotReady : AuthService.MSG.linkFailed;
       return { ok: false, rolledBack: false };
     }
-    acct.account = { displayName: intent.displayName, role: intent.role, memberId: res.memberId, householdId: res.householdId, householdCode: res.householdCode };
+    acct.account = { displayName: intent.displayName, role: intent.role, memberId: res.memberId, householdId: res.householdId, householdCode: res.householdCode, ...(intent.situation ? { situation: intent.situation } : {}), ...(intent.province ? { province: intent.province, district: intent.district } : {}) };
     if (hh.code && hh.code !== res.householdCode) {
       // 이 기기에 다른 가구가 연결돼 있다: 사용자가 고르기 전에는 바꾸지 않는다(선택 시트 — 계정 가족 쓰기 / 이 기기 아이를 가족에 추가).
       acctClearIntent();
@@ -4106,29 +4123,60 @@
     acctRefreshCalendar();
     return { ok: true };
   }
-  /** 가구가 정해진 뒤: 신규 가족이면 기존 아이 입력 화면(이름·생년월일/예정일 미리 채움 — 지역·출생순서만 추가로 물음), 합류면 가구의 첫 아이를 불러온다. */
+  /** 가구가 정해진 뒤(D5): 아이 입력 화면은 열지 않는다. 합류한 가구에 아이가 있으면 첫 아이를 불러오고, 아이가 없으면(새 가족·빈 가구) 아이가 없는 홈을 보인다. */
   async function acctAfterHousehold(intent, res) {
     if (profile) {
       acctClearIntent(); // 이 기기에 이미 아이가 있으면 건드리지 않는다(기존 데이터 연결은 D4)
       return;
     }
-    if (res.created) {
-      const stage = intent.situation === "PREGNANT" ? "pregnant" : "born";
-      showLandingView();
-      setLandingStage(stage);
-      el("childName").value = stage === "born" ? intent.childName || "" : "";
-      const iso = stage === "born" ? intent.birthDate : intent.dueDate;
-      if (iso) setBirthDatePicker(new Date(iso + "T00:00:00"));
-      acctClearIntent();
-      return;
+    let kids = [];
+    if (!res.created) {
+      const m = HouseholdSync.getMirror(res.householdId);
+      kids = HouseholdView.mergeChildren([], m, null).filter((c) => !c.removed);
     }
-    const m = HouseholdSync.getMirror(res.householdId);
-    const kids = HouseholdView.mergeChildren([], m, null).filter((c) => !c.removed);
     acctClearIntent();
     if (kids.length) {
       el("familyCodeInput").value = kids[0].code;
       await handleLoadCode();
     }
+    if (!profile) showEmptyHome();
+  }
+  // ── D5 아이가 없는 홈: 프로필이 없어도 앱이 깨지지 않도록 대시보드의 탭 패널 대신 안내 패널(#empty-panel)만 보인다. 계정으로 가입·로그인한 경우에만 진입한다. ──
+  let emptyHome = false;
+  const acctExpecting = () => !!(acct.account && acct.account.situation === "EXPECTING");
+  function emptyRender(tab) {
+    emptyHome = true;
+    TAB_NAMES.forEach((t) => el(`tab-${t}`).classList.add("hidden"));
+    const p = el("empty-panel");
+    p.classList.remove("hidden");
+    const st = { expecting: acctExpecting() };
+    p.innerHTML = tab === "home" ? AccountView.renderEmptyHome(st) : AccountView.renderEmptyTab(tab, st);
+    currentTab = tab;
+    document.querySelectorAll(".nav-item").forEach((btn) => btn.classList.toggle("active", btn.dataset.nav === tab));
+    window.scrollTo(0, 0);
+  }
+  function showEmptyHome() {
+    if (!acctEnabled() || profile) return;
+    el("view-landing").classList.add("hidden");
+    el("new-child-bar").classList.add("hidden");
+    el("view-calendar").classList.remove("hidden");
+    emptyRender("home");
+  }
+  function hideEmptyHome() {
+    emptyHome = false;
+    const p = el("empty-panel");
+    if (p) p.classList.add("hidden");
+  }
+  /** 가입에서 받은 사는 지역을 아이 등록 화면의 기본값으로 미리 채운다(이미 고른 값은 덮어쓰지 않는다). */
+  function acctPrefillRegion() {
+    if (!acctEnabled() || !acct.account || !acct.account.province || !acct.account.district || !regionsData || el("province").value) return;
+    const p = regionsData.provinces.find((x) => x.code === acct.account.province);
+    if (!p || !p.districts.includes(acct.account.district)) return;
+    el("province").value = p.code;
+    populateDistricts(p.code, acct.account.district);
+    el("district").value = acct.account.district;
+    renderProvinceChips();
+    renderDistrictChips();
   }
   /** 로그인 상태가 됐을 때: 끝나지 않은 가입이 있으면 이어서 마무리, 아니면 계정 가구를 이 기기에 복원(이 기기에 다른 가구가 있으면 건드리지 않는다 — D4). */
   async function acctRestore(u) {
@@ -4175,6 +4223,8 @@
       acct.restoring = false;
       acctRenderSlot();
       acctRefreshCalendar();
+      // D5: 계정이 연결됐는데 이 기기에 아이가 없고 입력 화면도 아니면(재시작·다른 기기 로그인) 아이가 없는 홈을 보인다.
+      if (acct.user && acct.account && acct.account.householdCode && !profile && !newChildMode && !emptyHome) showEmptyHome();
       acctMaybeShowMigrate();
     }
   }
@@ -4184,6 +4234,7 @@
     const radio = ev.target.closest("[data-acct-radio]");
     if (radio) {
       acct.form[radio.getAttribute("data-acct-radio")] = radio.getAttribute("data-value");
+      AccountView.syncForm(acct.form, regionsData && regionsData.provinces); // 자녀 유무가 바뀌면 맞지 않는 역할 선택을 지운다
       return acctShowSheet();
     }
     const b = ev.target.closest("[data-acct-action]");
@@ -4233,6 +4284,10 @@
       acct.migrate = null;
       us.selection = [];
       us.selTouched = false;
+      if (emptyHome && !profile) {
+        hideEmptyHome(); // D5: 아이가 없는 홈에서 로그아웃하면 처음 화면으로
+        showLandingView();
+      }
       acct.recoverShown = false;
       acct.form = {};
       acct.notice = AccountView.MSG.loggedOut;
@@ -4278,14 +4333,22 @@
       acctRefreshCalendar();
       return;
     }
-    if (action === "copy-invite") {
+    if (action === "empty-register") {
+      closeDetail();
+      return beginNewChildEntry(); // 기존 아이 입력 흐름(임신 중 선택 포함)
+    }
+    if (action === "empty-me") {
+      acct.notice = null;
+      return acctShowSheet("me");
+    }
+    if (action === "copy-invite" || action === "copy-me") {
       try {
         await navigator.clipboard.writeText(hh.code || "");
         acct.notice = AccountView.MSG.inviteCopied;
       } catch (e) {
         acct.notice = null;
       }
-      return acctShowSheet("invite");
+      return acctShowSheet(action === "copy-me" ? "me" : "invite");
     }
     if (action === "recover-join-open" || action === "recover-back") {
       acct.joining = action === "recover-join-open";
@@ -4326,7 +4389,7 @@
       return;
     }
     if (action === "submit-signup") {
-      const v = AccountView.validateSignup(acct.form, new Date());
+      const v = AccountView.validateSignup(acct.form, new Date(), regionsData && regionsData.provinces);
       acct.errors = v.errors;
       acct.error = null;
       if (!v.ok) return acctShowSheet();
