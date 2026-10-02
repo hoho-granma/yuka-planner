@@ -118,6 +118,7 @@ const text = (h) => h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
     vm.runInContext(`
       let hhJoining = false;
       const mem = { view: "list", form: null, deleteId: null }; function memRender() {} function memOnClick() {}
+      const acctEnabled = () => false; const acct = { user: null }; // 계정 기능 OFF(hideLeave 판정)
       const hhCanLinkChild = () => false; // 현재 아이 연결 버튼 판정은 c3-enroll-link 테스트에서 따로 확인
       let familyCode = "ABC234"; let profile = { name: "은찬", stage: "born" }; let completed = { "VX-DTAP__dose-1": { done: true } };
       const hh = { view: "none", hid: ${JSON.stringify(hid)}, code: ${JSON.stringify(code)}, notice: null, rulesUnavailable: false, lifecycle: false, joinInput: "" };

@@ -45,7 +45,7 @@ test("renderSelectedDayPanel·attachListHandlers·renderCalendarProgress·comput
 });
 test("usBuildModel: view 인자(F2)·C2 연결 옵션·칩 달력 필터(복수 선택)만 늘었고 기본(월) 호출은 month 모델", () => {
   const now = fnSrc(app, "usBuildModel");
-  assert.ok(now.includes('view: view === "week" ? "week" : "month",') && now.includes("UserScheduleView.toModelFilter(us.selection, us.onlyUser, usLinks(), usMembers())") && now.includes("hideLinked: autoLinkOn()"));
+  assert.ok(now.includes('view: view === "week" ? "week" : "month",') && now.includes("UserScheduleView.toModelFilter(usSel(), us.onlyUser, usLinks(), usMembers(), usSelOpts())") && now.includes("hideLinked: autoLinkOn()"));
 });
 test("usRenderDayPanel: C2 의 배지 옵션 한 곳만 다르다", () => {
   const now = fnSrc(app, "usRenderDayPanel");

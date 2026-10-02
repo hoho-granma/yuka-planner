@@ -44,7 +44,7 @@ function env(opts) {
   const els = {};
   const mk = (id) => els[id] || (els[id] = { id, innerHTML: "", listeners: {}, classList: { remove() {}, add() {} }, addEventListener(t, f) { this.listeners[t] = f; } });
   const sb = {
-    console, hhEnabled: () => o.hhOn, usActive: () => o.active, el: mk, modalMode: null,
+    console, acctEnabled: () => false, AccountView: {}, hhEnabled: () => o.hhOn, usActive: () => o.active, el: mk, modalMode: null,
     showNewChildSheet: (...a) => { log.newChild++; log.newChildArgs = a; return "NEW"; }, closeDetail: () => log.closed++,
     usOpenForm: (...a) => log.forms.push(a), toISODate: () => "2026-10-02", Date,
   };

@@ -62,6 +62,7 @@
     periodRow: (range) => `날짜 미정 · ${range}`, // #11
     legend: "꽉 찬 칩은 직접 등록한 일정, 테두리만 있는 칩은 자동 일정이에요.", // #12 (칩 달력 개편)
     filterAll: "전체", // #13
+    meChip: (role) => `나(${role})`, // 계정 모드: 내 구성원 칩
     filterFamily: "가족", // #13
     toggleAuto: "자동 일정 함께 보기", // #14 (구)
     onlyUserSwitch: "직접 등록한 일정만 보기", // 칩 달력 개편: 아이만 선택했을 때 보이는 토글 칩(기본 꺼짐, 켜면 자동 일정 칩 숨김)
@@ -241,12 +242,18 @@
 
   // ── 필터 (칩 달력 개편: 복수 선택) ───────────────────────────────────────────
   /** 선택값 id: "MOM" | "DAD" | "CHILD:<childKey>" | "FAMILY". 선택 배열이 비어 있으면 "전체". 옛 단일 값("ALL"·"FAMILY"·"CHILD:key")도 받아 1개짜리 배열로 바꾼다. */
+  /** 계정 모드(D3, opts.memberMode): 칩이 역할(MOM/DAD)이 아니라 구성원 단위 "MEMBER:<memberId>" 다. 라벨은 나=나(엄마)·그 밖은 구성원 라벨. */
+  const ROLE_LABELS = Object.freeze({ MOM: "엄마", DAD: "아빠", GRANDPARENT: "조부모", CAREGIVER: "이모님", CHILD: "자녀", OTHER: "기타" });
+  const visibleMembersOf = (members) => (members || []).filter((m) => m && !m.deletedAt && (m.memberId || m.id)).slice().sort((a, b) => (a.order || 0) - (b.order || 0) || String(a.label || "").localeCompare(String(b.label || "")) || ((a.memberId || a.id) < (b.memberId || b.id) ? -1 : 1));
+  const memberKey = (m) => m.memberId || m.id;
+  const memberColor = (m) => MEMBER_COLORS[m && m.role] || FAMILY_COLOR;
   const roleSet = (members) => new Set((members || []).filter((m) => m && !m.deletedAt).map((m) => m.role));
-  function normalizeSelection(selection, links, members) {
+  function normalizeSelection(selection, links, members, opts) {
     const raw = Array.isArray(selection) ? selection : selection == null || selection === "ALL" ? [] : [selection];
     const kids = activeLinks(links).map((l) => `CHILD:${linkKey(l)}`);
     const roles = members === undefined ? new Set(["MOM", "DAD"]) : roleSet(members);
-    const valid = [...["MOM", "DAD"].filter((r) => roles.has(r)), ...kids, "FAMILY"];
+    const memberIds = opts && opts.memberMode ? visibleMembersOf(members).map((m) => `MEMBER:${memberKey(m)}`) : null;
+    const valid = [...(memberIds || ["MOM", "DAD"].filter((r) => roles.has(r))), ...kids, "FAMILY"];
     const picked = valid.filter((id) => raw.includes(id));
     return picked.length === valid.length ? [] : picked; // 전부 골랐으면 전체와 같다
   }
@@ -256,10 +263,18 @@
     return sel.every((id) => id.startsWith("CHILD:")) ? "kids" : "member";
   }
   /** 칩: 전체 / 엄마·아빠(있는 구성원만) / 아이들(분리된 아이 제외) / 가족. selected 는 복수. */
-  function filterChips(links, selection, members) {
-    const sel = normalizeSelection(selection, links, members);
+  function filterChips(links, selection, members, opts) {
+    const sel = normalizeSelection(selection, links, members, opts);
     const chips = [{ id: "ALL", label: MSG.filterAll, selected: sel.length === 0 }];
     const mem = (members || []).filter((m) => m && !m.deletedAt);
+    if (opts && opts.memberMode) {
+      // 계정 모드: 구성원마다 칩 하나(내 구성원은 '나(역할)'), 합류한 구성원은 목록에 들어오는 즉시 칩이 늘어난다.
+      for (const m of visibleMembersOf(members)) {
+        const id = `MEMBER:${memberKey(m)}`;
+        const label = opts.meId && memberKey(m) === opts.meId ? MSG.meChip(ROLE_LABELS[m.role] || ROLE_LABELS.OTHER) : m.label || ROLE_LABELS[m.role] || "";
+        chips.push({ id, label, selected: sel.includes(id), color: memberColor(m) });
+      }
+    } else
     for (const role of ["MOM", "DAD"]) {
       const m = mem.find((x) => x.role === role);
       if (m) chips.push({ id: role, label: m.label || (role === "MOM" ? "엄마" : "아빠"), selected: sel.includes(role), color: MEMBER_COLORS[role] });
@@ -269,16 +284,16 @@
     return chips;
   }
   /** 칩 하나를 눌렀을 때의 새 선택: "ALL" 은 비우기, 그 밖은 토글. */
-  function toggleSelection(selection, id, links, members) {
+  function toggleSelection(selection, id, links, members, opts) {
     if (id === "ALL") return [];
-    const cur = normalizeSelection(selection, links, members);
+    const cur = normalizeSelection(selection, links, members, opts);
     const base = cur.length ? cur : [];
     const next = base.includes(id) ? base.filter((x) => x !== id) : [...base, id];
-    return normalizeSelection(next, links, members);
+    return normalizeSelection(next, links, members, opts);
   }
   /** CalendarModel.buildCalendarModel 의 input.filter. onlyUser(직접 등록한 일정만)는 아이만 선택했을 때만 효력이 있다. */
-  function toModelFilter(selection, onlyUser, links, members) {
-    const sel = normalizeSelection(selection, links, members);
+  function toModelFilter(selection, onlyUser, links, members, opts) {
+    const sel = normalizeSelection(selection, links, members, opts);
     if (!sel.length) return { scope: "ALL", showAuto: true };
     return { scope: "ALL", showAuto: !(selectionMode(sel) === "kids" && onlyUser === true), owners: sel };
   }
@@ -956,7 +971,7 @@
 
   return {
     MSG, CATEGORIES, CHILD_PALETTE, FAMILY_COLOR, PICKER_PREFIXES, HOURS, MINUTES,
-    categoryLabel, childColor, childColors, occurrenceColor, MEMBER_COLORS, CATEGORY_COLORS, autoCategoryGroup, selectionMode, toggleSelection, cellChips,
+    categoryLabel, childColor, childColors, occurrenceColor, MEMBER_COLORS, ROLE_LABELS, CATEGORY_COLORS, autoCategoryGroup, selectionMode, toggleSelection, cellChips,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
     linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, applyTemplate, renderQuickChips,

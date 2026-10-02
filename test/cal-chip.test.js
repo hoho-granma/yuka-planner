@@ -32,12 +32,12 @@ test("가구 없음(usModel null → dm 없음): 기존 점 표식 마크업과 
   assert.ok(now.includes("const usModel = usActive() ? usBuildModel(") && now.includes("const dm = usModel ? usModel.days.get(toISODate(date)) : null;"));
 });
 test("연결: 필터 클릭=복수 토글, 스위치 2개 핸들러, catColor 는 이 기기에만 보존(실패해도 동작), 서버 쓰기 없음", () => {
-  assert.ok(APP.includes('us.selection = UserScheduleView.toggleSelection(us.selection, f.getAttribute("data-us-filter"), usLinks(), usMembers());'));
+  assert.ok(APP.includes('us.selection = UserScheduleView.toggleSelection(usSel(), f.getAttribute("data-us-filter"), usLinks(), usMembers(), usSelOpts());'));
   assert.ok(APP.includes('if (act === "toggle-only-user") {\n        us.onlyUser = !us.onlyUser;') && APP.includes('if (act === "toggle-cat-color") {'));
-  assert.ok(APP.includes('const CAL_CATCOLOR_KEY = "hannun_cal_catcolor";') && /selection: \[\], onlyUser: false, catColor: \(\(\) =>/.test(APP));
+  assert.ok(APP.includes('const CAL_CATCOLOR_KEY = "hannun_cal_catcolor";') && /selection: \[\], selTouched: false, onlyUser: false, catColor: \(\(\) =>/.test(APP));
   const blk = APP.slice(APP.indexOf('if (act === "toggle-only-user")'), APP.indexOf('if (act === "add") return usOpenForm'));
   assert.ok(!/HouseholdSync|FamilySync|upsert|patchSchedule|createSchedule/.test(blk));
-  assert.ok(APP.includes("UserScheduleView.toModelFilter(us.selection, us.onlyUser, usLinks(), usMembers())"));
+  assert.ok(APP.includes("UserScheduleView.toModelFilter(usSel(), us.onlyUser, usLinks(), usMembers(), usSelOpts())"));
 });
 test("모델: 일정에 assigneeRole(담당 구성원 역할) 포함, 삭제된 담당자는 null — 홈·주·상세의 기본 색(owner)이 이를 쓴다", () => {
   const mk = (extra) => ({ ...UserSchedule.buildCreateDoc({ sourceType: "MANUAL", title: "t", category: "MEDICAL", scope: "FAMILY", allDay: true, dateKind: "FIXED", eventDate: "2026-10-06", ...extra }).doc, id: "s1" });

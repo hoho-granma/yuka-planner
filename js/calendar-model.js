@@ -85,6 +85,7 @@
     const tags = [];
     const m = doc.assigneeMemberId && memberOf ? memberOf.get(doc.assigneeMemberId) : null;
     if (m && !m.deletedAt && (m.role === "MOM" || m.role === "DAD")) tags.push(m.role);
+    if (m && !m.deletedAt) tags.push(`MEMBER:${doc.assigneeMemberId}`); // 계정 모드(D3): 구성원 단위 필터
     if (doc.scope === "FAMILY") tags.push("FAMILY");
     for (const k of doc.childKeys || []) tags.push(`CHILD:${k}`);
     return tags;

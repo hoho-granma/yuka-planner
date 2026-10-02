@@ -267,7 +267,7 @@
           ${note(MSG.codeInfo)}${note(MSG.shareWarn, "hh-warn")}
           <div class="hh-actions">${btn("copy", MSG.copyButton)}${btn("reissue", MSG.reissueButton)}</div>
           ${state.canLinkChild === true ? `<div class="hh-actions">${btn("link-child", MSG.linkButton)}</div>` : ""}
-          <div class="hh-actions">${btn("leave", MSG.leaveButton, "hh-danger")}</div>`;
+          ${state.hideLeave === true ? "" : `<div class="hh-actions">${btn("leave", MSG.leaveButton, "hh-danger")}</div>`}`;
         break;
       default: // "none"
         body = `${note(MSG.startHint)}${note(MSG.noHouseholdDesc)}<div class="hh-actions">${btn("create", MSG.createButton, "hh-primary")}</div>

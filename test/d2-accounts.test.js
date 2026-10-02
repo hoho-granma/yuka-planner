@@ -330,23 +330,62 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     await e.click({ action: "confirm-logout" });
     assert.ok(!("hannun_account_intent" in e.store));
   });
-  await test("복구 경로: 계정 문서만 있고 가구 연결·가입 의도가 모두 없으면, 로그인 때 계정 문서 정보로 새 가족을 만들어 연결한다(영영 안 이어지는 상태 방지)", async () => {
+  await test("복구 경로: 가구 연결도 가입 의도도 없으면 새 가족을 바로 만들지 않고 선택 화면(새 가족 만들기 / 가족 코드로 합류)을 한 번 거친다", async () => {
     const e = appEnv();
     e.init();
     e.w.db.docs.set("accounts/uLost", { v: 1, displayName: "지은", role: "MOM", institution: "DAYCARE", createdAt: 1, updatedAt: 1 });
     e.acct.user = { uid: "uLost", email: "m@x.co" };
     await e.restore(e.acct.user);
-    const acc = e.w.db.docs.get("accounts/uLost");
-    assert.ok(acc.householdId && acc.householdCode && acc.memberId);
-    assert.deepStrictEqual([e.log.setJoined.length, e.log.stage], [1, "born"], "아이 입력 화면으로(이름은 비어 있음)");
-    assert.strictEqual(e.w.db.docs.get(`households/${acc.householdId}/members/${acc.memberId}`).uid, "uLost");
-    // 이미 연결된 계정은 건드리지 않는다
-    const n = e.w.db.docs.size;
-    const e2 = appEnv({ shared: e.w });
+    assert.ok(!e.w.db.docs.get("accounts/uLost").householdId && e.log.setJoined.length === 0, "선택 전에는 아무것도 만들지 않는다");
+    assert.ok(e.sheet.innerHTML.includes("가족 캘린더를 연결해 주세요") && e.sheet.innerHTML.includes("새 가족 만들기") && e.sheet.innerHTML.includes("가족 코드로 합류하기"));
+    assert.deepStrictEqual([e.acct.form.role, e.acct.form.displayName], ["MOM", "지은"], "계정 문서 값으로 미리 채움");
+    // 한 번만 보인다
+    e.sheet.innerHTML = "";
+    await e.restore(e.acct.user);
+    assert.strictEqual(e.sheet.innerHTML, "");
+    // 합류 선택: 잘못된 코드는 막고, 맞는 코드면 가구에 합류
+    await e.click({ action: "recover-join-open" });
+    assert.ok(e.sheet.innerHTML.includes('data-acct-input="familyCode"'));
+    e.acct.form.familyCode = "ZZZZ2222";
+    await e.click({ action: "recover-join" });
+    assert.ok(e.sheet.innerHTML.includes("가족 캘린더 코드를 찾을 수 없어요.") && !e.w.db.docs.get("accounts/uLost").householdId);
+    const c = await e.w.hs.createHousehold({ firstChild: { familyCode: "ABC234", displayName: "수아" } });
+    e.acct.form.familyCode = c.code;
+    await e.click({ action: "recover-join" });
+    const joined = e.w.db.docs.get("accounts/uLost");
+    assert.deepStrictEqual([joined.householdId, joined.householdCode], [c.householdId, c.code]);
+    assert.ok(e.log.setJoined.length === 1 && e.log.closed >= 1 && e.log.loaded.length === 1, "합류 후 가구의 첫 아이를 불러온다");
+    // 새 가족 만들기 선택
+    const e2 = appEnv();
     e2.init();
-    await e2.restore({ uid: "uLost" }); // 이 기기엔 가구가 없으므로 계정 가구를 복원할 뿐 새로 만들지 않는다
-    assert.strictEqual(e.w.db.docs.size, n, "중복 가구 없음");
-    assert.strictEqual(e2.log.setJoined.length, 1);
+    e2.acct.user = { uid: "uNone", email: "n@x.co", displayName: "민수" };
+    await e2.restore(e2.acct.user); // 계정 문서도 의도도 없음 → 역할 다시 입력
+    assert.ok(e2.sheet.innerHTML.includes("가족 캘린더를 연결해 주세요") && e2.acct.form.displayName === "민수" && e2.acct.form.role === "");
+    await e2.click({ action: "recover-new" });
+    assert.ok(e2.acct.errors.role && !e2.w.db.docs.has("accounts/uNone"), "역할을 고르기 전에는 만들지 않는다");
+    e2.acct.form.role = "DAD";
+    await e2.click({ action: "recover-new" });
+    const acc = e2.w.db.docs.get("accounts/uNone");
+    assert.ok(acc.householdId && acc.memberId && acc.role === "DAD" && e2.log.setJoined.length === 1);
+    assert.strictEqual(e2.w.db.docs.get(`households/${acc.householdId}/members/${acc.memberId}`).uid, "uNone");
+    // 이 기기에 이미 가구가 있으면 묻지 않는다
+    const e3 = appEnv({ hhCode: "OTHER234" });
+    e3.init();
+    e3.acct.user = { uid: "uX", email: "x@x.co" };
+    await e3.restore(e3.acct.user);
+    assert.strictEqual(e3.sheet.innerHTML, "");
+  });
+  await test("로그인 직후 복원: 로그인 시트에서 로그인하면 끝난 뒤 계정 가구를 복원한다(로그인 중 onChange 복원은 건너뜀)", async () => {
+    const e = appEnv();
+    const c = await e.w.hs.createHousehold({ firstChild: { familyCode: "ABC234", displayName: "수아" } });
+    e.w.db.docs.set("accounts/uOld", { v: 1, displayName: "지은", role: "MOM", householdId: c.householdId, householdCode: c.code, memberId: "m", createdAt: 1, updatedAt: 1 });
+    e.init();
+    e.acct.mode = "login";
+    e.acct.form = { email: "m@x.co", password: "pw" };
+    await e.click({ action: "submit-login" });
+    await new Promise((r) => setTimeout(r, 20));
+    assert.deepStrictEqual(e.log.setJoined, [[c.householdId, c.code]]);
+    assert.strictEqual(e.acct.account.householdCode, c.code);
   });
   await test("플래그 OFF: acctInit·가입·복원이 아무 일도 하지 않는다(Firestore·Auth 호출 0)", async () => {
     const e = appEnv({ flag: false });

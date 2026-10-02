@@ -63,6 +63,24 @@
     errChildName: "아이 이름을 입력해 주세요(12자 이내).",
     errBirthDate: "아이 생년월일을 확인해 주세요.",
     errDueDate: "출산 예정일을 확인해 주세요.",
+    // D3: 내 정보·가족 초대·연결 복구
+    myRole: (role) => `나(${role})`,
+    inviteMenu: "가족 초대하기",
+    inviteTitle: "가족 초대하기",
+    inviteBody: "가족에게 이 코드를 알려 주세요. 회원가입할 때 가족 캘린더 코드에 입력하면 같은 가족으로 합류해요.",
+    inviteCodeLabel: "가족 캘린더 코드",
+    inviteCopy: "코드 복사",
+    inviteCopied: "복사했어요.",
+    inviteNone: "가족 캘린더가 아직 연결되지 않았어요. 연결한 뒤에 초대할 수 있어요.",
+    registerChild: "아이 등록하기",
+    recoverTitle: "가족 캘린더를 연결해 주세요",
+    recoverBody: "계정에 연결된 가족 캘린더가 없어요. 새로 만들지, 가족에게 받은 코드로 합류할지 골라 주세요.",
+    recoverNew: "새 가족 만들기",
+    recoverJoinOpen: "가족 코드로 합류하기",
+    recoverJoin: "합류하기",
+    recoverBack: "뒤로",
+    recoverLater: "나중에",
+    recoverDone: "가족 캘린더에 연결했어요.",
   });
   const ROLES = Object.freeze([["MOM", "엄마"], ["DAD", "아빠"], ["CHILD", "자녀"], ["CAREGIVER", "이모님(기타 돌봄)"]]);
   const INSTITUTIONS = Object.freeze([["DAYCARE", "어린이집"], ["KINDERGARTEN", "유치원"], ["ELEMENTARY", "초등학교"], ["NONE", "해당 없음"]]);
@@ -125,6 +143,18 @@
     const intent = ok ? { email, displayName: name, role: f.role, joiningCode: joining ? code : null, ...(joining ? {} : { situation: f.situation, institution: f.institution, ...childPart }) } : null;
     return { ok, errors, intent };
   }
+  /** 연결 복구 폼 검증: 역할·표시 이름 필수, 합류(joining)면 8자리 코드 필수. intent 는 가입 의도와 같은 모양(상황·기관 없음). */
+  function validateRecover(form, joining) {
+    const f = form || {};
+    const errors = {};
+    if (!ROLES.some(([k]) => k === f.role)) errors.role = MSG.errRole;
+    const name = String(f.displayName || "").trim();
+    if (!name || name.length > NAME_MAX) errors.displayName = MSG.errName;
+    const code = normCode(f.familyCode);
+    if (joining && !CODE_RE.test(code)) errors.familyCode = MSG.errCode;
+    const ok = Object.keys(errors).length === 0;
+    return { ok, errors, intent: ok ? { email: String(f.email || ""), displayName: name, role: f.role, joiningCode: joining ? code : null } : null };
+  }
   function validateLogin(form) {
     const f = form || {};
     const errors = {};
@@ -146,10 +176,11 @@
     if (s.user) return `<div class="card acct-landing" id="acct-landing"><div class="acct-logo">${esc(MSG.logo)}</div><p class="fine-print">${esc(MSG.loggedInAs(s.user.displayName || s.user.email))}</p><div class="acct-actions"><button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div></div>`;
     return `<div class="card acct-landing" id="acct-landing"><div class="acct-logo">${esc(MSG.logo)}</div><p class="fine-print">${esc(MSG.landingLead)}</p><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-signup">${esc(MSG.signup)}</button><button type="button" class="btn-close" data-acct-action="open-login">${esc(MSG.login)}</button></div><p class="fine-print">${esc(MSG.landingNote)}</p></div>`;
   }
-  /** 프로필 시트의 계정 슬롯. */
+  const roleLabel = (r) => (ROLES.find(([k]) => k === r) || [])[1] || "";
+  /** 프로필 시트의 계정 슬롯. s.account = { displayName, role }(accounts 문서)가 있으면 이름·역할을 보여준다. */
   function renderAccountSlot(state) {
     const s = state || {};
-    if (s.user) return `<div class="detail-row acct-slot"><div class="label">${esc(MSG.myAccount)}</div>${esc(s.user.displayName || "")}${s.user.displayName ? " · " : ""}${esc(s.user.email)}<div class="acct-actions"><button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div>${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
+    if (s.user) return `<div class="detail-row acct-slot"><div class="label">${esc(MSG.myAccount)}</div>${esc((s.account && s.account.displayName) || s.user.displayName || "")}${s.account && s.account.role ? ` · ${esc(MSG.myRole(roleLabel(s.account.role).replace(/\(.*\)/, "")))}` : ""}<br /><span class="fine-print">${esc(s.user.email)}</span><div class="acct-actions"><button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div>${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
     return `<div class="detail-row acct-slot"><div class="label">${esc(MSG.myAccount)}</div><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-signup">${esc(MSG.signup)}</button><button type="button" class="btn-close" data-acct-action="open-login">${esc(MSG.login)}</button></div>${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
   }
   /** state: { form, errors, error(서버 오류 문구), busy } */
@@ -182,11 +213,29 @@
       <button type="button" class="btn-text" data-acct-action="reset-password"${s.busy ? " disabled" : ""}>${esc(MSG.forgot)}</button>
       <button type="button" class="btn-close" data-acct-action="close"${s.busy ? " disabled" : ""}>${esc(MSG.cancel)}</button></div>`;
   }
+  /** 가족 초대하기 시트(+ 메뉴): 내 가구 코드와 복사 버튼. code 가 없으면 안내만. */
+  function renderInvite(state) {
+    const code = state && state.code;
+    return `<div class="acct-form" data-acct-form="invite"><h3>${esc(MSG.inviteTitle)}</h3>${code
+      ? `<p class="fine-print">${lines(MSG.inviteBody)}</p><div class="hh-code-box"><span class="hh-code-label">${esc(MSG.inviteCodeLabel)}</span><strong class="hh-code">${esc(code)}</strong></div><button type="button" class="btn-complete" data-acct-action="copy-invite">${esc(MSG.inviteCopy)}</button>${state.notice ? `<p class="fine-print">${esc(state.notice)}</p>` : ""}`
+      : `<p class="fine-print">${esc(MSG.inviteNone)}</p>`}<button type="button" class="btn-close" data-acct-action="close">${esc(MSG.close)}</button></div>`;
+  }
+  /** 연결 복구 시트: 새 가족을 만들기 전에 반드시 한 번 거친다(합류 의도였는데 새 가족이 만들어지는 것을 막는다). state: { form, errors, error, busy, joining } */
+  function renderRecover(state) {
+    const s = state || {}, f = s.form || {}, e = s.errors || {};
+    const body = s.joining
+      ? `<div class="acct-field"><label>${esc(MSG.codeLabel.replace(" (선택)", ""))}</label><input type="text" class="acct-input acct-code" data-acct-input="familyCode" maxlength="8" placeholder="${esc(MSG.codePlaceholder)}" value="${esc(f.familyCode || "")}" autocapitalize="characters" autocomplete="off" spellcheck="false" />${err(e, "familyCode")}</div>
+        <button type="button" class="btn-complete" data-acct-action="recover-join"${s.busy ? " disabled" : ""}>${esc(MSG.recoverJoin)}</button><button type="button" class="btn-text" data-acct-action="recover-back"${s.busy ? " disabled" : ""}>${esc(MSG.recoverBack)}</button>`
+      : `<button type="button" class="btn-complete" data-acct-action="recover-new"${s.busy ? " disabled" : ""}>${esc(MSG.recoverNew)}</button><button type="button" class="btn-close" data-acct-action="recover-join-open"${s.busy ? " disabled" : ""}>${esc(MSG.recoverJoinOpen)}</button>`;
+    return `<div class="acct-form" data-acct-form="recover"><h3>${esc(MSG.recoverTitle)}</h3><p class="fine-print">${esc(MSG.recoverBody)}</p>
+      ${radios("role", MSG.roleLabel, ROLES, f.role, e)}${input("displayName", MSG.nameLabel, "text", f.displayName || "", 'maxlength="20"')}${err(e, "displayName")}
+      ${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}${body}<button type="button" class="btn-text" data-acct-action="close"${s.busy ? " disabled" : ""}>${esc(MSG.recoverLater)}</button></div>`;
+  }
   function renderLogoutConfirm(state) {
     const n = (state && state.pending) || 0;
     return `<div class="acct-form" data-acct-form="logout"><h3>${esc(MSG.logoutTitle)}</h3><p class="fine-print">${lines(MSG.logoutBody)}</p>${n > 0 ? `<p class="acct-err">${esc(MSG.logoutPending(n))}</p>` : ""}
       <button type="button" class="btn-complete" data-acct-action="confirm-logout">${esc(MSG.logout)}</button><button type="button" class="btn-close" data-acct-action="close">${esc(MSG.cancel)}</button></div>`;
   }
 
-  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, normCode, toISO, renderLanding, renderAccountSlot, renderSignup, renderLogin, renderLogoutConfirm, esc };
+  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, renderLanding, renderAccountSlot, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderRecover, esc };
 });
