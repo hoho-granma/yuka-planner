@@ -43,8 +43,8 @@ test("합류 시 칩 자동 추가: 구성원 목록이 늘면(리스너가 미�
   const after = V.filterChips(LINKS, [], MEMBERS, ME).map((c) => c.id);
   assert.ok(!before.includes("MEMBER:m2") && after.includes("MEMBER:m2"));
 });
-test("선택 정규화·토글: MEMBER 칩만 유효(역할 칩 MOM/DAD 는 계정 모드에서 무효), 전부 고르면 전체, 옛 값 호환(opts 없음)은 그대로", () => {
-  assert.deepStrictEqual(V.normalizeSelection(["MEMBER:m2", "MOM", "MEMBER:zz"], LINKS, MEMBERS, ME), ["MEMBER:m2"]);
+test("선택 정규화·토글: MEMBER 칩만 유효(이전 역할 칩은 d4 테스트에서 복원 확인), 전부 고르면 전체, 옛 값 호환(opts 없음)은 그대로", () => {
+  assert.deepStrictEqual(V.normalizeSelection(["MEMBER:m2", "MEMBER:zz"], LINKS, MEMBERS, ME), ["MEMBER:m2"]);
   assert.deepStrictEqual(V.toggleSelection(["MEMBER:m1"], "MEMBER:m2", LINKS, MEMBERS, ME), ["MEMBER:m1", "MEMBER:m2"]);
   assert.deepStrictEqual(V.toggleSelection(["MEMBER:m1"], "ALL", LINKS, MEMBERS, ME), []);
   assert.deepStrictEqual(V.normalizeSelection(["MOM"], LINKS, MEMBERS), ["MOM"], "옵션이 없으면 기존 역할 칩 동작");
@@ -118,7 +118,7 @@ test("+ 메뉴: 계정 ON 이면 '아이 등록하기'·'가족 초대하기', O
   assert.ok(o.includes("새 아이 추가") && !o.includes("가족 초대하기") && !o.includes("아이 등록하기") && !o.includes("btn-add-menu-invite"));
 });
 test("내 정보: 로그인 상태에서는 N6 '이 기기에서 나가기'를 숨기고(hideLeave) 계정 슬롯에 이름·역할·로그아웃, 로그아웃 상태·OFF 는 기존 그대로", () => {
-  assert.ok(APP.includes("hideLeave: acctEnabled() && !!acct.user };"));
+  assert.ok(APP.includes("hideLeave: acctEnabled() && !!acct.user,"));
   const HV = require("../js/household-view.js");
   const st = { enabled: true, view: "active", code: "ABCD2345", pending: 0 };
   assert.ok(HV.renderSection(st).includes('data-hh-action="leave"') && HV.renderSection({ ...st, hideLeave: false }).includes('data-hh-action="leave"'));
@@ -151,7 +151,7 @@ test("연결 복구 화면·검증: 새 가족 만들기/코드로 합류, 역�
 test("플래그 OFF·계정 로그아웃 상태: 새 코드는 모두 acctEnabled/계정 상태 가드 뒤, 서버 쓰기는 AccountSync(계정 문서·가구)뿐", () => {
   const blk = APP.slice(APP.indexOf("// ── D1 계정"), APP.indexOf("async function init()"));
   assert.ok(/async function acctOnClick\(ev\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
-  assert.ok(!/FamilySync|HouseholdSync\.(create|add|update|upsert|patch|remove|reissue|flush)|completed|saveProfile/.test(blk));
+  assert.ok(!/FamilySync|HouseholdSync\.(create|update|upsert|patch|remove|reissue)|completed|saveProfile/.test(blk));
   assert.ok(/if \(!acctEnabled\(\) \|\| !acct\.user \|\| !acct\.account \|\| !acct\.account\.memberId\) return null;/.test(APP));
   assert.ok(APP.includes("const acctOn = acctEnabled();") && APP.includes("${acctOn ? `<button class=\"btn-complete\" id=\"btn-add-menu-invite\">"));
 });

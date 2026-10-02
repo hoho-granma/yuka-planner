@@ -249,7 +249,12 @@
   const memberColor = (m) => MEMBER_COLORS[m && m.role] || FAMILY_COLOR;
   const roleSet = (members) => new Set((members || []).filter((m) => m && !m.deletedAt).map((m) => m.role));
   function normalizeSelection(selection, links, members, opts) {
-    const raw = Array.isArray(selection) ? selection : selection == null || selection === "ALL" ? [] : [selection];
+    let raw = Array.isArray(selection) ? selection : selection == null || selection === "ALL" ? [] : [selection];
+    if (opts && opts.memberMode) {
+      // 계정 모드 이전에 저장된 선택(MOM/DAD 역할 칩)은 같은 역할의 구성원 칩으로 옮겨 복원한다.
+      const legacy = raw.filter((id) => id === "MOM" || id === "DAD");
+      if (legacy.length) raw = [...raw, ...visibleMembersOf(members).filter((m) => legacy.includes(m.role)).map((m) => `MEMBER:${memberKey(m)}`)];
+    }
     const kids = activeLinks(links).map((l) => `CHILD:${linkKey(l)}`);
     const roles = members === undefined ? new Set(["MOM", "DAD"]) : roleSet(members);
     const memberIds = opts && opts.memberMode ? visibleMembersOf(members).map((m) => `MEMBER:${memberKey(m)}`) : null;

@@ -189,7 +189,7 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
   });
 
   console.log("app.js 가입·복원 흐름(소스 추출 + 가짜 Auth/Firestore)");
-  function appEnv({ rules = true, local = {}, flag = true, profile = null, hhCode = null, shared = null } = {}) {
+  function appEnv({ rules = true, local = {}, flag = true, profile = null, hhCode = null, shared = null, familyCode = null } = {}) {
     const w = shared || world({ rules });
     const authAd = (() => {
       const calls = []; let cb = null; let cur = null;
@@ -216,7 +216,7 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     };
     vm.createContext(sb);
     const a = APP.indexOf("// ── D1 계정"), b = APP.indexOf("async function init()");
-    vm.runInContext(`let modalMode = null; let profile = ${JSON.stringify(profile)};\n` + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick, acctInit, acctRestore };", sb);
+    vm.runInContext(`let modalMode = null; let profile = ${JSON.stringify(profile)}; let familyCode = ${JSON.stringify(familyCode)}; const isPregnant = () => false; const childDisplayName = () => "수아"; const loadChildren = () => { try { return JSON.parse(localStorage.getItem("hannun_children") || "[]"); } catch (e) { return []; } }; const us = { selection: [], selTouched: false }; function hhRender() {} function hhLeaveLocal() { hh.hid = null; hh.code = null; }\n` + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick, acctInit, acctRestore };", sb);
     const click = (attrs) => sb.__t.acctOnClick({ target: { closest: (sel) => (sel === "[data-acct-radio]" ? null : { getAttribute: () => attrs.action }) } });
     return { sb, w, authAd, store, sheet, log, hhObj, acct: sb.__t.acct, click, init: () => sb.__t.acctInit(), restore: (u) => sb.__t.acctRestore(u) };
   }
@@ -400,7 +400,8 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
   await test("서버 쓰기 범위: 앱의 계정 블록은 accounts(AccountSync)·가구 생성/합류만 — 아이 문서(families)·일정·완료에는 쓰지 않는다", () => {
     const a = APP.indexOf("// ── D1 계정"), b = APP.indexOf("async function init()");
     const blk = APP.slice(a, b);
-    assert.ok(!/FamilySync|families\/|completed|saveProfile|patchSchedule|createSchedule|addChild/.test(blk));
+    assert.ok(!/FamilySync|families\/|completed|saveProfile|patchSchedule|createSchedule/.test(blk));
+    assert.strictEqual((blk.match(/HouseholdSync\.addChild\(/g) || []).length, 1, "D4: 아이 링크 쓰기는 acctLinkKids 한 곳뿐");
     assert.ok(blk.includes("acct.sync.completeSignup(") && blk.includes("HouseholdSync.lookupHousehold(") && blk.includes("await acct.svc.deleteCurrentUser();"));
     const sync = read("js/account-sync.js").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
     assert.ok(!/families|completed|schedules|localStorage/.test(sync));

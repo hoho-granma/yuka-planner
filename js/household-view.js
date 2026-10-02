@@ -29,6 +29,7 @@
     creating: "만드는 중이에요…", // #7
     created: "가족 캘린더를 만들었어요. 아래 코드로 가족을 초대해 보세요.", // #8
     codeLabel: "가족 코드", // #9
+    codeLabelAcct: "가족 캘린더 코드(8자리)", // 계정 모드: 두 코드(아이 6자·가구 8자) 혼동 방지
     codeInfo: "이 코드로 아이 전부와 일정을 볼 수 있어요.", // #10
     shareWarn: "이 코드를 아는 사람은 누구나 우리 가족 일정을 볼 수 있어요. 가족에게만 알려 주세요.", // #11
     copyButton: "코드 복사", // #12
@@ -263,7 +264,7 @@
         break;
       }
       case "active":
-        body = `<div class="hh-code-box"><span class="hh-code-label">${esc(MSG.codeLabel)}</span><strong class="hh-code">${esc(state.code)}</strong></div>
+        body = `<div class="hh-code-box"><span class="hh-code-label">${esc(state.acctMode ? MSG.codeLabelAcct : MSG.codeLabel)}</span><strong class="hh-code">${esc(state.code)}</strong></div>
           ${note(MSG.codeInfo)}${note(MSG.shareWarn, "hh-warn")}
           <div class="hh-actions">${btn("copy", MSG.copyButton)}${btn("reissue", MSG.reissueButton)}</div>
           ${state.canLinkChild === true ? `<div class="hh-actions">${btn("link-child", MSG.linkButton)}</div>` : ""}

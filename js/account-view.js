@@ -49,7 +49,7 @@
     loggedInAs: (who) => `${who}님으로 로그인했어요.`,
     myAccount: "내 계정",
     logoutTitle: "로그아웃할까요?",
-    logoutBody: "로그아웃해도 가족의 일정과 아이 정보는 지워지지 않아요. 다시 로그인하면 이어서 볼 수 있어요.",
+    logoutBody: "로그아웃해도 가족의 일정과 아이 정보는 지워지지 않아요. 이 기기에서는 가족 캘린더 연결만 해제되고, 다시 로그인하면 이어서 볼 수 있어요.",
     logoutPending: (n) => `아직 서버에 보내지 못한 변경 ${n}건은 로그아웃하면 사라질 수 있어요.`,
     loggedOut: "로그아웃했어요.",
     errEmailEmpty: "이메일을 입력해 주세요.",
@@ -81,6 +81,17 @@
     recoverBack: "뒤로",
     recoverLater: "나중에",
     recoverDone: "가족 캘린더에 연결했어요.",
+    migrateTitle: "이 기기의 아이를 어떻게 할까요?",
+    migrateTitleConflict: "가족 캘린더를 바꿀까요?",
+    migrateConflictBody: "이 기기에는 다른 가족 캘린더가 연결돼 있어요. 내 계정의 가족 캘린더로 바꿀까요?\n어느 쪽을 골라도 이 기기의 아이 기록은 지워지지 않아요.",
+    migrateFail: "아직 보내지 못한 변경이 있거나 연결에 실패해 바꾸지 못했어요. 인터넷에 연결한 뒤 다시 시도해 주세요.",
+    migrateBody: (names) => `이 기기에는 ${names}의 기록이 있어요. 내 계정의 가족 캘린더에 함께 볼까요?\n어느 쪽을 골라도 이 기기의 기록은 지워지지 않아요.`,
+    migrateAdd: "이 기기 아이를 가족에 추가",
+    migrateKeep: "내 계정 가족 쓰기",
+    migrateAdded: "이 기기의 아이를 가족 캘린더에 추가했어요.",
+    migrateKept: "내 계정 가족 캘린더를 쓰고 있어요. 이 기기의 아이 기록은 그대로 남아 있어요.",
+    childCodeLabel: "아이 기록 코드(6자리)",
+    childCodeHint: "다른 기기에서 이 아이의 기록을 불러올 때 쓰는 코드예요. 가족을 초대할 땐 위의 가족 캘린더 코드(8자리)를 알려주세요.",
   });
   const ROLES = Object.freeze([["MOM", "엄마"], ["DAD", "아빠"], ["CHILD", "자녀"], ["CAREGIVER", "이모님(기타 돌봄)"]]);
   const INSTITUTIONS = Object.freeze([["DAYCARE", "어린이집"], ["KINDERGARTEN", "유치원"], ["ELEMENTARY", "초등학교"], ["NONE", "해당 없음"]]);
@@ -220,6 +231,15 @@
       ? `<p class="fine-print">${lines(MSG.inviteBody)}</p><div class="hh-code-box"><span class="hh-code-label">${esc(MSG.inviteCodeLabel)}</span><strong class="hh-code">${esc(code)}</strong></div><button type="button" class="btn-complete" data-acct-action="copy-invite">${esc(MSG.inviteCopy)}</button>${state.notice ? `<p class="fine-print">${esc(state.notice)}</p>` : ""}`
       : `<p class="fine-print">${esc(MSG.inviteNone)}</p>`}<button type="button" class="btn-close" data-acct-action="close">${esc(MSG.close)}</button></div>`;
   }
+  /** 이 기기의 아이를 계정 가족에 추가할지 묻는 시트(D4). kids: [{name}] */
+  function renderMigrate(state) {
+    const s = state || {};
+    const kids = (s.kids || []).filter(Boolean);
+    const names = kids.map((k) => k.name).filter(Boolean).join("·") || "아이";
+    const dis = s.busy ? " disabled" : "";
+    return `<div class="acct-form" data-acct-form="migrate"><h3>${esc(s.conflict ? MSG.migrateTitleConflict : MSG.migrateTitle)}</h3><p class="fine-print">${lines(s.conflict ? MSG.migrateConflictBody : MSG.migrateBody(names))}</p>
+      ${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}${kids.length ? `<button type="button" class="btn-complete" data-acct-action="migrate-add"${dis}>${esc(MSG.migrateAdd)}</button>` : ""}<button type="button" class="${kids.length ? "btn-close" : "btn-complete"}" data-acct-action="migrate-keep"${dis}>${esc(MSG.migrateKeep)}</button><button type="button" class="btn-text" data-acct-action="close"${dis}>${esc(MSG.recoverLater)}</button></div>`;
+  }
   /** 연결 복구 시트: 새 가족을 만들기 전에 반드시 한 번 거친다(합류 의도였는데 새 가족이 만들어지는 것을 막는다). state: { form, errors, error, busy, joining } */
   function renderRecover(state) {
     const s = state || {}, f = s.form || {}, e = s.errors || {};
@@ -237,5 +257,5 @@
       <button type="button" class="btn-complete" data-acct-action="confirm-logout">${esc(MSG.logout)}</button><button type="button" class="btn-close" data-acct-action="close">${esc(MSG.cancel)}</button></div>`;
   }
 
-  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, renderLanding, renderAccountSlot, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderRecover, esc };
+  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, renderLanding, renderAccountSlot, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderRecover, renderMigrate, esc };
 });

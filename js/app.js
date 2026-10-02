@@ -833,11 +833,17 @@
       ${enrollmentRowHtml()}
       ${
         familyCode
-          ? `<div class="detail-row">
+          ? (acctEnabled() && acct.user && hh.code
+            ? `<details class="detail-row acct-child-code"><summary class="label">${esc(AccountView.MSG.childCodeLabel)}</summary>
+               <button id="btn-copy-code" class="btn-code-pill">${familyCode} · 복사하기</button>
+               <p id="code-hint" class="fine-print hidden code-hint-oneline">복사됐어요! 다른 기기에 입력하면 정보가 이어져요.</p>
+               <p class="fine-print">${esc(AccountView.MSG.childCodeHint)}</p>
+             </details>`
+            : `<div class="detail-row">
                <div class="label">가족코드</div>
                <button id="btn-copy-code" class="btn-code-pill">${familyCode} · 복사하기</button>
                <p id="code-hint" class="fine-print hidden code-hint-oneline">복사됐어요! 다른 기기에 입력하면 정보가 이어져요.</p>
-             </div>`
+             </div>`)
           : ""
       }
       ${acctEnabled() ? '<div id="acct-slot"></div>' : ""}${hhEnabled() ? '<div id="hh-slot"></div><div id="members-slot"></div>' : ""}<div id="beta-slot"></div>${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
@@ -2469,7 +2475,7 @@
     const st = hh.hid ? HouseholdSync.getStatus(hh.hid) : { pending: 0, permissionDenied: false };
     // 아이 전환 진입점: 가구가 있거나, 가구가 없어도 이 기기에 저장된 아이가 2명 이상일 때.
     const showChildSwitch = !!(hh.hid && hh.code) || loadChildren().length >= 2;
-    return { enabled: true, view: hh.view, childName: childDisplayName(), code: hh.code, pending: st.pending, permissionDenied: st.permissionDenied, rulesUnavailable: hh.rulesUnavailable, notice: hh.notice, joinInput: hh.joinInput, showChildSwitch, canLinkChild: hhCanLinkChild(), hideLeave: acctEnabled() && !!acct.user };
+    return { enabled: true, view: hh.view, childName: childDisplayName(), code: hh.code, pending: st.pending, permissionDenied: st.permissionDenied, rulesUnavailable: hh.rulesUnavailable, notice: hh.notice, joinInput: hh.joinInput, showChildSwitch, canLinkChild: hhCanLinkChild(), hideLeave: acctEnabled() && !!acct.user, acctMode: acctEnabled() && !!acct.user };
   }
   function hhRender() {
     const slot = el("hh-slot");
@@ -3902,7 +3908,7 @@
   // 플래그 OFF 면 이 블록의 어떤 함수도 DOM·SDK 를 건드리지 않는다(acctInit 이 맨 앞에서 반환).
   const acctEnabled = () => typeof AccountView !== "undefined" && typeof AuthService !== "undefined" && !!window.FEATURES && window.FEATURES.accounts === true;
   const ACCT_INTENT_KEY = "hannun_account_intent";
-  const acct = { svc: null, sync: null, user: null, account: null, joining: false, recoverShown: false, form: {}, errors: {}, error: null, busy: false, completing: false, restoring: false, notice: null, mode: null };
+  const acct = { svc: null, sync: null, user: null, account: null, joining: false, recoverShown: false, form: {}, errors: {}, error: null, busy: false, completing: false, restoring: false, notice: null, mode: null, migrate: null };
   function acctInit() {
     if (!acctEnabled()) return;
     acct.svc = AuthService.create();
@@ -3948,6 +3954,7 @@
       acct.mode === "signup" ? AccountView.renderSignup(st)
       : acct.mode === "login" ? AccountView.renderLogin(st)
       : acct.mode === "invite" ? AccountView.renderInvite({ code: hh.code, notice: acct.notice })
+      : acct.mode === "migrate" ? AccountView.renderMigrate({ kids: acct.migrate && acct.migrate.kids, conflict: !!(acct.migrate && acct.migrate.switchTo), busy: acct.busy, error: acct.error })
       : acct.mode === "recover" ? AccountView.renderRecover({ ...st, joining: acct.joining })
       : AccountView.renderLogoutConfirm({ pending: acct.pending || 0 });
     el("detail-modal").classList.remove("hidden");
@@ -3994,12 +4001,78 @@
     const r = await acct.sync.restore(uid);
     return !!(r.ok && r.account && r.account.householdCode);
   }
+  // ── D4 기존 기기 데이터 이전: 이 기기의 아이·가구를 지우지 않고 계정 가구에 연결한다(서버 쓰기는 addChild·계정 문서뿐). ──
+  const ACCT_KEPT_KEY = "hannun_migrate_kept"; // '내 계정 가족 쓰기'를 고른 아이 코드(다시 묻지 않는다)
+  const acctReadKept = () => {
+    try {
+      const l = JSON.parse(localStorage.getItem(ACCT_KEPT_KEY) || "[]");
+      return Array.isArray(l) ? l : [];
+    } catch (e) {
+      return [];
+    }
+  };
+  /** 이 기기에 저장된 아이(임신 중 제외): 아이 목록 + 지금 아이. */
+  function acctDeviceKids() {
+    const list = loadChildren().filter((c) => c && c.code && c.stage !== "pregnant");
+    if (familyCode && profile && !isPregnant() && !list.some((c) => c.code === familyCode)) list.push({ code: familyCode, name: childDisplayName(), stage: "born" });
+    return list.map((c) => ({ code: c.code, name: c.name || "" }));
+  }
+  const acctUnlinkedKids = (mirror) => {
+    const kept = acctReadKept();
+    return acctDeviceKids().filter((c) => !HouseholdView.isChildLinked(mirror, c.code) && !kept.includes(c.code));
+  };
+  async function acctLinkKids(hid, kids) {
+    const m = HouseholdSync.getMirror(hid);
+    let order = Object.keys((m && m.children) || {}).length;
+    for (const c of kids) {
+      const w = await HouseholdSync.addChild(hid, { familyCode: c.code, displayName: c.name, order: ++order });
+      if (!w || !w.ok) return { ok: false };
+    }
+    return { ok: true };
+  }
+  /** 가구가 정해진 직후: 새 가구면 이 기기 아이를 바로 연결(고를 것이 없다), 기존 가구에 합류했으면 아직 연결 안 된 아이가 있을 때 선택 시트를 준비한다. */
+  async function acctPlanKids(res) {
+    const m = HouseholdSync.getMirror(res.householdId);
+    if (res.created) {
+      const kids = acctUnlinkedKids(m);
+      if (kids.length) await acctLinkKids(res.householdId, kids).catch((e) => console.error("아이 연결 실패", e));
+      return;
+    }
+    if (!m) return;
+    const kids = acctUnlinkedKids(m);
+    if (kids.length) acct.migrate = { switchTo: null, kids };
+  }
+  /** 선택 시트가 준비돼 있으면 연다(다른 시트를 닫은 직후에 호출). */
+  function acctMaybeShowMigrate() {
+    if (acct.user && acct.migrate && !acct.busy) acctShowSheet("migrate");
+  }
+  /** 이 기기의 가구를 정리하고 계정 가구로 바꾼다. 보내지 못한 변경이 남아 있으면 바꾸지 않는다(데이터 유실 방지). */
+  async function acctSwitchHousehold(code) {
+    const look = await HouseholdSync.lookupHousehold(code);
+    if (!look.ok) return false;
+    if (hh.hid) {
+      try {
+        await HouseholdSync.flush(hh.hid);
+      } catch (e) {}
+      if (HouseholdSync.getStatus(hh.hid).pending > 0) return false;
+      hhLeaveLocal();
+    }
+    const j = await HouseholdSync.joinHousehold(code);
+    if (!j.ok) return false;
+    hhSetJoined(j.householdId, code);
+    if (!profile) await acctAfterHousehold({}, { created: false, householdId: j.householdId });
+    acctRefreshCalendar();
+    return true;
+  }
   /** 가입 마무리: accounts 문서 → 가구 생성/합류 → 구성원 uid 연결. rollback=true(방금 가입)면 서버 규칙이 없을 때 Auth 사용자를 지우고 가입 전 상태로 돌린다. */
   async function acctFinishSignup(intent, rollback) {
     acct.completing = true;
     let res;
+    // D4: 이 기기에 이미 가구가 있고 합류 코드가 없으면 새 가구를 만들지 않고 이 기기 가구를 계정에 귀속한다(가구가 서버에 없으면 원래 흐름으로).
+    const adopt = !intent.joiningCode && !!hh.hid && !!hh.code;
     try {
-      res = await acct.sync.completeSignup({ user: acct.user, intent });
+      res = await acct.sync.completeSignup({ user: acct.user, intent: adopt ? { ...intent, joiningCode: hh.code } : intent });
+      if (adopt && !res.ok && res.reason === "not-found") res = await acct.sync.completeSignup({ user: acct.user, intent });
     } finally {
       acct.completing = false;
     }
@@ -4018,9 +4091,17 @@
       acct.error = res.reason === "rules-unavailable" ? AuthService.MSG.serverNotReady : AuthService.MSG.linkFailed;
       return { ok: false, rolledBack: false };
     }
-    hhSetJoined(res.householdId, res.householdCode);
     acct.account = { displayName: intent.displayName, role: intent.role, memberId: res.memberId, householdId: res.householdId, householdCode: res.householdCode };
+    if (hh.code && hh.code !== res.householdCode) {
+      // 이 기기에 다른 가구가 연결돼 있다: 사용자가 고르기 전에는 바꾸지 않는다(선택 시트 — 계정 가족 쓰기 / 이 기기 아이를 가족에 추가).
+      acctClearIntent();
+      acct.migrate = { switchTo: res.householdCode, kids: acctDeviceKids() };
+      acctRefreshCalendar();
+      return { ok: true };
+    }
+    hhSetJoined(res.householdId, res.householdCode);
     await acctAfterHousehold(intent, res);
+    await acctPlanKids(res);
     acctRefreshCalendar();
     return { ok: true };
   }
@@ -4075,17 +4156,25 @@
         return;
       }
       const acc = r.account;
-      if (!acc || !acc.householdCode || hh.code) return;
+      if (!acc || !acc.householdCode) return;
+      if (hh.code && hh.code !== acc.householdCode) {
+        // D4: 이 기기 가구와 계정 가구가 다르다 — 묻기 전에는 아무것도 바꾸지 않는다.
+        acct.migrate = { switchTo: acc.householdCode, kids: acctDeviceKids() };
+        return;
+      }
+      if (hh.code) return;
       const j = await HouseholdSync.joinHousehold(acc.householdCode);
       if (!j.ok) return;
       hhSetJoined(j.householdId, acc.householdCode);
       await acctAfterHousehold({}, { created: false, householdId: j.householdId });
+      await acctPlanKids({ created: false, householdId: j.householdId });
     } catch (e) {
       console.error("계정 복원 실패", e);
     } finally {
       acct.restoring = false;
       acctRenderSlot();
       acctRefreshCalendar();
+      acctMaybeShowMigrate();
     }
   }
 
@@ -4115,22 +4204,77 @@
     if (action === "confirm-logout") {
       // 가입 의도는 가구 연결이 끝난 계정에서만 지운다. 연결이 안 끝났으면(일시 오류 등) 남겨 두어 다시 로그인할 때 이어서 연결한다.
       const linked = await acctIsLinked(acct.user && acct.user.uid);
+      // D4: 이 기기 가구가 이 계정의 가구면, 로그아웃 전에 대기열을 한 번 더 보내 보고 로그아웃 뒤 이 기기의 가구 연결을 정리한다(다른 계정 로그인 시 혼선 방지).
+      const own = !!(hh.hid && hh.code && acct.account && acct.account.householdCode === hh.code);
+      if (own) {
+        try {
+          await HouseholdSync.flush(hh.hid);
+        } catch (e) {}
+      }
       const r = await acct.svc.signOut();
       if (!r.ok) {
         acct.mode = "login";
         acct.error = r.message || AuthService.MSG.generic;
         return acctShowSheet();
       }
-      // D1: 가구는 아직 계정에 묶이지 않았으므로 가구·아이 로컬 데이터는 그대로 둔다(정리 범위는 D2·D4에서 확장).
+      // 정리 범위: 가구 id·코드·미러·대기열·이 기기 사용자 키만. 아이·완료·기록·사진은 그대로 둔다.
+      if (own) {
+        try {
+          hhLeaveLocal();
+        } catch (e) {
+          console.error("로그아웃 후 가구 정리 실패", e);
+        }
+        hhRender();
+      }
       if (linked) acctClearIntent();
       acct.user = null;
       acct.account = null;
+      acct.migrate = null;
+      us.selection = [];
+      us.selTouched = false;
       acct.recoverShown = false;
       acct.form = {};
       acct.notice = AccountView.MSG.loggedOut;
       closeDetail();
       acctRenderLanding();
       acctRenderSlot();
+      acctRefreshCalendar();
+      return;
+    }
+    if (action === "migrate-add" || action === "migrate-keep") {
+      const mg = acct.migrate;
+      if (!mg) return closeDetail();
+      const add = action === "migrate-add";
+      acct.busy = true;
+      acct.error = null;
+      acctShowSheet("migrate");
+      let ok = true;
+      try {
+        if (mg.switchTo) ok = await acctSwitchHousehold(mg.switchTo);
+        if (ok && add) {
+          const m = HouseholdSync.getMirror(hh.hid);
+          ok = (await acctLinkKids(hh.hid, acctDeviceKids().filter((k) => !HouseholdView.isChildLinked(m, k.code)))).ok;
+        }
+      } catch (e) {
+        console.error("기기 데이터 이전 실패", e);
+        ok = false;
+      }
+      acct.busy = false;
+      if (!ok) {
+        acct.error = AccountView.MSG.migrateFail;
+        return acctShowSheet("migrate");
+      }
+      if (!add) {
+        try {
+          localStorage.setItem(ACCT_KEPT_KEY, JSON.stringify([...new Set([...acctReadKept(), ...acctDeviceKids().map((k) => k.code)])]));
+        } catch (e) {}
+      }
+      acct.migrate = null;
+      acct.notice = add ? AccountView.MSG.migrateAdded : AccountView.MSG.migrateKept;
+      closeDetail();
+      acctRenderSlot();
+      hhRender();
+      acctRefreshCalendar();
       return;
     }
     if (action === "copy-invite") {
@@ -4177,6 +4321,7 @@
       acct.notice = AccountView.MSG.recoverDone;
       closeDetail();
       acctRenderSlot();
+      acctMaybeShowMigrate();
       return;
     }
     if (action === "submit-signup") {
@@ -4218,6 +4363,7 @@
       closeDetail();
       acctRenderLanding();
       acctRenderSlot();
+      acctMaybeShowMigrate();
       return;
     }
     if (action === "submit-login") {

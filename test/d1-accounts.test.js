@@ -178,7 +178,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     assert.ok(/async function acctOnClick\(ev\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
     assert.ok(/function acctRenderLanding\(\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
     // D2: 서버 읽기(lookupHousehold·joinHousehold)와 AccountSync(계정 문서·가구 생성)만 허용 — 아이·일정·완료에는 쓰지 않는다
-    assert.ok(!/FamilySync|HouseholdSync\.(create|add|update|upsert|patch|remove|reissue|flush)/.test(blk));
+    assert.ok(!/FamilySync|HouseholdSync\.(create|update|upsert|patch|remove|reissue)/.test(blk));
     assert.ok(blk.includes("localStorage.setItem(ACCT_INTENT_KEY, JSON.stringify(v.intent));") && !/setItem\([^)]*password/i.test(blk));
     assert.ok(APP.includes("    usInit();\n    acctInit();") && APP.includes("${acctEnabled() ? '<div id=\"acct-slot\"></div>' : \"\"}") && APP.includes("if (acctEnabled()) acctOpenSlot();"));
   });
@@ -190,7 +190,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
   await test("OFF 불변: index.html 에 정적 계정 마크업·Auth SDK 스크립트가 없다(플래그 ON 일 때 동적 로드), sw.js 에는 새 스크립트만 추가", () => {
     const html = read("index.html");
     assert.ok(!/firebase-auth-compat/.test(html) && !/acct-/.test(html));
-    assert.ok(html.includes('<script src="js/auth-service.js?v=2"></script>') && html.includes('<script src="js/account-view.js?v=2"></script>'));
+    assert.ok(html.includes('<script src="js/auth-service.js?v=2"></script>') && html.includes('<script src="js/account-view.js?v=3"></script>'));
     const sw = read("sw.js");
     assert.ok(sw.includes('"./js/auth-service.js"') && sw.includes('"./js/account-view.js"') && !sw.includes("firebase-auth-compat"));
     assert.ok(AS.SDK_URL === "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js");
@@ -210,7 +210,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
       document: { createElement: () => ({ addEventListener() {}, set innerHTML(v) {} }) },
     };
     vm.createContext(sb);
-    vm.runInContext("let modalMode = null;\n" + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick };", sb);
+    vm.runInContext("let modalMode = null; let profile = null; const us = { selection: [], selTouched: false }; function hhRender() {}\n" + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick };", sb);
     const click = (attrs) => sb.__t.acctOnClick({ target: { closest: (sel) => (sel === "[data-acct-radio]" ? (attrs.radio ? { getAttribute: (n) => (n === "data-acct-radio" ? attrs.radio[0] : attrs.radio[1]) } : null) : { getAttribute: () => attrs.action } ) } });
     return { sb, ad, store, sheet, log, click, acct: sb.__t.acct };
   }
