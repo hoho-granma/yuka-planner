@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#ff8a5c" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
-<link rel="stylesheet" href="css/style.css?v=67" />
+<link rel="stylesheet" href="css/style.css?v=68" />
 </head>
 <body>
   <main id="app">
@@ -156,7 +156,7 @@
 
       <!-- 캘린더 -->
       <div id="tab-calendar" class="tab-panel hidden">
-        <div class="card cal-progress-card">
+        <div class="card cal-progress-card" id="cal-progress-card">
           <div class="cal-progress-row">
             <span class="progress-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
@@ -170,6 +170,7 @@
           <div class="cal-legend" id="cal-legend"></div>
         </div>
 
+        <div id="cal-todo-slot"></div>
         <div id="us-filter-slot"></div>
         <div class="card calendar-card">
           <div id="cal-view-slot"></div>
@@ -282,9 +283,10 @@
   <script src="js/user-schedule.js?v=2"></script>
   <script src="js/calendar-model.js?v=5"></script>
   <script src="js/calendar-week.js?v=1"></script>
-  <script src="js/user-schedule-view.js?v=13"></script>
+  <script src="js/apply-links.js?v=1"></script>
+  <script src="js/user-schedule-view.js?v=14"></script>
   <script src="js/records-view.js?v=7"></script>
-  <script src="js/app.js?v=82"></script>
+  <script src="js/app.js?v=83"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

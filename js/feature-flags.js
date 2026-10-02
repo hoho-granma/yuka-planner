@@ -23,7 +23,8 @@
       flags.household = true; // 계정 기능이 켜지면 가족 캘린더가 기본 구조
     }
     // autoLink 는 household 가 켜져 있을 때만 읽는다 — household 가 꺼진 기기는 localStorage 를 한 번만(household 키) 읽고 그 뒤 접근이 없다.
-    if (flags.household && storage.getItem("hannun_feature_autolink") === "1") flags.autoLink = true;
+    // E(1-2): 규칙 배포·수동 검증이 끝났으므로 가구가 켜지면 기본 ON. 끄려면 hannun_feature_autolink = "0".
+    if (flags.household && storage.getItem("hannun_feature_autolink") !== "0") flags.autoLink = true;
   } catch (e) {}
   return flags;
 });

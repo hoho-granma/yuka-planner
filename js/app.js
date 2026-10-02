@@ -998,13 +998,80 @@
     return { fixed, planned };
   }
 
-  /** 진행현황 카드 — 그 달 달력에 표시되는 항목(지원금 신청 시작 + 추천일 배치) 중 실제로 완료 처리한 수. */
+  /** 진행현황 카드 — 그 달 달력에 표시되는 항목(지원금 신청 시작 + 추천일 배치) 중 실제로 완료 처리한 수.
+   *  E(1-2): 가족 캘린더가 켜져 있으면(usActive) 이 카드 대신 달력 위 '이번 달 챙길 것' 한 줄을 보인다(체크리스트 탭 달성률은 그대로). */
   function renderCalendarProgress() {
+    if (renderCalTodoLine()) return;
     const month = viewMonth.getMonth();
     const { total, done, percent } = HNLogic.calendarMonthProgress(calendarDotSchedule(), calDisplayDays, completed, viewMonth.getFullYear(), month);
     el("cal-progress-summary").innerHTML = `<span style="display:block;font-size:.8em;font-weight:500;opacity:.75">${month + 1}월에 확인할 항목</span>${month + 1}월 · ${total}개 중 ${done}개 확인`;
     el("cal-progress-bar-fill").style.width = `${percent}%`;
     el("cal-progress-bar-label").textContent = total ? `${percent}%` : "";
+  }
+  // ── E(1-2) 달력 위 '이번 달 챙길 것' 한 줄 — 기한 안에 하면 되는 자동 항목. 날짜·담당이 정해진 '일정'은 예약(autoLink)으로 잇는다. ──
+  let calTodoOpen = false;
+  /** 자동 항목의 신청용 링크(근거 링크 officialUrl 과 별개). 해당 없으면 null. */
+  function usApplyLinkOf(e) {
+    if (typeof ApplyLinks === "undefined" || !e) return null;
+    const def = e.detail && e.detail.definition;
+    if (def) {
+      const by = {};
+      for (const s of (dataset.subsidy && dataset.subsidy.subsidies) || []) by[s.id] = s;
+      return ApplyLinks.forTodo(def, by);
+    }
+    return ApplyLinks.forSubsidy(e.detail);
+  }
+  /** 이 달 챙길 것 목록(미완료는 마감 빠른 순, 마감 없는 것은 뒤, 완료는 마지막). */
+  function calTodoItems() {
+    const y = viewMonth.getFullYear(), m = viewMonth.getMonth();
+    const links = autoLinks();
+    const canResv = autoLinkOn() && usActiveChildKey() != null;
+    const md = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
+    const rows = HNLogic.calendarMonthItems(calendarDotSchedule(), calDisplayDays, y, m).map((e) => {
+      const done = !!completed[e.id];
+      let end = null;
+      if (e.category === "행정·지원금") {
+        const dl = HNLogic.subsidyDeadline(e);
+        if (dl) end = dl instanceof Date ? dl : new Date(dl);
+      }
+      if (!end) { const r = HNLogic.dayRange(e); if (r && e.scheduleKind === "window") end = r[1]; }
+      if (end && isNaN(end.getTime())) end = null;
+      const link = links ? links.get(e.id) : null;
+      return {
+        e, end,
+        item: { id: e.id, title: usAutoTitleOfEvent(e), deadlineMd: end ? md(end) : "", done, reservedText: link ? UserScheduleView.autoLinkNote(link) : "", canReserve: canResv && !done && !link && CalendarModel.isLinkableAuto(e), apply: usApplyLinkOf(e) },
+      };
+    });
+    rows.sort((a, b) => (a.item.done - b.item.done) || ((a.end ? a.end.getTime() : Infinity) - (b.end ? b.end.getTime() : Infinity)) || (a.e.id < b.e.id ? -1 : 1));
+    return rows.map((r) => r.item);
+  }
+  /** 가구가 활성이면 한 줄을 그리고 달성률 카드를 숨긴다(true). 아니면 카드를 보이고 한 줄을 비운다(false) — OFF·가구 없음은 이전 화면 그대로. */
+  function renderCalTodoLine() {
+    const card = el("cal-progress-card"), slot = el("cal-todo-slot");
+    const on = usActive() && typeof UserScheduleView.renderTodoLine === "function";
+    if (card) card.classList.toggle("hidden", on);
+    if (slot) slot.innerHTML = "";
+    if (!on || !slot) return on && !!slot;
+    const now = new Date();
+    const isNow = viewMonth.getFullYear() === now.getFullYear() && viewMonth.getMonth() === now.getMonth();
+    slot.innerHTML = UserScheduleView.renderTodoLine({ label: isNow ? "이번 달" : `${viewMonth.getMonth() + 1}월`, open: calTodoOpen, items: calTodoItems() });
+    return true;
+  }
+  function calTodoOnClick(ev) {
+    const b = ev.target.closest("[data-cal-todo-act]");
+    if (!b) return;
+    const act = b.getAttribute("data-cal-todo-act");
+    const id = b.getAttribute("data-id");
+    if (act === "toggle") {
+      calTodoOpen = !calTodoOpen;
+      return renderCalTodoLine();
+    }
+    if (act === "reserve") {
+      const e = schedule.find((x) => x.id === id);
+      if (e) usOpenFormFromAuto(e);
+      return;
+    }
+    if (act === "done" && id) toggleComplete(id);
   }
 
   /**
@@ -4552,6 +4619,7 @@
       })
     );
     el("btn-profile-card").addEventListener("click", showProfileSheet);
+    if (el("cal-todo-slot")) el("cal-todo-slot").addEventListener("click", calTodoOnClick);
     el("btn-add-child").addEventListener("click", showAddMenuSheet);
     setupRefreshButton();
 

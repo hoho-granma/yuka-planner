@@ -261,10 +261,14 @@
     return events.filter((e) => (displayDays.get(e.id) || []).some((x) => x.getFullYear() === year && x.getMonth() === month));
   }
 
+  /** 그 달 달력에 표시되는 항목: 지원금 신청 시작(fixed) + 그 달에 추천일이 있는 항목. */
+  function calendarMonthItems(events, displayDays, year, month) {
+    const fixed = events.filter((e) => e.scheduleKind === "fixed" && dayRange(e)[0].getFullYear() === year && dayRange(e)[0].getMonth() === month);
+    return [...fixed, ...plannedInMonth(events, displayDays, year, month)];
+  }
   /** 달력 한 달 진행 현황: 그 달에 표시되는 항목(지원금 신청 시작 + 추천일 배치) 중 실제 완료 수. */
   function calendarMonthProgress(events, displayDays, completed, year, month) {
-    const fixed = events.filter((e) => e.scheduleKind === "fixed" && dayRange(e)[0].getFullYear() === year && dayRange(e)[0].getMonth() === month);
-    const items = [...fixed, ...plannedInMonth(events, displayDays, year, month)];
+    const items = calendarMonthItems(events, displayDays, year, month);
     const total = items.length;
     const done = items.filter((e) => isDone(completed, e.id)).length;
     return { total, done, percent: total ? Math.round((done / total) * 100) : 0 };
@@ -585,6 +589,7 @@
     classifyHomeItems,
     plannedOnDay,
     plannedInMonth,
+    calendarMonthItems,
     calendarMonthProgress,
     subsidyPeriod,
     coversDay,

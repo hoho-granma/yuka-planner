@@ -191,7 +191,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
   await test("feature-flags: accounts 는 '1'일 때만 ON 이고 household 도 함께 켠다, OFF 는 둘 다 false", () => {
     const mk = (store) => { const sb = { console, localStorage: { getItem: (k) => (k in store ? store[k] : null) } }; sb.window = sb; vm.createContext(sb); vm.runInContext(read("js/feature-flags.js"), sb); return JSON.parse(JSON.stringify(sb.FEATURES)); };
     assert.deepStrictEqual(mk({}), { household: false, autoLink: false, accounts: false });
-    assert.deepStrictEqual(mk({ hannun_feature_accounts: "1" }), { household: true, autoLink: false, accounts: true });
+    assert.deepStrictEqual(mk({ hannun_feature_accounts: "1" }), { household: true, autoLink: true, accounts: true }); // E(1-2): 가구가 켜지면 autoLink 기본 ON
     assert.deepStrictEqual(mk({ hannun_feature_accounts: "true" }), { household: false, autoLink: false, accounts: false });
   });
   await test("app.js: 모든 진입점이 acctEnabled 가드 뒤, 서버(Firestore) 쓰기 없음, 가입 정보는 의도로만 보관하고 비밀번호는 저장하지 않는다", () => {

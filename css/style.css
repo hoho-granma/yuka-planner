@@ -1061,3 +1061,19 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .us-assignee-field.us-emph { padding: 8px; border: 2px solid var(--accent, #ff9ec4); border-radius: 12px; background: #fff6f1; }
 .us-emph-note { margin: 6px 0 0; font-size: 12px; font-weight: 800; color: var(--accent-dark, #b4552a); }
 .us-emph-note[hidden] { display: none; }
+/* E(1-2): 캘린더 '이번 달 챙길 것' 한 줄 */
+.cal-todo { padding: 0; overflow: hidden; }
+.cal-todo-head { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 12px 14px; border: 0; background: transparent; font: inherit; font-size: 15px; font-weight: 800; color: var(--text); text-align: left; cursor: pointer; }
+.cal-todo-chev { color: var(--text-muted); }
+.cal-todo .us-note { margin: 0 14px 6px; }
+.cal-todo-list { list-style: none; margin: 0; padding: 0 10px 8px; }
+.cal-todo-item { display: flex; flex-direction: column; gap: 6px; padding: 10px 4px; border-top: 1px solid var(--border); }
+.cal-todo-item.done .cal-todo-main strong { text-decoration: line-through; opacity: .5; }
+.cal-todo-main strong { display: block; font-size: 14px; line-height: 1.35; }
+.cal-todo-main small { display: block; margin-top: 2px; color: var(--text-muted); font-size: 12px; }
+.cal-todo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cal-todo-actions .btn-close, .cal-todo-actions .btn-apply { width: auto; margin: 0; padding: 7px 12px; font-size: 13px; }
+.cal-todo-actions .btn-apply { display: inline-block; border-radius: 10px; background: var(--accent-dark, #b4552a); color: #fff; font-weight: 800; text-decoration: none; }
+.cal-todo-note { flex-basis: 100%; font-size: 11px; color: var(--text-muted); }
+.cal-todo-done { padding: 0 14px 8px; }
+.cal-todo-done summary { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--text-muted); padding: 6px 0; }

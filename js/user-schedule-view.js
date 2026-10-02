@@ -899,6 +899,41 @@
       <div class="us-actions"><button type="button" class="us-btn us-primary" data-us-action="link-keep">${esc(MSG.linkKeepStay)}</button><button type="button" class="us-btn" data-us-action="link-complete">${esc(MSG.linkKeepDone)}</button></div></div>`;
   }
 
+  // ── E(1-2) 캘린더 '이번 달 챙길 것' 한 줄 (순수) ─────────────────────────────────────
+  const TODO_MSG = Object.freeze({
+    title: (label, n) => `${label} 챙길 것 ${n}개`,
+    allDone: (label) => `${label} 챙길 것을 모두 확인했어요`,
+    none: (label) => `${label} 챙길 것이 없어요`,
+    reserve: "예약 일정 만들기",
+    done: "완료",
+    undo: "완료 취소",
+    doneGroup: (n) => `완료한 항목 ${n}개`,
+    deadline: (md) => `${md}까지`,
+    loginNote: "공식 사이트에서 로그인 후 신청해요",
+    hint: "날짜가 정해진 일정이 아니라 기한 안에 하면 되는 항목이에요. 병원 예약처럼 날짜가 생기면 ‘예약 일정 만들기’로 캘린더에 담아요.",
+  });
+  const safeHttps = (u) => (typeof u === "string" && /^https:\/\/[^\s"'<>]+$/.test(u) ? u : "");
+  /**
+   * 달력 위 한 줄. state: { label("이번 달"|"11월"), open, items:[{ id, title, deadlineMd, done, reservedText, canReserve, apply:{url,label}|null }] }.
+   * 항목은 호출부가 정렬해 준다(미완료 마감 빠른 순, 완료는 아래 접힘). 버튼은 data-cal-todo-act(toggle|reserve|done) 로 구분한다.
+   */
+  function renderTodoLine(state) {
+    const s = state || {};
+    const items = s.items || [];
+    const todo = items.filter((i) => !i.done), done = items.filter((i) => i.done);
+    const head = todo.length ? TODO_MSG.title(s.label, todo.length) : done.length ? TODO_MSG.allDone(s.label) : TODO_MSG.none(s.label);
+    const li = (i) => {
+      const apply = i.apply && safeHttps(i.apply.url) ? `<a class="btn-apply" href="${esc(i.apply.url)}" target="_blank" rel="noopener noreferrer">${esc(i.apply.label)}</a>${/bokjiro\.go\.kr/.test(i.apply.url) ? `<span class="cal-todo-note">${esc(TODO_MSG.loginNote)}</span>` : ""}` : "";
+      const reserve = i.canReserve ? `<button type="button" class="btn-close" data-cal-todo-act="reserve" data-id="${esc(i.id)}">${esc(TODO_MSG.reserve)}</button>` : "";
+      const meta = [i.deadlineMd ? TODO_MSG.deadline(i.deadlineMd) : "", i.reservedText || ""].filter(Boolean).map((t) => esc(t)).join(" · ");
+      return `<li class="cal-todo-item${i.done ? " done" : ""}" data-id="${esc(i.id)}"><div class="cal-todo-main"><strong>${esc(i.title)}</strong>${meta ? `<small>${meta}</small>` : ""}</div><div class="cal-todo-actions">${i.done ? "" : reserve}${i.done ? "" : apply}<button type="button" class="btn-close" data-cal-todo-act="done" data-id="${esc(i.id)}">${esc(i.done ? TODO_MSG.undo : TODO_MSG.done)}</button></div></li>`;
+    };
+    const body = s.open
+      ? `<p class="us-note">${esc(TODO_MSG.hint)}</p>${todo.length ? `<ul class="cal-todo-list">${todo.map(li).join("")}</ul>` : ""}${done.length ? `<details class="cal-todo-done"><summary>${esc(TODO_MSG.doneGroup(done.length))}</summary><ul class="cal-todo-list">${done.map(li).join("")}</ul></details>` : ""}`
+      : "";
+    return `<div class="card cal-todo"><button type="button" class="cal-todo-head" data-cal-todo-act="toggle" aria-expanded="${s.open ? "true" : "false"}"><span>${esc(head)}</span><span class="cal-todo-chev" aria-hidden="true">${s.open ? "⌃" : "⌄"}</span></button>${body}</div>`;
+  }
+
   // ── F3 빠른 추가 칩 (순수) ───────────────────────────────────────────────────
   /** 칩 → 제목·분류만 채운다(종일·날짜·담당·대상은 건드리지 않는다). 분류는 기존 CATEGORIES 값만 쓴다. */
   const QUICK_TEMPLATES = Object.freeze([
@@ -988,7 +1023,7 @@
     categoryLabel, childColor, childColors, occurrenceColor, MEMBER_COLORS, ROLE_LABELS, CATEGORY_COLORS, autoCategoryGroup, selectionMode, toggleSelection, cellChips,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
-    linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, assigneeEmphasis, applyTemplate, renderQuickChips,
+    linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, renderTodoLine, TODO_MSG, assigneeEmphasis, applyTemplate, renderQuickChips,
     renderCard, detailView, renderDetail, renderDeleteConfirm, renderAddButton, renderPeriodSection,
     newForm, formFromSchedule, stripId, formToInput, validateForm, messagesFromErrors, prepareSave, changesFromForm, minuteOptions, splitTime,
     renderForm, pickerInitials, esc,

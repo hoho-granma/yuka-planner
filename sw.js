@@ -38,6 +38,7 @@ const SHELL_ASSETS = [
   "./js/user-schedule.js",
   "./js/calendar-model.js",
   "./js/calendar-week.js",
+  "./js/apply-links.js",
   "./js/user-schedule-view.js",
   "./js/records-view.js",
   "./js/app.js",
