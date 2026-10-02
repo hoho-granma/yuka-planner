@@ -471,7 +471,7 @@
           }
         ]
       },
-      "extendedVisibility": [{ "occurrenceKeys": ["dose-5"], "fromAgeMonths": 73, "maxVisibleMonths": 144 }],
+      "extendedVisibility": [{ "occurrenceKeys": ["dose-5"], "fromAgeMonths": 132, "maxVisibleMonths": 144 }],
       "catchUp": "ALLOWED",
       "priority": 2,
       "leadDays": 14,

@@ -52,7 +52,7 @@ test("로더: app.js TODO_CATEGORY_FILES 에 school-age.json 이 있고, vaccina
   const app = fs.readFileSync(path.join(ROOT, "js/app.js"), "utf8");
   assert.ok(app.includes('"data/todos/school.json",\n    "data/todos/school-age.json",'));
   const jev = baseDefs.find((d) => d.todo_id === "VX-JEV");
-  assert.deepStrictEqual(JSON.parse(JSON.stringify(jev.extendedVisibility)), [{ occurrenceKeys: ["dose-5"], fromAgeMonths: 73, maxVisibleMonths: 144 }]);
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(jev.extendedVisibility)), [{ occurrenceKeys: ["dose-5"], fromAgeMonths: 132, maxVisibleMonths: 144 }]);
 });
 test("0~72개월 아이: 신규 데이터 추가 전과 노출 항목이 완전히 같다(월령 0~72 전수, 날짜 경계 3종)", () => {
   for (let m = 0; m <= 72; m++) {
@@ -63,16 +63,15 @@ test("0~72개월 아이: 신규 데이터 추가 전과 노출 항목이 완전�
     }
   }
 });
-test("73개월+: 2017·2018·2019년생에게 Tdap·HPV·JEV 5차가 나오고 학년에 맞는 학교 항목만 나온다", () => {
-  const byYear = (y, mo) => new Date(y, mo, 10);
-  for (const [y, grade] of [[2017, null], [2018, null], [2019, null]]) {
-    const b = byYear(y, 5);
+test("73개월+: 2017·2018·2019년생(7~9세)에게는 학년에 맞는 학교 항목만, Tdap·HPV·JEV 5차는 시작 1년 전부터(120·132개월)", () => {
+  for (const y of [2017, 2018, 2019]) {
+    const b = new Date(y, 5, 10);
     const age = CT.completedMonths(b, NOW);
-    assert.ok(age >= 73, `${y} 월령 ${age}`);
+    assert.ok(age >= 73 && age < 120, `${y} 월령 ${age}`);
     const v = visible(newDefs, b);
     const t = todoIds(v);
-    for (const id of ["VX-TDAP", "VX-HPV"]) assert.ok(t.has(id), `${y}: ${id}`);
-    assert.ok(v.some((e) => e.id.startsWith("VX-JEV__dose-5")), `${y}: JEV dose-5`);
+    for (const id of ["VX-TDAP", "VX-HPV"]) assert.ok(!t.has(id), `${y}: ${id} 는 아직 안 보임`);
+    assert.ok(!v.some((e) => e.id.startsWith("VX-JEV__dose-5")), `${y}: JEV dose-5 아직`);
     // 학교 항목: 현재 학년에 맞는 신체발달 검사 1개만(초N → SC-(5+N)), 다른 학년 것은 안 나옴
     const school = [...t].filter((id) => /^SC-(0[6-9]|1[01])$/.test(id));
     const stage = CT.compute({ birthDate: b, asOf: NOW, stage: "born", policy }).school;
@@ -82,6 +81,19 @@ test("73개월+: 2017·2018·2019년생에게 Tdap·HPV·JEV 5차가 나오고 �
     assert.strictEqual(t.has("SC-05"), stage.grade === 4);
     assert.strictEqual(t.has("SC-12"), stage.grade === 1);
   }
+});
+test("접종 항목 노출 시점: Tdap 은 120개월(만 10세)부터, HPV·JEV 5차는 132개월(만 11세)부터 — 경계(119/120, 131/132)", () => {
+  const at = (m) => new Date(NOW.getFullYear(), NOW.getMonth() - m, 1); // 1일생이면 오늘 기준 완료 개월 수가 정확히 m
+  const has = (months, f) => visible(newDefs, at(months)).some(f);
+  const tdap = (e) => e.id.startsWith("VX-TDAP__");
+  const hpv = (e) => e.id.startsWith("VX-HPV__dose-1");
+  const jev5 = (e) => e.id.startsWith("VX-JEV__dose-5");
+  const cm = (m) => CT.completedMonths(at(m), NOW);
+  assert.strictEqual(cm(119), 119);
+  assert.deepStrictEqual([119, 120].map((m) => has(m, tdap)), [false, true]);
+  assert.deepStrictEqual([131, 132].map((m) => has(m, hpv)), [false, true]);
+  assert.deepStrictEqual([131, 132].map((m) => has(m, jev5)), [false, true]);
+  for (const m of [132, 140, 144]) assert.ok(has(m, tdap) && has(m, hpv) && has(m, jev5), `${m}개월 모두 보임`);
 });
 test("초1(2019년생 등 입학 학년도): 건강검진 초1·신체발달 초1·입학 후 예방접종 확인이 함께 나온다", () => {
   const sy = NOW.getMonth() + 1 >= 3 ? NOW.getFullYear() : NOW.getFullYear() - 1; // 학년도

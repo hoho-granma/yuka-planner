@@ -197,24 +197,24 @@
       "triggerType": "AGE_WINDOW",
       "triggerParams": {
         "startMonth": 0,
-        "endMonth": 36
+        "endMonth": 71
       },
       "eligibilityCondition": {
         "attribute": "daycareEnrolled",
         "requiredValue": true
       },
-      "catchUp": "ALLOWED",
+      "catchUp": "NOT_ALLOWED",
       "priority": 2,
       "leadDays": 30,
       "regionCondition": null,
-      "source": "중앙육아종합지원센터",
+      "source": "중앙육아종합지원센터, 복지로·보육사업안내 2026 (열람 2026-10-02)",
       "verificationStatus": "확인완료",
       "displayMonth": 0,
       "displayMonthLabel": "0개월",
       "displayMonthBasis": "적용 가능 기간의 시작점을 기준으로 대표 월령 설정",
       "categoryGroup": "행정·지원금",
       "cardSummary": "어린이집 보육료 지원 (0세 58.4만 · 1세 51.5만 · 2세 42.6만원)",
-      "verificationNote": "확인됨(2026 기본보육료 0세 58.4만·1세 51.5만·2세 42.6만·3~5세 28만원)"
+      "verificationNote": "확인됨(2026 기본보육료 0세 58.4만·1세 51.5만·2세 42.6만·3~5세 28만원). 지원 대상은 0~5세(0~71개월, data/subsidies/national.json NAT-007과 일치), 소급 불가·신청일 기준(복지로·보육사업안내 2026, 열람 2026-10-02)"
     },
     {
       "todo_id": "SB-08",
