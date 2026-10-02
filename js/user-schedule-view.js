@@ -491,8 +491,9 @@
   const minuteOptions = (current) => (current && !MINUTES.includes(current) ? [...MINUTES, current].sort() : MINUTES.slice());
 
   /** 새 일정 폼. date: 선택한 날짜("YYYY-MM-DD"), 대상 기본값 = 지금 보는 아이(가구에 링크돼 있을 때) 아니면 가족 전체. */
-  function newForm({ date, activeChildKey, links, defaultAssigneeId, autoRef, title }) {
-    const active = activeLinks(links).some((l) => linkKey(l) === activeChildKey);
+  function newForm({ date, activeChildKey, links, defaultAssigneeId, autoRef, title, defaultScope }) {
+    // defaultScope:"FAMILY"(헤더 + 버튼의 일정 추가)면 아이가 링크돼 있어도 대상을 가족 전체로 시작한다(칩으로 아이를 고를 수 있다). 옵션이 없으면 기존과 같다.
+    const active = activeLinks(links).some((l) => linkKey(l) === activeChildKey) && defaultScope !== "FAMILY";
     return {
       mode: "create", scheduleId: null, title: "", category: "", scope: active ? "CHILD" : "FAMILY", childKeys: active ? [activeChildKey] : [], assigneeMemberId: defaultAssigneeId || "",
       dateKind: "FIXED", eventDate: date || "", multiDay: false, endDate: "", periodStart: "", periodEnd: "", allDay: true, startTime: "", endTime: "", location: "", memo: "",

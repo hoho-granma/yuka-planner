@@ -2221,6 +2221,33 @@
   }
 
   /** 헤더의 + 버튼 — 새 아이를 처음부터 입력한다(새 가족코드 생성). 기존 아이는 가족코드로 다시 불러올 수 있다. */
+  // ── N2 헤더 + 버튼: 가구(가족 캘린더)가 켜져 있을 때만 '추가하기' 선택 시트(일정 추가 / 새 아이 추가). 꺼져 있으면 예전처럼 바로 새 아이 시트 ──
+  const ADD_MENU_MSG = Object.freeze({
+    title: "추가하기",
+    schedule: "일정 추가",
+    child: "새 아이 추가",
+    needHousehold: "일정을 추가하려면 먼저 프로필에서 가족 캘린더를 만들어 주세요",
+    close: "닫기",
+  });
+  function showAddMenuSheet() {
+    if (!hhEnabled()) return showNewChildSheet(); // 가구 플래그 OFF: 이전과 100% 동일
+    const can = usActive();
+    modalMode = "add-menu";
+    el("modal-content").innerHTML = `
+      <h3>${ADD_MENU_MSG.title}</h3>
+      <button class="btn-complete" id="btn-add-menu-schedule"${can ? "" : " disabled"}>${ADD_MENU_MSG.schedule}</button>
+      ${can ? "" : `<p class="fine-print" id="add-menu-note">${ADD_MENU_MSG.needHousehold}</p>`}
+      <button class="btn-complete" id="btn-add-menu-child">${ADD_MENU_MSG.child}</button>
+      <button class="btn-close" id="btn-add-menu-close">${ADD_MENU_MSG.close}</button>
+    `;
+    el("detail-modal").classList.remove("hidden");
+    el("btn-add-menu-close").addEventListener("click", closeDetail);
+    el("btn-add-menu-child").addEventListener("click", showNewChildSheet);
+    el("btn-add-menu-schedule").addEventListener("click", () => {
+      if (!usActive()) return; // 비활성 버튼(가구 없음)은 아무 일도 하지 않는다
+      usOpenForm(null, toISODate(new Date()), { scope: "FAMILY" }); // 대상 기본값은 가족 전체, 담당 기본값은 이 기기 사용자(B6-lite)
+    });
+  }
   function showNewChildSheet() {
     modalMode = "new-child";
     el("modal-content").innerHTML = `
@@ -3080,10 +3107,10 @@
     el("modal-content").innerHTML = UserScheduleView.renderDetail(UserScheduleView.cardData(occ, usLinks(), extra));
     el("detail-modal").classList.remove("hidden");
   }
-  function usOpenForm(id, dateIso) {
+  function usOpenForm(id, dateIso, opts) {
     const doc = id ? usDocById(id) : null;
     us.autoLabel = null;
-    us.form = doc ? UserScheduleView.formFromSchedule(doc) : UserScheduleView.newForm({ date: dateIso || toISODate(selectedCalendarDate), activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: memActiveId() });
+    us.form = doc ? UserScheduleView.formFromSchedule(doc) : UserScheduleView.newForm({ date: dateIso || toISODate(selectedCalendarDate), activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: memActiveId(), ...(opts && opts.scope ? { defaultScope: opts.scope } : {}) });
     us.messages = [];
     us.saving = false;
     us.dayForm = null;
@@ -3719,7 +3746,7 @@
       })
     );
     el("btn-profile-card").addEventListener("click", showProfileSheet);
-    el("btn-add-child").addEventListener("click", showNewChildSheet);
+    el("btn-add-child").addEventListener("click", showAddMenuSheet);
     setupRefreshButton();
 
     profile = loadProfile();
