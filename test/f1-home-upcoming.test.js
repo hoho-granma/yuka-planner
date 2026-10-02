@@ -202,10 +202,10 @@ function hookEnv(opts) {
   const st = { enabled: true, active: true, docsHtml: "A", ...opts };
   const sandbox = {
     console, us: { homeSig: "" }, profile: {}, log, st,
-    hhEnabled: () => st.enabled, usActive: () => st.active, toISODate: () => TODAY,
+    hhEnabled: () => st.enabled, usActive: () => st.active, usAutoLinkSig: () => st.autoSig || "", autoLinkOn: () => !!st.autoSig, renderChecklistTab: () => { log.checklist = (log.checklist || 0) + 1; }, toISODate: () => TODAY,
     UserSchedule: { addDays: US.addDays }, usBuildModel: (a, b, f) => { log.build++; log.args = [a, b, f]; return {}; }, usLinks: () => [],
     UserScheduleView: { upcomingItems: () => ({ items: [] }), renderUpcomingCard: () => st.docsHtml },
-    renderHome: () => { log.render++; sandbox.us.homeSig = sandbox.usHomeCardHtml(); },
+    renderHome: () => { log.render++; sandbox.us.homeSig = sandbox.usHomeCardHtml() + sandbox.usAutoLinkSig(); },
   };
   vm.createContext(sandbox);
   vm.runInContext(hookSrc, sandbox);
@@ -240,6 +240,19 @@ test("중복 호출 가드: 카드 HTML 이 같으면 renderHome 을 부르지 �
   e.usRefreshHome(); e.usRefreshHome();
   assert.strictEqual(e.log.render, 2);
 });
+test("C2: 연결 색인(usAutoLinkSig)이 달라지면 카드가 같아도 홈과(autoLink ON 일 때) 체크리스트를 한 번 다시 그리고, 같으면 건너뛴다", () => {
+  const e = hookEnv({ autoSig: "A" });
+  e.usRefreshHome(); // "" → "A|card": 1회
+  assert.deepStrictEqual([e.log.render, e.log.checklist], [1, 1]);
+  e.usRefreshHome(); e.usRefreshHome();
+  assert.deepStrictEqual([e.log.render, e.log.checklist], [1, 1]);
+  e.st.autoSig = "B";
+  e.usRefreshHome(); e.usRefreshHome();
+  assert.deepStrictEqual([e.log.render, e.log.checklist], [2, 2]);
+  const off = hookEnv({}); // autoLink 꺼짐: 카드 변화로 홈만 갱신, 체크리스트는 건드리지 않는다
+  off.usRefreshHome();
+  assert.deepStrictEqual([off.log.render, off.log.checklist || 0], [1, 0]);
+});
 test("usHomeCardHtml 이 던져도 홈은 깨지지 않는다(\"\" 반환)", () => {
   const e = hookEnv();
   e.usBuildModel = () => { throw new Error("boom"); };
@@ -250,7 +263,7 @@ test("연결: usRefreshCalendar 는 캘린더가 숨겨져 있어도 홈 갱신�
   const body = slice("  function usRefreshCalendar()", "  /** 캘린더 위");
   assert.ok(/^\s*function usRefreshCalendar\(\) \{\n\s*usRefreshHome\(\);\n\s*if \(!profile/.test(body));
   const ctxSrc = slice("      usUpcomingHtml:", "      openDetail,");
-  assert.ok(/us\.homeSig = usHomeCardHtml\(\)/.test(ctxSrc) && /usOpenForm\(null, toISODate\(new Date\(\)\)\)/.test(ctxSrc));
+  assert.ok(/us\.homeSig = h \+ usAutoLinkSig\(\)/.test(ctxSrc) && /const h = usHomeCardHtml\(\);/.test(ctxSrc) && /usOpenForm\(null, toISODate\(new Date\(\)\)\)/.test(ctxSrc));
 });
 test("버전 쿼리: home.js·user-schedule-view.js·app.js 스크립트 태그가 올라갔다", () => {
   const idx = read("index.html");

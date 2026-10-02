@@ -51,6 +51,7 @@
   let unsubscribeFamily = null;
   let activeCats = new Set(Object.keys(CATEGORY_META));
   let viewMonth = new Date();
+  let autoIdAliases = {}; // C2: 데이터 수정으로 AUTO id 가 바뀐 경우의 { 옛 id: 새 id }(data/auto-id-aliases.json) — autoLink 플래그가 켜졌을 때만 읽는다
   let calView = "month"; // 캘린더 보기("month"|"week") — 주 보기는 가구가 있을 때만(F2)
   viewMonth.setDate(1);
   let currentDayContext = null; // { events, date } — 날짜 클릭으로 연 일정 여러 개 목록
@@ -200,6 +201,15 @@
     // 지자체 지원금(dataset.subsidy)은 프로필의 지역이 정해진 뒤 ensureRegionSubsidyLoaded()가 채운다.
     const todoDefinitions = categoryFiles.flatMap((f) => f.todos).map(applyBirthRule);
     dataset = { todoDefinitions, subsidy: { subsidies: [] } };
+    // C2: autoLink 플래그가 켜진 기기만 별칭 파일을 읽는다(꺼져 있으면 네트워크 요청도 없다). 실패·형식 오류는 빈 맵으로 진행한다.
+    autoIdAliases = window.FEATURES && window.FEATURES.autoLink === true ? sanitizeAliases(await loadJsonOrNull("data/auto-id-aliases.json")) : {};
+  }
+  /** 별칭 파일 → { 옛 id: 새 id }(문자열 쌍만). 객체가 아니면 빈 맵. */
+  function sanitizeAliases(raw) {
+    const out = {};
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    for (const [k, v] of Object.entries(raw)) if (typeof v === "string" && /^[A-Za-z0-9-]+__[A-Za-z0-9-]+$/.test(k) && /^[A-Za-z0-9-]+__[A-Za-z0-9-]+$/.test(v)) out[k] = v;
+    return out;
   }
 
   /**
@@ -1081,7 +1091,7 @@
     const g = calGroupFor(e);
     const done = !!completed[e.id];
     const title = e.title.replace(/^⚠️ 확인 필요 · /, "");
-    return `<button type="button" class="remaining-item${done ? " done" : ""}" data-id="${e.id}"><span class="dot" style="background:${done ? "#cfc7bf" : g.color}"></span>${title}${done ? '<span class="ri-check">✓</span>' : ""}</button>`;
+    return `<button type="button" class="remaining-item${done ? " done" : ""}" data-id="${e.id}"><span class="dot" style="background:${done ? "#cfc7bf" : g.color}"></span>${title}${autoLinkInlineHtml(e)}${done ? '<span class="ri-check">✓</span>' : ""}</button>`;
   }
 
   /** "이 달 월령 체크" — 특정 날짜가 없는 월령별 항목(달력 칸에는 찍지 않는다). 미완료를 먼저 보여준다. */
@@ -1307,7 +1317,7 @@
           ${providerTagHtml(e) ? `<p class="prov-row">${providerTagHtml(e)}${subsidyTagsHtml(e)}</p>` : ""}
           <p class="title">${e.title}</p>
           ${e.category === "행정·지원금" && !isDone && subsidyPeriodLineHtml(e) ? "" : `<p class="date-label">${isDone ? "" : kindTagHtml(e)}${dateLine}</p>`}${subsidyPeriodLineHtml(e)}
-          <p class="summary">${e.category === "행정·지원금" ? shortSubsidySummary(e.summary) : e.summary || ""}</p>
+          <p class="summary">${e.category === "행정·지원금" ? shortSubsidySummary(e.summary) : e.summary || ""}</p>${autoLinkNoteHtml(e)}
         </div>
         <span class="check ${isDone ? "checked" : ""}" data-check-id="${e.id}">${isDone ? "✓" : ""}</span>
       </div>
@@ -1891,6 +1901,7 @@
             : `<div class="apply-choice"><button class="btn-na" id="btn-mark-na">미해당</button><button class="btn-complete" id="btn-toggle-complete">${isDone ? "신청 완료 취소" : "해당 (신청 완료)"}</button></div>`
           : `<button class="btn-complete" id="btn-toggle-complete" ${catButtonStyle(e.category)}>${isDone ? doneWords(e.category).undo : doneWords(e.category).mark}</button>`
       }
+      ${autoLinkButtonHtml(e, isDone)}
       ${showBack ? `<button class="btn-close" id="btn-back-to-day">← 이 날 목록으로</button>` : ""}
       <button class="btn-close" id="btn-close-modal">닫기</button>
     `;
@@ -1899,6 +1910,8 @@
     if (el("btn-toggle-complete")) el("btn-toggle-complete").addEventListener("click", () => toggleComplete(e.id));
     if (el("btn-mark-na")) el("btn-mark-na").addEventListener("click", () => setNotApplicable(e.id, true));
     if (el("btn-na-restore")) el("btn-na-restore").addEventListener("click", () => setNotApplicable(e.id, false));
+    if (el("btn-auto-reserve")) el("btn-auto-reserve").addEventListener("click", () => usOpenFormFromAuto(e));
+    if (el("btn-auto-view")) el("btn-auto-view").addEventListener("click", () => usOpenDetail(el("btn-auto-view").getAttribute("data-auto-schedule"), null));
     const dateInput = el("completion-date-input");
     if (dateInput) {
       el("btn-change-completion").addEventListener("click", () => {
@@ -2651,7 +2664,7 @@
   // 가구가 있고 플래그(FEATURES.household)가 켜졌을 때만 동작한다. 자동 일정(autoEvents·displayDate·visibleSchedule·completed·진행률)은 읽기만 하고 바꾸지 않는다.
   // 추가한 일정의 완료는 일정 문서의 status 에만 기록한다(completed 와 분리). 캘린더는 하나이며 scope 는 CHILD / FAMILY 두 가지뿐이다.
   // detailKey/detailOcc: 열려 있는 상세의 회차(반복 일정은 같은 문서에서 회차가 여럿이라 id 만으로는 부족), dayForm: "이 날만 수정", plan: 규칙 변경 확인 대기 중인 전체 수정 계획.
-  const us = { selection: "ALL", showAuto: true, form: null, messages: [], saving: false, detailId: null, detailKey: null, detailOcc: null, dayForm: null, plan: null };
+  const us = { selection: "ALL", showAuto: true, form: null, messages: [], saving: false, detailId: null, detailKey: null, detailOcc: null, dayForm: null, plan: null, autoLabel: null };
   const usReady = () => typeof UserScheduleView !== "undefined" && typeof UserSchedule !== "undefined" && typeof CalendarModel !== "undefined";
   const usActive = () => hhEnabled() && usReady() && !!hh.hid && !!hh.code;
   const usMirror = () => (hh.hid ? HouseholdSync.getMirror(hh.hid) : null);
@@ -2670,9 +2683,61 @@
       view: view === "week" ? "week" : "month",
       range: { start: startIso, end: endIso },
       filter: filterOverride || UserScheduleView.toModelFilter(us.selection, us.showAuto, usLinks()),
-      auto: { events: calendarDotSchedule(), displayDates: calDisplayDays, completed, childKey: usActiveChildKey() },
+      auto: { events: calendarDotSchedule(), displayDates: calDisplayDays, completed, childKey: usActiveChildKey(), autoIdAliases, hideLinked: autoLinkOn() },
       user: { schedules: usDocs(), childLinks: usLinks(), members: usMembers() },
     });
+  }
+  // ── C2-b1 AUTO 항목 연결(autoLink 서브 플래그 — 가구 플래그가 켜져 있고 가구가 있을 때만) ───────────────────
+  const autoLinkOn = () => usActive() && !!window.FEATURES && window.FEATURES.autoLink === true;
+  let autoLinkMemo = null;
+  /** 이 아이의 연결 색인(Map: AUTO id → {scheduleId,date,status,count}). 꺼져 있으면 null. 한 번의 화면 갱신(같은 동기 구간) 안에서만 재사용한다. */
+  function autoLinks() {
+    if (!autoLinkOn()) return null;
+    if (!autoLinkMemo) {
+      autoLinkMemo = CalendarModel.linksByAutoId(usDocs(), usActiveChildKey(), autoIdAliases);
+      Promise.resolve().then(() => (autoLinkMemo = null));
+    }
+    return autoLinkMemo;
+  }
+  /** 홈·체크리스트 보조 문구용 변경 표식(연결이 달라졌는지 비교). 꺼져 있으면 "". */
+  function usAutoLinkSig() {
+    const m = autoLinks();
+    return m ? JSON.stringify([...m.values()].map((l) => [l.autoId, l.scheduleId, l.date, l.status])) : "";
+  }
+  const usAutoTitleOfEvent = (e) => String(e.title || "").replace(/^⚠️ 확인 필요 · /, "").slice(0, 100);
+  /** autoRef(별칭 해석 후)에 해당하는 현재 AUTO 항목의 제목. 찾지 못하면 ""(연결이 끊긴 일정은 일반 일정으로만 보인다). */
+  function usAutoTitleOf(autoRef) {
+    const id = Object.prototype.hasOwnProperty.call(autoIdAliases, autoRef) ? autoIdAliases[autoRef] : autoRef;
+    const e = schedule.find((x) => x.id === id);
+    return e ? usAutoTitleOfEvent(e) : "";
+  }
+  function autoLinkNoteHtml(e) {
+    const m = autoLinks();
+    const t = m ? UserScheduleView.autoLinkNote(m.get(e.id)) : "";
+    return t ? `<p class="auto-link-note">${esc(t)}</p>` : "";
+  }
+  function autoLinkInlineHtml(e) {
+    const m = autoLinks();
+    const t = m ? UserScheduleView.autoLinkNote(m.get(e.id)) : "";
+    return t ? `<span class="ri-reserved">${esc(t)}</span>` : "";
+  }
+  /** AUTO 상세 하단 버튼: 연결 가능한 항목이고 아직 완료 전이며 이 아이가 가구에 있을 때만. */
+  function autoLinkButtonHtml(e, isDone) {
+    const m = autoLinks();
+    if (!m || isDone || usActiveChildKey() == null || !CalendarModel.isLinkableAuto(e)) return "";
+    return UserScheduleView.renderAutoLinkButton(m.get(e.id));
+  }
+  /** AUTO 상세 → 예약 일정 만들기: 제목·분류(병원)·아이·autoRef 를 채워 일정 폼을 연다. 날짜·시각은 사용자가 입력한다(I9). */
+  function usOpenFormFromAuto(e) {
+    const ck = usActiveChildKey();
+    if (!autoLinkOn() || ck == null || !CalendarModel.isLinkableAuto(e)) return;
+    us.autoLabel = usAutoTitleOfEvent(e);
+    us.form = UserScheduleView.newForm({ date: "", activeChildKey: ck, links: usLinks(), defaultAssigneeId: memActiveId(), autoRef: e.id, title: us.autoLabel });
+    us.messages = [];
+    us.saving = false;
+    us.dayForm = null;
+    us.plan = null;
+    usShowForm();
   }
   /** 홈 '다가오는 가족 일정' 카드(F1). 플래그 OFF·가구 없음이면 "" — 홈은 기존 그대로. AUTO 일정은 섞지 않는다(showAuto:false). */
   function usHomeCardHtml() {
@@ -2689,7 +2754,10 @@
   /** 가구 데이터·일정이 바뀐 뒤 홈 카드가 달라졌을 때만 홈을 다시 그린다(같으면 건너뜀 — 중복 호출 가드). */
   function usRefreshHome() {
     if (!profile || !hhEnabled()) return;
-    if (usHomeCardHtml() !== (us.homeSig || "")) renderHome();
+    if (usHomeCardHtml() + usAutoLinkSig() !== (us.homeSig || "")) {
+      renderHome();
+      if (autoLinkOn() && typeof renderChecklistTab === "function") renderChecklistTab(); // 체크리스트 카드의 '예약됨' 보조 문구도 함께 갱신
+    }
   }
   function usRefreshCalendar() {
     usRefreshHome();
@@ -2812,7 +2880,7 @@
     }
     const iso = toISODate(date);
     const day = usBuildModel(iso, iso).days.get(iso);
-    const panel = UserScheduleView.dayPanel(day, usLinks(), { docById: usDocById });
+    const panel = UserScheduleView.dayPanel(day, usLinks(), { docById: usDocById, ...(autoLinkOn() ? { autoTitleOf: usAutoTitleOf } : {}) });
     const group = (title) => `<h4 class="us-group">${esc(title)}</h4>`;
     el("selected-day-list").innerHTML =
       group(panel.added.title) +
@@ -2858,6 +2926,7 @@
   }
   function usOpenForm(id, dateIso) {
     const doc = id ? usDocById(id) : null;
+    us.autoLabel = null;
     us.form = doc ? UserScheduleView.formFromSchedule(doc) : UserScheduleView.newForm({ date: dateIso || toISODate(selectedCalendarDate), activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: memActiveId() });
     us.messages = [];
     us.saving = false;
@@ -2867,7 +2936,7 @@
   }
   function usShowForm() {
     modalMode = "profile";
-    el("modal-content").innerHTML = UserScheduleView.renderForm(us.form, usLinks(), { messages: us.messages, saving: us.saving, members: HouseholdView.visibleMembers(usMembers()) });
+    el("modal-content").innerHTML = UserScheduleView.renderForm(us.form, usLinks(), { messages: us.messages, saving: us.saving, members: HouseholdView.visibleMembers(usMembers()), autoLabel: us.autoLabel });
     el("detail-modal").classList.remove("hidden");
     usBindPickers();
   }
@@ -3369,7 +3438,15 @@
         renderHome();
         renderRecordTab();
       },
-      usUpcomingHtml: () => (us.homeSig = usHomeCardHtml()),
+      usUpcomingHtml: () => {
+        const h = usHomeCardHtml();
+        us.homeSig = h + usAutoLinkSig();
+        return h;
+      },
+      autoLinkText: (e) => {
+        const m = autoLinks();
+        return m ? UserScheduleView.autoLinkNote(m.get(e.id)) : "";
+      },
       usAddFromHome() {
         usOpenForm(null, toISODate(new Date())); // 캘린더 선택일은 바꾸지 않는다(폼 날짜만 오늘)
       },

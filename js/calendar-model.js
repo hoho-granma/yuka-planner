@@ -154,7 +154,7 @@
     if (autoVisible(filter, auto)) {
       const events = auto.events || [];
       const displayDates = auto.displayDates || new Map();
-      const hiddenAutoIds = new Set(linksByAutoId(user.schedules, auto.childKey, auto.autoIdAliases).keys());
+      const hiddenAutoIds = auto.hideLinked === false ? new Set() : new Set(linksByAutoId(user.schedules, auto.childKey, auto.autoIdAliases).keys()); // hideLinked:false 면 숨기지 않는다(앱의 autoLink 플래그 OFF)
       for (const k of dayKeys) {
         const date = toDate(k);
         const cell = days.get(k);

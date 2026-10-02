@@ -124,9 +124,9 @@ test("기본값은 OFF: FEATURES.household 는 저장소에 값이 없으면 fal
   assert.strictEqual(load("true").household, false);
   assert.strictEqual(load("1").household, true);
 });
-test("js/feature-flags.js 는 이번 변경으로 바뀌지 않았다(HEAD 와 같은 내용)", () => {
-  const head = execFileSync("git", ["show", "HEAD:js/feature-flags.js"], { cwd: ROOT }).toString("utf8");
-  assert.strictEqual(read("js/feature-flags.js"), head);
+test("js/feature-flags.js 는 베타 스위치 커밋(7374c88)에서 바뀌지 않았다", () => {
+  const changed = execFileSync("git", ["diff", "--name-only", "7374c88^", "7374c88"], { cwd: ROOT }).toString("utf8");
+  assert.ok(!changed.split("\n").includes("js/feature-flags.js"));
 });
 
 console.log("app.js 연결(소스에서 꺼내 실행·정적 확인)");

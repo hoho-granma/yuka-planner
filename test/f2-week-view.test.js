@@ -39,12 +39,17 @@ test("renderCalendar: 변경은 맨 앞 가드 한 줄뿐이다", () => {
   assert.ok(now.startsWith("  function renderCalendar() {\n    if (calWeekOn()) return renderWeek();\n"));
 });
 test("renderSelectedDayPanel·attachListHandlers·renderCalendarProgress·computeCalendarDays·renderAutoPeriodSlot 는 HEAD 와 글자까지 같다", () => {
-  ["renderSelectedDayPanel", "attachListHandlers", "renderCalendarProgress", "computeCalendarDays", "renderAutoPeriodSlot", "usRefreshCalendar", "usRenderDayPanel"].forEach((n) => assert.strictEqual(fnSrc(app, n), fnSrc(head, n), n));
+  ["renderSelectedDayPanel", "attachListHandlers", "renderCalendarProgress", "computeCalendarDays", "renderAutoPeriodSlot", "usRefreshCalendar"].forEach((n) => assert.strictEqual(fnSrc(app, n), fnSrc(head, n), n));
 });
-test("usBuildModel: view 인자만 늘었고 기본(월) 호출은 그대로 month 모델", () => {
+test("usBuildModel: view 인자(F2)와 C2 의 연결 옵션(autoIdAliases·hideLinked)만 늘었고 기본(월) 호출은 그대로 month 모델", () => {
   const now = fnSrc(app, "usBuildModel");
   const old = fnSrc(head, "usBuildModel");
-  assert.strictEqual(now.replace("function usBuildModel(startIso, endIso, filterOverride, view)", "function usBuildModel(startIso, endIso, filterOverride)").replace('view: view === "week" ? "week" : "month",', 'view: "month",'), old);
+  assert.strictEqual(now.replace("function usBuildModel(startIso, endIso, filterOverride, view)", "function usBuildModel(startIso, endIso, filterOverride)").replace('view: view === "week" ? "week" : "month",', 'view: "month",').replace(", autoIdAliases, hideLinked: autoLinkOn() }", " }"), old);
+});
+test("usRenderDayPanel: C2 의 배지 옵션 한 곳만 다르다", () => {
+  const now = fnSrc(app, "usRenderDayPanel");
+  const old = fnSrc(head, "usRenderDayPanel");
+  assert.strictEqual(now.replace("{ docById: usDocById, ...(autoLinkOn() ? { autoTitleOf: usAutoTitleOf } : {}) }", "{ docById: usDocById }"), old);
 });
 test("usRenderCalendarSlots: 변경은 usRenderViewToggle() 호출 한 줄뿐(플래그 OFF 가드 뒤)", () => {
   const now = fnSrc(app, "usRenderCalendarSlots");

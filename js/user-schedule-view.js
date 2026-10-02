@@ -42,6 +42,12 @@
     upcomingTomorrow: "내일",
     // F3 빠른 추가 칩(승인 문구 10~12)
     quickLabel: "자주 쓰는 일정",
+    // C2-b1 AUTO 항목 연결(승인 문구 #1~#4)
+    autoReserve: "예약 일정 만들기",
+    autoReserved: (md) => `예약됨 ${md} · 일정 보기`,
+    autoReservedNote: (md) => `예약됨 ${md}`,
+    autoFormNote: (item) => `‘${item}’ 예약 일정이에요. 날짜와 시간을 입력해 주세요.`,
+    autoLinkBadge: (item) => `${item} 연결`,
     periodTitle: "이번 달 기간 일정", // #9
     periodNote: "날짜는 아직 정해지지 않았어요.", // #10
     periodRow: (range) => `날짜 미정 · ${range}`, // #11
@@ -309,6 +315,7 @@
       memo: occ.memo || "",
       isPeriod: occ.dateKind === "PERIOD",
     };
+    if (extra && extra.autoTitle && occ.autoRef) base.autoLinkText = MSG.autoLinkBadge(extra.autoTitle); // C2: 연결된 AUTO 항목 배지(앱이 제목을 줄 때만)
     if (!occ.recurring) return base;
     // 반복 일정의 한 회차(B5): 원래 날짜(originalDate)가 회차의 정체성, 표시 날짜(date)는 이동했으면 다를 수 있다.
     const x = extra || {};
@@ -347,7 +354,11 @@
   }
   /** 선택한 날짜 패널: 추가한 일정은 카드 데이터, 자동 일정 두 구역은 제목·개수만(자동 일정 카드 마크업은 기존 앱이 그대로 그린다). */
   function dayPanel(day, links, extra) {
-    const extraOf = (o) => (extra && extra.docById ? { recurrence: (extra.docById(o.scheduleId) || {}).recurrence } : undefined);
+    const recOf = (o) => (extra && extra.docById ? { recurrence: (extra.docById(o.scheduleId) || {}).recurrence } : undefined);
+    const extraOf = (o) => {
+      const title = extra && extra.autoTitleOf && o.autoRef ? extra.autoTitleOf(o.autoRef) : "";
+      return title ? { ...(recOf(o) || {}), autoTitle: title } : recOf(o);
+    };
     // 취소한 반복 회차(B5 D4)는 칸 표식·집계에서는 빠지지만 그날 패널에는 흐리게 남아 되돌릴 수 있다. 맨 뒤에 둔다.
     const cards = (day.user || []).concat(day.cancelled || []).map((o) => cardData(o, links, extraOf(o)));
     return {
@@ -380,7 +391,7 @@
       <span class="us-bar"></span>
       <span class="us-body"><strong class="us-title">${esc(c.title)}</strong>
         <span class="us-meta">${meta}</span>${rec && c.movedText ? `\n        <span class="us-meta us-moved">${esc(c.movedText)}</span>` : ""}
-        ${c.tag ? `<span class="us-tag">${esc(c.tag)}</span>` : ""}${rec ? `<span class="us-tag us-repeat">${esc(c.repeatBadge)}</span>` : ""}
+        ${c.tag ? `<span class="us-tag">${esc(c.tag)}</span>` : ""}${c.autoLinkText ? `<span class="us-tag us-autolink">${esc(c.autoLinkText)}</span>` : ""}${rec ? `<span class="us-tag us-repeat">${esc(c.repeatBadge)}</span>` : ""}
       </span>
       ${c.done ? `<span class="us-done">${esc(c.doneLabel)}</span>` : ""}${c.cancelled ? `<span class="us-cancelled">${esc(c.cancelledLabel)}</span>` : ""}
     </button>`;
@@ -471,12 +482,13 @@
   const minuteOptions = (current) => (current && !MINUTES.includes(current) ? [...MINUTES, current].sort() : MINUTES.slice());
 
   /** 새 일정 폼. date: 선택한 날짜("YYYY-MM-DD"), 대상 기본값 = 지금 보는 아이(가구에 링크돼 있을 때) 아니면 가족 전체. */
-  function newForm({ date, activeChildKey, links, defaultAssigneeId }) {
+  function newForm({ date, activeChildKey, links, defaultAssigneeId, autoRef, title }) {
     const active = activeLinks(links).some((l) => linkKey(l) === activeChildKey);
     return {
       mode: "create", scheduleId: null, title: "", category: "", scope: active ? "CHILD" : "FAMILY", childKeys: active ? [activeChildKey] : [], assigneeMemberId: defaultAssigneeId || "",
       dateKind: "FIXED", eventDate: date || "", multiDay: false, endDate: "", periodStart: "", periodEnd: "", allDay: true, startTime: "", endTime: "", location: "", memo: "",
       repeat: "NONE", byDay: [], untilMode: "NONE", until: "", wasRecurring: false,
+      ...(autoRef ? { autoRef, ...(title ? { title: String(title).slice(0, 100) } : {}), category: "MEDICAL" } : {}), // C2: AUTO 항목 예약 — 제목·분류(병원)를 채우고 날짜·시각은 비워 둔다(I9)
     };
   }
   /** 저장된 일정 문서에서 화면용 id 를 뗀다. getSchedules()/CalendarModel 의 문서에는 id 가 붙어 있는데 UserSchedule.buildPatch(before, …)·validate 는 저장 필드만 허용한다. */
@@ -495,6 +507,7 @@
       mode: "edit", scheduleId: doc.id || null, title: doc.title || "", category: doc.category || "", scope: doc.scope, childKeys: (doc.childKeys || []).slice(), assigneeMemberId: typeof doc.assigneeMemberId === "string" ? doc.assigneeMemberId : "",
       dateKind: doc.dateKind, eventDate: rec ? rec.startDate || "" : doc.eventDate || "", multiDay: !!doc.endDate, endDate: doc.endDate || "", periodStart: doc.periodStart || "", periodEnd: doc.periodEnd || "",
       allDay: doc.allDay !== false, startTime: doc.startTime || "", endTime: doc.endTime || "", location: doc.location || "", memo: doc.memo || "",
+      ...(doc.autoRef ? { autoRef: doc.autoRef } : {}),
     };
   }
   const isRepeating = (f) => f.repeat === "WEEKLY" || f.repeat === "BIWEEKLY";
@@ -502,6 +515,7 @@
   function formToInput(f) {
     const input = { sourceType: "MANUAL", title: String(f.title || "").trim(), category: f.category, scope: f.scope, dateKind: f.dateKind, allDay: !!f.allDay };
     if (f.scope === "CHILD") input.childKeys = (f.childKeys || []).slice();
+    if (f.autoRef) input.autoRef = f.autoRef; // C2: 연결은 생성 때만 정해진다(수정은 PATCH_FIELDS 밖)
     if (f.assigneeMemberId) input.assigneeMemberId = f.assigneeMemberId; // 미지정이면 필드 생략(규칙은 null 을 허용하지 않는다)
     if (isRepeating(f)) {
       // 반복: 첫 날은 recurrence.startDate 에 둔다(eventDate·endDate 없음 — I3·I4). 키 순서는 설계서 §6-1 과 같다.
@@ -533,6 +547,7 @@
     else if (title.length > 100) add("title", MSG.errTitleLong);
     if (!f.category) add("category", MSG.errCategory);
     if (f.scope === "CHILD" && !(f.childKeys || []).length) add("target", MSG.errTarget);
+    if (f.autoRef && (f.scope !== "CHILD" || (f.childKeys || []).length !== 1)) add("target", MSG.errTarget); // I13: 연결 일정은 아이 1명
     if (isRepeating(f)) {
       if (!f.eventDate) add("date", MSG.errDate);
       if (!(f.byDay || []).length) add("byDay", MSG.errNoWeekday); // R13
@@ -687,9 +702,10 @@
     const assignee = hasMembers && (members.length || staleAssignee)
       ? `<div class="us-field"><label>${esc(MSG.assigneeLabel)}</label><div class="us-chips">${members.map((m) => chip("", `data-us-assignee="${esc(m.memberId)}"`, m.label || "", f.assigneeMemberId === m.memberId)).join("")}${staleAssignee ? chip("", `data-us-assignee="${esc(f.assigneeMemberId)}"`, MSG.deletedAssignee, true) : ""}${chip("", 'data-us-assignee=""', MSG.assigneeNone, !f.assigneeMemberId)}</div><p class="us-note">${esc(MSG.assigneeHint)}</p></div>`
       : "";
+    const locked = !!f.autoRef; // C2: 연결된 AUTO 예약은 대상(아이 1명)·날짜 종류(날짜 정함)·반복을 바꿀 수 없다
     const fixed = f.dateKind !== "PERIOD";
     const repeating = fixed && isRepeating(f);
-    const repeatBlock = !fixed
+    const repeatBlock = !fixed || locked
       ? ""
       : `<div class="us-field"><label>${esc(MSG.repeatLabel)}</label><div class="us-chips">${chip("", 'data-us-repeat="NONE"', MSG.repeatNone, !repeating)}${chip("", 'data-us-repeat="WEEKLY"', MSG.repeatWeekly, f.repeat === "WEEKLY")}${chip("", 'data-us-repeat="BIWEEKLY"', MSG.repeatBiweekly, f.repeat === "BIWEEKLY")}</div></div>`;
     const repeatDetail = !repeating
@@ -711,12 +727,12 @@
     const errors = (o.messages || []).map((m) => `<p class="us-error">${esc(m)}</p>`).join("");
     return `<div class="us-form" data-us-mode="${esc(f.mode)}">
       <h3>${esc(f.wasRecurring && f.mode === "edit" ? MSG.editAllTitle : f.mode === "edit" ? MSG.sheetEdit : MSG.sheetAdd)}</h3>${f.wasRecurring && f.mode === "edit" ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
-      ${renderQuickChips(f)}
+      ${locked && f.mode === "create" && o.autoLabel ? `<p class="us-note us-autoref-note">${esc(MSG.autoFormNote(o.autoLabel))}</p>` : ""}${renderQuickChips(f)}
       <div class="us-field"><label for="us-title">${esc(MSG.titleLabel)}</label><input type="text" id="us-title" maxlength="100" placeholder="${esc(MSG.titleHint)}" value="${esc(f.title)}" /></div>
       <div class="us-field"><label>${esc(MSG.categoryLabel)}</label><div class="us-chips">${cats}</div></div>
-      <div class="us-field"><label>${esc(MSG.targetLabel)}</label><div class="us-chips">${targets}</div></div>
+      ${locked ? "" : `<div class="us-field"><label>${esc(MSG.targetLabel)}</label><div class="us-chips">${targets}</div></div>`}
       ${assignee}
-      <div class="us-field"><label>${esc(MSG.dateLabel)}</label><div class="us-chips">${chip("", 'data-us-kind="FIXED"', MSG.kindFixed, fixed)}${repeating ? `<button type="button" class="us-chip" disabled>${esc(MSG.kindPeriod)}</button>` : chip("", 'data-us-kind="PERIOD"', MSG.kindPeriod, !fixed)}</div></div>
+      ${locked ? "" : `<div class="us-field"><label>${esc(MSG.dateLabel)}</label><div class="us-chips">${chip("", 'data-us-kind="FIXED"', MSG.kindFixed, fixed)}${repeating ? `<button type="button" class="us-chip" disabled>${esc(MSG.kindPeriod)}</button>` : chip("", 'data-us-kind="PERIOD"', MSG.kindPeriod, !fixed)}</div></div>`}
       ${dates}
       <div class="us-field"><label for="us-location">${esc(MSG.locationLabel)}</label><input type="text" id="us-location" maxlength="100" placeholder="${esc(MSG.locationHint)}" value="${esc(f.location)}" /></div>
       <div class="us-field"><label for="us-memo">${esc(MSG.memoLabel)}</label><textarea id="us-memo" maxlength="500" placeholder="${esc(MSG.memoHint)}">${esc(f.memo)}</textarea></div>
@@ -748,6 +764,18 @@
       : { [PICKER_PREFIXES.date]: f.eventDate, ...(f.multiDay ? { [PICKER_PREFIXES.end]: f.endDate } : {}) };
   }
 
+  // ── C2-b1 AUTO 연결 표시 (순수) ─────────────────────────────────────────────
+  /** linksByAutoId 의 값 → 보조 문구 "예약됨 10/14"(완료된 예약·날짜 없음이면 ""). */
+  function autoLinkNote(link) {
+    if (!link || !link.date || link.status === "DONE") return "";
+    return MSG.autoReservedNote(md(link.date));
+  }
+  /** AUTO 상세 하단 버튼 줄: 현재 예약이 있으면 "예약됨 10/14 · 일정 보기"(일정 상세로), 없으면 "예약 일정 만들기". */
+  function renderAutoLinkButton(link) {
+    if (link && link.date) return `<button type="button" class="btn-complete auto-link-btn" id="btn-auto-view" data-auto-schedule="${esc(link.scheduleId || "")}">${esc(MSG.autoReserved(md(link.date)))}</button>`;
+    return `<button type="button" class="btn-complete auto-link-btn" id="btn-auto-reserve">${esc(MSG.autoReserve)}</button>`;
+  }
+
   // ── F3 빠른 추가 칩 (순수) ───────────────────────────────────────────────────
   /** 칩 → 제목·분류만 채운다(종일·날짜·담당·대상은 건드리지 않는다). 분류는 기존 CATEGORIES 값만 쓴다. */
   const QUICK_TEMPLATES = Object.freeze([
@@ -765,7 +793,7 @@
   }
   /** 추가 모드 폼의 칩 줄. 수정·반복 편집 폼에는 그리지 않는다(""). */
   function renderQuickChips(f) {
-    if (!f || f.mode !== "create") return "";
+    if (!f || f.mode !== "create" || f.autoRef) return "";
     return `<div class="us-field us-quick"><label>${esc(MSG.quickLabel)}</label><div class="us-chips">${QUICK_TEMPLATES.map((t) => chip("", `data-us-quick="${t.key}"`, t.label, false)).join("")}</div></div>`;
   }
 
@@ -829,7 +857,7 @@
     categoryLabel, childColor, childColors, occurrenceColor,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
-    clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, applyTemplate, renderQuickChips,
+    autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, applyTemplate, renderQuickChips,
     renderCard, detailView, renderDetail, renderDeleteConfirm, renderAddButton, renderPeriodSection,
     newForm, formFromSchedule, stripId, formToInput, validateForm, messagesFromErrors, prepareSave, changesFromForm, minuteOptions, splitTime,
     renderForm, pickerInitials, esc,

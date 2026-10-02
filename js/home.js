@@ -74,7 +74,7 @@
         const todo = list.filter((x) => !x.done);
         // 발달 관찰은 제목이 "0~3개월 발달 관찰"처럼 뭘 보는지 알 수 없어서 관찰 내용(카드 요약)을 함께 보여준다.
         const label = (x) => (c === "발달관찰" && x.e.summary ? `${shortTitle(x.e.title).replace(/\s*발달\s*관찰$/, "")}: ${x.e.summary}` : shortTitle(x.e.title));
-        const text = todo.length ? todo.map(label).join(", ") : "모두 완료";
+        const text = todo.length ? todo.map((x) => label(x) + (typeof ctx.autoLinkText === "function" && ctx.autoLinkText(x.e) ? ` (${ctx.autoLinkText(x.e)})` : "")).join(", ") : "모두 완료";
         return `<button type="button" class="cat-line ${todo.length ? "" : "all-done"}" data-cat="${ctx.esc(c)}"><span class="cl-dot" style="background:${meta.color}"></span><span class="cl-label">${ctx.esc(meta.label)}</span><span class="cl-text">${ctx.esc(text)}</span>${todo.length ? `<span class="cl-n">${todo.length}</span>` : '<span class="cl-n ok">✓</span>'}</button>`;
       })
       .join("");

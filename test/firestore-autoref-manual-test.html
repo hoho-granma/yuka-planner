@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>C2 autoRef 규칙 — Firestore 수동 서버 검증</title>
+<style>
+  body { font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; max-width: 900px; margin: 24px auto; padding: 0 16px; line-height: 1.6; color: #222; }
+  h1 { font-size: 22px; } h2 { font-size: 17px; margin-top: 28px; }
+  .danger { background: #ffe3e3; border: 2px solid #d9480f; padding: 14px 16px; border-radius: 8px; font-weight: 600; }
+  .info { background: #e7f5ff; border: 1px solid #74c0fc; padding: 10px 14px; border-radius: 8px; font-size: 14px; }
+  code, pre { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; }
+  pre { background: #f6f8fa; border: 1px solid #ddd; padding: 10px; white-space: pre-wrap; word-break: break-all; max-height: 260px; overflow: auto; }
+  button { font-size: 16px; padding: 12px 18px; border-radius: 8px; border: 0; background: #d9480f; color: #fff; cursor: pointer; }
+  button:disabled { background: #bbb; cursor: not-allowed; }
+  label.confirm { display: block; margin: 14px 0; font-size: 15px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { border: 1px solid #ccc; padding: 6px 8px; vertical-align: top; text-align: left; }
+  th { background: #f1f3f5; }
+  .PASS { color: #2b8a3e; font-weight: 700; } .FAIL { color: #c92a2a; font-weight: 700; } .ERROR { color: #e8590c; font-weight: 700; } .SKIP { color: #868e96; font-weight: 700; }
+  #docpath { font-size: 20px; font-weight: 700; background: #fff3bf; padding: 12px; border-radius: 8px; word-break: break-all; }
+  textarea { width: 100%; height: 220px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>C2 autoRef 규칙 — Firestore 수동 서버 검증</h1>
+
+<div class="danger">
+  ⚠️ 이 페이지는 <b>운영 Firestore(프로젝트 yuka-planner)에 일회용 가구 아래 일정 문서를 실제로 만들고 씁니다.</b><br />
+  · 실제 가구 코드·가구 ID 를 쓰지 않습니다(페이지가 <code>zz-autoref-…</code> 형태의 무작위 일회용 가구 ID 를 새로 만듭니다).<br />
+  · 이미 있는 문서에는 쓰지 않습니다(생성 전 get() 으로 확인하고, 있으면 중단).<br />
+  · <b>보안 규칙상 문서 삭제는 불가(<code>delete: false</code>)</b>하므로, 끝난 뒤 <b>Firebase 콘솔에서 사용자가 직접 삭제</b>해야 합니다.<br />
+  · <b>autoLink 플래그(<code>hannun_feature_autolink</code>)를 켜기 전에</b>, 새 규칙(<code>firestore.rules</code> 의 autoRef 블록)을 배포한 뒤 이 페이지를 한 번 실행해 전부 PASS 인지 확인하세요.<br />
+  · 페이지를 연다고 자동 실행되지 않습니다. 아래 확인란에 체크하고 [실행]을 눌러야 시작합니다.
+</div>
+
+<h2>실행 방법</h2>
+<div class="info">
+  1. 규칙 배포(<code>firebase deploy --only firestore:rules</code> 등 평소 방식)를 먼저 합니다.<br />
+  2. 터미널에서 프로젝트 폴더(<code>한눈육아/</code>)로 이동해 <code>python3 -m http.server 8765</code> 를 실행합니다.<br />
+  3. 브라우저로 <code>http://127.0.0.1:8765/test/firestore-autoref-manual-test.html</code> 을 엽니다(<code>file://</code> 로 열면 스크립트 로드가 막힐 수 있어 로컬 서버로 여세요).<br />
+  4. 확인란에 체크 → [실행]. 끝나면 표·요약·복사용 JSON 이 나옵니다. JSON 을 그대로 복사해 전달해 주세요.<br />
+  5. 맨 아래에 표시되는 <code>households/&lt;일회용 ID&gt;/schedules</code> 아래 문서들을 Firebase 콘솔 → Firestore Database 에서 삭제합니다
+     (문서 삭제는 콘솔에서만 가능합니다. 부모 가구 문서는 만들어지지 않아 목록에 기울임체로 보일 수 있습니다). 다시 실행하려면 새로고침하세요(새 ID 가 만들어집니다).
+</div>
+
+<h2>시작</h2>
+<label class="confirm"><input type="checkbox" id="ack" /> 운영 Firestore 에 일회용 일정 문서가 만들어지고 내가 콘솔에서 직접 삭제해야 한다는 것을 이해했습니다.</label>
+<button id="run" disabled>실행 (운영 Firestore 에 씁니다)</button>
+<span id="status" style="margin-left:12px;color:#555;"></span>
+
+<h2>검증 대상</h2>
+<div class="info">
+  문서는 <code>../js/user-schedule.js</code> 의 실제 <code>buildCreateDoc()</code> 로 만들고(재구현 없음), 거부 시나리오는 그 문서에서 autoRef 관련 필드만 바꿔 SDK 로 직접 씁니다.
+  거부 시나리오마다 <b>같은 문서에서 autoRef 만 뺀 대조군</b>이 먼저 허용돼야 합니다(그래야 거부 이유가 autoRef 규칙임이 확인됩니다).
+  기대: 허용 = 쓰기 성공, 거부 = <code>permission-denied</code>. 규칙 항목: 형식 <code>^[A-Za-z0-9-]+__[A-Za-z0-9-]+$</code> · 80자 이하 · scope=CHILD · childKeys 정확히 1개 · 반복 일정 아님 · 생성 후 불변.
+</div>
+
+<h2>결과</h2>
+<div id="summary"></div>
+<table id="results"><thead><tr><th style="width:36px">#</th><th>시나리오 / 판정 기준</th><th style="width:70px">판정</th><th>상세</th></tr></thead><tbody></tbody></table>
+
+<h2>생성된 일회용 문서</h2>
+<div id="docpath">(아직 없음)</div>
+<div id="cleanup" class="info" style="display:none;margin-top:8px;"></div>
+
+<h2>복사용 결과 (JSON)</h2>
+<textarea id="out" readonly placeholder="실행이 끝나면 여기에 결과가 채워집니다."></textarea>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<!-- sync.js 는 로드 시 firebase.initializeApp(설정)만 호출한다(쓰기 없음). 이 페이지는 Firebase 설정을 따로 두지 않는다. -->
+<script src="../js/sync.js"></script>
+<script src="../js/user-schedule.js"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const FV = firebase.firestore.FieldValue;
+  const results = [];
+  let HID = null;
+  const created = [];
+  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const errInfo = (e) => ({ code: e && e.code ? e.code : null, message: e && e.message ? e.message : String(e) });
+  const NOW = Date.now();
+
+  function addRow(r) {
+    results.push(r);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${esc(r.id)}</td><td><b>${esc(r.title)}</b><br /><span style="color:#555">기준: ${esc(r.criteria)}</span></td><td class="${r.status}">${esc(r.status)}</td><td>${esc(r.detail || "")}</td>`;
+    $("results").tBodies[0].appendChild(tr);
+  }
+  // 허용/거부 판정 헬퍼: 쓰기를 시도해 성공하면 allowed, permission-denied 면 denied, 그 밖의 오류는 other 로 돌려준다.
+  async function attempt(fn) {
+    try { await fn(); return { outcome: "allowed" }; } catch (e) { const i = errInfo(e); return { outcome: i.code === "permission-denied" ? "denied" : "other", error: i }; }
+  }
+  async function step(id, title, criteria, fn) {
+    $("status").textContent = `실행 중: ${id} ${title}`;
+    try {
+      const r = await fn();
+      addRow({ id, title, criteria, status: r.pass ? "PASS" : "FAIL", detail: r.detail });
+      return r;
+    } catch (e) {
+      addRow({ id, title, criteria, status: "ERROR", detail: "예외: " + JSON.stringify(errInfo(e)) });
+      return { pass: false };
+    }
+  }
+
+  const db = () => firebase.firestore();
+  const col = () => db().collection("households").doc(HID).collection("schedules");
+  const newHid = () => "zz-autoref-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+  let seq = 0;
+  const newSid = () => "t" + ++seq + "-" + Math.random().toString(36).slice(2, 6);
+
+  // 실제 UserSchedule.buildCreateDoc 로 만든 문서(필드 정렬은 SDK 가 처리). over 로 바꿀 필드만 덮어쓴다(undefined 는 필드 제거).
+  const mkInput = (over) => {
+    const o = { sourceType: "MANUAL", title: "예방접종 병원 예약(수동 검증)", category: "MEDICAL", scope: "CHILD", childKeys: ["cX1"], allDay: true, dateKind: "FIXED", eventDate: "2026-10-14", autoRef: "VX-DTAP__dose-2", ...over };
+    Object.keys(o).forEach((k) => o[k] === undefined && delete o[k]);
+    return o;
+  };
+  // 클라이언트 검증(buildCreateDoc)은 거부될 문서는 만들어 주지 않으므로, 서버 규칙을 시험하려는 거부용 문서는 허용 문서에서 필드만 바꿔 만든다.
+  const goodDoc = (over) => { const r = UserSchedule.buildCreateDoc(mkInput(over), NOW); if (!r.ok) throw new Error("buildCreateDoc 거부: " + JSON.stringify(r.errors)); return r.doc; };
+  const rawDoc = (over) => { const d = goodDoc({}); const x = { ...d, ...over }; Object.keys(x).forEach((k) => x[k] === undefined && delete x[k]); return x; };
+  async function create(doc) { const id = newSid(); const ref = col().doc(id); if ((await ref.get({ source: "server" })).exists) throw new Error("이미 존재하는 문서: " + id); await ref.set(doc); created.push(id); return id; }
+
+  async function run() {
+    HID = newHid();
+    $("docpath").textContent = `households/${HID}/schedules/*`;
+    $("cleanup").style.display = "block";
+    $("cleanup").innerHTML = `Firebase 콘솔 → Firestore Database → <code>households</code> → <code>${esc(HID)}</code> → <code>schedules</code> 의 문서를 모두 삭제하세요(규칙상 앱·페이지에서는 삭제 불가, <code>delete: false</code>).`;
+
+    // 0. 대조군: autoRef 없는 같은 문서는 허용(기존 동작 상위 호환)
+    let baseId = null;
+    await step("0", "대조군: autoRef 없는 일정 생성", "허용(기존 일정 형태 — 규칙 변경이 기존 문서에 영향 없음)", async () => {
+      const r = await attempt(async () => { baseId = await create(goodDoc({ autoRef: undefined })); });
+      return { pass: r.outcome === "allowed", detail: JSON.stringify(r) };
+    });
+
+    // 1. 허용: 올바른 autoRef 일정
+    let linkedId = null;
+    await step("1", "허용: 올바른 autoRef 일정 생성(예방접종·scope=CHILD·childKeys 1개·단일)", "허용 + 읽어 보면 autoRef 가 저장돼 있다", async () => {
+      const r = await attempt(async () => { linkedId = await create(goodDoc({})); });
+      let stored = null;
+      if (linkedId) stored = (await col().doc(linkedId).get({ source: "server" })).data();
+      return { pass: r.outcome === "allowed" && !!stored && stored.autoRef === "VX-DTAP__dose-2", detail: JSON.stringify({ result: r, autoRef: stored && stored.autoRef }) };
+    });
+    await step("1b", "허용: 검진·치과 id 형태(HC-01__default, OR-04__occ-1, VX-FLU__season-1-dose-1)와 정확히 80자", "모두 허용", async () => {
+      const refs = ["HC-01__default", "OR-04__occ-1", "VX-FLU__season-1-dose-1", "A".repeat(39) + "__" + "b".repeat(39)];
+      const out = [];
+      for (const ref of refs) out.push([ref.length, (await attempt(() => create(goodDoc({ autoRef: ref })))).outcome]);
+      return { pass: out.every((x) => x[1] === "allowed"), detail: JSON.stringify(out) };
+    });
+
+    // 2. 거부(대조군 + 거부 쌍)
+    const rejects = [
+      ["2a", "거부: 형식 오류(구분자 하나 'VX-DTAP_dose-1')", { autoRef: "VX-DTAP_dose-1" }, { autoRef: undefined }],
+      ["2b", "거부: 형식 오류(공백 포함)", { autoRef: "VX DTAP__dose-1" }, { autoRef: undefined }],
+      ["2c", "거부: 81자", { autoRef: "A".repeat(40) + "__" + "b".repeat(39) }, { autoRef: undefined }],
+      ["2d", "거부: scope=FAMILY + autoRef", { scope: "FAMILY", category: "FAMILY", childKeys: undefined }, { scope: "FAMILY", category: "FAMILY", childKeys: undefined, autoRef: undefined }],
+      ["2e", "거부: childKeys 2개 + autoRef", { childKeys: ["cX1", "cX2"] }, { childKeys: ["cX1", "cX2"], autoRef: undefined }],
+      ["2f", "거부: 반복 일정 + autoRef", { eventDate: undefined, status: undefined, recurrence: { freq: "WEEKLY", interval: 1, byDay: ["TU"], startDate: "2026-10-06", until: null } }, { eventDate: undefined, status: undefined, recurrence: { freq: "WEEKLY", interval: 1, byDay: ["TU"], startDate: "2026-10-06", until: null }, autoRef: undefined }],
+    ];
+    for (const [id, title, bad, control] of rejects) {
+      await step(id, title, "대조군(같은 문서에서 autoRef 만 제거)은 허용되고, autoRef 가 있는 문서는 permission-denied", async () => {
+        const ctl = await attempt(() => create(rawDoc(control)));
+        const rej = await attempt(() => create(rawDoc(bad)));
+        return { pass: ctl.outcome === "allowed" && rej.outcome === "denied", detail: JSON.stringify({ 대조군: ctl.outcome, autoRef문서: rej.outcome, error: rej.error }) };
+      });
+    }
+
+    // 3. update: 허용/거부
+    await step("3a", "허용: 연결 일정을 완료로 바꾸기(status=DONE, autoRef 유지)", "허용 — 연결은 그대로", async () => {
+      if (!linkedId) return { pass: false, detail: "1번에서 만든 문서가 없다" };
+      const r = await attempt(() => col().doc(linkedId).update({ status: "DONE", updatedAt: NOW + 1 }));
+      const s = (await col().doc(linkedId).get({ source: "server" })).data();
+      return { pass: r.outcome === "allowed" && s.autoRef === "VX-DTAP__dose-2" && s.status === "DONE", detail: JSON.stringify({ result: r, status: s.status, autoRef: s.autoRef }) };
+    });
+    await step("3b", "허용: 연결 일정 소프트 삭제(deletedAt)와 제목 수정, autoRef 유지", "허용", async () => {
+      if (!linkedId) return { pass: false, detail: "문서 없음" };
+      const r = await attempt(() => col().doc(linkedId).update({ title: "수정된 제목", deletedAt: NOW + 2, updatedAt: NOW + 2 }));
+      return { pass: r.outcome === "allowed", detail: JSON.stringify(r) };
+    });
+    // 3c~3e 는 각각 '대조(autoRef 를 건드리지 않고 같은 문서의 다른 필드만 수정 → 허용)' 를 먼저 하고, 이어서 autoRef 를 건드린 같은 종류의 수정이 거부되는지 본다.
+    // (3b 에서 linkedId 에 deletedAt 을 이미 넣었으므로 3c/3d 대조·거부 모두 이미 소프트 삭제된 문서에서 수행해도 규칙 판정은 같다 — 소프트 삭제는 deletedAt 필드일 뿐 update 를 막지 않는다.)
+    await step("3c", "거부: autoRef 변경 — 대조: 같은 문서에서 autoRef 외 필드(memo)만 수정하면 허용", "대조 허용 → autoRef 변경 permission-denied, 값은 그대로", async () => {
+      if (!linkedId) return { pass: false, detail: "문서 없음" };
+      const ctl = await attempt(() => col().doc(linkedId).update({ memo: "대조 3c", updatedAt: NOW + 3 }));
+      const r = await attempt(() => col().doc(linkedId).update({ autoRef: "HC-01__default", memo: "대조 3c", updatedAt: NOW + 3 }));
+      const s = (await col().doc(linkedId).get({ source: "server" })).data();
+      return { pass: ctl.outcome === "allowed" && r.outcome === "denied" && s.autoRef === "VX-DTAP__dose-2", detail: JSON.stringify({ 대조: ctl.outcome, autoRef변경: r.outcome, error: r.error, autoRef: s.autoRef }) };
+    });
+    await step("3d", "거부: autoRef 삭제(필드 제거) — 대조: autoRef 외 필드(memo)만 수정하면 허용", "대조 허용 → autoRef 삭제 permission-denied, 값은 그대로", async () => {
+      if (!linkedId) return { pass: false, detail: "문서 없음" };
+      const ctl = await attempt(() => col().doc(linkedId).update({ memo: "대조 3d", updatedAt: NOW + 4 }));
+      const r = await attempt(() => col().doc(linkedId).update({ autoRef: FV.delete(), memo: "대조 3d", updatedAt: NOW + 4 }));
+      const s = (await col().doc(linkedId).get({ source: "server" })).data();
+      return { pass: ctl.outcome === "allowed" && r.outcome === "denied" && s.autoRef === "VX-DTAP__dose-2", detail: JSON.stringify({ 대조: ctl.outcome, autoRef삭제: r.outcome, error: r.error, autoRef: s.autoRef }) };
+    });
+    await step("3e", "거부: 기존(autoRef 없는) 일정에 나중에 autoRef 추가 — 대조: autoRef 없는 update(memo)는 허용", "대조 허용 → autoRef 추가 permission-denied, 필드 없음", async () => {
+      if (!baseId) return { pass: false, detail: "0번에서 만든 문서가 없다" };
+      const ctl = await attempt(() => col().doc(baseId).update({ memo: "대조 3e", updatedAt: NOW + 5 }));
+      const r = await attempt(() => col().doc(baseId).update({ autoRef: "VX-DTAP__dose-2", memo: "대조 3e", updatedAt: NOW + 5 }));
+      const s = (await col().doc(baseId).get({ source: "server" })).data();
+      return { pass: ctl.outcome === "allowed" && r.outcome === "denied" && !("autoRef" in s), detail: JSON.stringify({ 대조: ctl.outcome, autoRef추가: r.outcome, error: r.error, hasAutoRef: "autoRef" in s }) };
+    });
+    await step("3f", "거부: 하드 삭제(delete)", "permission-denied(delete: false 유지)", async () => {
+      if (!baseId) return { pass: false, detail: "문서 없음" };
+      const r = await attempt(() => col().doc(baseId).delete());
+      return { pass: r.outcome === "denied", detail: JSON.stringify(r) };
+    });
+  }
+
+  $("ack").addEventListener("change", () => { $("run").disabled = !$("ack").checked; });
+  $("run").addEventListener("click", async () => {
+    $("run").disabled = true; $("ack").disabled = true;
+    try { await run(); } catch (e) { addRow({ id: "-", title: "실행 중단", criteria: "-", status: "ERROR", detail: JSON.stringify(errInfo(e)) }); }
+    const c = (s) => results.filter((r) => r.status === s).length;
+    $("status").textContent = "끝났습니다.";
+    $("summary").innerHTML = `<b>PASS ${c("PASS")} · FAIL ${c("FAIL")} · ERROR ${c("ERROR")}</b> — 전부 PASS 여야 autoLink 플래그를 켤 수 있습니다.`;
+    $("out").value = JSON.stringify({ page: "firestore-autoref-manual-test", at: new Date().toISOString(), household: HID, created, results }, null, 2);
+  });
+})();
+</script>
+</body>
+</html>

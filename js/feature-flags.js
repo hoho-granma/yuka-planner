@@ -3,7 +3,9 @@
  * household: 가구(가족 캘린더) 기능(B1~). 꺼져 있으면 js/household-sync.js 는 Firestore 를 읽지도 쓰지도 않고, js/household-view.js 는 아무것도 그리지 않는다.
  * B3/B4 도 같은 플래그를 읽는다.
  *
- * 개발용 override: 이 기기의 localStorage "hannun_feature_household" 가 정확히 "1" 일 때만 켜진다(2기기 테스트용).
+ * autoLink: AUTO 항목↔가구 일정 연결(C2-b). household 가 켜져 있을 때만 의미가 있고, 규칙(autoRef) 배포를 확인하기 전에는 켜지 않는다.
+ *
+ * 개발용 override: 이 기기의 localStorage "hannun_feature_household" / "hannun_feature_autolink" 가 정확히 "1" 일 때만 켜진다(2기기 테스트용).
  * 규칙(firestore.rules)이 배포되기 전에는 아무도 켜지 않는다. 페이지를 새로 불러올 때 한 번만 읽는다.
  */
 (function (root, factory) {
@@ -11,9 +13,11 @@
   else root.FEATURES = factory(root.localStorage);
 })(typeof window !== "undefined" ? window : global, function (storage) {
   "use strict";
-  const flags = { household: false };
+  const flags = { household: false, autoLink: false };
   try {
     if (storage && storage.getItem("hannun_feature_household") === "1") flags.household = true;
+    // autoLink 는 household 가 켜져 있을 때만 읽는다 — household 가 꺼진 기기는 localStorage 를 한 번만(household 키) 읽고 그 뒤 접근이 없다.
+    if (flags.household && storage.getItem("hannun_feature_autolink") === "1") flags.autoLink = true;
   } catch (e) {}
   return flags;
 });
