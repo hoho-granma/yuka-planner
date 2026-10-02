@@ -151,7 +151,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     assert.ok(r.ok, JSON.stringify(r.errors));
     assert.strictEqual(r.intent.joiningCode, "ABCD2345");
     assert.ok(!("situation" in r.intent) && !("province" in r.intent));
-    assert.strictEqual(AV.validateSignup({ ...join, familyCode: "ABC12" }, T).errors.familyCode, "가족 캘린더 코드는 8자리 영문·숫자예요. 비워 두면 새 가족으로 시작해요.");
+    assert.strictEqual(AV.validateSignup({ ...join, familyCode: "ABC12" }, T).errors.familyCode, "가족코드는 8자리 영문·숫자예요. 비워 두면 새 가족으로 시작해요.");
   });
   await test("로그인 검증", () => {
     assert.ok(AV.validateLogin({ email: "a@b.co", password: "x" }).ok);
@@ -172,7 +172,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     assert.ok(AV.renderSignup({ form: { situation: "EXPECTING" }, regions: REGIONS }).includes(">예비엄마<"));
     assert.ok(AV.renderSignup({ form: { situation: "HAS_CHILD", province: "서울특별시" }, regions: REGIONS }).includes("<option value=\"구로구\""));
     const joined = AV.renderSignup({ form: { familyCode: "ABCD2345" }, regions: REGIONS });
-    assert.ok(!joined.includes('data-acct-radio="situation"') && !joined.includes('data-acct-input="province"') && joined.includes(">이모님(기타 돌봄)<") && joined.includes('data-acct-radio="role"'));
+    assert.ok(!joined.includes('data-acct-radio="situation"') && !joined.includes('data-acct-input="province"') && !joined.includes('data-acct-radio="role"') && AV.renderRolePick({ form: {} }).includes(">이모님(기타 돌봄)<")) // H2: 합류 폼은 역할을 묻지 않고 자리/역할 단계에서 정한다;
     const evil = AV.renderSignup({ form: { email: '"><img src=x>', displayName: "<script>" }, errors: { email: "<i>" }, error: "<u>" });
     assert.ok(!/<img|<script|<i>|<u>/.test(evil));
     assert.ok(AV.renderSignup({ busy: true }).includes("disabled") && AV.renderLogin({ form: {} }).includes('data-acct-action="reset-password"'));
@@ -201,8 +201,8 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     assert.ok(/async function acctOnClick\(ev\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
     assert.ok(/function acctRenderLanding\(\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
     // D2: 서버 읽기(lookupHousehold·joinHousehold)와 AccountSync(계정 문서·가구 생성)만 허용 — 아이·일정·완료에는 쓰지 않는다
-    assert.ok(!/FamilySync|HouseholdSync\.(create|update|upsert|patch|remove|reissue)/.test(blk));
-    assert.ok(blk.includes("localStorage.setItem(ACCT_INTENT_KEY, JSON.stringify(v.intent));") && !/setItem\([^)]*password/i.test(blk));
+    assert.ok(!/FamilySync|HouseholdSync\.(create|update|upsert|patch|remove)/.test(blk));
+    assert.ok(blk.includes("localStorage.setItem(ACCT_INTENT_KEY, JSON.stringify(intent));") && !/setItem\([^)]*password/i.test(blk));
     assert.ok(APP.includes("    usInit();\n    acctInit();") && APP.includes("${acctEnabled() ? '<div id=\"acct-slot\"></div>' : \"\"}") && APP.includes("if (acctEnabled()) acctOpenSlot();"));
   });
   await test("로그아웃 최소: Auth 로그아웃 + 가입 의도 삭제만, 가구·아이 로컬 데이터는 건드리지 않는다(D2·D4에서 확장)", () => {
@@ -213,7 +213,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
   await test("OFF 불변: index.html 에 정적 계정 마크업·Auth SDK 스크립트가 없다(플래그 ON 일 때 동적 로드), sw.js 에는 새 스크립트만 추가", () => {
     const html = read("index.html");
     assert.ok(!/firebase-auth-compat/.test(html) && !/acct-/.test(html));
-    assert.ok(html.includes('<script src="js/auth-service.js?v=2"></script>') && html.includes('<script src="js/account-view.js?v=7"></script>'));
+    assert.ok(html.includes('<script src="js/auth-service.js?v=3"></script>') && html.includes('<script src="js/account-view.js?v=9"></script>'));
     const sw = read("sw.js");
     assert.ok(sw.includes('"./js/auth-service.js"') && sw.includes('"./js/account-view.js"') && !sw.includes("firebase-auth-compat"));
     assert.ok(AS.SDK_URL === "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js");

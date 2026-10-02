@@ -219,7 +219,7 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     vm.createContext(sb);
     const a = APP.indexOf("// ── D1 계정"), b = APP.indexOf("async function init()");
     vm.runInContext(`let modalMode = null; let profile = ${JSON.stringify(profile)}; let familyCode = ${JSON.stringify(familyCode)}; let regionsData = null; let currentTab = "home"; let newChildMode = false; const TAB_NAMES = ["home", "calendar", "record", "subsidy", "checklist"]; const isPregnant = () => false; const childDisplayName = () => "수아"; const loadChildren = () => { try { return JSON.parse(localStorage.getItem("hannun_children") || "[]"); } catch (e) { return []; } }; const us = { selection: [], selTouched: false }; function hhRender() {} function hhLeaveLocal() { hh.hid = null; hh.code = null; }\n` + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick, acctInit, acctRestore };", sb);
-    const click = (attrs) => sb.__t.acctOnClick({ target: { closest: (sel) => (sel === "[data-acct-radio]" ? null : { getAttribute: () => attrs.action }) } });
+    const click = (attrs) => sb.__t.acctOnClick({ target: { closest: (sel) => (sel === "[data-acct-radio]" ? null : { getAttribute: (n) => (n === "data-slot-id" ? attrs.slot : attrs.action) }) } });
     return { sb, w, authAd, store, sheet, log, hhObj, acct: sb.__t.acct, click, init: () => sb.__t.acctInit(), restore: (u) => sb.__t.acctRestore(u) };
   }
   const signupForm = (extra) => ({ email: "m@x.co", password: "12345678", displayName: "지은", role: "MOM", situation: "HAS_CHILD", province: "서울특별시", district: "구로구", ...extra });
@@ -257,8 +257,8 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     e.acct.form = signupForm({ role: "DAD", familyCode: "ZZZZ2222" });
     await e.click({ action: "submit-signup" });
     assert.deepStrictEqual(e.authAd.calls, []);
-    assert.strictEqual(e.acct.errors.familyCode, "가족 캘린더 코드를 찾을 수 없어요. 코드를 다시 확인해 주세요.");
-    assert.ok(e.sheet.innerHTML.includes("가족 캘린더 코드를 찾을 수 없어요.") && e.acct.user === null && !e.acct.busy);
+    assert.strictEqual(e.acct.errors.familyCode, "가족코드를 찾을 수 없어요. 코드를 다시 확인해 주세요.");
+    assert.ok(e.sheet.innerHTML.includes("가족코드를 찾을 수 없어요.") && e.acct.user === null && !e.acct.busy);
     assert.strictEqual(e.w.db.docs.size, 0);
   });
   await test("코드 합류 가입: 가구 합류·구성원 확보 후 가구의 첫 아이를 불러온다(기기에 아이가 없을 때)", async () => {
@@ -270,6 +270,10 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     e.acct.mode = "signup";
     e.acct.form = signupForm({ role: "DAD", displayName: "민수", familyCode: c.code, situation: undefined, province: undefined, district: undefined });
     await e.click({ action: "submit-signup" });
+    // H2: 합류하면 가입하지 않은 자리(시드 엄마·아빠)를 고른다 — 같은 역할(DAD) 자리
+    assert.deepStrictEqual(e.acct.slotPick.slots.map((x) => x.role).sort(), ["DAD", "MOM"]);
+    assert.ok(e.sheet.innerHTML.includes("누구로 합류하나요?"));
+    await e.click({ action: "pick-slot", slot: e.acct.slotPick.slots.find((x) => x.role === "DAD").memberId });
     assert.strictEqual(e.acct.user.uid, "uNew");
     assert.deepStrictEqual(e.log.loaded, ["ABC234"]);
     assert.strictEqual(e.w.db.docs.get("accounts/uNew").householdId, c.householdId);
@@ -355,7 +359,7 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     assert.ok(e.sheet.innerHTML.includes('data-acct-input="familyCode"'));
     e.acct.form.familyCode = "ZZZZ2222";
     await e.click({ action: "recover-join" });
-    assert.ok(e.sheet.innerHTML.includes("가족 캘린더 코드를 찾을 수 없어요.") && !e.w.db.docs.get("accounts/uLost").householdId);
+    assert.ok(e.sheet.innerHTML.includes("가족코드를 찾을 수 없어요.") && !e.w.db.docs.get("accounts/uLost").householdId);
     const c = await e.w.hs.createHousehold({ firstChild: { familyCode: "ABC234", displayName: "수아" } });
     e.acct.form.familyCode = c.code;
     await e.click({ action: "recover-join" });

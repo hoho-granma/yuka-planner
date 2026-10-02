@@ -245,7 +245,8 @@ test("handleSubmit·handleLoadCode: 입력 모드 확인 한 줄씩만 추가됐
   // 온보딩 가족 단계 훅(첫 아이 기록 3줄·await·onbMaybeOffer)도 함께 걷어 낸 뒤 비교한다
   const noOnb = strip(strip(strip(submitSrc, /    const wasNewChildMode = newChildMode;\n/), /    \/\/ 온보딩 가족 단계:[^\n]*\n    const onbFirstChild[^\n]*\n/), /\n    onbMaybeOffer\(!onbFirstChild\);/).replace("    await ensureFamilyCode();", "    ensureFamilyCode();");
   assert.strictEqual(strip(noOnb, /    \/\/ N1:[^\n]*\n    if \(newChildMode\) finishNewChildEntry\(\);\n/), fnSrc(headApp, "handleSubmit", "  async function "));
-  assert.strictEqual(strip(loadSrc, /      if \(newChildMode\) finishNewChildEntry\(\);[^\n]*\n/), fnSrc(headApp, "handleLoadCode", "  async function "));
+  // H1: 계정 모드에서는 입력칸이 없어 가족코드 분기를 건너뛴다(!acctEnabled()) — 비교 전에 되돌린다
+  assert.strictEqual(strip(loadSrc, /      if \(newChildMode\) finishNewChildEntry\(\);[^\n]*\n/).replace("if (hhEnabled() && !acctEnabled()) {", "if (hhEnabled()) {").replace(/ \/\/ 계정 모드: 입력칸은[^\n]*\n/, "\n"), fnSrc(headApp, "handleLoadCode", "  async function "));
 });
 test("저장소 키 상수: HH_CODE_KEY 는 household-sync.js 의 CODE_KEY 와 같다", () => {
   const hs = require("../js/household-sync.js");

@@ -34,7 +34,7 @@ test("문구 상수가 승인본과 글자까지 같다", () => {
   assert.strictEqual(M.betaCancel, "취소");
   assert.strictEqual(M.betaConfirmOn, "가족 캘린더(베타)를 켤까요? 켜면 이 기기에서 가족 캘린더 화면이 나타나요.");
   assert.strictEqual(M.betaConfirmOff, "가족 캘린더를 끌까요? 가족 캘린더 화면이 숨겨져요. 저장된 일정은 지워지지 않아요.");
-  assert.strictEqual(M.betaLandingAsk, "가족 캘린더 코드(8자리)가 있나요? 베타 기능을 켜면 입력할 수 있어요.");
+  assert.strictEqual(M.betaLandingAsk, "가족코드(8자리)가 있나요? 베타 기능을 켜면 입력할 수 있어요.");
   assert.strictEqual(M.betaLandingButton, "가족 캘린더(베타) 켜기");
   assert.ok(Object.isFrozen(M));
 });
@@ -151,7 +151,7 @@ test("스위치 코드(beta*)는 FamilySync·HouseholdSync·Firestore·fetch 를
   assert.ok(/const BETA_FLAG_KEY = "hannun_feature_household"/.test(block));
 });
 test("프로필 시트에 #beta-slot 이 항상 들어간다(가구 슬롯 아래, 플래그와 무관) · index.html 에 #beta-landing-slot 이 있다", () => {
-  assert.ok(/\$\{hhEnabled\(\) \? '<div id="hh-slot"><\/div>(<div id="members-slot"><\/div>)?' : ""\}<div id="beta-slot"><\/div>/.test(APP)); // 구성원 슬롯(B6-lite)은 플래그 ON 일 때만 hh-slot 옆에 추가됨
+  assert.ok(APP.includes(`\${acctEnabled() ? "" : '<div id="beta-slot"></div>'}`) && APP.includes(`\${acctEnabled() ? "" : '<div id="hh-slot"></div>'}`)); // H1: 계정 모드에서는 베타 토글·옛 가족 캘린더 슬롯 생략 // 구성원 슬롯(B6-lite)은 플래그 ON 일 때만 hh-slot 옆에 추가됨
   assert.ok(/<div id="beta-landing-slot"><\/div>/.test(read("index.html")));
 });
 

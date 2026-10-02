@@ -22,10 +22,21 @@
    * ① 이미 내 uid 가 달린 구성원 → 그대로 ② 엄마/아빠이고 같은 role 의 시드(uid 없음·삭제 안 됨) → 확보(라벨·순서 유지) ③ 새 구성원(라벨=표시 이름, 순서=최대+1)
    * 반환 { memberId|null, role, label, order, claimed: boolean }
    */
-  function chooseMember(members, { role, uid, displayName }) {
+  /** 아직 가입하지 않은 자리(uid 없음·삭제 안 됨). 합류 시트의 '누구로 합류하나요?' 목록. 순서대로. */
+  function openSlots(members) {
+    const list = Array.isArray(members) ? members : Object.entries(members || {}).map(([memberId, m]) => ({ memberId, ...m }));
+    return list.filter((m) => m && m.memberId && !m.deletedAt && !m.uid).sort((a, b) => (a.order || 0) - (b.order || 0));
+  }
+  /** 구성원 role → accounts 문서 role(규칙은 MOM·DAD·CHILD·CAREGIVER 만 허용). */
+  const accountRoleOf = (role) => (ACCOUNT_ROLES.includes(role) ? role : "CAREGIVER");
+  function chooseMember(members, { role, uid, displayName, slotMemberId }) {
     const list = (Array.isArray(members) ? members : Object.entries(members || {}).map(([memberId, m]) => ({ memberId, ...m }))).filter((m) => m && !m.deletedAt);
     const mine = list.find((m) => m.uid === uid);
     if (mine) return { memberId: mine.memberId, role: mine.role, label: mine.label, order: mine.order || 1, claimed: true };
+    if (slotMemberId) { // 합류하는 사람이 고른 자리(아직 uid 가 없는 것만) — 역할·이름은 자리의 것을 쓴다
+      const slot = list.find((m) => m.memberId === slotMemberId && !m.uid);
+      if (slot) return { memberId: slot.memberId, role: slot.role, label: slot.label, order: slot.order || 1, claimed: true };
+    }
     if (SEED_ROLES.includes(role)) {
       const seed = list.filter((m) => m.role === role && !m.uid).sort((a, b) => (a.order || 0) - (b.order || 0))[0];
       if (seed) return { memberId: seed.memberId, role: seed.role, label: seed.label, order: seed.order || 1, claimed: true };
@@ -84,7 +95,7 @@
           mirror = household.getMirror(hid);
           created = true;
         }
-        const pick = chooseMember((mirror && mirror.members) || {}, { role: intent.role, uid, displayName: intent.displayName });
+        const pick = chooseMember((mirror && mirror.members) || {}, { role: intent.role, uid, displayName: intent.displayName, slotMemberId: intent.slotMemberId });
         const w = await household.upsertMember(hid, { ...(pick.memberId ? { memberId: pick.memberId } : {}), role: pick.role, label: pick.label, order: pick.order, uid });
         if (!w || !w.ok || !w.memberId) return { ok: false, reason: "network", step: "member" };
         await adapter.set(pathOf(uid), { householdId: hid, householdCode: code, memberId: w.memberId, updatedAt: now() }, { merge: true });
@@ -103,8 +114,31 @@
       }
     }
 
-    return { completeSignup, restore, getAccount };
+    /** 가족코드를 다시 만든 뒤 내 계정 문서의 코드를 새 코드로 바꾼다(다른 기기 로그인 때 새 코드로 복원되게). */
+    async function setHouseholdCode(uid, code) {
+      try {
+        await adapter.set(pathOf(uid), { householdCode: code, updatedAt: now() }, { merge: true });
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, reason: isDenied(e) ? "rules-unavailable" : "network" };
+      }
+    }
+
+    /** 내 구성원의 이름·역할을 바꿨을 때 계정 문서도 같이 갱신한다(role 은 규칙이 허용하는 4종으로 변환). */
+    async function updateProfile(uid, { displayName, role }) {
+      try {
+        const patch = { updatedAt: now() };
+        if (displayName) patch.displayName = String(displayName).slice(0, 20);
+        if (role) patch.role = accountRoleOf(role);
+        await adapter.set(pathOf(uid), patch, { merge: true });
+        return { ok: true, patch };
+      } catch (e) {
+        return { ok: false, reason: isDenied(e) ? "rules-unavailable" : "network" };
+      }
+    }
+
+    return { completeSignup, restore, getAccount, setHouseholdCode, updateProfile };
   }
 
-  return { create, chooseMember, ACCOUNT_ROLES };
+  return { create, chooseMember, openSlots, accountRoleOf, ACCOUNT_ROLES };
 });

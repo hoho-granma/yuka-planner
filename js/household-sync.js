@@ -232,7 +232,7 @@
       const t = now();
       let code = newCode();
       try {
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 8; i++) {
           const ex = await getAdapter().get("householdCodes/" + code);
           if (!ex.exists) break;
           code = newCode();
@@ -262,6 +262,18 @@
       const h = await a.get("households/" + c.data.householdId);
       if (!h.exists) return { ok: false, reason: "not-found" };
       return { ok: true, householdId: c.data.householdId };
+    }
+
+    /** 읽기 전용: 코드의 가구 구성원 목록만 가져온다(미러·저장된 코드는 건드리지 않는다). 합류 전 '누구로 합류하나요?' 용. */
+    async function peekMembers(code) {
+      if (!enabled()) return DISABLED;
+      code = String(code || "").trim().toUpperCase();
+      const a = getAdapter();
+      const c = await a.get("householdCodes/" + code);
+      if (!c.exists || !c.data || c.data.active !== true) return { ok: false, reason: "not-found" };
+      const hid = c.data.householdId;
+      const members = await a.list(`households/${hid}/members`);
+      return { ok: true, householdId: hid, members: members.map((d) => ({ memberId: d.id, ...d.data })) };
     }
 
     // ── 참여(새 기기) ─────────────────────────────────────────────────
@@ -363,7 +375,16 @@
     async function reissueCode(hid, oldCode) {
       if (!enabled()) return DISABLED;
       const t = now();
-      const code = newCode();
+      let code = newCode();
+      try {
+        for (let i = 0; i < 8; i++) {
+          const ex = await getAdapter().get("householdCodes/" + code);
+          if (!ex.exists) break;
+          code = newCode();
+        }
+      } catch (e) {
+        noteError(e);
+      }
       await write(hid, { op: "set", path: "householdCodes/" + code, payload: { householdId: hid, active: true, createdAt: t, revokedAt: null } });
       if (oldCode) await write(hid, { op: "update", path: "householdCodes/" + oldCode, payload: { active: false, revokedAt: t } });
       if (storage) storage.setItem(CODE_KEY, code);
@@ -468,6 +489,7 @@
       patchSchedule,
       getSchedules,
       reissueCode,
+      peekMembers,
       leaveLocal,
       flush,
       startListening,

@@ -66,7 +66,7 @@ function env({ flag = true, profile = null, account = null, user = null, emptySt
     const html = AV.renderSignup({ form: { situation: "HAS_CHILD", province: "서울특별시" }, regions: REGIONS });
     assert.ok(html.includes('data-acct-input="province"') && html.includes("구로구") && html.includes("상세 주소는 받지 않아요") && html.includes("신청 기한을 놓치지 않게"));
     const joined = AV.renderSignup({ form: AV.syncForm({ familyCode: "abcd2345", situation: "HAS_CHILD", province: "서울특별시", district: "구로구" }), regions: REGIONS });
-    assert.ok(!joined.includes("province") && !joined.includes("현재 출생한 자녀") && joined.includes(">이모님(기타 돌봄)<") && joined.includes(">자녀<"));
+    assert.ok(!joined.includes("province") && !joined.includes("현재 출생한 자녀") && !joined.includes('data-acct-radio="role"') && AV.renderRolePick({ form: {} }).includes(">이모님(기타 돌봄)<") && AV.renderRolePick({ form: {} }).includes(">자녀<")) // H2;
   });
   console.log("가입 intent");
   await test("가입 의도(저장값): situation·role·지역만 있고 아이 이름·생년월일·기관·비밀번호는 없다, 지역 없이도 가입된다", async () => {

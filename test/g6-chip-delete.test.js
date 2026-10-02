@@ -70,16 +70,10 @@ function env(o) {
     us: { selection: o.selection || [], chipEdit: true, chipDel: null }, localStorage: { getItem: (k) => (k in store ? store[k] : null) }, ACTIVE_MEMBER_KEY: "k", memSetActive: (v) => log.active.push(v),
     closeDetail: () => { log.closed++; }, hhRender: () => { log.rendered++; }, usRefreshCalendar: () => { log.refreshed++; } };
   vm.createContext(sb);
-  vm.runInContext(APP.slice(a, b) + "\n;globalThis.__t = { usDeletableChips, usChipDelAsk, usChipDelClick };", sb);
+  vm.runInContext(APP.slice(a, b) + "\n;globalThis.__t = { usChipDelAsk, usChipDelClick };", sb);
   const click = (act) => sb.__t.usChipDelClick({ target: { closest: () => ({ getAttribute: () => act }) } });
   return { sb, content, log, t: sb.__t, click, us: sb.us };
 }
-test("지울 수 있는 칩: 계정 모드는 '나' 제외 구성원 + 가구의 아이(분리된 아이 제외), 계정이 아니면 아이만", () => {
-  const J = (x) => JSON.parse(JSON.stringify(x));
-  assert.deepStrictEqual(J(env({}).t.usDeletableChips()), ["MEMBER:m2", "MEMBER:m3", "CHILD:c1", "CHILD:c2"]);
-  assert.deepStrictEqual(J(env({ me: null }).t.usDeletableChips()), ["CHILD:c1", "CHILD:c2"]);
-  assert.deepStrictEqual(J(env({ links: [LINKS[0], { ...LINKS[1], removedAt: 5 }], members: [MEMBERS[0], { ...MEMBERS[2], deletedAt: 9 }] }).t.usDeletableChips()), ["CHILD:c1"]);
-});
 test("구성원 지우기: 확인 시트(uid 달린 다른 사람이면 경고) → removeMember(hid,id) → 선택에서 제거·이 기기 사용자였다면 해제·시트 닫힘·즉시 다시 그림", async () => {
   const e = env({ selection: ["MEMBER:m3", "FAMILY"], store: { k: "m3" } });
   e.t.usChipDelAsk("MEMBER:m3");
@@ -104,20 +98,17 @@ test("아이 빼기: 현재 보고 있는 아이는 막고(호출 0), 다른 아
   await e.click("confirm");
   assert.deepStrictEqual([e.log.removedC, JSON.parse(JSON.stringify(e.us.selection)), e.log.closed, e.log.refreshed], [[["h1", "c2"]], [], 1, 1]);
 });
-test("취소는 호출 없음, 서버 실패는 시트에 오류·재시도 가능(busy 해제), 모르는 칩·없는 대상은 무시, 지울 칩이 없어지면 편집 모드 종료", async () => {
+test("취소는 호출 없음, 서버 실패는 시트에 오류·재시도 가능(busy 해제), 모르는 칩·없는 대상은 무시, 칩 줄 편집 모드는 없다(H2)", async () => {
   const c = env({}); c.t.usChipDelAsk("MEMBER:m3"); await c.click("cancel");
   assert.deepStrictEqual([c.log.removedM.length, c.log.closed, c.us.chipDel], [0, 1, null]);
   const f = env({ fail: true }); f.t.usChipDelAsk("MEMBER:m3"); await f.click("confirm");
-  assert.ok(f.content.innerHTML.includes("처리하지 못했어요") && f.us.chipDel.busy === false && f.log.closed === 0 && f.us.chipEdit === true);
+  assert.ok(f.content.innerHTML.includes("처리하지 못했어요") && f.us.chipDel.busy === false && f.log.closed === 0);
   const n = env({}); n.t.usChipDelAsk("ALL"); n.t.usChipDelAsk("MEMBER:zz"); n.t.usChipDelAsk("CHILD:zz");
   assert.strictEqual(n.content.innerHTML, "");
-  const last = env({ me: null, links: [LINKS[1]], cur: "cX", emptyAfter: true }); last.t.usChipDelAsk("CHILD:c2"); await last.click("confirm");
-  assert.strictEqual(last.us.chipEdit, false);
 });
-test("클릭 위임: 칩 줄의 편집 토글·✕ 는 usActive 일 때만(플래그 OFF·가구 없음 불변)", () => {
-  assert.ok(/function usOnCalendarClick\(ev\) \{\n    if \(!usActive\(\)\) return;\n    const del = ev\.target\.closest\("\[data-us-chip-del\]"\);/.test(APP));
-  assert.ok(APP.includes('if (act === "chip-edit") {\n        us.chipEdit = !us.chipEdit;\n        return usRefreshCalendar();'));
-  assert.ok(APP.includes("canEdit: true, edit: us.chipEdit, deletable: usDeletableChips()"));
+test("H2: 캘린더 칩 줄에서 편집 토글·✕ 를 제거 — 삭제 확인 시트는 프로필 구성원 목록(ask-remove-child·ask-delete)에서만 쓴다", () => {
+  assert.ok(!APP.includes("data-us-chip-del") && !APP.includes('act === "chip-edit"') && !APP.includes("usDeletableChips") && !APP.includes("canEdit: true"));
+  assert.ok(APP.includes('return usChipDelAsk(`CHILD:${id}`)'));
 });
 
 console.log("서버 규칙(변경 없이 가능한가)");

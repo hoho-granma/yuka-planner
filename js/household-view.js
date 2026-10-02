@@ -29,7 +29,7 @@
     creating: "만드는 중이에요…", // #7
     created: "가족 캘린더를 만들었어요. 아래 코드로 가족을 초대해 보세요.", // #8
     codeLabel: "가족 코드", // #9
-    codeLabelAcct: "가족 캘린더 코드(8자리)", // 계정 모드: 두 코드(아이 6자·가구 8자) 혼동 방지
+    codeLabelAcct: "가족코드(8자리)", // 계정 모드: 코드는 가족코드 하나뿐(H1)
     codeInfo: "이 코드로 아이 전부와 일정을 볼 수 있어요.", // #10
     shareWarn: "이 코드를 아는 사람은 누구나 우리 가족 일정을 볼 수 있어요. 가족에게만 알려 주세요.", // #11
     copyButton: "코드 복사", // #12
@@ -82,7 +82,7 @@
     betaCancel: "취소",
     betaConfirmOn: "가족 캘린더(베타)를 켤까요? 켜면 이 기기에서 가족 캘린더 화면이 나타나요.",
     betaConfirmOff: "가족 캘린더를 끌까요? 가족 캘린더 화면이 숨겨져요. 저장된 일정은 지워지지 않아요.",
-    betaLandingAsk: "가족 캘린더 코드(8자리)가 있나요? 베타 기능을 켜면 입력할 수 있어요.",
+    betaLandingAsk: "가족코드(8자리)가 있나요? 베타 기능을 켜면 입력할 수 있어요.",
     betaLandingButton: "가족 캘린더(베타) 켜기",
     // 가족 코드로 참여 · 시작 안내 · 아이 전환(핫픽스, 승인본)
     startHint: "시작하려면 가족 캘린더를 만들거나, 가족에게 받은 코드로 참여하세요.",
@@ -99,8 +99,15 @@
     memSave: "저장",
     memCancel: "취소",
     memNameLabel: "이름",
+    memNamePlaceholderAcct: "이름 (선택)",
+    memTitleAcct: "가족 구성원",
+    memNoteAcct: "가족코드를 받은 사람이 가입할 때 아직 가입하지 않은 자리를 고르면 역할이 자동으로 정해져요. 이름은 일정에 보여 주는 표시용이에요.",
+    memMe: "나",
+    memChildTitle: "아이",
+    memChildRemove: "빼기",
     memNamePlaceholder: "이름 (예: 이모님, 할머니)",
     memRoleLabel: "역할",
+    memErrRole: "역할을 골라 주세요.",
     memErrEmpty: "이름을 입력해 주세요.",
     memErrLong: "이름은 20자까지 입력할 수 있어요.",
     memMax: "구성원은 8명까지 추가할 수 있어요.",
@@ -113,6 +120,26 @@
   /** 역할 → 표시명(칩 라벨 겸용). 규칙(firestore.rules members)의 role 값과 같은 5종. */
   const ROLE_NAMES = Object.freeze({ MOM: "엄마", DAD: "아빠", GRANDPARENT: "조부모", CAREGIVER: "돌봄 선생님", OTHER: "기타" });
   const ROLES = Object.freeze(Object.keys(ROLE_NAMES));
+  // 계정 모드(H2) 구성원 추가 폼의 역할 선택지. 화면 키 → 저장 role(+기본 이름). 할머니·할아버지는 둘 다 GRANDPARENT 이고 label 로 구분한다.
+  const FORM_ROLES = Object.freeze([["MOM", "엄마", "MOM"], ["DAD", "아빠", "DAD"], ["CHILD", "아이(자녀)", "CHILD"], ["CAREGIVER", "이모님·돌봄", "CAREGIVER"], ["GRANDMA", "할머니", "GRANDPARENT"], ["GRANDPA", "할아버지", "GRANDPARENT"], ["OTHER", "기타", "OTHER"]]);
+  const DEFAULT_LABEL = Object.freeze({ MOM: "엄마", DAD: "아빠", CHILD: "아이", CAREGIVER: "이모님", GRANDMA: "할머니", GRANDPA: "할아버지", OTHER: "가족" });
+  /** 이름에서 역할 추정(역할을 아직 고르지 않았을 때): 할머니·할아버지·엄마·아빠·이모·아이 등. 못 정하면 "". */
+  function inferRoleFromName(name) {
+    const n = String(name || "").replace(/\s+/g, "");
+    if (/할아버지|할아부지/.test(n)) return "GRANDPA";
+    if (/할머니|할무니/.test(n)) return "GRANDMA";
+    if (/아빠|아버지|아버님/.test(n)) return "DAD";
+    if (/엄마|어머니|어머님/.test(n)) return "MOM";
+    if (/이모|돌봄|선생님|도우미|시터/.test(n)) return "CAREGIVER";
+    if (/아이|딸|아들/.test(n)) return "CHILD";
+    return "";
+  }
+  /** 저장된 구성원 → 폼 역할 키(GRANDPARENT 는 이름에 '할아버지'가 있으면 할아버지, 아니면 할머니). */
+  function formRoleOf(m) {
+    if (m && m.role === "GRANDPARENT") return /할아버지|할아부지|외할아버지/.test(m.label || "") ? "GRANDPA" : "GRANDMA";
+    return m && FORM_ROLES.some((r) => r[0] === m.role) ? m.role : "OTHER";
+  }
+  const roleLabelOf = (m) => (m && m.role === "GRANDPARENT" ? (formRoleOf(m) === "GRANDPA" ? "할아버지" : "할머니") : ROLE_NAMES[m && m.role] || (m && m.role === "CHILD" ? "아이(자녀)" : ROLE_NAMES.OTHER));
   const MEMBER_MAX = 8; // UI 상한(규칙에는 없다)
   const MEMBER_NAME_MAX = 20; // 규칙: label.size() <= 20
 
@@ -126,8 +153,10 @@
 
   // ── 코드 입력 분류 (code-entry 하나로 아이 코드와 가족 코드를 구분 — D2) ─────────────────
   /** 6자리=아이 코드, 8자리=가족(가구) 코드, 그 밖은 invalid. 공백 제거·대문자화. */
-  function classifyCode(input) {
+  function classifyCode(input, opts) {
     const code = String(input == null ? "" : input).replace(/\s+/g, "").toUpperCase();
+    // 계정 모드(H1): 코드는 8자리 가족코드 하나뿐이다. 아이 기록 코드는 화면에 나오지 않는다.
+    if (opts && opts.accounts === true) return /^[A-Z0-9]{8}$/.test(code) ? { kind: "household", code } : { kind: "invalid", code };
     if (/^[A-Z0-9]{8}$/.test(code)) return { kind: "household", code };
     if (/^[A-Z0-9]{6}$/.test(code)) return { kind: "child", code };
     return { kind: "invalid", code };
@@ -168,8 +197,9 @@
   }
 
   /** 아이 전환 시트 한 줄 설명. 기존 문구("임신 중 · 가족코드 X")를 유지하고 가구 항목만 달리 표시한다. */
-  function childSubtitle(entry) {
+  function childSubtitle(entry, opts) {
     if (!entry) return "";
+    if (opts && opts.accounts === true) return entry.removed ? MSG.removedChild : entry.stage === "pregnant" ? "임신 중" : ""; // 계정 모드: 아이 기록 코드는 보이지 않는다(H1)
     if (entry.removed) return `${MSG.removedChild} · 가족코드 ${entry.code}`;
     if (entry.source === "household") return MSG.linkedOnly(entry.code);
     return `${entry.stage === "pregnant" ? "임신 중 · " : ""}가족코드 ${entry.code}`;
@@ -295,7 +325,16 @@
   /** 이 기기 사용자로 저장된 id 가 지금 구성원 목록(삭제 제외)에 있으면 그 id, 아니면 "" (미지정). */
   const activeMemberOf = (members, id) => (id && visibleMembers(members).some((m) => m.memberId === id) ? id : "");
   /** 폼 검증: 이름은 공백 제거 후 1~20자, 역할은 5종 중 하나. { ok, label, role, error } — error 는 승인 문구. */
-  function validateMemberForm(form) {
+  function validateMemberForm(form, opts) {
+    if (opts && opts.accounts === true) { // 계정 모드: 이름은 선택(비우면 역할 이름), 역할은 FORM_ROLES 키
+      const typed = String((form && form.label) == null ? "" : form.label).trim();
+      const key = form && form.role ? form.role : inferRoleFromName(typed); // 역할을 고르지 않았으면 이름으로 추정, 그래도 모르면 고르게 한다(기본값 없음)
+      const f = FORM_ROLES.find((r) => r[0] === key);
+      if (!f) return { ok: false, label: typed, role: null, error: MSG.memErrRole };
+      const label = typed || DEFAULT_LABEL[f[0]];
+      if (label.length > MEMBER_NAME_MAX) return { ok: false, label, role: f[2], error: MSG.memErrLong };
+      return { ok: true, label, role: f[2], error: null };
+    }
     const label = String((form && form.label) == null ? "" : form.label).trim();
     const role = form && ROLES.includes(form.role) ? form.role : null;
     if (!label) return { ok: false, label, role, error: MSG.memErrEmpty };
@@ -315,31 +354,38 @@
     if (!on(state) || state.hasHousehold !== true) return "";
     const list = visibleMembers(state.members);
     const activeId = activeMemberOf(list, state.activeMemberId);
-    const head = `<h4 class="hh-title">${esc(MSG.memTitle)}</h4>${note(MSG.memNote)}`;
+    const head = `<h4 class="hh-title">${esc(state.acctMode === true ? MSG.memTitleAcct : MSG.memTitle)}</h4>${note(state.acctMode === true ? MSG.memNoteAcct : MSG.memNote)}`;
     const roleName = (r) => ROLE_NAMES[r] || ROLE_NAMES.OTHER;
+    const acctMode = state.acctMode === true;
+    const rn = (m) => (acctMode ? roleLabelOf(m) : roleName(m.role));
     let body;
     if (state.view === "delete") {
       const m = list.find((x) => x.memberId === state.deleteId);
       body = m
-        ? `<p class="hh-consent-title">${esc(MSG.memDeleteTitle)}</p><p class="hh-consent-body">${esc(m.label)} · ${esc(roleName(m.role))}</p>${note(MSG.memDeleteBody)}
+        ? `<p class="hh-consent-title">${esc(MSG.memDeleteTitle)}</p><p class="hh-consent-body">${esc(m.label)} · ${esc(rn(m))}</p>${note(MSG.memDeleteBody)}
           <div class="hh-actions"><button type="button" class="hh-btn hh-primary" data-mem-action="confirm-delete" data-member-id="${esc(m.memberId)}"${state.saving === true ? " disabled" : ""}>${esc(MSG.memDelete)}</button><button type="button" class="hh-btn" data-mem-action="cancel">${esc(MSG.memCancel)}</button></div>`
         : "";
     } else if (state.view === "form" && state.form) {
       const f = state.form;
-      body = `<div class="hh-field"><label>${esc(MSG.memNameLabel)}</label><input type="text" class="hh-input" data-mem-input="label" maxlength="${MEMBER_NAME_MAX}" placeholder="${esc(MSG.memNamePlaceholder)}" value="${esc(f.label || "")}" /></div>
-          <div class="hh-field"><label>${esc(MSG.memRoleLabel)}</label><div class="hh-chips">${ROLES.map((r) => mchip(`data-mem-role="${r}"`, ROLE_NAMES[r], f.role === r)).join("")}</div></div>
+      body = `<div class="hh-field"><label>${esc(MSG.memNameLabel)}</label><input type="text" class="hh-input" data-mem-input="label" maxlength="${MEMBER_NAME_MAX}" placeholder="${esc(acctMode ? MSG.memNamePlaceholderAcct : MSG.memNamePlaceholder)}" value="${esc(f.label || "")}" /></div>
+          <div class="hh-field"><label>${esc(MSG.memRoleLabel)}</label><div class="hh-chips">${(acctMode ? FORM_ROLES.map((r) => [r[0], r[1]]) : ROLES.map((r) => [r, ROLE_NAMES[r]])).map(([k, n]) => mchip(`data-mem-role="${k}"`, n, f.role === k)).join("")}</div></div>
           ${f.error ? `<p class="hh-note hh-warn">${esc(f.error)}</p>` : ""}
           <div class="hh-actions"><button type="button" class="hh-btn hh-primary" data-mem-action="save"${state.saving === true ? " disabled" : ""}>${esc(MSG.memSave)}</button><button type="button" class="hh-btn" data-mem-action="cancel">${esc(MSG.memCancel)}</button></div>`;
     } else {
-      const device = `<div class="hh-field"><label>${esc(MSG.deviceUserLabel)}</label><div class="hh-chips">${list.map((m) => mchip(`data-mem-action="set-active" data-member-id="${esc(m.memberId)}"`, m.label, m.memberId === activeId)).join("")}${mchip('data-mem-action="clear-active"', MSG.deviceUserNone, !activeId)}</div>${note(MSG.deviceUserNote)}</div>`;
+      const device = acctMode ? "" : `<div class="hh-field"><label>${esc(MSG.deviceUserLabel)}</label><div class="hh-chips">${list.map((m) => mchip(`data-mem-action="set-active" data-member-id="${esc(m.memberId)}"`, m.label, m.memberId === activeId)).join("")}${mchip('data-mem-action="clear-active"', MSG.deviceUserNone, !activeId)}</div>${note(MSG.deviceUserNote)}</div>`;
       const rows = list
-        .map(
-          (m) => `<li class="hh-member" data-member-id="${esc(m.memberId)}"><span class="hh-member-name">${esc(m.label)}</span><span class="hh-member-role">${esc(roleName(m.role))}</span>
-            <button type="button" class="hh-btn hh-small" data-mem-action="edit" data-member-id="${esc(m.memberId)}">${esc(MSG.memEdit)}</button><button type="button" class="hh-btn hh-small" data-mem-action="ask-delete" data-member-id="${esc(m.memberId)}">${esc(MSG.memDelete)}</button></li>`
-        )
+        .map((m) => {
+          const isMe = acctMode && state.meId && m.memberId === state.meId;
+          const del = isMe ? "" : `<button type="button" class="hh-btn hh-small" data-mem-action="ask-delete" data-member-id="${esc(m.memberId)}">${esc(MSG.memDelete)}</button>`;
+          return `<li class="hh-member" data-member-id="${esc(m.memberId)}"><span class="hh-member-name">${esc(m.label)}${isMe ? ` (${esc(MSG.memMe)})` : ""}</span><span class="hh-member-role">${esc(rn(m))}</span>
+            <button type="button" class="hh-btn hh-small" data-mem-action="edit" data-member-id="${esc(m.memberId)}">${esc(MSG.memEdit)}</button>${del}</li>`;
+        })
         .join("");
+      const kids = acctMode && Array.isArray(state.children) && state.children.length
+        ? `<h4 class="hh-title">${esc(MSG.memChildTitle)}</h4><ul class="hh-members">${state.children.map((c) => `<li class="hh-member" data-child-key="${esc(c.childKey)}"><span class="hh-member-name">${esc(c.displayName || "")}</span><button type="button" class="hh-btn hh-small" data-mem-action="ask-remove-child" data-member-id="${esc(c.childKey)}">${esc(MSG.memChildRemove)}</button></li>`).join("")}</ul>`
+        : "";
       const add = list.length >= MEMBER_MAX ? note(MSG.memMax) : `<div class="hh-actions"><button type="button" class="hh-btn" data-mem-action="add">${esc(MSG.memAdd)}</button></div>`;
-      body = `${device}<ul class="hh-members">${rows}</ul>${add}`;
+      body = `${device}<ul class="hh-members">${rows}</ul>${add}${kids}`;
     }
     return `<section class="hh-section" data-mem="${esc(state.view || "list")}">${head}${body}</section>`;
   }
@@ -456,5 +502,5 @@
     return `<section class="hh-section" data-onb="${esc(st.step || "offer")}">${body}</section>`;
   }
 
-  return { MSG, isChildLinked, canLinkCurrentChild, isEnabled, classifyCode, mergeChildren, childSubtitle, switchSubText, statusLine, failMessage, joinMessage, renderNotice, renderSection, renderCodeEntryHint, renderBetaSwitch, renderBetaSwitchLanding, ROLE_NAMES, ROLES, MEMBER_MAX, MEMBER_NAME_MAX, visibleMembers, nextMemberOrder, activeMemberOf, validateMemberForm, renderMembers, ONB_MSG, shouldOfferOnboarding, onboardingNameUpdates, renderOnboarding };
+  return { MSG, isChildLinked, canLinkCurrentChild, isEnabled, classifyCode, formRoleOf, inferRoleFromName, roleLabelOf, FORM_ROLES, mergeChildren, childSubtitle, switchSubText, statusLine, failMessage, joinMessage, renderNotice, renderSection, renderCodeEntryHint, renderBetaSwitch, renderBetaSwitchLanding, ROLE_NAMES, ROLES, MEMBER_MAX, MEMBER_NAME_MAX, visibleMembers, nextMemberOrder, activeMemberOf, validateMemberForm, renderMembers, ONB_MSG, shouldOfferOnboarding, onboardingNameUpdates, renderOnboarding };
 });

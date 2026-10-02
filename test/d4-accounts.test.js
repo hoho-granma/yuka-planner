@@ -39,6 +39,12 @@ function world(db) {
   const hs = HS.create({ adapter: db, storage, features: () => ({ household: true }), now: () => ++T, rand: (() => { let i = 7; return () => ((i = (i * 7919 + 13) % 1000) / 1000); })() });
   return { db, storage, hs, sync: ASYNC.create({ adapter: db, household: hs, now: () => ++T }) };
 }
+// H2: 가족코드로 합류하면 가입하지 않은 자리 목록이 뜬다(새 가구의 시드 엄마·아빠 포함) — 가입 폼에서 고른 역할과 같은 자리를 고른다.
+const signup = async (e) => {
+  await e.click("submit-signup");
+  const sp = e.acct.slotPick;
+  if (sp) await e.click("pick-slot", (sp.slots.find((x) => x.role === sp.intent.role) || sp.slots[0]).memberId);
+};
 const KIDS = [{ code: "KID111", name: "수아", stage: "born" }];
 
 function appEnv({ w, local = {}, hhHid = null, hhCode = null, profile = null, familyCode = null, pendingN = 0, uid = "uNew" } = {}) {
@@ -69,7 +75,7 @@ function appEnv({ w, local = {}, hhHid = null, hhCode = null, profile = null, fa
   const a = APP.indexOf("// ── D1 계정"), b = APP.indexOf("async function init()");
   vm.runInContext(`let modalMode = null; let profile = ${JSON.stringify(profile)}; let familyCode = ${JSON.stringify(familyCode)}; let regionsData = null; let currentTab = "home"; let newChildMode = false; const TAB_NAMES = ["home", "calendar", "record", "subsidy", "checklist"]; const isPregnant = () => false; const childDisplayName = () => "수아"; const CHILDREN_KEY = "hannun_children";
     const loadChildren = () => { try { return JSON.parse(localStorage.getItem(CHILDREN_KEY) || "[]"); } catch (e) { return []; } }; const us = { selection: ["CHILD:x"], selTouched: true }; function usRefreshCalendar() {}\n` + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick, acctInit, acctRestore };", sb);
-  const click = (action) => sb.__t.acctOnClick({ target: { closest: (sel) => (sel === "[data-acct-radio]" ? null : { getAttribute: () => action }) } });
+  const click = (action, slot) => sb.__t.acctOnClick({ target: { closest: (sel) => (sel === "[data-acct-radio]" ? null : { getAttribute: (n) => (n === "data-slot-id" ? slot : action) }) } });
   return { sb, w, authAd, store, sheet, log, hhObj, acct: sb.__t.acct, click, init: () => sb.__t.acctInit(), restore: (u) => sb.__t.acctRestore(u) };
 }
 const form = (x) => ({ email: "m@x.co", password: "12345678", displayName: "지은", role: "MOM", situation: "HAS_CHILD", ...x });
@@ -85,7 +91,7 @@ async function mkHousehold(w) { const r = await w.hs.createHousehold({}); assert
     const e = appEnv({ w, hhHid: dev.householdId, hhCode: dev.code, profile: {}, familyCode: "KID111" });
     e.init();
     e.acct.mode = "signup"; e.acct.form = form();
-    await e.click("submit-signup");
+    await signup(e);
     assert.strictEqual(householdsOf(w).length, 1, "새 가구 없음");
     const acc = w.db.docs.get("accounts/uNew");
     assert.deepStrictEqual([acc.householdId, acc.householdCode], [dev.householdId, dev.code]);
@@ -97,7 +103,7 @@ async function mkHousehold(w) { const r = await w.hs.createHousehold({}); assert
     const e = appEnv({ w, profile: {}, familyCode: "KID111" });
     e.init();
     e.acct.mode = "signup"; e.acct.form = form();
-    await e.click("submit-signup");
+    await signup(e);
     const hid = w.db.docs.get("accounts/uNew").householdId;
     assert.deepStrictEqual(childrenOf(w, hid).map((c) => [c.familyCode, c.displayName]), [["KID111", "수아"]]);
     assert.strictEqual(e.acct.migrate, null);
@@ -109,7 +115,7 @@ async function mkHousehold(w) { const r = await w.hs.createHousehold({}); assert
     const e = appEnv({ w, hhHid: b.householdId, hhCode: b.code, profile: {}, familyCode: "KID111" });
     e.init();
     e.acct.mode = "signup"; e.acct.form = form({ role: "DAD", familyCode: a.code });
-    await e.click("submit-signup");
+    await signup(e);
     assert.deepStrictEqual([e.log.setJoined.length, e.log.left, e.hhObj.code], [0, 0, b.code]);
     assert.strictEqual(e.acct.migrate.switchTo, a.code);
     assert.ok(e.sheet.innerHTML.includes('data-acct-form="migrate"') && e.sheet.innerHTML.includes("가족 캘린더를 바꿀까요?") && e.sheet.innerHTML.includes("내 계정 가족 쓰기") && e.sheet.innerHTML.includes("이 기기 아이를 가족에 추가") && e.sheet.innerHTML.includes("지워지지 않아요"));
@@ -121,7 +127,7 @@ async function mkHousehold(w) { const r = await w.hs.createHousehold({}); assert
     const a = await mkHousehold(w), b = await mkHousehold(w);
     const e = appEnv({ w, hhHid: b.householdId, hhCode: b.code, profile: {}, familyCode: "KID111" });
     e.init(); e.acct.mode = "signup"; e.acct.form = form({ role: "DAD", familyCode: a.code });
-    await e.click("submit-signup");
+    await signup(e);
     await e.click("migrate-add");
     assert.deepStrictEqual([e.log.flushed >= 1, e.log.left, e.log.setJoined.map((x) => x[1])], [true, 1, [a.code]]);
     assert.deepStrictEqual(childrenOf(w, a.householdId).map((c) => c.familyCode), ["KID111"]);
@@ -134,7 +140,7 @@ async function mkHousehold(w) { const r = await w.hs.createHousehold({}); assert
     const a = await mkHousehold(w), b = await mkHousehold(w);
     const e = appEnv({ w, hhHid: b.householdId, hhCode: b.code, profile: {}, familyCode: "KID111" });
     e.init(); e.acct.mode = "signup"; e.acct.form = form({ role: "DAD", familyCode: a.code });
-    await e.click("submit-signup");
+    await signup(e);
     await e.click("migrate-keep");
     assert.deepStrictEqual([e.log.left, e.log.setJoined.map((x) => x[1]), childrenOf(w, a.householdId).length], [1, [a.code], 0]);
     assert.deepStrictEqual(JSON.parse(e.store.hannun_migrate_kept), ["KID111"]);
@@ -145,7 +151,7 @@ async function mkHousehold(w) { const r = await w.hs.createHousehold({}); assert
     const a = await mkHousehold(w), b = await mkHousehold(w);
     const e = appEnv({ w, hhHid: b.householdId, hhCode: b.code, profile: {}, familyCode: "KID111", pendingN: 2 });
     e.init(); e.acct.mode = "signup"; e.acct.form = form({ role: "DAD", familyCode: a.code });
-    await e.click("submit-signup");
+    await signup(e);
     await e.click("migrate-add");
     assert.deepStrictEqual([e.log.left, e.log.setJoined.length, e.hhObj.code], [0, 0, b.code]);
     assert.ok(e.acct.migrate && e.sheet.innerHTML.includes(AV.MSG.migrateFail.slice(0, 12)) && !e.acct.busy);
@@ -245,14 +251,14 @@ async function mkHousehold(w) { const r = await w.hs.createHousehold({}); assert
     assert.deepStrictEqual(V.normalizeSelection(["MOM"], L, M), ["MOM"]);
     assert.deepStrictEqual(V.filterChips(L, ["MOM"], M, ME).filter((c) => c.selected).map((c) => c.id), ["MEMBER:m1"]);
   });
-  await test("두 가족코드 구분: 계정 로그인 상태에서는 가구 코드를 '가족 캘린더 코드(8자리)'로 강조하고 아이 코드는 '아이 기록 코드(6자리)' 접힘 영역으로, 로그아웃·OFF 는 기존 라벨", () => {
+  await test("가족코드 하나: 계정 모드에서는 가구 코드를 '가족코드(8자리)'로 보이고 아이 기록 코드 UI·문구는 없다(OFF 는 기존 라벨)", () => {
     const st = { enabled: true, view: "active", code: "ABCD2345", pending: 0 };
-    assert.ok(HV.renderSection({ ...st, acctMode: true }).includes("가족 캘린더 코드(8자리)"));
+    assert.ok(HV.renderSection({ ...st, acctMode: true }).includes("가족코드(8자리)"));
     const off = HV.renderSection(st);
     assert.ok(off.includes("가족 코드") && !off.includes("8자리"));
     assert.ok(APP.includes("acctMode: acctEnabled() && !!acct.user"));
-    assert.ok(/acctEnabled\(\) && acct\.user && hh\.code\s*\n\s*\? `<details class="detail-row acct-child-code"><summary class="label">\$\{esc\(AccountView\.MSG\.childCodeLabel\)\}<\/summary>/.test(APP));
-    assert.ok(APP.includes('<div class="label">가족코드</div>') && AV.MSG.childCodeLabel === "아이 기록 코드(6자리)" && AV.MSG.childCodeHint.includes("8자리"));
+    assert.ok(!APP.includes("acct-child-code") && AV.MSG.childCodeLabel === undefined && AV.MSG.childCodeHint === undefined);
+    assert.ok(APP.includes("familyCode && !acctEnabled()") && APP.includes('<div class="label">가족코드</div>'));
   });
   await test("플래그 OFF: 이전 관련 새 동작은 어떤 것도 실행되지 않는다(마이그레이션 클릭·로그아웃 정리 모두 acctOnClick 가드 뒤, 서버 호출 0)", async () => {
     const w = world();

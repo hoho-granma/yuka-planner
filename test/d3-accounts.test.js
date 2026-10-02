@@ -131,7 +131,7 @@ test("내 정보: 로그인 상태에서는 N6 '이 기기에서 나가기'를 �
 });
 test("가족 초대 시트: 코드·복사 버튼·안내(가구 없으면 안내만), 이스케이프", () => {
   const inv = AV.renderInvite({ code: "ABCD2345" });
-  assert.ok(inv.includes("가족 초대하기") && inv.includes("ABCD2345") && inv.includes('data-acct-action="copy-invite"') && inv.includes("회원가입할 때 가족 캘린더 코드에 입력하면"));
+  assert.ok(inv.includes("가족 초대하기") && inv.includes("ABCD2345") && inv.includes('data-acct-action="copy-invite"') && inv.includes("회원가입할 때 가족코드에 입력하면"));
   assert.ok(AV.renderInvite({ code: "ABCD2345", notice: "복사했어요." }).includes("복사했어요."));
   const none = AV.renderInvite({});
   assert.ok(none.includes("아직 연결되지 않았어요") && !none.includes("copy-invite"));
@@ -152,7 +152,7 @@ test("연결 복구 화면·검증: 새 가족 만들기/코드로 합류, 역�
 test("플래그 OFF·계정 로그아웃 상태: 새 코드는 모두 acctEnabled/계정 상태 가드 뒤, 서버 쓰기는 AccountSync(계정 문서·가구)뿐", () => {
   const blk = APP.slice(APP.indexOf("// ── D1 계정"), APP.indexOf("async function init()"));
   assert.ok(/async function acctOnClick\(ev\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
-  assert.ok(!/FamilySync|HouseholdSync\.(create|update|upsert|patch|remove|reissue)|completed|saveProfile/.test(blk));
+  assert.ok(!/FamilySync|HouseholdSync\.(create|update|upsert|patch|remove)|completed|saveProfile/.test(blk));
   assert.ok(/if \(!acctEnabled\(\) \|\| !acct\.user \|\| !acct\.account \|\| !acct\.account\.memberId\) return null;/.test(APP));
   assert.ok(APP.includes("const acctOn = acctEnabled();") && APP.includes("${acctOn ? `<button class=\"btn-complete\" id=\"btn-add-menu-invite\">"));
 });

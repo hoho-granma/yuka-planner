@@ -850,21 +850,15 @@
       <div class="detail-row"><div class="label">거주 지역</div>${profile.province} ${profile.district}</div>
       ${enrollmentRowHtml()}
       ${
-        familyCode
-          ? (acctEnabled() && acct.user && hh.code
-            ? `<details class="detail-row acct-child-code"><summary class="label">${esc(AccountView.MSG.childCodeLabel)}</summary>
-               <button id="btn-copy-code" class="btn-code-pill">${familyCode} · 복사하기</button>
-               <p id="code-hint" class="fine-print hidden code-hint-oneline">복사됐어요! 다른 기기에 입력하면 정보가 이어져요.</p>
-               <p class="fine-print">${esc(AccountView.MSG.childCodeHint)}</p>
-             </details>`
-            : `<div class="detail-row">
+        familyCode && !acctEnabled() // 계정 모드: 아이 기록 코드는 화면에 보이지 않는다(가족코드 하나로 통일 — H1)
+          ? `<div class="detail-row">
                <div class="label">가족코드</div>
                <button id="btn-copy-code" class="btn-code-pill">${familyCode} · 복사하기</button>
                <p id="code-hint" class="fine-print hidden code-hint-oneline">복사됐어요! 다른 기기에 입력하면 정보가 이어져요.</p>
-             </div>`)
+             </div>`
           : ""
       }
-      ${acctEnabled() ? '<div id="acct-slot"></div>' : ""}${hhEnabled() ? '<div id="hh-slot"></div><div id="members-slot"></div>' : ""}<div id="beta-slot"></div>${hhEnabled() ? '<button type="button" class="btn-close" id="btn-view-records">기록 보기</button>' : ""}${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
+      ${acctEnabled() ? '<div id="acct-slot"></div>' : ""}${hhEnabled() ? `${acctEnabled() ? "" : '<div id="hh-slot"></div>'}<div id="members-slot"></div>` : ""}${acctEnabled() ? "" : '<div id="beta-slot"></div>'}${hhEnabled() ? '<button type="button" class="btn-close" id="btn-view-records">기록 보기</button>' : ""}${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
       ${changed ? `<button class="btn-complete btn-photo-save" id="btn-photo-save">저장</button>` : ""}
       <button class="btn-close" id="btn-close-modal">닫기</button>
     `;
@@ -2439,7 +2433,7 @@
     const code = input.value.trim().toUpperCase();
     el("code-error").classList.add("hidden");
     if (!code) return;
-    if (hhEnabled()) {
+    if (hhEnabled() && !acctEnabled()) { // 계정 모드: 입력칸은 보이지 않고 내부 호출만 있다(코드=아이 기록 코드 하나) — 가족코드 합류는 가입 시트가 맡는다
       hhResetEntryMessage();
       if (HouseholdView.classifyCode(code).kind === "household") return hhJoinFromEntry(code);
     }
@@ -2871,7 +2865,7 @@
         const inp = slot && slot.querySelector('[data-hh-input="join-code"]');
         const typed = inp ? inp.value : "";
         hh.joinInput = typed;
-        const cls = HouseholdView.classifyCode(typed);
+        const cls = HouseholdView.classifyCode(typed, { accounts: acctEnabled() });
         if (cls.kind !== "household") {
           hh.notice = { kind: "error", text: HouseholdView.MSG.joinNotFound };
         } else {
@@ -2979,7 +2973,7 @@
       console.warn("이 기기 사용자를 저장하지 못했어요(저장소 사용 불가).", e);
     }
   }
-  const memState = () => ({ enabled: hhEnabled(), hasHousehold: !!(hh.hid && hh.code), members: usMembers(), activeMemberId: memActiveId(), view: mem.view, form: mem.form, deleteId: mem.deleteId, saving: mem.saving });
+  const memState = () => ({ acctMode: acctEnabled(), meId: usMeId(), children: usLinks().filter((l) => !l.removedAt), enabled: hhEnabled(), hasHousehold: !!(hh.hid && hh.code), members: usMembers(), activeMemberId: memActiveId(), view: mem.view, form: mem.form, deleteId: mem.deleteId, saving: mem.saving });
   function memRender() {
     const slot = el("members-slot");
     if (!slot || !hhEnabled()) return;
@@ -3015,23 +3009,26 @@
         memSetActive("");
       } else if (action === "add") {
         if (visible.length >= HouseholdView.MEMBER_MAX) return;
-        mem.form = { memberId: null, role: "OTHER", label: "", error: null };
+        mem.form = { memberId: null, role: acctEnabled() ? "" : "OTHER", label: "", error: null };
         mem.view = "form";
       } else if (action === "edit") {
         const m = visible.find((x) => x.memberId === id);
         if (!m) return;
-        mem.form = { memberId: id, role: m.role, label: m.label, error: null };
+        mem.form = { memberId: id, role: acctEnabled() ? HouseholdView.formRoleOf(m) : m.role, label: m.label, error: null };
         mem.view = "form";
       } else if (action === "ask-delete") {
+        if (acctEnabled() && id === usMeId()) return; // 나 자신은 지울 수 없다
         mem.deleteId = id;
         mem.view = "delete";
+      } else if (action === "ask-remove-child") {
+        return usChipDelAsk(`CHILD:${id}`); // 아이 빼기: 확인 시트(G6 문구 재사용)
       } else if (action === "cancel") {
         mem.view = "list"; mem.form = null; mem.deleteId = null;
       } else if (action === "save") {
         const form = mem.form;
         if (!form || mem.saving) return; // 저장 중에는 두 번째 클릭을 무시한다
         form.label = memReadLabel();
-        const v = HouseholdView.validateMemberForm(form);
+        const v = HouseholdView.validateMemberForm(form, { accounts: acctEnabled() });
         if (!v.ok) {
           form.error = v.error;
         } else if (!form.memberId && visible.length >= HouseholdView.MEMBER_MAX) {
@@ -3042,8 +3039,14 @@
           mem.saving = true;
           memRender(); // 저장 버튼을 잠근 상태로 다시 그린다
           try {
-            const r = await HouseholdSync.upsertMember(hh.hid, { memberId: form.memberId || undefined, role: v.role, label: v.label, order: old ? old.order || 1 : HouseholdView.nextMemberOrder(all) });
+            // 계정 모드: 이미 uid 가 있는 구성원은 uid 를 그대로 실어 보낸다(merge 라 키가 지워지지 않지만 규칙 uidOk 를 확실히 만족시킨다)
+            const r = await HouseholdSync.upsertMember(hh.hid, { memberId: form.memberId || undefined, role: v.role, label: v.label, order: old ? old.order || 1 : HouseholdView.nextMemberOrder(all), ...(old && old.uid ? { uid: old.uid } : {}) });
             if (!r || !r.ok) throw new Error((r && r.reason) || "member-save-failed");
+            // H2: 내 구성원의 이름·역할을 바꾸면 계정 문서도 같이 갱신한다(role 은 규칙 허용 4종으로 변환)
+            if (acctEnabled() && form.memberId && form.memberId === usMeId() && acct.sync && acct.user) {
+              const u = await acct.sync.updateProfile(acct.user.uid, { displayName: v.label, role: v.role });
+              if (u && u.ok && acct.account) Object.assign(acct.account, { displayName: u.patch.displayName || acct.account.displayName, role: u.patch.role || acct.account.role });
+            }
             mem.view = "list"; mem.form = null;
           } catch (e) {
             console.error("구성원 저장 실패", e);
@@ -3275,7 +3278,7 @@
   // detailKey/detailOcc: 열려 있는 상세의 회차(반복 일정은 같은 문서에서 회차가 여럿이라 id 만으로는 부족), dayForm: "이 날만 수정", plan: 규칙 변경 확인 대기 중인 전체 수정 계획.
   // 칩 달력 개편: selection=복수 선택 배열(비어 있으면 전체), onlyUser=직접 등록한 일정만 보기(아이만 선택했을 때만 효력, 기본 꺼짐), catColor=카테고리별 색(기본 꺼짐, 이 기기에 보존)
   const CAL_CATCOLOR_KEY = "hannun_cal_catcolor";
-  const us = { selection: [], selTouched: false, onlyUser: false, catColor: (() => { try { return localStorage.getItem(CAL_CATCOLOR_KEY) === "1"; } catch (e) { return false; } })(), form: null, messages: [], saving: false, detailId: null, detailKey: null, detailOcc: null, dayForm: null, plan: null, autoLabel: null, linkPrompt: null, chipEdit: false, chipDel: null };
+  const us = { selection: [], selTouched: false, onlyUser: false, catColor: (() => { try { return localStorage.getItem(CAL_CATCOLOR_KEY) === "1"; } catch (e) { return false; } })(), form: null, messages: [], saving: false, detailId: null, detailKey: null, detailOcc: null, dayForm: null, plan: null, autoLabel: null, linkPrompt: null, chipDel: null };
   const usReady = () => typeof UserScheduleView !== "undefined" && typeof UserSchedule !== "undefined" && typeof CalendarModel !== "undefined";
   const usActive = () => hhEnabled() && usReady() && !!hh.hid && !!hh.code;
   const usMirror = () => (hh.hid ? HouseholdSync.getMirror(hh.hid) : null);
@@ -3566,7 +3569,7 @@
     const counts = { userItems: model.counts.userItems + model.counts.periodItems, userDone: model.counts.userDone + periodDone };
     top.innerHTML =
       `<div class="card us-top"><p class="us-summary">${esc(UserScheduleView.monthSummary(counts))}</p>` +
-      UserScheduleView.renderFilterChips(UserScheduleView.filterChips(links, usSel(), usMembers(), usSelOpts()), { mode: usSelectionMode(), onlyUser: us.onlyUser, catColor: us.catColor, canEdit: true, edit: us.chipEdit, deletable: usDeletableChips() }) +
+      UserScheduleView.renderFilterChips(UserScheduleView.filterChips(links, usSel(), usMembers(), usSelOpts()), { mode: usSelectionMode(), onlyUser: us.onlyUser, catColor: us.catColor }) +
       `<p class="us-note">${esc(UserScheduleView.MSG.legend)}</p></div>`;
     const skipped = UserScheduleView.skippedNote(model.skipped);
     const period = UserScheduleView.renderPeriodSection(UserScheduleView.periodSection(model.periodList, links));
@@ -3829,13 +3832,6 @@
     }
   }
   // ── G6 칩 지우기: 편집 모드에서 지울 수 있는 칩(구성원: 나 제외, 아이)에 ✕ → 확인 시트 → 기존 소프트 삭제 경로(removeMember deletedAt / removeChild removedAt, 서버 규칙 변경 없음) ──
-  function usDeletableChips() {
-    const ids = [];
-    const meId = usMeId();
-    if (meId) for (const m of HouseholdView.visibleMembers(usMembers())) if (m.memberId !== meId) ids.push(`MEMBER:${m.memberId}`); // 계정 모드의 구성원 칩만(역할 칩 MOM/DAD 는 사람이 아니라 역할)
-    for (const l of usLinks()) if (!l.removedAt) ids.push(`CHILD:${l.childKey}`);
-    return ids;
-  }
   function usChipDelShow() {
     const d = us.chipDel;
     modalMode = "profile";
@@ -3876,7 +3872,6 @@
         if (saved === d.id) memSetActive("");
       }
       us.chipDel = null;
-      if (!usDeletableChips().length) us.chipEdit = false;
       closeDetail();
       hhRender();
       usRefreshCalendar();
@@ -3889,8 +3884,6 @@
   }
   function usOnCalendarClick(ev) {
     if (!usActive()) return;
-    const del = ev.target.closest("[data-us-chip-del]");
-    if (del) return usChipDelAsk(del.getAttribute("data-us-chip-del"));
     const f = ev.target.closest("[data-us-filter]");
     if (f) {
       us.selection = UserScheduleView.toggleSelection(usSel(), f.getAttribute("data-us-filter"), usLinks(), usMembers(), usSelOpts());
@@ -3900,10 +3893,6 @@
     const a = ev.target.closest("[data-us-action]");
     if (a) {
       const act = a.getAttribute("data-us-action");
-      if (act === "chip-edit") {
-        us.chipEdit = !us.chipEdit;
-        return usRefreshCalendar();
-      }
       if (act === "toggle-only-user") {
         us.onlyUser = !us.onlyUser;
         return usRefreshCalendar();
@@ -4137,7 +4126,7 @@
                 const photo = now && profile && profile.photoDataUrl ? `<img src="${profile.photoDataUrl}" alt="" />` : person;
                 return `<button type="button" class="cs-item${now ? " current" : ""}" data-code="${esc(c.code)}">
                   <span class="cs-avatar">${photo}</span>
-                  <span class="cs-info"><strong>${esc(c.name)}</strong><small>${hhOn ? esc(HouseholdView.childSubtitle(c)) : `${c.stage === "pregnant" ? "임신 중 · " : ""}가족코드 ${esc(c.code)}`}</small></span>
+                  <span class="cs-info"><strong>${esc(c.name)}</strong><small>${acctEnabled() ? esc(HouseholdView.childSubtitle(c, { accounts: true })) : hhOn ? esc(HouseholdView.childSubtitle(c)) : `${c.stage === "pregnant" ? "임신 중 · " : ""}가족코드 ${esc(c.code)}`}</small></span>
                   ${now ? `<span class="cs-now">${check}보는 중</span>` : `<span class="cs-go">›</span>`}
                 </button>`;
               })
@@ -4146,11 +4135,11 @@
       }</div>
       <p id="child-switch-error" class="fine-print hidden" style="color:#e0524e">불러오지 못했어요. 인터넷 연결을 확인해 주세요.</p>
       <button class="cs-add" id="btn-child-add">${plus}새 아이 추가</button>
-      <button class="cs-code" id="btn-child-code">가족코드로 아이 불러오기</button>
+      ${acctEnabled() ? "" : '<button class="cs-code" id="btn-child-code">가족코드로 아이 불러오기</button>'}
     `;
     el("detail-modal").classList.remove("hidden");
     el("btn-child-add").addEventListener("click", showNewChildSheet);
-    el("btn-child-code").addEventListener("click", () => beginNewChildEntry({ codeEntry: true }));
+    if (el("btn-child-code")) el("btn-child-code").addEventListener("click", () => beginNewChildEntry({ codeEntry: true }));
     document.querySelectorAll("#modal-content .cs-item").forEach((b) =>
       b.addEventListener("click", () => {
         if (b.dataset.code === familyCode) return closeDetail();
@@ -4324,10 +4313,11 @@
       const b = sb(k);
       if (b && b.querySelector("strong")) { b.querySelector("strong").textContent = t; b.querySelector("small").textContent = d; }
     }
+    // H1: 아이 기록 코드 입력은 계정 모드에서 쓰지 않는다(가족코드로 합류는 '가족에게 받은 가족코드로 함께하기').
     const co = el("btn-show-code-entry");
-    if (co) co.textContent = O.codeEntryOpen;
-    const cl = el("view-landing").querySelector('label[for="familyCodeInput"]');
-    if (cl) cl.textContent = O.codeEntryLabel;
+    if (co) co.style.setProperty("display", "none", "important");
+    const ce = el("code-entry");
+    if (ce) ce.classList.add("hidden");
     acctApplyLandingMode();
   }
   let acctBrowse = false; // '가입 없이 둘러보기'를 펼쳤는가(기본 접힘)
@@ -4381,7 +4371,7 @@
   /* (G1 구간 끝) */
   function acctRenderSlot() {
     const s = el("acct-slot");
-    if (s) s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, account: acct.account, notice: acct.notice });
+    if (s) s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, account: acct.account, notice: acct.notice, withCode: true, code: hh.code });
   }
   function acctOpenSlot() {
     const s = el("acct-slot");
@@ -4398,6 +4388,9 @@
       acct.mode === "signup" ? AccountView.renderSignup(st)
       : acct.mode === "login" ? AccountView.renderLogin(st)
       : acct.mode === "me" ? AccountView.renderMe({ user: acct.user, account: acct.account, code: hh.code, notice: acct.notice })
+      : acct.mode === "role" ? AccountView.renderRolePick({ form: acct.form, errors: acct.errors, busy: acct.busy, error: acct.error })
+      : acct.mode === "slot" ? AccountView.renderSlotPick({ slots: acct.slotPick && acct.slotPick.slots, busy: acct.busy, error: acct.error })
+      : acct.mode === "reissue" ? AccountView.renderReissueConfirm({ busy: acct.busy, error: acct.error })
       : acct.mode === "invite" ? AccountView.renderInvite({ code: hh.code, notice: acct.notice })
       : acct.mode === "migrate" ? AccountView.renderMigrate({ kids: acct.migrate && acct.migrate.kids, conflict: !!(acct.migrate && acct.migrate.switchTo), busy: acct.busy, error: acct.error })
       : acct.mode === "recover" ? AccountView.renderRecover({ ...st, joining: acct.joining })
@@ -4586,7 +4579,7 @@
     TAB_NAMES.forEach((t) => el(`tab-${t}`).classList.add("hidden"));
     const p = el("empty-panel");
     p.classList.remove("hidden");
-    const st = { expecting: acctExpecting() };
+    const st = { expecting: acctExpecting(), user: acct.user, account: acct.account };
     p.innerHTML = tab === "home" ? AccountView.renderEmptyHome(st) : AccountView.renderEmptyTab(tab, st);
     currentTab = tab;
     document.querySelectorAll(".nav-item").forEach((btn) => btn.classList.toggle("active", btn.dataset.nav === tab));
@@ -4666,6 +4659,26 @@
     }
   }
 
+  /** 고른 자리를 가입 의도에 반영: 자리 id + 계정 role(규칙이 허용하는 4종으로 변환). */
+  function acctApplySlot(intent, slot) {
+    intent.slotMemberId = slot.memberId;
+    intent.role = AccountSync.accountRoleOf(slot.role);
+  }
+  /** 가입 마무리(가구 연결·구성원 확보) 뒤 시트·홈 정리. */
+  async function acctSignupTail(intent) {
+    try {
+      localStorage.setItem(ACCT_INTENT_KEY, JSON.stringify(intent));
+    } catch (e) {}
+    const fin = acct.sync ? await acctFinishSignup(intent, true) : { ok: true };
+    acct.busy = false;
+    if (!fin.ok) return acctShowSheet(acct.mode === "slot" ? "signup" : undefined);
+    acct.form = {};
+    acct.notice = AccountView.MSG.signupDone;
+    closeDetail();
+    acctRenderLanding();
+    acctRenderSlot();
+    acctMaybeShowMigrate();
+  }
   async function acctOnClick(ev) {
     if (!acctEnabled()) return;
     const radio = ev.target.closest("[data-acct-radio]");
@@ -4797,7 +4810,44 @@
       } catch (e) {
         acct.notice = null;
       }
+      if (action === "copy-me" && el("acct-slot")) return acctRenderSlot(); // 프로필 시트 안: 시트를 바꾸지 않고 그 자리에서 복사 안내
       return acctShowSheet(action === "copy-me" ? "me" : "invite");
+    }
+    if (action === "open-invite") return acctShowSheet("invite");
+    if (action === "open-recover") {
+      acct.form = {};
+      acct.errors = {};
+      acct.error = null;
+      acct.joining = false;
+      return acctShowSheet("recover");
+    }
+    if (action === "ask-reissue") {
+      acct.error = null;
+      return acctShowSheet("reissue");
+    }
+    if (action === "cancel-reissue") {
+      acct.error = null;
+      return acctShowSheet("me");
+    }
+    if (action === "confirm-reissue") {
+      if (!hh.hid || !hh.code) return acctShowSheet("me");
+      acct.busy = true;
+      acct.error = null;
+      acctShowSheet("reissue");
+      try {
+        const r = await HouseholdSync.reissueCode(hh.hid, hh.code);
+        if (!r || !r.ok) throw new Error((r && r.reason) || "reissue-failed");
+        hh.code = r.code;
+        if (acct.account) acct.account.householdCode = r.code;
+        if (acct.sync && acct.user && acct.sync.setHouseholdCode) await acct.sync.setHouseholdCode(acct.user.uid, r.code);
+        acct.notice = AccountView.MSG.reissueDone;
+        acct.busy = false;
+        return acctShowSheet("me");
+      } catch (e) {
+        acct.busy = false;
+        acct.error = AccountView.MSG.reissueFail;
+        return acctShowSheet("reissue");
+      }
     }
     if (action === "recover-join-open" || action === "recover-back") {
       acct.joining = action === "recover-join-open";
@@ -4865,19 +4915,48 @@
         return acctShowSheet();
       }
       acct.user = r.user;
-      try {
-        localStorage.setItem(ACCT_INTENT_KEY, JSON.stringify(v.intent));
-      } catch (e) {}
-      const fin = acct.sync ? await acctFinishSignup(v.intent, true) : { ok: true };
-      acct.busy = false;
-      if (!fin.ok) return acctShowSheet();
-      acct.form = {};
-      acct.notice = AccountView.MSG.signupDone;
-      closeDetail();
-      acctRenderLanding();
-      acctRenderSlot();
-      acctMaybeShowMigrate();
-      return;
+      // H2: 가족코드로 합류하면 가입하지 않은 자리 목록을 보여 준다(하나면 자동 선택, 없으면 기존처럼 직접 고른 역할).
+      if (v.intent.joiningCode && acct.sync) {
+        let slots = [];
+        try {
+          const j = await HouseholdSync.peekMembers(v.intent.joiningCode); // 읽기 전용(저장된 가구 코드·미러를 바꾸지 않는다)
+          if (j && j.ok) slots = AccountSync.openSlots(j.members);
+        } catch (e) {
+          slots = []; // 읽기에 실패하면 자리 선택 없이 기존 흐름으로 합류한다
+        }
+        acct.slotPick = { intent: v.intent, slots };
+        acct.busy = false;
+        if (slots.length) return acctShowSheet("slot"); // 하나여도 확인을 받는다([합류하기] / [다른 역할로])
+        return acctShowSheet("role"); // 자리가 없으면 역할을 직접 고른다
+      }
+      return acctSignupTail(v.intent);
+    }
+    if (action === "pick-slot") {
+      const sp = acct.slotPick;
+      if (!sp) return;
+      const slot = sp.slots.find((x) => x.memberId === b.getAttribute("data-slot-id"));
+      if (!slot) { // [다른 역할로]·[목록에 없어요]: 역할을 직접 고른다
+        acct.errors = {};
+        return acctShowSheet("role");
+      }
+      acctApplySlot(sp.intent, slot);
+      acct.slotPick = null;
+      acct.busy = true;
+      acctShowSheet("slot");
+      return acctSignupTail(sp.intent);
+    }
+    if (action === "role-continue") {
+      const sp = acct.slotPick;
+      if (!sp) return;
+      if (!AccountView.ROLES.some(([k]) => k === acct.form.role)) {
+        acct.errors = { role: AccountView.MSG.errRole };
+        return acctShowSheet("role");
+      }
+      sp.intent.role = acct.form.role;
+      acct.slotPick = null;
+      acct.busy = true;
+      acctShowSheet("role");
+      return acctSignupTail(sp.intent);
     }
     if (action === "submit-login") {
       const v = AccountView.validateLogin(acct.form);
