@@ -11,12 +11,16 @@
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#ff8a5c" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
-<link rel="stylesheet" href="css/style.css?v=58" />
+<link rel="stylesheet" href="css/style.css?v=59" />
 </head>
 <body>
   <main id="app">
     <!-- 1. 랜딩 -->
     <section id="view-landing" class="view">
+      <div id="new-child-bar" class="new-child-bar hidden">
+        <button type="button" id="btn-new-child-cancel" class="btn-text">← 취소</button>
+        <span class="fine-print" id="new-child-note"></span>
+      </div>
       <div class="hero">
         <h1 id="hero-title">아이 키우면서 챙겨야 할 모든 것<br /><span class="hl">한눈육아</span> 하나로.</h1>
         <p class="sub" id="hero-sub">아이 생년월일과 사는 지역만 알려주시면<br />건강검진·예방접종·육아 혜택·발달까지 한 캘린더에서 챙겨드려요.</p>
@@ -274,7 +278,7 @@
   <script src="js/calendar-week.js?v=1"></script>
   <script src="js/user-schedule-view.js?v=8"></script>
   <script src="js/records-view.js?v=5"></script>
-  <script src="js/app.js?v=64"></script>
+  <script src="js/app.js?v=65"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

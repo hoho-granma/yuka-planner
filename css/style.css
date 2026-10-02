@@ -1011,3 +1011,7 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .remaining-item .ri-reserved { margin-left: 6px; font-size: 11px; font-weight: 600; color: var(--accent-dark); }
 .auto-link-btn { margin-top: 8px; background: #fff; color: var(--accent-dark); border: 1px solid var(--accent-dark); }
 .us-card .us-autolink { color: var(--accent-dark); font-weight: 600; }
+
+/* N1 새 아이 입력 모드 — 랜딩 위쪽의 취소 줄 */
+.new-child-bar { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+.new-child-bar .btn-text { padding: 0; font-weight: 600; }

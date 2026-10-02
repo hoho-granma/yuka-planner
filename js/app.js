@@ -2074,6 +2074,8 @@
       return;
     }
 
+    // N1: '새 아이 추가' 중이었다면 이제서야(검증을 통과한 저장 시점에) 이전 아이의 로컬 상태를 비운다.
+    if (newChildMode) finishNewChildEntry();
     profile = { name, birthDate: new Date(birthDateStr + "T00:00:00"), birthOrder, stage: landingStage || "born", province, district };
     saveProfile(profile);
     await buildAndRender();
@@ -2096,6 +2098,7 @@
         el("code-error").classList.remove("hidden");
         return;
       }
+      if (newChildMode) finishNewChildEntry(); // N1: 불러오기가 성공한 시점에만 이전 아이의 로컬 상태를 비운다
       profile = profileFromPlain(data.profile);
       completed = data.completed || {};
       saveProfile(profile);
@@ -2112,7 +2115,18 @@
     }
   }
 
-  function handleReset() {
+  // ── N1 새 아이 추가: 입력하는 동안은 지금 아이를 그대로 두고, 저장(또는 불러오기 성공)하는 시점에만 비운다 ─────────────────────
+  const NEW_CHILD_MSG = Object.freeze({
+    cancel: "← 취소",
+    note: "지금 아이 정보는 그대로 있어요.",
+    offlineTitle: "지금은 새 아이를 추가할 수 없어요",
+    offlineBody: "인터넷에 연결되어 있지 않아 지금 아이 정보를 안전하게 저장해 둘 수 없어요. 연결된 뒤에 다시 시도해 주세요.",
+    close: "닫기",
+  });
+  let newChildMode = false; // 새 아이 입력 화면 중(이전 아이는 아직 지워지지 않았다)
+  let newChildSnapshot = null; // 입력 화면에 들어올 때의 가구 연결(취소하면 되돌린다)
+  /** 이전 아이의 로컬 상태 비우기(기존 handleReset 의 데이터 부분). 화면 전환은 하지 않는다. */
+  function applyNewChildReset() {
     localStorage.removeItem(PROFILE_KEY);
     // 완료 기록도 함께 비운다 — 남겨 두면 새로 만든 아이(새 가족코드)에 이전 아이의 완료 상태가 섞여 들어간다.
     completed = {};
@@ -2124,10 +2138,86 @@
     // completed와 같은 이유로 코드 없는 임시 기록도 비운다(새 아이에게 이전 아이의 기록이 섞이지 않게).
     HNRecords.clearLocal();
     HNRecords.use(null);
+  }
+  /** 저장·불러오기 성공 시점: 이전 아이를 비우고 입력 모드를 끝낸다. */
+  function finishNewChildEntry() {
+    applyNewChildReset();
+    newChildMode = false;
+    newChildSnapshot = null;
+    el("new-child-bar").classList.add("hidden");
+  }
+  /** 가구 연결(code·id)을 입력 화면에 들어올 때의 값으로 되돌린다 — 입력 중 다른 가구에 참여했다가 취소한 경우. */
+  function hhRestoreSaved(snap) {
+    if (!hhEnabled() || !snap || (hh.hid === snap.hid && hh.code === snap.code)) return;
+    try {
+      HouseholdSync.stopListening();
+      if (snap.hid && snap.code) {
+        localStorage.setItem(HH_ID_KEY, snap.hid);
+        localStorage.setItem(HH_CODE_KEY, snap.code);
+      } else {
+        localStorage.removeItem(HH_ID_KEY);
+        localStorage.removeItem(HH_CODE_KEY);
+      }
+    } catch (e) {}
+    hhLoadSaved();
+    if (hh.hid && hh.code) hhStart();
+    hhRender();
+  }
+  /** 입력 화면 열기: 현재 아이는 건드리지 않는다(프로필·완료·가족코드·기록 그대로). 취소 줄을 보인다. */
+  function enterNewChildEntry(opts) {
+    rememberChild(); // 이 기기 아이 목록에 지금 아이를 확실히 남긴다(나중에 전환 시트로 언제든 복귀)
+    newChildMode = true;
+    newChildSnapshot = { hid: hhEnabled() ? hh.hid : null, code: hhEnabled() ? hh.code : null };
     el("query-form").reset();
     setLandingStage(null);
-    updateBrandText();
+    if (opts && opts.codeEntry) el("code-entry").classList.remove("hidden");
+    el("btn-new-child-cancel").textContent = NEW_CHILD_MSG.cancel;
+    el("new-child-note").textContent = NEW_CHILD_MSG.note;
+    el("new-child-bar").classList.remove("hidden");
     showLandingView();
+  }
+  /** 취소: 저장소·메모리 상태는 바꾸지 않고(입력 화면에서 참여한 가구 연결만 되돌림) 지금 아이 화면으로 돌아간다. */
+  function cancelNewChildEntry() {
+    if (!newChildMode) return;
+    newChildMode = false;
+    const snap = newChildSnapshot;
+    newChildSnapshot = null;
+    el("new-child-bar").classList.add("hidden");
+    el("code-entry").classList.add("hidden");
+    el("code-error").classList.add("hidden");
+    if (hhEnabled()) hhResetEntryMessage();
+    hhRestoreSaved(snap);
+    fillFormFromProfile();
+    showCalendarView();
+  }
+  /** 폼 입력칸을 지금 아이의 프로필로 다시 채운다(입력 화면에서 비웠던 칸 복원). */
+  function fillFormFromProfile() {
+    if (!profile) return;
+    populateDistricts(profile.province, profile.district);
+    el("province").value = profile.province;
+    el("childName").value = profile.name || "";
+    el("birthOrder").value = profile.birthOrder || "";
+    syncOrderChips();
+    renderProvinceChips();
+    renderDistrictChips();
+    setBirthDatePicker(profile.birthDate);
+  }
+  /** 입력 화면 들어가기 전 보호: 가족코드가 없는 아이는 먼저 코드(서버 백업)를 만들고, 못 만들면 들어가지 않는다(로컬 기록 유실 방지). */
+  async function beginNewChildEntry(opts) {
+    closeDetail();
+    if (profile && !familyCode) {
+      try {
+        await ensureFamilyCode();
+      } catch (e) {}
+      if (!familyCode) {
+        modalMode = "new-child";
+        el("modal-content").innerHTML = `<h3>${NEW_CHILD_MSG.offlineTitle}</h3><p class="fine-print">${NEW_CHILD_MSG.offlineBody}</p><button class="btn-close" id="btn-close-offline-new-child">${NEW_CHILD_MSG.close}</button>`;
+        el("detail-modal").classList.remove("hidden");
+        el("btn-close-offline-new-child").addEventListener("click", closeDetail);
+        return;
+      }
+    }
+    enterNewChildEntry(opts);
   }
 
   /** 헤더의 + 버튼 — 새 아이를 처음부터 입력한다(새 가족코드 생성). 기존 아이는 가족코드로 다시 불러올 수 있다. */
@@ -2143,10 +2233,7 @@
     `;
     el("detail-modal").classList.remove("hidden");
     el("btn-cancel-new-child").addEventListener("click", closeDetail);
-    el("btn-confirm-new-child").addEventListener("click", () => {
-      closeDetail();
-      handleReset();
-    });
+    el("btn-confirm-new-child").addEventListener("click", () => beginNewChildEntry({ codeEntry: false }));
   }
 
   // ── 앱 버전 표시 · 새로고침 ─────────────────────────────────────────────
@@ -2278,6 +2365,7 @@
   // 플래그(FEATURES.household)가 꺼져 있으면 아래 함수는 호출되지 않거나 즉시 반환한다(기존 화면·동작 그대로).
   // 아이 문서(families/{코드})에는 쓰지 않는다. 가구 ID 는 이 기기 localStorage(hannun_household_id)에만 둔다(R1).
   const HH_ID_KEY = "hannun_household_id";
+  const HH_CODE_KEY = "hannun_household_code"; // household-sync.js 의 CODE_KEY 와 같은 값(입력 중 가구 참여를 취소할 때 되돌리는 용도)
   const hh = { view: "none", hid: null, code: null, notice: null, rulesUnavailable: false, lifecycle: false };
   let hhJoining = false; // 가족 코드 참여 진행 중 — 시트를 닫았다 다시 열어도 중복 호출을 막고 'joining' 뷰를 유지한다
   const hhEnabled = () => typeof HouseholdView !== "undefined" && HouseholdView.isEnabled(window.FEATURES);
@@ -3439,11 +3527,7 @@
     `;
     el("detail-modal").classList.remove("hidden");
     el("btn-child-add").addEventListener("click", showNewChildSheet);
-    el("btn-child-code").addEventListener("click", () => {
-      closeDetail();
-      handleReset();
-      el("code-entry").classList.remove("hidden");
-    });
+    el("btn-child-code").addEventListener("click", () => beginNewChildEntry({ codeEntry: true }));
     document.querySelectorAll("#modal-content .cs-item").forEach((b) =>
       b.addEventListener("click", () => {
         if (b.dataset.code === familyCode) return closeDetail();
@@ -3589,6 +3673,7 @@
     initBirthDatePicker();
     document.querySelectorAll(".stage-btn").forEach((b) => b.addEventListener("click", () => setLandingStage(b.dataset.stage)));
     el("btn-stage-back").addEventListener("click", () => setLandingStage(null));
+    el("btn-new-child-cancel").addEventListener("click", cancelNewChildEntry);
     el("modal-backdrop").addEventListener("click", closeDetail);
     // 모든 팝업 오른쪽 위에 ✕ 닫기 버튼을 달고, 맨 아래의 "닫기" 버튼은 숨긴다(내용이 바뀔 때마다 적용).
     const ensureModalX = () => {
