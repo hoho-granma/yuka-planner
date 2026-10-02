@@ -280,7 +280,8 @@
       "officialUrl": "https://www.yongin.go.kr/home/child/c_rest/rest02.jsp",
       "summary": "영유아 발달에 맞는 놀잇감과 도서를 연회비 1만원으로 빌려주는 장난감도서관이에요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": "장난감 대여는 회원 등록 후 이용할 수 있어요."
     },
     {
       "id": "gyeonggi-yongin-edu-002",
@@ -299,7 +300,8 @@
       "officialUrl": "https://www.yongin.go.kr/home/child/c_rest/rest02.jsp",
       "summary": "미취학 영유아 가정이 장난감과 도서를 대여할 수 있는 장난감도서관이에요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": "장난감 대여는 회원 등록 후 이용할 수 있어요."
     },
     {
       "id": "gyeonggi-seongnam-park-001",
@@ -446,7 +448,8 @@
       "officialUrl": "https://www.koreajobworld.or.kr/page.do?site=1&id=4",
       "summary": "만 4세부터 10세 어린이가 직업 현장을 모의로 체험하는 어린이 체험관이에요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": "만 4세부터 이용할 수 있어요."
     },
     {
       "id": "gyeonggi-seongnam-exp-002",
@@ -494,7 +497,8 @@
       "officialUrl": "https://www.sneducare.or.kr/fisarang/M000710/S008/conts.do",
       "summary": "취학 전 영유아 가정이 아이 연령에 맞는 놀잇감으로 자유롭게 노는 놀이공간이에요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": "성남시민·성남시 소재 직장 재직 가정만 이용할 수 있어요."
     },
     {
       "id": "gyeonggi-seongnam-edu-002",
@@ -510,7 +514,8 @@
       "officialUrl": "https://www.sneducare.or.kr/hisarang/M000870/S010/conts.do",
       "summary": "취학 전 영유아 가정이 아이 연령에 맞는 놀잇감으로 자유롭게 노는 놀이공간이에요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": "성남시민·성남시 소재 직장 재직 가정만 이용할 수 있어요."
     },
     {
       "id": "gyeonggi-seongnam-edu-003",
@@ -526,7 +531,8 @@
       "officialUrl": "https://www.sneducare.or.kr/gisarang/M000795/S009/conts.do",
       "summary": "취학 전 영유아 가정이 아이 연령에 맞는 놀잇감으로 자유롭게 노는 놀이공간이에요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": "성남시민·성남시 소재 직장 재직 가정만 이용할 수 있어요."
     },
     {
       "id": "gyeonggi-seongnam-edu-004",
@@ -542,7 +548,111 @@
       "officialUrl": "https://www.sneducare.or.kr/cisarang/M000453/S005/conts.do",
       "summary": "도란도란 이야기놀이터라는 이름의 영유아 자유놀이 공간이에요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": "성남시민·성남시 소재 직장 재직 가정만 이용할 수 있어요."
+    },
+    {
+      "id": "seoul-mus-002",
+      "name": "국립중앙박물관 어린이박물관",
+      "category": "MUSEUM",
+      "province": "서울특별시",
+      "district": "용산구",
+      "ageMonths": null,
+      "indoor": "INDOOR",
+      "cost": "FREE",
+      "reservation": "REQUIRED",
+      "address": "서울특별시 용산구 서빙고로 137",
+      "officialUrl": "https://www.museum.go.kr/CHILD/contents/C0102000000.do",
+      "summary": "무료로 관람하는 온라인 예약제 어린이박물관이고, 5~9세 대상 전시실과 36개월 이하 영유아 공간인 데굴데굴놀이터가 있어요.",
+      "checkedAt": "2026-10-03",
+      "example": false,
+      "notice": "전시실은 5~9세 대상이고, 36개월 이하 아이를 위한 놀이 공간이 따로 있어요."
+    },
+    {
+      "id": "seoul-mus-003",
+      "name": "국립민속박물관 어린이박물관",
+      "category": "MUSEUM",
+      "province": "서울특별시",
+      "district": "종로구",
+      "ageMonths": null,
+      "indoor": "INDOOR",
+      "cost": "FREE",
+      "reservation": "REQUIRED",
+      "address": "서울특별시 종로구 삼청로 37",
+      "officialUrl": "https://www.nfm.go.kr/kids/user/content.do?pageId=PAGE_000000000000003",
+      "summary": "무료로 관람하는 어린이박물관이고, 홈페이지에서 1인당 1일 1회 사전 예약해야 입장할 수 있어요.",
+      "checkedAt": "2026-10-03",
+      "example": false,
+      "notice": "보호자와 어린이가 함께 입장해야 하고, 예약 후 취소 없이 불참하면 60일간 관람이 제한될 수 있어요."
+    },
+    {
+      "id": "seoul-mus-004",
+      "name": "서울시립과학관",
+      "category": "MUSEUM",
+      "province": "서울특별시",
+      "district": "노원구",
+      "ageMonths": null,
+      "indoor": "INDOOR",
+      "cost": "FREE",
+      "reservation": null,
+      "address": "서울특별시 노원구 한글비석로 160",
+      "officialUrl": "https://science.seoul.go.kr/",
+      "summary": "관람료는 무료이고 일부 체험·교육 프로그램은 유료로 운영돼요.",
+      "checkedAt": "2026-10-03",
+      "example": false,
+      "notice": null
+    },
+    {
+      "id": "seoul-exp-001",
+      "name": "서울상상나라",
+      "category": "EXPERIENCE",
+      "province": "서울특별시",
+      "district": "광진구",
+      "ageMonths": null,
+      "indoor": "INDOOR",
+      "cost": "PARTLY",
+      "reservation": "REQUIRED",
+      "address": "서울특별시 광진구 능동로 216",
+      "officialUrl": "https://www.seoulchildrensmuseum.org/reservation/viewAdmission.do",
+      "summary": "어린이를 위한 복합체험시설이고, 36개월 미만은 무료이며 36개월 이상 어린이와 성인은 4,000원이에요.",
+      "checkedAt": "2026-10-03",
+      "example": false,
+      "notice": "36개월 미만은 무료, 개인 관람은 온라인 사전예약이에요."
+    },
+    {
+      "id": "seoul-edu-001",
+      "name": "서울시육아종합지원센터",
+      "category": "EDU",
+      "province": "서울특별시",
+      "district": "마포구",
+      "ageMonths": null,
+      "indoor": "INDOOR",
+      "cost": null,
+      "reservation": null,
+      "address": "서울특별시 마포구 서강로 75-16 1층",
+      "officialUrl": "https://seoul.childcare.go.kr/lseoul/d2_10000/d2_10015.jsp",
+      "summary": "서울시 보육·양육 지원과 양육코칭 같은 부모 교육을 운영하는 공공 센터예요.",
+      "checkedAt": "2026-10-03",
+      "example": false,
+      "notice": null
+    },
+    {
+      "id": "seoul-edu-002",
+      "name": "서울장난감도서관",
+      "category": "EDU",
+      "province": "서울특별시",
+      "district": "동작구",
+      "ageMonths": null,
+      "indoor": "INDOOR",
+      "cost": null,
+      "reservation": null,
+      "address": "서울특별시 동작구 노량진로 10 서울가족플라자 1층",
+      "officialUrl": "https://seoultoy.or.kr/renew/main/index.php",
+      "summary": "장난감, 도서, 육아용품을 빌려주고 장난감 수리와 기부·교환도 안내하는 곳이에요.",
+      "checkedAt": "2026-10-03",
+      "example": false,
+      "notice": null
     }
-  ]
+  ],
+  "coverage": "서울 대표 시설·성남시 분당구·용인시"
 }
