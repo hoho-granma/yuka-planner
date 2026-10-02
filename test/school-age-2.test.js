@@ -109,6 +109,17 @@ test("체크리스트 그룹: Tdap(132)·HPV(144)는 '만 10~12세' 구간, 72 �
     assert.ok(d.displayMonth > CT.SERVICE_RANGE.maxMonths);
   }
 });
+test("사실 점검 반영: Tdap 창 132~155·'백일해 백신을 맞을 수 없는 경우 Td'만, HPV 조건부·dose-2 상한 없음·효능 문구 완화, 학교 문구 완화", () => {
+  const by = (id) => SA.todos.find((d) => d.todo_id === id);
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(by("VX-TDAP").triggerParams)), { startMonth: 132, endMonth: 155 });
+  assert.ok(by("VX-TDAP").parentAction.includes("Tdap(백일해 백신을 맞을 수 없는 경우 Td)") && !by("VX-TDAP").parentAction.includes("또는 Td"));
+  const hpv = by("VX-HPV");
+  assert.strictEqual(hpv.exposureLevel, "CONDITIONAL");
+  assert.strictEqual(hpv.occurrences.find((o) => o.occurrenceKey === "dose-2").trigger.maxOffsetDays, null);
+  assert.strictEqual(hpv.occurrences.find((o) => o.occurrenceKey === "dose-2").trigger.minOffsetDays, 180);
+  assert.ok(!/자궁경부암/.test(JSON.stringify(hpv)));
+  for (const d of SA.todos.filter((x) => x.todo_id.startsWith("SC-"))) assert.ok(!/따로 신청할 일은 없고|키·몸무게 등|검진기관은 학교에서 안내/.test(JSON.stringify(d)), d.todo_id);
+});
 test("제외 확인: 구강검진·돌봄·늘봄·인플루엔자 항목은 없다", () => {
   const txt = JSON.stringify(SA.todos);
   assert.ok(!/구강|늘봄|돌봄교실|인플루엔자/.test(SA.todos.map((d) => d.title).join("")));

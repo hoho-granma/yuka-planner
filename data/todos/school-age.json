@@ -7,13 +7,13 @@
       "todo_id": "VX-TDAP",
       "category": "VX",
       "title": "Tdap(파상풍·디프테리아·백일해) 만 11~12세",
-      "parentAction": "만 11~12세에 Tdap(또는 Td) 추가접종을 맞아요(국가예방접종). DTaP 추가접종이 늦어져 만 10세 이후에 맞았다면 이 접종을 마친 것으로 보니, 접종 기록을 접종기관에 확인하세요",
+      "parentAction": "만 11~12세에 Tdap(백일해 백신을 맞을 수 없는 경우 Td) 추가접종을 맞아요(국가예방접종). DTaP 추가접종이 늦어져 만 10세 이후에 맞았다면 이 접종을 마친 것으로 보니, 접종 기록을 접종기관에 확인하세요",
       "completionCriteria": "접종 완료",
       "exposureLevel": "MUST",
       "triggerType": "AGE_WINDOW",
       "triggerParams": {
         "startMonth": 132,
-        "endMonth": 144
+        "endMonth": 155
       },
       "catchUp": "ALLOWED",
       "priority": 2,
@@ -22,7 +22,7 @@
       "verificationStatus": "확인됨(KDCA 2026 국가예방접종 지침 117·118쪽 대조, 열람 2026-10-02: DTaP 6차 = 만 11~12세 Tdap, 국가지원)",
       "displayMonth": 132,
       "displayMonthLabel": "132개월",
-      "displayMonthBasis": "표준접종 시작 월령(만 11세)",
+      "displayMonthBasis": "표준접종 시작 월령(만 11세). 접종 기간은 만 13세 생일 직전까지(155개월)",
       "categoryGroup": "예방접종",
       "extendedVisibility": [
         {
@@ -39,7 +39,7 @@
       "title": "HPV(사람유두종바이러스)",
       "parentAction": "만 12~14세에 2회(0개월, 6~12개월 후) 접종해요. 무료 접종 대상은 출생연도·성별에 따라 달라질 수 있으니 보건소·질병관리청 안내로 확인하세요(확인 필요)",
       "completionCriteria": "각 회차 접종 완료",
-      "exposureLevel": "MUST",
+      "exposureLevel": "CONDITIONAL",
       "occurrences": [
         {
           "occurrenceKey": "dose-1",
@@ -55,7 +55,7 @@
             "type": "RELATIVE_TO_EVENT",
             "referenceEvent": "previous_occurrence_completion",
             "minOffsetDays": 180,
-            "maxOffsetDays": 365
+            "maxOffsetDays": null
           }
         }
       ],
@@ -74,7 +74,7 @@
           "maxVisibleMonths": 144
         }
       ],
-      "about": "자궁경부암 등 HPV 관련 질환을 막는 백신이에요.",
+      "about": "사람유두종바이러스(HPV) 감염을 예방하는 백신이에요.",
       "why": "만 12~14세에는 2회로 접종을 마칠 수 있어요. 무료 접종 대상은 출생연도·성별 기준이 있어서 해당 여부는 보건소나 질병관리청 안내를 확인하세요."
     },
     {
@@ -105,7 +105,7 @@
       ],
       "guideType": "SCHEDULED",
       "cardSummary": "초1 건강검진 — 학교 안내에 따라 (시기는 학교별)",
-      "why": "학교보건법 제7조에 따라 초등학교 1학년과 4학년에는 건강검진을 해요. 구체적인 일정과 검진기관은 학교에서 안내해 주니 가정통신문을 확인하세요.",
+      "why": "학교보건법 제7조에 따라 초등학교 1학년과 4학년에는 건강검진을 해요. 일정과 방법은 학교 안내를 확인하세요.",
       "observationGuide": [
         "학교 가정통신문의 건강검진 안내",
         "검진 일정과 준비물",
@@ -140,7 +140,7 @@
       ],
       "guideType": "SCHEDULED",
       "cardSummary": "초4 건강검진 — 학교 안내에 따라 (시기는 학교별)",
-      "why": "학교보건법 제7조에 따라 초등학교 1학년과 4학년에는 건강검진을 해요. 구체적인 일정과 검진기관은 학교에서 안내해 주니 가정통신문을 확인하세요.",
+      "why": "학교보건법 제7조에 따라 초등학교 1학년과 4학년에는 건강검진을 해요. 일정과 방법은 학교 안내를 확인하세요.",
       "observationGuide": [
         "학교 가정통신문의 건강검진 안내",
         "검진 일정과 준비물",
@@ -151,7 +151,7 @@
       "todo_id": "SC-06",
       "category": "SC",
       "title": "학교 신체발달 검사(초1)",
-      "parentAction": "학교에서 매 학년도 1학기 말까지 신체발달 검사(키·몸무게 등)를 해요. 따로 신청할 일은 없고, 학교 안내를 확인하세요",
+      "parentAction": "학교에서 매 학년도 1학기 말까지 신체발달 검사(키·몸무게)를 해요. 학교 안내를 확인하세요",
       "completionCriteria": "학교 안내 확인",
       "exposureLevel": "MUST",
       "triggerType": "SCHOOL_TERM_WINDOW",
@@ -185,7 +185,7 @@
       "todo_id": "SC-07",
       "category": "SC",
       "title": "학교 신체발달 검사(초2)",
-      "parentAction": "학교에서 매 학년도 1학기 말까지 신체발달 검사(키·몸무게 등)를 해요. 따로 신청할 일은 없고, 학교 안내를 확인하세요",
+      "parentAction": "학교에서 매 학년도 1학기 말까지 신체발달 검사(키·몸무게)를 해요. 학교 안내를 확인하세요",
       "completionCriteria": "학교 안내 확인",
       "exposureLevel": "MUST",
       "triggerType": "SCHOOL_TERM_WINDOW",
@@ -219,7 +219,7 @@
       "todo_id": "SC-08",
       "category": "SC",
       "title": "학교 신체발달 검사(초3)",
-      "parentAction": "학교에서 매 학년도 1학기 말까지 신체발달 검사(키·몸무게 등)를 해요. 따로 신청할 일은 없고, 학교 안내를 확인하세요",
+      "parentAction": "학교에서 매 학년도 1학기 말까지 신체발달 검사(키·몸무게)를 해요. 학교 안내를 확인하세요",
       "completionCriteria": "학교 안내 확인",
       "exposureLevel": "MUST",
       "triggerType": "SCHOOL_TERM_WINDOW",
@@ -253,7 +253,7 @@
       "todo_id": "SC-09",
       "category": "SC",
       "title": "학교 신체발달 검사(초4)",
-      "parentAction": "학교에서 매 학년도 1학기 말까지 신체발달 검사(키·몸무게 등)를 해요. 따로 신청할 일은 없고, 학교 안내를 확인하세요",
+      "parentAction": "학교에서 매 학년도 1학기 말까지 신체발달 검사(키·몸무게)를 해요. 학교 안내를 확인하세요",
       "completionCriteria": "학교 안내 확인",
       "exposureLevel": "MUST",
       "triggerType": "SCHOOL_TERM_WINDOW",
@@ -287,7 +287,7 @@
       "todo_id": "SC-10",
       "category": "SC",
       "title": "학교 신체발달 검사(초5)",
-      "parentAction": "학교에서 매 학년도 1학기 말까지 신체발달 검사(키·몸무게 등)를 해요. 따로 신청할 일은 없고, 학교 안내를 확인하세요",
+      "parentAction": "학교에서 매 학년도 1학기 말까지 신체발달 검사(키·몸무게)를 해요. 학교 안내를 확인하세요",
       "completionCriteria": "학교 안내 확인",
       "exposureLevel": "MUST",
       "triggerType": "SCHOOL_TERM_WINDOW",
@@ -321,7 +321,7 @@
       "todo_id": "SC-11",
       "category": "SC",
       "title": "학교 신체발달 검사(초6)",
-      "parentAction": "학교에서 매 학년도 1학기 말까지 신체발달 검사(키·몸무게 등)를 해요. 따로 신청할 일은 없고, 학교 안내를 확인하세요",
+      "parentAction": "학교에서 매 학년도 1학기 말까지 신체발달 검사(키·몸무게)를 해요. 학교 안내를 확인하세요",
       "completionCriteria": "학교 안내 확인",
       "exposureLevel": "MUST",
       "triggerType": "SCHOOL_TERM_WINDOW",
