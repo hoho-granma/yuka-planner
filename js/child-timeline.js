@@ -52,6 +52,17 @@
     return `생후 ${totalMonths}개월`;
   }
 
+  /** 36개월부터는 개월 수 대신 세는 나이(한국 나이)로 표기한다: asOf 연도 − 출생 연도 + 1(생일과 무관). */
+  const COUNTING_AGE_FROM_MONTHS = 36;
+  /**
+   * 화면 표기: 36개월 미만은 "생후 N개월"(ageLabel 그대로), 36개월 이상은 "N세"(세는 나이).
+   * 36개월 이상 판정은 완료 개월 수(completedMonths) 기준, 연도 차는 asOf 연도 기준이다. 임신 중 표기는 호출하는 쪽(app.js)이 따로 한다.
+   */
+  function ageLabelAt(birthDate, asOf) {
+    const months = completedMonths(birthDate, asOf);
+    return months < COUNTING_AGE_FROM_MONTHS ? ageLabel(months) : `${asOf.getFullYear() - birthDate.getFullYear() + 1}세`;
+  }
+
   /** 이벤트 시점 월령이 서비스 범위 안인가(날짜만 본다). range 를 주면 그 상한으로 판정한다(예: { maxMonths: LEGACY_TODO_CAP_MONTHS }). */
   function isWithinServiceRange(birthDate, eventDate, range) {
     return completedMonths(birthDate, eventDate) <= (range || SERVICE_RANGE).maxMonths;
@@ -183,11 +194,11 @@
     const totalMonths = completedMonths(birthDate, asOf);
     return {
       age: { years: Math.floor(totalMonths / 12), months: totalMonths % 12, totalMonths },
-      label: stage === "pregnant" ? null : ageLabel(totalMonths),
+      label: stage === "pregnant" ? null : ageLabelAt(birthDate, asOf),
       // 임신 중(birthDate = 출산 예정일)에는 학년을 계산하지 않는다. 정책이 없으면 기존과 같이 null.
       school: stage === "pregnant" || !policy ? null : computeSchool(birthDate, asOf, policy, { enrollmentYearOverride }),
     };
   }
 
-  return { SERVICE_RANGE, LEGACY_TODO_CAP_MONTHS, INFANT_TODDLER_MAX_MONTHS, CHECKLIST_BUCKETS, completedMonths, ageLabel, isWithinServiceRange, isLegacyCappedDefinition, isLegacyCapped, effectiveMaxMonths, isEventVisible, isSchoolTermDefinition, checklistBucket, checklistGroupLabel, computeSchool, compute };
+  return { SERVICE_RANGE, LEGACY_TODO_CAP_MONTHS, INFANT_TODDLER_MAX_MONTHS, CHECKLIST_BUCKETS, completedMonths, ageLabel, ageLabelAt, isWithinServiceRange, isLegacyCappedDefinition, isLegacyCapped, effectiveMaxMonths, isEventVisible, isSchoolTermDefinition, checklistBucket, checklistGroupLabel, computeSchool, compute };
 });

@@ -124,7 +124,7 @@ test("A5-1 불변: 정책이 없거나 확인되지 않으면 compute 결과는 
       const asOf = new Date(b.getFullYear(), b.getMonth() + m, 15);
       const base = CT.compute({ birthDate: b, asOf, stage: "born" });
       const total = CT.completedMonths(b, asOf);
-      assert.deepStrictEqual(base, { age: { years: Math.floor(total / 12), months: total % 12, totalMonths: total }, label: `생후 ${total}개월`, school: null });
+      assert.deepStrictEqual(base, { age: { years: Math.floor(total / 12), months: total % 12, totalMonths: total }, label: total < 36 ? `생후 ${total}개월` : `${asOf.getFullYear() - b.getFullYear() + 1}세`, school: null }); // N3: 36개월부터 세는 나이(의도된 표기 변경)
       assert.deepStrictEqual(Object.keys(base), ["age", "label", "school"]);
       for (const policy of [undefined, null, {}, unverified, { ...T_POLICY, schoolYearStartMonth: { value: 13, verificationStatus: "확인됨" } }, { ...T_POLICY, preElementaryYearsBefore: undefined }]) {
         assert.deepStrictEqual(CT.compute({ birthDate: b, asOf, stage: "born", policy }), base);

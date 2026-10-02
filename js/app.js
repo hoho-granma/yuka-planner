@@ -761,7 +761,7 @@
       const dLabel = pi.daysToDue > 0 ? `출산까지 D-${pi.daysToDue}` : pi.daysToDue === 0 ? "오늘이 출산 예정일" : "출산 예정일이 지났어요";
       el("profile-name-age").textContent = `${childDisplayName()} · 임신 ${pi.weeks}주 · ${dLabel}`;
     } else {
-      el("profile-name-age").textContent = `${childDisplayName()} · ${ChildTimeline.ageLabel(ageNow)}`;
+      el("profile-name-age").textContent = `${childDisplayName()} · ${ChildTimeline.ageLabelAt(profile.birthDate, today)}`;
     }
     el("profile-location-text").textContent = `${profile.province} ${profile.district}`;
     el("profile-avatar").innerHTML = avatarInnerHTML(profile.photoDataUrl, childDisplayName());
@@ -797,7 +797,7 @@
       <div class="detail-row"><div class="label">${isPregnant() ? "출산 예정일" : "생년월일"}</div>${
         isPregnant()
           ? `${formatDateKR(profile.birthDate)} · 임신 ${pregnancyInfo(profile.birthDate, today).weeks}주`
-          : `${formatDateKR(profile.birthDate)} · ${ChildTimeline.ageLabel(ageNow)}`
+          : `${formatDateKR(profile.birthDate)} · ${ChildTimeline.ageLabelAt(profile.birthDate, today)}`
       }</div>
       <div class="detail-row"><div class="label">거주 지역</div>${profile.province} ${profile.district}</div>
       ${

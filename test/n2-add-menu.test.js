@@ -76,7 +76,10 @@ test("연결: + 버튼 리스너만 showNewChildSheet → showAddMenuSheet 로 �
     .replace('el("btn-add-child").addEventListener("click", showAddMenuSheet);', 'el("btn-add-child").addEventListener("click", showNewChildSheet);')
     .replace(menuSrc, "")
     .replace("usOpenForm(id, dateIso, opts)", "usOpenForm(id, dateIso)")
-    .replace(", ...(opts && opts.scope ? { defaultScope: opts.scope } : {})", "");
+    .replace(", ...(opts && opts.scope ? { defaultScope: opts.scope } : {})", "")
+    // N3(나이 표기) 이후 커밋의 변경 두 곳도 되돌려 N2 변경만 분리한다
+    .replace("ChildTimeline.ageLabelAt(profile.birthDate, today)", "ChildTimeline.ageLabel(ageNow)")
+    .replace("ChildTimeline.ageLabelAt(profile.birthDate, today)", "ChildTimeline.ageLabel(ageNow)");
   assert.strictEqual(restored, headApp);
   assert.strictEqual(fnSrc(app, "showNewChildSheet"), fnSrc(headApp, "showNewChildSheet"));
 });
