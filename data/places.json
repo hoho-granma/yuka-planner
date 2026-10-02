@@ -34,7 +34,8 @@
       "officialUrl": "https://www.guro.go.kr/www/contents.do?key=2500",
       "summary": "일반자료실과 어린이자료실이 있는 구립 도서관이에요.",
       "checkedAt": "2026-10-02",
-      "example": true
+      "example": false,
+      "notice": null
     },
     {
       "id": "seoul-guro-park-001",
@@ -50,7 +51,8 @@
       "officialUrl": "https://www.guro.go.kr/www/contents.do?key=2974",
       "summary": "저수지와 주제정원, 숲교육센터가 있는 시립 수목원이에요. 가드닝·생태학습 프로그램을 운영해요.",
       "checkedAt": "2026-10-02",
-      "example": true
+      "example": false,
+      "notice": null
     },
     {
       "id": "seoul-guro-exp-001",
@@ -69,7 +71,8 @@
       "officialUrl": "https://www.guro.go.kr/health/contents.do?key=1383",
       "summary": "손 씻기·구강위생·영양·운동을 체험으로 배우는 어린이 건강교육 공간이에요. 사전 예약제예요.",
       "checkedAt": "2026-10-02",
-      "example": true
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-yongin-park-001",
@@ -85,7 +88,8 @@
       "officialUrl": "https://www.yongin.go.kr/home/yitour/ytour01/yttour02/yttourmn01_02.jsp",
       "summary": "기흥구 하갈동·공세동·고매동 일원에 있고 10여 km 둘레길이 조성돼 있어요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-yongin-park-002",
@@ -101,7 +105,8 @@
       "officialUrl": "https://www.yongin.go.kr/user/bbs/BD_selectBbs.do?q_bbsCode=1076&q_clCode=1&q_bbscttSn=20250114142934325",
       "checkedAt": "2026-10-03",
       "summary": "호수 주변 산책로가 있고 음악분수와 야외무대가 설치돼 있어요(음악분수는 겨울에 운영하지 않아요).",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-yongin-park-003",
@@ -117,7 +122,8 @@
       "officialUrl": "https://www.yongin.go.kr/home/yitour/ytour01/yttour05_01_01.jsp",
       "summary": "농경문화전시관, 경관농업단지, 체험관 등을 갖춘 농촌 체험 시설이에요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-yongin-lib-001",
@@ -133,7 +139,8 @@
       "officialUrl": "https://lib.yongin.go.kr/yongin/menu/10220/contents/40051/contents.do",
       "summary": "영·유아와 초등학생이 이용할 수 있는 어린이도서관이고 평일 09:00~18:00, 주말 09:00~17:00에 운영해요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-yongin-lib-002",
@@ -149,7 +156,8 @@
       "officialUrl": "https://lib.yongin.go.kr/giheung/menu/10797/contents/40071/contents.do",
       "summary": "초등학생 이하 어린이가 이용하는 1층 자료실이고 열람·대출, 회원증 발급, 도서관 견학을 할 수 있어요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-yongin-lib-003",
@@ -165,7 +173,8 @@
       "officialUrl": "https://lib.yongin.go.kr/suji/menu/12365/contents/40165/contents.do",
       "summary": "수지도서관에서 어린이 도서를 열람하고 대출할 수 있는 어린이자료실이에요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-yongin-mus-001",
@@ -181,7 +190,8 @@
       "officialUrl": "https://www.yongin.go.kr/museum/index.do",
       "summary": "용인시가 운영하는 박물관으로 화요일부터 일요일까지 무료로 관람할 수 있어요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-yongin-mus-002",
@@ -197,7 +207,8 @@
       "officialUrl": "https://njp.ggcf.kr/",
       "summary": "경기도 공립 미술관으로 유아(만 7세 이하)는 입장료가 무료이고 예술교육 프로그램도 운영해요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-yongin-exp-001",
@@ -213,7 +224,8 @@
       "officialUrl": "https://forestedu.yongin.go.kr/program/forest1",
       "summary": "용인자연휴양림 안에 있는 유아숲체험원으로, 모래놀이집과 어드벤처플레이 등을 갖추고 있어요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-yongin-exp-002",
@@ -229,7 +241,8 @@
       "officialUrl": "https://forestedu.yongin.go.kr/program/forest1",
       "summary": "한숲근린공원 안에 있는 유아숲체험원으로, 숲속교실과 모래놀이터 등을 갖추고 있어요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-yongin-exp-003",
@@ -245,7 +258,8 @@
       "officialUrl": "https://forestedu.yongin.go.kr/program/forest1",
       "summary": "보라생태마당근린공원 안에 있는 유아숲체험원으로, 경사오르기와 밧줄놀이, 모래놀이터 등을 갖추고 있어요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-yongin-exp-004",
@@ -261,7 +275,8 @@
       "officialUrl": "https://forestedu.yongin.go.kr/program/forest1",
       "summary": "정암근린공원 안에 있는 유아숲체험원으로, 나뭇잎놀이터와 밧줄놀이 등을 갖추고 있어요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-yongin-edu-001",
@@ -317,7 +332,8 @@
       "officialUrl": "https://www.seongnam.go.kr/tour/tu-pm030101/43",
       "summary": "도심 한가운데서 숲과 호수를 함께 볼 수 있는 녹지공간이에요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-seongnam-park-002",
@@ -333,7 +349,8 @@
       "officialUrl": "https://www.seongnam.go.kr/tour/tu-pm030101/44",
       "summary": "원래의 자연을 살려 조성한 자연호수 공원이에요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-seongnam-lib-001",
@@ -349,7 +366,8 @@
       "officialUrl": "https://www.snlib.go.kr/cpg/menu/10813/contents/40209/contents.do",
       "summary": "36개월 이하 영아와 보호자를 위한 아기책나라와 유아와 보호자가 책을 읽는 유아열람실이 있어요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-seongnam-lib-002",
@@ -365,7 +383,8 @@
       "officialUrl": "https://www.snlib.go.kr/gm/menu/10379/contents/40111/contents.do",
       "summary": "어린이와 유아를 위한 자료실에 유아 및 아동도서를 갖추고 유아방도 있어요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-seongnam-lib-003",
@@ -381,7 +400,8 @@
       "officialUrl": "https://www.snlib.go.kr/mjg/menu/10724/contents/40192/contents.do",
       "summary": "유아를 위한 유아가족열람실에 유아 및 아동도서를 갖추고 있어요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-seongnam-lib-004",
@@ -397,7 +417,8 @@
       "officialUrl": "https://www.snlib.go.kr/bd/menu/10252/contents/40078/contents.do",
       "summary": "유아와 보호자가 함께 읽는 가족열람실과 초등학생을 위한 어린이열람실이 있어요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-seongnam-mus-001",
@@ -413,7 +434,8 @@
       "officialUrl": "https://museum.seongnam.go.kr/pangyo/contents/content.do?cIdx=1",
       "summary": "상설전시와 야외전시를 둔 박물관이고 개인은 예약 없이 현장에서 전시해설을 신청할 수 있어요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-seongnam-mus-002",
@@ -429,7 +451,8 @@
       "officialUrl": "https://museum.snart.or.kr/",
       "summary": "전통과 현대, 동양과 서양이 만나는 미술관이에요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-seongnam-exp-001",
@@ -465,7 +488,8 @@
       "officialUrl": "https://mpark.seongnam.go.kr:10003/main.php?menugrp=010300&master=html&act=page",
       "summary": "반딧불이가 사는 인공 습지와 잘 보존된 숲에서 자연을 느끼고 배우는 학습원이에요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-seongnam-exp-003",
@@ -481,7 +505,8 @@
       "officialUrl": "https://ppark.seongnam.go.kr:10013/info/info",
       "summary": "어린이 중심의 체험관에서 숲과 습지 같은 생태계를 관찰할 수 있어요. 개인은 예약 없이 전시를 볼 수 있어요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "notice": null
     },
     {
       "id": "gyeonggi-seongnam-edu-001",
@@ -652,6 +677,142 @@
       "checkedAt": "2026-10-03",
       "example": false,
       "notice": null
+    },
+    {
+      "id": "seoul-park-001",
+      "name": "서울식물원",
+      "category": "PARK",
+      "province": "서울특별시",
+      "district": "강서구",
+      "ageMonths": null,
+      "indoor": "BOTH",
+      "cost": "PARTLY",
+      "reservation": null,
+      "address": "서울특별시 강서구 마곡동로 161 서울식물원",
+      "officialUrl": "https://botanicpark.seoul.go.kr/front/introduce/useInfo.do",
+      "summary": "식물원과 공원이 함께 있는 공원 속 식물원이고 열린숲·호수원·습지원은 늘 무료로 열려 있어요.",
+      "notice": null,
+      "checkedAt": "2026-10-03",
+      "example": false
+    },
+    {
+      "id": "seoul-park-002",
+      "name": "서울숲",
+      "category": "PARK",
+      "province": "서울특별시",
+      "district": "성동구",
+      "ageMonths": null,
+      "indoor": null,
+      "cost": null,
+      "reservation": null,
+      "address": "서울특별시 성동구 뚝섬로 273",
+      "officialUrl": "https://parks.seoul.go.kr/mini/content.do?key=2605260008",
+      "summary": "숲과 문화가 어우러지는 서울의 대표적인 녹색 쉼터예요.",
+      "notice": null,
+      "checkedAt": "2026-10-03",
+      "example": false
+    },
+    {
+      "id": "seoul-park-003",
+      "name": "북서울꿈의숲",
+      "category": "PARK",
+      "province": "서울특별시",
+      "district": "강북구",
+      "ageMonths": null,
+      "indoor": null,
+      "cost": null,
+      "reservation": null,
+      "address": "서울특별시 강북구 월계로 173",
+      "officialUrl": "https://parks.seoul.go.kr/content.do?key=2604300016",
+      "summary": "어린이놀이터와 유아숲체험원, 유모차 대여·수유실이 있는 대형 녹지공원이에요.",
+      "notice": null,
+      "checkedAt": "2026-10-03",
+      "example": false
+    },
+    {
+      "id": "seoul-park-004",
+      "name": "길동생태공원",
+      "category": "PARK",
+      "province": "서울특별시",
+      "district": "강동구",
+      "ageMonths": null,
+      "indoor": null,
+      "cost": "FREE",
+      "reservation": "PARTLY",
+      "address": "서울특별시 강동구 천호대로 1291(길동 18-3)",
+      "officialUrl": "https://parks.seoul.go.kr/content.do?key=2604300010",
+      "summary": "숲과 습지를 둘러보는 생태공원이에요. 사전 예약이나 당일 현장 등록으로 들어갈 수 있어요.",
+      "notice": "하루 최대 400명까지 입장하고 매주 월요일은 쉬어요. 킥보드·자전거는 가져가지 않는 게 좋아요.",
+      "checkedAt": "2026-10-03",
+      "example": false
+    },
+    {
+      "id": "seoul-park-005",
+      "name": "서울어린이대공원",
+      "category": "PARK",
+      "province": "서울특별시",
+      "district": "광진구",
+      "ageMonths": null,
+      "indoor": null,
+      "cost": "PARTLY",
+      "reservation": null,
+      "address": "서울특별시 광진구 능동로 216 서울어린이대공원",
+      "officialUrl": "https://www.sisul.or.kr/open_content/childrenpark/introduce/use.jsp",
+      "summary": "동식물이 함께 살아가는 생태공원이자 시민의 휴식공간이에요. 공원 입장은 무료예요.",
+      "notice": "킥보드·자전거·반려동물은 들어갈 수 없어요. 공원 안 식물원은 2027년 하반기까지 운영을 멈춰요.",
+      "checkedAt": "2026-10-03",
+      "example": false
+    },
+    {
+      "id": "seoul-lib-001",
+      "name": "국립어린이청소년도서관",
+      "category": "LIBRARY",
+      "province": "서울특별시",
+      "district": "강남구",
+      "ageMonths": null,
+      "indoor": "INDOOR",
+      "cost": null,
+      "reservation": null,
+      "address": "서울특별시 강남구 테헤란로7길 21(역삼1동 635-1)",
+      "officialUrl": "https://www.nlcy.go.kr/NLCY/contents/C50201000000.do",
+      "summary": "유아와 초등 저학년 자료를 갖춘 어린이자료실에 이야기방과 그림책나라가 있어요.",
+      "notice": "어린이는 보호자 신분증과 아이 신분 확인 서류가 필요하고, 자료는 도서관 안에서만 볼 수 있어요.",
+      "checkedAt": "2026-10-03",
+      "example": false
+    },
+    {
+      "id": "seoul-lib-002",
+      "name": "도봉기적의도서관",
+      "category": "LIBRARY",
+      "province": "서울특별시",
+      "district": "도봉구",
+      "ageMonths": null,
+      "indoor": "INDOOR",
+      "cost": null,
+      "reservation": null,
+      "address": "서울특별시 도봉구 마들로 797(도봉동)",
+      "officialUrl": "https://dbfac.or.kr/front/cultureplace/miraclelibrary.do",
+      "summary": "유·아동 자료열람실과 북스타트 공간, 수유실을 갖춘 어린이 도서관이에요.",
+      "notice": null,
+      "checkedAt": "2026-10-03",
+      "example": false
+    },
+    {
+      "id": "seoul-lib-004",
+      "name": "구로기적의도서관",
+      "category": "LIBRARY",
+      "province": "서울특별시",
+      "district": "구로구",
+      "ageMonths": null,
+      "indoor": "INDOOR",
+      "cost": null,
+      "reservation": null,
+      "address": "서울특별시 구로구 구로중앙로40길 24(신도림)",
+      "officialUrl": "https://www.guro.go.kr/www/contents.do?key=2500",
+      "summary": "신도림에 있는 구로구 기적의도서관이고 어린이자료실을 운영해요.",
+      "notice": null,
+      "checkedAt": "2026-10-03",
+      "example": false
     }
   ],
   "coverage": "서울 대표 시설·성남시 분당구·용인시"
