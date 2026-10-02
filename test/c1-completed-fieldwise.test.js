@@ -185,7 +185,7 @@ const KEY = "VX-DTAP__dose-5";
       const schedule = ${JSON.stringify(milestoneIds.map((id) => ({ id, detail: { definition: { triggerType: "MILESTONE_EVENT" } } })))};
       const saved = [];
       function saveCompleted() { saved.push(JSON.stringify(completed)); }
-      function refreshSchedule() {} function closeDetail() {} function renderHome() {} function renderRecordTab() {} function renderDayList() {} function openDetail() {}
+      function refreshSchedule() {} function closeDetail() {} function renderHome() {} function renderRecordTab() {} function renderDayList() {} function openDetail() {} function usAfterAutoComplete() {} /* C2-b2 훅: 이 시나리오(연결 없음)에서는 아무 일도 하지 않는다 */
       function el() { return { classList: { contains: () => true } }; }
       ${parts.join("\n")}
       globalThis.__api = { setNotApplicable, toggleComplete, setCompletionDate, setCompletionMemo, get completed() { return completed; }, set completed(v) { completed = v; }, saved };
@@ -317,10 +317,12 @@ const KEY = "VX-DTAP__dose-5";
     assert.strictEqual(none.calls.length, 0);
   });
 
-  await test("호출부 4곳에 맵 전체 전송이 남아 있지 않다(app.js 의 FamilySync.updateCompleted( 는 캐시 혼재 폴백 1곳뿐, createFamily 의 최초 업로드는 sync.js 내부)", () => {
+  await test("호출부(4곳, C2-b2 이후 5곳)에 맵 전체 전송이 남아 있지 않다(app.js 의 FamilySync.updateCompleted( 는 캐시 혼재 폴백 1곳뿐, createFamily 의 최초 업로드는 sync.js 내부)", () => {
     assert.strictEqual((NEW_SRC.match(/FamilySync\.updateCompleted\(/g) || []).length, 1);
     assert.ok(/function syncCompletedChanges[\s\S]*?typeof FamilySync\.updateCompletedEntries !== "function"[\s\S]*?FamilySync\.updateCompleted\(/.test(NEW_SRC));
-    assert.strictEqual((NEW_SRC.match(/syncCompletedChanges\(before\);/g) || []).length, 4);
+    // 호출부: 완료 토글·메모·완료일·해당 없음 4곳 + C2-b2 연결 완료(applyAutoCompleteFromLink) 1곳 — 모두 같은 필드 단위 경로
+    assert.strictEqual((NEW_SRC.match(/syncCompletedChanges\(before\);/g) || []).length, NEW_SRC.includes("function applyAutoCompleteFromLink(") ? 5 : 4);
+    if (NEW_SRC.includes("function applyAutoCompleteFromLink(")) assert.ok(/function applyAutoCompleteFromLink\([\s\S]*?syncCompletedChanges\(before\);/.test(NEW_SRC));
   });
 
   console.log("서버 모사(의미 모사 — Firestore 호출 아님): 두 기기가 서로 다른 키를 체크해도 둘 다 남고, 취소가 되살아나지 않는다");

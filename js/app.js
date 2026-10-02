@@ -1610,6 +1610,7 @@
         if (e) openDetail(e, !!currentDayContext);
       }
     }
+    if (!wasDone && completed[id]) usAfterAutoComplete(id); // C2-b2: 연결된 예약이 있으면 '예약 일정은 어떻게 할까요?'(autoLink 꺼짐·연결 없음이면 아무것도 안 함)
   }
 
   /**
@@ -2664,7 +2665,7 @@
   // 가구가 있고 플래그(FEATURES.household)가 켜졌을 때만 동작한다. 자동 일정(autoEvents·displayDate·visibleSchedule·completed·진행률)은 읽기만 하고 바꾸지 않는다.
   // 추가한 일정의 완료는 일정 문서의 status 에만 기록한다(completed 와 분리). 캘린더는 하나이며 scope 는 CHILD / FAMILY 두 가지뿐이다.
   // detailKey/detailOcc: 열려 있는 상세의 회차(반복 일정은 같은 문서에서 회차가 여럿이라 id 만으로는 부족), dayForm: "이 날만 수정", plan: 규칙 변경 확인 대기 중인 전체 수정 계획.
-  const us = { selection: "ALL", showAuto: true, form: null, messages: [], saving: false, detailId: null, detailKey: null, detailOcc: null, dayForm: null, plan: null, autoLabel: null };
+  const us = { selection: "ALL", showAuto: true, form: null, messages: [], saving: false, detailId: null, detailKey: null, detailOcc: null, dayForm: null, plan: null, autoLabel: null, linkPrompt: null };
   const usReady = () => typeof UserScheduleView !== "undefined" && typeof UserSchedule !== "undefined" && typeof CalendarModel !== "undefined";
   const usActive = () => hhEnabled() && usReady() && !!hh.hid && !!hh.code;
   const usMirror = () => (hh.hid ? HouseholdSync.getMirror(hh.hid) : null);
@@ -2738,6 +2739,73 @@
     us.dayForm = null;
     us.plan = null;
     usShowForm();
+  }
+  // ── C2-b2 완료 제안(연결된 두 쪽의 완료는 서로 자동으로 쓰지 않는다 — 항상 사용자가 시트에서 답한다) ─────────────────
+  const usResolveAutoId = (ref) => (Object.prototype.hasOwnProperty.call(autoIdAliases, ref) ? autoIdAliases[ref] : ref);
+  /** 완료 제안 시트가 지금 열려 있는가(중복 시트 방지 — 모달이 닫혀 있거나 다른 내용이면 아니다). */
+  const usLinkPromptOpen = () => !el("detail-modal").classList.contains("hidden") && !!el("modal-content").querySelector(".us-link-prompt");
+  function usShowLinkPrompt(html, data) {
+    us.linkPrompt = data;
+    modalMode = "profile"; // 일반 시트 모드(usShowForm 과 같은 값): 완료 직후 "day-list" 모드의 재렌더가 방금 연 시트를 덮지 않게 한다
+    el("modal-content").innerHTML = html;
+    el("detail-modal").classList.remove("hidden");
+  }
+  /** USER → AUTO: 연결 일정을 완료로 표시한 직후, 그 AUTO 항목도 완료로 기록할지 묻는다(예/아니요). */
+  function usSuggestAutoComplete(doc) {
+    if (!autoLinkOn() || usLinkPromptOpen()) return;
+    const autoId = UserScheduleView.autoCompleteTarget(doc, {
+      activeChildKey: usActiveChildKey(),
+      resolveId: usResolveAutoId,
+      eventOf: (id) => schedule.find((x) => x.id === id) || null,
+      isLinkable: CalendarModel.isLinkableAuto,
+      isDone: (id) => !!completed[id],
+      todayIso: toISODate(new Date()),
+    });
+    if (!autoId) return;
+    const e = schedule.find((x) => x.id === autoId);
+    usShowLinkPrompt(
+      UserScheduleView.renderLinkRecordSheet({ word: UserScheduleView.linkKindWord(e.category), scheduleTitle: doc.title, date: doc.eventDate, item: usAutoTitleOfEvent(e) }),
+      { kind: "toAuto", autoId, date: doc.eventDate }
+    );
+  }
+  /** 연결 일정의 날짜로 AUTO 항목을 완료 기록한다. toggleComplete 의 완료 객체와 같은 모양이고(완료일만 일정 날짜 정오), 저장은 C1-a 필드 단위 경로다. 이미 완료됐거나 항목이 없으면 false. */
+  function applyAutoCompleteFromLink(id, dateIso) {
+    const e = schedule.find((x) => x.id === id);
+    if (!e || completed[id] || !CalendarModel.isLinkableAuto(e)) return false;
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateIso || ""));
+    if (!m) return false;
+    const before = { ...completed };
+    delete completed[id + NA_SUFFIX];
+    const sepIdx = id.indexOf("__");
+    const todoId = sepIdx === -1 ? id : id.slice(0, sepIdx);
+    const occurrenceKey = sepIdx === -1 ? "default" : id.slice(sepIdx + 2);
+    completed[id] = { done: true, todo_id: todoId, occurrenceKey, recordType: "TODO_COMPLETED", recordedAt: new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0).toISOString() };
+    saveCompleted();
+    syncCompletedChanges(before);
+    refreshSchedule();
+    return true;
+  }
+  function usLinkRecordYes() {
+    const p = us.linkPrompt;
+    us.linkPrompt = null;
+    if (p && p.kind === "toAuto") applyAutoCompleteFromLink(p.autoId, p.date);
+    closeDetail();
+  }
+  /** AUTO → USER: AUTO 항목을 완료한 직후, 연결된 미완료 예약이 있으면 그대로 둘지 일정도 완료할지 묻는다. */
+  function usAfterAutoComplete(id) {
+    if (!autoLinkOn() || usLinkPromptOpen()) return;
+    const m = autoLinks();
+    const link = m && m.get(id);
+    if (!link || !link.date || !link.scheduleId || link.status === "DONE") return;
+    const e = schedule.find((x) => x.id === id);
+    if (!e) return;
+    usShowLinkPrompt(UserScheduleView.renderLinkKeepSheet({ item: usAutoTitleOfEvent(e), date: link.date }), { kind: "toUser", scheduleId: link.scheduleId });
+  }
+  function usLinkCompleteSchedule() {
+    const p = us.linkPrompt;
+    us.linkPrompt = null;
+    if (!p || p.kind !== "toUser") return closeDetail();
+    return usPatchAction(p.scheduleId, (before, now) => UserSchedule.markDone(before, now));
   }
   /** 홈 '다가오는 가족 일정' 카드(F1). 플래그 OFF·가구 없음이면 "" — 홈은 기존 그대로. AUTO 일정은 섞지 않는다(showAuto:false). */
   function usHomeCardHtml() {
@@ -3104,7 +3172,7 @@
     }
   }
   /** 완료/완료 취소 · 삭제(소프트). 추가한 일정의 완료는 일정 문서의 status 에만 기록한다. */
-  async function usPatchAction(id, build) {
+  async function usPatchAction(id, build, opts) {
     const doc = usDocById(id);
     if (!doc) return;
     try {
@@ -3119,6 +3187,7 @@
       if (!res.ok) throw new Error(res.reason || "patch-failed");
       closeDetail();
       usRefreshCalendar();
+      if (opts && opts.suggestOnDone && r.after && r.after.status === "DONE") usSuggestAutoComplete({ ...r.after, id }); // C2-b2: 연결 일정 완료 → AUTO 완료 제안(autoLink 꺼짐·연결 없음이면 아무것도 안 함)
     } catch (e) {
       console.error("일정 처리 실패", e);
       usModalNote((e && e.note) || UserScheduleView.MSG.actionFail);
@@ -3162,9 +3231,12 @@
         return closeDetail();
       }
       if (act === "close") return closeDetail();
+      if (act === "link-record") return usLinkRecordYes();
+      if (act === "link-skip" || act === "link-keep") return closeDetail();
+      if (act === "link-complete") return usLinkCompleteSchedule();
       if (act === "toggle-done") {
         if (rec) return usPatchAction(id, (before, now) => (occ.status === "DONE" ? UserSchedule.restoreOccurrence(before, occ.originalDate, now) : UserSchedule.markDone(before, now, { date: occ.originalDate })));
-        return usPatchAction(id, (before, now) => (before.status === "DONE" ? UserSchedule.setStatus(before, "TODO", now) : UserSchedule.markDone(before, now)));
+        return usPatchAction(id, (before, now) => (before.status === "DONE" ? UserSchedule.setStatus(before, "TODO", now) : UserSchedule.markDone(before, now)), { suggestOnDone: true });
       }
       if (act === "restore") return usPatchAction(id, (before, now) => UserSchedule.restoreOccurrence(before, occ.originalDate, now));
       if (act === "edit") {

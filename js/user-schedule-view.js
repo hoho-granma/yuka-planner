@@ -48,6 +48,15 @@
     autoReservedNote: (md) => `예약됨 ${md}`,
     autoFormNote: (item) => `‘${item}’ 예약 일정이에요. 날짜와 시간을 입력해 주세요.`,
     autoLinkBadge: (item) => `${item} 연결`,
+    // C2-b2 완료 제안(승인 문구 #6~#10) — 사용자가 직접 답하는 방식만. 자동으로 완료하지 않고, 공식 기록과 연동된다는 표현은 쓰지 않는다.
+    linkRecordTitle: (word) => `${word ? `${word} ` : ""}기록도 남길까요?`,
+    linkRecordBody: (sched, md, item) => `‘${sched}’(${md})을 완료로 표시했어요. ‘${item}’도 완료로 기록할까요?`,
+    linkRecordYes: "예, 기록할게요",
+    linkRecordNo: "아니요",
+    linkKeepTitle: "예약 일정은 어떻게 할까요?",
+    linkKeepBody: (item, md) => `‘${item}’을 완료했어요. 예약 일정(${md})은 그대로 둘까요?`,
+    linkKeepStay: "그대로 두기",
+    linkKeepDone: "일정도 완료",
     periodTitle: "이번 달 기간 일정", // #9
     periodNote: "날짜는 아직 정해지지 않았어요.", // #10
     periodRow: (range) => `날짜 미정 · ${range}`, // #11
@@ -776,6 +785,36 @@
     return `<button type="button" class="btn-complete auto-link-btn" id="btn-auto-reserve">${esc(MSG.autoReserve)}</button>`;
   }
 
+  // ── C2-b2 완료 제안 (순수) ───────────────────────────────────────────────────
+  /** AUTO 항목의 카테고리 → 제목에 쓰는 낱말(접종/검진). 그 밖(치과 등)은 낱말 없이 "기록도 남길까요?". */
+  function linkKindWord(category) {
+    return category === "예방접종" ? "접종" : category === "영유아검진" ? "검진" : "";
+  }
+  /**
+   * 연결 일정을 완료로 바꾼 뒤 'AUTO 항목도 완료로 기록할까요?'를 물을지 판단한다(U8 포함). 물어야 하면 AUTO 항목 id, 아니면 null.
+   * 조건: 일정이 DONE·날짜 정함(FIXED)이고 일정 날짜 ≤ 오늘(미래 날짜는 제안 안 함), 활성 아이의 일정, autoRef 가 현재 AUTO 항목으로 해석되고 연결 대상이며 그 항목이 아직 완료 전.
+   * c = { activeChildKey, resolveId(ref)→id, eventOf(id)→event|null, isLinkable(event), isDone(id)→boolean(그 AUTO 항목의 완료 여부 — 이 모듈은 완료 저장소를 보지 않는다), todayIso }
+   */
+  function autoCompleteTarget(doc, c) {
+    if (!doc || !c || typeof doc.autoRef !== "string" || doc.status !== "DONE") return null;
+    if (doc.dateKind !== "FIXED" || !doc.eventDate || !c.todayIso || doc.eventDate > c.todayIso) return null;
+    if (c.activeChildKey == null || !Array.isArray(doc.childKeys) || doc.childKeys[0] !== c.activeChildKey) return null;
+    const id = c.resolveId(doc.autoRef);
+    const e = id ? c.eventOf(id) : null;
+    if (!e || !c.isLinkable(e)) return null;
+    if (typeof c.isDone === "function" && c.isDone(e.id)) return null;
+    return e.id;
+  }
+  /** 시트 마크업. 버튼은 data-us-action(link-record / link-skip / link-keep / link-complete) — 앱이 한 곳에서 처리한다. */
+  function renderLinkRecordSheet(d) {
+    return `<div class="us-confirm us-link-prompt"><h3>${esc(MSG.linkRecordTitle(d.word))}</h3><p>${esc(MSG.linkRecordBody(d.scheduleTitle, md(d.date), d.item))}</p>
+      <div class="us-actions"><button type="button" class="us-btn us-primary" data-us-action="link-record">${esc(MSG.linkRecordYes)}</button><button type="button" class="us-btn" data-us-action="link-skip">${esc(MSG.linkRecordNo)}</button></div></div>`;
+  }
+  function renderLinkKeepSheet(d) {
+    return `<div class="us-confirm us-link-prompt"><h3>${esc(MSG.linkKeepTitle)}</h3><p>${esc(MSG.linkKeepBody(d.item, md(d.date)))}</p>
+      <div class="us-actions"><button type="button" class="us-btn us-primary" data-us-action="link-keep">${esc(MSG.linkKeepStay)}</button><button type="button" class="us-btn" data-us-action="link-complete">${esc(MSG.linkKeepDone)}</button></div></div>`;
+  }
+
   // ── F3 빠른 추가 칩 (순수) ───────────────────────────────────────────────────
   /** 칩 → 제목·분류만 채운다(종일·날짜·담당·대상은 건드리지 않는다). 분류는 기존 CATEGORIES 값만 쓴다. */
   const QUICK_TEMPLATES = Object.freeze([
@@ -857,7 +896,7 @@
     categoryLabel, childColor, childColors, occurrenceColor,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
-    autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, applyTemplate, renderQuickChips,
+    linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, applyTemplate, renderQuickChips,
     renderCard, detailView, renderDetail, renderDeleteConfirm, renderAddButton, renderPeriodSection,
     newForm, formFromSchedule, stripId, formToInput, validateForm, messagesFromErrors, prepareSave, changesFromForm, minuteOptions, splitTime,
     renderForm, pickerInitials, esc,
