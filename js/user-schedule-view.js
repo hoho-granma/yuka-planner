@@ -910,9 +910,22 @@
     undo: "완료 취소",
     doneGroup: (n) => `완료한 항목 ${n}개`,
     deadline: (md) => `${md}까지`,
+    expired: "기한 지남",
+    more: (n) => `나머지 ${n}개 더 보기`,
+    less: "접기",
     loginNote: "공식 사이트에서 로그인 후 신청해요",
     hint: "날짜가 정해진 일정이 아니라 기한 안에 하면 되는 항목이에요. 병원 예약처럼 날짜가 생기면 ‘예약 일정 만들기’로 캘린더에 담아요.",
   });
+  const TODO_LIMIT = 5;
+  /** 마감 표기: 이미 지났으면 '기한 지남', 올해가 아니면 'YYYY. M/D까지', 올해면 'M/D까지'. date·today(Date)가 없거나 잘못됐으면 "". */
+  function todoDeadlineText(date, today) {
+    const ok = (d) => !!d && typeof d.getTime === "function" && !isNaN(d.getTime());
+    if (!ok(date) || !ok(today)) return "";
+    const key = (d) => d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    if (key(date) < key(today)) return TODO_MSG.expired;
+    const md = `${date.getMonth() + 1}/${date.getDate()}`;
+    return TODO_MSG.deadline(date.getFullYear() === today.getFullYear() ? md : `${date.getFullYear()}. ${md}`);
+  }
   const safeHttps = (u) => (typeof u === "string" && /^https:\/\/[^\s"'<>]+$/.test(u) ? u : "");
   /**
    * 달력 위 한 줄. state: { label("이번 달"|"11월"), open, items:[{ id, title, deadlineMd, done, reservedText, canReserve, apply:{url,label}|null }] }.
@@ -926,11 +939,11 @@
     const li = (i) => {
       const apply = i.apply && safeHttps(i.apply.url) ? `<a class="btn-apply" href="${esc(i.apply.url)}" target="_blank" rel="noopener noreferrer">${esc(i.apply.label)}</a>${/bokjiro\.go\.kr/.test(i.apply.url) ? `<span class="cal-todo-note">${esc(TODO_MSG.loginNote)}</span>` : ""}` : "";
       const reserve = i.canReserve ? `<button type="button" class="btn-close" data-cal-todo-act="reserve" data-id="${esc(i.id)}">${esc(TODO_MSG.reserve)}</button>` : "";
-      const meta = [i.deadlineMd ? TODO_MSG.deadline(i.deadlineMd) : "", i.reservedText || ""].filter(Boolean).map((t) => esc(t)).join(" · ");
+      const meta = [i.deadlineText || (i.deadlineMd ? TODO_MSG.deadline(i.deadlineMd) : ""), i.reservedText || ""].filter(Boolean).map((t) => esc(t)).join(" · ");
       return `<li class="cal-todo-item${i.done ? " done" : ""}" data-id="${esc(i.id)}"><div class="cal-todo-main"><strong>${esc(i.title)}</strong>${meta ? `<small>${meta}</small>` : ""}</div><div class="cal-todo-actions">${i.done ? "" : reserve}${i.done ? "" : apply}<button type="button" class="btn-close" data-cal-todo-act="done" data-id="${esc(i.id)}">${esc(i.done ? TODO_MSG.undo : TODO_MSG.done)}</button></div></li>`;
     };
     const body = s.open
-      ? `<p class="us-note">${esc(TODO_MSG.hint)}</p>${todo.length ? `<ul class="cal-todo-list">${todo.map(li).join("")}</ul>` : ""}${done.length ? `<details class="cal-todo-done"><summary>${esc(TODO_MSG.doneGroup(done.length))}</summary><ul class="cal-todo-list">${done.map(li).join("")}</ul></details>` : ""}`
+      ? `<p class="us-note">${esc(TODO_MSG.hint)}</p>${todo.length ? `<ul class="cal-todo-list">${(s.showAll ? todo : todo.slice(0, TODO_LIMIT)).map(li).join("")}</ul>${todo.length > TODO_LIMIT ? `<button type="button" class="home-more" data-cal-todo-act="more">${esc(s.showAll ? TODO_MSG.less : TODO_MSG.more(todo.length - TODO_LIMIT))}</button>` : ""}` : ""}${done.length ? `<details class="cal-todo-done"><summary>${esc(TODO_MSG.doneGroup(done.length))}</summary><ul class="cal-todo-list">${done.map(li).join("")}</ul></details>` : ""}`
       : "";
     return `<div class="card cal-todo"><button type="button" class="cal-todo-head" data-cal-todo-act="toggle" aria-expanded="${s.open ? "true" : "false"}"><span>${esc(head)}</span><span class="cal-todo-chev" aria-hidden="true">${s.open ? "⌃" : "⌄"}</span></button>${body}</div>`;
   }
@@ -1024,7 +1037,7 @@
     categoryLabel, childColor, childColors, occurrenceColor, MEMBER_COLORS, ROLE_LABELS, CATEGORY_COLORS, autoCategoryGroup, selectionMode, toggleSelection, cellChips,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
-    linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, renderTodoLine, TODO_MSG, assigneeEmphasis, applyTemplate, renderQuickChips,
+    linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, renderTodoLine, todoDeadlineText, TODO_LIMIT, TODO_MSG, assigneeEmphasis, applyTemplate, renderQuickChips,
     renderCard, detailView, renderDetail, renderDeleteConfirm, renderAddButton, renderPeriodSection,
     newForm, formFromSchedule, stripId, formToInput, validateForm, messagesFromErrors, prepareSave, changesFromForm, minuteOptions, splitTime,
     renderForm, pickerInitials, esc,

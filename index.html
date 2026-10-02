@@ -11,7 +11,8 @@
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#ff8a5c" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
-<link rel="stylesheet" href="css/style.css?v=68" />
+<link rel="stylesheet" href="css/style.css?v=69" />
+  <link rel="stylesheet" href="css/places.css?v=1" />
 </head>
 <body>
   <main id="app">
@@ -218,9 +219,16 @@
 
       <!-- 기록 -->
       <div id="tab-record" class="tab-panel hidden">
+        <button type="button" class="btn-back hidden" id="btn-record-back">‹ 돌아가기</button>
         <div class="filter-chips record-filter" id="record-filter"></div>
         <div id="list-record" class="event-list"></div>
         <p id="empty-record" class="empty hidden"></p>
+      </div>
+
+      <!-- 어디갈까(가족 캘린더·계정 기능이 켜졌을 때만 하단 탭에 나온다) -->
+      <div id="tab-places" class="tab-panel hidden">
+        <div class="sub-header"><h2>어디갈까?</h2></div>
+        <div id="places-body"></div>
       </div>
 
       <!-- 지원금·제도 -->
@@ -251,6 +259,10 @@
           <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/></svg></span>
           <span>기록</span>
         </button>
+        <button type="button" class="nav-item hidden" data-nav="places">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s6.5-5.6 6.5-11a6.5 6.5 0 1 0-13 0c0 5.4 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span>
+          <span>어디갈까</span>
+        </button>
       </nav>
     </section>
   </main>
@@ -267,7 +279,7 @@
   <script src="js/household-sync.js?v=3"></script>
   <script src="js/household-view.js?v=9"></script>
   <script src="js/auth-service.js?v=2"></script>
-  <script src="js/account-view.js?v=4"></script>
+  <script src="js/account-view.js?v=5"></script>
   <script src="js/account-sync.js?v=2"></script>
   <script src="js/version.js?v=1"></script>
   <script src="js/date-calc.js?v=1"></script>
@@ -284,10 +296,12 @@
   <script src="js/calendar-model.js?v=5"></script>
   <script src="js/calendar-week.js?v=1"></script>
   <script src="js/apply-links.js?v=1"></script>
+  <script src="js/places.js?v=1"></script>
+  <script src="js/places-view.js?v=1"></script>
   <script src="js/home-order.js?v=1"></script>
-  <script src="js/user-schedule-view.js?v=15"></script>
+  <script src="js/user-schedule-view.js?v=16"></script>
   <script src="js/records-view.js?v=7"></script>
-  <script src="js/app.js?v=84"></script>
+  <script src="js/app.js?v=85"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

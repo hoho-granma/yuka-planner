@@ -56,7 +56,7 @@
   viewMonth.setDate(1);
   let currentDayContext = null; // { events, date } — 날짜 클릭으로 연 일정 여러 개 목록
   let modalMode = null; // "day-list" | "detail" | "profile"
-  let currentTab = "home"; // "home" | "calendar" | "record" | "subsidy" | "checklist"(전체 할 일 서브 화면)
+  let currentTab = "home"; // "home" | "calendar" | "record" | "subsidy" | "checklist"(전체 할 일 서브 화면) | "places"(가구·계정 기능이 켜졌을 때만 하단 탭)
   let checklistScope = null; // 홈의 "전체 보기"로 들어왔을 때만 { label, ids:Set } — 그 항목들만 보여준다
   let showPastInfant = false; // N5: 72개월 넘은 아이의 체크리스트에서 지난 영유아 항목(미완료)을 보일지(기본 꺼짐, 앱 세션 동안만)
   let checklistStatus = "all"; // 전체 할 일의 완료 상태 필터: "all" | "todo" | "done"
@@ -864,7 +864,7 @@
              </div>`)
           : ""
       }
-      ${acctEnabled() ? '<div id="acct-slot"></div>' : ""}${hhEnabled() ? '<div id="hh-slot"></div><div id="members-slot"></div>' : ""}<div id="beta-slot"></div>${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
+      ${acctEnabled() ? '<div id="acct-slot"></div>' : ""}${hhEnabled() ? '<div id="hh-slot"></div><div id="members-slot"></div>' : ""}<div id="beta-slot"></div>${hhEnabled() ? '<button type="button" class="btn-close" id="btn-view-records">기록 보기</button>' : ""}${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
       ${changed ? `<button class="btn-complete btn-photo-save" id="btn-photo-save">저장</button>` : ""}
       <button class="btn-close" id="btn-close-modal">닫기</button>
     `;
@@ -872,6 +872,7 @@
     el("btn-close-modal").addEventListener("click", closeDetail);
     if (acctEnabled()) acctOpenSlot();
     if (hhEnabled()) hhOpenSection();
+    if (el("btn-view-records")) el("btn-view-records").addEventListener("click", openRecordView);
     betaConfirming = false;
     betaOpenSlot("beta-slot", "renderBetaSwitch");
     el("btn-open-reset").addEventListener("click", showEditProfileSheet);
@@ -1028,6 +1029,7 @@
   }
   // ── E(1-2) 달력 위 '이번 달 챙길 것' 한 줄 — 기한 안에 하면 되는 자동 항목. 날짜·담당이 정해진 '일정'은 예약(autoLink)으로 잇는다. ──
   let calTodoOpen = false;
+  let calTodoAll = false; // 목록 5개 제한 해제('나머지 N개 더 보기')
   /** 자동 항목의 신청용 링크(근거 링크 officialUrl 과 별개). 해당 없으면 null. */
   function usApplyLinkOf(e) {
     if (typeof ApplyLinks === "undefined" || !e) return null;
@@ -1057,7 +1059,7 @@
       const link = links ? links.get(e.id) : null;
       return {
         e, end,
-        item: { id: e.id, title: usAutoTitleOfEvent(e), deadlineMd: end ? md(end) : "", done, reservedText: link ? UserScheduleView.autoLinkNote(link) : "", canReserve: canResv && !done && !link && CalendarModel.isLinkableAuto(e), apply: usApplyLinkOf(e) },
+        item: { id: e.id, title: usAutoTitleOfEvent(e), deadlineMd: end ? md(end) : "", deadlineText: end ? UserScheduleView.todoDeadlineText(end, new Date()) : "", done, reservedText: link ? UserScheduleView.autoLinkNote(link) : "", canReserve: canResv && !done && !link && CalendarModel.isLinkableAuto(e), apply: usApplyLinkOf(e) },
       };
     });
     rows.sort((a, b) => (a.item.done - b.item.done) || ((a.end ? a.end.getTime() : Infinity) - (b.end ? b.end.getTime() : Infinity)) || (a.e.id < b.e.id ? -1 : 1));
@@ -1072,7 +1074,7 @@
     if (!on || !slot) return on && !!slot;
     const now = new Date();
     const isNow = viewMonth.getFullYear() === now.getFullYear() && viewMonth.getMonth() === now.getMonth();
-    slot.innerHTML = UserScheduleView.renderTodoLine({ label: isNow ? "이번 달" : `${viewMonth.getMonth() + 1}월`, open: calTodoOpen, items: calTodoItems() });
+    slot.innerHTML = UserScheduleView.renderTodoLine({ label: isNow ? "이번 달" : `${viewMonth.getMonth() + 1}월`, open: calTodoOpen, showAll: calTodoAll, items: calTodoItems() });
     return true;
   }
   function calTodoOnClick(ev) {
@@ -1082,6 +1084,10 @@
     const id = b.getAttribute("data-id");
     if (act === "toggle") {
       calTodoOpen = !calTodoOpen;
+      return renderCalTodoLine();
+    }
+    if (act === "more") {
+      calTodoAll = !calTodoAll;
       return renderCalTodoLine();
     }
     if (act === "reserve") {
@@ -2084,7 +2090,81 @@
     attachListHandlers();
   }
 
-  const TAB_NAMES = ["home", "calendar", "record", "subsidy", "checklist"];
+  const TAB_NAMES = ["home", "calendar", "record", "subsidy", "checklist", "places"];
+  // ── E(2-1·2-2) 하단 탭 교체: 가구·계정 기능이 켜졌을 때만 '기록' 탭 자리에 '어디갈까'. 기록은 프로필 시트의 '기록 보기'로 연다(기존 기록 패널 그대로). ──
+  const tabLayoutOn = () => hhEnabled();
+  let recordReturnTab = "home";
+  function applyTabLayout() {
+    const on = tabLayoutOn();
+    const rec = document.querySelector('.nav-item[data-nav="record"]');
+    const pl = document.querySelector('.nav-item[data-nav="places"]');
+    if (rec) rec.classList.toggle("hidden", on);
+    if (pl) pl.classList.toggle("hidden", !on);
+    const back = el("btn-record-back");
+    if (back) back.classList.toggle("hidden", !on);
+  }
+  /** 프로필 시트 '기록 보기': 기존 기록 패널로 이동(돌아가기 버튼으로 이전 탭 복귀). */
+  function openRecordView() {
+    recordReturnTab = currentTab === "record" || currentTab === "places" ? "home" : currentTab;
+    closeDetail();
+    switchTab("record");
+  }
+  let placesData = null; // data/places.json(편집 추천) — 처음 한 번만 읽는다
+  let placesLoading = null;
+  let placesCat = "ALL";
+  async function loadPlaces() {
+    if (placesData) return placesData;
+    if (!placesLoading) placesLoading = loadJsonOrNull("data/places.json").then((d) => { placesData = d && Array.isArray(d.places) ? d : { places: [], status: "준비 중" }; return placesData; });
+    return placesLoading;
+  }
+  function placesViewHtml() {
+    const d = placesData || { places: [] };
+    const valid = d.places.filter((p) => Places.validatePlace(p).length === 0);
+    const child = profile ? { name: childDisplayName(), ageLabel: isPregnant() ? "임신 중" : ChildTimeline.ageLabelAt(profile.birthDate, new Date()) } : null;
+    const region = profile ? { province: profile.province, district: profile.district } : null;
+    const list = Places.filterPlaces(valid, { province: region && region.province, district: region && region.district, ageMonths: profile && !isPregnant() ? ageInMonths(profile.birthDate, new Date()) : null, category: placesCat });
+    return PlacesView.render({ places: list, child, region, category: placesCat, status: d.status });
+  }
+  async function renderPlacesTab() {
+    const body = el("places-body");
+    if (!body || typeof PlacesView === "undefined") return;
+    await loadPlaces();
+    if (currentTab !== "places") return;
+    body.innerHTML = placesViewHtml();
+  }
+  function placesOnClick(ev) {
+    const cat = ev.target.closest("[data-places-cat]");
+    if (cat) {
+      placesCat = cat.getAttribute("data-places-cat") || "ALL";
+      el("places-body").innerHTML = placesViewHtml();
+      return;
+    }
+    const add = ev.target.closest("[data-places-add]");
+    if (add) {
+      const place = ((placesData && placesData.places) || []).find((p) => p.id === add.getAttribute("data-places-add"));
+      if (place) placesAddSchedule(place);
+      return;
+    }
+    if (ev.target.closest('[data-places-action="change"]') && profile) showProfileSheet();
+  }
+  /** [일정 추가]: 장소 이름·주소를 채운 일정 폼(날짜는 사용자가 고른다). 가족 캘린더(가구)가 없으면 안내만. */
+  function placesAddSchedule(place) {
+    if (!usActive()) {
+      modalMode = "profile";
+      el("modal-content").innerHTML = `<h3>${esc(PlacesView.TEXT.add)}</h3><p class="fine-print">${esc(ADD_MENU_MSG.needHousehold)}</p><button class="btn-close" id="btn-places-close">${esc(ADD_MENU_MSG.close)}</button>`;
+      el("detail-modal").classList.remove("hidden");
+      el("btn-places-close").addEventListener("click", closeDetail);
+      return;
+    }
+    us.autoLabel = null;
+    us.form = { ...UserScheduleView.newForm({ date: "", activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: memActiveId(), defaultScope: "FAMILY" }), ...PlacesView.scheduleDraftFor(place) };
+    us.messages = [];
+    us.saving = false;
+    us.dayForm = null;
+    us.plan = null;
+    usShowForm();
+  }
+
   function switchTab(name) {
     if (emptyHome && !profile) return emptyRender(name); // D5: 아이가 없는 홈에서는 탭마다 빈 상태 안내만
     // 체크리스트에서 특정 카테고리만 보다가 다른 탭으로 나가면, 돌아왔을 때 다시 전체 카테고리가 켜진 상태로 시작한다.
@@ -2103,6 +2183,7 @@
     const navKey = name;
     document.querySelectorAll(".nav-item").forEach((btn) => btn.classList.toggle("active", btn.dataset.nav === navKey));
     window.scrollTo(0, 0);
+    if (name === "places") renderPlacesTab();
     if (name === "checklist") {
       // 현재 월령 그룹이 보이도록 스크롤한다(과거 월령이 위에 쌓여 있어도 지금 챙길 것부터 보이게).
       requestAnimationFrame(() => {
@@ -4642,6 +4723,9 @@
     );
     el("btn-profile-card").addEventListener("click", showProfileSheet);
     if (el("cal-todo-slot")) el("cal-todo-slot").addEventListener("click", calTodoOnClick);
+    applyTabLayout();
+    if (el("places-body")) el("places-body").addEventListener("click", placesOnClick);
+    if (el("btn-record-back")) el("btn-record-back").addEventListener("click", () => switchTab(recordReturnTab || "home"));
     el("btn-add-child").addEventListener("click", showAddMenuSheet);
     setupRefreshButton();
 
