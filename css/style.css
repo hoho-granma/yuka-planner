@@ -1036,3 +1036,17 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 /* N1 새 아이 입력 모드 — 랜딩 위쪽의 취소 줄 */
 .new-child-bar { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
 .new-child-bar .btn-text { padding: 0; font-weight: 600; }
+
+/* D1 계정(FEATURES.accounts): 랜딩 카드·가입/로그인 시트. 플래그 OFF 면 이 마크업은 만들어지지 않는다. */
+.acct-landing { text-align: center; }
+.acct-logo { font-size: 22px; font-weight: 900; color: var(--accent-dark); margin-bottom: 6px; }
+.acct-actions { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 4px; }
+.acct-form h3 { margin: 0 0 8px; }
+.acct-field { margin: 10px 0; }
+.acct-field label { display: block; margin-bottom: 4px; font-size: 13px; font-weight: 800; }
+.acct-input { box-sizing: border-box; width: 100%; padding: 11px 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 16px; background: #fff; }
+.acct-code { letter-spacing: 2px; text-transform: uppercase; }
+.acct-radios { display: flex; flex-wrap: wrap; gap: 6px; }
+.acct-radio { padding: 8px 12px; border: 1px solid var(--border); border-radius: 999px; background: #fff; color: var(--text); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.acct-radio[aria-checked="true"] { background: var(--text); border-color: var(--text); color: #fff; }
+.acct-err { margin: 4px 0 0; font-size: 12px; font-weight: 700; color: #b4552a; }

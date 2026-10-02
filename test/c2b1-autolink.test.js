@@ -146,13 +146,13 @@ function flags(store) {
   return { F: sb.FEATURES, calls };
 }
 test("기본 OFF · household 와 autolink 가 모두 정확히 '1' 일 때만 ON · household 가 꺼져 있으면 autolink 키를 읽지도 않는다", () => {
-  assert.deepStrictEqual(J(flags({}).F), { household: false, autoLink: false });
-  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1" }).F), { household: true, autoLink: false });
-  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1", hannun_feature_autolink: "1" }).F), { household: true, autoLink: true });
-  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1", hannun_feature_autolink: "true" }).F), { household: true, autoLink: false });
+  assert.deepStrictEqual(J(flags({}).F), { household: false, autoLink: false, accounts: false });
+  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1" }).F), { household: true, autoLink: false, accounts: false });
+  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1", hannun_feature_autolink: "1" }).F), { household: true, autoLink: true, accounts: false });
+  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1", hannun_feature_autolink: "true" }).F), { household: true, autoLink: false, accounts: false });
   const off = flags({ hannun_feature_autolink: "1" });
-  assert.deepStrictEqual(J(off.F), { household: false, autoLink: false });
-  assert.deepStrictEqual(off.calls, ["hannun_feature_household"]);
+  assert.deepStrictEqual(J(off.F), { household: false, autoLink: false, accounts: false });
+  assert.deepStrictEqual(off.calls, ["hannun_feature_household", "hannun_feature_accounts"]); // accounts(D1) 키도 한 번 읽는다
 });
 
 console.log("app.js 연결(소스 추출 스텁)");

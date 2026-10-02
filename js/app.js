@@ -840,12 +840,13 @@
              </div>`
           : ""
       }
-      ${hhEnabled() ? '<div id="hh-slot"></div><div id="members-slot"></div>' : ""}<div id="beta-slot"></div>${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
+      ${acctEnabled() ? '<div id="acct-slot"></div>' : ""}${hhEnabled() ? '<div id="hh-slot"></div><div id="members-slot"></div>' : ""}<div id="beta-slot"></div>${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
       ${changed ? `<button class="btn-complete btn-photo-save" id="btn-photo-save">저장</button>` : ""}
       <button class="btn-close" id="btn-close-modal">닫기</button>
     `;
     el("detail-modal").classList.remove("hidden");
     el("btn-close-modal").addEventListener("click", closeDetail);
+    if (acctEnabled()) acctOpenSlot();
     if (hhEnabled()) hhOpenSection();
     betaConfirming = false;
     betaOpenSlot("beta-slot", "renderBetaSwitch");
@@ -3883,6 +3884,178 @@
     };
   }
 
+  // ── D1 계정(FEATURES.accounts) — 회원가입·로그인·로그아웃(최소). 서버(Firestore) 연결은 D2: 가입 정보는 이 기기에 '가입 의도'로만 보관한다. ────
+  // 플래그 OFF 면 이 블록의 어떤 함수도 DOM·SDK 를 건드리지 않는다(acctInit 이 맨 앞에서 반환).
+  const acctEnabled = () => typeof AccountView !== "undefined" && typeof AuthService !== "undefined" && !!window.FEATURES && window.FEATURES.accounts === true;
+  const ACCT_INTENT_KEY = "hannun_account_intent";
+  const acct = { svc: null, user: null, form: {}, errors: {}, error: null, busy: false, notice: null, mode: null };
+  function acctInit() {
+    if (!acctEnabled()) return;
+    acct.svc = AuthService.create();
+    acct.svc.onChange((u) => {
+      acct.user = u;
+      acctRenderLanding();
+      acctRenderSlot();
+    });
+    acctRenderLanding();
+  }
+  /** 랜딩의 계정 카드(로고·회원가입·로그인). 기존 입력 화면은 그대로 아래에 둔다(계정 없이 시작하기). */
+  function acctRenderLanding() {
+    if (!acctEnabled()) return;
+    const hero = el("view-landing") && el("view-landing").querySelector(".hero");
+    if (!hero) return;
+    let slot = el("acct-landing-slot");
+    if (!slot) {
+      slot = document.createElement("div");
+      slot.id = "acct-landing-slot";
+      hero.insertAdjacentElement("afterend", slot);
+      slot.addEventListener("click", acctOnClick);
+    }
+    slot.innerHTML = AccountView.renderLanding({ user: acct.user });
+  }
+  function acctRenderSlot() {
+    const s = el("acct-slot");
+    if (s) s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, notice: acct.notice });
+  }
+  function acctOpenSlot() {
+    const s = el("acct-slot");
+    if (!s) return;
+    acctRenderSlot();
+    s.addEventListener("click", acctOnClick);
+  }
+  function acctShowSheet(kind) {
+    if (kind) acct.mode = kind;
+    modalMode = "account";
+    const st = { form: acct.form, errors: acct.errors, error: acct.error, busy: acct.busy, notice: acct.notice };
+    el("modal-content").innerHTML =
+      acct.mode === "signup" ? AccountView.renderSignup(st) : acct.mode === "login" ? AccountView.renderLogin(st) : AccountView.renderLogoutConfirm({ pending: acct.pending || 0 });
+    el("detail-modal").classList.remove("hidden");
+    const root = el("modal-content").querySelector("[data-acct-form]");
+    if (!root) return;
+    root.addEventListener("click", acctOnClick);
+    root.addEventListener("input", (ev) => {
+      const k = ev.target && ev.target.getAttribute && ev.target.getAttribute("data-acct-input");
+      if (!k) return;
+      const before = AccountView.normCode(acct.form.familyCode) !== "";
+      acct.form[k] = ev.target.value;
+      // 가족 코드 입력 여부가 바뀌면(신규↔합류) 아래 항목이 달라지므로 다시 그리고 입력 위치를 되돌린다.
+      if (k === "familyCode" && before !== (AccountView.normCode(acct.form.familyCode) !== "")) {
+        acctShowSheet();
+        const again = el("modal-content").querySelector('[data-acct-input="familyCode"]');
+        if (again) {
+          again.focus();
+          again.setSelectionRange(again.value.length, again.value.length);
+        }
+      }
+    });
+  }
+  async function acctOnClick(ev) {
+    if (!acctEnabled()) return;
+    const radio = ev.target.closest("[data-acct-radio]");
+    if (radio) {
+      acct.form[radio.getAttribute("data-acct-radio")] = radio.getAttribute("data-value");
+      return acctShowSheet();
+    }
+    const b = ev.target.closest("[data-acct-action]");
+    if (!b || acct.busy) return;
+    const action = b.getAttribute("data-acct-action");
+    if (action === "open-signup" || action === "open-login") {
+      acct.mode = action === "open-signup" ? "signup" : "login";
+      acct.form = {};
+      acct.errors = {};
+      acct.error = null;
+      acct.notice = null;
+      return acctShowSheet();
+    }
+    if (action === "close") return closeDetail();
+    if (action === "logout") {
+      acct.pending = hh.hid ? HouseholdSync.getStatus(hh.hid).pending : 0;
+      return acctShowSheet("logout");
+    }
+    if (action === "confirm-logout") {
+      const r = await acct.svc.signOut();
+      if (!r.ok) {
+        acct.mode = "login";
+        acct.error = r.message || AuthService.MSG.generic;
+        return acctShowSheet();
+      }
+      // D1: 가구는 아직 계정에 묶이지 않았으므로 가구·아이 로컬 데이터는 그대로 둔다(정리 범위는 D2·D4에서 확장).
+      try {
+        localStorage.removeItem(ACCT_INTENT_KEY);
+      } catch (e) {}
+      acct.user = null;
+      acct.form = {};
+      acct.notice = AccountView.MSG.loggedOut;
+      closeDetail();
+      acctRenderLanding();
+      acctRenderSlot();
+      return;
+    }
+    if (action === "submit-signup") {
+      const v = AccountView.validateSignup(acct.form, new Date());
+      acct.errors = v.errors;
+      acct.error = null;
+      if (!v.ok) return acctShowSheet();
+      acct.busy = true;
+      acctShowSheet();
+      const r = await acct.svc.signUp({ email: acct.form.email, password: acct.form.password, displayName: acct.form.displayName });
+      acct.busy = false;
+      if (!r.ok) {
+        acct.error = r.message || AuthService.MSG.generic;
+        return acctShowSheet();
+      }
+      try {
+        localStorage.setItem(ACCT_INTENT_KEY, JSON.stringify(v.intent));
+      } catch (e) {}
+      acct.user = r.user;
+      acct.form = {};
+      acct.notice = AccountView.MSG.signupDone;
+      closeDetail();
+      acctRenderLanding();
+      acctRenderSlot();
+      return;
+    }
+    if (action === "submit-login") {
+      const v = AccountView.validateLogin(acct.form);
+      acct.errors = v.errors;
+      acct.error = null;
+      acct.notice = null;
+      if (!v.ok) return acctShowSheet();
+      acct.busy = true;
+      acctShowSheet();
+      const r = await acct.svc.signIn({ email: acct.form.email, password: acct.form.password });
+      acct.busy = false;
+      if (!r.ok) {
+        acct.error = r.message || AuthService.MSG.generic;
+        return acctShowSheet();
+      }
+      acct.user = r.user;
+      acct.form = {};
+      acct.notice = AccountView.MSG.loginDone;
+      closeDetail();
+      acctRenderLanding();
+      acctRenderSlot();
+      return;
+    }
+    if (action === "reset-password") {
+      const email = String(acct.form.email || "").trim();
+      acct.error = null;
+      acct.notice = null;
+      if (!email) {
+        acct.errors = { email: AccountView.MSG.errEmailEmpty };
+        return acctShowSheet();
+      }
+      acct.busy = true;
+      acctShowSheet();
+      const r = await acct.svc.sendPasswordReset(email);
+      acct.busy = false;
+      acct.errors = {};
+      if (r.ok) acct.notice = r.message;
+      else acct.error = r.message || AuthService.MSG.generic;
+      return acctShowSheet();
+    }
+  }
+
   async function init() {
     await loadAll();
     populateProvinces();
@@ -3994,6 +4167,7 @@
     betaOpenSlot("beta-landing-slot", "renderBetaSwitchLanding");
     hhInit();
     usInit();
+    acctInit();
 
     if (profile) {
       populateDistricts(profile.province, profile.district);
