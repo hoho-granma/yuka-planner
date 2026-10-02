@@ -3944,6 +3944,7 @@
     const s = el("acct-slot");
     if (!s) return;
     acctRenderSlot();
+    acct.notice = null; // 가입·로그인 직후 안내는 내 정보 시트에 한 번만 보인다
     s.addEventListener("click", acctOnClick);
   }
   function acctShowSheet(kind) {

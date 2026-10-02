@@ -262,6 +262,10 @@ async function mkHousehold(w) { const r = await w.hs.createHousehold({}); assert
     assert.deepStrictEqual([e.log.left, e.log.flushed, e.log.setJoined.length, e.authAd.calls], [0, 0, 0, []]);
     assert.ok(/function acctMaybeShowMigrate\(\) \{\n\s*if \(acct\.user && acct\.migrate && !acct\.busy\)/.test(APP));
   });
+  await test("가입 직후 안내('가입했어요…')는 내 정보 시트에서 한 번 보이고 이후 사라진다", () => {
+    const m = APP.match(/function acctOpenSlot\(\) \{[\s\S]*?\n  \}/)[0];
+    assert.ok(/acctRenderSlot\(\);\n\s*acct\.notice = null;/.test(m));
+  });
   await Promise.all(pending);
   console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);
 })();
