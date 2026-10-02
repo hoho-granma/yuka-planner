@@ -2117,13 +2117,23 @@
     if (!placesLoading) placesLoading = loadJsonOrNull("data/places.json").then((d) => { placesData = d && Array.isArray(d.places) ? d : { places: [], status: "준비 중" }; return placesData; });
     return placesLoading;
   }
+  let placesFilters = { indoor: false, free: false, noReserve: false }; // 보조 필터(이 실행 동안만)
+  let placesBrowse = null; // '다른 지역 둘러보기'로 고른 보기용 지역 { province, district }(프로필은 바꾸지 않는다)
   function placesViewHtml() {
     const d = placesData || { places: [] };
     const valid = d.places.filter((p) => Places.validatePlace(p).length === 0);
     const child = profile ? { name: childDisplayName(), ageLabel: isPregnant() ? "임신 중" : ChildTimeline.ageLabelAt(profile.birthDate, new Date()) } : null;
     const region = profile ? { province: profile.province, district: profile.district } : null;
-    const list = Places.filterPlaces(valid, { province: region && region.province, district: region && region.district, ageMonths: profile && !isPregnant() ? ageInMonths(profile.birthDate, new Date()) : null, category: placesCat });
-    return PlacesView.render({ places: list, child, region, category: placesCat, status: d.status });
+    const age = profile && !isPregnant() ? ageInMonths(profile.birthDate, new Date()) : null;
+    // 지역이 준비 중인가: 내 시·군·구에 장소가 없다(같은 시·도의 다른 시·군·구는 뒤에 이어서 보여 준다). 시·도에도 없으면 전체를 보여 준다.
+    const mine = region && region.province ? valid.filter((p) => p.province === region.province && (!region.district || p.district === region.district)) : [];
+    const preparing = !!region && region.province && mine.length === 0;
+    const eff = placesBrowse || region;
+    const sameProvince = eff && eff.province && valid.some((p) => p.province === eff.province);
+    let list = Places.filterPlaces(valid, { province: sameProvince ? eff.province : null, district: sameProvince ? eff.district : null, ageMonths: age, category: placesCat, ...placesFilters });
+    if (placesBrowse) list = list.filter((p) => p.province === placesBrowse.province && (!placesBrowse.district || p.district === placesBrowse.district)); // 둘러보기로 고른 지역만
+    const fallback = preparing ? { regions: Places.regionsOf(valid), current: placesBrowse, coverage: d.coverage } : null;
+    return PlacesView.render({ places: list, child, region, category: placesCat, status: d.status, filters: placesFilters, showNoReserve: Places.hasNoReserve(valid), fallback });
   }
   async function renderPlacesTab() {
     const body = el("places-body");
@@ -2136,6 +2146,20 @@
     const cat = ev.target.closest("[data-places-cat]");
     if (cat) {
       placesCat = cat.getAttribute("data-places-cat") || "ALL";
+      el("places-body").innerHTML = placesViewHtml();
+      return;
+    }
+    const flt = ev.target.closest("[data-places-filter]");
+    if (flt) {
+      const k = flt.getAttribute("data-places-filter");
+      if (k in placesFilters) placesFilters[k] = !placesFilters[k];
+      el("places-body").innerHTML = placesViewHtml();
+      return;
+    }
+    const br = ev.target.closest("[data-places-browse]");
+    if (br) {
+      const [province, district] = (br.getAttribute("data-places-browse") || "").split("|");
+      placesBrowse = province ? { province, district: district || null } : null;
       el("places-body").innerHTML = placesViewHtml();
       return;
     }
@@ -2175,6 +2199,11 @@
     if (r.mode === "register" && el("plr-dp-btn")) {
       const picker = HNDatePicker.bindById("plr", { getStage: () => "schedule", format: formatDateKR, placeholder: "날짜를 선택해주세요", onChange: (d) => { r.date = toISODate(d); } });
       if (r.date) picker.set(new Date(`${r.date}T00:00:00`));
+      // 날짜 팝업이 열리면 시트를 팝업 아래까지 스크롤한다(시트 안에서 화면 아래로 넘치지 않게).
+      el("plr-dp-btn").addEventListener("click", () => setTimeout(() => {
+        const pop = el("plr-dp-popup");
+        if (pop && pop.classList && !pop.classList.contains("hidden") && typeof pop.scrollIntoView === "function") pop.scrollIntoView({ block: "nearest" });
+      }, 0));
     }
   }
   function placesReadTimes() {

@@ -18,6 +18,14 @@
     noProfile: "아이와 지역을 등록하면 맞춤 장소를 보여 드려요",
     empty: "우리 동네 갈 만한 곳을 준비하고 있어요. 곧 편집 추천 장소를 보여 드릴게요.",
     emptyCategory: "이 분류는 아직 준비하고 있어요. 다른 분류를 골라 보세요.",
+    emptyFilter: "조건에 맞는 곳이 없어요. 필터를 줄여 보세요.",
+    filterIndoor: "실내",
+    filterFree: "무료",
+    filterNoReserve: "예약 없이",
+    filterLabel: "보조 필터",
+    fallbackPrefix: "아직 이 지역은 준비 중이에요. 지금은 ",
+    fallbackSuffix: " 장소를 보여 드려요.",
+    browse: "다른 지역 둘러보기",
     notice: "방문 전 공식 링크에서 운영 여부를 확인하세요",
     unknown: "방문 전 확인",
     stale: "확인 오래됨",
@@ -129,6 +137,21 @@
     );
   }
 
+  const chipBtn = (attrs, label, active) => `<button type="button" class="places-chip${active ? " active" : ""}" aria-pressed="${active ? "true" : "false"}" ${attrs}>${esc(label)}</button>`;
+  function filterRow(filters, showNoReserve) {
+    const f = filters || {};
+    const items = [["indoor", TEXT.filterIndoor], ["free", TEXT.filterFree]].concat(showNoReserve ? [["noReserve", TEXT.filterNoReserve]] : []);
+    return `<div class="places-filters" role="group" aria-label="${esc(TEXT.filterLabel)}">${items.map(([k, label]) => `<button type="button" class="places-chip places-filter${f[k] === true ? " active" : ""}" aria-pressed="${f[k] === true ? "true" : "false"}" data-places-filter="${k}">${esc(label)}</button>`).join("")}</div>`;
+  }
+  /** 지역이 준비 중일 때 안내 + 데이터에 있는 지역 선택 칩(보기용). fb: { regions:[{province,district}], current:{province,district}|null } */
+  function fallbackBox(fb) {
+    const regions = (fb && Array.isArray(fb.regions) ? fb.regions : []);
+    const name = (r) => r.district || r.province;
+    const names = fb && typeof fb.coverage === "string" && fb.coverage.trim() ? fb.coverage.trim() : regions.map(name).join("·");
+    const cur = fb && fb.current;
+    const chips = regions.map((r) => chipBtn(`data-places-browse="${esc(r.province)}|${esc(r.district || "")}"`, name(r), !!cur && cur.province === r.province && (cur.district || "") === (r.district || ""))).join("");
+    return `<div class="places-fallback"><p>${esc(TEXT.fallbackPrefix + names + TEXT.fallbackSuffix)}</p><p class="places-fallback-title">${esc(TEXT.browse)}</p><div class="places-chips-wrap">${chips}</div></div>`;
+  }
   function metaItem(label, value) {
     const known = value !== null && value !== undefined && value !== "";
     return `<li class="places-meta-item${known ? "" : " unknown"}"><span class="places-meta-label">${esc(label)}</span><span class="places-meta-value">${esc(known ? value : TEXT.unknown)}</span></li>`;
@@ -148,6 +171,7 @@
       `<div class="places-badges">${badges.join("")}</div>` +
       `<h3 class="places-name">${esc(p.name)}</h3>` +
       (p.summary ? `<p class="places-summary">${esc(p.summary)}</p>` : "") +
+      (typeof p.notice === "string" && p.notice ? `<p class="places-card-notice">${esc(p.notice)}</p>` : "") +
       (p.address || where ? `<p class="places-address">${esc(p.address || where)}</p>` : "") +
       `<ul class="places-meta">` +
       metaItem("권장 나이", ageText(p.ageMonths)) +
@@ -171,6 +195,8 @@
     const list = Array.isArray(opts.places) ? opts.places.filter((p) => p && typeof p === "object" && typeof p.id === "string") : [];
     const today = opts.today === undefined ? new Date() : opts.today;
     const catOn = opts.category && opts.category !== "ALL";
+    const f = opts.filters || {};
+    const filterOn = f.indoor === true || f.free === true || f.noReserve === true;
     const head =
       `<div class="places-head">` +
       `<span class="places-label">${esc(TEXT.label)}</span>` +
@@ -178,13 +204,13 @@
       `</div>`;
     const body = list.length
       ? `<div class="places-list">${list.map((p) => renderCard(p, today)).join("")}</div><p class="places-notice">${esc(TEXT.notice)}</p>`
-      : `<div class="places-empty"><p>${esc(catOn ? TEXT.emptyCategory : TEXT.empty)}</p></div>`;
-    return `<section class="places-view">${contextRow(opts.child, opts.region)}${chipRow(opts.category)}${head}${body}</section>`;
+      : `<div class="places-empty"><p>${esc(filterOn ? TEXT.emptyFilter : catOn ? TEXT.emptyCategory : TEXT.empty)}</p></div>`;
+    const fb = opts.fallback && Array.isArray(opts.fallback.regions) && opts.fallback.regions.length ? fallbackBox(opts.fallback) : "";
+    return `<section class="places-view">${contextRow(opts.child, opts.region)}${fb}${chipRow(opts.category)}${filterRow(f, opts.showNoReserve === true)}${head}${body}</section>`;
   }
 
   const HOUR_OPTS = Array.from({ length: 24 }, (_, i) => pad2(i));
   const MIN_OPTS = ["00", "10", "20", "30", "40", "50"];
-  const chipBtn = (attrs, label, active) => `<button type="button" class="places-chip${active ? " active" : ""}" aria-pressed="${active ? "true" : "false"}" ${attrs}>${esc(label)}</button>`;
   const splitHm = (v) => { const m = /^(\d{2}):(\d{2})$/.exec(v || ""); return m ? { h: m[1], m: m[2] } : { h: "", m: "" }; };
   function timeSel(id, value, label) {
     const t = splitHm(value);
@@ -236,6 +262,7 @@
       `<div class="places-detail" data-places-detail="info"><div class="places-badges">${badges.join("")}</div>` +
       `<h3 class="places-name">${esc(p.name || "")}</h3>` +
       (p.summary ? `<p class="places-summary">${esc(p.summary)}</p>` : "") +
+      (typeof p.notice === "string" && p.notice ? `<p class="places-reserve-note places-detail-notice">${esc(p.notice)}</p>` : "") +
       addrRow +
       `<ul class="places-meta">${metaItem("권장 나이", ageText(p.ageMonths))}${metaItem("실내·실외", lookup(Places.INDOOR, p.indoor))}${metaItem("비용", lookup(Places.COST, p.cost))}${metaItem("예약", lookup(Places.RESERVATION, p.reservation))}</ul>` +
       resv +
@@ -259,5 +286,5 @@
     };
   }
 
-  return { TEXT, SCHEDULE_LIMITS, esc, ageText, render, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, memoFor, scheduleDraftFor };
+  return { TEXT, SCHEDULE_LIMITS, esc, ageText, render, filterRow, fallbackBox, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, memoFor, scheduleDraftFor };
 });

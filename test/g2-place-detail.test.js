@@ -80,8 +80,8 @@ function env(o) {
   const modal = { classList: { remove() {}, add() {} } };
   const log = { created: [], switched: [], rendered: 0, closed: 0, refreshed: 0, picker: [] };
   const sels = o.sels || {};
-  const sb = { console: { error() {}, log() {} }, Date, JSON, Promise, PlacesView: PV, UserScheduleView: V, UserSchedule: US, HouseholdView: HV,
-    el: (id) => (id === "modal-content" ? content : id === "detail-modal" ? modal : id === "plr-dp-btn" ? {} : sels[id] ? { value: sels[id] } : null),
+  const sb = { console: { error() {}, log() {} }, Date, JSON, Promise, setTimeout, PlacesView: PV, UserScheduleView: V, UserSchedule: US, HouseholdView: HV,
+    el: (id) => (id === "modal-content" ? content : id === "detail-modal" ? modal : id === "plr-dp-btn" ? { addEventListener: (t, f) => (log.btnClick = f) } : id === "plr-dp-popup" ? { classList: { contains: () => !o.popupOpen }, scrollIntoView: (a) => (log.scrolled = a) } : sels[id] ? { value: sels[id] } : null),
     usActive: () => o.active !== false, usLinks: () => [{ childKey: "c1", displayName: "수아", order: 1 }], usMembers: () => [{ memberId: "m1", role: "MOM", label: "엄마", order: 1 }, { memberId: "m2", role: "DAD", label: "아빠", order: 2 }], usActiveChildKey: () => "c1", memActiveId: () => "m1",
     HNDatePicker: { markup: () => "<div id=\"plr-dp-btn\"></div>", bindById: (prefix, op) => { log.picker.push(prefix); return { set(d) { log.set = d; } }; } }, formatDateKR: () => "", toISODate: (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
     HouseholdSync: { createSchedule: async (hid, doc) => { if (o.fail) return { ok: false, reason: "x" }; log.created.push([hid, doc]); return { ok: true }; } }, hh: { hid: "h1" }, usRefreshCalendar: () => { log.refreshed++; },
@@ -102,6 +102,18 @@ test("[일정 추가] → 등록 단계(기본 날짜=다가오는 토요일, �
   assert.ok(nh.reg.mode === "info" && nh.content.innerHTML.includes("가족 캘린더를 만들면 일정으로 등록할 수 있어요"));
   const info = env({}); info.t.placesDetailOpen(PL, "info");
   assert.ok(info.content.innerHTML.includes("data-places-reg-open") && !info.content.innerHTML.includes("data-places-save"));
+});
+test("날짜 팝업이 열리면 시트를 팝업 아래까지 스크롤(scrollIntoView block:nearest), 닫혀 있으면 스크롤 안 함", async () => {
+  const open = env({ popupOpen: true });
+  open.t.placesDetailOpen(PL, "register");
+  open.log.btnClick();
+  await new Promise((r) => setTimeout(r, 5));
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(open.log.scrolled)), { block: "nearest" });
+  const closed = env({ popupOpen: false });
+  closed.t.placesDetailOpen(PL, "register");
+  closed.log.btnClick();
+  await new Promise((r) => setTimeout(r, 5));
+  assert.strictEqual(closed.log.scrolled, undefined);
 });
 test("[캘린더에 등록]: 기존 buildCreateDoc 경로로 저장 — 제목=장소명·장소=주소·분류 FAMILY·대상 가족·eventDate·종일·담당·메모(공식 링크), 성공 토스트 라벨·캘린더 이동", async () => {
   const e = env({});

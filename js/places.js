@@ -28,7 +28,9 @@
   const COST = Object.freeze({ FREE: "무료", PAID: "유료", PARTLY: "일부 유료" });
   const RESERVATION = Object.freeze({ REQUIRED: "예약 필요", NONE: "예약 없이 이용", PARTLY: "일부 예약 필요" });
   const FIELDS = Object.freeze(["id", "name", "category", "province", "district", "ageMonths", "indoor", "cost", "reservation", "address", "officialUrl", "summary", "checkedAt", "example"]);
-  const LIMITS = Object.freeze({ nameMax: 60, addressMax: 100, summaryMax: 80, ageMax: 240 });
+  /** 선택 필드: 없어도 통과(있으면 검증). notice = 이용 제한·주의 한 줄(예: '성남시민만 이용할 수 있어요.'), 없으면 null. */
+  const OPTIONAL_FIELDS = Object.freeze(["notice"]);
+  const LIMITS = Object.freeze({ nameMax: 60, addressMax: 100, summaryMax: 80, noticeMax: 80, ageMax: 240 });
   /** 순위·평가 표현(조사지침 §1·§3 — 실제 이용 통계가 없으므로 쓰지 않는다). */
   const BANNED_WORDS = Object.freeze(["인기", "최고", "best", "1위", "순위", "랭킹", "핫플"]);
   const hasBannedWord = (s) => typeof s === "string" && BANNED_WORDS.some((w) => s.toLowerCase().includes(w));
@@ -80,7 +82,7 @@
       if (!has(p, k)) err(k, "필드 없음(미확인 값은 null 로 둔다)");
     });
     Object.keys(p).forEach((k) => {
-      if (!FIELDS.includes(k)) err(k, "정의되지 않은 필드");
+      if (!FIELDS.includes(k) && !OPTIONAL_FIELDS.includes(k)) err(k, "정의되지 않은 필드");
     });
     if (has(p, "id") && !(typeof p.id === "string" && ID_RE.test(p.id))) err("id", "영문 소문자·숫자·하이픈 1~64자");
     if (has(p, "name") && !(isStr(p.name) && p.name.length <= LIMITS.nameMax)) err("name", `이름 1~${LIMITS.nameMax}자`);
@@ -109,6 +111,10 @@
     if (has(p, "summary")) {
       if (!(isStr(p.summary) && p.summary.length <= LIMITS.summaryMax)) err("summary", `한 줄 설명 1~${LIMITS.summaryMax}자`);
       else if (hasBannedWord(p.summary)) err("summary", "순위·평가 표현 금지(인기·최고·BEST·1위 등)");
+    }
+    if (has(p, "notice") && p.notice !== null) {
+      if (!(isStr(p.notice) && p.notice.length <= LIMITS.noticeMax)) err("notice", `안내는 1~${LIMITS.noticeMax}자 문자열 또는 null`);
+      else if (hasBannedWord(p.notice)) err("notice", "순위·평가 표현 금지(인기·최고·BEST·1위 등)");
     }
     if (has(p, "name") && isStr(p.name) && hasBannedWord(p.name)) err("name", "순위·평가 표현 금지(인기·최고·BEST·1위 등)");
     if (has(p, "checkedAt") && !parseDate(p.checkedAt)) err("checkedAt", "YYYY-MM-DD 실제 날짜");
@@ -145,6 +151,7 @@
    *  - province 가 있으면 같은 시·도만 남기고, 같은 시·군·구를 앞에(그 안에서는 원래 순서 = 편집 순서).
    *  - ageMonths(숫자)가 있으면 권장 나이 범위 밖은 뺀다(장소의 ageMonths 가 null 이면 통과).
    *  - category 가 분류 코드면 그 분류만('ALL'·빈 값·null 은 전체).
+   *  - indoor/free/noReserve(true 일 때만, 모두 AND): 실내(INDOOR·BOTH) / 무료(FREE) / 예약 없이(값이 있고 REQUIRED 가 아님 — 모르는 값(null)은 제외).
    */
   function filterPlaces(list, opts) {
     const o = opts || {};
@@ -153,7 +160,10 @@
     const prov = isStr(o.province) ? o.province : null;
     const dist = prov && isStr(o.district) ? o.district : null;
     const age = typeof o.ageMonths === "number" && Number.isFinite(o.ageMonths) ? o.ageMonths : null;
-    const kept = src.filter((p) => (!cat || p.category === cat) && (!prov || p.province === prov) && (age === null || ageFits(p, age)));
+    const kept = src.filter((p) => (!cat || p.category === cat) && (!prov || p.province === prov) && (age === null || ageFits(p, age))
+      && (o.indoor !== true || p.indoor === "INDOOR" || p.indoor === "BOTH")
+      && (o.free !== true || p.cost === "FREE")
+      && (o.noReserve !== true || (p.reservation !== null && p.reservation !== undefined && p.reservation !== "REQUIRED")));
     if (!dist) return kept;
     const same = kept.filter((p) => p.district === dist);
     const rest = kept.filter((p) => p.district !== dist);
@@ -170,5 +180,19 @@
     return t.getTime() >= addMonths(checked, n).getTime();
   }
 
-  return { CATEGORIES, CATEGORY_KEYS, INDOOR, COST, RESERVATION, FIELDS, LIMITS, BANNED_WORDS, STALE_MONTHS, hasBannedWord, validatePlace, validateData, filterPlaces, ageFits, isStale, parseDate, isHttpsUrl };
+  /** 데이터에 있는 (시·도, 시·군·구) 목록(처음 나온 순, 중복 없음). */
+  function regionsOf(list) {
+    const seen = new Set(), out = [];
+    (Array.isArray(list) ? list : []).forEach((p) => {
+      if (!p || !isStr(p.province)) return;
+      const d = isStr(p.district) ? p.district : null;
+      const k = p.province + "|" + (d || "");
+      if (!seen.has(k)) { seen.add(k); out.push({ province: p.province, district: d }); }
+    });
+    return out;
+  }
+  /** 데이터에 '예약 필요 없음(NONE)' 장소가 하나라도 있는가(없으면 '예약 없이' 칩을 보이지 않는다). */
+  const hasNoReserve = (list) => (Array.isArray(list) ? list : []).some((p) => p && p.reservation === "NONE");
+
+  return { OPTIONAL_FIELDS, regionsOf, hasNoReserve, CATEGORIES, CATEGORY_KEYS, INDOOR, COST, RESERVATION, FIELDS, LIMITS, BANNED_WORDS, STALE_MONTHS, hasBannedWord, validatePlace, validateData, filterPlaces, ageFits, isStale, parseDate, isHttpsUrl };
 });

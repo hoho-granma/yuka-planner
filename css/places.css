@@ -86,3 +86,11 @@
 .places-time { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; }
 .places-time-sel { padding: 6px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 14px; background: #fff; }
 .places-reg-err { margin: 6px 0; font-size: 12px; font-weight: 700; color: #b4552a; }
+
+/* G3: 보조 필터·준비 중 지역 안내·이용 제한 안내 */
+.places-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.places-fallback { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: #fff7f2; border: 1px solid var(--border); font-size: 13px; line-height: 1.5; }
+.places-fallback p { margin: 0 0 6px; }
+.places-fallback-title { font-weight: 800; }
+.places-chips-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+.places-card-notice { margin: 4px 0; font-size: 12px; font-weight: 700; color: var(--accent-dark); overflow-wrap: anywhere; }
