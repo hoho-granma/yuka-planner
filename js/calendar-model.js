@@ -77,7 +77,21 @@
   }
 
   /** USER 문서가 필터를 통과하는가 (§7-2). */
-  function passesUserFilter(doc, filter) {
+  /**
+   * 일정의 소유 태그: 담당 구성원이 엄마·아빠(MOM/DAD)면 그 역할, 가족 일정이면 "FAMILY", 아이 일정이면 "CHILD:<childKey>"(여러 명이면 모두).
+   * filter.owners(복수 선택 필터)와 겹치는 태그가 하나라도 있으면 통과한다.
+   */
+  function ownerTags(doc, memberOf) {
+    const tags = [];
+    const m = doc.assigneeMemberId && memberOf ? memberOf.get(doc.assigneeMemberId) : null;
+    if (m && !m.deletedAt && (m.role === "MOM" || m.role === "DAD")) tags.push(m.role);
+    if (doc.scope === "FAMILY") tags.push("FAMILY");
+    for (const k of doc.childKeys || []) tags.push(`CHILD:${k}`);
+    return tags;
+  }
+
+  function passesUserFilter(doc, filter, memberOf) {
+    if (Array.isArray(filter.owners) && filter.owners.length) return ownerTags(doc, memberOf).some((t) => filter.owners.includes(t));
     if (filter.scope === "FAMILY") return doc.scope === "FAMILY";
     if (filter.scope === "CHILD") return doc.scope === "CHILD" && (doc.childKeys || []).includes(filter.childKey);
     return true; // ALL
@@ -86,6 +100,10 @@
   /** AUTO 는 활성 아이 1명의 것이다(§7-3 1차): 전체이거나, 그 아이를 고른 경우에만 보인다. 가족 필터에서는 없다. */
   function autoVisible(filter, auto) {
     if (!filter.showAuto) return false;
+    // 복수 선택 필터: 현재 아이가 선택에 포함될 때만 보인다(아이를 모르면 아이 칩이 하나라도 선택된 경우). 엄마·아빠·가족만 고르면 없다.
+    if (Array.isArray(filter.owners) && filter.owners.length) {
+      return auto.childKey == null ? filter.owners.some((t) => t.startsWith("CHILD:")) : filter.owners.includes(`CHILD:${auto.childKey}`);
+    }
     if (filter.scope === "FAMILY") return false;
     if (filter.scope === "CHILD") return auto.childKey == null || auto.childKey === filter.childKey;
     return true;
@@ -111,11 +129,13 @@
         return { childKey: k, displayName: l && !l.removedAt ? l.displayName : "(분리된 아이)", colorKey: (l && l.colorKey) || null, removed: !l || !!l.removedAt };
       });
       let assigneeLabel = null;
+      let assigneeRole = null;
       if (o.assigneeMemberId) {
         const m = memberOf.get(o.assigneeMemberId);
         assigneeLabel = m && !m.deletedAt ? m.label : "(삭제된 담당자)";
+        assigneeRole = m && !m.deletedAt ? m.role || null : null;
       }
-      return { ...o, done: o.status === "DONE", badges, assigneeLabel };
+      return { ...o, done: o.status === "DONE", badges, assigneeLabel, assigneeRole };
     };
 
     const dayKeys = eachDay(US, range.start, range.end);
@@ -125,7 +145,7 @@
     const periodList = [];
     const skipped = [];
     for (const doc of user.schedules || []) {
-      if (!doc || !passesUserFilter(doc, filter)) continue;
+      if (!doc || !passesUserFilter(doc, filter, memberOf)) continue;
       if (US.isRecurring(doc) && !doc.deletedAt && !US.recurrenceUsable(doc.recurrence)) {
         skipped.push({ scheduleId: doc.id || null, reason: "recurrence-not-expanded" });
         continue;
@@ -186,5 +206,5 @@
     return { view, range: { start: range.start, end: range.end }, days, periodList, counts, skipped };
   }
 
-  return { buildCalendarModel, linksByAutoId, isLinkableAuto, MAX_MARKS };
+  return { buildCalendarModel, linksByAutoId, isLinkableAuto, ownerTags, MAX_MARKS };
 });

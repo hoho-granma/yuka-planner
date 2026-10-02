@@ -1056,7 +1056,10 @@
       const moreHtml = moreCount > 0 ? `<span class="cal-marker-more">+${moreCount}</span>` : "";
       cell.setAttribute("role", "button");
       cell.setAttribute("aria-label", `${month + 1}월 ${day}일 · 항목 ${totalMarks}건`);
-      cell.innerHTML = `<span class="num">${day}</span><span class="markers">${dotHtml}${moreHtml}</span>`;
+      // 가구가 있을 때(칩 달력): 직접 등록=꽉 찬 칩, 자동=옅은 칩+같은 색 테두리, 최대 2개+N. 가구가 없으면(dm 없음) 기존 점 표식 그대로.
+      cell.innerHTML = dm
+        ? `<span class="num">${day}</span><span class="markers chips">${UserScheduleView.cellChips([...userBars.map((occ) => ({ t: "u", occ })), ...marks.map((e) => ({ t: "a", title: usAutoTitleOfEvent(e), category: e.category, done: !!completed[e.id] }))], { links: usLinks(), mode: usSelectionMode(), catColor: us.catColor, autoColor: usAutoChipColor() })}</span>`
+        : `<span class="num">${day}</span><span class="markers">${dotHtml}${moreHtml}</span>`;
       cell.addEventListener("click", () => {
         selectedCalendarDate = date;
         renderCalendar();
@@ -2964,7 +2967,9 @@
   // 가구가 있고 플래그(FEATURES.household)가 켜졌을 때만 동작한다. 자동 일정(autoEvents·displayDate·visibleSchedule·completed·진행률)은 읽기만 하고 바꾸지 않는다.
   // 추가한 일정의 완료는 일정 문서의 status 에만 기록한다(completed 와 분리). 캘린더는 하나이며 scope 는 CHILD / FAMILY 두 가지뿐이다.
   // detailKey/detailOcc: 열려 있는 상세의 회차(반복 일정은 같은 문서에서 회차가 여럿이라 id 만으로는 부족), dayForm: "이 날만 수정", plan: 규칙 변경 확인 대기 중인 전체 수정 계획.
-  const us = { selection: "ALL", showAuto: true, form: null, messages: [], saving: false, detailId: null, detailKey: null, detailOcc: null, dayForm: null, plan: null, autoLabel: null, linkPrompt: null };
+  // 칩 달력 개편: selection=복수 선택 배열(비어 있으면 전체), onlyUser=직접 등록한 일정만 보기(아이만 선택했을 때만 효력, 기본 꺼짐), catColor=카테고리별 색(기본 꺼짐, 이 기기에 보존)
+  const CAL_CATCOLOR_KEY = "hannun_cal_catcolor";
+  const us = { selection: [], onlyUser: false, catColor: (() => { try { return localStorage.getItem(CAL_CATCOLOR_KEY) === "1"; } catch (e) { return false; } })(), form: null, messages: [], saving: false, detailId: null, detailKey: null, detailOcc: null, dayForm: null, plan: null, autoLabel: null, linkPrompt: null };
   const usReady = () => typeof UserScheduleView !== "undefined" && typeof UserSchedule !== "undefined" && typeof CalendarModel !== "undefined";
   const usActive = () => hhEnabled() && usReady() && !!hh.hid && !!hh.code;
   const usMirror = () => (hh.hid ? HouseholdSync.getMirror(hh.hid) : null);
@@ -2977,12 +2982,19 @@
     const l = usLinks().find((x) => !x.removedAt && x.familyCode === familyCode);
     return l ? l.childKey : null;
   };
+  /** 자동 일정 칩 색: 현재 아이의 색(링크 order 기반, 링크가 없으면 가족색). */
+  const usAutoChipColor = () => {
+    const k = usActiveChildKey();
+    const c = k ? UserScheduleView.childColors(usLinks())[k] : null;
+    return c || UserScheduleView.FAMILY_COLOR;
+  };
+  const usSelectionMode = () => UserScheduleView.selectionMode(UserScheduleView.normalizeSelection(us.selection, usLinks(), usMembers()));
   /** 월/일 범위의 캘린더 모델(자동 일정은 읽기 전용 입력). */
   function usBuildModel(startIso, endIso, filterOverride, view) {
     return CalendarModel.buildCalendarModel({
       view: view === "week" ? "week" : "month",
       range: { start: startIso, end: endIso },
-      filter: filterOverride || UserScheduleView.toModelFilter(us.selection, us.showAuto, usLinks()),
+      filter: filterOverride || UserScheduleView.toModelFilter(us.selection, us.onlyUser, usLinks(), usMembers()),
       auto: { events: calendarDotSchedule(), displayDates: calDisplayDays, completed, childKey: usActiveChildKey(), autoIdAliases, hideLinked: autoLinkOn() },
       user: { schedules: usDocs(), childLinks: usLinks(), members: usMembers() },
     });
@@ -3230,7 +3242,7 @@
     const counts = { userItems: model.counts.userItems + model.counts.periodItems, userDone: model.counts.userDone + periodDone };
     top.innerHTML =
       `<div class="card us-top"><p class="us-summary">${esc(UserScheduleView.monthSummary(counts))}</p>` +
-      UserScheduleView.renderFilterChips(UserScheduleView.filterChips(links, us.selection), us.showAuto) +
+      UserScheduleView.renderFilterChips(UserScheduleView.filterChips(links, us.selection, usMembers()), { mode: usSelectionMode(), onlyUser: us.onlyUser, catColor: us.catColor }) +
       `<p class="us-note">${esc(UserScheduleView.MSG.legend)}</p></div>`;
     const skipped = UserScheduleView.skippedNote(model.skipped);
     const period = UserScheduleView.renderPeriodSection(UserScheduleView.periodSection(model.periodList, links));
@@ -3496,14 +3508,21 @@
     if (!usActive()) return;
     const f = ev.target.closest("[data-us-filter]");
     if (f) {
-      us.selection = f.getAttribute("data-us-filter");
+      us.selection = UserScheduleView.toggleSelection(us.selection, f.getAttribute("data-us-filter"), usLinks(), usMembers());
       return usRefreshCalendar();
     }
     const a = ev.target.closest("[data-us-action]");
     if (a) {
       const act = a.getAttribute("data-us-action");
-      if (act === "toggle-auto") {
-        us.showAuto = !us.showAuto;
+      if (act === "toggle-only-user") {
+        us.onlyUser = !us.onlyUser;
+        return usRefreshCalendar();
+      }
+      if (act === "toggle-cat-color") {
+        us.catColor = !us.catColor;
+        try {
+          localStorage.setItem(CAL_CATCOLOR_KEY, us.catColor ? "1" : "0");
+        } catch (e) {}
         return usRefreshCalendar();
       }
       if (act === "add") return usOpenForm(null);

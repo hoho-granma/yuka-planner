@@ -35,26 +35,25 @@ console.log("월 보기 경로 불변(HEAD 소스 대비)");
 test("renderCalendar: 변경은 맨 앞 가드 한 줄뿐이다", () => {
   const now = fnSrc(app, "renderCalendar");
   const old = fnSrc(head, "renderCalendar");
-  assert.strictEqual(now.replace("    if (calWeekOn()) return renderWeek();\n", ""), old);
+  // 칩 달력 개편: 가구가 있을 때(dm)의 칸 마크업 분기만 더해졌고 가구가 없을 때의 기존 점 마크업은 그대로 남아 있다
+  assert.ok(now.includes('<span class="markers">${dotHtml}${moreHtml}</span>') && old.includes('<span class="markers">${dotHtml}${moreHtml}</span>'));
+  assert.ok(/cell\.innerHTML = dm\s*\?/.test(now));
   assert.ok(now.startsWith("  function renderCalendar() {\n    if (calWeekOn()) return renderWeek();\n"));
 });
 test("renderSelectedDayPanel·attachListHandlers·renderCalendarProgress·computeCalendarDays·renderAutoPeriodSlot 는 HEAD 와 글자까지 같다", () => {
   ["renderSelectedDayPanel", "attachListHandlers", "renderCalendarProgress", "computeCalendarDays", "renderAutoPeriodSlot", "usRefreshCalendar"].forEach((n) => assert.strictEqual(fnSrc(app, n), fnSrc(head, n), n));
 });
-test("usBuildModel: view 인자(F2)와 C2 의 연결 옵션(autoIdAliases·hideLinked)만 늘었고 기본(월) 호출은 그대로 month 모델", () => {
+test("usBuildModel: view 인자(F2)·C2 연결 옵션·칩 달력 필터(복수 선택)만 늘었고 기본(월) 호출은 month 모델", () => {
   const now = fnSrc(app, "usBuildModel");
-  const old = fnSrc(head, "usBuildModel");
-  assert.strictEqual(now.replace("function usBuildModel(startIso, endIso, filterOverride, view)", "function usBuildModel(startIso, endIso, filterOverride)").replace('view: view === "week" ? "week" : "month",', 'view: "month",').replace(", autoIdAliases, hideLinked: autoLinkOn() }", " }"), old);
+  assert.ok(now.includes('view: view === "week" ? "week" : "month",') && now.includes("UserScheduleView.toModelFilter(us.selection, us.onlyUser, usLinks(), usMembers())") && now.includes("hideLinked: autoLinkOn()"));
 });
 test("usRenderDayPanel: C2 의 배지 옵션 한 곳만 다르다", () => {
   const now = fnSrc(app, "usRenderDayPanel");
   const old = fnSrc(head, "usRenderDayPanel");
   assert.strictEqual(now.replace("{ docById: usDocById, ...(autoLinkOn() ? { autoTitleOf: usAutoTitleOf } : {}) }", "{ docById: usDocById }"), old);
 });
-test("usRenderCalendarSlots: 변경은 usRenderViewToggle() 호출 한 줄뿐(플래그 OFF 가드 뒤)", () => {
+test("usRenderCalendarSlots: usRenderViewToggle() 호출은 플래그 OFF 가드 뒤에 있다(칩 달력 개편으로 필터 줄 마크업이 바뀜)", () => {
   const now = fnSrc(app, "usRenderCalendarSlots");
-  const old = fnSrc(head, "usRenderCalendarSlots");
-  assert.strictEqual(now.replace("    usRenderViewToggle();\n", ""), old);
   assert.ok(now.indexOf("if (!hhEnabled()) return;") < now.indexOf("usRenderViewToggle();"));
 });
 test("월 이동 버튼: 주 보기일 때만 가로채고 월 이동 본문은 그대로", () => {

@@ -60,10 +60,12 @@
     periodTitle: "이번 달 기간 일정", // #9
     periodNote: "날짜는 아직 정해지지 않았어요.", // #10
     periodRow: (range) => `날짜 미정 · ${range}`, // #11
-    legend: "막대는 추가한 일정 · 원은 혜택과 추천 항목", // #12
+    legend: "꽉 찬 칩은 직접 등록한 일정, 테두리만 있는 칩은 자동 일정이에요.", // #12 (칩 달력 개편)
     filterAll: "전체", // #13
     filterFamily: "가족", // #13
-    toggleAuto: "자동 일정 함께 보기", // #14
+    toggleAuto: "자동 일정 함께 보기", // #14 (구)
+    onlyUserSwitch: "직접 등록한 일정만 보기", // 칩 달력 개편: 아이만 선택했을 때 보이는 토글 칩(기본 꺼짐, 켜면 자동 일정 칩 숨김)
+    catColorSwitch: "카테고리별 색깔 다르게 하기", // 칩 달력 개편: 기본 꺼짐
     // #15 "반복 일정은 아직 표시되지 않아요." 는 B5 R38 로 폐기 — 반복 일정이 표시되므로 쓰지 않는다.
     sheetAdd: "일정 추가", // #16
     sheetEdit: "일정 수정", // #17
@@ -190,10 +192,14 @@
   const categoryLabel = (key) => (CATEGORIES.find((c) => c.key === key) || { label: "" }).label;
 
   // ── 아이별 색(링크 order 기반 파생 — 저장하지 않는다) ─────────────────────────
-  const CHILD_PALETTE = Object.freeze(["#ff7a59", "#14b8a6", "#ec4899", "#a16207"]); // 첫째·둘째·셋째·넷째 이상
-  const FAMILY_COLOR = "#6b5b53"; // 가족 일정(웜 그레이)
+  // 칩 달력 개편(B 마카롱 파스텔): 아이 첫째·둘째·셋째·넷째 이상 / 가족·기타 구성원 / 엄마·아빠(역할 고정, 저장하지 않는다)
+  const CHILD_PALETTE = Object.freeze(["#ffc46b", "#7fe0b3", "#ff9a9a", "#86b6ff"]);
+  const FAMILY_COLOR = "#c9b8ff";
+  const MEMBER_COLORS = Object.freeze({ MOM: "#ff9ec4", DAD: "#7fb8ff" });
+  // 카테고리별 색(칩 전용 맵 — 앱의 CATEGORY_META 색과 별개): 자동 6분류 + 등록 일정(병원=검진색·수업/기관=주황·가족/기타=회색)
+  const CATEGORY_COLORS = Object.freeze({ "접종": "#86b6ff", "검진": "#c9a2ff", "발달": "#86e0a5", "생활": "#ffe27a", "안전": "#ff9a9a", "혜택": "#a9b6c8", "수업·기관": "#ffb87a", "가족·기타": "#d8cdc4" });
   const NEUTRAL_COLOR = FAMILY_COLOR;
-  const ALL_COLORS = new Set([...CHILD_PALETTE, FAMILY_COLOR]);
+  const ALL_COLORS = new Set([...CHILD_PALETTE, FAMILY_COLOR, ...Object.values(MEMBER_COLORS), ...Object.values(CATEGORY_COLORS)]);
   const safeColor = (c) => (ALL_COLORS.has(c) ? c : NEUTRAL_COLOR);
 
   const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -212,43 +218,99 @@
     return out;
   }
   /** 일정 한 건의 막대 색: 가족 일정=가족색, 아이 일정=childKeys 중 order 가 가장 앞선 아이의 색(공동 일정은 첫 아이 색 + 배지). */
-  function occurrenceColor(occ, links) {
+  function childOnlyColor(occ, links) {
     if (!occ || occ.scope === "FAMILY" || !(occ.childKeys || []).length) return FAMILY_COLOR;
     const colors = childColors(links);
     const ordered = (occ.childKeys || []).slice().sort((a, b) => (colorRank(colors[a])) - (colorRank(colors[b])));
     return colors[ordered[0]] || NEUTRAL_COLOR;
   }
+  const USER_CATEGORY_GROUP = Object.freeze({ MEDICAL: "검진", LESSON: "수업·기관", INSTITUTION: "수업·기관", FAMILY: "가족·기타", ETC: "가족·기타" });
+  const AUTO_CATEGORY_GROUP = Object.freeze({ "예방접종": "접종", "영유아검진": "검진", "발달관찰": "발달", "생활·수유": "생활", "안전·돌봄": "안전", "행정·지원금": "혜택" });
+  const userCategoryGroup = (occ) => USER_CATEGORY_GROUP[occ && occ.category] || "가족·기타";
+  const autoCategoryGroup = (ev) => AUTO_CATEGORY_GROUP[ev && ev.category] || "가족·기타";
+  /**
+   * 일정 한 건의 표시색. mode: "owner"(기본: 담당 엄마·아빠 → 아이 → 가족 순) | "child"(아이색만) | "category"(분류색).
+   * 홈·주 보기·상세는 기본(owner), 월 달력은 선택한 필터에 따라 정한다.
+   */
+  function occurrenceColor(occ, links, mode) {
+    if (mode === "category") return CATEGORY_COLORS[userCategoryGroup(occ)];
+    if (mode !== "child" && occ && MEMBER_COLORS[occ.assigneeRole]) return MEMBER_COLORS[occ.assigneeRole];
+    return childOnlyColor(occ, links);
+  }
   const colorRank = (c) => (CHILD_PALETTE.indexOf(c) >= 0 ? CHILD_PALETTE.indexOf(c) : 99);
 
-  // ── 필터 ──────────────────────────────────────────────────────────────────
-  /** 선택값: "ALL" | "FAMILY" | "CHILD:<childKey>". 칩: 전체 / 아이들(분리된 아이 제외) / 가족. */
-  function filterChips(links, selection) {
-    const sel = normalizeSelection(selection, links);
-    const chips = [{ id: "ALL", label: MSG.filterAll, selected: sel === "ALL" }];
-    activeLinks(links).forEach((l) => chips.push({ id: `CHILD:${linkKey(l)}`, label: l.displayName || "", selected: sel === `CHILD:${linkKey(l)}`, color: childColors(links)[linkKey(l)] }));
-    chips.push({ id: "FAMILY", label: MSG.filterFamily, selected: sel === "FAMILY" });
+  // ── 필터 (칩 달력 개편: 복수 선택) ───────────────────────────────────────────
+  /** 선택값 id: "MOM" | "DAD" | "CHILD:<childKey>" | "FAMILY". 선택 배열이 비어 있으면 "전체". 옛 단일 값("ALL"·"FAMILY"·"CHILD:key")도 받아 1개짜리 배열로 바꾼다. */
+  const roleSet = (members) => new Set((members || []).filter((m) => m && !m.deletedAt).map((m) => m.role));
+  function normalizeSelection(selection, links, members) {
+    const raw = Array.isArray(selection) ? selection : selection == null || selection === "ALL" ? [] : [selection];
+    const kids = activeLinks(links).map((l) => `CHILD:${linkKey(l)}`);
+    const roles = members === undefined ? new Set(["MOM", "DAD"]) : roleSet(members);
+    const valid = [...["MOM", "DAD"].filter((r) => roles.has(r)), ...kids, "FAMILY"];
+    const picked = valid.filter((id) => raw.includes(id));
+    return picked.length === valid.length ? [] : picked; // 전부 골랐으면 전체와 같다
+  }
+  /** "all"(선택 없음) | "kids"(아이만 선택) | "member"(엄마·아빠·가족이 하나라도 선택) */
+  function selectionMode(sel) {
+    if (!sel || !sel.length) return "all";
+    return sel.every((id) => id.startsWith("CHILD:")) ? "kids" : "member";
+  }
+  /** 칩: 전체 / 엄마·아빠(있는 구성원만) / 아이들(분리된 아이 제외) / 가족. selected 는 복수. */
+  function filterChips(links, selection, members) {
+    const sel = normalizeSelection(selection, links, members);
+    const chips = [{ id: "ALL", label: MSG.filterAll, selected: sel.length === 0 }];
+    const mem = (members || []).filter((m) => m && !m.deletedAt);
+    for (const role of ["MOM", "DAD"]) {
+      const m = mem.find((x) => x.role === role);
+      if (m) chips.push({ id: role, label: m.label || (role === "MOM" ? "엄마" : "아빠"), selected: sel.includes(role), color: MEMBER_COLORS[role] });
+    }
+    activeLinks(links).forEach((l) => chips.push({ id: `CHILD:${linkKey(l)}`, label: l.displayName || "", selected: sel.includes(`CHILD:${linkKey(l)}`), color: childColors(links)[linkKey(l)] }));
+    chips.push({ id: "FAMILY", label: MSG.filterFamily, selected: sel.includes("FAMILY"), color: FAMILY_COLOR });
     return chips;
   }
-  /** 선택한 아이가 분리됐거나 알 수 없는 값이면 "전체"로 되돌린다. */
-  function normalizeSelection(selection, links) {
-    if (selection === "FAMILY" || selection === "ALL") return selection;
-    const m = /^CHILD:(.+)$/.exec(String(selection || ""));
-    if (m && activeLinks(links).some((l) => linkKey(l) === m[1])) return selection;
-    return "ALL";
+  /** 칩 하나를 눌렀을 때의 새 선택: "ALL" 은 비우기, 그 밖은 토글. */
+  function toggleSelection(selection, id, links, members) {
+    if (id === "ALL") return [];
+    const cur = normalizeSelection(selection, links, members);
+    const base = cur.length ? cur : [];
+    const next = base.includes(id) ? base.filter((x) => x !== id) : [...base, id];
+    return normalizeSelection(next, links, members);
   }
-  /** CalendarModel.buildCalendarModel 의 input.filter */
-  function toModelFilter(selection, showAuto, links) {
-    const sel = normalizeSelection(selection, links);
-    const showAutoFlag = showAuto !== false;
-    if (sel === "FAMILY") return { scope: "FAMILY", showAuto: showAutoFlag };
-    if (sel.startsWith("CHILD:")) return { scope: "CHILD", childKey: sel.slice(6), showAuto: showAutoFlag };
-    return { scope: "ALL", showAuto: showAutoFlag };
+  /** CalendarModel.buildCalendarModel 의 input.filter. onlyUser(직접 등록한 일정만)는 아이만 선택했을 때만 효력이 있다. */
+  function toModelFilter(selection, onlyUser, links, members) {
+    const sel = normalizeSelection(selection, links, members);
+    if (!sel.length) return { scope: "ALL", showAuto: true };
+    return { scope: "ALL", showAuto: !(selectionMode(sel) === "kids" && onlyUser === true), owners: sel };
   }
-  function renderFilterChips(chips, showAuto) {
+  /** opts: { mode, onlyUser, catColor } — 토글 칩 2개는 아이만 선택했을 때(mode "kids")만 필터 칩 아래 한 줄에 나란히(role=switch, 라벨만) 보인다. */
+  function renderFilterChips(chips, opts) {
+    const o = opts || {};
     const items = chips
-      .map((c) => `<button type="button" class="us-chip${c.selected ? " active" : ""}" data-us-filter="${esc(c.id)}"${c.color ? ` style="--us-color:${safeColor(c.color)}"` : ""}>${esc(c.label)}</button>`)
+      .map((c) => `<button type="button" class="us-chip${c.selected ? " active" : ""}" aria-pressed="${c.selected ? "true" : "false"}" data-us-filter="${esc(c.id)}"${c.color ? ` style="--us-color:${safeColor(c.color)}"` : ""}>${esc(c.label)}</button>`)
       .join("");
-    return `<div class="us-filter">${items}<button type="button" class="us-chip us-toggle${showAuto !== false ? " active" : ""}" data-us-action="toggle-auto" aria-pressed="${showAuto !== false}">${esc(MSG.toggleAuto)}</button></div>`;
+    const sw = (action, label, on) => `<button type="button" class="us-tchip" role="switch" aria-checked="${on ? "true" : "false"}" data-us-action="${action}">${esc(label)}</button>`;
+    const switches = o.mode === "kids" ? `<div class="us-optrows">${sw("toggle-only-user", MSG.onlyUserSwitch, o.onlyUser === true)}${sw("toggle-cat-color", MSG.catColorSwitch, o.catColor === true)}</div>` : "";
+    return `<div class="us-filter">${items}</div>${switches}`;
+  }
+  /**
+   * 월 달력 날짜 칸의 제목 칩(최대 2개 + 나머지 +N). items: [{ t:"u", occ } | { t:"a", title, category, done }] 를 직접 등록 → 자동 순으로 받는다.
+   * ctx: { links, mode("all"|"member"|"kids"), catColor, autoColor(현재 아이 색) }. 직접 등록=꽉 찬 칩, 자동=옅은 칩+같은 색 테두리, 완료=흐리게.
+   */
+  function cellChips(items, ctx) {
+    const c = ctx || {};
+    const catMode = c.mode === "kids" && c.catColor === true;
+    const list = (items || []).slice().sort((a, b) => (a.t === "u" ? 0 : 1) - (b.t === "u" ? 0 : 1));
+    const show = list.slice(0, 2).map((it) => {
+      if (it.t === "u") {
+        const col = catMode ? occurrenceColor(it.occ, c.links, "category") : occurrenceColor(it.occ, c.links, c.mode === "kids" ? "child" : "owner");
+        const done = it.occ.status === "DONE" || it.occ.done === true;
+        return `<span class="cal-chip u${done ? " done" : ""}" style="background:${safeColor(col)}">${esc(it.occ.title)}</span>`;
+      }
+      const col = catMode ? CATEGORY_COLORS[autoCategoryGroup(it)] : c.autoColor || FAMILY_COLOR;
+      return `<span class="cal-chip a${it.done ? " done" : ""}" style="--chip-c:${safeColor(col)}">${esc(catMode ? autoCategoryGroup(it) : it.title)}</span>`;
+    });
+    const more = list.length - 2;
+    return show.join("") + (more > 0 ? `<span class="cal-chip-more">+${more}</span>` : "");
   }
 
   // ── 표시용 데이터 변환 ─────────────────────────────────────────────────────
@@ -894,7 +956,7 @@
 
   return {
     MSG, CATEGORIES, CHILD_PALETTE, FAMILY_COLOR, PICKER_PREFIXES, HOURS, MINUTES,
-    categoryLabel, childColor, childColors, occurrenceColor,
+    categoryLabel, childColor, childColors, occurrenceColor, MEMBER_COLORS, CATEGORY_COLORS, autoCategoryGroup, selectionMode, toggleSelection, cellChips,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
     linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, applyTemplate, renderQuickChips,

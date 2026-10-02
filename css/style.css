@@ -945,9 +945,25 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .us-top { padding: 12px 14px; }
 .us-summary { margin: 0 0 8px; font-size: 13px; font-weight: 700; }
 .us-note { margin: 6px 0 0; font-size: 12px; line-height: 1.5; color: var(--text-muted); }
-.us-filter { display: flex; flex-wrap: wrap; gap: 6px; }
+.us-filter { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.us-filter::-webkit-scrollbar, .us-optrows::-webkit-scrollbar { display: none; }
+.us-filter .us-chip { flex: none; }
 .us-chip { padding: 7px 12px; border: 1px solid var(--border); border-radius: 999px; background: #fff; color: var(--text); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
-.us-chip.active { background: var(--us-color, var(--accent)); border-color: transparent; color: #fff; }
+.us-chip.active { background: var(--us-color, var(--text)); border-color: transparent; color: #fff; }
+.us-chip.active[style*="--us-color"] { color: var(--text); }
+/* 아이만 선택했을 때의 토글 칩 2개(직접 등록한 일정만 보기 / 카테고리별 색깔 다르게 하기): 필터 칩 아래 한 줄 */
+.us-optrows { display: flex; gap: 6px; margin-top: 6px; overflow-x: auto; scrollbar-width: none; }
+.us-tchip { flex: none; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; font-size: 12px; font-weight: 700; padding: 6px 10px 6px 8px; border-radius: 999px; border: 1px solid var(--border); background: #fff; color: var(--text-muted); cursor: pointer; white-space: nowrap; }
+.us-tchip::before { content: ""; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--text-muted); flex: none; box-sizing: border-box; }
+.us-tchip[aria-checked="true"] { background: var(--text); color: #fff; border-color: var(--text); }
+.us-tchip[aria-checked="true"]::before { border-color: #fff; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3.5 7.3l2.3 2.3 4.7-4.9' fill='none' stroke='%233a2e2a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat; }
+/* 월 달력 제목 칩(최대 2개+N) — 가구가 있을 때만 만들어진다 */
+.calendar-grid-v2 .markers.chips { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 2px; padding: 0 2px; }
+.cal-chip { display: block; font-size: 9px; line-height: 14px; height: 14px; padding: 0 3px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; text-align: left; border: 1px solid transparent; color: var(--text); box-sizing: border-box; }
+.cal-chip.a { background: #fff; border-color: var(--chip-c); font-weight: 600; }
+@supports (background: color-mix(in srgb, red 30%, white)) { .cal-chip.a { background: color-mix(in srgb, var(--chip-c) 30%, #fff); } }
+.cal-chip.done { opacity: .4; }
+.cal-chip-more { font-size: 9px; line-height: 12px; color: var(--text-muted); text-align: left; padding-left: 3px; }
 .us-group { margin: 14px 0 6px; font-size: 13px; font-weight: 800; color: var(--text-muted); }
 .us-group:first-child { margin-top: 0; }
 .us-card { display: flex; align-items: stretch; gap: 10px; width: 100%; margin: 0 0 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: #fff; font-family: inherit; text-align: left; cursor: pointer; }

@@ -15,6 +15,8 @@ const CM = require("../js/calendar-model.js");
 const HNLogic = require("../js/hn-logic.js");
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
 const BASE = "84286f3"; // C2-a 커밋(이번 변경 직전)
+// 칩 달력 개편으로 팔레트가 파스텔로 바뀌었다 — 이전 커밋의 출력도 새 색으로 바꿔 비교한다(그 밖의 마크업은 글자까지 같아야 한다)
+const RECOLOR = (s) => String(s).replace(/#ff7a59/g, "#ffc46b").replace(/#14b8a6/g, "#7fe0b3").replace(/#ec4899/g, "#ff9a9a").replace(/#a16207/g, "#86b6ff").replace(/#6b5b53/g, "#c9b8ff");
 const baseSrc = (f) => execSync(`git show ${BASE}:${f}`, { cwd: ROOT, encoding: "utf8" });
 let passed = 0, started = 0, finished = 0;
 function test(name, fn) {
@@ -85,7 +87,7 @@ test("autoRef 없는 폼 렌더(추가·수정·기간·반복·다자녀)는 �
     V.formFromSchedule({ id: "s1", title: "수업", category: "LESSON", scope: "CHILD", childKeys: ["c1", "c2"], dateKind: "FIXED", eventDate: "2026-10-06", allDay: false, startTime: "16:00", endTime: "16:50" }),
   ];
   const opts = { members: [{ memberId: "m1", label: "엄마" }], messages: ["x"], saving: false };
-  forms.forEach((f, i) => assert.strictEqual(V.renderForm(f, LINKS, opts), OLD.renderForm(f, LINKS, opts), "form " + i));
+  forms.forEach((f, i) => assert.strictEqual(V.renderForm(f, LINKS, opts), RECOLOR(OLD.renderForm(f, LINKS, opts)), "form " + i));
 });
 test("저장: 날짜를 넣으면 prepareSave 통과·autoRef 포함 입력, 날짜 없으면 거부, scope/childKeys 가 어긋나면 거부(I13)", () => {
   const f = af();
@@ -130,8 +132,8 @@ test("일정 카드 배지: autoTitleOf 가 제목을 주면 '{항목} 연결', 
   assert.ok(V.renderCard(withBadge.added.cards[0]).includes("us-autolink") && V.renderCard(withBadge.added.cards[0]).includes("DTaP 접종 (2차) 연결"));
   const none = V.dayPanel(day, LINKS, { docById, autoTitleOf: () => "" });
   assert.ok(!("autoLinkText" in none.added.cards[0]));
-  assert.deepStrictEqual(J(V.dayPanel(day, LINKS, { docById })), J(OLD.dayPanel(day, LINKS, { docById })));
-  assert.strictEqual(V.renderCard(V.dayPanel(day, LINKS, { docById }).added.cards[0]), OLD.renderCard(OLD.dayPanel(day, LINKS, { docById }).added.cards[0]));
+  assert.deepStrictEqual(J(V.dayPanel(day, LINKS, { docById })), JSON.parse(RECOLOR(JSON.stringify(J(OLD.dayPanel(day, LINKS, { docById }))))));
+  assert.strictEqual(V.renderCard(V.dayPanel(day, LINKS, { docById }).added.cards[0]), RECOLOR(OLD.renderCard(OLD.dayPanel(day, LINKS, { docById }).added.cards[0])));
 });
 
 console.log("플래그(FEATURES.autoLink)");

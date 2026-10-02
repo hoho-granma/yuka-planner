@@ -52,7 +52,7 @@ test("#1~#59 주요 문구가 승인본과 같다(#39·#42·#55 는 수정본)",
   assert.deepStrictEqual([M.groupAdded, M.groupBenefit, M.groupPlanned], ["추가한 일정", "혜택 신청 시작", "추천 항목 (정해진 날이 아니에요)"]);
   assert.strictEqual(M.dayEmpty, "이 날 추가한 일정이 없어요.");
   assert.deepStrictEqual([M.periodTitle, M.periodNote, M.periodRow("10/1~10/31")], ["이번 달 기간 일정", "날짜는 아직 정해지지 않았어요.", "날짜 미정 · 10/1~10/31"]);
-  assert.strictEqual(M.legend, "막대는 추가한 일정 · 원은 혜택과 추천 항목");
+  assert.strictEqual(M.legend, "꽉 찬 칩은 직접 등록한 일정, 테두리만 있는 칩은 자동 일정이에요.");
   assert.deepStrictEqual([M.filterAll, M.filterFamily, M.toggleAuto], ["전체", "가족", "자동 일정 함께 보기"]);
   assert.strictEqual(M.recurringSkipped, undefined, "#15 는 B5 R38 로 폐기");
   assert.deepStrictEqual([M.sheetAdd, M.sheetEdit], ["일정 추가", "일정 수정"]);
@@ -89,30 +89,30 @@ test("#58·#59 오프라인 대기·쓰기 거부 문구는 B3 HouseholdView 것
 test('"내 일정"·"개인" 표현이 문구·마크업 어디에도 없다', () => {
   const texts = JSON.stringify(Object.values(M).map((v) => (typeof v === "function" ? v(1, 1) : v)));
   const f = V.newForm({ date: "2026-10-06", activeChildKey: "c1", links: LINKS });
-  const html = [V.renderForm(f, LINKS), V.renderAddButton({ enabled: true, hasHousehold: true }), V.renderAddButton({ enabled: true, hasHousehold: false }), V.renderDeleteConfirm(), V.renderFilterChips(V.filterChips(LINKS, "ALL"), true)].join("");
+  const html = [V.renderForm(f, LINKS), V.renderAddButton({ enabled: true, hasHousehold: true }), V.renderAddButton({ enabled: true, hasHousehold: false }), V.renderDeleteConfirm(), V.renderFilterChips(V.filterChips(LINKS, []), { mode: "kids" })].join("");
   [texts, html].forEach((t) => assert(!/내 일정|개인/.test(t)));
   const src = fs.readFileSync(path.join(__dirname, "..", "js", "user-schedule-view.js"), "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
   assert(!/내 일정|개인|PERSONAL/.test(src), "코드(주석 제외)에도 없다");
 });
 
 console.log("\n아이색(order 파생)");
-test("order 1~4 → 코랄·틸·핑크·브라운, 5 이상은 넷째 색(브라운)", () => {
+test("order 1~4 → 마카롱 파스텔 4색, 5 이상은 넷째 색", () => {
   const c = V.childColors(LINKS);
-  assert.deepStrictEqual([c.c1, c.c2, c.c3, c.c4, c.c5], ["#ff7a59", "#14b8a6", "#ec4899", "#a16207", "#a16207"]);
+  assert.deepStrictEqual([c.c1, c.c2, c.c3, c.c4, c.c5], ["#ffc46b", "#7fe0b3", "#ff9a9a", "#86b6ff", "#86b6ff"]);
 });
 test("링크 배열 순서와 무관하고, 분리된 아이도 자기 색을 유지한다", () => {
   const rev = [...LINKS].reverse();
   assert.deepStrictEqual(V.childColors(rev), V.childColors(LINKS));
-  assert.strictEqual(V.childColors(LINKS).cx, "#a16207");
+  assert.strictEqual(V.childColors(LINKS).cx, "#86b6ff");
 });
 test("order 가 없는 링크는 목록 순서로 색을 준다", () => {
   const c = V.childColors([{ childKey: "a" }, { childKey: "b" }]);
-  assert.deepStrictEqual([c.a, c.b], ["#ff7a59", "#14b8a6"]);
+  assert.deepStrictEqual([c.a, c.b], ["#ffc46b", "#7fe0b3"]);
 });
 test("일정 막대 색: 가족 일정=가족색, 아이 일정=그 아이색, 공동 일정=order 가 앞선 아이색", () => {
   assert.strictEqual(V.occurrenceColor({ scope: "FAMILY", childKeys: [] }, LINKS), V.FAMILY_COLOR);
-  assert.strictEqual(V.occurrenceColor({ scope: "CHILD", childKeys: ["c2"] }, LINKS), "#14b8a6");
-  assert.strictEqual(V.occurrenceColor({ scope: "CHILD", childKeys: ["c3", "c2"] }, LINKS), "#14b8a6");
+  assert.strictEqual(V.occurrenceColor({ scope: "CHILD", childKeys: ["c2"] }, LINKS), "#7fe0b3");
+  assert.strictEqual(V.occurrenceColor({ scope: "CHILD", childKeys: ["c3", "c2"] }, LINKS), "#7fe0b3");
   assert.strictEqual(V.occurrenceColor({ scope: "CHILD", childKeys: ["unknown"] }, LINKS), V.FAMILY_COLOR, "알 수 없는 아이는 중립색");
 });
 test("자동 일정 색 6가지와 겹치지 않는다(파랑·보라·초록·노랑·빨강·슬레이트)", () => {
@@ -121,45 +121,118 @@ test("자동 일정 색 6가지와 겹치지 않는다(파랑·보라·초록·�
 });
 
 console.log("\n필터 로직");
-test("칩: 전체 · 아이들(order 순, 분리된 아이 제외) · 가족, 선택 상태", () => {
-  const chips = V.filterChips(LINKS, "CHILD:c2");
-  assert.deepStrictEqual(chips.map((c) => c.id), ["ALL", "CHILD:c1", "CHILD:c2", "CHILD:c3", "CHILD:c4", "CHILD:c5", "FAMILY"]);
-  assert.deepStrictEqual(chips.filter((c) => c.selected).map((c) => c.id), ["CHILD:c2"]);
+const MEMBERS = [{ memberId: "m1", role: "MOM", label: "엄마" }, { memberId: "m2", role: "DAD", label: "아빠" }, { memberId: "m3", role: "GRANDMA", label: "할머니" }];
+test("칩: 전체 · 엄마·아빠(있는 구성원만) · 아이들(order 순, 분리된 아이 제외) · 가족, 복수 선택 상태", () => {
+  const chips = V.filterChips(LINKS, ["CHILD:c2", "CHILD:c1"], MEMBERS);
+  assert.deepStrictEqual(chips.map((c) => c.id), ["ALL", "MOM", "DAD", "CHILD:c1", "CHILD:c2", "CHILD:c3", "CHILD:c4", "CHILD:c5", "FAMILY"]);
+  assert.deepStrictEqual(chips.filter((c) => c.selected).map((c) => c.id), ["CHILD:c1", "CHILD:c2"]);
+  assert.deepStrictEqual([chips[1].color, chips[2].color, chips.at(-1).color], ["#ff9ec4", "#7fb8ff", "#c9b8ff"]);
   assert.strictEqual(chips[0].label, "전체");
   assert.strictEqual(chips.at(-1).label, "가족");
+  assert.deepStrictEqual(V.filterChips(LINKS, [], [{ memberId: "m1", role: "MOM", label: "엄마" }]).map((c) => c.id).slice(0, 3), ["ALL", "MOM", "CHILD:c1"], "아빠 구성원이 없으면 아빠 칩도 없다");
 });
-test("정규화: 분리된 아이·모르는 값은 전체로", () => {
-  ["CHILD:cx", "CHILD:none", "", null, undefined, "weird"].forEach((s) => assert.strictEqual(V.normalizeSelection(s, LINKS), "ALL", String(s)));
-  assert.strictEqual(V.normalizeSelection("FAMILY", LINKS), "FAMILY");
-  assert.strictEqual(V.normalizeSelection("CHILD:c1", LINKS), "CHILD:c1");
+test("정규화: 분리된 아이·모르는 값은 빠지고, 전부 고르면 전체, 옛 단일 값도 1개짜리 배열로", () => {
+  ["CHILD:cx", "CHILD:none", "", null, undefined, "weird", "ALL"].forEach((s) => assert.deepStrictEqual(V.normalizeSelection(s, LINKS, MEMBERS), [], String(s)));
+  assert.deepStrictEqual(V.normalizeSelection("FAMILY", LINKS, MEMBERS), ["FAMILY"]);
+  assert.deepStrictEqual(V.normalizeSelection("CHILD:c1", LINKS, MEMBERS), ["CHILD:c1"]);
+  assert.deepStrictEqual(V.normalizeSelection(["FAMILY", "MOM", "CHILD:cx"], LINKS, MEMBERS), ["MOM", "FAMILY"]);
+  const all = ["MOM", "DAD", "CHILD:c1", "CHILD:c2", "CHILD:c3", "CHILD:c4", "CHILD:c5", "FAMILY"];
+  assert.deepStrictEqual(V.normalizeSelection(all, LINKS, MEMBERS), []);
 });
-test("toModelFilter: 선택 → CalendarModel 필터(scope·childKey·showAuto)", () => {
-  assert.deepStrictEqual(V.toModelFilter("ALL", true, LINKS), { scope: "ALL", showAuto: true });
-  assert.deepStrictEqual(V.toModelFilter("FAMILY", false, LINKS), { scope: "FAMILY", showAuto: false });
-  assert.deepStrictEqual(V.toModelFilter("CHILD:c2", true, LINKS), { scope: "CHILD", childKey: "c2", showAuto: true });
-  assert.deepStrictEqual(V.toModelFilter("CHILD:cx", undefined, LINKS), { scope: "ALL", showAuto: true }, "분리된 아이 선택은 전체로, showAuto 기본 true");
+test("토글: ALL=비우기, 그 밖은 추가/제거, 마지막까지 고르면 전체", () => {
+  assert.deepStrictEqual(V.toggleSelection([], "MOM", LINKS, MEMBERS), ["MOM"]);
+  assert.deepStrictEqual(V.toggleSelection(["MOM"], "CHILD:c1", LINKS, MEMBERS), ["MOM", "CHILD:c1"]);
+  assert.deepStrictEqual(V.toggleSelection(["MOM", "CHILD:c1"], "MOM", LINKS, MEMBERS), ["CHILD:c1"]);
+  assert.deepStrictEqual(V.toggleSelection(["MOM", "CHILD:c1"], "ALL", LINKS, MEMBERS), []);
+  assert.deepStrictEqual(V.toggleSelection(["CHILD:c1"], "CHILD:c1", LINKS, MEMBERS), []);
 });
-test("실제 CalendarModel 과 연결: 전체/아이별/가족 필터 결과", () => {
-  const docs = [sched({ title: "첫째만", childKeys: ["c1"] }), sched({ title: "둘째만", childKeys: ["c2"] }), sched({ title: "형제공동", childKeys: ["c1", "c2"] }), sched({ title: "가족행사", scope: "FAMILY", childKeys: undefined, category: "FAMILY" })];
-  const titles = (sel) => model(docs, V.toModelFilter(sel, false, LINKS)).days.get("2026-10-06").user.map((o) => o.title).sort();
-  assert.deepStrictEqual(titles("ALL"), ["가족행사", "둘째만", "첫째만", "형제공동"]);
-  assert.deepStrictEqual(titles("CHILD:c2"), ["둘째만", "형제공동"]);
-  assert.deepStrictEqual(titles("FAMILY"), ["가족행사"]);
+test("모드: 선택 없음=all, 아이만=kids, 엄마·아빠·가족이 하나라도 있으면 member", () => {
+  assert.deepStrictEqual([[], ["CHILD:c1"], ["CHILD:c1", "CHILD:c2"], ["MOM"], ["CHILD:c1", "FAMILY"]].map(V.selectionMode), ["all", "kids", "kids", "member", "member"]);
 });
-test("필터 칩 마크업: 선택 표시·토글 aria-pressed·아이 이름 이스케이프", () => {
+test("toModelFilter: 선택 → CalendarModel 필터(owners·showAuto) — '직접 등록한 일정만'은 아이만 선택했을 때만 효력", () => {
+  assert.deepStrictEqual(V.toModelFilter([], true, LINKS, MEMBERS), { scope: "ALL", showAuto: true });
+  assert.deepStrictEqual(V.toModelFilter(["FAMILY"], true, LINKS, MEMBERS), { scope: "ALL", showAuto: true, owners: ["FAMILY"] });
+  assert.deepStrictEqual(V.toModelFilter(["CHILD:c2"], false, LINKS, MEMBERS), { scope: "ALL", showAuto: true, owners: ["CHILD:c2"] });
+  assert.deepStrictEqual(V.toModelFilter(["CHILD:c2"], true, LINKS, MEMBERS), { scope: "ALL", showAuto: false, owners: ["CHILD:c2"] });
+  assert.deepStrictEqual(V.toModelFilter(["MOM", "CHILD:c2"], true, LINKS, MEMBERS), { scope: "ALL", showAuto: true, owners: ["MOM", "CHILD:c2"] });
+  assert.deepStrictEqual(V.toModelFilter(["CHILD:cx"], true, LINKS, MEMBERS), { scope: "ALL", showAuto: true }, "분리된 아이 선택은 전체로");
+});
+test("실제 CalendarModel 과 연결: 복수 선택(엄마·아이·가족) 필터 결과, 담당자 역할 반영", () => {
+  const docs = [sched({ title: "첫째만", childKeys: ["c1"] }), sched({ title: "둘째만", childKeys: ["c2"] }), sched({ title: "형제공동", childKeys: ["c1", "c2"] }), sched({ title: "가족행사", scope: "FAMILY", childKeys: undefined, category: "FAMILY" }), sched({ title: "엄마치과", scope: "FAMILY", childKeys: undefined, category: "MEDICAL", assigneeMemberId: "m1" })];
+  const run = (sel, only) => {
+    const m = CM.buildCalendarModel({ view: "month", range: { start: "2026-10-01", end: "2026-10-31" }, filter: V.toModelFilter(sel, only, LINKS, MEMBERS), auto: { events: [], displayDates: new Map(), completed: {} }, user: { schedules: docs, childLinks: LINKS, members: MEMBERS } });
+    return m.days.get("2026-10-06").user.map((o) => o.title).sort();
+  };
+  assert.deepStrictEqual(run([]), ["가족행사", "둘째만", "엄마치과", "첫째만", "형제공동"]);
+  assert.deepStrictEqual(run(["CHILD:c2"]), ["둘째만", "형제공동"]);
+  assert.deepStrictEqual(run(["CHILD:c1", "CHILD:c2"]), ["둘째만", "첫째만", "형제공동"]);
+  assert.deepStrictEqual(run(["FAMILY"]), ["가족행사", "엄마치과"]);
+  assert.deepStrictEqual(run(["MOM"]), ["엄마치과"]);
+  assert.deepStrictEqual(run(["MOM", "CHILD:c1"]), ["엄마치과", "첫째만", "형제공동"]);
+  assert.deepStrictEqual(run(["DAD"]), []);
+});
+test("AUTO 표시 규칙: 현재 아이가 선택에 포함될 때만(엄마·아빠·가족만 고르면 없음, 둘째만이면 없음), 아이만 선택+직접 등록만 켜면 없음", () => {
+  const ev = { id: "A1", scheduleKind: "fixed", fixedDate: new Date(2026, 9, 6), windowStart: new Date(2026, 9, 6), windowEnd: new Date(2026, 9, 6), category: "예방접종", title: "x" };
+  const autoCount = (sel, only, childKey) => {
+    const m = CM.buildCalendarModel({ view: "month", range: { start: "2026-10-01", end: "2026-10-31" }, filter: V.toModelFilter(sel, only, LINKS, MEMBERS), auto: { events: [ev], displayDates: new Map(), completed: {}, childKey }, user: { schedules: [], childLinks: LINKS, members: MEMBERS } });
+    return m.days.get("2026-10-06").benefit.length;
+  };
+  assert.strictEqual(autoCount([], false, "c1"), 1);
+  assert.strictEqual(autoCount(["CHILD:c1"], false, "c1"), 1);
+  assert.strictEqual(autoCount(["CHILD:c2"], false, "c1"), 0, "둘째만 선택하면 현재 아이(첫째)의 자동 일정은 숨김");
+  assert.strictEqual(autoCount(["MOM"], false, "c1"), 0);
+  assert.strictEqual(autoCount(["FAMILY"], false, "c1"), 0);
+  assert.strictEqual(autoCount(["MOM", "CHILD:c1"], false, "c1"), 1);
+  assert.strictEqual(autoCount(["CHILD:c1"], true, "c1"), 0, "직접 등록한 일정만 보기 ON");
+  assert.strictEqual(autoCount(["MOM", "CHILD:c1"], true, "c1"), 1, "엄마가 같이 선택되면 이 스위치는 효력 없음(스위치도 안 보임)");
+  assert.strictEqual(autoCount(["CHILD:c2"], false, null), 1, "현재 아이를 모르면 아이 칩이 선택된 경우 보임");
+});
+test("필터 칩 마크업: 복수 선택(aria-pressed)·아이 이름 이스케이프·토글 칩은 아이만 선택했을 때 한 줄에 2개", () => {
   const evilLinks = [{ childKey: "c1", displayName: '<img src=x onerror="alert(1)">', order: 1 }];
-  const html = V.renderFilterChips(V.filterChips(evilLinks, "ALL"), false);
+  const html = V.renderFilterChips(V.filterChips(evilLinks, [], MEMBERS), { mode: "all" });
   assert(!html.includes("<img") && html.includes("&lt;img"));
-  assert(html.includes('data-us-filter="ALL"') && html.includes("us-chip active"));
-  assert(html.includes('data-us-action="toggle-auto"') && html.includes('aria-pressed="false"'));
-  assert(V.renderFilterChips(V.filterChips(LINKS, "ALL"), true).includes('aria-pressed="true"'));
+  assert(html.includes('data-us-filter="ALL"') && html.includes("us-chip active") && html.includes('aria-pressed="true"') && html.includes('aria-pressed="false"'));
+  assert(!html.includes("us-tchip"), "아이만 선택이 아니면 토글 칩 없음");
+  const kids = V.renderFilterChips(V.filterChips(LINKS, ["CHILD:c1", "CHILD:c2"], MEMBERS), { mode: "kids", onlyUser: false, catColor: true });
+  assert.strictEqual((kids.match(/class="us-tchip"/g) || []).length, 2);
+  assert(kids.includes('data-us-action="toggle-only-user"') && kids.includes("직접 등록한 일정만 보기") && kids.includes('data-us-action="toggle-cat-color"') && kids.includes("카테고리별 색깔 다르게 하기"));
+  assert(/data-us-action="toggle-only-user"/.test(kids) && /role="switch" aria-checked="false" data-us-action="toggle-only-user"/.test(kids) && /role="switch" aria-checked="true" data-us-action="toggle-cat-color"/.test(kids));
+  assert(!/<p|fine-print|us-note/.test(kids.split("us-optrows")[1] || ""), "토글 칩 줄에는 보조 설명 문구가 없다");
+});
+test("색 모드: 홈·주·상세 기본=담당(엄마·아빠)→아이→가족, 아이만 선택=아이색, 카테고리=분류색(병원=검진·수업/기관=주황·가족/기타=회색)", () => {
+  const o = (x) => ({ scope: "CHILD", childKeys: ["c1"], category: "LESSON", ...x });
+  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "MOM" }), LINKS), "#ff9ec4");
+  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "DAD" }), LINKS), "#7fb8ff");
+  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "GRANDMA" }), LINKS), V.childColors(LINKS).c1, "엄마·아빠 외 담당자는 아이색으로");
+  assert.strictEqual(V.occurrenceColor({ scope: "FAMILY", assigneeRole: "GRANDMA" }, LINKS), "#c9b8ff");
+  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "MOM" }), LINKS, "child"), V.childColors(LINKS).c1);
+  assert.deepStrictEqual(["MEDICAL", "LESSON", "INSTITUTION", "FAMILY", "ETC"].map((c) => V.occurrenceColor(o({ category: c }), LINKS, "category")), ["#c9a2ff", "#ffb87a", "#ffb87a", "#d8cdc4", "#d8cdc4"]);
+  assert.deepStrictEqual(["예방접종", "영유아검진", "발달관찰", "생활·수유", "안전·돌봄", "행정·지원금"].map((c) => V.CATEGORY_COLORS[V.autoCategoryGroup({ category: c })]), ["#86b6ff", "#c9a2ff", "#86e0a5", "#ffe27a", "#ff9a9a", "#a9b6c8"]);
+});
+test("칩 칸 마크업: 직접=꽉 찬 칩·자동=옅은 칩, 최대 2개+N, 완료 흐림, 카테고리 모드는 자동 칩에 분류명, 이스케이프", () => {
+  const u = (title, extra) => ({ t: "u", occ: { title, scope: "CHILD", childKeys: ["c1"], category: "MEDICAL", status: "TODO", ...extra } });
+  const a = (title, extra) => ({ t: "a", title, category: "예방접종", done: false, ...extra });
+  const ctx = { links: LINKS, mode: "member", catColor: false, autoColor: "#ffc46b" };
+  const h = V.cellChips([a("자동1"), u("직접1"), u("직접2"), a("자동2")], ctx);
+  assert.strictEqual((h.match(/class="cal-chip /g) || []).length, 2);
+  assert(h.indexOf("직접1") < h.indexOf("직접2") && !h.includes("자동1") && h.includes("cal-chip-more\">+2<"), "직접 등록이 앞, 나머지는 +N");
+  assert(/cal-chip u" style="background:#ffc46b">직접1/.test(h));
+  const auto = V.cellChips([a("접종", { done: true })], ctx);
+  assert(auto.includes("cal-chip a done") && auto.includes("--chip-c:#ffc46b"));
+  const cat = V.cellChips([a("접종 제목"), u("병원")], { ...ctx, mode: "kids", catColor: true });
+  assert(cat.includes("background:#c9a2ff") && cat.includes("--chip-c:#86b6ff") && cat.includes(">접종<") && !cat.includes("접종 제목"));
+  const noCat = V.cellChips([a("접종 제목")], { ...ctx, mode: "member", catColor: true });
+  assert(noCat.includes("접종 제목"), "카테고리 색은 아이만 선택했을 때만");
+  const evil = V.cellChips([u('<img src=x onerror="a">', { assigneeRole: "MOM" })], ctx);
+  assert(!evil.includes("<img") && evil.includes("&lt;img") && evil.includes("#ff9ec4"));
+  assert.strictEqual(V.cellChips([], ctx), "");
 });
 
 console.log("\n표시 데이터 변환(완료·삭제 포함)");
 const occOf = (doc, links) => model([doc]).days.get(doc.eventDate || "2026-10-06").user[0];
 test("카드 데이터: 분류 라벨·시각·태그·색·미완료", () => {
   const c = V.cardData(occOf(sched({ title: "피아노", category: "LESSON" })), LINKS);
-  assert.deepStrictEqual({ title: c.title, label: c.categoryLabel, time: c.timeText, date: c.dateText, tag: c.tag, color: c.color, done: c.done, doneLabel: c.doneLabel }, { title: "피아노", label: "수업·학원", time: "16:00 ~ 16:50", date: "", tag: "은찬이", color: "#ff7a59", done: false, doneLabel: "" });
+  assert.deepStrictEqual({ title: c.title, label: c.categoryLabel, time: c.timeText, date: c.dateText, tag: c.tag, color: c.color, done: c.done, doneLabel: c.doneLabel }, { title: "피아노", label: "수업·학원", time: "16:00 ~ 16:50", date: "", tag: "은찬이", color: "#ffc46b", done: false, doneLabel: "" });
 });
 test("시각 표기: 종일 / 시작~종료 / 시작만(…부터)", () => {
   const T = (over) => V.cardData(occOf(sched(over)), LINKS).timeText;
@@ -244,7 +317,7 @@ test("입력 객체를 변경하지 않는다(deep freeze 한 모델·링크)", 
   V.cardData(frozenModel.days[5].user[0] || { title: "x", dateKind: "FIXED", date: "2026-10-06", badges: [] }, links);
   V.cellMarks(frozenModel.days[5], links);
   V.dayPanel(frozenModel.days[5], links);
-  V.filterChips(links, "ALL");
+  V.filterChips(links, []);
   V.childColors(links);
   V.monthSummary(frozenModel.counts);
 });
@@ -252,16 +325,16 @@ test("입력 객체를 변경하지 않는다(deep freeze 한 모델·링크)", 
 console.log("\n마크업·이스케이프");
 const EVIL = '<img src=x onerror="alert(1)">&"\'';
 test("카드: 제목·태그·분류·ID·키의 HTML 은 실행되지 않는다", () => {
-  const html = V.renderCard({ key: EVIL, scheduleId: EVIL, title: EVIL, categoryLabel: EVIL, timeText: EVIL, dateText: EVIL, tag: EVIL, color: "#ff7a59", done: true, doneLabel: "완료" });
+  const html = V.renderCard({ key: EVIL, scheduleId: EVIL, title: EVIL, categoryLabel: EVIL, timeText: EVIL, dateText: EVIL, tag: EVIL, color: "#ffc46b", done: true, doneLabel: "완료" });
   assert(!html.includes("<img"), html);
   assert(html.includes("&lt;img") && html.includes("&quot;"));
 });
 test("카드: 팔레트에 없는 색(스타일 주입 시도)은 중립색으로 바뀐다", () => {
   const html = V.renderCard({ key: "k", scheduleId: "s", title: "t", categoryLabel: "", timeText: "", dateText: "", tag: "", color: 'red;background:url(javascript:alert(1))', done: false });
-  assert(!html.includes("javascript:") && html.includes("--us-color:#6b5b53"));
+  assert(!html.includes("javascript:") && html.includes("--us-color:#c9b8ff"));
 });
 test("카드: 완료면 done 클래스와 '완료' 표시, 미완료면 없음", () => {
-  const base = { key: "k", scheduleId: "s", title: "t", categoryLabel: "수업·학원", timeText: "종일", dateText: "", tag: "가족 일정", color: "#6b5b53" };
+  const base = { key: "k", scheduleId: "s", title: "t", categoryLabel: "수업·학원", timeText: "종일", dateText: "", tag: "가족 일정", color: "#c9b8ff" };
   const d = V.renderCard({ ...base, done: true, doneLabel: "완료" });
   const u = V.renderCard({ ...base, done: false, doneLabel: "" });
   assert(d.includes("us-card done") && d.includes('<span class="us-done">완료</span>'));
@@ -278,7 +351,7 @@ test("추가 버튼: 플래그 OFF → '', 가구 없음 → 안내만, 가구 �
   assert(on.includes('data-us-action="add"') && on.includes("＋ 일정 추가"));
 });
 test("상세: 미완료는 '완료했어요', 완료는 '완료 취소', 수정·삭제·닫기, 본문 이스케이프", () => {
-  const c = { key: "k", scheduleId: "s", title: EVIL, categoryLabel: "병원·검진", timeText: "종일", dateText: "", tag: "은찬이", color: "#ff7a59", done: false, location: EVIL, memo: EVIL };
+  const c = { key: "k", scheduleId: "s", title: EVIL, categoryLabel: "병원·검진", timeText: "종일", dateText: "", tag: "은찬이", color: "#ffc46b", done: false, location: EVIL, memo: EVIL };
   const html = V.renderDetail(c);
   assert(!html.includes("<img") && html.includes("&lt;img"));
   assert(html.includes(">완료했어요<") && !html.includes("완료 취소"));
@@ -456,9 +529,9 @@ test("정적 확인: DOM·저장소·네트워크·Firestore·자동 일정 완�
   ["document.", "window.", "localStorage", "sessionStorage", "firebase", "fetch(", "FamilySync", "HouseholdSync", "navigator", "innerHTML", "addEventListener", "completed", "toISOString", "new Date"].forEach((w) => assert(!src.includes(w), w + " 참조"));
 });
 test("data-us-action 은 정해진 값만 쓴다", () => {
-  const all = [V.renderForm(F({}), LINKS), V.renderDetail({ key: "k", scheduleId: "s", title: "t", categoryLabel: "", timeText: "", dateText: "", tag: "", color: "#ff7a59", done: false }), V.renderDeleteConfirm(), V.renderAddButton({ enabled: true, hasHousehold: true }), V.renderFilterChips(V.filterChips(LINKS, "ALL"), true)].join("");
+  const all = [V.renderForm(F({}), LINKS), V.renderDetail({ key: "k", scheduleId: "s", title: "t", categoryLabel: "", timeText: "", dateText: "", tag: "", color: "#ffc46b", done: false }), V.renderDeleteConfirm(), V.renderAddButton({ enabled: true, hasHousehold: true }), V.renderFilterChips(V.filterChips(LINKS, []), { mode: "kids" })].join("");
   const acts = new Set([...all.matchAll(/data-us-action="([^"]+)"/g)].map((m) => m[1]));
-  assert.deepStrictEqual([...acts].sort(), ["add", "cancel", "cancel-delete", "close", "confirm-delete", "delete", "edit", "save", "toggle-auto", "toggle-done"]);
+  assert.deepStrictEqual([...acts].sort(), ["add", "cancel", "cancel-delete", "close", "confirm-delete", "delete", "edit", "save", "toggle-cat-color", "toggle-done", "toggle-only-user"]);
 });
 
 // ════════════════════════════════════════════════════════════════════════
