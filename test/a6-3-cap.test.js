@@ -81,7 +81,8 @@ test("모든 출생일·지역: 기존(날짜 월령 ≤ 36) 노출은 그대로
       const oldVis = new Set(ev.filter((e) => cm(b, e.date) <= 36).map((e) => e.id));
       const newVis = new Set(ev.filter((e) => CT.isEventVisible(b, e)).map((e) => e.id));
       for (const id of oldVis) assert.ok(newVis.has(id), `${region} ${b.toDateString()}: 사라짐 ${id}`);
-      const added = ev.filter((e) => newVis.has(e.id) && !oldVis.has(e.id));
+      // 학령기 확장(옵트인 규칙: VX-JEV dose-5 등)은 이 테스트의 범위 밖 — 72개월 이하 아이에게 안 보인다는 것은 school-age-2.test.js 가 확인한다
+      const added = ev.filter((e) => newVis.has(e.id) && !oldVis.has(e.id) && !CT.extendedRuleOf(e));
       added.forEach((e) => assert.ok(cm(b, e.date) > 36 && cm(b, e.date) <= 72, `${e.id} 월령 ${cm(b, e.date)}`));
       assert.deepStrictEqual(added.filter((e) => !e.isEngineEvent).map((e) => e.id), [], `지원금 신규 노출: ${region}`);
       assert.deepStrictEqual(added.map(evKey).sort(), ["HC-07", "HC-08", "HC-09", "VX-DTAP__dose-5", "VX-IPV__dose-4", "VX-JEV__dose-4", "VX-MMR__dose-2"], `${region} ${b.toDateString()}`);

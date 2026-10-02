@@ -38,7 +38,17 @@
     Object.freeze({ start: 37, end: 47, label: "만 3세 (37~47개월)" }),
     Object.freeze({ start: 48, end: 59, label: "만 4세 (48~59개월)" }),
     Object.freeze({ start: 60, end: 72, label: "만 5~6세 (60~72개월)" }),
+    // 학령기 확장 1단계: 73~144개월(만 12세까지) 구간. 위 6개의 경계·라벨·순서는 변경하지 않는다.
+    Object.freeze({ start: 73, end: 95, label: "만 6~7세 (73~95개월)" }),
+    Object.freeze({ start: 96, end: 119, label: "만 8~9세 (96~119개월)" }),
+    Object.freeze({ start: 120, end: 144, label: "만 10~12세 (120~144개월)" }),
   ]);
+
+  // 학령기 확장: 전역 서비스 범위(SERVICE_RANGE.maxMonths 72)는 그대로 두고, 정의가 직접 옵트인한 이벤트만 72개월 너머(최대 144개월)에서 보인다.
+  // 정의 필드 extendedVisibility: [{ occurrenceKeys?: ["dose-5"], fromAgeMonths: 73, maxVisibleMonths: 144 }]
+  //   - 규칙에 걸린 이벤트는 "아이의 현재 월령 >= fromAgeMonths" 이고 "이벤트 시점 월령 <= maxVisibleMonths" 일 때만 보인다(72개월 이하 아이에게는 보이지 않음 → 기존 화면 불변).
+  //   - occurrenceKeys 가 없으면 그 정의의 모든 회차에 적용, 있으면 그 회차에만. 규칙이 없는 정의·이벤트는 기존 규칙(72/36) 그대로.
+  const EXTENDED_MAX_MONTHS = 144;
 
   /** 완료된 개월 수 — 기존 ageInMonths/ageMonthsAt 과 동일한 규칙(말일 clamp 아님). */
   function completedMonths(birthDate, asOf) {
@@ -88,8 +98,19 @@
     return isLegacyCappedDefinition(def);
   }
 
-  /** 이 이벤트가 보여질 수 있는 최대 월령 — 72(서비스 상한) 또는 36(보존 상한). 반복 행 cap 도 이 값을 쓴다. */
+  /** 이 이벤트에 걸리는 학령기 확장 규칙(없으면 null). 정의의 extendedVisibility 중 회차가 맞는 첫 규칙. */
+  function extendedRuleOf(event) {
+    const def = event && event.isEngineEvent && event.detail ? event.detail.definition : null;
+    const rules = def && def.extendedVisibility;
+    if (!Array.isArray(rules)) return null;
+    const key = event.detail.instance && event.detail.instance.occurrenceKey;
+    return rules.find((r) => r && Number.isInteger(r.fromAgeMonths) && Number.isInteger(r.maxVisibleMonths) && (!Array.isArray(r.occurrenceKeys) || r.occurrenceKeys.indexOf(key) >= 0)) || null;
+  }
+
+  /** 이 이벤트가 보여질 수 있는 최대 월령 — 72(서비스 상한) 또는 36(보존 상한), 학령기 확장 규칙이 있으면 그 상한(최대 144). 반복 행 cap 도 이 값을 쓴다. */
   function effectiveMaxMonths(event) {
+    const rule = extendedRuleOf(event);
+    if (rule) return Math.min(rule.maxVisibleMonths, EXTENDED_MAX_MONTHS);
     return isLegacyCapped(event) ? Math.min(LEGACY_TODO_CAP_MONTHS, SERVICE_RANGE.maxMonths) : SERVICE_RANGE.maxMonths;
   }
 
@@ -105,13 +126,16 @@
   function isSchoolStageVisible(def, stage) {
     if (!stage || !Array.isArray(def.visibleStages)) return false;
     if (def.visibleStages.indexOf(stage.stageBand) >= 0) return true;
-    return stage.grade === 1 && def.visibleStages.indexOf("GRADE_1") >= 0;
+    // 초1~초6: "GRADE_<n>" (현재 데이터는 PRE_ELEMENTARY 와 GRADE_1 만 쓴다. 초4 등은 학령기 확장 2단계에서 쓴다)
+    return typeof stage.grade === "number" && def.visibleStages.indexOf("GRADE_" + stage.grade) >= 0;
   }
 
   /** app.js visibleSchedule 의 노출 판정: 학교 단계 정의는 현재 학교 단계로, 그 밖에는 이벤트 날짜의 월령이 그 이벤트의 유효 상한 이하인가. */
-  function isEventVisible(birthDate, event) {
+  function isEventVisible(birthDate, event, asOf) {
     const def = event && event.isEngineEvent && event.detail ? event.detail.definition : null;
     if (isSchoolTermDefinition(def)) return isSchoolStageVisible(def, event.schoolStage);
+    const rule = extendedRuleOf(event);
+    if (rule) return completedMonths(birthDate, asOf || new Date()) >= rule.fromAgeMonths && completedMonths(birthDate, event.date) <= effectiveMaxMonths(event);
     return completedMonths(birthDate, event.date) <= effectiveMaxMonths(event);
   }
 
@@ -215,5 +239,5 @@
     };
   }
 
-  return { SERVICE_RANGE, LEGACY_TODO_CAP_MONTHS, INFANT_TODDLER_MAX_MONTHS, CHECKLIST_BUCKETS, completedMonths, ageLabel, ageLabelAt, isWithinServiceRange, isLegacyCappedDefinition, isLegacyCapped, effectiveMaxMonths, isEventVisible, isSchoolTermDefinition, enrollmentOptions, checklistBucket, checklistGroupLabel, computeSchool, compute };
+  return { SERVICE_RANGE, EXTENDED_MAX_MONTHS, LEGACY_TODO_CAP_MONTHS, INFANT_TODDLER_MAX_MONTHS, CHECKLIST_BUCKETS, completedMonths, ageLabel, ageLabelAt, isWithinServiceRange, isLegacyCappedDefinition, isLegacyCapped, extendedRuleOf, effectiveMaxMonths, isEventVisible, isSchoolTermDefinition, enrollmentOptions, checklistBucket, checklistGroupLabel, computeSchool, compute };
 });

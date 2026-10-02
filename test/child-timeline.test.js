@@ -84,7 +84,7 @@ test("체크리스트 그룹 키·라벨: 월령 0~36과 비숫자 키가 기준
 });
 
 test("A6-3 체크리스트 그룹: 37~47 / 48~59 / 60~72 구간이 뒤에 붙고 빈틈·겹침이 없다", () => {
-  assert.deepStrictEqual(CT.CHECKLIST_BUCKETS.slice(3).map((b) => [b.start, b.end, b.label]), [[37, 47, "만 3세 (37~47개월)"], [48, 59, "만 4세 (48~59개월)"], [60, 72, "만 5~6세 (60~72개월)"]]);
+  assert.deepStrictEqual(CT.CHECKLIST_BUCKETS.slice(3, 6).map((b) => [b.start, b.end, b.label]), [[37, 47, "만 3세 (37~47개월)"], [48, 59, "만 4세 (48~59개월)"], [60, 72, "만 5~6세 (60~72개월)"]]);
   for (let i = 1; i < CT.CHECKLIST_BUCKETS.length; i++) assert.strictEqual(CT.CHECKLIST_BUCKETS[i].start, CT.CHECKLIST_BUCKETS[i - 1].end + 1);
   const exp = (m) => (m <= 36 ? legacyBucket(m) : m <= 47 ? 37 : m <= 59 ? 48 : 60);
   for (let m = 37; m <= 72; m++) assert.strictEqual(CT.checklistBucket(m), exp(m), `bucket ${m}`);

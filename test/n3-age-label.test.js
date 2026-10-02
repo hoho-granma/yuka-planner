@@ -86,7 +86,7 @@ test("월령 의미 문구는 그대로: 체크리스트 구간 라벨·지원�
   assert.strictEqual(CT.checklistGroupLabel(5), "생후 5개월");
   assert.ok(read("js/schedule.js").includes("`생후 ${s.deadlineValue.minMonths}~${s.deadlineValue.maxMonths}개월 사이 신청`"));
   assert.ok(read("js/app.js").includes("생후 3개월~만 12세 이하, 소득기준 충족 시"));
-  assert.deepStrictEqual(CT.CHECKLIST_BUCKETS.map((b) => b.label), ["만 1세 (13~17개월)", "만 1세 (18~23개월)", "만 2세 (24~36개월)", "만 3세 (37~47개월)", "만 4세 (48~59개월)", "만 5~6세 (60~72개월)"]);
+  assert.deepStrictEqual(CT.CHECKLIST_BUCKETS.slice(0, 6).map((b) => b.label), ["만 1세 (13~17개월)", "만 1세 (18~23개월)", "만 2세 (24~36개월)", "만 3세 (37~47개월)", "만 4세 (48~59개월)", "만 5~6세 (60~72개월)"]);
 });
 test("AUTO 계산·완료·규칙 파일은 바뀌지 않았다(나이 표기만 변경)", () => {
   const { execSync } = require("child_process");

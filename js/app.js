@@ -110,6 +110,7 @@
     "data/todos/daily-life.json",
     "data/todos/childcare.json",
     "data/todos/school.json",
+    "data/todos/school-age.json",
     "data/subsidies/national-todos.json",
   ];
 
@@ -1498,7 +1499,8 @@
     // N5: 서비스 범위(72개월)를 넘은 아이는 기본 보기에서 미완료 영유아 항목을 숨긴다(완료·학교·그때그때 확인해요는 유지). 홈에서 범위를 지정해 들어온 보기는 그대로 둔다.
     const beyondRange = !checklistScope && HNLogic.isBeyondServiceRange(profile.birthDate, new Date());
     const pastHidden = beyondRange && !showPastInfant;
-    const pastKeep = (e) => monthKeysOf(e).some((k) => k === NEED_CHECK_GROUP || k === SCHOOL_GROUP);
+    // 학령기(72개월 초과 월령) 항목은 영유아 항목이 아니므로 숨기지 않는다.
+    const pastKeep = (e) => monthKeysOf(e).some((k) => k === NEED_CHECK_GROUP || k === SCHOOL_GROUP || (typeof k === "number" && k > ChildTimeline.SERVICE_RANGE.maxMonths));
     const items = HNLogic.hidePastInfantItems(visibleSchedule().filter(inScope).filter(statusOk), completed, { birthDate: profile.birthDate, today: new Date(), showPast: !pastHidden, isKeep: pastKeep }).sort((a, b) => a.date - b.date);
     const nowAge = Math.max(0, ageInMonths(profile.birthDate, new Date()));
     const curKey = checklistBucket(nowAge);
