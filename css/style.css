@@ -773,6 +773,9 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .rec-row.na { opacity: .85; }
 
 .scope-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; padding: 10px 12px; border-radius: 12px; background: #fff0e4; font-size: 13px; font-weight: 700; color: var(--accent-dark); }
+.past-infant-card { margin-bottom: 10px; padding: 12px; border-radius: 12px; background: #fff0e4; font-size: 13px; color: var(--accent-dark); }
+.past-infant-card p { margin: 0 0 8px; font-weight: 700; line-height: 1.5; }
+.past-infant-toggle { display: flex; align-items: center; gap: 8px; font-weight: 800; cursor: pointer; min-height: 32px; }
 .scope-banner button { border: none; background: #fff; color: var(--accent-dark); border-radius: 999px; padding: 6px 12px; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer; min-height: 32px; }
 .home-row.done .hr-body strong { color: var(--text-muted); text-decoration: line-through; }
 .home-row .hr-check { color: var(--success); font-size: 14px; font-weight: 800; flex-shrink: 0; }

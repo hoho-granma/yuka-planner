@@ -58,6 +58,7 @@
   let modalMode = null; // "day-list" | "detail" | "profile"
   let currentTab = "home"; // "home" | "calendar" | "record" | "subsidy" | "checklist"(전체 할 일 서브 화면)
   let checklistScope = null; // 홈의 "전체 보기"로 들어왔을 때만 { label, ids:Set } — 그 항목들만 보여준다
+  let showPastInfant = false; // N5: 72개월 넘은 아이의 체크리스트에서 지난 영유아 항목(미완료)을 보일지(기본 꺼짐, 앱 세션 동안만)
   let checklistStatus = "all"; // 전체 할 일의 완료 상태 필터: "all" | "todo" | "done"
   let openMonthGroups = null; // 전체 체크리스트의 월령별 아코디언 펼침 상태(Set<월령>). null=아직 초기화 전(기본은 현재 월령만 펼침)
   let selectedCalendarDate = new Date(); // 달력 탭에서 선택된 날짜(기본값: 오늘)
@@ -1464,7 +1465,11 @@
     }
     const inScope = (e) => !checklistScope || checklistScope.ids.has(e.id);
     const statusOk = (e) => (checklistStatus === "todo" ? !completed[e.id] : checklistStatus === "done" ? !!completed[e.id] : true);
-    const items = visibleSchedule().filter(inScope).filter(statusOk).sort((a, b) => a.date - b.date);
+    // N5: 서비스 범위(72개월)를 넘은 아이는 기본 보기에서 미완료 영유아 항목을 숨긴다(완료·학교·그때그때 확인해요는 유지). 홈에서 범위를 지정해 들어온 보기는 그대로 둔다.
+    const beyondRange = !checklistScope && HNLogic.isBeyondServiceRange(profile.birthDate, new Date());
+    const pastHidden = beyondRange && !showPastInfant;
+    const pastKeep = (e) => monthKeysOf(e).some((k) => k === NEED_CHECK_GROUP || k === SCHOOL_GROUP);
+    const items = HNLogic.hidePastInfantItems(visibleSchedule().filter(inScope).filter(statusOk), completed, { birthDate: profile.birthDate, today: new Date(), showPast: !pastHidden, isKeep: pastKeep }).sort((a, b) => a.date - b.date);
     const nowAge = Math.max(0, ageInMonths(profile.birthDate, new Date()));
     const curKey = checklistBucket(nowAge);
     const nextKey = checklistBucket(nowAge + 1);
@@ -1498,7 +1503,7 @@
     });
     // 돌 전(0~12개월)은 그 달에 항목이 없어도 월별 그룹을 항상 보여준다 — 13개월 이후는 항목이 있는 달만.
     // (완료 상태 필터를 걸었을 땐 빈 달 그룹을 만들지 않는다.)
-    if (items.length > 0 && checklistStatus === "all" && !scoped) for (let m = 0; m <= 12; m++) if (!groups.has(m)) groups.set(m, []);
+    if (items.length > 0 && checklistStatus === "all" && !scoped && !pastHidden) for (let m = 0; m <= 12; m++) if (!groups.has(m)) groups.set(m, []);
     const monthKeys = [...groups.keys()].sort((a, b) => {
       if (a === NEED_CHECK_GROUP) return 1;
       if (b === NEED_CHECK_GROUP) return -1;
@@ -1506,7 +1511,10 @@
       if (b === SCHOOL_GROUP) return -1;
       return a - b;
     });
-    el("list-checklist").innerHTML = monthKeys
+    const pastCard = beyondRange
+      ? `<div class="past-infant-card"><p>${esc(HNLogic.PAST_INFANT_MSG.notice)}</p><label class="past-infant-toggle"><input type="checkbox" id="past-infant-toggle"${showPastInfant ? " checked" : ""} /> ${esc(HNLogic.PAST_INFANT_MSG.toggle)}</label></div>`
+      : "";
+    el("list-checklist").innerHTML = pastCard + monthKeys
       .map((key) => {
         const list = groups.get(key);
         const isOpen = openMonthGroups.has(key);
@@ -1525,6 +1533,12 @@
       })
       .join("");
     el("list-checklist").querySelectorAll(".event-item").forEach(bindEventItem);
+    const pastToggle = el("past-infant-toggle");
+    if (pastToggle)
+      pastToggle.addEventListener("change", () => {
+        showPastInfant = pastToggle.checked;
+        renderChecklistTab();
+      });
     el("empty-checklist").classList.toggle("hidden", items.length > 0);
     el("empty-checklist").textContent = checklistStatus === "todo" ? "미완료 항목이 없어요. 👏" : checklistStatus === "done" ? "아직 완료한 항목이 없어요." : "해당하는 항목이 없어요.";
     el("list-checklist")

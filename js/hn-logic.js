@@ -432,6 +432,32 @@
   }
 
   // ---------------------------------------------------------------------
+  // 체크리스트: 서비스 범위(72개월)를 넘은 아이(N5)
+  // ---------------------------------------------------------------------
+
+  const PAST_INFANT_MSG = Object.freeze({
+    notice: "초등 이후 체크리스트는 준비 중이에요. 지난 영유아 항목은 아래 보기 버튼으로 확인할 수 있어요.",
+    toggle: "지난 영유아 항목 보기",
+  });
+
+  /** 체크리스트 기본 보기에서 '지난 영유아 항목'을 숨겨야 하는 아이인가: 완료 개월 수가 서비스 범위(72개월)를 넘었을 때만. */
+  function isBeyondServiceRange(birthDate, today) {
+    if (!(birthDate instanceof Date) || isNaN(birthDate.getTime()) || !(today instanceof Date)) return false;
+    return ChildTimeline.completedMonths(birthDate, today) > ChildTimeline.SERVICE_RANGE.maxMonths;
+  }
+
+  /**
+   * 72개월 초과 아이의 체크리스트 기본 보기: 미완료 영유아 항목은 숨기고, 완료한 항목과 isKeep(e)가 참인 항목(학교·그때그때 확인해요)은 유지한다.
+   * 72개월 이하이거나 showPast 면 입력을 그대로(같은 배열) 돌려준다. 입력은 바꾸지 않는다.
+   */
+  function hidePastInfantItems(items, completed, opts) {
+    const o = opts || {};
+    if (o.showPast || !isBeyondServiceRange(o.birthDate, o.today)) return items;
+    const keep = typeof o.isKeep === "function" ? o.isKeep : () => false;
+    return items.filter((e) => isDone(completed, e.id) || keep(e));
+  }
+
+  // ---------------------------------------------------------------------
   // 기록
   // ---------------------------------------------------------------------
 
@@ -573,6 +599,9 @@
     daysLeft,
     isUrgent,
     subsidyBuckets,
+    PAST_INFANT_MSG,
+    isBeyondServiceRange,
+    hidePastInfantItems,
     MANUAL_CATEGORIES,
     recordCategoryOf,
     ageMonthsAt,
