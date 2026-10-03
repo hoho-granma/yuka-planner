@@ -1323,3 +1323,75 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .us-src { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 6px; font-size: 11px; font-weight: 800; line-height: 1.5; vertical-align: 1px; }
 .us-src-auto { background: #e8f0fe; color: #1f5fbf; }
 .us-src-user { background: #ffe9f1; color: #c23a7a; }
+
+/* G13-2: 일정 추가 시트(계정 모드) — '곧 추가돼요' 비활성 칩 */
+.us-chip-soon { opacity: .55; cursor: not-allowed; display: inline-flex; align-items: center; gap: 6px; }
+.us-chip-soon small { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: #f3ebe3; color: var(--text-muted); }
+
+/* G13-3: 계정 모드 홈 — 맨 위 프로필 카드는 '나', 챙길 것 머리에 아이 칩·아이 한 줄 */
+.profile-card.acct-me .avatar { background: #ffe9f1; color: #c23a7a; }
+.home-child-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; -webkit-overflow-scrolling: touch; }
+.home-child-chip { flex: 0 0 auto; min-height: 36px; padding: 0 14px; border: 1px solid var(--border); border-radius: 999px; background: #fff; color: var(--text-muted); font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.home-child-chip.active { background: #ffe3d6; border-color: #ffc9b0; color: var(--accent-dark); }
+.home-child-line { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--text-muted); }
+
+/* ===== G14: 계정 모드 새 디자인(body.acct-design) — 플래그 OFF 에는 적용되지 않는다 ===== */
+/* G14-1 일정 상세: 라벨·값 줄 + 완료 버튼 전체 폭, 수정·삭제 2열, 닫기 */
+body.acct-design .us-detail { display: block; }
+body.acct-design .us-detail h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 20px; }
+body.acct-design .us-detail .detail-row { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; text-align: right; }
+body.acct-design .us-detail .detail-row .label { flex: none; margin: 0; font-size: 13px; font-weight: 700; color: var(--text-muted); text-align: left; }
+body.acct-design .us-detail .us-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+body.acct-design .us-detail .us-actions .us-btn { min-height: 48px; border-radius: 14px; }
+body.acct-design .us-detail .us-actions .us-btn[data-us-action="toggle-done"] { grid-column: 1 / -1; min-height: 52px; background: var(--accent); border-color: var(--accent); color: #fff; font-size: 15px; }
+body.acct-design .us-detail .us-actions .us-btn[data-us-action="delete"] { background: #fff5f3; color: #c0392b; border-color: #f4c7c1; }
+body.acct-design .us-detail .us-actions .us-btn[data-us-action="close"], body.acct-design .us-detail .us-actions .us-btn[data-us-action="restore"] { grid-column: 1 / -1; background: #f3ebe3; border-color: transparent; color: var(--text-muted); }
+
+/* G14-2 체크리스트(월령 타임라인): 분류 칩은 한 줄 가로 스크롤, 카드 안의 신청 링크 버튼, 그룹 헤더 개수 알약 */
+body.acct-design #filter-chips-checklist { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+body.acct-design #filter-chips-checklist .chip { flex: 0 0 auto; white-space: nowrap; }
+body.acct-design #list-checklist .event-item { border-radius: 14px; }
+body.acct-design #list-checklist .ck-go { display: inline-flex; align-items: center; margin-top: 8px; min-height: 32px; padding: 0 12px; border: 1px solid var(--accent); border-radius: 9px; background: #fff; color: var(--accent-dark); font-size: 13px; font-weight: 800; text-decoration: none; }
+body.acct-design #list-checklist .month-group-card .count-badge { padding: 2px 9px; border-radius: 999px; background: #f3ebe3; color: var(--text-muted); font-size: 12px; font-weight: 800; }
+
+/* G14-3 할 일 상세(접는 항목 시트): 항목마다 접고 펴는 줄 */
+body.acct-design .modal-panel .acc-row { margin: 8px 0; border: 1px solid var(--border); border-radius: 14px; background: #fffaf5; overflow: hidden; }
+body.acct-design .modal-panel .acc-row > summary { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 14px; font-size: 14px; font-weight: 800; cursor: pointer; list-style: none; }
+body.acct-design .modal-panel .acc-row > summary::-webkit-details-marker { display: none; }
+body.acct-design .modal-panel .acc-row > summary::after { content: "▾"; color: var(--text-muted); font-size: 12px; }
+body.acct-design .modal-panel .acc-row[open] > summary::after { content: "▴"; }
+body.acct-design .modal-panel .acc-row[open] > summary { border-bottom: 1px solid #f3e8dc; }
+body.acct-design .modal-panel .acc-row .acc-body { padding: 10px 14px; font-size: 14px; line-height: 1.6; background: #fff; }
+
+/* G14-4 혜택(큰 카드 목록): 카드의 분류 점은 없애고(구분은 전국 공통·지역 라벨 색), 큰 카드·한 줄 범위 칩 */
+body.acct-design #subsidy-scope { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+body.acct-design #subsidy-scope .chip { flex: 0 0 auto; white-space: nowrap; }
+body.acct-design #subsidy-body .event-item { gap: 0; padding: 14px 16px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03); }
+body.acct-design #subsidy-body .event-item > .cat-dot { display: none; }
+body.acct-design #subsidy-body .event-item .title { font-size: 17px; line-height: 1.35; }
+body.acct-design #subsidy-body .sub-group-title { margin: 18px 0 10px; font-size: 18px; }
+body.acct-design #subsidy-body .sub-expired-toggle { border-radius: 14px; background: #fffaf5; }
+
+/* G14-5 혜택 상세(신청 완료 상태, 톤 변경): 짙은 머리 + 겹친 상태 카드 */
+body.acct-design .modal-panel .acct-sub-head { margin: -24px -20px 0; padding: 26px 20px 34px; background: #26475c; color: #fff; border-radius: 20px 20px 24px 24px; }
+body.acct-design .modal-panel .acct-sub-head h3 { margin: 6px 0 0; font-size: 20px; color: #fff; }
+body.acct-design .modal-panel .acct-sub-head .cat-badge { background: #fff !important; color: #26475c; margin-bottom: 0; }
+body.acct-design .modal-panel .acct-sub-head .detail-tag, body.acct-design .modal-panel .acct-sub-head .prov-tag { margin: 0 0 0 6px; color: #cfe2ee !important; background: transparent !important; }
+body.acct-design .modal-panel .acct-sub-status { position: relative; margin: -20px 0 8px; padding: 14px 16px; border-radius: 16px; background: #fff; border: 1px solid #dfe9ef; box-shadow: 0 6px 16px rgba(38, 71, 92, 0.15); }
+body.acct-design .modal-panel .acct-sub-status > strong { display: block; margin-bottom: 4px; font-size: 15px; color: #1d7a45; }
+body.acct-design .modal-panel .acct-sub-status .completion-row { margin: 0; padding: 4px 0 0; border: 0; }
+body.acct-design .modal-panel .acct-sub-status .apply-choice { margin-top: 10px; }
+
+/* G14-6 기록(날짜 타임라인): 큰 날짜 숫자 + 카드, 자동·직접 태그 */
+body.acct-design #list-record .rec-row { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: #fff; }
+body.acct-design #list-record .rec-day { flex: none; width: 36px; text-align: center; font-size: 11px; line-height: 1.2; color: var(--text-muted); }
+body.acct-design #list-record .rec-day b { display: block; font-size: 20px; color: var(--text); }
+body.acct-design #list-record .rec-main strong { display: block; font-size: 15px; line-height: 1.35; }
+body.acct-design #list-record .rec-src { display: inline-block; margin-right: 4px; padding: 1px 7px; border-radius: 6px; font-size: 11px; font-weight: 800; vertical-align: 1px; }
+body.acct-design #list-record .rec-src.auto { background: #e8f0fe; color: #1f5fbf; }
+body.acct-design #list-record .rec-src.manual { background: #ffe9f1; color: #c23a7a; }
+body.acct-design #list-record .rec-month { margin: 16px 0 8px; }
+body.acct-design #list-record .rec-row.manual { border-left: 4px solid var(--accent); }
+body.acct-design .us-detail .us-val { display: inline-flex; align-items: center; justify-content: flex-end; gap: 7px; }
+body.acct-design .us-detail .us-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+body.acct-design .rec-add { display: block; width: 100%; min-height: 46px; margin: 4px 0 12px; border: 1.5px dashed var(--accent); border-radius: 14px; background: #fff; color: var(--accent); font-size: 15px; font-weight: 800; }

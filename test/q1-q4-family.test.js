@@ -167,7 +167,7 @@ const J = (x) => JSON.parse(JSON.stringify(x));
     assert.deepStrictEqual(J(meEnv({ account: null, meId: "m1", members: [{ memberId: "m1", role: "MOM", label: "엄마" }] })()), { name: "엄마", roleName: "엄마" });
     assert.strictEqual(meEnv({ user: null, account: { displayName: "주연", role: "MOM" } })(), null);
     assert.strictEqual(meEnv({ on: false, account: { displayName: "주연" } })(), null);
-    assert.ok(APP.includes("acctRenderMeLine();") && /line\.textContent = id\.roleName \? `\$\{id\.name\} · \$\{AccountView\.MSG\.myRole\(id\.roleName\)\}` : id\.name;/.test(APP));
+    assert.ok(APP.includes("acctRenderMeLine();") && /strong\.textContent = id\.roleName \? `\$\{id\.name\} · \$\{AccountView\.MSG\.myRole\(id\.roleName\)\}` : id\.name;/.test(APP));
   });
   await test("아이 이름 수정 → 가구 링크 displayName 도 updateChild 로 맞춘다(같으면·링크 없으면·분리된 링크면 호출 없음)", async () => {
     const run = (links, name) => {

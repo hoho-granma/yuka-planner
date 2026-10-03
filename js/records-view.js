@@ -43,6 +43,8 @@
 
     const items = showNA ? [] : L.mergeRecords(auto, manual, filter);
     let html = syncNote(ctx);
+    // G15-5: 직접 기록 진입점 — 계정 모드에서만 위쪽에 [+ 기록 추가](OFF 화면은 그대로). 기존 작성 화면(openEditor)을 연다.
+    if (ctx.accountDesign === true) html += `<button type="button" class="rec-add" data-rec-add="1">＋ 기록 추가</button>`;
     html += `<button type="button" class="na-toggle ${showNA ? "active" : ""}" data-na="1">미해당 항목 ${showNA ? "닫기" : "보기"} (${naList.length})</button>`;
     if (showNA) {
       html += naList.length
@@ -67,9 +69,13 @@
       const meta = [ChildTimeline.ageLabelAt(ctx.profile.birthDate, r.date), r.category, r.source === "auto" ? "자동" : r.authorLabel ? `직접 · ${ctx.esc(r.authorLabel)}` : "직접"].join(" · ");
       // C2-b3(표시만): 연결된 예약 일정이 있는 자동 기록에 보조 표시. autoLink 플래그 OFF 면 ctx.autoLinkedIds 가 null 이라 아무것도 더하지 않는다.
       const linkedTag = r.source === "auto" && ctx.autoLinkedIds && ctx.autoLinkedIds.has(r.eventId) ? `<span class="rec-linked">${RECORD_LINK_LABEL}</span>` : "";
+      // G14-6: 계정 모드(ctx.accountDesign)는 날짜 타임라인 — 큰 날짜 숫자 + '자동'/'직접' 태그. 클릭·데이터는 그대로이고 꺼져 있으면 아래 기존 마크업 그대로다.
+      const acctD = ctx.accountDesign === true;
+      const dayHtml = acctD ? `<span class="rec-day"><b>${r.date.getDate()}</b>${r.date.getMonth() + 1}월</span>` : `<span class="rec-day">${r.date.getMonth() + 1}/${r.date.getDate()}</span>`;
+      const srcTag = acctD ? `<span class="rec-src ${r.source}">${r.source === "auto" ? "자동" : "직접"}</span> ` : "";
       html += `<button type="button" class="rec-row ${r.source}" data-rec="${ctx.esc(r.id)}">
-        <span class="rec-day">${r.date.getMonth() + 1}/${r.date.getDate()}</span>
-        <span class="rec-main"><strong>${ctx.esc(r.title)}</strong><small>${meta}</small>${linkedTag}${r.memo ? `<em>${ctx.esc(r.memo.length > 46 ? r.memo.slice(0, 46) + "…" : r.memo)}</em>` : ""}</span>
+        ${dayHtml}
+        <span class="rec-main"><strong>${srcTag}${ctx.esc(r.title)}</strong><small>${meta}</small>${linkedTag}${r.memo ? `<em>${ctx.esc(r.memo.length > 46 ? r.memo.slice(0, 46) + "…" : r.memo)}</em>` : ""}</span>
         <span class="hr-chev">›</span>
       </button>`;
     }
@@ -88,6 +94,8 @@
         openDetail(ctx, id);
       })
     );
+    const addBtn = list.querySelector("[data-rec-add]");
+    if (addBtn) addBtn.addEventListener("click", () => openEditor(ctx));
     const naBtn = list.querySelector("[data-na]");
     if (naBtn) naBtn.addEventListener("click", () => { showNA = !showNA; render(ctx); });
     list.querySelectorAll("[data-na-open]").forEach((b) =>
@@ -100,7 +108,7 @@
     empty.classList.toggle("hidden", showNA || items.length > 0);
     empty.innerHTML =
       filter === "전체"
-        ? "아직 기록이 없어요.<br />할 일을 완료하면 자동으로 쌓이고, 아이의 성장·활동은 아래 ＋ 버튼으로 직접 남길 수 있어요."
+        ? `아직 기록이 없어요.<br />할 일을 완료하면 자동으로 쌓이고, 아이의 성장·활동은 ${ctx.accountDesign === true ? "위 [＋ 기록 추가]" : "아래 ＋ 버튼"}으로 직접 남길 수 있어요.`
         : filter === "활동"
         ? "아이가 경험한 활동(첫 물놀이, 산책 등)을 ＋ 버튼으로 남겨 보세요."
         : `${ctx.esc(filter)} 기록이 아직 없어요.`;

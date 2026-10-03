@@ -16,11 +16,12 @@
 (function (root, factory) {
   const mod = factory(
     () => (typeof module !== "undefined" && module.exports ? require("./user-schedule.js") : root.UserSchedule),
-    () => (typeof module !== "undefined" && module.exports ? require("./date-picker.js") : root.HNDatePicker)
+    () => (typeof module !== "undefined" && module.exports ? require("./date-picker.js") : root.HNDatePicker),
+    () => (typeof module !== "undefined" && module.exports ? require("./schedule-kinds.js") : root.ScheduleKinds)
   );
   if (typeof module !== "undefined" && module.exports) module.exports = mod;
   else root.UserScheduleView = mod;
-})(typeof window !== "undefined" ? window : global, function (getUS, getDP) {
+})(typeof window !== "undefined" ? window : global, function (getUS, getDP, getSK) {
   "use strict";
 
   // ── 승인된 문구 (번호는 B4 문구 목록 #) ─────────────────────────────────────
@@ -86,6 +87,17 @@
     targetLabel: "대상", // #21
     targetFamily: "가족 전체", // #22
     assigneeLabel: "담당", // B6-lite (승인본)
+    // G13 일정 추가 시트(계정 모드)
+    g13Who: "누구 일정인가요?",
+    g13WhoMe: "나",
+    g13Kind: "카테고리",
+    g13Visibility: "공개 범위",
+    g13VisFamily: "공개 (가족 캘린더)",
+    g13VisPrivate: "비공개 (나만 보기)",
+    g13VisNote: "지금은 모든 일정이 가족 캘린더에 공개로 저장돼요.",
+    g13Soon: "곧 추가돼요",
+    g13RepeatMonthly: "매월",
+    g13RepeatNth: "매월 같은 요일",
     assigneeNone: "정하지 않음",
     assigneeHint: "담당을 고르면 카드에 이름이 함께 보여요.",
     assigneeEmph: "누가 맡을지 골라 주세요. 담당을 정해 두면 가족 모두가 알 수 있어요.",
@@ -546,19 +558,25 @@
     }
     return { ...c, actions: [{ id: "toggle-done", label: c.done ? MSG.btnUndone : MSG.btnDone }, { id: "edit", label: MSG.btnEdit }, { id: "delete", label: MSG.btnDelete }, { id: "close", label: MSG.btnClose }] };
   }
-  function renderDetail(c) {
+  /** G15-3: 일정 상세의 대상·담당 앞 사람별 대표색 점(표시만). 아이=아이색(없으면 가족색), 담당=구성원 역할색(없으면 가족색). */
+  function detailDots(occ, links) {
+    if (!occ) return null;
+    return { target: occ.scope === "CHILD" ? childOnlyColor(occ, links) : FAMILY_COLOR, assignee: MEMBER_COLORS[occ.assigneeRole] || FAMILY_COLOR };
+  }
+  function renderDetail(c, opts) {
+    const dots = opts && opts.dots ? opts.dots : null; // 계정 모드 상세에서만 넘어온다(없으면 기존 마크업 그대로)
     const v = detailView(c);
     const rows = [
       [MSG.categoryLabel, v.categoryLabel],
       [MSG.dateLabel, v.recurring ? [v.dayLabel, v.timeText].filter(Boolean).join(" · ") : [v.dateText, v.timeText].filter(Boolean).join(" · ")],
       ...(v.recurring ? [[MSG.repeatLabel, v.repeatSummary], ["", v.movedText]] : []),
-      [MSG.targetLabel, v.targetText !== undefined ? v.targetText : v.tag],
-      [MSG.assigneeLabel, v.assigneeText],
+      [MSG.targetLabel, v.targetText !== undefined ? v.targetText : v.tag, "target"],
+      [MSG.assigneeLabel, v.assigneeText, "assignee"],
       [MSG.locationLabel.replace(/ \(선택\)$/, ""), v.location],
       [MSG.memoLabel.replace(/ \(선택\)$/, ""), v.memo],
     ]
       .filter(([, val]) => val)
-      .map(([k, val]) => `<div class="detail-row">${k ? `<div class="label">${esc(k)}</div>` : ""}${esc(val)}</div>`)
+      .map(([k, val, dk]) => `<div class="detail-row">${k ? `<div class="label">${esc(k)}</div>` : ""}${dots && dk && dots[dk] ? `<span class="us-val"><i class="us-dot" style="background:${safeColor(dots[dk])}"></i>${esc(val)}</span>` : esc(val)}</div>`)
       .join("");
     const badges = (v.done ? ` <span class="us-done">${esc(MSG.done)}</span>` : "") + (v.cancelled ? ` <span class="us-cancelled">${esc(v.cancelledLabel)}</span>` : "") + (v.recurring ? ` <span class="us-repeat">${esc(v.repeatBadge)}</span>` : "");
     const notice = v.recurring && v.exceptionsNotice ? `<p class="us-note">${esc(v.exceptionsNotice)}</p>` : "";
@@ -784,6 +802,122 @@
     const r = US.editAll(before, changes, now);
     if (!r.ok) return { ok: false, messages: messagesFromErrors(r.errors), confirm: false };
     return { ok: true, messages: [], changes, patch: r.patch, after: r.after, ruleChanged, pruned: r.pruned, prunedEffective: r.prunedEffective, confirm: ruleChanged };
+  }
+
+  // ── G13 일정 추가 시트(계정 모드): 누구 일정 → 그 사람에 맞는 카테고리 → 제목 자동 → 날짜·시간 → 반복 → 장소·담당·메모 → 공개 범위 ──
+  // 저장 필드는 기존 그대로다: 아이=scope CHILD+childKeys, 어른=scope FAMILY+담당자(assigneeMemberId)=그 사람, 가족 전체=scope FAMILY. 새 필드·규칙 변경 없음.
+  const whoKeyOf = (f) => (f.scope === "CHILD" ? `CHILD:${(f.childKeys || [])[0] || ""}` : f.assigneeMemberId && f.whoPerson ? `MEMBER:${f.assigneeMemberId}` : "FAMILY");
+  /** 카테고리 목록의 대상 구분: MEMBER → ADULT, CHILD → CHILD(+나이), FAMILY. */
+  function g13Kinds(f, ctx) {
+    const SK = getSK();
+    if (!SK) return [];
+    const t = f.whoPerson ? "ADULT" : f.scope === "CHILD" ? "CHILD" : "FAMILY";
+    return SK.kindsFor(t, t === "CHILD" && ctx && ctx.ageOf ? ctx.ageOf((f.childKeys || [])[0]) : null);
+  }
+  /** 고른 사람(whoKey)을 폼 필드로 옮기고, 새 목록에 없는 카테고리는 비운다(직접 고친 제목은 그대로). */
+  function g13ApplyWho(f, whoKey, ctx) {
+    const [type, id] = String(whoKey).split(/:(.*)/s);
+    const wasPerson = !!f.whoPerson;
+    if (type === "MEMBER") { f.scope = "FAMILY"; f.childKeys = []; f.assigneeMemberId = id || ""; f.whoPerson = true; }
+    else if (type === "CHILD") { f.scope = "CHILD"; f.childKeys = id ? [id] : []; f.whoPerson = false; if (wasPerson) f.assigneeMemberId = (ctx && ctx.meId) || ""; }
+    else { f.scope = "FAMILY"; f.childKeys = []; f.whoPerson = false; if (wasPerson) f.assigneeMemberId = ""; }
+    const list = g13Kinds(f, ctx);
+    if (f.kindPick && !list.some((x) => x.label === f.kindPick)) {
+      const SK = getSK();
+      if (SK && !f.titleTouched && f.title === f.kindPick) f.title = "";
+      f.kindPick = "";
+      f.category = "";
+    }
+    return f;
+  }
+  /** 카테고리 칩을 눌렀을 때: category enum 을 정하고 제목을 자동으로 채운다(직접 고친 제목은 덮어쓰지 않는다). */
+  function g13PickKind(f, label, ctx) {
+    const SK = getSK();
+    const hit = g13Kinds(f, ctx).find((x) => x.label === label);
+    if (!SK || !hit) return f;
+    f.kindPick = hit.label;
+    f.category = hit.category;
+    f.title = SK.nextTitle(f.title, f.titleTouched === true, hit.label);
+    return f;
+  }
+  /**
+   * 기존 폼(newForm·formFromSchedule 이 만든 것)을 계정 모드 시트용으로 바꾼다(저장 필드는 그대로, 보기 상태만 더한다).
+   * 새 일정: 기본은 본인(구성원을 알 때), 모르면 가족 전체. 수정: 저장된 제목은 카테고리를 바꿔도 덮어쓰지 않는다.
+   * ctx: { meId, ageOf(childKey)→개월수|"PREGNANT"|null }
+   */
+  function upgradeFormG13(f, ctx) {
+    const c = ctx || {};
+    f.g13 = true;
+    f.kindPick = "";
+    if (f.mode === "edit") {
+      f.titleTouched = true;
+      f.whoPerson = f.scope === "FAMILY" && typeof f.assigneeMemberId === "string" && !!f.assigneeMemberId;
+      const hit = g13Kinds(f, c).find((x) => x.label === f.title); // 제목이 지금 사람·나이 기준 카테고리 이름과 같으면 그 칩을 선택 상태로(표시만, 저장 필드는 그대로)
+      f.kindPick = hit ? hit.label : "";
+      return f;
+    }
+    f.titleTouched = false;
+    f.whoPerson = false;
+    return g13ApplyWho(f, c.meId ? `MEMBER:${c.meId}` : "FAMILY", c);
+  }
+  const soonChip = (label) => `<button type="button" class="us-chip us-chip-soon" disabled aria-disabled="true">${esc(label)}<small>${esc(MSG.g13Soon)}</small></button>`;
+  /** 계정 모드 일정 추가·수정 시트. opts: renderForm 과 같음 + { ctx } */
+  function renderFormG13(f, links, opts) {
+    const o = opts || {};
+    const ctx = o.ctx || {};
+    const kids = activeLinks(links);
+    const colors = childColors(links);
+    const members = Array.isArray(o.members) ? o.members : [];
+    const meId = ctx.meId || "";
+    const ordered = members.slice().sort((a, b) => (a.memberId === meId ? -1 : 0) - (b.memberId === meId ? -1 : 0));
+    const whoChips =
+      ordered.map((m) => chip("", `data-us-who="MEMBER:${esc(m.memberId)}"`, m.memberId === meId ? MSG.g13WhoMe : m.label || "", f.whoPerson && f.assigneeMemberId === m.memberId)).join("") +
+      kids.map((l) => chip("", `data-us-who="CHILD:${esc(linkKey(l))}"`, l.displayName || "", f.scope === "CHILD" && (f.childKeys || []).includes(linkKey(l)), colors[linkKey(l)])).join("") +
+      chip("", 'data-us-who="FAMILY"', MSG.targetFamily, f.scope === "FAMILY" && !f.whoPerson);
+    const kindChips = g13Kinds(f, ctx).map((x) => chip("", `data-us-sk="${esc(x.label)}"`, x.label, f.kindPick === x.label)).join("");
+    const fixed = f.dateKind !== "PERIOD";
+    const repeating = fixed && isRepeating(f);
+    const repeatBlock = !fixed
+      ? ""
+      : `<div class="us-field"><label>${esc(MSG.repeatLabel)}</label><div class="us-chips">${chip("", 'data-us-repeat="NONE"', MSG.repeatNone, !repeating)}${chip("", 'data-us-repeat="WEEKLY"', MSG.repeatWeekly, f.repeat === "WEEKLY")}${f.repeat === "BIWEEKLY" ? chip("", 'data-us-repeat="BIWEEKLY"', MSG.repeatBiweekly, true) : ""}${soonChip(MSG.g13RepeatMonthly)}${soonChip(MSG.g13RepeatNth)}</div></div>`;
+    const repeatDetail = !repeating
+      ? ""
+      : `<div class="us-field"><label>${esc(MSG.repeatDaysLabel)}</label><div class="us-chips">${WEEKDAY_KEYS.map((k) => chip("", `data-us-day="${k}"`, WEEKDAY_LABELS[k], (f.byDay || []).includes(k))).join("")}</div></div>
+         <p class="us-note">${esc(MSG.firstDayHint)}</p>
+         <div class="us-field"><label>${esc(MSG.untilLabel)}</label><div class="us-chips">${chip("", 'data-us-until="NONE"', MSG.untilNone, f.untilMode !== "DATE")}${chip("", 'data-us-until="DATE"', MSG.untilDate, f.untilMode === "DATE")}</div></div>
+         ${f.untilMode === "DATE" ? `<div class="us-field"><label>${esc(MSG.lastRepeatLabel)}</label>${picker(PICKER_PREFIXES.until, f.until)}</div>` : ""}
+         <p class="us-note">${esc(MSG.repeatHint)}</p>`;
+    const dates = fixed
+      ? `<div class="us-field"><label>${esc(repeating ? MSG.firstDayLabel : MSG.dateField)}</label>${picker(PICKER_PREFIXES.date, f.eventDate)}</div>
+         <label class="us-check"><input type="checkbox" id="us-allday"${f.allDay ? " checked" : ""} /> ${esc(MSG.allDay)}</label>
+         ${f.allDay ? "" : `<div class="us-times">${timeSelect("us-start", f.startTime, MSG.startField)}${timeSelect("us-end", f.endTime, MSG.endTimeField)}</div>`}
+         ${repeating ? "" : `<label class="us-check"><input type="checkbox" id="us-multi"${f.multiDay ? " checked" : ""} /> ${esc(MSG.multiDay)}</label>
+         ${f.multiDay ? `<div class="us-field"><label>${esc(MSG.endField)}</label>${picker(PICKER_PREFIXES.end, f.endDate)}</div>` : ""}`}
+         ${repeatBlock}${repeatDetail}`
+      : `<div class="us-field"><label>${esc(MSG.periodStart)}</label>${picker(PICKER_PREFIXES.periodStart, f.periodStart)}</div>
+         <div class="us-field"><label>${esc(MSG.periodEnd)}</label>${picker(PICKER_PREFIXES.periodEnd, f.periodEnd)}</div>
+         <p class="us-note">${esc(MSG.periodHint)}</p>`;
+    const staleAssignee = !f.whoPerson && f.assigneeMemberId && !members.some((m) => m.memberId === f.assigneeMemberId);
+    const assignee = !f.whoPerson && (members.length || staleAssignee)
+      ? `<div class="us-field us-assignee-field" data-us-assignee-field><label>${esc(MSG.assigneeLabel)}</label><div class="us-chips">${members.map((m) => chip("", `data-us-assignee="${esc(m.memberId)}"`, m.label || "", f.assigneeMemberId === m.memberId)).join("")}${staleAssignee ? chip("", `data-us-assignee="${esc(f.assigneeMemberId)}"`, MSG.deletedAssignee, true) : ""}${chip("", 'data-us-assignee=""', MSG.assigneeNone, !f.assigneeMemberId)}</div><p class="us-note">${esc(MSG.assigneeHint)}</p></div>`
+      : "";
+    const errors = (o.messages || []).map((m) => `<p class="us-error">${esc(m)}</p>`).join("");
+    const edit = f.mode === "edit";
+    return `<div class="us-form us-form-g13" data-us-mode="${esc(f.mode)}">
+      <h3>${esc(f.wasRecurring && edit ? MSG.editAllTitle : edit ? MSG.sheetEdit : MSG.sheetAdd)}</h3>${f.wasRecurring && edit ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
+      <div class="us-field"><label>${esc(MSG.g13Who)}</label><div class="us-chips">${whoChips}</div></div>
+      <div class="us-field"><label>${esc(MSG.g13Kind)}</label><div class="us-chips" data-us-kinds>${kindChips}</div></div>
+      <div class="us-field"><label for="us-title">${esc(MSG.titleLabel)}</label><input type="text" id="us-title" maxlength="100" placeholder="${esc(MSG.titleHint)}" value="${esc(f.title)}" /></div>
+      <div class="us-field"><label>${esc(MSG.dateLabel)}</label><div class="us-chips">${chip("", 'data-us-kind="FIXED"', MSG.kindFixed, fixed)}${repeating ? `<button type="button" class="us-chip" disabled>${esc(MSG.kindPeriod)}</button>` : chip("", 'data-us-kind="PERIOD"', MSG.kindPeriod, !fixed)}</div></div>
+      ${dates}
+      <div class="us-field"><label for="us-location">${esc(MSG.locationLabel)}</label><input type="text" id="us-location" maxlength="100" placeholder="${esc(MSG.locationHint)}" value="${esc(f.location)}" /></div>
+      ${assignee}
+      <div class="us-field"><label for="us-memo">${esc(MSG.memoLabel)}</label><textarea id="us-memo" maxlength="500" placeholder="${esc(MSG.memoHint)}">${esc(f.memo)}</textarea></div>
+      <div class="us-field"><label>${esc(MSG.g13Visibility)}</label><div class="us-chips">${chip("", 'data-us-vis="FAMILY"', MSG.g13VisFamily, true)}${soonChip(MSG.g13VisPrivate)}</div><p class="us-note">${esc(MSG.g13VisNote)}</p></div>
+      <div id="us-errors">${errors}</div>
+      ${o.saving ? `<p class="us-note">${esc(MSG.saving)}</p>` : ""}
+      <div class="us-actions"><button type="button" class="us-btn us-primary" data-us-action="save"${o.saving ? " disabled" : ""}>${esc(f.wasRecurring && edit ? MSG.editAllSave : MSG.save)}</button><button type="button" class="us-btn" data-us-action="cancel">${esc(MSG.cancel)}</button></div>
+    </div>`;
   }
 
   // ── "이 날만 수정" 폼 (R31): 날짜·시각만 ─────────────────────────────────────
@@ -1084,9 +1218,9 @@
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, sourceLabeled, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
     linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, renderChipDeleteConfirm, withObjectParticle, renderTodoLine, todoDeadlineText, TODO_LIMIT, TODO_MSG, assigneeEmphasis, applyTemplate, renderQuickChips,
-    renderCard, detailView, renderDetail, renderDeleteConfirm, renderAddButton, renderPeriodSection,
+    renderCard, detailView, renderDetail, detailDots, renderDeleteConfirm, renderAddButton, renderPeriodSection,
     newForm, formFromSchedule, stripId, formToInput, validateForm, messagesFromErrors, prepareSave, changesFromForm, minuteOptions, splitTime,
-    renderForm, pickerInitials, esc,
+    renderForm, renderFormG13, upgradeFormG13, g13ApplyWho, g13PickKind, g13Kinds, pickerInitials, esc,
     // B5 반복 일정
     WEEKDAY_KEYS, WEEKDAY_LABELS, dayLabel, repeatSummary, exceptionsNotice, isRepeating, sameRule, planFullEdit,
     renderEditScopeSheet, renderDeleteScopeSheet, renderCancelDayConfirm, renderDeleteAllConfirm, renderRuleChangeConfirm,

@@ -122,3 +122,128 @@
 .places-ph-pin .places-badge { background: #fff; }
 .places-ph-tm { position: absolute; right: 10px; top: 10px; background: rgba(58, 46, 42, .85); color: #fff; font-weight: 800; font-size: 12px; padding: 3px 9px; border-radius: 999px; }
 .places-card-bd { padding: 12px 16px 16px; }
+
+/* G14: 어디갈까 필터 — 분류 한 줄 + [필터 N] 버튼, 고른 조건은 지울 수 있는 칩, 결과 줄(N곳 · 정렬) */
+.places-topline { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; min-width: 0; }
+.places-topline .places-chips {
+  flex: 1 1 auto; min-width: 0; margin: 0; padding-right: 14px;
+  -webkit-mask-image: linear-gradient(90deg, #000 86%, transparent); mask-image: linear-gradient(90deg, #000 86%, transparent);
+}
+.places-filter-btn {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 6px 11px;
+  border-radius: 12px; border: 1.5px solid var(--text); background: var(--card-bg); color: var(--text);
+  font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap;
+}
+.places-filter-btn em { font-style: normal; min-width: 18px; padding: 1px 5px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 11px; line-height: 16px; text-align: center; box-sizing: border-box; }
+.places-active { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 2px; }
+.places-active-chip {
+  display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 4px 10px; border-radius: 999px;
+  border: 1px solid #ffd2bd; background: #fff1e9; color: var(--accent-dark);
+  font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.places-active-chip span { font-size: 13px; line-height: 1; }
+.places-clear { background: none; border: none; padding: 6px 4px; min-height: 30px; color: var(--text-muted); font-family: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; }
+.places-count { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0 10px; font-size: 12px; color: var(--text-muted); }
+.places-count-main { min-width: 0; overflow-wrap: anywhere; }
+.places-count-main strong { color: var(--text); font-size: 13px; }
+.places-sort-btn {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px; min-height: 32px; padding: 4px 2px;
+  background: none; border: none; color: var(--text); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.places-sort-btn span { font-size: 10px; color: var(--text-muted); }
+
+/* 필터 시트(아래에서 올라오는 시트 — 하단 탭(z 30) 위, 상세 팝업(z 50) 아래) */
+.places-sheet { display: none; position: fixed; inset: 0; z-index: 40; }
+.places-view.is-sheet-open .places-sheet { display: block; }
+.places-sheet-dim { position: absolute; inset: 0; background: rgba(58, 46, 42, .32); }
+.places-sheet-panel {
+  position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 480px; box-sizing: border-box;
+  max-height: 85vh; max-height: 85dvh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  background: #fff; border-radius: 22px 22px 0 0; box-shadow: 0 -8px 24px rgba(58, 46, 42, .16);
+  padding: 10px 20px max(16px, calc(env(safe-area-inset-bottom) + 12px)); display: flex; flex-direction: column; gap: 16px;
+}
+.places-sheet-grip { width: 40px; height: 4px; border-radius: 2px; background: var(--border); margin: 0 auto -6px; flex: 0 0 auto; }
+.places-sheet-head { display: flex; align-items: center; justify-content: space-between; }
+.places-sheet-head strong { font-size: 17px; color: var(--text); }
+.places-sheet-x { width: 32px; height: 32px; border: none; border-radius: 50%; background: #f3ece3; color: var(--text-muted); font-size: 15px; cursor: pointer; }
+.places-sheet-sec h4 { margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--text-muted); }
+.places-sheet .places-drive-basis { margin: -4px 0 8px; text-align: left; }
+.places-sheet .places-drive-row, .places-sheet .places-sort-row { flex-wrap: wrap; overflow: visible; padding: 0; }
+.places-sheet .places-filters { margin: 0; }
+.places-sheet .places-origin-hint { margin: 8px 0 0; }
+.places-sheet-foot { display: flex; gap: 8px; }
+.places-sheet-clear {
+  flex: 0 0 auto; min-height: 48px; padding: 0 16px; border: 1px solid var(--border); border-radius: 12px; background: #fff;
+  color: var(--text); font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.places-sheet-go {
+  flex: 1 1 auto; min-height: 48px; border: none; border-radius: 12px; background: var(--accent); color: #fff;
+  font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer;
+}
+.places-sheet-go:active { background: var(--accent-dark); }
+
+/* G14: 장소 상세(지도형) — 지도 그림 머리 + 지도·길찾기 버튼, 아래 고정 [일정 등록하기].
+   팝업 안쪽 여백(위 24px·좌우 20px)을 음수 여백으로 덮어 머리를 끝까지 붙인다. 오른쪽 위 ✕ 는 app.js 가 붙이는 .modal-x. */
+.places-detail-map { margin-top: -24px; }
+/* overflow:hidden 은 BFC 를 만들어 ✕(float)를 피해 좁아지므로 clip-path 로 자른다 */
+.places-dmap { position: relative; height: 188px; margin: 0 -20px; clip-path: inset(0 round 20px 20px 0 0); background: #e8efe6; }
+.places-dmap::before {
+  content: ""; position: absolute; inset: 0;
+  background-image: linear-gradient(#d5dfd2 1px, transparent 1px), linear-gradient(90deg, #d5dfd2 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.places-dmap::after {
+  content: ""; position: absolute; top: -20px; bottom: -20px; left: 70%; width: 10px; background: #fff;
+  transform: rotate(18deg); box-shadow: 0 0 0 1px #d9d4c8;
+}
+.places-dmap-road { position: absolute; left: -20px; right: -20px; top: 74px; height: 16px; background: #fff; transform: rotate(-12deg); box-shadow: 0 0 0 1px #d9d4c8; z-index: 1; }
+.places-dmap-pin {
+  position: absolute; left: 50%; top: 50px; width: 34px; height: 34px; margin-left: -17px; z-index: 2;
+  border-radius: 50% 50% 50% 0; background: var(--accent-dark); transform: rotate(-45deg); box-shadow: -2px 3px 6px rgba(58, 46, 42, .25);
+}
+.places-dmap-pin::after { content: ""; position: absolute; left: 11px; top: 11px; width: 12px; height: 12px; border-radius: 50%; background: #fff; }
+.places-dmap .places-dmap-tm { left: 16px; right: auto; top: 18px; z-index: 2; }
+.places-dmap-btns { position: absolute; left: 16px; right: 16px; bottom: 12px; z-index: 2; }
+.places-dmap-btns .places-link {
+  min-height: 40px; border: none; border-radius: 12px; background: #fff; color: var(--text);
+  font-size: 14px; font-weight: 800; box-shadow: 0 2px 8px rgba(0, 0, 0, .12);
+}
+.places-dmap-btns .places-route { background: var(--accent); color: #fff; }
+.places-detail-bd { display: flex; flex-direction: column; gap: 9px; padding-top: 14px; min-width: 0; }
+.places-detail-bd > * { margin: 0; }
+.places-detail-bd .places-badges { margin: 0; }
+.places-badge-cat.places-cat-park { background: #e3f5e8; color: #2f8a55; }
+.places-badge-cat.places-cat-library { background: #fff0e0; color: #b8601c; }
+.places-badge-cat.places-cat-kidscafe { background: #fff4d6; color: #9a6a0c; }
+.places-badge-cat.places-cat-experience { background: #efe9ff; color: #5b3fb5; }
+.places-badge-cat.places-cat-edu { background: #e2f4f6; color: #2a7783; }
+.places-badge-cat.places-cat-museum { background: #f6ebe0; color: #84563a; }
+.places-badge-cat.places-cat-indoor { background: #ffe9e6; color: #b8433a; }
+.places-detail-bd .places-badge-district { background: #f3ebe3; border-color: transparent; }
+.places-detail-map .places-name { margin: 0; font-size: 20px; font-weight: 800; }
+.places-detail-map .places-detail-addr { margin: 0; font-size: 14px; line-height: 1.4; }
+.modal-panel .places-detail-addr .places-copy {
+  width: auto; flex: 0 0 auto; min-height: 36px; margin: 0; padding: 7px 12px; border-radius: 12px;
+  background: #f3ebe3; color: var(--text); font-size: 13px; font-weight: 800;
+}
+.places-detail-map .places-detail-drive { font-size: 13px; font-weight: 800; color: var(--accent-dark); }
+.places-detail-est { font-weight: 600; color: var(--text-muted); }
+.places-detail-map .places-summary { font-size: 14px; }
+.places-detail-map .places-meta { gap: 8px 12px; }
+.places-detail-map .places-meta-value { font-size: 14px; }
+.places-detail-map .places-reserve-note {
+  padding: 9px 12px; border-radius: 12px; border: 1px solid #f6dfaa; background: #fff7e6; color: #5a4a2a;
+  font-size: 13px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere;
+}
+.places-detail-bd .places-actions .places-link { min-height: 44px; }
+.places-detail-map .places-notice { font-size: 12px; }
+.places-detail-map .places-checked { text-align: center; }
+/* 아래 고정: 팝업 아래 여백(style.css .modal-panel padding-bottom 과 같은 값)까지 덮어 내용이 버튼 밑으로 비치지 않게 한다 */
+.places-detail-foot {
+  --pl-pb: max(32px, calc(env(safe-area-inset-bottom, 0px) + 20px));
+  position: sticky; bottom: calc(-1 * var(--pl-pb)); z-index: 2;
+  margin: 12px -20px calc(-1 * var(--pl-pb)); padding: 10px 20px var(--pl-pb);
+  background: linear-gradient(rgba(255, 255, 255, 0), #fff 12px);
+}
+.places-detail-foot .btn-complete { margin-top: 0; }
+.places-detail-foot .fine-print { margin: 0; }

@@ -45,6 +45,15 @@
     return `<div class="home-banner"><strong>${dText}</strong><span>출산 전 준비와 임신 중 혜택을 먼저 보여드리고, 출산 후 검진·접종·발달 일정은 예정일 기준으로 미리 계산해 두었어요. 아이가 태어나면 프로필에서 “아이가 태어났어요”를 눌러 주세요.</span></div>`;
   }
 
+  /** G13-3: '챙길 것' 머리 — 아이가 여러 명이면 아이 칩(누르면 그 아이로 바꿔 보기), 지금 아이 한 줄. */
+  function childHead(ctx) {
+    const kids = Array.isArray(ctx.homeChildren) ? ctx.homeChildren : [];
+    const chips = kids.length >= 2
+      ? `<div class="home-child-chips" role="tablist">${kids.map((c) => `<button type="button" role="tab" aria-selected="${c.current ? "true" : "false"}" class="home-child-chip${c.current ? " active" : ""}" data-home-child="${ctx.esc(c.code)}">${ctx.esc(c.name)}</button>`).join("")}</div>`
+      : "";
+    return `${chips}<p class="home-child-line">${ctx.esc(ctx.homeChildText || "")}</p>`;
+  }
+
   function render(ctx) {
     const wrap = document.getElementById("home-body");
     if (!wrap) return;
@@ -55,8 +64,9 @@
     // 가족 캘린더(가구)가 켜져 있을 때만 앞으로 7일의 추가 일정 카드가 붙는다. 꺼져 있거나 가구가 없으면 ""(홈 DOM 그대로).
     // E(1-3): 가구가 활성이면 ctx.homeOrder()(["todo","family"] | ["family","todo"])가 '이번 달 챙길 것'과 이 카드의 순서만 정한다(내용 불변). 36개월 이상(family 먼저)이면 카드 제목이 '오늘·이번 주 우리 가족'.
     const order = typeof ctx.homeOrder === "function" ? ctx.homeOrder() : null;
-    const todoFirst = !!order && order[0] === "todo";
-    const usCard = typeof ctx.usUpcomingHtml === "function" ? ctx.usUpcomingHtml(order ? { family: !todoFirst } : undefined) : "";
+    const acctHome = ctx.accountHome === true; // G13-3: 계정 모드 홈은 가족 일정이 먼저(나이와 상관없이)
+    const todoFirst = !acctHome && !!order && order[0] === "todo";
+    const usCard = typeof ctx.usUpcomingHtml === "function" ? ctx.usUpcomingHtml(acctHome ? { family: true } : order ? { family: !todoFirst } : undefined) : "";
     if (usCard && !todoFirst) html.push(usCard);
 
     const cls = L.classifyHomeItems(events, completed, { today, birthDate: ctx.profile.birthDate, monthKeysOf: ctx.monthKeysOf, periodRangeOf: ctx.periodRangeOf });
@@ -85,7 +95,7 @@
       section(
         `${m + 1}월 챙길 것`,
         cls.thisMonth.length ? `<button type="button" class="home-viewall" data-act="todos">전체보기 ›</button>` : "",
-        cls.thisMonth.length ? catLines : `<p class="home-empty-line">이번 달에 챙길 항목이 없어요.</p>`,
+        (acctHome ? childHead(ctx) : "") + (cls.thisMonth.length ? catLines : `<p class="home-empty-line">이번 달에 챙길 항목이 없어요.</p>`),
         "sec-today"
       )
     );
@@ -145,6 +155,8 @@
         else if (a === "cal-next") ctx.goCalendar(new Date(today.getFullYear(), today.getMonth() + 1, 1));
       })
     );
+    // G13-3: 아이 칩 → 그 아이로 바꿔 보기(아이 전환 시트와 같은 동작)
+    wrap.querySelectorAll("[data-home-child]").forEach((b) => b.addEventListener("click", () => typeof ctx.switchChild === "function" && ctx.switchChild(b.dataset.homeChild)));
     // 다가오는 가족 일정 줄: 캘린더의 그 날짜로 이동한다.
     wrap.querySelectorAll("[data-home-date]").forEach((b) =>
       b.addEventListener("click", () => {

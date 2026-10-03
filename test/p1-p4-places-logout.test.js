@@ -104,6 +104,32 @@ const at = (dLat, dLng) => ({ lat: O.lat + dLat, lng: O.lng + dLng });
     assert.ok(!PV.renderDetail(pl, { mode: "info", origin: null, today: T }).includes("차로 약") && PV.renderDetail(pl, { mode: "info", origin: null, today: T }).includes("길찾기"));
     assert.ok(APP.includes("PlacesView.renderDetail(r.place, { origin: profile ? Places.originOf(placesOffices, profile.province, profile.district) : null,"));
   });
+  await test("G14 필터: 분류 한 줄 + [필터 N](거리·실내·무료·예약 없이 개수, 정렬 제외), 지울 수 있는 조건 칩·모두 지우기, 결과 줄 N곳·정렬, 시트 안에 거리·정렬·조건 칩", () => {
+    const near = mk("n1", at(0.01, 0));
+    const h = PV.render({ places: [near], category: "ALL", filters: { indoor: true, noReserve: true }, showNoReserve: true, origin: O, driveMax: 30, sort: "popular", today: T, sheetOpen: false });
+    assert.ok(/<div class="places-topline"><div class="places-chips"[\s\S]*?<\/div><button type="button" class="places-filter-btn on" data-places-sheet="open"[^>]*aria-expanded="false"[^>]*>[\s\S]*?필터<em>3<\/em><\/button><\/div>/.test(h));
+    assert.ok(h.includes('data-places-remove="drive" aria-label="차로 30분 이내 조건 지우기">차로 30분 이내<span aria-hidden="true">×</span>') && h.includes('data-places-remove="indoor"') && h.includes('data-places-remove="noReserve"') && !h.includes('data-places-remove="free"') && h.includes('data-places-remove="all">모두 지우기<'));
+    assert.ok(h.includes("<strong>1곳</strong>") && h.includes("구로구청에서 차로(직선거리로 추정)") && /class="places-sort-btn" data-places-sheet="open"[^>]*>인기순</.test(h));
+    const sheet = h.slice(h.indexOf('<div class="places-sheet"'), h.indexOf('<div class="places-active"'));
+    assert.ok(sheet.includes('role="dialog"') && sheet.includes('data-places-drive="30"') && sheet.includes('data-places-sort="near"') && sheet.includes('data-places-filter="indoor"') && sheet.includes('data-places-sheet="close">1곳 보기<'));
+    assert.ok(!h.includes("is-sheet-open") && PV.render({ places: [], origin: O, sheetOpen: true }).includes('class="places-view is-sheet-open"'));
+    const plain = PV.render({ places: [near], filters: {}, origin: O, today: T, sheetOpen: false });
+    assert.ok(!plain.includes("places-active") && !plain.includes("<em>") && plain.includes('class="places-filter-btn" data-places-sheet="open"'));
+    const noOrigin = PV.render({ places: [near], filters: {}, origin: null, driveMax: 30, today: T, sheetOpen: false });
+    assert.ok(!noOrigin.includes('data-places-remove="drive"') && !noOrigin.includes("places-count-basis") && /places-sort-btn[^>]*>정렬</.test(noOrigin));
+    assert.deepStrictEqual(PV.activeConds({ origin: O, driveMax: 90, filters: { free: true, noReserve: true }, showNoReserve: false }).map((c) => c.key), ["drive", "free"]);
+    assert.ok(!PV.render({ places: [near], origin: { ...O, name: "<b>" }, filters: {}, today: T }).includes("<b>에서"), "이스케이프");
+  });
+  await test("G14 상세(지도형): 지도 머리 안에 [지도에서 보기]·[길찾기]·이동 시간 칩, 분류색 배지, 아래 고정 [일정 등록하기](data-places-reg-open) + data-places-close 유지", () => {
+    const pl = mk("g", { name: "개봉도서관", category: "LIBRARY", notice: "구로구민만", ...at(0.05, 0) });
+    const h = PV.renderDetail(pl, { mode: "info", origin: O, canRegister: true, today: T });
+    const map = h.slice(h.indexOf('<div class="places-dmap">'), h.indexOf('<div class="places-detail-bd">'));
+    assert.ok(map.includes(">지도에서 보기</a>") && map.includes(">길찾기</a>") && map.includes(`places-dmap-tm">차로 약 ${Math.max(1, P.driveMinFrom(pl, O))}분<`));
+    assert.ok(h.includes('places-badge-cat places-cat-library">도서관<') && h.includes('places-badge-district">구로구<') && h.includes("places-detail-notice") && h.includes("직선거리로 추정"));
+    assert.ok(/<div class="places-detail-foot"><button type="button" class="btn-complete" data-places-reg-open>일정 등록하기<\/button><button type="button" class="btn-close" data-places-close>닫기<\/button><\/div><\/div>$/.test(h));
+    const none = PV.renderDetail(mk("n", {}), { mode: "info", origin: O, today: T });
+    assert.ok(!none.includes("places-dmap-tm") && !none.includes("길찾기") && none.includes('class="places-detail-foot"><p class="fine-print">'));
+  });
   await test("실제 data/places.json 은 좌표 필드가 없어도(또는 있어도) 전부 검증 통과", () => {
     assert.deepStrictEqual(P.validateData(JSON.parse(read("data/places.json"))), []);
   });

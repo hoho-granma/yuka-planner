@@ -657,7 +657,11 @@
     const wrap = el(containerId);
     if (!wrap) return;
     const allOn = Object.keys(CATEGORY_META).every((k) => activeCats.has(k));
+    // G15-4: 계정 모드에서만 '전체'를 맨 앞에(OFF 는 기존 맨 끝 그대로)
+    const allFirst = containerId === "filter-chips-checklist" && typeof acctEnabled === "function" && acctEnabled();
+    const allBtn = `<button class="chip chip-all ${allOn ? "active" : ""}" data-cat="__all">전체</button>`;
     wrap.innerHTML =
+      (allFirst ? allBtn : "") +
       Object.entries(CATEGORY_META)
         .map(([key, meta]) => {
           const active = activeCats.has(key);
@@ -668,7 +672,7 @@
         })
         .join("") +
       // 맨 끝 "전체" — 전부 켜져 있으면 눌러서 전부 끄고, 하나라도 꺼져 있으면 눌러서 전부 켠다.
-      `<button class="chip chip-all ${allOn ? "active" : ""}" data-cat="__all">전체</button>`;
+      (allFirst ? "" : allBtn);
     wrap.querySelectorAll(".chip").forEach((chip) => {
       chip.addEventListener("click", () => {
         const cat = chip.getAttribute("data-cat");
@@ -801,18 +805,35 @@
   }
   /** 홈 프로필 카드 위에 '주연 · 나(엄마)' 한 줄(로그인 상태에서만, 없으면 숨김). 마크업은 이 함수가 만든다(OFF 화면 HTML 불변). */
   function acctRenderMeLine() {
-    const box = el("profile-name-age") && el("profile-name-age").parentNode;
+    const strong = el("profile-name-age");
+    const box = strong && strong.parentNode;
     if (!box) return;
-    let line = box.querySelector && box.querySelector("#profile-me-line");
+    const old = box.querySelector && box.querySelector("#profile-me-line");
+    if (old) old.remove(); // G13-3: 별도 줄 대신 홈 맨 위 프로필 카드 자체가 '나'(아이는 아래 '챙길 것' 머리에서 보인다)
+    const card = el("btn-profile-card");
     const id = acctIdentity();
-    if (!id) { if (line) line.remove(); return; }
-    if (!line) {
-      line = document.createElement("span");
-      line.id = "profile-me-line";
-      line.className = "profile-me-line";
-      box.insertBefore(line, box.firstChild);
+    if (card && card.classList) card.classList.toggle("acct-me", !!id);
+    if (!id) return; // 로그인 전·플래그 OFF: renderProfileHeader 가 쓴 아이 이름·나이 그대로
+    strong.textContent = id.roleName ? `${id.name} · ${AccountView.MSG.myRole(id.roleName)}` : id.name;
+    if (el("profile-avatar")) el("profile-avatar").innerHTML = PERSON_ICON_SVG;
+  }
+  /** G13-3: 홈 '챙길 것' 머리에 보일 지금 아이 한 줄("은찬 · 생후 3개월" / 임신 중이면 주수·D-day). */
+  function acctHomeChildText() {
+    const today = new Date();
+    if (isPregnant()) {
+      const pi = pregnancyInfo(profile.birthDate, today);
+      return `${childDisplayName()} · 임신 ${pi.weeks}주`;
     }
-    line.textContent = id.roleName ? `${id.name} · ${AccountView.MSG.myRole(id.roleName)}` : id.name;
+    return `${childDisplayName()} · ${ChildTimeline.ageLabelAt(profile.birthDate, new Date())}`;
+  }
+  /** 이 기기에서 볼 수 있는 아이 목록(분리된 아이 제외) — 두 명 이상이면 홈에 아이 칩. */
+  function acctHomeChildren() {
+    if (!hhEnabled()) return [];
+    const list = HouseholdView.mergeChildren(loadChildren(), hh.hid ? HouseholdSync.getMirror(hh.hid) : null, familyCode);
+    const out = list.filter((c) => !c.removed).map((c) => ({ code: c.code, name: c.name || "", current: c.code === familyCode }));
+    // 지금 보는 아이는 기기 목록·가구 미러에 아직 없어도(방금 등록) 항상 칩에 포함한다
+    if (familyCode && profile && !out.some((c) => c.code === familyCode)) out.push({ code: familyCode, name: childDisplayName(), current: true });
+    return out;
   }
 
   /** 프로필 카드를 탭하면 뜨는 바텀시트 — 상세정보 + 가족코드 복사 + 정보 다시 입력. */
@@ -1712,6 +1733,7 @@
       })
       .join("");
     el("list-checklist").querySelectorAll(".event-item").forEach(bindEventItem);
+    acctDesignApplyButtons(el("list-checklist"));
     const pastToggle = el("past-infant-toggle");
     if (pastToggle)
       pastToggle.addEventListener("change", () => {
@@ -1732,6 +1754,26 @@
           card.classList.toggle("open");
         });
       });
+  }
+
+  /** G14: 계정 모드 체크리스트·할 일 카드에 신청용 링크 버튼('신청하러 가기'·'안내 보기'·'예방접종도우미 열기')을 카드 안에 붙인다. 이미 있는 링크 데이터(usApplyLinkOf)만 쓰고, 카드를 누르는 동작(상세 열기)은 그대로다. */
+  function acctDesignApplyButtons(root) {
+    if (!acctEnabled() || !root || !root.querySelectorAll) return;
+    root.querySelectorAll(".event-item").forEach((item) => {
+      if (item.querySelector(".ck-go")) return;
+      const e = schedule.find((x) => x.id === item.getAttribute("data-id"));
+      const link = e && !completed[e.id] ? usApplyLinkOf(e) : null;
+      const body = item.querySelector(".body");
+      if (!link || !body) return;
+      const a = document.createElement("a");
+      a.className = "ck-go";
+      a.href = link.url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = link.label;
+      a.addEventListener("click", (ev) => ev.stopPropagation());
+      body.appendChild(a);
+    });
   }
 
   function renderRecordTab() {
@@ -2116,6 +2158,62 @@
     }
     if (showBack) el("btn-back-to-day").addEventListener("click", renderDayList);
   }
+  // G14-3: 계정 모드 할 일 상세 시트(접는 항목) — openDetail 본문은 그대로 두고, 그린 다음 DOM 만 바꾼다(버튼·완료일·핸들러는 그대로).
+  const ACC_OPEN_LABELS = ["이 접종은", "이 검진은", "해야 할 일", "관찰 포인트", "정상/비정상 기준", "이상 기준"]; // 처음부터 펼치는 줄(주의 신호 포함)
+  const ACC_KEEP_LABELS = ["현재 상태", "안내"]; // 접지 않는 줄
+  function acctDesignAccordion(box) {
+    if (!box || !box.children) return;
+    Array.from(box.children).forEach((row) => {
+      if (!row.classList || !row.classList.contains("detail-row") || row.classList.contains("completion-row")) return;
+      const labelEl = row.querySelector(".label");
+      const label = labelEl ? (labelEl.textContent || "").trim() : "";
+      if (!labelEl || !label || ACC_KEEP_LABELS.includes(label)) return;
+      const det = document.createElement("details");
+      det.className = "acc-row";
+      if (ACC_OPEN_LABELS.includes(label)) det.open = true;
+      const sum = document.createElement("summary");
+      sum.textContent = label;
+      const body = document.createElement("div");
+      body.className = "acc-body";
+      labelEl.remove();
+      while (row.firstChild) body.appendChild(row.firstChild);
+      det.appendChild(sum);
+      det.appendChild(body);
+      box.replaceChild(det, row);
+    });
+  }
+  // G14-5: 계정 모드 혜택 상세 시트(신청 완료 상태, 톤 변경) — 위쪽 짙은 머리(분류 라벨·제목) + 상태 카드(신청 전/신청 완료·확인일·[해당(신청 완료)]/[신청 완료 취소]/[미해당]). 요소를 옮기기만 해서 핸들러는 그대로다.
+  function acctDesignSubsidy(box) {
+    if (!box || !box.querySelector || !box.children || box.querySelector(".acct-sub-head")) return;
+    const title = box.querySelector("h3");
+    if (!title) return;
+    const kids = Array.from(box.children);
+    const head = document.createElement("div");
+    head.className = "acct-sub-head";
+    kids.slice(0, kids.indexOf(title) + 1).forEach((n) => head.appendChild(n)); // 분류 라벨·지원 주체 라벨·제목
+    const toggle = box.querySelector("#btn-toggle-complete");
+    const restore = box.querySelector("#btn-na-restore");
+    const done = !!(toggle && /취소/.test(toggle.textContent || ""));
+    const status = document.createElement("div");
+    status.className = "acct-sub-status";
+    const label = document.createElement("strong");
+    label.textContent = restore ? "해당 없음으로 표시했어요" : done ? "신청 완료" : "신청 전이에요";
+    status.appendChild(label);
+    const comp = box.querySelector(".completion-row");
+    if (comp) status.appendChild(comp);
+    const choice = box.querySelector(".apply-choice");
+    if (choice) status.appendChild(choice);
+    else if (restore) status.appendChild(restore);
+    box.insertBefore(status, box.firstChild);
+    box.insertBefore(head, box.firstChild);
+  }
+  const openDetailBase = openDetail;
+  openDetail = function openDetail(e, cameFromDayList) {
+    openDetailBase(e, cameFromDayList);
+    if (!acctEnabled() || !e) return;
+    if (e.category === "행정·지원금") acctDesignSubsidy(el("modal-content"));
+    else acctDesignAccordion(el("modal-content"));
+  };
 
   function closeDetail() {
     el("detail-modal").classList.add("hidden");
@@ -2819,6 +2917,7 @@
       else list.push(entry);
       localStorage.setItem(CHILDREN_KEY, JSON.stringify(list.slice(0, 8)));
     } catch (e) {}
+    if (typeof acctEnabled === "function" && acctEnabled() && typeof usRefreshHome === "function") usRefreshHome(); // G15: 기기 아이 목록이 바뀌면(방금 등록한 둘째) 홈의 아이 칩을 바로 갱신
   }
 
   async function switchToChild(code) {
@@ -3446,7 +3545,11 @@
   /** 홈·체크리스트 보조 문구용 변경 표식(연결이 달라졌는지 비교). 꺼져 있으면 "". */
   function usAutoLinkSig() {
     const m = autoLinks();
-    return m ? JSON.stringify([...m.values()].map((l) => [l.autoId, l.scheduleId, l.date, l.status])) : "";
+    return (m ? JSON.stringify([...m.values()].map((l) => [l.autoId, l.scheduleId, l.date, l.status])) : "") + acctKidsSig();
+  }
+  /** G15: 계정 모드 홈의 아이 칩 목록이 달라졌는지 비교하는 표식(둘째 등록 직후 홈을 다시 그리게 한다). 계정 모드가 아니면 "". */
+  function acctKidsSig() {
+    return typeof acctEnabled === "function" && acctEnabled() && typeof acctHomeChildren === "function" ? "|kids:" + acctHomeChildren().map((c) => c.code).join(",") : "";
   }
   const usAutoTitleOfEvent = (e) => String(e.title || "").replace(/^⚠️ 확인 필요 · /, "").slice(0, 100);
   /** autoRef(별칭 해석 후)에 해당하는 현재 AUTO 항목의 제목. 찾지 못하면 ""(연결이 끊긴 일정은 일반 일정으로만 보인다). */
@@ -3742,7 +3845,7 @@
     us.plan = null;
     modalMode = "profile";
     const extra = occ.recurring ? { recurrence: doc.recurrence, exceptionCount: UserSchedule.exceptionCount(doc) } : undefined;
-    el("modal-content").innerHTML = UserScheduleView.renderDetail(UserScheduleView.cardData(occ, usLinks(), extra));
+    el("modal-content").innerHTML = UserScheduleView.renderDetail(UserScheduleView.cardData(occ, usLinks(), extra), acctEnabled() ? { dots: UserScheduleView.detailDots(occ, usLinks()) } : undefined);
     el("detail-modal").classList.remove("hidden");
   }
   function usOpenForm(id, dateIso, opts) {
@@ -3761,6 +3864,32 @@
     el("detail-modal").classList.remove("hidden");
     usBindPickers();
   }
+  // G13: 계정 모드의 일정 추가·수정 시트(누구 일정 → 나이별 카테고리 → 제목 자동). 위 두 함수(usOpenForm·usShowForm)의 본문은 그대로 두고,
+  // 폼을 보여 주는 순간에만 계정 모드 시트로 바꿔 그린다. 플래그 OFF·가구만 켠 기기·AUTO 연결 예약은 이 분기를 타지 않는다.
+  const usG13 = () => acctEnabled() && typeof ScheduleKinds !== "undefined";
+  /** 아이 한 명의 나이 출처: ① 지금 보는 아이 프로필 ② 이 기기에 저장된 아이 목록(출산 예정 표시)·기억해 둔 아이별 생일(CHILD_BIRTHS_KEY) — 둘 다 모르면 null(공통 아이 목록). 새로 서버를 읽지 않는다. */
+  function usChildAge(childKey) {
+    const l = usLinks().find((x) => x.childKey === childKey);
+    const code = l && l.familyCode;
+    const today = toISODate(new Date());
+    if (code && code === familyCode && profile) return profile.stage === "pregnant" ? "PREGNANT" : ScheduleKinds.ageMonths(toISODate(profile.birthDate), today);
+    const saved = code ? loadChildren().find((c) => c.code === code) : null;
+    if (!saved) return null;
+    if (saved.stage === "pregnant") return "PREGNANT";
+    let births = {};
+    try { births = JSON.parse(localStorage.getItem(CHILD_BIRTHS_KEY) || "{}") || {}; } catch (e) {} // 이미 이 기기에 기억해 둔 아이별 생일(홈 순서용)
+    return births[code] ? ScheduleKinds.ageMonths(births[code], today) : null;
+  }
+  const usG13Ctx = () => ({ links: usLinks(), meId: usMeId() || memActiveId() || "", ageOf: usChildAge });
+  const usShowFormBase = usShowForm;
+  usShowForm = function usShowForm() {
+    if (us.form && !us.form.g13 && !us.form.autoRef && (us.form.mode === "create" || us.form.mode === "edit") && usG13()) UserScheduleView.upgradeFormG13(us.form, usG13Ctx());
+    if (!(us.form && us.form.g13)) return usShowFormBase();
+    modalMode = "profile";
+    el("modal-content").innerHTML = UserScheduleView.renderFormG13(us.form, usLinks(), { messages: us.messages, saving: us.saving, members: HouseholdView.visibleMembers(usMembers()), ctx: usG13Ctx() });
+    el("detail-modal").classList.remove("hidden");
+    usBindPickers();
+  };
   /** 폼에 들어 있는 날짜 칸에 공통 달력(HNDatePicker, 일정용 범위)을 연결한다. "이 날만 수정" 중이면 그 폼의 날짜 칸. */
   function usBindPickers() {
     const P = UserScheduleView.PICKER_PREFIXES;
@@ -4086,6 +4215,18 @@
       return;
     }
     if (!us.form) return;
+    const who = ev.target.closest("[data-us-who]");
+    if (who && us.form.g13) {
+      UserScheduleView.g13ApplyWho(us.form, who.getAttribute("data-us-who"), usG13Ctx());
+      usShowForm();
+      return;
+    }
+    const sk = ev.target.closest("[data-us-sk]");
+    if (sk && us.form.g13) {
+      UserScheduleView.g13PickKind(us.form, sk.getAttribute("data-us-sk"), usG13Ctx());
+      usShowForm();
+      return;
+    }
     const quick = ev.target.closest("[data-us-quick]");
     if (quick) {
       // 빠른 추가 칩: 폼을 다시 그리지 않고 제목 칸·분류 칩만 갱신한다(입력 중인 시간·장소·메모 보존). 제목은 비어 있을 때만 채운다.
@@ -4136,6 +4277,7 @@
     const rep = ev.target.closest("[data-us-repeat]");
     if (rep) {
       us.form.repeat = rep.getAttribute("data-us-repeat");
+      if (us.form.g13 && us.form.repeat === "WEEKLY" && !(us.form.byDay || []).length && us.form.eventDate) us.form.byDay = [UserSchedule.weekdayOf(us.form.eventDate)]; // 매주: 시작 날짜의 요일을 기본으로
       if (UserScheduleView.isRepeating(us.form)) {
         // 반복 일정은 날짜 정함(FIXED)이고 여러 날에 걸치지 않는다(R10).
         us.form.dateKind = "FIXED";
@@ -4207,6 +4349,7 @@
     if (!usActive() || !us.form || !ev.target.closest(".us-form")) return;
     const map = { "us-title": "title", "us-location": "location", "us-memo": "memo" };
     if (map[ev.target.id]) us.form[map[ev.target.id]] = ev.target.value;
+    if (us.form.g13 && ev.target.id === "us-title") us.form.titleTouched = true; // 직접 고친 제목은 카테고리를 바꿔도 덮어쓰지 않는다
   }
   function usInit() {
     if (!hhEnabled() || !usReady()) return;
@@ -4285,6 +4428,9 @@
       today,
       pregnant: isPregnant(),
       ageNow: ageInMonths(profile.birthDate, today),
+      // G13-3: 계정 모드 홈(가족 일정 먼저 → 아이별 챙길 것 → 혜택). 꺼져 있으면 아래 4개는 없다(기존 홈 그대로).
+      ...(acctEnabled() ? { accountDesign: true } : {}), // G14: 계정 모드 화면 디자인(기록 타임라인 등)
+      ...(acctEnabled() && acct.user ? { accountHome: true, homeChildText: acctHomeChildText(), homeChildren: acctHomeChildren(), switchChild: (code) => { if (code && code !== familyCode) switchToChild(code); } } : {}),
       events: calendarSchedule(),
       autoLinkedIds: linkIdx ? new Set(linkIdx.keys()) : null,
       allEvents: schedule,
@@ -4390,6 +4536,7 @@
   function acctInit() {
     if (acctJoinLinkStart()) return; // Q3: 계정 기능이 꺼진 기기는 켠 뒤 새로고침
     if (!acctEnabled()) return;
+    if (typeof document !== "undefined" && document.body && document.body.classList) document.body.classList.add("acct-design"); // G14: 계정 모드에서만 새 화면 디자인(체크리스트·혜택·기록·상세 시트) CSS 가 적용된다
     acct.svc = AuthService.create();
     // D2: accounts 문서·가구 연결(가짜 어댑터로 테스트 가능). 같은 Firestore 어댑터를 쓰되 계정 문서 쓰기는 이 서비스만 한다.
     if (typeof AccountSync !== "undefined") acct.sync = AccountSync.create({ adapter: HouseholdSync.firestoreAdapter(() => firebase.firestore()), household: HouseholdSync });
