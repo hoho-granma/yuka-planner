@@ -71,6 +71,15 @@ const at = (dLat, dLng) => ({ lat: O.lat + dLat, lng: O.lng + dLng });
     assert.ok(h.includes("거리: 직선거리로 추정한 차량 이동 시간 · 위치 © OpenStreetMap contributors"));
     assert.strictEqual(PV.TEXT.driveNote(0, "구로구청").startsWith("차로 약 0분"), true);
   });
+  await test("D1: 거리 칩 바로 위에 '{기준점}에서 차로 걸리는 시간(직선거리로 추정)' 한 줄(fine-print), 기준점이 없으면 이 줄은 숨기고 비활성 안내만", () => {
+    const h = PV.render({ places: [near], origin: O, today: T });
+    const line = '<p class="fine-print places-drive-basis">구로구청에서 차로 걸리는 시간(직선거리로 추정)</p>';
+    assert.ok(h.includes(line) && h.indexOf(line) < h.indexOf('class="places-drive-row"') && h.indexOf(line) > h.indexOf('data-places-cat="ALL"'));
+    assert.strictEqual(PV.TEXT.driveBasis("성남시청"), "성남시청에서 차로 걸리는 시간(직선거리로 추정)");
+    assert.ok(!PV.render({ places: [near], origin: { ...O, name: "<b>" }, today: T }).includes("<b>에서"), "이스케이프");
+    const no = PV.render({ places: [near], origin: null, today: T });
+    assert.ok(!no.includes("places-drive-basis") && no.includes("프로필에서 지역을 정하면 거리로 볼 수 있어요"));
+  });
   await test("기준점 없음: 거리 칩·가까운순 비활성 + 안내, 인기순은 선택 가능, 카드에 이동 시간 없음", () => {
     const h = PV.render({ places: [near], origin: null, today: T });
     assert.ok(h.includes("프로필에서 지역을 정하면 거리로 볼 수 있어요"));

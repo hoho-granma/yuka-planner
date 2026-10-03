@@ -29,6 +29,7 @@
     sortNear: "가까운순",
     sortPopular: "인기순",
     noOrigin: "프로필에서 지역을 정하면 거리로 볼 수 있어요",
+    driveBasis: (name) => `${name}에서 차로 걸리는 시간(직선거리로 추정)`,
     driveNote: (min, name) => `차로 약 ${min}분 · ${name} 기준`,
     source: "거리: 직선거리로 추정한 차량 이동 시간 · 위치 © OpenStreetMap contributors",
     notice: "방문 전 공식 링크에서 운영 여부를 확인하세요",
@@ -144,7 +145,8 @@
       .map(([m, label]) => `<button type="button" class="places-chip places-drive-chip${(m === cur || (m === null && !has)) ? " active" : ""}" aria-pressed="${m === cur ? "true" : "false"}" data-places-drive="${m === null ? "all" : m}"${m === null ? "" : dis}>${esc(label)}</button>`).join("");
     const sorts = [["near", TEXT.sortNear, dis], ["popular", TEXT.sortPopular, ""]]
       .map(([k, label, d]) => `<button type="button" class="places-chip places-sort-chip${(has ? sort === k : k === "popular" && sort === "popular") ? " active" : ""}" aria-pressed="${sort === k ? "true" : "false"}" data-places-sort="${k}"${d}>${esc(label)}</button>`).join("");
-    return `<div class="places-drive-row" role="group" aria-label="${esc(TEXT.driveLabel)}">${drive}</div><div class="places-sort-row" role="group" aria-label="${esc(TEXT.sortLabel)}">${sorts}</div>${has ? "" : `<p class="places-origin-hint">${esc(TEXT.noOrigin)}</p>`}`;
+    const basis = has ? `<p class="fine-print places-drive-basis">${esc(TEXT.driveBasis(o.origin.name))}</p>` : ""; // D1: 거리 칩 위 기준 한 줄(기준점이 없으면 숨기고 아래 비활성 안내만)
+    return `${basis}<div class="places-drive-row" role="group" aria-label="${esc(TEXT.driveLabel)}">${drive}</div><div class="places-sort-row" role="group" aria-label="${esc(TEXT.sortLabel)}">${sorts}</div>${has ? "" : `<p class="places-origin-hint">${esc(TEXT.noOrigin)}</p>`}`;
   }
   function metaItem(label, value) {
     const known = value !== null && value !== undefined && value !== "";
