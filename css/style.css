@@ -1122,3 +1122,7 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .acct-copy-ico { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--accent-dark); cursor: pointer; }
 .acct-copy-ico:focus-visible { outline: 3px solid var(--accent-dark); outline-offset: 2px; }
 .acct-copied { font-size: 12px; font-weight: 700; color: var(--accent-dark); }
+
+/* D5: 내 계정 — 이름·이메일·가족코드 왼쪽 정렬, [가족 추가] 전체 폭 보조(강조색 테두리) 버튼 */
+.acct-me-text .fine-print { text-align: left; }
+.modal-panel .btn-close.acct-btn-outline { margin-top: 0; background: #fff; color: var(--accent-dark); border: 1.5px solid var(--accent-dark); }

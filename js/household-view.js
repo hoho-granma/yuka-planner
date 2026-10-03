@@ -377,7 +377,7 @@
         .map((m) => {
           const isMe = acctMode && state.meId && m.memberId === state.meId;
           const del = isMe ? "" : `<button type="button" class="hh-btn hh-small" data-mem-action="ask-delete" data-member-id="${esc(m.memberId)}">${esc(MSG.memDelete)}</button>`;
-          return `<li class="hh-member" data-member-id="${esc(m.memberId)}"><span class="hh-member-name">${esc(m.label)}${isMe ? ` (${esc(MSG.memMe)})` : ""}</span><span class="hh-member-role">${esc(rn(m))}</span>
+          return `<li class="hh-member" data-member-id="${esc(m.memberId)}"><span class="hh-member-name">${esc(isMe && state.meName ? state.meName : m.label)}${isMe ? ` (${esc(MSG.memMe)})` : ""}</span><span class="hh-member-role">${esc(rn(m))}</span>
             <button type="button" class="hh-btn hh-small" data-mem-action="edit" data-member-id="${esc(m.memberId)}">${esc(MSG.memEdit)}</button>${del}</li>`;
         })
         .join("");

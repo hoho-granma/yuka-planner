@@ -98,7 +98,6 @@
     submitLogin: "로그인",
     signingUp: "가입하는 중이에요…",
     loggingIn: "로그인하는 중이에요…",
-    signupDone: "가입했어요. 로그인 상태예요.",
     loginDone: "로그인했어요.",
     loggedInAs: (who) => `${who}님으로 로그인했어요.`,
     myAccount: "내 계정",
@@ -304,7 +303,7 @@
   const ICO_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
   /** 가족코드 구역(로그인 상태): 코드(다른 줄과 같은 글자 크기)+오른쪽 복사 아이콘 → [가족 추가] / 가구 연결이 없을 때만 [가족 만들기]. */
   function codeBlock(s) {
-    if (s.code) return `<div class="acct-code-row"><span class="fine-print">${esc(MSG.codeLabelShort)} ${esc(s.code)}</span><button type="button" class="acct-copy-ico" data-acct-action="copy-me" aria-label="${esc(MSG.copyIcon)}" title="${esc(MSG.copyIcon)}">${ICO_COPY}</button>${s.notice === MSG.inviteCopied ? `<span class="acct-copied" role="status">${esc(MSG.copiedShort)}</span>` : ""}</div><div class="acct-actions"><button type="button" class="btn-close" data-acct-action="open-invite">${esc(MSG.inviteMenu)}</button></div>`;
+    if (s.code) return `<div class="acct-code-row"><span class="fine-print">${esc(MSG.codeLabelShort)} ${esc(s.code)}</span><button type="button" class="acct-copy-ico" data-acct-action="copy-me" aria-label="${esc(MSG.copyIcon)}" title="${esc(MSG.copyIcon)}">${ICO_COPY}</button>${s.notice === MSG.inviteCopied ? `<span class="acct-copied" role="status">${esc(MSG.copiedShort)}</span>` : ""}</div>`;
     return `<div class="acct-code-block"><p class="fine-print">${esc(MSG.codeNoneHint)}</p><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-recover">${esc(MSG.codeCreate)}</button></div></div>`;
   }
   /** 내 계정 영역: 기본 아이콘 + 이름·역할 → 이메일 → 가족코드. */
@@ -313,7 +312,7 @@
     if (s.user) {
       const name = (s.account && s.account.displayName) || s.user.displayName || "";
       const role = s.account && s.account.role ? ` · ${esc(MSG.myRole(roleLabel(s.account.role).replace(/\(.*\)/, "")))}` : "";
-      return `<div class="detail-row acct-slot"><div class="label">${esc(MSG.myAccount)}</div><div class="acct-me"><span class="avatar acct-me-avatar">${ICO_PERSON}</span><div class="acct-me-text"><strong>${esc(name)}${role}</strong><span class="fine-print">${esc(s.user.email)}</span>${s.withCode ? codeBlock(s) : ""}</div></div><div class="acct-actions"><button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div>${s.notice && s.notice !== MSG.inviteCopied ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
+      return `<div class="detail-row acct-slot"><div class="label">${esc(MSG.myAccount)}</div><div class="acct-me"><span class="avatar acct-me-avatar">${ICO_PERSON}</span><div class="acct-me-text"><strong>${esc(name)}${role}</strong><span class="fine-print">${esc(s.user.email)}</span>${s.withCode ? codeBlock(s) : ""}</div></div><div class="acct-actions">${s.withCode && s.code ? `<button type="button" class="btn-close acct-btn-outline" data-acct-action="open-invite">${esc(MSG.inviteMenu)}</button>` : ""}<button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div>${s.notice && s.notice !== MSG.inviteCopied ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
     }
     return `<div class="detail-row acct-slot"><div class="label">${esc(MSG.myAccount)}</div><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-signup">${esc(MSG.signup)}</button><button type="button" class="btn-close" data-acct-action="open-login">${esc(MSG.login)}</button></div>${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
   }

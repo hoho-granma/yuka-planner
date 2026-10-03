@@ -237,7 +237,7 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     const html = e.sb.el("empty-panel").innerHTML;
     assert.ok(html.includes("아이를 등록하면 월령에 맞는 일정과 혜택이 나와요") && html.includes('data-acct-action="empty-register"'));
     assert.ok(!("hannun_account_intent" in e.store) && e.log.closed === 1 && !e.authAd.calls.includes("deleteUser"));
-    assert.strictEqual(e.acct.notice, "가입했어요. 로그인 상태예요.");
+    assert.strictEqual(e.acct.notice, null, "D5: 가입 직후 안내 문구는 없앴다");
   });
   await test("예비 부모 가입: situation=EXPECTING 이 저장되고 빈 홈 문구는 '출산 예정일을 등록하면…'", async () => {
     const e = appEnv();

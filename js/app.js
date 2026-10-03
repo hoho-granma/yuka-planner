@@ -3056,7 +3056,7 @@
       console.warn("이 기기 사용자를 저장하지 못했어요(저장소 사용 불가).", e);
     }
   }
-  const memState = () => ({ acctMode: acctEnabled(), meId: usMeId(), children: usLinks().filter((l) => !l.removedAt), enabled: hhEnabled(), hasHousehold: !!(hh.hid && hh.code), members: usMembers(), activeMemberId: memActiveId(), view: mem.view, form: mem.form, deleteId: mem.deleteId, saving: mem.saving });
+  const memState = () => ({ acctMode: acctEnabled(), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt), enabled: hhEnabled(), hasHousehold: !!(hh.hid && hh.code), members: usMembers(), activeMemberId: memActiveId(), view: mem.view, form: mem.form, deleteId: mem.deleteId, saving: mem.saving });
   function memRender() {
     const slot = el("members-slot");
     if (!slot || !hhEnabled()) return;
@@ -4858,7 +4858,7 @@
     acct.busy = false;
     if (!fin.ok) return acctShowSheet(acct.mode === "slot" ? "signup" : undefined);
     acct.form = {};
-    acct.notice = AccountView.MSG.signupDone;
+    acct.notice = null; // D5: 가입 직후 "가입했어요" 안내는 정보 가치가 낮아 없앤다
     closeDetail();
     acctRenderLanding();
     acctRenderSlot();

@@ -241,7 +241,7 @@ const ST = { enabled: true, hasHousehold: true, members: MEMBERS, activeMemberId
     vm.runInContext(`
       const ACTIVE_MEMBER_KEY = "hannun_active_member";
       const usMeId = () => null; // 계정 모드(D3)가 아닌 경우: 기존 기기 사용자 동작
-      const acctEnabled = () => false; // H2: 계정 모드가 아니면 기존 구성원 UI 그대로
+      const acctEnabled = () => false; const acctIdentity = () => null; // H2: 계정 모드가 아니면 기존 구성원 UI 그대로
       const usLinks = () => []; const usChipDelAsk = () => {};
       const mem = { view: "list", form: null, deleteId: null, saving: false };
       const hh = { hid: ${JSON.stringify(hid)}, code: ${JSON.stringify(code)} };
