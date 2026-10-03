@@ -4395,8 +4395,12 @@
     acct.svc = AuthService.create();
     // D2: accounts 문서·가구 연결(가짜 어댑터로 테스트 가능). 같은 Firestore 어댑터를 쓰되 계정 문서 쓰기는 이 서비스만 한다.
     if (typeof AccountSync !== "undefined") acct.sync = AccountSync.create({ adapter: HouseholdSync.firestoreAdapter(() => firebase.firestore()), household: HouseholdSync });
-    acct.svc.onChange((u) => {
+    acct.svc.onChange((u, info) => {
       acct.user = u;
+      // 오프라인·SDK 로드 실패(확인 불가)는 '로그아웃됨'이 아니다: 이 기기에 로그아웃 표시가 있을 때만 로그아웃으로 본다(로그인했던 기기는 홈 유지).
+      acct.authKnown = !(info && info.unknown) || acctSignedOutMark();
+      if (u) acctSignedOutMark(false);
+      acctGateHome();
       acctRenderLanding();
       acctRenderSlot();
       if (u) acct.pendingLink = null; // 이미 로그인된 기기는 초대 링크를 무시한다
@@ -4406,6 +4410,28 @@
     const ep = el("empty-panel");
     if (ep) ep.addEventListener("click", acctOnClick);
     acctRenderLanding();
+  }
+  /**
+   * 계정 모드에서 로그인하지 않은 상태는 항상 첫 화면(온보딩). 로그아웃 직후·새로고침·앱 재실행이 같다.
+   * 원인: 이 기기에 아이 프로필이 남아 있으면 init() 이 무조건 캘린더를 띄우고, 인증 상태(null)는 랜딩 카드만 다시 그려서 화면은 홈 그대로였다.
+   * 화면만 옮기고 아이·기록 데이터는 건드리지 않는다. 아이 추가(newChildMode) 입력 중에는 그대로 둔다.
+   */
+  const SIGNED_OUT_KEY = "hannun_acct_signed_out";
+  /** 이 기기의 '로그아웃함' 표시. 인자 없이 읽기, true 면 남기기, false 면 지우기. */
+  function acctSignedOutMark(set) {
+    try {
+      if (set === true) localStorage.setItem(SIGNED_OUT_KEY, "1");
+      else if (set === false) localStorage.removeItem(SIGNED_OUT_KEY);
+      else return localStorage.getItem(SIGNED_OUT_KEY) === "1";
+    } catch (e) {}
+    return set === undefined ? false : !!set;
+  }
+  function acctGateHome() {
+    if (!acctEnabled() || acct.user || !acct.authKnown || newChildMode) return false;
+    if (el("view-landing") && !el("view-landing").classList.contains("hidden")) return false;
+    if (typeof hideEmptyHome === "function") hideEmptyHome();
+    showLandingView();
+    return true;
   }
   /** 랜딩의 계정 카드(로고·회원가입·로그인). 기존 입력 화면은 그대로 아래에 둔다(계정 없이 시작하기). */
   function acctRenderLanding() {
@@ -5016,6 +5042,7 @@
         hhRender();
       }
       if (linked) acctClearIntent();
+      acctSignedOutMark(true); // 오프라인으로 다시 열어도 첫 화면이 나오게 이 기기에 표시를 남긴다(로그인하면 지운다)
       acct.user = null;
       acct.account = null;
       acct.migrate = null;
@@ -5382,6 +5409,7 @@
       setBirthDatePicker(profile.birthDate);
       await buildAndRender();
       showCalendarView();
+      if (typeof acctGateHome === "function") acctGateHome(); // 인증 확인이 렌더보다 먼저 끝난 경우(로그아웃 상태)도 첫 화면으로
     }
   }
 

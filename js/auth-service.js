@@ -162,7 +162,7 @@
       getAdapter().then((a) => {
         if (dead) return;
         off = a.onChange((u) => { user = u; cb(u); });
-      }).catch(() => cb(null));
+      }).catch(() => cb(null, { unknown: true })); // SDK 로드 실패·확인 불가는 '로그아웃됨'이 아니다(두 번째 인자로 구분)
       return () => { dead = true; if (off) off(); };
     }
     return { isEnabled: enabled, signUp, signIn, signOut, deleteCurrentUser, sendPasswordReset, onChange, currentUser: () => user };
