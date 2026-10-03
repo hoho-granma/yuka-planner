@@ -2268,7 +2268,7 @@
     modalMode = "profile";
     const r = placesReg;
     const kids = usLinks().filter((l) => !l.removedAt).map((l) => ({ childKey: l.childKey, name: l.displayName || "" }));
-    el("modal-content").innerHTML = PlacesView.renderDetail(r.place, { mode: r.mode, canRegister: usActive(), today: new Date(), reg: r, members: usActive() ? HouseholdView.visibleMembers(usMembers()).map((m) => ({ memberId: m.memberId, label: m.label })) : [], kids, doneLabel: r.doneLabel, pickerHtml: r.mode === "register" ? HNDatePicker.markup("plr") : "" });
+    el("modal-content").innerHTML = PlacesView.renderDetail(r.place, { origin: profile ? Places.originOf(placesOffices, profile.province, profile.district) : null, mode: r.mode, canRegister: usActive(), today: new Date(), reg: r, members: usActive() ? HouseholdView.visibleMembers(usMembers()).map((m) => ({ memberId: m.memberId, label: m.label })) : [], kids, doneLabel: r.doneLabel, pickerHtml: r.mode === "register" ? HNDatePicker.markup("plr") : "" });
     el("detail-modal").classList.remove("hidden");
     const root = el("modal-content").querySelector("[data-places-detail]");
     if (root) root.addEventListener("click", placesDetailClick);

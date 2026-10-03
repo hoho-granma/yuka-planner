@@ -44,6 +44,7 @@
     copied: "복사했어요",
     homepage: "공식 홈페이지",
     map: "지도에서 보기",
+    route: "길찾기",
     register: "일정 등록하기",
     needHousehold: "가족 캘린더를 만들면 일정으로 등록할 수 있어요",
     reservationRequired: "예약이 필요한 곳이에요. 공식 홈페이지에서 먼저 예약하세요.",
@@ -66,6 +67,7 @@
     registered: (label) => `${label} 캘린더에 등록했어요`,
     memoPrefix: "공식 홈페이지: ",
     mapBase: "https://map.kakao.com/link/search/",
+    routeBase: "https://map.kakao.com/link/to/",
   });
   const DOW = Object.freeze(["일", "월", "화", "수", "목", "금", "토"]);
   const pad2 = (n) => String(n).padStart(2, "0");
@@ -87,6 +89,13 @@
     const p = place || {};
     const q = p.address || [p.province, p.district, p.name].filter((x) => typeof x === "string" && x).join(" ");
     return TEXT.mapBase + encodeURIComponent(q);
+  }
+  /** 카카오맵 길찾기(웹 링크, 앱 키 없음): https://map.kakao.com/link/to/{장소명},{lat},{lng}. 좌표가 없으면 "". */
+  function routeUrl(place) {
+    const p = place || {};
+    const ok = (v) => typeof v === "number" && Number.isFinite(v);
+    if (!ok(p.lat) || !ok(p.lng) || typeof p.name !== "string" || !p.name.trim()) return "";
+    return `${TEXT.routeBase}${encodeURIComponent(p.name.trim().replace(/,/g, " "))},${p.lat},${p.lng}`;
   }
   /** 일정 메모: 공식 홈페이지 주소(https 만). 없으면 "". */
   function memoFor(place) {
@@ -251,14 +260,16 @@
     const addr = p.address || where;
     const addrRow = addr ? `<div class="places-detail-addr"><span>${esc(addr)}</span>${p.address ? `<button type="button" class="btn-close" data-places-copy="${esc(p.address)}">${esc(TEXT.copy)}</button>` : ""}</div>` : "";
     const hasHome = Places.isHttpsUrl(p.officialUrl);
-    const links = `<div class="places-actions">${hasHome ? `<a class="places-link" href="${esc(p.officialUrl)}" target="_blank" rel="noopener noreferrer">${esc(TEXT.homepage)}</a>` : ""}<a class="places-link" href="${esc(mapUrl(p))}" target="_blank" rel="noopener noreferrer">${esc(TEXT.map)}</a></div>`;
+    const links = `<div class="places-actions">${hasHome ? `<a class="places-link" href="${esc(p.officialUrl)}" target="_blank" rel="noopener noreferrer">${esc(TEXT.homepage)}</a>` : ""}<a class="places-link" href="${esc(mapUrl(p))}" target="_blank" rel="noopener noreferrer">${esc(TEXT.map)}</a>${routeUrl(p) ? `<a class="places-link places-route" href="${esc(routeUrl(p))}" target="_blank" rel="noopener noreferrer">${esc(TEXT.route)}</a>` : ""}</div>`;
+    const dmin = opts.origin ? Places.driveMinFrom(p, opts.origin) : null;
+    const driveRow = dmin === null ? "" : `<p class="places-drive places-detail-drive">${esc(TEXT.driveNote(Math.max(1, dmin), opts.origin.name))}</p>`;
     const resv = p.reservation === "REQUIRED" ? `<p class="places-reserve-note">${esc(TEXT.reservationRequired)}</p>` : p.reservation === "PARTLY" ? `<p class="places-reserve-note">${esc(TEXT.reservationPartly)}</p>` : "";
     return (
       `<div class="places-detail" data-places-detail="info"><div class="places-badges">${badges.join("")}</div>` +
       `<h3 class="places-name">${esc(p.name || "")}</h3>` +
       (p.summary ? `<p class="places-summary">${esc(p.summary)}</p>` : "") +
       (typeof p.notice === "string" && p.notice ? `<p class="places-reserve-note places-detail-notice">${esc(p.notice)}</p>` : "") +
-      addrRow +
+      addrRow + driveRow +
       `<ul class="places-meta">${metaItem("권장 나이", ageText(p.ageMonths))}${metaItem("실내·실외", lookup(Places.INDOOR, p.indoor))}${metaItem("비용", lookup(Places.COST, p.cost))}${metaItem("예약", lookup(Places.RESERVATION, p.reservation))}</ul>` +
       resv +
       `<p class="places-checked">${p.checkedAt ? esc(p.checkedAt) + " 확인" : esc(TEXT.unknown)}</p>` +
@@ -281,5 +292,5 @@
     };
   }
 
-  return { TEXT, SCHEDULE_LIMITS, esc, ageText, render, filterRow, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, memoFor, scheduleDraftFor };
+  return { TEXT, SCHEDULE_LIMITS, esc, ageText, render, filterRow, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, routeUrl, memoFor, scheduleDraftFor };
 });

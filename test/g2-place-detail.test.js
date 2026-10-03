@@ -80,7 +80,7 @@ function env(o) {
   const modal = { classList: { remove() {}, add() {} } };
   const log = { counted: [], created: [], switched: [], rendered: 0, closed: 0, refreshed: 0, picker: [] };
   const sels = o.sels || {};
-  const sb = { console: { error() {}, log() {} }, Date, JSON, Promise, setTimeout, PlacesView: PV, UserScheduleView: V, UserSchedule: US, HouseholdView: HV,
+  const sb = { console: { error() {}, log() {} }, Date, JSON, Promise, setTimeout, PlacesView: PV, Places: require("../js/places.js"), profile: null, placesOffices: null, UserScheduleView: V, UserSchedule: US, HouseholdView: HV,
     el: (id) => (id === "modal-content" ? content : id === "detail-modal" ? modal : id === "plr-dp-btn" ? { addEventListener: (t, f) => (log.btnClick = f) } : id === "plr-dp-popup" ? { classList: { contains: () => !o.popupOpen }, scrollIntoView: (a) => (log.scrolled = a) } : sels[id] ? { value: sels[id] } : null),
     usActive: () => o.active !== false, usLinks: () => [{ childKey: "c1", displayName: "수아", order: 1 }], usMembers: () => [{ memberId: "m1", role: "MOM", label: "엄마", order: 1 }, { memberId: "m2", role: "DAD", label: "아빠", order: 2 }], usActiveChildKey: () => "c1", memActiveId: () => "m1",
     HNDatePicker: { markup: () => "<div id=\"plr-dp-btn\"></div>", bindById: (prefix, op) => { log.picker.push(prefix); return { set(d) { log.set = d; } }; } }, formatDateKR: () => "", toISODate: (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,

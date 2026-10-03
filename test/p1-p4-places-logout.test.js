@@ -91,6 +91,19 @@ const at = (dLat, dLng) => ({ lat: O.lat + dLat, lng: O.lng + dLng });
     assert.ok(!/편집 추천|준비 중|우리 동네|둘러보기|places-ctx|수아/.test(h));
     assert.ok(!APP.includes("placesBrowse") && !APP.includes("places-ctx") && !read("js/places-view.js").includes("fallbackBox"));
   });
+  await test("D3: 상세 시트 [길찾기](카카오맵 link/to/{장소명},{lat},{lng}, 좌표 있을 때만) + '차로 약 N분 · 기준점 기준'", () => {
+    const pl = mk("g", { name: "개봉도서관", ...at(0.05, 0) });
+    assert.strictEqual(PV.routeUrl(pl), `https://map.kakao.com/link/to/${encodeURIComponent("개봉도서관")},${pl.lat},${pl.lng}`);
+    assert.strictEqual(PV.routeUrl(mk("n", { name: "a,b", lat: 1.5, lng: 2.5 })), "https://map.kakao.com/link/to/a%20b,1.5,2.5");
+    assert.deepStrictEqual([PV.routeUrl(mk("n", {})), PV.routeUrl(mk("n", { lat: null, lng: null })), PV.routeUrl(mk("n", { lat: 37 }))], ["", "", ""]);
+    const h = PV.renderDetail(pl, { mode: "info", origin: O, today: T });
+    assert.ok(h.includes(`href="${PV.routeUrl(pl)}"`) && h.includes(">길찾기<") && h.includes(">지도에서 보기<") && h.indexOf(">지도에서 보기<") < h.indexOf(">길찾기<"));
+    assert.ok(new RegExp(`차로 약 ${Math.max(1, P.driveMinFrom(pl, O))}분 · 구로구청 기준`).test(h));
+    const none = PV.renderDetail(mk("n", {}), { mode: "info", origin: O, today: T });
+    assert.ok(!none.includes("길찾기") && !none.includes("차로 약") && none.includes("지도에서 보기"));
+    assert.ok(!PV.renderDetail(pl, { mode: "info", origin: null, today: T }).includes("차로 약") && PV.renderDetail(pl, { mode: "info", origin: null, today: T }).includes("길찾기"));
+    assert.ok(APP.includes("PlacesView.renderDetail(r.place, { origin: profile ? Places.originOf(placesOffices, profile.province, profile.district) : null,"));
+  });
   await test("실제 data/places.json 은 좌표 필드가 없어도(또는 있어도) 전부 검증 통과", () => {
     assert.deepStrictEqual(P.validateData(JSON.parse(read("data/places.json"))), []);
   });
