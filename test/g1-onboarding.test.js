@@ -121,7 +121,7 @@ test("미리 써 보기 카드: OFF 에서만 보이고(ON·새 아이 입력 �
   const nc = env({ flag: false, newChild: true }); nc.t.previewRender(); assert.strictEqual(nc.slot.innerHTML, "");
   e.setRoot({ addEventListener() {} });
   e.pclick("ask");
-  assert.ok(e.sheet.innerHTML.includes("새 버전을 써 볼까요?") && e.sheet.innerHTML.includes("써 볼게요") && e.sheet.innerHTML.includes("취소") && e.sheet.innerHTML.includes("언제든 이전 화면으로 돌아올 수 있어요"));
+  assert.ok(e.sheet.innerHTML.includes("새 버전을 써 볼까요?") && e.sheet.innerHTML.includes("써 볼게요") && e.sheet.innerHTML.includes("취소") && e.sheet.innerHTML.includes("지금까지 입력한 아이 기록은 지워지지 않아요"));
   e.pclick("cancel");
   assert.deepStrictEqual([e.log.closed, e.log.reload, Object.keys(e.store)], [1, 0, []]);
 });
