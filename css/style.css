@@ -1395,3 +1395,5 @@ body.acct-design #list-record .rec-row.manual { border-left: 4px solid var(--acc
 body.acct-design .us-detail .us-val { display: inline-flex; align-items: center; justify-content: flex-end; gap: 7px; }
 body.acct-design .us-detail .us-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
 body.acct-design .rec-add { display: block; width: 100%; min-height: 46px; margin: 4px 0 12px; border: 1.5px dashed var(--accent); border-radius: 14px; background: #fff; color: var(--accent); font-size: 15px; font-weight: 800; }
+/* G16: 온보딩 맨 아래 버전 표시(작은 회색, 높이 최소) */
+body.acct-design #view-landing .acct-ver { margin: 0; padding: 0; font-size: 10.5px; line-height: 1.2; text-align: center; color: #b3b3ba; letter-spacing: .2px; }

@@ -334,6 +334,7 @@
         <button type="button" class="acct-btn-primary" data-acct-action="open-login">${esc(O.loginBtn)}</button>
         <button type="button" class="acct-btn-text" data-acct-action="open-signup">${esc(O.primary)}</button>
         <p class="acct-code-hint">${esc(O.codeHint)}</p>
+        ${s.version ? `<p class="acct-ver">v${esc(s.version)}</p>` : ""}
       </div></div></div>`;
   }
   const FEAT_ICO = Object.freeze({

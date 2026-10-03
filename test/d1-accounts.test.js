@@ -213,7 +213,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
   await test("OFF 불변: index.html 에 정적 계정 마크업·Auth SDK 스크립트가 없다(플래그 ON 일 때 동적 로드), sw.js 에는 새 스크립트만 추가", () => {
     const html = read("index.html");
     assert.ok(!/firebase-auth-compat/.test(html) && !/acct-/.test(html));
-    assert.ok(html.includes('<script src="js/auth-service.js?v=4"></script>') && html.includes('<script src="js/account-view.js?v=21"></script>'));
+    assert.ok(html.includes('<script src="js/auth-service.js?v=4"></script>') && html.includes('<script src="js/account-view.js?v=22"></script>'));
     const sw = read("sw.js");
     assert.ok(sw.includes('"./js/auth-service.js"') && sw.includes('"./js/account-view.js"') && !sw.includes("firebase-auth-compat"));
     assert.ok(AS.SDK_URL === "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js");
@@ -227,6 +227,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     const log = { closed: 0 };
     const ad = fakeAdapter(adapterOver);
     const sb = {
+      newChildMode: false, // G16: acctRestore 가 sync 없이도 acctGoHome 을 거친다
       console, window: { FEATURES: { accounts: flag !== false } }, AccountView: AV, AuthService: { create: () => AS.create({ features: () => ({ accounts: true }), adapter: ad }), MSG: AS.MSG, normCode: AV.normCode },
       el: (id) => els[id] || null, closeDetail: () => { log.closed++; }, hh: { hid: null }, HouseholdSync: { getStatus: () => ({ pending: 2 }) },
       localStorage: { setItem: (k, v) => { store[k] = v; }, removeItem: (k) => { delete store[k]; }, getItem: (k) => store[k] },

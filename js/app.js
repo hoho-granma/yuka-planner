@@ -4537,6 +4537,8 @@
     if (acctJoinLinkStart()) return; // Q3: 계정 기능이 꺼진 기기는 켠 뒤 새로고침
     if (!acctEnabled()) return;
     if (typeof document !== "undefined" && document.body && document.body.classList) document.body.classList.add("acct-design"); // G14: 계정 모드에서만 새 화면 디자인(체크리스트·혜택·기록·상세 시트) CSS 가 적용된다
+    // G16: 첫 화면 입력 폼의 OFF 안내문('회원가입 없이 바로 시작해요…')을 계정 모드에서는 처음부터 중립 문구로 바꾼다(로그인 직후 새 아이 입력 폼에도 OFF 문구가 보이지 않게).
+    if (typeof el === "function" && el("entry-fine-print")) el("entry-fine-print").textContent = AccountView.MSG.onboard.formNote;
     acct.svc = AuthService.create();
     // D2: accounts 문서·가구 연결(가짜 어댑터로 테스트 가능). 같은 Firestore 어댑터를 쓰되 계정 문서 쓰기는 이 서비스만 한다.
     if (typeof AccountSync !== "undefined") acct.sync = AccountSync.create({ adapter: HouseholdSync.firestoreAdapter(() => firebase.firestore()), household: HouseholdSync });
@@ -4554,7 +4556,7 @@
       if (u) acct.pendingLink = null; // 이미 로그인된 기기는 초대 링크를 무시한다
       else if (acct.pendingLink) acctOpenLinkSignup(); // Q3: 링크로 들어오면 바로 회원가입(합류) 시트
       if (u) acctSplashArm(RESTORE_MAX_MS, acctRestoreSlow); // 복원을 기다리는 동안엔 3초 타이머를 쓰지 않는다(Auth 응답은 이미 왔다)
-      if (u) Promise.resolve(acctRestore(u)).then(acctSplashHide, acctSplashHide); // 로그인 상태가 되면(다른 기기 로그인·앱 재시작) 계정 가구를 이 기기에 복원한다(끝난 뒤 중립 화면을 걷는다)
+      if (u) acctRestoreThenHide(u); // 로그인 상태가 되면(다른 기기 로그인·앱 재시작) 계정 가구를 이 기기에 복원한다(끝난 뒤 중립 화면을 걷는다)
       else acctSplashHide();
     });
     const ep = el("empty-panel");
@@ -4590,6 +4592,7 @@
     acctSplashArm(SPLASH_MAX_MS, acctSplashHide);
   }
   function acctSplashArm(ms, fn) {
+    if (typeof setTimeout !== "function") return;
     if (acctSplashTimer) clearTimeout(acctSplashTimer);
     acctSplashTimer = setTimeout(fn, ms);
   }
@@ -4597,6 +4600,22 @@
   function acctRestoreSlow() {
     acctSplashHide();
     if (acct.user && !profile && !newChildMode && typeof showEmptyHome === "function") showEmptyHome();
+  }
+  /**
+   * G16: 로그인 직후 복원(Firestore 읽기)이 느려도 아이 입력 폼(view-landing)이 비치지 않게, 복원이 끝날 때까지 중립 화면(스플래시)을 덮는다.
+   * 10초를 넘기면 기존 규칙(acctRestoreSlow)대로 걷고 빈 홈. 다른 복원이 진행 중이면(onChange) 그쪽이 끝날 때 걷는다.
+   */
+  function acctLoginRestore(u) {
+    acctSplashShow();
+    acctSplashArm(RESTORE_MAX_MS, acctRestoreSlow);
+    return acctRestoreThenHide(u);
+  }
+  /** 복원을 하고 끝나면 스플래시를 걷는다. 다른 복원이 이미 진행 중이라 바로 돌아온 경우(acct.restoring)는 걷지 않는다 — 진행 중인 복원이 끝날 때 걷는다(Auth 콜백·signIn 응답 순서와 무관). */
+  function acctRestoreThenHide(u) {
+    return Promise.resolve(acctRestore(u)).then(
+      () => { if (!acct.restoring) acctSplashHide(); },
+      () => acctSplashHide()
+    );
   }
   function acctSplashHide() {
     if (acctSplashTimer) clearTimeout(acctSplashTimer);
@@ -4623,7 +4642,7 @@
       hero.insertAdjacentElement("afterend", slot);
       slot.addEventListener("click", acctOnClick);
     }
-    slot.innerHTML = AccountView.renderLanding({ user: acct.user });
+    slot.innerHTML = AccountView.renderLanding({ user: acct.user, version: typeof self !== "undefined" ? self.APP_VERSION || "" : "" });
     acctBindSlides(slot);
     // G1: 계정 기능이 켜졌을 때만 옛 첫 화면의 문구를 새 톤으로 바꾸고(OFF 는 기존 그대로), 첫 화면 모드(간단/둘러보기)를 적용한다.
     const O = AccountView.MSG.onboard;
@@ -5007,7 +5026,9 @@
   }
   /** 로그인 상태가 됐을 때: 끝나지 않은 가입이 있으면 이어서 마무리, 아니면 계정 가구를 이 기기에 복원(이 기기에 다른 가구가 있으면 건드리지 않는다 — D4). */
   async function acctRestore(u) {
-    if (!acct.sync || acct.busy || acct.completing || acct.restoring) return;
+    // G16: 복원을 못 하는 경우(계정 동기화 모듈 없음)에도 로그인한 사람이 첫 화면(아이 입력 폼)에 남지 않게 홈으로 보낸다.
+    if (!acct.sync) { await acctGoHome(); return; }
+    if (acct.busy || acct.completing || acct.restoring) return;
     acct.restoring = true;
     try {
       let intent = acctReadIntent();
@@ -5048,8 +5069,7 @@
       console.error("계정 복원 실패", e);
     } finally {
       acct.restoring = false;
-      acctRenderSlot();
-      acctRefreshCalendar();
+      try { acctRenderSlot(); acctRefreshCalendar(); } catch (e) { console.error("계정 화면 갱신 실패", e); } // G16: 갱신 오류가 홈 이동(아래)을 막지 않게
       // D5: 계정이 연결됐는데 이 기기에 아이가 없고 입력 화면도 아니면(재시작·다른 기기 로그인) 아이가 없는 홈을 보인다.
       if (acct.user && acct.account && acct.account.householdCode && !profile && !newChildMode && !emptyHome) showEmptyHome();
       await acctGoHome();
@@ -5181,6 +5201,7 @@
     closeDetail();
     acctRenderLanding();
     acctRenderSlot();
+    if (typeof acctGoHome === "function") await acctGoHome(); // G16: 가입 직후에도 첫 화면(아이 입력 폼)에 남지 않고 홈/빈 홈으로
     acctMaybeShowMigrate();
   }
   async function acctOnClick(ev) {
@@ -5473,7 +5494,7 @@
       closeDetail();
       acctRenderLanding();
       acctRenderSlot();
-      acctRestore(r.user); // 로그인 중에는 onChange 의 복원이 건너뛰어지므로(busy) 끝난 뒤 한 번 직접 실행한다
+      acctLoginRestore(r.user); // 로그인 중에는 onChange 의 복원이 건너뛰어지므로(busy) 끝난 뒤 한 번 직접 실행한다(G16: 끝날 때까지 중립 화면)
       return;
     }
     if (action === "reset-password") {

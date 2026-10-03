@@ -29,7 +29,7 @@ function boot(opts) {
     AuthService: { create: () => ({ onChange: (f) => (cb = f), signOut: async () => ({ ok: true }) }) }, HouseholdSync: { firestoreAdapter: () => ({}) }, firebase: {}, console,
   };
   vm.createContext(sb);
-  vm.runInContext(["const SIGNED_OUT_KEY = \"hannun_acct_signed_out\"; const SPLASH_MAX_MS = 3000; const RESTORE_MAX_MS = 10000; let acctSplashTimer = null;", fn("showCalendarView"), fn("showLandingView"), fn("acctSignedOutMark"), fn("acctSplashShow"), fn("acctSplashArm"), fn("acctRestoreSlow"), fn("acctSplashHide"), fn("acctGateHome"), fn("acctInit")].join("\n"), sb);
+  vm.runInContext(["const SIGNED_OUT_KEY = \"hannun_acct_signed_out\"; const SPLASH_MAX_MS = 3000; const RESTORE_MAX_MS = 10000; let acctSplashTimer = null;", fn("showCalendarView"), fn("showLandingView"), fn("acctSignedOutMark"), fn("acctSplashShow"), fn("acctSplashArm"), fn("acctRestoreSlow"), fn("acctSplashHide"), fn("acctRestoreThenHide"), fn("acctGateHome"), fn("acctInit")].join("\n"), sb);
   return { sb, view, log, fire: (u, info) => cb(u, info), ls, store, body, timers };
 }
 (async () => {
