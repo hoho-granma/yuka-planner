@@ -136,31 +136,25 @@ const TODAY = "2026-10-02";
 const child = { name: "은찬", ageLabel: "4개월" };
 const region = { province: "서울특별시", district: "구로구" };
 const noRank = (html) => {
-  assert(!html.includes("인기"), "'인기' 없음");
+  assert(!html.replace(/인기순/g, "").includes("인기"), "'인기' 없음(정렬 칩 '인기순' 제외)");
   assert(!/best/i.test(html), "'BEST' 없음");
 };
-test("빈 상태: 준비 문구·편집 추천·칩 8개, 안내 문구 없음", () => {
-  const html = V.render({ places: [], child, region, category: null, status: "준비 중", today: TODAY });
-  assert(html.includes("우리 동네 갈 만한 곳을 준비하고 있어요. 곧 편집 추천 장소를 보여 드릴게요."));
-  assert(html.includes("편집 추천") && html.includes("준비 중"));
+test("빈 상태(P2): '편집 추천'·'준비 중' 표기 없이 조건 안내만, 분류 칩 8개", () => {
+  const html = V.render({ places: [], category: null, today: TODAY });
+  assert(html.includes("조건에 맞는 곳이 없어요. 필터를 줄여 보세요."));
+  assert(!html.includes("편집 추천") && !html.includes("준비 중") && !html.includes("준비하고"));
   assert.strictEqual((html.match(/data-places-cat="/g) || []).length, 8);
   assert(html.includes('data-places-cat="ALL"') && /class="places-chip active"[^>]*data-places-cat="ALL"/.test(html));
-  assert(!html.includes("places-card"));
-  assert(html.includes("은찬") && html.includes("서울특별시 구로구"));
-  assert(!html.includes("아이와 지역을 등록하면"));
+  assert(!html.includes("places-card") && !html.includes("은찬"));
   noRank(html);
 });
-test("아이·지역 없으면 등록 안내", () => {
-  const html = V.render({ places: [], child: null, region: null, category: null, today: TODAY });
-  assert(html.includes("아이와 지역을 등록하면 맞춤 장소를 보여 드려요"));
-});
 test("분류 선택 중 빈 목록은 분류 안내 + 해당 칩 active", () => {
-  const html = V.render({ places: [], child, region, category: "MUSEUM", today: TODAY });
-  assert(html.includes("이 분류는 아직 준비하고 있어요"));
+  const html = V.render({ places: [], category: "MUSEUM", today: TODAY });
+  assert(html.includes("이 분류에는 조건에 맞는 곳이 없어요"));
   assert(/class="places-chip active"[^>]*data-places-cat="MUSEUM"/.test(html));
 });
 test("카드 1개: 이름·설명·나이·실내외·비용·예약·링크·일정 추가·공통 안내", () => {
-  const html = V.render({ places: [base], child, region, category: "LIBRARY", status: "준비 중", today: TODAY });
+  const html = V.render({ places: [base], category: "LIBRARY", today: TODAY });
   assert.strictEqual((html.match(/class="places-card"/g) || []).length, 1);
   ["구로구립도서관", "영유아 자료실이 있는 구립 도서관", "0~72개월", "실내", "무료", "예약 없이 이용", "도서관", "예시"].forEach((s) => assert(html.includes(s), s));
   assert(html.includes('href="https://example.go.kr/lib" target="_blank" rel="noopener noreferrer"'));
@@ -179,7 +173,7 @@ test("오래된 항목은 '확인 오래됨'", () => {
 });
 test("HTML 이스케이프(이름·설명·주소·id·아이 이름·지역)", () => {
   const evil = mk({ id: "x", name: '<img src=x onerror="a">', summary: "a&b <script>", address: "\"'><b>" });
-  const html = V.render({ places: [evil], child: { name: "<i>", ageLabel: "<u>" }, region: { province: "<s>", district: null }, today: TODAY });
+  const html = V.render({ places: [evil], today: TODAY });
   assert(!/<img|<script|<b>|<i>|<u>|<s>/.test(html));
   assert(html.includes("&lt;img src=x onerror=&quot;a&quot;&gt;") && html.includes("a&amp;b &lt;script&gt;") && html.includes("&quot;&#39;&gt;&lt;b&gt;"));
 });

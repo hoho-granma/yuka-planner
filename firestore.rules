@@ -315,6 +315,18 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // [P4 초안 — 배포 전] placeStats/{placeId} — 어디갈까 인기순 신호(장소별 [일정 등록하기] 완료 횟수).
+    //   읽기는 공개(get/list), 쓰기는 count 를 정확히 1 만 올리는 것만 허용. 삭제 금지. 키는 count·updatedAt 뿐.
+    //   한계: 인증 없는 구조라 조작(반복 +1)을 Rules 만으로 막을 수 없다 — 정렬 보조 신호로만 쓰고 숫자는 화면에 내지 않는다.
+    match /placeStats/{placeId} {
+      allow get, list: if true;
+      allow create: if request.resource.data.keys().hasOnly(['count', 'updatedAt'])
+                    && request.resource.data.count == 1;
+      allow update: if request.resource.data.keys().hasOnly(['count', 'updatedAt'])
+                    && request.resource.data.count == resource.data.count + 1;
+      allow delete: if false;
+    }
+
     // 그 외 모든 경로: 기본 거부(명시하지 않으면 Firestore 규칙은 기본적으로 거부한다).
     // TodoDefinition/지역/지원금 데이터는 Firestore에 두지 않으므로 여기에 규칙이 없다
     // (docs/Firestore-스키마-설계.md 섹션 7).

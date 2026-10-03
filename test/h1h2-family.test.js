@@ -50,9 +50,10 @@ test("내 정보 카드·시트·자리 선택 마크업", () => {
   assert.ok(card.includes("지은 · 나(엄마)") && card.includes("아이를 등록해 주세요") && card.includes("a@b.c") && card.includes('data-acct-action="empty-me"'));
   assert.ok(AV.renderMyCard({ user: { email: "a@b.c" }, account: { displayName: "지은", role: "MOM", situation: "EXPECTING" }, expecting: true }).includes("출산 예정일을 등록해 주세요"));
   const me = AV.renderMe({ user: { email: "a@b.c" }, account: { displayName: "지은", role: "MOM" }, code: "ABCD2345" });
-  assert.ok(me.includes("ABCD2345") && me.includes('data-acct-action="copy-me"') && me.includes('data-acct-action="open-invite"') && me.includes('data-acct-action="ask-reissue"'));
+  assert.ok(me.includes("ABCD2345") && me.includes('data-acct-action="copy-me"') && me.includes('data-acct-action="open-invite"') && !me.includes("ask-reissue") && !me.includes("다시 만들기")); // Q4: 가족코드 다시 만들기 삭제
   assert.ok(AV.renderMe({ user: { email: "a@b.c" }, account: {}, code: "" }).includes('data-acct-action="open-recover"'));
-  assert.ok(AV.renderReissueConfirm({}).includes("새 코드를 만들면 지금 코드로는 더 이상 합류할 수 없어요."));
+  assert.strictEqual(AV.renderReissueConfirm, undefined); // 재발급 확인 시트 삭제(reissueCode 함수 자체는 household-sync 에 남김)
+  assert.ok(!APP.includes('acctShowSheet("reissue")') && !APP.includes("setHouseholdCode(acct") && require("../js/household-sync.js").create && typeof require("../js/household-sync.js").create === "function");
   const pick = AV.renderSlotPick({ slots: [{ memberId: "a", label: "할머니", role: "GRANDPARENT" }] });
   assert.ok(pick.includes("할머니(으)로 합류할까요?") && pick.includes('data-slot-id="a"') && pick.includes('data-slot-id=""') && pick.includes("다른 역할로") && pick.includes("합류하기"));
   const many = AV.renderSlotPick({ slots: [{ memberId: "a", label: "할머니", role: "GRANDPARENT" }, { memberId: "b", label: "아빠", role: "DAD" }] });

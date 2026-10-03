@@ -384,7 +384,7 @@
       const kids = acctMode && Array.isArray(state.children) && state.children.length
         ? `<h4 class="hh-title">${esc(MSG.memChildTitle)}</h4><ul class="hh-members">${state.children.map((c) => `<li class="hh-member" data-child-key="${esc(c.childKey)}"><span class="hh-member-name">${esc(c.displayName || "")}</span><button type="button" class="hh-btn hh-small" data-mem-action="ask-remove-child" data-member-id="${esc(c.childKey)}">${esc(MSG.memChildRemove)}</button></li>`).join("")}</ul>`
         : "";
-      const add = list.length >= MEMBER_MAX ? note(MSG.memMax) : `<div class="hh-actions"><button type="button" class="hh-btn" data-mem-action="add">${esc(MSG.memAdd)}</button></div>`;
+      const add = acctMode ? "" : list.length >= MEMBER_MAX ? note(MSG.memMax) : `<div class="hh-actions"><button type="button" class="hh-btn" data-mem-action="add">${esc(MSG.memAdd)}</button></div>`;
       body = `${device}<ul class="hh-members">${rows}</ul>${add}${kids}`;
     }
     return `<section class="hh-section" data-mem="${esc(state.view || "list")}">${head}${body}</section>`;

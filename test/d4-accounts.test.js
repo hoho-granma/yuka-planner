@@ -201,14 +201,14 @@ async function mkHousehold(w) { const r = await w.hs.createHousehold({}); assert
     assert.deepStrictEqual([e.acct.user, e.acct.account, e.acct.migrate], [null, null, null]);
     assert.ok(w.db.docs.has("households/" + a.householdId), "서버 데이터 삭제 없음");
   });
-  await test("로그아웃: 계정과 무관한 기기 가구(다른 코드)는 건드리지 않는다 / 가구가 없으면 아무 정리도 하지 않는다", async () => {
+  await test("로그아웃(P1): 이 기기의 가구 연결은 계정 가구와 다른 코드여도 정리한다", async () => {
     const w = world();
     const a = await mkHousehold(w), b = await mkHousehold(w);
     const e = appEnv({ w, uid: "uOld", hhHid: b.householdId, hhCode: b.code });
     e.init();
     e.acct.user = { uid: "uOld" }; e.acct.account = { householdCode: a.code };
     await e.click("confirm-logout");
-    assert.deepStrictEqual([e.log.left, e.log.flushed, e.hhObj.code], [0, 0, b.code]);
+    assert.deepStrictEqual([e.log.left, e.log.flushed, e.hhObj.code], [1, 1, null]); // P1: 계정 모드 로그아웃은 이 기기의 가구 연결을 계정 가구와 같든 다르든 정리한다
   });
   await test("로그아웃 후 다른 계정 로그인: 이전 계정 가구가 섞이지 않고 새 계정 가구만 복원되며, 남은 이 기기 아이는 자동 연결 없이 물어본다", async () => {
     const w = world();

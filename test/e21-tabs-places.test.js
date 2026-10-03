@@ -71,7 +71,7 @@ test("기록 보기: 시트를 닫고 기록 탭으로 이동, 돌아가기용 �
 test("어디갈까 렌더: places.json 을 읽어 내 지역·월령으로 거르고(카드 렌더), 분류 칩을 누르면 다시 그리며, 탭이 바뀌었으면 그리지 않는다", async () => {
   const e = env({ on: true, tab: "places" });
   await e.t.renderPlacesTab();
-  assert.ok(e.nodes.body.innerHTML.includes("places-view") && e.nodes.body.innerHTML.includes("수아") && e.nodes.body.innerHTML.includes("서울특별시 구로구") && e.nodes.body.innerHTML.includes("data-places-id="));
+  assert.ok(e.nodes.body.innerHTML.includes("places-view") && !e.nodes.body.innerHTML.includes("수아") && !e.nodes.body.innerHTML.includes("places-ctx") && e.nodes.body.innerHTML.includes("data-places-id=") && e.nodes.body.innerHTML.includes("data-places-drive="));
   const total = (e.nodes.body.innerHTML.match(/data-places-id=/g) || []).length;
   assert.ok(total >= 1 && total <= PLACES.places.length);
   const cat = PLACES.places[0].category;
@@ -81,9 +81,9 @@ test("어디갈까 렌더: places.json 을 읽어 내 지역·월령으로 거�
   const other = env({ on: true, tab: "home" }); await other.t.renderPlacesTab();
   assert.strictEqual(other.nodes.body.innerHTML, "");
   const none = env({ on: true, tab: "places", profile: null }); await none.t.renderPlacesTab();
-  assert.ok(none.nodes.body.innerHTML.includes("아이와 지역을 등록하면"), "프로필 없음 → 등록 안내");
+  assert.ok(none.nodes.body.innerHTML.includes("프로필에서 지역을 정하면 거리로 볼 수 있어요"), "프로필(지역) 없음 → 거리 안내");
 });
-test("[일정 추가](G2): 장소 상세 시트의 일정 등록 단계가 바로 열린다(기존 일정 폼은 열지 않음), 가구 없으면 등록 없이 상세+안내, 바꾸기는 프로필 시트", async () => {
+test("[일정 추가](G2): 장소 상세 시트의 일정 등록 단계가 바로 열린다(기존 일정 폼은 열지 않음), 가구 없으면 등록 없이 상세+안내", async () => {
   const e = env({ on: true, tab: "places" });
   await e.t.renderPlacesTab();
   const pl = PLACES.places[0];
@@ -94,8 +94,6 @@ test("[일정 추가](G2): 장소 상세 시트의 일정 등록 단계가 바�
   await nh.t.renderPlacesTab();
   nh.t.placesOnClick({ target: { closest: (s) => (s === "[data-places-add]" ? { getAttribute: () => pl.id } : null) } });
   assert.ok(nh.log.shown === 0 && nh.nodes.content.innerHTML.includes('data-places-detail="info"') && nh.nodes.content.innerHTML.includes("가족 캘린더를 만들면 일정으로 등록할 수 있어요") && !nh.nodes.content.innerHTML.includes("data-places-reg-open"));
-  e.t.placesOnClick({ target: { closest: (s) => (s === '[data-places-action="change"]' ? {} : null) } });
-  assert.strictEqual(e.log.profileSheet, 1);
 });
 test("switchTab: places 로 가면 어디갈까를 그린다(소스), 플래그 OFF 에서는 places nav 가 숨겨져 도달 불가", () => {
   assert.ok(/window\.scrollTo\(0, 0\);\n    if \(name === "places"\) renderPlacesTab\(\);/.test(APP));

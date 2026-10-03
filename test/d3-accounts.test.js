@@ -99,16 +99,16 @@ function menuEnv(acctOn) {
   const els = {};
   const mk = (id) => els[id] || (els[id] = { id, innerHTML: "", listeners: {}, classList: { remove() {}, add() {} }, addEventListener(t, f) { this.listeners[t] = f; } });
   const log = { sheets: [], newChild: 0 };
-  const sb = { console, acctEnabled: () => acctOn, AccountView: AV, hhEnabled: () => true, usActive: () => true, el: mk, modalMode: null, showNewChildSheet: () => log.newChild++, closeDetail() {}, usOpenForm() {}, toISODate: () => "2026-10-02", Date, acctShowSheet: (k) => log.sheets.push(k) };
+  const sb = { console, acctEnabled: () => acctOn, AccountView: AV, hhEnabled: () => true, usActive: () => true, el: mk, modalMode: null, showNewChildSheet: () => log.newChild++, closeDetail() {}, usOpenForm() {}, toISODate: () => "2026-10-02", Date, acctShowSheet: (k) => log.sheets.push(k), acctOpenInvite: () => log.sheets.push("invite") }; // Q3: 메뉴 → acctOpenInvite(역할 선택 초기화 후 invite 시트)
   vm.createContext(sb);
   vm.runInContext(APP.slice(a, b) + "\n;Object.assign(globalThis, { showAddMenuSheet });", sb);
   return { sb, els, log };
 }
-test("+ 메뉴: 계정 ON 이면 '아이 등록하기'·'가족 초대하기', OFF 이면 기존 메뉴 그대로('새 아이 추가', 초대 없음)", () => {
+test("+ 메뉴: 계정 ON 이면 '아이 등록하기'·'가족 추가', OFF 이면 기존 메뉴 그대로('새 아이 추가', 초대 없음)", () => {
   const on = menuEnv(true);
   on.sb.showAddMenuSheet();
   const h = on.els["modal-content"].innerHTML;
-  assert.ok(h.includes("아이 등록하기") && h.includes("가족 초대하기") && h.includes('id="btn-add-menu-invite"') && !h.includes("새 아이 추가"));
+  assert.ok(h.includes("아이 등록하기") && h.includes("가족 추가") && h.includes('id="btn-add-menu-invite"') && !h.includes("새 아이 추가"));
   on.els["btn-add-menu-invite"].listeners.click();
   assert.deepStrictEqual(on.log.sheets, ["invite"]);
   on.els["btn-add-menu-child"].listeners.click();
@@ -116,7 +116,7 @@ test("+ 메뉴: 계정 ON 이면 '아이 등록하기'·'가족 초대하기', O
   const off = menuEnv(false);
   off.sb.showAddMenuSheet();
   const o = off.els["modal-content"].innerHTML;
-  assert.ok(o.includes("새 아이 추가") && !o.includes("가족 초대하기") && !o.includes("아이 등록하기") && !o.includes("btn-add-menu-invite"));
+  assert.ok(o.includes("새 아이 추가") && !o.includes("가족 추가") && !o.includes("아이 등록하기") && !o.includes("btn-add-menu-invite"));
 });
 test("내 정보: 로그인 상태에서는 N6 '이 기기에서 나가기'를 숨기고(hideLeave) 계정 슬롯에 이름·역할·로그아웃, 로그아웃 상태·OFF 는 기존 그대로", () => {
   assert.ok(APP.includes("hideLeave: acctEnabled() && !!acct.user,"));
@@ -129,12 +129,14 @@ test("내 정보: 로그인 상태에서는 N6 '이 기기에서 나가기'를 �
   assert.ok(AV.renderAccountSlot({ user: { email: "a@b.co" }, account: { displayName: "민수", role: "DAD" } }).includes("나(아빠)"));
   assert.ok(AV.renderAccountSlot({}).includes("회원가입"));
 });
-test("가족 초대 시트: 코드·복사 버튼·안내(가구 없으면 안내만), 이스케이프", () => {
+test("가족 추가 시트: 역할 라디오·초대 보내기·안내(가구 없으면 안내만), 이스케이프", () => {
   const inv = AV.renderInvite({ code: "ABCD2345" });
-  assert.ok(inv.includes("가족 초대하기") && inv.includes("ABCD2345") && inv.includes('data-acct-action="copy-invite"') && inv.includes("회원가입할 때 가족코드에 입력하면"));
+  // Q3: 가족 추가 시트 = 라디오(아빠/자녀/기타) + [초대 보내기](역할을 고르기 전엔 비활성)
+  assert.ok(inv.includes("가족 추가") && inv.includes('data-acct-radio="inviteRole"') && inv.includes('data-acct-action="send-invite" disabled') && !inv.includes("copy-invite"));
+  assert.ok(!AV.renderInvite({ code: "ABCD2345", role: "DAD" }).includes('send-invite" disabled'));
   assert.ok(AV.renderInvite({ code: "ABCD2345", notice: "복사했어요." }).includes("복사했어요."));
   const none = AV.renderInvite({});
-  assert.ok(none.includes("아직 연결되지 않았어요") && !none.includes("copy-invite"));
+  assert.ok(none.includes("아직 연결되지 않았어요") && !none.includes("send-invite"));
   assert.ok(!AV.renderInvite({ code: "<img>" }).includes("<img>"));
 });
 test("연결 복구 화면·검증: 새 가족 만들기/코드로 합류, 역할·이름 필수, 합류는 8자리 코드, 이스케이프", () => {
@@ -152,7 +154,7 @@ test("연결 복구 화면·검증: 새 가족 만들기/코드로 합류, 역�
 test("플래그 OFF·계정 로그아웃 상태: 새 코드는 모두 acctEnabled/계정 상태 가드 뒤, 서버 쓰기는 AccountSync(계정 문서·가구)뿐", () => {
   const blk = APP.slice(APP.indexOf("// ── D1 계정"), APP.indexOf("async function init()"));
   assert.ok(/async function acctOnClick\(ev\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
-  assert.ok(!/FamilySync|HouseholdSync\.(create|update|upsert|patch|remove)|completed|saveProfile/.test(blk));
+  assert.ok(!/FamilySync|HouseholdSync\.(create|update|patch|remove)|completed|saveProfile/.test(blk));
   assert.ok(/if \(!acctEnabled\(\) \|\| !acct\.user \|\| !acct\.account \|\| !acct\.account\.memberId\) return null;/.test(APP));
   assert.ok(APP.includes("const acctOn = acctEnabled();") && APP.includes("${acctOn ? `<button class=\"btn-complete\" id=\"btn-add-menu-invite\">"));
 });

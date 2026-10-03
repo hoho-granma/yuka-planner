@@ -29,13 +29,17 @@
   }
   /** 구성원 role → accounts 문서 role(규칙은 MOM·DAD·CHILD·CAREGIVER 만 허용). */
   const accountRoleOf = (role) => (ACCOUNT_ROLES.includes(role) ? role : "CAREGIVER");
-  function chooseMember(members, { role, uid, displayName, slotMemberId }) {
+  function chooseMember(members, { role, uid, displayName, slotMemberId, claimRole }) {
     const list = (Array.isArray(members) ? members : Object.entries(members || {}).map(([memberId, m]) => ({ memberId, ...m }))).filter((m) => m && !m.deletedAt);
     const mine = list.find((m) => m.uid === uid);
     if (mine) return { memberId: mine.memberId, role: mine.role, label: mine.label, order: mine.order || 1, claimed: true };
     if (slotMemberId) { // 합류하는 사람이 고른 자리(아직 uid 가 없는 것만) — 역할·이름은 자리의 것을 쓴다
       const slot = list.find((m) => m.memberId === slotMemberId && !m.uid);
       if (slot) return { memberId: slot.memberId, role: slot.role, label: slot.label, order: slot.order || 1, claimed: true };
+    }
+    if (claimRole) { // 초대 링크로 가입: 초대한 사람이 만들어 둔 그 역할의 빈 자리(uid 없음)를 차지한다
+      const open = list.filter((m) => m.role === role && !m.uid).sort((a, b) => (a.order || 0) - (b.order || 0))[0];
+      if (open) return { memberId: open.memberId, role: open.role, label: open.label, order: open.order || 1, claimed: true };
     }
     if (SEED_ROLES.includes(role)) {
       const seed = list.filter((m) => m.role === role && !m.uid).sort((a, b) => (a.order || 0) - (b.order || 0))[0];
@@ -95,7 +99,7 @@
           mirror = household.getMirror(hid);
           created = true;
         }
-        const pick = chooseMember((mirror && mirror.members) || {}, { role: intent.role, uid, displayName: intent.displayName, slotMemberId: intent.slotMemberId });
+        const pick = chooseMember((mirror && mirror.members) || {}, { role: intent.memberRole || intent.role, uid, displayName: intent.displayName, slotMemberId: intent.slotMemberId, claimRole: !!intent.memberRole });
         const w = await household.upsertMember(hid, { ...(pick.memberId ? { memberId: pick.memberId } : {}), role: pick.role, label: pick.label, order: pick.order, uid });
         if (!w || !w.ok || !w.memberId) return { ok: false, reason: "network", step: "member" };
         await adapter.set(pathOf(uid), { householdId: hid, householdCode: code, memberId: w.memberId, updatedAt: now() }, { merge: true });

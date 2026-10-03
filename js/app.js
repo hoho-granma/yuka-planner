@@ -788,6 +788,31 @@
     }
     el("profile-location-text").textContent = `${profile.province} ${profile.district}`;
     el("profile-avatar").innerHTML = avatarInnerHTML(profile.photoDataUrl, childDisplayName());
+    acctRenderMeLine();
+  }
+  /** Q1: 계정 모드에서 로그인한 사람의 '내 이름 · 나(역할)'. 계정(accounts)과 내 구성원(members) 기준이며 아이 이름과 섞이지 않는다. 없으면 null. */
+  function acctIdentity() {
+    if (!acctEnabled() || !acct.user) return null;
+    const meId = usMeId();
+    const m = meId ? usMembers().find((x) => x.memberId === meId) : null;
+    const name = (acct.account && acct.account.displayName) || (m && m.label) || acct.user.displayName || "";
+    const roleName = m ? HouseholdView.roleLabelOf(m) : acct.account && acct.account.role ? ((AccountView.ROLES.find(([k]) => k === acct.account.role) || [])[1] || "").replace(/\(.*\)/, "") : "";
+    return name ? { name, roleName } : null;
+  }
+  /** 홈 프로필 카드 위에 '주연 · 나(엄마)' 한 줄(로그인 상태에서만, 없으면 숨김). 마크업은 이 함수가 만든다(OFF 화면 HTML 불변). */
+  function acctRenderMeLine() {
+    const box = el("profile-name-age") && el("profile-name-age").parentNode;
+    if (!box) return;
+    let line = box.querySelector && box.querySelector("#profile-me-line");
+    const id = acctIdentity();
+    if (!id) { if (line) line.remove(); return; }
+    if (!line) {
+      line = document.createElement("span");
+      line.id = "profile-me-line";
+      line.className = "profile-me-line";
+      box.insertBefore(line, box.firstChild);
+    }
+    line.textContent = id.roleName ? `${id.name} · ${AccountView.MSG.myRole(id.roleName)}` : id.name;
   }
 
   /** 프로필 카드를 탭하면 뜨는 바텀시트 — 상세정보 + 가족코드 복사 + 정보 다시 입력. */
@@ -983,11 +1008,26 @@
           console.error("아이 정보 동기화 실패", e);
         }
       }
+      hhSyncChildName(); // H1: 아이 이름을 바꾸면 가족 캘린더의 아이 링크(칩 이름)도 같이 바꾼다
       rememberChild();
       closeDetail();
       openMonthGroups = null;
       await buildAndRender();
     });
+  }
+  /** 현재 아이의 가구 링크 displayName 을 프로필 이름에 맞춘다(링크가 없거나 이름이 같으면 아무것도 하지 않는다). 실패는 조용히 무시. */
+  function hhSyncChildName() {
+    try {
+      if (!hhEnabled() || !hh.hid || !familyCode || !profile || !profile.name) return;
+      const links = Object.entries((HouseholdSync.getMirror(hh.hid) || {}).children || {});
+      for (const [childKey, l] of links) {
+        if (l && l.familyCode === familyCode && !l.removedAt && l.displayName !== profile.name) {
+          Promise.resolve(HouseholdSync.updateChild(hh.hid, childKey, { displayName: profile.name })).catch((e) => console.error("아이 이름 동기화 실패", e));
+        }
+      }
+    } catch (e) {
+      console.error("아이 이름 동기화 실패", e);
+    }
   }
 
   function renderCalLegend() {
@@ -2103,45 +2143,76 @@
     closeDetail();
     switchTab("record");
   }
-  let placesData = null; // data/places.json(편집 추천) — 처음 한 번만 읽는다
+  let placesData = null; // data/places.json — 처음 한 번만 읽는다
   let placesLoading = null;
   let placesCat = "ALL";
+  let placesOffices = null; // data/district-offices.json(기준점 시·군·구청 좌표) — 없으면 거리 기능은 꺼진다
+  let placesOfficesLoading = null;
+  let placesStats = {}; // placeStats/{id} {count} — 인기순 정렬용(화면에 숫자는 내지 않는다). 못 읽으면 빈 값
+  let placesStatsLoading = null;
+  let placesDriveMax = null; // null=전체 / 30 / 60 / 90 (이 실행 동안만)
+  let placesSort = "near"; // "near" | "popular"
   async function loadPlaces() {
     if (placesData) return placesData;
-    if (!placesLoading) placesLoading = loadJsonOrNull("data/places.json").then((d) => { placesData = d && Array.isArray(d.places) ? d : { places: [], status: "준비 중" }; return placesData; });
+    if (!placesLoading) placesLoading = loadJsonOrNull("data/places.json").then((d) => { placesData = d && Array.isArray(d.places) ? d : { places: [] }; return placesData; });
     return placesLoading;
   }
+  async function loadPlacesOffices() {
+    if (placesOffices) return placesOffices;
+    if (!placesOfficesLoading) placesOfficesLoading = loadJsonOrNull("data/district-offices.json").then((d) => { placesOffices = d && typeof d === "object" ? d : {}; return placesOffices; });
+    return placesOfficesLoading;
+  }
+  /** 인기순 신호: placeStats 컬렉션을 읽는다. 규칙 미배포·오프라인이면 조용히 빈 값. */
+  async function loadPlacesStats() {
+    if (!placesStatsLoading) {
+      placesStatsLoading = (async () => {
+        try {
+          if (typeof firebase === "undefined" || !firebase.firestore) return;
+          const snap = await firebase.firestore().collection("placeStats").get();
+          const m = {};
+          snap.docs.forEach((d) => { const c = d.data() && d.data().count; if (typeof c === "number") m[d.id] = { count: c }; });
+          placesStats = m;
+        } catch (e) { /* 조용히 무시 */ }
+      })();
+    }
+    return placesStatsLoading;
+  }
+  const PLACES_COUNTED_KEY = "hannun_place_counted"; // { 장소id: "YYYY-MM-DD" } — 같은 기기에서 같은 장소는 하루 1회만 센다
+  /** 일정 등록을 마친 장소의 인기 신호 +1(하루 1회/기기). 쓰기가 실패하면(규칙 미배포) 조용히 무시한다. */
+  async function placesCountOnce(placeId) {
+    if (!placeId) return;
+    const today = toISODate(new Date());
+    let map = {};
+    try { map = JSON.parse(localStorage.getItem(PLACES_COUNTED_KEY) || "{}") || {}; } catch (e) { map = {}; }
+    if (map[placeId] === today) return;
+    try {
+      map[placeId] = today;
+      localStorage.setItem(PLACES_COUNTED_KEY, JSON.stringify(map));
+    } catch (e) { return; }
+    try {
+      if (typeof firebase === "undefined" || !firebase.firestore) return;
+      const FV = firebase.firestore.FieldValue;
+      await firebase.firestore().collection("placeStats").doc(placeId).set({ count: FV.increment(1), updatedAt: FV.serverTimestamp() }, { merge: true });
+      const cur = (placesStats[placeId] && placesStats[placeId].count) || 0;
+      placesStats[placeId] = { count: cur + 1 };
+    } catch (e) { /* 규칙 미배포·오프라인: 조용히 무시 */ }
+  }
   let placesFilters = { indoor: false, free: false, noReserve: false }; // 보조 필터(이 실행 동안만)
-  let placesBrowse = null; // '다른 지역 둘러보기'로 고른 보기용 지역 { province, district }(프로필은 바꾸지 않는다)
   function placesViewHtml() {
     const d = placesData || { places: [] };
     const valid = d.places.filter((p) => Places.validatePlace(p).length === 0);
-    const child = profile ? { name: childDisplayName(), ageLabel: isPregnant() ? "임신 중" : ChildTimeline.ageLabelAt(profile.birthDate, new Date()) } : null;
-    const region = profile ? { province: profile.province, district: profile.district } : null;
     const age = profile && !isPregnant() ? ageInMonths(profile.birthDate, new Date()) : null;
-    // 지역이 준비 중인가: 내 시·군·구에 장소가 없다(같은 시·도의 다른 시·군·구는 뒤에 이어서 보여 준다). 시·도에도 없으면 전체를 보여 준다.
-    const mine = region && region.province ? valid.filter((p) => p.province === region.province && (!region.district || p.district === region.district)) : [];
-    const preparing = !!region && region.province && mine.length === 0;
-    const eff = placesBrowse || region;
-    const sameProvince = eff && eff.province && valid.some((p) => p.province === eff.province);
-    let list = Places.filterPlaces(valid, { province: sameProvince ? eff.province : null, district: sameProvince ? eff.district : null, ageMonths: age, category: placesCat, ...placesFilters });
-    if (placesBrowse) list = list.filter((p) => p.province === placesBrowse.province && (!placesBrowse.district || p.district === placesBrowse.district)); // 둘러보기로 고른 지역만
-    const fallback = preparing ? { regions: Places.regionsOf(valid), current: placesBrowse, coverage: d.coverage } : null;
-    // G4: 내 시군구에 장소가 있고 둘러보기·폴백이 아니면 두 묶음('우리 동네'·'가까운 지역')으로 나눈다(필터·분류는 두 묶음 모두에 적용됨 — list 가 이미 걸러져 있다).
-    let groups = null;
-    if (!preparing && !placesBrowse && region && region.province && region.district) {
-      const T = PlacesView.TEXT;
-      groups = [
-        { title: T.groupMine(region.district), places: list.filter((p) => p.province === region.province && p.district === region.district) },
-        { title: T.groupNear(region.province), places: list.filter((p) => !(p.province === region.province && p.district === region.district)) },
-      ];
-    }
-    return PlacesView.render({ places: list, groups, child, region, category: placesCat, status: d.status, filters: placesFilters, showNoReserve: Places.hasNoReserve(valid), fallback });
+    const origin = profile ? Places.originOf(placesOffices, profile.province, profile.district) : null;
+    const sort = placesSort === "near" && !origin ? "near" : placesSort;
+    let list = Places.filterPlaces(valid, { ageMonths: age, category: placesCat, ...placesFilters });
+    list = Places.filterByDrive(list, origin, placesDriveMax);
+    list = Places.sortPlaces(list, sort, origin, placesStats);
+    return PlacesView.render({ places: list, category: placesCat, filters: placesFilters, showNoReserve: Places.hasNoReserve(valid), origin, driveMax: origin ? placesDriveMax : null, sort });
   }
   async function renderPlacesTab() {
     const body = el("places-body");
     if (!body || typeof PlacesView === "undefined") return;
-    await loadPlaces();
+    await Promise.all([loadPlaces(), loadPlacesOffices(), loadPlacesStats()]);
     if (currentTab !== "places") return;
     body.innerHTML = placesViewHtml();
   }
@@ -2159,10 +2230,16 @@
       el("places-body").innerHTML = placesViewHtml();
       return;
     }
-    const br = ev.target.closest("[data-places-browse]");
-    if (br) {
-      const [province, district] = (br.getAttribute("data-places-browse") || "").split("|");
-      placesBrowse = province ? { province, district: district || null } : null;
+    const dr = ev.target.closest("[data-places-drive]");
+    if (dr) {
+      const v = dr.getAttribute("data-places-drive");
+      placesDriveMax = v === "all" ? null : Number(v) || null;
+      el("places-body").innerHTML = placesViewHtml();
+      return;
+    }
+    const so = ev.target.closest("[data-places-sort]");
+    if (so) {
+      placesSort = so.getAttribute("data-places-sort") === "popular" ? "popular" : "near";
       el("places-body").innerHTML = placesViewHtml();
       return;
     }
@@ -2171,10 +2248,6 @@
     if (add) {
       const place = find(add.getAttribute("data-places-add"));
       if (place) placesDetailOpen(place, "register");
-      return;
-    }
-    if (ev.target.closest('[data-places-action="change"]')) {
-      if (profile) showProfileSheet();
       return;
     }
     if (ev.target.closest("a")) return; // 카드 안 외부 링크는 그대로 열린다
@@ -2265,6 +2338,7 @@
       r.mode = "done";
       r.doneDate = r.date;
       r.doneLabel = PlacesView.dateLabel(r.date);
+      placesCountOnce(r.place.id); // 인기순 신호(하루 1회/기기, 실패는 조용히 무시)
       usRefreshCalendar();
       placesDetailRender();
     } catch (e) {
@@ -2590,7 +2664,7 @@
       <button class="btn-close" id="btn-add-menu-close">${ADD_MENU_MSG.close}</button>
     `;
     el("detail-modal").classList.remove("hidden");
-    if (acctOn) el("btn-add-menu-invite").addEventListener("click", () => acctShowSheet("invite"));
+    if (acctOn) el("btn-add-menu-invite").addEventListener("click", () => acctOpenInvite());
     el("btn-add-menu-close").addEventListener("click", closeDetail);
     el("btn-add-menu-child").addEventListener("click", showNewChildSheet);
     el("btn-add-menu-schedule").addEventListener("click", () => {
@@ -4273,6 +4347,7 @@
   const ACCT_INTENT_KEY = "hannun_account_intent";
   const acct = { svc: null, sync: null, user: null, account: null, joining: false, recoverShown: false, form: {}, errors: {}, error: null, busy: false, completing: false, restoring: false, notice: null, mode: null, migrate: null };
   function acctInit() {
+    if (acctJoinLinkStart()) return; // Q3: 계정 기능이 꺼진 기기는 켠 뒤 새로고침
     if (!acctEnabled()) return;
     acct.svc = AuthService.create();
     // D2: accounts 문서·가구 연결(가짜 어댑터로 테스트 가능). 같은 Firestore 어댑터를 쓰되 계정 문서 쓰기는 이 서비스만 한다.
@@ -4281,6 +4356,8 @@
       acct.user = u;
       acctRenderLanding();
       acctRenderSlot();
+      if (u) acct.pendingLink = null; // 이미 로그인된 기기는 초대 링크를 무시한다
+      else if (acct.pendingLink) acctOpenLinkSignup(); // Q3: 링크로 들어오면 바로 회원가입(합류) 시트
       if (u) acctRestore(u); // 로그인 상태가 되면(다른 기기 로그인·앱 재시작) 계정 가구를 이 기기에 복원한다
     });
     const ep = el("empty-panel");
@@ -4390,8 +4467,7 @@
       : acct.mode === "me" ? AccountView.renderMe({ user: acct.user, account: acct.account, code: hh.code, notice: acct.notice })
       : acct.mode === "role" ? AccountView.renderRolePick({ form: acct.form, errors: acct.errors, busy: acct.busy, error: acct.error })
       : acct.mode === "slot" ? AccountView.renderSlotPick({ slots: acct.slotPick && acct.slotPick.slots, busy: acct.busy, error: acct.error })
-      : acct.mode === "reissue" ? AccountView.renderReissueConfirm({ busy: acct.busy, error: acct.error })
-      : acct.mode === "invite" ? AccountView.renderInvite({ code: hh.code, notice: acct.notice })
+      : acct.mode === "invite" ? AccountView.renderInvite({ code: hh.code, role: acct.form && acct.form.inviteRole, notice: acct.notice, busy: acct.busy, error: acct.error })
       : acct.mode === "migrate" ? AccountView.renderMigrate({ kids: acct.migrate && acct.migrate.kids, conflict: !!(acct.migrate && acct.migrate.switchTo), busy: acct.busy, error: acct.error })
       : acct.mode === "recover" ? AccountView.renderRecover({ ...st, joining: acct.joining })
       : AccountView.renderLogoutConfirm({ pending: acct.pending || 0 });
@@ -4440,6 +4516,7 @@
   };
   /** 계정 정보(내 구성원)가 바뀐 뒤 캘린더 칩·기본 선택을 다시 그린다(앱 시작 전에는 함수가 없을 수 있다). */
   function acctRefreshCalendar() {
+    if (typeof acctRenderMeLine === "function" && profile && acctEnabled()) acctRenderMeLine(); // Q1: 로그인·복원·로그아웃 뒤 내 이름 줄 갱신
     if (typeof usRefreshCalendar === "function") usRefreshCalendar();
   }
   /** 이 계정의 가구 연결이 끝났는가(accounts 에 householdCode 가 기록됨). 계정 동기화가 없거나(D1) 연결 완료가 확인되면 true, 확인 못 하면 false(의도를 남긴다). */
@@ -4659,6 +4736,105 @@
     }
   }
 
+  /** Q3 가족 추가 시트 열기(역할 선택은 비워 둔다). */
+  function acctOpenInvite() {
+    acct.form = {};
+    acct.notice = null;
+    acct.error = null;
+    acctShowSheet("invite");
+  }
+  /** Q3 [초대 보내기]: 그 역할의 빈 자리(uid 없는 구성원)를 만들거나 이미 있으면 다시 쓰고, 초대 문구를 공유(없으면 복사)한다. */
+  async function acctSendInvite() {
+    const role = acct.form && acct.form.inviteRole;
+    if (!AccountView.INVITE_ROLES.some(([k]) => k === role) || !hh.hid || !hh.code || acct.busy) return;
+    acct.busy = true;
+    acct.error = null;
+    acct.notice = null;
+    acctShowSheet("invite");
+    try {
+      const members = usMembers();
+      const visible = HouseholdView.visibleMembers(members);
+      const open = visible.find((m) => !m.uid && m.role === role);
+      if (!open) {
+        if (visible.length >= HouseholdView.MEMBER_MAX) throw new Error("member-max");
+        const r = await HouseholdSync.upsertMember(hh.hid, { role, label: AccountView.INVITE_LABEL[role], order: HouseholdView.nextMemberOrder(members) });
+        if (!r || !r.ok) throw new Error((r && r.reason) || "invite-slot-failed");
+      }
+      const id = acctIdentity();
+      const text = AccountView.inviteText(id ? id.name : "한눈육아 가족", id && id.roleName, AccountView.inviteLink(hh.code, role, usMeId() || ""), hh.code);
+      let shared = false;
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        try {
+          await navigator.share({ text });
+          shared = true;
+        } catch (e) {
+          if (e && e.name === "AbortError") { acct.busy = false; return acctShowSheet("invite"); } // 사용자가 공유창을 닫음
+        }
+      }
+      if (!shared) {
+        try {
+          await navigator.clipboard.writeText(text);
+          acct.notice = AccountView.MSG.inviteTextCopied;
+        } catch (e) {
+          acct.error = AccountView.MSG.inviteFail;
+        }
+      }
+      acctRefreshCalendar(); // 새 빈 자리 칩이 바로 생긴다
+    } catch (e) {
+      console.error("초대 실패", e);
+      acct.error = e && e.message === "member-max" ? HouseholdView.MSG.memMax : AccountView.MSG.inviteFail;
+    }
+    acct.busy = false;
+    acctShowSheet("invite");
+  }
+  /** Q3 초대 링크(?join=&role=&from=): 주소에서 지우고(history.replaceState), 형식이 맞으면 첫 화면을 바로 회원가입(합류)으로 연다. 계정 기능이 꺼진 기기는 켠 뒤 다시 불러온다. */
+  const JOIN_LINK_KEY = "hannun_join_link";
+  function acctReadJoinLink() {
+    try {
+      if (typeof AccountView === "undefined" || typeof location === "undefined") return null;
+      const q = new URLSearchParams(location.search);
+      let link = null;
+      if (q.has("join") || q.has("role") || q.has("from")) {
+        link = AccountView.parseJoinParams(location.search); // 잘못된 코드는 null → 무시
+        ["join", "role", "from"].forEach((k) => q.delete(k));
+        const rest = q.toString();
+        if (history && history.replaceState) history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "") + location.hash);
+        if (link) { try { sessionStorage.setItem(JOIN_LINK_KEY, JSON.stringify(link)); } catch (e) {} }
+      }
+      let saved = null;
+      try { saved = JSON.parse(sessionStorage.getItem(JOIN_LINK_KEY) || "null"); } catch (e) {}
+      return saved && /^[A-Z0-9]{8}$/.test(saved.code || "") ? saved : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  /** 앱 시작 때 한 번. 반환 true 면 계정 기능을 켜기 위해 새로고침 중이다. */
+  function acctJoinLinkStart() {
+    const link = acctReadJoinLink();
+    if (!link) return false;
+    if (!acctEnabled()) {
+      try {
+        PREVIEW_KEYS.forEach((k) => localStorage.setItem(k, "1")); // 베타 미리 써 보기와 같은 키(이 기기에서만). 링크는 sessionStorage 에 남겨 새로고침 뒤 이어서 처리한다.
+      } catch (e) {
+        return false;
+      }
+      location.reload();
+      return true;
+    }
+    acct.pendingLink = link;
+    try { sessionStorage.removeItem(JOIN_LINK_KEY); } catch (e) {}
+    return false;
+  }
+  function acctOpenLinkSignup() {
+    const link = acct.pendingLink;
+    acct.pendingLink = null;
+    if (!link) return;
+    acct.form = { join: true, fromLink: true, familyCode: link.code, role: link.role || "", from: link.from || "" };
+    acct.errors = {};
+    acct.error = null;
+    acct.mode = "signup";
+    acctShowSheet("signup");
+  }
   /** 고른 자리를 가입 의도에 반영: 자리 id + 계정 role(규칙이 허용하는 4종으로 변환). */
   function acctApplySlot(intent, slot) {
     intent.slotMemberId = slot.memberId;
@@ -4711,16 +4887,12 @@
     }
     if (action === "beta-off-ask") return previewShowSheet(false);
     if (action === "close") return closeDetail();
-    if (action === "logout") {
-      acct.pending = hh.hid ? HouseholdSync.getStatus(hh.hid).pending : 0;
-      return acctShowSheet("logout");
-    }
-    if (action === "confirm-logout") {
+    if (action === "logout" || action === "confirm-logout") { // P1: 확인 시트 없이 바로 로그아웃(서버 데이터는 지우지 않는다)
       // 가입 의도는 가구 연결이 끝난 계정에서만 지운다. 연결이 안 끝났으면(일시 오류 등) 남겨 두어 다시 로그인할 때 이어서 연결한다.
       const linked = await acctIsLinked(acct.user && acct.user.uid);
       // D4: 이 기기 가구가 이 계정의 가구면, 로그아웃 전에 대기열을 한 번 더 보내 보고 로그아웃 뒤 이 기기의 가구 연결을 정리한다(다른 계정 로그인 시 혼선 방지).
       const own = !!(hh.hid && hh.code && acct.account && acct.account.householdCode === hh.code);
-      if (own) {
+      if (hh.hid) {
         try {
           await HouseholdSync.flush(hh.hid);
         } catch (e) {}
@@ -4732,7 +4904,8 @@
         return acctShowSheet();
       }
       // 정리 범위: 가구 id·코드·미러·대기열·이 기기 사용자 키만. 아이·완료·기록·사진은 그대로 둔다.
-      if (own) {
+      // P1: 계정 모드에서는 이 기기의 가구 연결을 계정 가구와 같든 다르든 모두 정리한다(로그아웃한 계정의 가구가 다음 사람 화면에 남지 않게).
+      if (hh.hid) {
         try {
           hhLeaveLocal();
         } catch (e) {
@@ -4746,14 +4919,14 @@
       acct.migrate = null;
       us.selection = [];
       us.selTouched = false;
-      if (emptyHome && !profile) {
-        hideEmptyHome(); // D5: 아이가 없는 홈에서 로그아웃하면 처음 화면으로
-        showLandingView();
-      }
+      // P1: 로그아웃하면 아이가 있어도 곧바로 첫 화면(온보딩)으로 간다(예전엔 아이 없는 홈에서만 이동해 캘린더가 그대로 남았다).
+      hideEmptyHome();
+      acctBrowse = false;
       acct.recoverShown = false;
       acct.form = {};
       acct.notice = AccountView.MSG.loggedOut;
       closeDetail();
+      showLandingView();
       acctRenderLanding();
       acctRenderSlot();
       acctRefreshCalendar();
@@ -4813,41 +4986,14 @@
       if (action === "copy-me" && el("acct-slot")) return acctRenderSlot(); // 프로필 시트 안: 시트를 바꾸지 않고 그 자리에서 복사 안내
       return acctShowSheet(action === "copy-me" ? "me" : "invite");
     }
-    if (action === "open-invite") return acctShowSheet("invite");
+    if (action === "open-invite") return acctOpenInvite();
+    if (action === "send-invite") return acctSendInvite();
     if (action === "open-recover") {
       acct.form = {};
       acct.errors = {};
       acct.error = null;
       acct.joining = false;
       return acctShowSheet("recover");
-    }
-    if (action === "ask-reissue") {
-      acct.error = null;
-      return acctShowSheet("reissue");
-    }
-    if (action === "cancel-reissue") {
-      acct.error = null;
-      return acctShowSheet("me");
-    }
-    if (action === "confirm-reissue") {
-      if (!hh.hid || !hh.code) return acctShowSheet("me");
-      acct.busy = true;
-      acct.error = null;
-      acctShowSheet("reissue");
-      try {
-        const r = await HouseholdSync.reissueCode(hh.hid, hh.code);
-        if (!r || !r.ok) throw new Error((r && r.reason) || "reissue-failed");
-        hh.code = r.code;
-        if (acct.account) acct.account.householdCode = r.code;
-        if (acct.sync && acct.user && acct.sync.setHouseholdCode) await acct.sync.setHouseholdCode(acct.user.uid, r.code);
-        acct.notice = AccountView.MSG.reissueDone;
-        acct.busy = false;
-        return acctShowSheet("me");
-      } catch (e) {
-        acct.busy = false;
-        acct.error = AccountView.MSG.reissueFail;
-        return acctShowSheet("reissue");
-      }
     }
     if (action === "recover-join-open" || action === "recover-back") {
       acct.joining = action === "recover-join-open";
@@ -4916,7 +5062,7 @@
       }
       acct.user = r.user;
       // H2: 가족코드로 합류하면 가입하지 않은 자리 목록을 보여 준다(하나면 자동 선택, 없으면 기존처럼 직접 고른 역할).
-      if (v.intent.joiningCode && acct.sync) {
+      if (v.intent.joiningCode && acct.sync && !v.intent.memberRole) { // 초대 링크(memberRole)는 역할로 빈 자리를 바로 차지하므로 자리 선택을 건너뛴다
         let slots = [];
         try {
           const j = await HouseholdSync.peekMembers(v.intent.joiningCode); // 읽기 전용(저장된 가구 코드·미러를 바꾸지 않는다)

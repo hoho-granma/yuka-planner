@@ -35,7 +35,9 @@
       "summary": "일반자료실과 어린이자료실이 있는 구립 도서관이에요.",
       "checkedAt": "2026-10-02",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.49009,
+      "lng": 126.85785
     },
     {
       "id": "seoul-guro-park-001",
@@ -52,7 +54,9 @@
       "summary": "저수지와 주제정원, 숲교육센터가 있는 시립 수목원이에요. 가드닝·생태학습 프로그램을 운영해요.",
       "checkedAt": "2026-10-02",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.481524,
+      "lng": 126.823747
     },
     {
       "id": "seoul-guro-exp-001",
@@ -72,7 +76,9 @@
       "summary": "손 씻기·구강위생·영양·운동을 체험으로 배우는 어린이 건강교육 공간이에요. 사전 예약제예요.",
       "checkedAt": "2026-10-02",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": null,
+      "lng": null
     },
     {
       "id": "gyeonggi-yongin-park-001",
@@ -89,7 +95,9 @@
       "summary": "기흥구 하갈동·공세동·고매동 일원에 있고 10여 km 둘레길이 조성돼 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.226552,
+      "lng": 127.102432
     },
     {
       "id": "gyeonggi-yongin-park-002",
@@ -106,7 +114,9 @@
       "checkedAt": "2026-10-03",
       "summary": "호수 주변 산책로가 있고 음악분수와 야외무대가 설치돼 있어요(음악분수는 겨울에 운영하지 않아요).",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.275619,
+      "lng": 127.157199
     },
     {
       "id": "gyeonggi-yongin-park-003",
@@ -123,7 +133,9 @@
       "summary": "농경문화전시관, 경관농업단지, 체험관 등을 갖춘 농촌 체험 시설이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.172495,
+      "lng": 127.297411
     },
     {
       "id": "gyeonggi-yongin-lib-001",
@@ -140,7 +152,9 @@
       "summary": "영·유아와 초등학생이 이용할 수 있는 어린이도서관이고 평일 09:00~18:00, 주말 09:00~17:00에 운영해요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.226344,
+      "lng": 127.199266
     },
     {
       "id": "gyeonggi-yongin-lib-002",
@@ -157,7 +171,9 @@
       "summary": "초등학생 이하 어린이가 이용하는 1층 자료실이고 열람·대출, 회원증 발급, 도서관 견학을 할 수 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.289482,
+      "lng": 127.11807
     },
     {
       "id": "gyeonggi-yongin-lib-003",
@@ -174,7 +190,9 @@
       "summary": "수지도서관에서 어린이 도서를 열람하고 대출할 수 있는 어린이자료실이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.320077,
+      "lng": 127.094511
     },
     {
       "id": "gyeonggi-yongin-mus-001",
@@ -191,7 +209,9 @@
       "summary": "용인시가 운영하는 박물관으로 화요일부터 일요일까지 무료로 관람할 수 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.271095,
+      "lng": 127.156686
     },
     {
       "id": "gyeonggi-yongin-mus-002",
@@ -208,7 +228,9 @@
       "summary": "경기도 공립 미술관으로 유아(만 7세 이하)는 입장료가 무료이고 예술교육 프로그램도 운영해요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.269118,
+      "lng": 127.110568
     },
     {
       "id": "gyeonggi-yongin-exp-001",
@@ -225,7 +247,9 @@
       "summary": "용인자연휴양림 안에 있는 유아숲체험원으로, 모래놀이집과 어드벤처플레이 등을 갖추고 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": null,
+      "lng": null
     },
     {
       "id": "gyeonggi-yongin-exp-002",
@@ -242,7 +266,9 @@
       "summary": "한숲근린공원 안에 있는 유아숲체험원으로, 숲속교실과 모래놀이터 등을 갖추고 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.273893,
+      "lng": 127.154198
     },
     {
       "id": "gyeonggi-yongin-exp-003",
@@ -259,7 +285,9 @@
       "summary": "보라생태마당근린공원 안에 있는 유아숲체험원으로, 경사오르기와 밧줄놀이, 모래놀이터 등을 갖추고 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": null,
+      "lng": null
     },
     {
       "id": "gyeonggi-yongin-exp-004",
@@ -276,7 +304,9 @@
       "summary": "정암근린공원 안에 있는 유아숲체험원으로, 나뭇잎놀이터와 밧줄놀이 등을 갖추고 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.30318,
+      "lng": 127.07704
     },
     {
       "id": "gyeonggi-yongin-edu-001",
@@ -296,7 +326,9 @@
       "summary": "영유아 발달에 맞는 놀잇감과 도서를 연회비 1만원으로 빌려주는 장난감도서관이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": "장난감 대여는 회원 등록 후 이용할 수 있어요."
+      "notice": "장난감 대여는 회원 등록 후 이용할 수 있어요.",
+      "lat": null,
+      "lng": null
     },
     {
       "id": "gyeonggi-yongin-edu-002",
@@ -316,7 +348,9 @@
       "summary": "미취학 영유아 가정이 장난감과 도서를 대여할 수 있는 장난감도서관이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": "장난감 대여는 회원 등록 후 이용할 수 있어요."
+      "notice": "장난감 대여는 회원 등록 후 이용할 수 있어요.",
+      "lat": 37.277431,
+      "lng": 127.113562
     },
     {
       "id": "gyeonggi-seongnam-park-001",
@@ -333,7 +367,9 @@
       "summary": "도심 한가운데서 숲과 호수를 함께 볼 수 있는 녹지공간이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.411278,
+      "lng": 127.128824
     },
     {
       "id": "gyeonggi-seongnam-park-002",
@@ -350,7 +386,9 @@
       "summary": "원래의 자연을 살려 조성한 자연호수 공원이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.384795,
+      "lng": 127.154874
     },
     {
       "id": "gyeonggi-seongnam-lib-001",
@@ -367,7 +405,9 @@
       "summary": "36개월 이하 영아와 보호자를 위한 아기책나라와 유아와 보호자가 책을 읽는 유아열람실이 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.387298,
+      "lng": 127.107933
     },
     {
       "id": "gyeonggi-seongnam-lib-002",
@@ -384,7 +424,9 @@
       "summary": "어린이와 유아를 위한 자료실에 유아 및 아동도서를 갖추고 유아방도 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.345463,
+      "lng": 127.107762
     },
     {
       "id": "gyeonggi-seongnam-lib-003",
@@ -401,7 +443,9 @@
       "summary": "유아를 위한 유아가족열람실에 유아 및 아동도서를 갖추고 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.34004,
+      "lng": 127.121992
     },
     {
       "id": "gyeonggi-seongnam-lib-004",
@@ -418,7 +462,9 @@
       "summary": "유아와 보호자가 함께 읽는 가족열람실과 초등학생을 위한 어린이열람실이 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.377077,
+      "lng": 127.140708
     },
     {
       "id": "gyeonggi-seongnam-mus-001",
@@ -435,7 +481,9 @@
       "summary": "상설전시와 야외전시를 둔 박물관이고 개인은 예약 없이 현장에서 전시해설을 신청할 수 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.400971,
+      "lng": 127.095535
     },
     {
       "id": "gyeonggi-seongnam-mus-002",
@@ -452,7 +500,9 @@
       "summary": "전통과 현대, 동양과 서양이 만나는 미술관이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.395838,
+      "lng": 127.128264
     },
     {
       "id": "gyeonggi-seongnam-exp-001",
@@ -472,7 +522,9 @@
       "summary": "만 4세부터 10세 어린이가 직업 현장을 모의로 체험하는 어린이 체험관이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": "만 4세부터 이용할 수 있어요."
+      "notice": "만 4세부터 이용할 수 있어요.",
+      "lat": 37.378544,
+      "lng": 127.106616
     },
     {
       "id": "gyeonggi-seongnam-exp-002",
@@ -489,7 +541,9 @@
       "summary": "반딧불이가 사는 인공 습지와 잘 보존된 숲에서 자연을 느끼고 배우는 학습원이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": null,
+      "lng": null
     },
     {
       "id": "gyeonggi-seongnam-exp-003",
@@ -506,7 +560,9 @@
       "summary": "어린이 중심의 체험관에서 숲과 습지 같은 생태계를 관찰할 수 있어요. 개인은 예약 없이 전시를 볼 수 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.399851,
+      "lng": 127.101878
     },
     {
       "id": "gyeonggi-seongnam-edu-001",
@@ -523,7 +579,9 @@
       "summary": "취학 전 영유아 가정이 아이 연령에 맞는 놀잇감으로 자유롭게 노는 놀이공간이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": "성남시민·성남시 소재 직장 재직 가정만 이용할 수 있어요."
+      "notice": "성남시민·성남시 소재 직장 재직 가정만 이용할 수 있어요.",
+      "lat": 37.3662,
+      "lng": 127.142739
     },
     {
       "id": "gyeonggi-seongnam-edu-002",
@@ -540,7 +598,9 @@
       "summary": "취학 전 영유아 가정이 아이 연령에 맞는 놀잇감으로 자유롭게 노는 놀이공간이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": "성남시민·성남시 소재 직장 재직 가정만 이용할 수 있어요."
+      "notice": "성남시민·성남시 소재 직장 재직 가정만 이용할 수 있어요.",
+      "lat": 37.379526,
+      "lng": 127.115066
     },
     {
       "id": "gyeonggi-seongnam-edu-003",
@@ -557,7 +617,9 @@
       "summary": "취학 전 영유아 가정이 아이 연령에 맞는 놀잇감으로 자유롭게 노는 놀이공간이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": "성남시민·성남시 소재 직장 재직 가정만 이용할 수 있어요."
+      "notice": "성남시민·성남시 소재 직장 재직 가정만 이용할 수 있어요.",
+      "lat": 37.40612,
+      "lng": 127.116353
     },
     {
       "id": "gyeonggi-seongnam-edu-004",
@@ -574,7 +636,9 @@
       "summary": "도란도란 이야기놀이터라는 이름의 영유아 자유놀이 공간이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": "성남시민·성남시 소재 직장 재직 가정만 이용할 수 있어요."
+      "notice": "성남시민·성남시 소재 직장 재직 가정만 이용할 수 있어요.",
+      "lat": 37.391693,
+      "lng": 127.089461
     },
     {
       "id": "seoul-mus-002",
@@ -591,7 +655,9 @@
       "summary": "무료로 관람하는 온라인 예약제 어린이박물관이고, 5~9세 대상 전시실과 36개월 이하 영유아 공간인 데굴데굴놀이터가 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": "전시실은 5~9세 대상이고, 36개월 이하 아이를 위한 놀이 공간이 따로 있어요."
+      "notice": "전시실은 5~9세 대상이고, 36개월 이하 아이를 위한 놀이 공간이 따로 있어요.",
+      "lat": 37.523953,
+      "lng": 126.98032
     },
     {
       "id": "seoul-mus-003",
@@ -608,7 +674,9 @@
       "summary": "무료로 관람하는 어린이박물관이고, 홈페이지에서 1인당 1일 1회 사전 예약해야 입장할 수 있어요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": "보호자와 어린이가 함께 입장해야 하고, 예약 후 취소 없이 불참하면 60일간 관람이 제한될 수 있어요."
+      "notice": "보호자와 어린이가 함께 입장해야 하고, 예약 후 취소 없이 불참하면 60일간 관람이 제한될 수 있어요.",
+      "lat": 37.578906,
+      "lng": 126.979223
     },
     {
       "id": "seoul-mus-004",
@@ -625,7 +693,9 @@
       "summary": "관람료는 무료이고 일부 체험·교육 프로그램은 유료로 운영돼요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.641866,
+      "lng": 127.077269
     },
     {
       "id": "seoul-exp-001",
@@ -642,7 +712,9 @@
       "summary": "어린이를 위한 복합체험시설이고, 36개월 미만은 무료이며 36개월 이상 어린이와 성인은 4,000원이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": "36개월 미만은 무료, 개인 관람은 온라인 사전예약이에요."
+      "notice": "36개월 미만은 무료, 개인 관람은 온라인 사전예약이에요.",
+      "lat": 37.549193,
+      "lng": 127.083689
     },
     {
       "id": "seoul-edu-001",
@@ -659,7 +731,9 @@
       "summary": "서울시 보육·양육 지원과 양육코칭 같은 부모 교육을 운영하는 공공 센터예요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.549621,
+      "lng": 126.931256
     },
     {
       "id": "seoul-edu-002",
@@ -676,7 +750,9 @@
       "summary": "장난감, 도서, 육아용품을 빌려주고 장난감 수리와 기부·교환도 안내하는 곳이에요.",
       "checkedAt": "2026-10-03",
       "example": false,
-      "notice": null
+      "notice": null,
+      "lat": 37.512433,
+      "lng": 126.926987
     },
     {
       "id": "seoul-park-001",
@@ -693,7 +769,9 @@
       "summary": "식물원과 공원이 함께 있는 공원 속 식물원이고 열린숲·호수원·습지원은 늘 무료로 열려 있어요.",
       "notice": null,
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "lat": 37.572244,
+      "lng": 126.832843
     },
     {
       "id": "seoul-park-002",
@@ -710,7 +788,9 @@
       "summary": "숲과 문화가 어우러지는 서울의 대표적인 녹색 쉼터예요.",
       "notice": null,
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "lat": 37.541468,
+      "lng": 127.045438
     },
     {
       "id": "seoul-park-003",
@@ -727,7 +807,9 @@
       "summary": "어린이놀이터와 유아숲체험원, 유모차 대여·수유실이 있는 대형 녹지공원이에요.",
       "notice": null,
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "lat": 37.621569,
+      "lng": 127.038556
     },
     {
       "id": "seoul-park-004",
@@ -744,7 +826,9 @@
       "summary": "숲과 습지를 둘러보는 생태공원이에요. 사전 예약이나 당일 현장 등록으로 들어갈 수 있어요.",
       "notice": "하루 최대 400명까지 입장하고 매주 월요일은 쉬어요. 킥보드·자전거는 가져가지 않는 게 좋아요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "lat": 37.538479,
+      "lng": 127.123699
     },
     {
       "id": "seoul-park-005",
@@ -761,7 +845,9 @@
       "summary": "동식물이 함께 살아가는 생태공원이자 시민의 휴식공간이에요. 공원 입장은 무료예요.",
       "notice": "킥보드·자전거·반려동물은 들어갈 수 없어요. 공원 안 식물원은 2027년 하반기까지 운영을 멈춰요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "lat": 37.548886,
+      "lng": 127.080475
     },
     {
       "id": "seoul-lib-001",
@@ -778,7 +864,9 @@
       "summary": "유아와 초등 저학년 자료를 갖춘 어린이자료실에 이야기방과 그림책나라가 있어요.",
       "notice": "어린이는 보호자 신분증과 아이 신분 확인 서류가 필요하고, 자료는 도서관 안에서만 볼 수 있어요.",
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "lat": 37.500984,
+      "lng": 127.030088
     },
     {
       "id": "seoul-lib-002",
@@ -795,7 +883,9 @@
       "summary": "유·아동 자료열람실과 북스타트 공간, 수유실을 갖춘 어린이 도서관이에요.",
       "notice": null,
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "lat": 37.656583,
+      "lng": 127.052599
     },
     {
       "id": "seoul-lib-004",
@@ -812,7 +902,9 @@
       "summary": "신도림에 있는 구로구 기적의도서관이고 어린이자료실을 운영해요.",
       "notice": null,
       "checkedAt": "2026-10-03",
-      "example": false
+      "example": false,
+      "lat": 37.506696,
+      "lng": 126.877152
     }
   ],
   "coverage": "서울 대표 시설·성남시 분당구·용인시"

@@ -98,3 +98,11 @@
 /* G4: 우리 동네 / 가까운 지역 소제목, 카드의 시·군·구 표기 */
 .places-group-title { margin: 14px 0 8px; font-size: 14px; font-weight: 800; color: var(--text); }
 .places-badge-district { background: #fff; border: 1px solid var(--border); color: var(--text-muted); }
+
+/* P3: 거리·정렬 칩, 카드의 이동 시간, 출처 */
+.places-drive-row, .places-sort-row { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0; -webkit-overflow-scrolling: touch; }
+.places-drive-row .places-chip, .places-sort-row .places-chip { flex: 0 0 auto; white-space: nowrap; }
+.places-chip:disabled { opacity: 0.45; cursor: default; }
+.places-origin-hint { margin: 2px 0 6px; font-size: 12px; color: var(--text-muted); }
+.places-drive { margin: 2px 0; font-size: 12px; font-weight: 700; color: var(--accent-dark); }
+.places-source { margin: 4px 0 12px; font-size: 11px; color: var(--text-muted); text-align: center; }

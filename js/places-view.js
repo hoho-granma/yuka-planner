@@ -14,20 +14,23 @@
   "use strict";
 
   const TEXT = Object.freeze({
-    label: "편집 추천",
-    noProfile: "아이와 지역을 등록하면 맞춤 장소를 보여 드려요",
-    empty: "우리 동네 갈 만한 곳을 준비하고 있어요. 곧 편집 추천 장소를 보여 드릴게요.",
-    emptyCategory: "이 분류는 아직 준비하고 있어요. 다른 분류를 골라 보세요.",
+    empty: "조건에 맞는 곳이 없어요. 필터를 줄여 보세요.",
+    emptyCategory: "이 분류에는 조건에 맞는 곳이 없어요. 다른 분류를 골라 보세요.",
     emptyFilter: "조건에 맞는 곳이 없어요. 필터를 줄여 보세요.",
     filterIndoor: "실내",
     filterFree: "무료",
     filterNoReserve: "예약 없이",
     filterLabel: "보조 필터",
-    fallbackPrefix: "아직 이 지역은 준비 중이에요. 지금은 ",
-    fallbackSuffix: " 장소를 보여 드려요.",
-    browse: "다른 지역 둘러보기",
-    groupMine: (district) => `우리 동네 · ${district}`,
-    groupNear: (province) => `가까운 지역 · ${province}`,
+    // P3 거리·정렬
+    driveLabel: "거리",
+    driveAll: "전체",
+    driveChip: { 30: "30분 이내", 60: "1시간 이내", 90: "1시간 30분 이내" },
+    sortLabel: "정렬",
+    sortNear: "가까운순",
+    sortPopular: "인기순",
+    noOrigin: "프로필에서 지역을 정하면 거리로 볼 수 있어요",
+    driveNote: (min, name) => `차로 약 ${min}분 · ${name} 기준`,
+    source: "거리: 직선거리로 추정한 차량 이동 시간 · 위치 © OpenStreetMap contributors",
     notice: "방문 전 공식 링크에서 운영 여부를 확인하세요",
     unknown: "방문 전 확인",
     stale: "확인 오래됨",
@@ -113,20 +116,6 @@
   }
   const lookup = (map, v) => (v !== null && v !== undefined && Object.prototype.hasOwnProperty.call(map, v) ? map[v] : null);
 
-  function contextRow(child, region) {
-    const parts = [];
-    if (child && child.name) parts.push(`<span class="places-ctx-child">${esc(child.name)}${child.ageLabel ? ` · ${esc(child.ageLabel)}` : ""}</span>`);
-    if (region && region.province) parts.push(`<span class="places-ctx-region">${esc(region.province)}${region.district ? ` ${esc(region.district)}` : ""}</span>`);
-    const missing = !(child && child.name) || !(region && region.province);
-    return (
-      `<div class="places-ctx">` +
-      (parts.length ? `<div class="places-ctx-main">${parts.join('<span class="places-ctx-sep" aria-hidden="true">·</span>')}</div>` : "") +
-      (missing ? `<p class="places-ctx-hint">${esc(TEXT.noProfile)}</p>` : "") +
-      `<button type="button" class="places-ctx-change" data-places-action="change">${esc(TEXT.change)}</button>` +
-      `</div>`
-    );
-  }
-
   function chipRow(category) {
     const cur = category && Object.prototype.hasOwnProperty.call(Places.CATEGORIES, category) ? category : "ALL";
     const chips = [["ALL", "전체"]].concat(Places.CATEGORY_KEYS.map((k) => [k, Places.CATEGORIES[k]]));
@@ -145,31 +134,24 @@
     const items = [["indoor", TEXT.filterIndoor], ["free", TEXT.filterFree]].concat(showNoReserve ? [["noReserve", TEXT.filterNoReserve]] : []);
     return `<div class="places-filters" role="group" aria-label="${esc(TEXT.filterLabel)}">${items.map(([k, label]) => `<button type="button" class="places-chip places-filter${f[k] === true ? " active" : ""}" aria-pressed="${f[k] === true ? "true" : "false"}" data-places-filter="${k}">${esc(label)}</button>`).join("")}</div>`;
   }
-  /** 지역이 준비 중일 때 안내 + 데이터에 있는 지역 선택 칩(보기용). fb: { regions:[{province,district}], current:{province,district}|null } */
-  const BROWSE_GROUP_MIN = 3; // 시·도에 시군구가 이 수 이상이면 시·도 칩으로 묶는다
-  function fallbackBox(fb) {
-    const regions = (fb && Array.isArray(fb.regions) ? fb.regions : []);
-    const name = (r) => r.district || r.province;
-    const names = fb && typeof fb.coverage === "string" && fb.coverage.trim() ? fb.coverage.trim() : regions.map(name).join("·");
-    const cur = fb && fb.current;
-    // G5: 시·도에 시군구가 3개 이상이면 시·도 칩 하나(그 시·도 전체 보기), 아니면 시군구 칩. 칩이 시군구마다 늘어나지 않게 묶는다.
-    const byProv = new Map();
-    regions.forEach((r) => { if (!byProv.has(r.province)) byProv.set(r.province, []); byProv.get(r.province).push(r); });
-    const items = [];
-    byProv.forEach((list, province) => {
-      const districts = list.filter((r) => r.district);
-      if (districts.length >= BROWSE_GROUP_MIN) items.push({ province, district: "", label: province });
-      else list.forEach((r) => items.push({ province: r.province, district: r.district || "", label: name(r) }));
-    });
-    const chips = items.map((it) => chipBtn(`data-places-browse="${esc(it.province)}|${esc(it.district)}"`, it.label, !!cur && cur.province === it.province && (cur.district || "") === it.district)).join("");
-    return `<div class="places-fallback"><p>${esc(TEXT.fallbackPrefix + names + TEXT.fallbackSuffix)}</p><p class="places-fallback-title">${esc(TEXT.browse)}</p><div class="places-chips-wrap">${chips}</div></div>`;
+  /** P3 거리·정렬 칩. o: { origin, driveMax(null|30|60|90), sort("near"|"popular") }. 기준점이 없으면 거리 칩·가까운순은 비활성 + 안내. */
+  function driveRows(o) {
+    const has = !!o.origin;
+    const dis = has ? "" : " disabled";
+    const cur = typeof o.driveMax === "number" ? o.driveMax : null;
+    const sort = o.sort === "popular" ? "popular" : "near";
+    const drive = [[null, TEXT.driveAll]].concat(Places.DRIVE_CHOICES.map((m) => [m, TEXT.driveChip[m]]))
+      .map(([m, label]) => `<button type="button" class="places-chip places-drive-chip${(m === cur || (m === null && !has)) ? " active" : ""}" aria-pressed="${m === cur ? "true" : "false"}" data-places-drive="${m === null ? "all" : m}"${m === null ? "" : dis}>${esc(label)}</button>`).join("");
+    const sorts = [["near", TEXT.sortNear, dis], ["popular", TEXT.sortPopular, ""]]
+      .map(([k, label, d]) => `<button type="button" class="places-chip places-sort-chip${(has ? sort === k : k === "popular" && sort === "popular") ? " active" : ""}" aria-pressed="${sort === k ? "true" : "false"}" data-places-sort="${k}"${d}>${esc(label)}</button>`).join("");
+    return `<div class="places-drive-row" role="group" aria-label="${esc(TEXT.driveLabel)}">${drive}</div><div class="places-sort-row" role="group" aria-label="${esc(TEXT.sortLabel)}">${sorts}</div>${has ? "" : `<p class="places-origin-hint">${esc(TEXT.noOrigin)}</p>`}`;
   }
   function metaItem(label, value) {
     const known = value !== null && value !== undefined && value !== "";
     return `<li class="places-meta-item${known ? "" : " unknown"}"><span class="places-meta-label">${esc(label)}</span><span class="places-meta-value">${esc(known ? value : TEXT.unknown)}</span></li>`;
   }
 
-  function renderCard(p, today) {
+  function renderCard(p, today, origin) {
     const stale = Places.isStale(p, today);
     const badges = [`<span class="places-badge places-badge-cat">${esc(lookup(Places.CATEGORIES, p.category) || "")}</span>`];
     if (typeof p.district === "string" && p.district) badges.push(`<span class="places-badge places-badge-district">${esc(p.district)}</span>`); // G4: 시·군·구 작은 표기
@@ -178,6 +160,8 @@
     const link = Places.isHttpsUrl(p.officialUrl)
       ? `<a class="places-link" href="${esc(p.officialUrl)}" target="_blank" rel="noopener noreferrer">${esc(TEXT.link)}</a>`
       : "";
+    const min = origin ? Places.driveMinFrom(p, origin) : null;
+    const driveLine = min === null ? "" : `<p class="places-drive">${esc(TEXT.driveNote(Math.max(1, min), origin.name))}</p>`; // '약'은 추정이라 꼭 붙인다. 1분 미만은 1분으로 표시
     const where = [p.province, p.district].filter((s) => typeof s === "string" && s).join(" ");
     return (
       `<article class="places-card" data-places-id="${esc(p.id)}" data-places-open="${esc(p.id)}">` +
@@ -186,6 +170,7 @@
       (p.summary ? `<p class="places-summary">${esc(p.summary)}</p>` : "") +
       (typeof p.notice === "string" && p.notice ? `<p class="places-card-notice">${esc(p.notice)}</p>` : "") +
       (p.address || where ? `<p class="places-address">${esc(p.address || where)}</p>` : "") +
+      driveLine +
       `<ul class="places-meta">` +
       metaItem("권장 나이", ageText(p.ageMonths)) +
       metaItem("실내·실외", lookup(Places.INDOOR, p.indoor)) +
@@ -209,22 +194,12 @@
     const today = opts.today === undefined ? new Date() : opts.today;
     const catOn = opts.category && opts.category !== "ALL";
     const f = opts.filters || {};
-    const filterOn = f.indoor === true || f.free === true || f.noReserve === true;
-    const head =
-      `<div class="places-head">` +
-      `<span class="places-label">${esc(TEXT.label)}</span>` +
-      (opts.status ? `<span class="places-status">${esc(opts.status)}</span>` : "") +
-      `</div>`;
-    // G4: groups([{title, places}])가 있으면 소제목 묶음으로(0곳인 묶음은 숨김), 없으면 places 한 목록.
-    const groups = Array.isArray(opts.groups) ? opts.groups.map((g) => ({ title: g && g.title, places: Array.isArray(g && g.places) ? g.places.filter((p) => p && typeof p === "object" && typeof p.id === "string") : [] })).filter((g) => g.places.length) : null;
-    const total = groups ? groups.reduce((n, g) => n + g.places.length, 0) : list.length;
-    const body = total
-      ? (groups
-          ? groups.map((g) => `<h4 class="places-group-title">${esc(g.title || "")}</h4><div class="places-list">${g.places.map((p) => renderCard(p, today)).join("")}</div>`).join("")
-          : `<div class="places-list">${list.map((p) => renderCard(p, today)).join("")}</div>`) + `<p class="places-notice">${esc(TEXT.notice)}</p>`
+    const filterOn = f.indoor === true || f.free === true || f.noReserve === true || typeof opts.driveMax === "number";
+    const origin = opts.origin || null;
+    const body = list.length
+      ? `<div class="places-list">${list.map((p) => renderCard(p, today, origin)).join("")}</div><p class="places-notice">${esc(TEXT.notice)}</p><p class="places-source">${esc(TEXT.source)}</p>`
       : `<div class="places-empty"><p>${esc(filterOn ? TEXT.emptyFilter : catOn ? TEXT.emptyCategory : TEXT.empty)}</p></div>`;
-    const fb = opts.fallback && Array.isArray(opts.fallback.regions) && opts.fallback.regions.length ? fallbackBox(opts.fallback) : "";
-    return `<section class="places-view">${contextRow(opts.child, opts.region)}${fb}${chipRow(opts.category)}${filterRow(f, opts.showNoReserve === true)}${head}${body}</section>`;
+    return `<section class="places-view">${chipRow(opts.category)}${driveRows({ origin, driveMax: opts.driveMax, sort: opts.sort })}${filterRow(f, opts.showNoReserve === true)}${body}</section>`;
   }
 
   const HOUR_OPTS = Array.from({ length: 24 }, (_, i) => pad2(i));
@@ -267,7 +242,7 @@
         `<button type="button" class="btn-text" data-places-back${r.saving ? " disabled" : ""}>${esc(TEXT.back)}</button></div>`
       );
     }
-    const badges = [`<span class="places-badge places-badge-cat">${esc(lookup(Places.CATEGORIES, p.category) || "")}</span>`, `<span class="places-badge">${esc(TEXT.label)}</span>`];
+    const badges = [`<span class="places-badge places-badge-cat">${esc(lookup(Places.CATEGORIES, p.category) || "")}</span>`];
     if (p.example === true) badges.push(`<span class="places-badge places-badge-example">${esc(TEXT.example)}</span>`);
     const stale = Places.isStale(p, opts.today === undefined ? new Date() : opts.today);
     if (stale) badges.push(`<span class="places-badge places-badge-stale">${esc(TEXT.stale)}</span>`);
@@ -304,5 +279,5 @@
     };
   }
 
-  return { TEXT, SCHEDULE_LIMITS, esc, ageText, render, filterRow, fallbackBox, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, memoFor, scheduleDraftFor };
+  return { TEXT, SCHEDULE_LIMITS, esc, ageText, render, filterRow, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, memoFor, scheduleDraftFor };
 });

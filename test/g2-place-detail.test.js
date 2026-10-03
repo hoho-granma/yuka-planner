@@ -24,7 +24,7 @@ console.log("상세 마크업");
 test("상세: 이름·분류·설명·주소(복사)·권장 나이·실내외·비용·예약·확인 날짜·'편집 추천'·[공식 홈페이지]·[지도에서 보기], 이스케이프", () => {
   const h = PV.renderDetail(PL, { mode: "info", canRegister: true, today: new Date(2026, 9, 3) });
   assert.ok(h.includes("구로 &lt;b&gt;어린이&lt;/b&gt; 도서관") && !h.includes("<b>어린이") && h.includes("책 읽는 &quot;아이&quot; 공간"));
-  assert.ok(h.includes(">도서관<") && h.includes("편집 추천") && h.includes("예시") && h.includes("서울특별시 구로구 가마산로 245 &amp; 별관") && h.includes('data-places-copy="서울특별시 구로구 가마산로 245 &amp; 별관"'));
+  assert.ok(h.includes(">도서관<") && !h.includes("편집 추천") && h.includes("예시") && h.includes("서울특별시 구로구 가마산로 245 &amp; 별관") && h.includes('data-places-copy="서울특별시 구로구 가마산로 245 &amp; 별관"'));
   assert.ok(h.includes("12~72개월") && h.includes("실내") && h.includes("무료") && h.includes("예약 필요") && h.includes("2026-09-20 확인"));
   assert.ok(h.includes('href="https://www.guro.go.kr/lib?a=1&amp;b=2" target="_blank" rel="noopener noreferrer">공식 홈페이지</a>'));
   assert.ok(h.includes('>지도에서 보기</a>') && h.includes("예약이 필요한 곳이에요. 공식 홈페이지에서 먼저 예약하세요.") && h.includes("data-places-reg-open"));
@@ -78,13 +78,13 @@ function env(o) {
   const a = APP.indexOf("  // ── G2 장소 상세 시트"), b = APP.indexOf("  function switchTab(name) {");
   const content = { innerHTML: "", listeners: {}, querySelector: () => ({ addEventListener: (t, f) => (content.listeners[t] = f) }) };
   const modal = { classList: { remove() {}, add() {} } };
-  const log = { created: [], switched: [], rendered: 0, closed: 0, refreshed: 0, picker: [] };
+  const log = { counted: [], created: [], switched: [], rendered: 0, closed: 0, refreshed: 0, picker: [] };
   const sels = o.sels || {};
   const sb = { console: { error() {}, log() {} }, Date, JSON, Promise, setTimeout, PlacesView: PV, UserScheduleView: V, UserSchedule: US, HouseholdView: HV,
     el: (id) => (id === "modal-content" ? content : id === "detail-modal" ? modal : id === "plr-dp-btn" ? { addEventListener: (t, f) => (log.btnClick = f) } : id === "plr-dp-popup" ? { classList: { contains: () => !o.popupOpen }, scrollIntoView: (a) => (log.scrolled = a) } : sels[id] ? { value: sels[id] } : null),
     usActive: () => o.active !== false, usLinks: () => [{ childKey: "c1", displayName: "수아", order: 1 }], usMembers: () => [{ memberId: "m1", role: "MOM", label: "엄마", order: 1 }, { memberId: "m2", role: "DAD", label: "아빠", order: 2 }], usActiveChildKey: () => "c1", memActiveId: () => "m1",
     HNDatePicker: { markup: () => "<div id=\"plr-dp-btn\"></div>", bindById: (prefix, op) => { log.picker.push(prefix); return { set(d) { log.set = d; } }; } }, formatDateKR: () => "", toISODate: (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
-    HouseholdSync: { createSchedule: async (hid, doc) => { if (o.fail) return { ok: false, reason: "x" }; log.created.push([hid, doc]); return { ok: true }; } }, hh: { hid: "h1" }, usRefreshCalendar: () => { log.refreshed++; },
+    HouseholdSync: { createSchedule: async (hid, doc) => { if (o.fail) return { ok: false, reason: "x" }; log.created.push([hid, doc]); return { ok: true }; } }, hh: { hid: "h1" }, usRefreshCalendar: () => { log.refreshed++; }, placesCountOnce: (id) => { log.counted.push(id); },
     closeDetail: () => { log.closed++; }, switchTab: (n) => log.switched.push(n), renderCalendar() {}, renderSelectedDayPanel() {}, attachListHandlers() {}, modalMode: null, viewMonth: null, selectedCalendarDate: null,
     navigator: { clipboard: { writeText: async (t) => (log.copied = t) } } };
   vm.createContext(sb);
@@ -123,7 +123,7 @@ test("[캘린더에 등록]: 기존 buildCreateDoc 경로로 저장 — 제목=�
   assert.strictEqual(e.log.created.length, 1);
   const [hid, d] = e.log.created[0];
   assert.deepStrictEqual([hid, d.title, d.location, d.category, d.scope, d.eventDate, d.allDay, d.assigneeMemberId, d.memo, d.dateKind, d.status], ["h1", PL.name.slice(0, 100), PL.address.slice(0, 100), "FAMILY", "FAMILY", "2026-10-10", true, "m1", "공식 홈페이지: https://www.guro.go.kr/lib?a=1&b=2", "FIXED", "TODO"]);
-  assert.deepStrictEqual([e.reg.mode, e.reg.doneLabel, e.log.refreshed], ["done", "10/10(토)", 1]);
+  assert.deepStrictEqual([e.reg.mode, e.reg.doneLabel, e.log.refreshed, e.log.counted.length], ["done", "10/10(토)", 1, 1]); // P4: 등록 성공 → 인기 신호 +1 호출
   assert.ok(e.content.innerHTML.includes("10/10(토) 캘린더에 등록했어요") && e.content.innerHTML.includes("data-places-view-cal"));
   await e.click("data-places-view-cal");
   assert.deepStrictEqual([e.log.closed, e.log.switched, e.sb.selectedCalendarDate.getDate(), e.sb.viewMonth.getMonth()], [1, ["calendar"], 10, 9]);

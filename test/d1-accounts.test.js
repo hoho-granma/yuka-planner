@@ -197,23 +197,23 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
   await test("app.js: 모든 진입점이 acctEnabled 가드 뒤, 서버(Firestore) 쓰기 없음, 가입 정보는 의도로만 보관하고 비밀번호는 저장하지 않는다", () => {
     const a = APP.indexOf("// ── D1 계정"), b = APP.indexOf("async function init()");
     const blk = APP.slice(a, b);
-    assert.ok(/function acctInit\(\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
+    assert.ok(/function acctInit\(\) \{\n    if \(acctJoinLinkStart\(\)\) return;[^\n]*\n    if \(!acctEnabled\(\)\) return;/.test(blk));
     assert.ok(/async function acctOnClick\(ev\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
     assert.ok(/function acctRenderLanding\(\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
     // D2: 서버 읽기(lookupHousehold·joinHousehold)와 AccountSync(계정 문서·가구 생성)만 허용 — 아이·일정·완료에는 쓰지 않는다
-    assert.ok(!/FamilySync|HouseholdSync\.(create|update|upsert|patch|remove)/.test(blk));
+    assert.ok(!/FamilySync|HouseholdSync\.(create|update|patch|remove)/.test(blk)); // upsertMember 는 가족 추가(acctSendInvite)의 빈 자리 만들기 한 곳뿐
     assert.ok(blk.includes("localStorage.setItem(ACCT_INTENT_KEY, JSON.stringify(intent));") && !/setItem\([^)]*password/i.test(blk));
     assert.ok(APP.includes("    usInit();\n    acctInit();") && APP.includes("${acctEnabled() ? '<div id=\"acct-slot\"></div>' : \"\"}") && APP.includes("if (acctEnabled()) acctOpenSlot();"));
   });
   await test("로그아웃 최소: Auth 로그아웃 + 가입 의도 삭제만, 가구·아이 로컬 데이터는 건드리지 않는다(D2·D4에서 확장)", () => {
-    const blk = APP.slice(APP.indexOf('if (action === "confirm-logout")'), APP.indexOf('if (action === "submit-signup")'));
+    const blk = APP.slice(APP.indexOf('if (action === "logout" || action === "confirm-logout")'), APP.indexOf('if (action === "submit-signup")'));
     assert.ok(blk.includes("acct.svc.signOut()") && blk.includes("if (linked) acctClearIntent();"));
     assert.ok(!/leaveLocal|HH_ID_KEY|removeItem\([^)]*(PROFILE|COMPLETED|CHILDREN)|clearCode|saveCompleted|saveProfile/.test(blk));
   });
   await test("OFF 불변: index.html 에 정적 계정 마크업·Auth SDK 스크립트가 없다(플래그 ON 일 때 동적 로드), sw.js 에는 새 스크립트만 추가", () => {
     const html = read("index.html");
     assert.ok(!/firebase-auth-compat/.test(html) && !/acct-/.test(html));
-    assert.ok(html.includes('<script src="js/auth-service.js?v=3"></script>') && html.includes('<script src="js/account-view.js?v=9"></script>'));
+    assert.ok(html.includes('<script src="js/auth-service.js?v=3"></script>') && html.includes('<script src="js/account-view.js?v=11"></script>'));
     const sw = read("sw.js");
     assert.ok(sw.includes('"./js/auth-service.js"') && sw.includes('"./js/account-view.js"') && !sw.includes("firebase-auth-compat"));
     assert.ok(AS.SDK_URL === "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js");
@@ -233,7 +233,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
       document: { createElement: () => ({ addEventListener() {}, set innerHTML(v) {} }) },
     };
     vm.createContext(sb);
-    vm.runInContext("let modalMode = null; let profile = null; let regionsData = null; const us = { selection: [], selTouched: false }; function hhRender() {}\n" + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick };", sb);
+    vm.runInContext("let modalMode = null; let profile = null; let regionsData = null; const us = { selection: [], selTouched: false }; function hhRender() {} function hideEmptyHome() {} function showLandingView() { globalThis.__landing = (globalThis.__landing || 0) + 1; }\n" + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick };", sb);
     const click = (attrs) => sb.__t.acctOnClick({ target: { closest: (sel) => (sel === "[data-acct-radio]" ? (attrs.radio ? { getAttribute: (n) => (n === "data-acct-radio" ? attrs.radio[0] : attrs.radio[1]) } : null) : { getAttribute: () => attrs.action } ) } });
     return { sb, ad, store, sheet, log, click, acct: sb.__t.acct };
   }
@@ -267,7 +267,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     assert.ok(dup.sheet.innerHTML.includes("이미 가입된 이메일이에요. 로그인해 주세요."));
     assert.ok(!("hannun_account_intent" in dup.store) && dup.acct.user === null && dup.acct.busy === false);
   });
-  await test("로그인·로그아웃 흐름: 로그인 성공 → 로그인 상태, 로그아웃 확인에 보내지 못한 변경 건수 안내 → Auth 로그아웃 + 의도 삭제, 로컬 데이터 유지", async () => {
+  await test("로그인·로그아웃 흐름: 로그인 성공 → 로그인 상태, [로그아웃]은 확인 없이 바로 Auth 로그아웃 + 의도 삭제 + 첫 화면, 로컬 데이터 유지", async () => {
     const e = appEnv();
     e.acct.svc = e.sb.AuthService.create();
     e.sb.hh.hid = "h1";
@@ -275,10 +275,10 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     await e.click({ action: "submit-login" });
     assert.strictEqual(e.acct.user.uid, "u1");
     e.store.hannun_account_intent = "{}";
-    await e.click({ action: "logout" });
-    assert.ok(e.sheet.innerHTML.includes("로그아웃할까요?") && e.sheet.innerHTML.includes("아직 서버에 보내지 못한 변경 2건"));
-    await e.click({ action: "confirm-logout" });
+    await e.click({ action: "logout" }); // P1: 확인 시트 없이 바로 로그아웃 → 첫 화면
+    assert.ok(!APP.includes('acctShowSheet("logout")') && e.log.closed >= 1, "확인 시트를 열지 않고 닫는다");
     assert.strictEqual(e.acct.user, null);
+    assert.strictEqual(e.sb.__landing, 1, "첫 화면(온보딩)으로 이동");
     assert.ok(e.ad.calls.includes("signOut") && !("hannun_account_intent" in e.store));
     assert.deepStrictEqual([e.store.hannun_profile, e.store.hannun_household_id, e.store.hannun_children], ["keep", "h1", "[1]"]);
   });
