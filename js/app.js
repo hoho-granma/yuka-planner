@@ -3383,6 +3383,7 @@
   /** 슬롯을 그리고 클릭을 연결한다. 슬롯 요소는 새로 그려질 때마다 새 요소라 리스너가 쌓이지 않는다(랜딩 슬롯은 한 번만 연결). */
   function betaOpenSlot(slotId, renderName) {
     const slot = el(slotId);
+    if (typeof acctEnabled === "function" && acctEnabled()) { if (slot) slot.innerHTML = ""; return; } // G18: 계정 모드(기본)에는 베타 스위치가 없다
     if (!slot || typeof HouseholdView === "undefined" || typeof HouseholdView[renderName] !== "function") return;
     slot.innerHTML = HouseholdView[renderName](betaState());
     if (!slot.dataset.betaBound) {
@@ -3399,6 +3400,7 @@
     if (!b) return;
     ev.stopPropagation();
     const action = b.getAttribute("data-beta-action");
+    if (typeof acctEnabled === "function" && acctEnabled()) return; // G18: 계정 모드에서는 끄는 경로(confirm-off 등)를 열지 않는다
     if (action === "ask-on" || action === "ask-off") {
       betaConfirming = true;
       betaRenderAll();
@@ -4829,6 +4831,7 @@
     if (!b) return;
     ev.stopPropagation && ev.stopPropagation();
     const action = b.getAttribute("data-preview-action");
+    if (acctEnabled()) return; // G18: 계정 모드(기본)에서는 미리 써 보기·끄기 흐름이 없다
     if (action === "ask") return previewShowSheet(true);
     if (action === "cancel") return closeDetail();
     if (action !== "confirm") return;
@@ -5331,7 +5334,7 @@
       acctBrowse = action === "browse";
       return acctApplyLandingMode();
     }
-    if (action === "beta-off-ask") return previewShowSheet(false);
+    if (action === "beta-off-ask") return; // G18: 베타 끄기는 계정 모드에서 없앴다
     if (action === "close") return closeDetail();
     if (action === "logout" || action === "confirm-logout") { // P1: 확인 시트 없이 바로 로그아웃(서버 데이터는 지우지 않는다)
       // 가입 의도는 가구 연결이 끝난 계정에서만 지운다. 연결이 안 끝났으면(일시 오류 등) 남겨 두어 다시 로그인할 때 이어서 연결한다.

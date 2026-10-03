@@ -44,6 +44,7 @@ const topKey = (k) => k.split(".")[0];
   const origFirestore = sandbox.firebase.firestore;
   sandbox.firebase.firestore = Object.assign(() => (dbCalls++, origFirestore()), origFirestore);
   const load = (f) => vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "js", f), "utf8"), sandbox);
+  sandbox.localStorage = { getItem: (k) => (k === "hannun_feature_accounts" ? "0" : null), setItem() {}, removeItem() {} }; // G18: 기본은 ON — OFF 경로는 accounts="0" 으로 명시
   load("feature-flags.js");
   load("household-sync.js");
   assert.strictEqual(sandbox.FEATURES.household, false);

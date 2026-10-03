@@ -142,6 +142,7 @@ console.log("플래그(FEATURES.autoLink)");
 function flags(store) {
   const calls = [];
   const sb = { localStorage: { getItem: (k) => (calls.push(k), store[k] === undefined ? null : store[k]) } };
+  if (store.hannun_feature_accounts === undefined) store = { ...store, hannun_feature_accounts: "0" }; // G18: 기본 ON 이라 OFF 기준은 accounts="0" 을 명시
   sb.window = sb;
   vm.createContext(sb);
   vm.runInContext(read("js/feature-flags.js"), sb);
@@ -154,7 +155,7 @@ test("기본 OFF · E(1-2): household 가 켜지면 autolink 기본 ON, hannun_f
   assert.deepStrictEqual(J(flags({ hannun_feature_household: "1", hannun_feature_autolink: "0" }).F), { household: true, autoLink: false, accounts: false });
   const off = flags({ hannun_feature_autolink: "1" });
   assert.deepStrictEqual(J(off.F), { household: false, autoLink: false, accounts: false });
-  assert.deepStrictEqual(off.calls, ["hannun_feature_household", "hannun_feature_accounts"]); // accounts(D1) 키도 한 번 읽는다
+  assert.deepStrictEqual(off.calls, ["hannun_feature_accounts", "hannun_feature_household"]); // G18: accounts → household 순(autolink 키는 household 가 꺼져 있으면 읽지 않는다)
 });
 
 console.log("app.js 연결(소스 추출 스텁)");

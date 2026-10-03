@@ -116,6 +116,8 @@ const mk = (flag, extra = {}) => {
   await test("OFF(실제 feature-flags.js + 브라우저식 로드): firebase.firestore() 를 만들지 않는다", async () => {
     let firestoreCalls = 0;
     const sb = { console, localStorage: memStorage(), firebase: { firestore: () => (firestoreCalls++, {}) } };
+    sb.localStorage.setItem("hannun_feature_accounts", "0"); // G18: 기본 ON — OFF 경로는 accounts="0" 으로 명시
+    sb.localStorage.calls.length = 0;
     sb.window = sb;
     vm.createContext(sb);
     vm.runInContext(FEATURES_SRC, sb);
@@ -123,7 +125,7 @@ const mk = (flag, extra = {}) => {
     assert.deepStrictEqual(Object.keys(sb.FEATURES), ["household", "autoLink", "accounts"]); // autoLink(C2), accounts(D1): household 가 꺼져 있으면 항상 false, 별도 저장소 접근도 없다
     assert.strictEqual(sb.FEATURES.autoLink, false);
     // 플래그 파일은 개발용 override 키 하나만 읽는다. 그 이후(household-sync 로드·호출)에는 localStorage 접근이 0건이어야 한다.
-    assert.deepStrictEqual(sb.localStorage.calls, [["get", "hannun_feature_household"], ["get", "hannun_feature_accounts"]]); // household · accounts(D1) 키 한 번씩
+    assert.deepStrictEqual(sb.localStorage.calls, [["get", "hannun_feature_accounts"], ["get", "hannun_feature_household"]]); // G18: accounts → household 키 한 번씩
     const afterFlags = sb.localStorage.calls.length;
     // 브라우저 경로: window 에 HouseholdSync 기본 인스턴스가 만들어진다
     const code = fs.readFileSync(path.join(__dirname, "..", "js", "household-sync.js"), "utf8");
@@ -137,7 +139,7 @@ const mk = (flag, extra = {}) => {
 
   await test("개발용 override: localStorage hannun_feature_household 가 정확히 '1' 일 때만 ON", async () => {
     const load = (val) => {
-      const sb = { console, localStorage: { getItem: () => val } };
+      const sb = { console, localStorage: { getItem: (k) => (k === "hannun_feature_accounts" ? "0" : val) } }; // G18: 계정을 끈(accounts="0") 기기에서 household 키 해석
       sb.window = sb;
       vm.createContext(sb);
       vm.runInContext(FEATURES_SRC, sb);
@@ -149,7 +151,7 @@ const mk = (flag, extra = {}) => {
     throwing.window = throwing;
     vm.createContext(throwing);
     vm.runInContext(FEATURES_SRC, throwing);
-    assert.strictEqual(throwing.FEATURES.household, false, "저장소 접근이 막혀도 OFF");
+    assert.strictEqual(throwing.FEATURES.household, true, "G18: 저장소 접근이 막혀도 기본값 ON");
   });
 
   console.log("\n플래그 ON — 가짜 어댑터");

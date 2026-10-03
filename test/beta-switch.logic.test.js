@@ -114,7 +114,7 @@ test("기존 render* 불변: enabled 가 true 가 아니면 renderSection·rende
 });
 test("기본값은 OFF: FEATURES.household 는 저장소에 값이 없으면 false, 정확히 '1' 일 때만 true (feature-flags.js 불변)", () => {
   const load = (val) => {
-    const sb = { window: {}, localStorage: { getItem: (k) => (k === "hannun_feature_household" ? val : null) } };
+    const sb = { window: {}, localStorage: { getItem: (k) => (k === "hannun_feature_accounts" ? "0" : k === "hannun_feature_household" ? val : null) } }; // G18: 기본 ON — household 단독 해석은 accounts="0" 기기에서
     sb.window.localStorage = sb.localStorage;
     vm.runInNewContext(read("js/feature-flags.js"), { ...sb, window: sb.window, global: sb.window }, {});
     return sb.window.FEATURES;

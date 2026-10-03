@@ -125,7 +125,7 @@ test("미리 써 보기 카드: OFF 에서만 보이고(ON·새 아이 입력 �
   e.pclick("cancel");
   assert.deepStrictEqual([e.log.closed, e.log.reload, Object.keys(e.store)], [1, 0, []]);
 });
-test("왕복: 켜기 확인 → household·accounts 키 '1' + reload, 새 첫 화면의 [이전 화면으로 돌아가기(베타 끄기)] → 확인 시트 → 두 키 삭제 + reload(서버 호출 0)", async () => {
+test("왕복: 켜기 확인 → household·accounts 키 '1' + reload(OFF 경로), 계정 모드(기본)에서는 끄기 경로가 노출·동작하지 않는다(G18)", async () => {
   const e = env({ flag: false });
   e.setRoot({ addEventListener() {} });
   e.pclick("ask"); e.pclick("confirm", "on");
@@ -133,10 +133,9 @@ test("왕복: 켜기 확인 → household·accounts 키 '1' + reload, 새 첫 �
   const on = env({ flag: true });
   on.store.hannun_feature_household = "1"; on.store.hannun_feature_accounts = "1";
   await on.click("beta-off-ask");
-  assert.ok(on.sheet.innerHTML.includes("이전 화면으로 돌아갈까요?") && on.sheet.innerHTML.includes('data-preview-form="off"'));
-  assert.deepStrictEqual([Object.keys(on.store).length, on.log.reload], [2, 0], "확인 전에는 아무것도 바꾸지 않는다");
+  assert.ok(on.sheet.innerHTML === "", "G18: 계정 모드(기본)에는 베타 끄기 시트가 없다");
   on.pclick("confirm", "off");
-  assert.deepStrictEqual([Object.keys(on.store), on.log.reload], [[], 1]);
+  assert.deepStrictEqual([Object.keys(on.store).length, on.log.reload], [2, 0], "G18: 끄는 경로(confirm-off)는 계정 모드에서 아무것도 지우지 않고 reload 도 하지 않는다");
   const blk = APP.slice(APP.indexOf("// ── G1 OFF 첫 화면"), APP.indexOf("/* (G1 구간 끝) */"));
   assert.ok(!/fetch\(|firebase|Firestore|HouseholdSync|FamilySync|\.set\(|\.update\(/.test(blk), "서버 호출 없음");
   const bad = env({ flag: false, storageThrows: true });
