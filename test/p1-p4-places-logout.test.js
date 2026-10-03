@@ -64,10 +64,10 @@ const at = (dLat, dLng) => ({ lat: O.lat + dLat, lng: O.lng + dLng });
     assert.ok(/places-drive-chip active" aria-pressed="true" data-places-drive="60"/.test(h) && /places-sort-chip active" aria-pressed="true" data-places-sort="near"/.test(h));
     assert.ok(h.includes('data-places-cat="ALL"') && h.includes('data-places-filter="indoor"') && !h.includes("프로필에서 지역을 정하면"));
   });
-  await test("카드: '차로 약 N분 · 구로구청 기준'(약 필수), 좌표 없으면 줄 없음, 출처 표기", () => {
+  await test("카드: 우상단 칩 '차로 약 N분'(약 필수, 본문 줄·기준점 중복 없음), 좌표 없으면 줄 없음, 출처 표기", () => {
     const h = PV.render({ places: [near, none], origin: O, today: T });
-    assert.ok(new RegExp(`차로 약 ${Math.max(1, P.driveMinFrom(near, O))}분 · 구로구청 기준`).test(h));
-    assert.strictEqual((h.match(/places-drive">/g) || []).length, 1);
+    assert.ok(h.includes(`<span class="places-ph-tm">차로 약 ${Math.max(1, P.driveMinFrom(near, O))}분</span>`) && !h.includes("places-drive\"") && !h.includes("구로구청 기준"));
+    assert.strictEqual((h.match(/places-ph-tm">/g) || []).length, 1);
     assert.ok(h.includes("거리: 직선거리로 추정한 차량 이동 시간 · 위치 © OpenStreetMap contributors"));
     assert.strictEqual(PV.TEXT.driveNote(0, "구로구청").startsWith("차로 약 0분"), true);
   });

@@ -861,6 +861,7 @@
     const changed = pendingPhoto !== undefined;
     const shownPhoto = changed ? pendingPhoto : profile.photoDataUrl;
     el("modal-content").innerHTML = `
+      ${acctEnabled() ? '<div id="acct-slot"></div>' : ""}
       <div class="profile-photo-row">
         <span class="avatar profile-sheet-avatar">${avatarInnerHTML(shownPhoto, childDisplayName())}</span>
         <div class="profile-photo-actions">
@@ -891,7 +892,9 @@
              </div>`
           : ""
       }
-      ${acctEnabled() ? '<div id="acct-slot"></div>' : ""}${acctEnabled() && acctKidCount() >= 2 ? '<button type="button" class="btn-close" id="btn-acct-child-switch">아이 전환</button>' : ""}${hhEnabled() ? `${acctEnabled() ? "" : '<div id="hh-slot"></div>'}<div id="members-slot"></div>` : ""}${acctEnabled() ? "" : '<div id="beta-slot"></div>'}${hhEnabled() ? '<button type="button" class="btn-close" id="btn-view-records">기록 보기</button>' : ""}${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
+      ${acctEnabled()
+        ? `<details class="acct-members-det"><summary><strong>${esc(AccountView.MSG.membersManage)}</strong><small>${esc(AccountView.MSG.membersManageHint)}</small></summary><div id="members-slot"></div></details><div class="acct-bottom-row">${acctKidCount() >= 2 ? '<button type="button" class="btn-close" id="btn-acct-child-switch">아이 전환</button>' : ""}<button type="button" class="btn-close" id="btn-view-records">기록 보기</button></div>`
+        : `${hhEnabled() ? '<div id="hh-slot"></div><div id="members-slot"></div>' : ""}<div id="beta-slot"></div>${hhEnabled() ? '<button type="button" class="btn-close" id="btn-view-records">기록 보기</button>' : ""}`}${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
       ${changed ? `<button class="btn-complete btn-photo-save" id="btn-photo-save">저장</button>` : ""}
       <button class="btn-close" id="btn-close-modal">닫기</button>
     `;
@@ -2664,6 +2667,13 @@
     const can = usActive();
     const acctOn = acctEnabled(); // 계정 기능이 켜졌을 때만 '아이 등록하기'·'가족 초대하기'
     modalMode = "add-menu";
+    if (acctOn) { // G7: 계정 모드 + 메뉴 = 타일 3개(일정 추가·아이 등록하기·가족 추가)
+      el("modal-content").innerHTML = AccountView.renderAddMenu({ canSchedule: can });
+      el("detail-modal").classList.remove("hidden");
+      addTilesBind();
+      el("btn-add-menu-close").addEventListener("click", closeDetail);
+      return;
+    }
     el("modal-content").innerHTML = `
       <h3>${ADD_MENU_MSG.title}</h3>
       <button class="btn-complete" id="btn-add-menu-schedule"${can ? "" : " disabled"}>${ADD_MENU_MSG.schedule}</button>
@@ -2680,6 +2690,30 @@
       if (!usActive()) return; // 비활성 버튼(가구 없음)은 아무 일도 하지 않는다
       usOpenForm(null, toISODate(new Date()), { scope: "FAMILY" }); // 대상 기본값은 가족 전체, 담당 기본값은 이 기기 사용자(B6-lite)
     });
+  }
+  /** G7 타일: 일정 추가 / 아이 등록하기 / 가족 추가로 바로 이동(메뉴·아이 등록 시트에서 id 로 연결, 가족 추가 시트는 acctOnClick 이 처리). */
+  function addTabGo(tab) {
+    if (tab === "schedule") {
+      if (!usActive()) return; // 비활성 타일(가구 없음)은 아무 일도 하지 않는다
+      return usOpenForm(null, toISODate(new Date()), { scope: "FAMILY" }); // 대상 기본값은 가족 전체, 담당 기본값은 이 기기 사용자(B6-lite)
+    }
+    if (tab === "child") return showAddChildSheet();
+    if (tab === "invite") return acctOpenInvite();
+  }
+  function addTilesBind() {
+    [["btn-add-menu-schedule", "schedule"], ["btn-add-menu-child", "child"], ["btn-add-menu-invite", "invite"]].forEach(([id, tab]) => {
+      const b = el(id);
+      if (b) b.addEventListener("click", () => addTabGo(tab));
+    });
+  }
+  /** G7: 계정 모드의 아이 등록하기 시트(타일 + 입력 항목 안내). 비계정 '새 아이 추가'(showNewChildSheet)는 그대로. */
+  function showAddChildSheet() {
+    modalMode = "new-child";
+    el("modal-content").innerHTML = AccountView.renderAddChild({ canSchedule: usActive() });
+    el("detail-modal").classList.remove("hidden");
+    addTilesBind();
+    el("btn-cancel-new-child").addEventListener("click", closeDetail);
+    el("btn-confirm-new-child").addEventListener("click", () => beginNewChildEntry({ codeEntry: false }));
   }
   function showNewChildSheet() {
     modalMode = "new-child";
@@ -4386,6 +4420,7 @@
       slot.addEventListener("click", acctOnClick);
     }
     slot.innerHTML = AccountView.renderLanding({ user: acct.user });
+    acctBindSlides(slot);
     // G1: 계정 기능이 켜졌을 때만 옛 첫 화면의 문구를 새 톤으로 바꾸고(OFF 는 기존 그대로), 첫 화면 모드(간단/둘러보기)를 적용한다.
     const O = AccountView.MSG.onboard;
     const title = el("hero-title");
@@ -4405,6 +4440,38 @@
     const ce = el("code-entry");
     if (ce) ce.classList.add("hidden");
     acctApplyLandingMode();
+  }
+  /** G7 첫 화면 슬라이드: 스크롤(스와이프)·점·화살표 키로 장을 바꾸고 점 표시를 맞춘다. */
+  function acctSlidesOf(slot) {
+    return slot && slot.querySelector ? slot.querySelector("[data-acct-slides]") : null;
+  }
+  function acctSyncDots(slot) {
+    const sl = acctSlidesOf(slot);
+    if (!sl) return;
+    const idx = AccountView.slideIndex(sl.scrollLeft, sl.clientWidth, 2);
+    slot.querySelectorAll("[data-slide-to]").forEach((d) => {
+      const on = Number(d.getAttribute("data-slide-to")) === idx;
+      d.classList.toggle("on", on);
+      d.setAttribute("aria-selected", on ? "true" : "false");
+    });
+  }
+  function acctGoSlide(slot, n) {
+    const sl = acctSlidesOf(slot);
+    if (!sl) return;
+    const left = Math.max(0, Math.min(1, n)) * sl.clientWidth;
+    if (typeof sl.scrollTo === "function") sl.scrollTo({ left, behavior: "smooth" });
+    else sl.scrollLeft = left;
+    acctSyncDots(slot);
+  }
+  function acctBindSlides(slot) {
+    const sl = acctSlidesOf(slot);
+    if (!sl || !sl.addEventListener) return;
+    sl.addEventListener("scroll", () => acctSyncDots(slot), { passive: true });
+    sl.addEventListener("keydown", (ev) => {
+      if (ev.key !== "ArrowRight" && ev.key !== "ArrowLeft") return;
+      ev.preventDefault();
+      acctGoSlide(slot, AccountView.slideIndex(sl.scrollLeft, sl.clientWidth, 2) + (ev.key === "ArrowRight" ? 1 : -1));
+    });
   }
   let acctBrowse = false; // '가입 없이 둘러보기'를 펼쳤는가(기본 접힘)
   /** 첫 화면 모드: 간단(기본: 로고·가입·가족 코드·로그인만) / 둘러보기(옛 상황 선택·아이 입력 폼 펼침) / 새 아이 입력 중(카드 숨김). OFF 는 클래스를 건드리지 않는다. */
@@ -4457,7 +4524,10 @@
   /* (G1 구간 끝) */
   function acctRenderSlot() {
     const s = el("acct-slot");
-    if (s) s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, account: acct.account, notice: acct.notice, withCode: true, code: hh.code });
+    if (s) {
+      const family = hh.hid || hh.code ? { members: HouseholdView.visibleMembers(usMembers()).map((m) => ({ memberId: m.memberId, role: m.role, label: m.label })), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt) } : { members: [], meId: null, meName: "", children: [] };
+      s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, account: acct.account, notice: acct.notice, withCode: true, code: hh.code, family });
+    }
   }
   function acctOpenSlot() {
     const s = el("acct-slot");
@@ -4476,11 +4546,12 @@
       : acct.mode === "me" ? AccountView.renderMe({ user: acct.user, account: acct.account, code: hh.code, notice: acct.notice })
       : acct.mode === "role" ? AccountView.renderRolePick({ form: acct.form, errors: acct.errors, busy: acct.busy, error: acct.error })
       : acct.mode === "slot" ? AccountView.renderSlotPick({ slots: acct.slotPick && acct.slotPick.slots, busy: acct.busy, error: acct.error })
-      : acct.mode === "invite" ? AccountView.renderInvite({ code: hh.code, role: acct.form && acct.form.inviteRole, notice: acct.notice, busy: acct.busy, error: acct.error })
+      : acct.mode === "invite" ? AccountView.renderInvite({ code: hh.code, role: acct.form && acct.form.inviteRole, preview: acctInvitePreview(), canSchedule: usActive(), notice: acct.notice, busy: acct.busy, error: acct.error })
       : acct.mode === "migrate" ? AccountView.renderMigrate({ kids: acct.migrate && acct.migrate.kids, conflict: !!(acct.migrate && acct.migrate.switchTo), busy: acct.busy, error: acct.error })
       : acct.mode === "recover" ? AccountView.renderRecover({ ...st, joining: acct.joining })
       : AccountView.renderLogoutConfirm({ pending: acct.pending || 0 });
     el("detail-modal").classList.remove("hidden");
+    if (acct.mode === "invite" && typeof addTilesBind === "function") addTilesBind(); // G7: 가족 추가 시트 위 타일(일정 추가·아이 등록하기로 이동)
     const root = el("modal-content").querySelector("[data-acct-form]");
     if (!root) return;
     root.addEventListener("click", acctOnClick);
@@ -4752,6 +4823,13 @@
     acct.error = null;
     acctShowSheet("invite");
   }
+  /** G7 가족 추가 시트의 초대 문구 미리보기(역할을 고른 뒤): 실제로 보낼 문구와 같다. */
+  function acctInvitePreview() {
+    const role = acct.form && acct.form.inviteRole;
+    if (!hh.code || !AccountView.INVITE_ROLES.some(([k]) => k === role)) return "";
+    const id = acctIdentity();
+    return AccountView.inviteText(id ? id.name : "한눈육아 가족", id && id.roleName, AccountView.inviteLink(hh.code, role, usMeId() || ""), hh.code);
+  }
   /** Q3 [초대 보내기]: 그 역할의 빈 자리(uid 없는 구성원)를 만들거나 이미 있으면 다시 쓰고, 초대 문구를 공유(없으면 복사)한다. */
   async function acctSendInvite() {
     const role = acct.form && acct.form.inviteRole;
@@ -4770,7 +4848,7 @@
         if (!r || !r.ok) throw new Error((r && r.reason) || "invite-slot-failed");
       }
       const id = acctIdentity();
-      const text = AccountView.inviteText(id ? id.name : "한눈육아 가족", id && id.roleName, AccountView.inviteLink(hh.code, role, usMeId() || ""), hh.code);
+      const text = acctInvitePreview(); // 미리보기와 같은 문구
       let shared = false;
       if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
         try {
@@ -4875,13 +4953,28 @@
     const b = ev.target.closest("[data-acct-action]");
     if (!b || acct.busy) return;
     const action = b.getAttribute("data-acct-action");
+    if (action === "slide-go") return acctGoSlide(el("acct-landing-slot"), Number(b.getAttribute("data-slide-to")) || 0);
     if (action === "open-signup" || action === "open-login" || action === "open-join") {
       acct.mode = action === "open-login" ? "login" : "signup";
-      acct.form = action === "open-join" ? { join: true } : {}; // G1: 가족 코드로 함께하기 = 가입 시트의 합류 모드(코드 칸 포커스)
+      acct.form = action === "open-join" ? { join: true, step: 2 } : {}; // 합류는 가족코드(2단계)부터 // G1: 가족 코드로 함께하기 = 가입 시트의 합류 모드(코드 칸 포커스)
       acct.joinFocus = action === "open-join";
       acct.errors = {};
       acct.error = null;
       acct.notice = null;
+      return acctShowSheet();
+    }
+    if (action === "next-step" || action === "prev-step") { // G7: 가입 폼 3단계 — 다음은 이 단계의 필드만 검증한다
+      const cur = AccountView.signupStep(acct.form);
+      if (action === "prev-step") {
+        acct.form.step = Math.max(1, cur - 1);
+        acct.errors = {};
+        return acctShowSheet();
+      }
+      const v = AccountView.validateSignup(acct.form, new Date(), regionsData && regionsData.provinces);
+      const keys = AccountView.signupStepKeys(acct.form, cur);
+      acct.errors = Object.fromEntries(Object.entries(v.errors).filter(([k]) => keys.includes(k)));
+      acct.error = null;
+      if (!Object.keys(acct.errors).length) acct.form.step = Math.min(AccountView.signupTotal(acct.form), cur + 1);
       return acctShowSheet();
     }
     if (action === "join-off") {
@@ -5046,7 +5139,10 @@
       const v = AccountView.validateSignup(acct.form, new Date(), regionsData && regionsData.provinces);
       acct.errors = v.errors;
       acct.error = null;
-      if (!v.ok) return acctShowSheet();
+      if (!v.ok) {
+        acct.form.step = AccountView.firstErrorStep(acct.form, v.errors) || AccountView.signupStep(acct.form); // 앞 단계 오류가 있으면 그 단계로 되돌린다
+        return acctShowSheet();
+      }
       acct.busy = true;
       acctShowSheet();
       // 코드 사전 확인(읽기만): 잘못된 코드면 계정을 만들기 전에 막는다(신규 가족으로 몰래 만들지 않는다).
@@ -5060,6 +5156,7 @@
         if (!look.ok) {
           acct.busy = false;
           acct.errors = { familyCode: look.reason === "not-found" ? AuthService.MSG.codeNotFound : look.reason === "denied" ? AuthService.MSG.serverNotReady : AuthService.MSG.network };
+          acct.form.step = AccountView.firstErrorStep(acct.form, acct.errors) || 2; // 코드 오류는 가족코드 단계에서 보인다
           return acctShowSheet();
         }
       }
@@ -5067,6 +5164,7 @@
       if (!r.ok) {
         acct.busy = false;
         acct.error = r.message || AuthService.MSG.generic;
+        acct.form.step = 1; // 이메일 중복 등 계정 오류는 1단계에서 고친다
         return acctShowSheet();
       }
       acct.user = r.user;

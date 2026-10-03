@@ -99,7 +99,7 @@ function menuEnv(acctOn) {
   const els = {};
   const mk = (id) => els[id] || (els[id] = { id, innerHTML: "", listeners: {}, classList: { remove() {}, add() {} }, addEventListener(t, f) { this.listeners[t] = f; } });
   const log = { sheets: [], newChild: 0 };
-  const sb = { console, acctEnabled: () => acctOn, AccountView: AV, hhEnabled: () => true, usActive: () => true, el: mk, modalMode: null, showNewChildSheet: () => log.newChild++, closeDetail() {}, usOpenForm() {}, toISODate: () => "2026-10-02", Date, acctShowSheet: (k) => log.sheets.push(k), acctOpenInvite: () => log.sheets.push("invite") }; // Q3: 메뉴 → acctOpenInvite(역할 선택 초기화 후 invite 시트)
+  const sb = { console, acctEnabled: () => acctOn, AccountView: AV, hhEnabled: () => true, usActive: () => true, el: mk, modalMode: null, showNewChildSheet: () => log.newChild++, beginNewChildEntry: () => log.newChild++, closeDetail() {}, usOpenForm() {}, toISODate: () => "2026-10-02", Date, acctShowSheet: (k) => log.sheets.push(k), acctOpenInvite: () => log.sheets.push("invite") }; // Q3: 메뉴 → acctOpenInvite(역할 선택 초기화 후 invite 시트)
   vm.createContext(sb);
   vm.runInContext(APP.slice(a, b) + "\n;Object.assign(globalThis, { showAddMenuSheet });", sb);
   return { sb, els, log };
@@ -111,7 +111,9 @@ test("+ 메뉴: 계정 ON 이면 '아이 등록하기'·'가족 추가', OFF 이
   assert.ok(h.includes("아이 등록하기") && h.includes("가족 추가") && h.includes('id="btn-add-menu-invite"') && !h.includes("새 아이 추가"));
   on.els["btn-add-menu-invite"].listeners.click();
   assert.deepStrictEqual(on.log.sheets, ["invite"]);
-  on.els["btn-add-menu-child"].listeners.click();
+  on.els["btn-add-menu-child"].listeners.click(); // G7: 아이 등록하기 타일 → 계정 모드 아이 등록 시트(타일 + 입력 항목 안내) → [아이 입력하기] = 기존 새 아이 입력 흐름(N1)
+  assert.ok(on.els["modal-content"].innerHTML.includes('data-acct-form="add-child"') && on.els["modal-content"].innerHTML.includes("아이 입력하기"));
+  on.els["btn-confirm-new-child"].listeners.click();
   assert.strictEqual(on.log.newChild, 1, "아이 등록하기는 기존 새 아이 입력 흐름(N1)");
   const off = menuEnv(false);
   off.sb.showAddMenuSheet();

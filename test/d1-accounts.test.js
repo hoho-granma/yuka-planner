@@ -159,18 +159,18 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
   });
   await test("마크업: 랜딩(로그아웃/로그인 상태)·내 계정 슬롯·가입/로그인/로그아웃 시트, 이스케이프·조건부 필드", () => {
     const l = AV.renderLanding({});
-    assert.ok(l.includes("한눈육아") && l.includes('data-acct-action="open-signup"') && l.includes('data-acct-action="open-login"') && l.includes("회원가입하고 시작하기") && l.includes("data-acct-action=\"open-join\"") && l.includes("가입 없이 둘러보기"));
+    assert.ok(l.includes("한눈육아") && l.includes('data-acct-action="open-signup"') && l.includes('data-acct-action="open-login"') && l.includes("회원가입하고 시작하기") && l.includes("data-acct-action=\"open-join\"") && !l.includes("가입 없이 둘러보기"));
     const li = AV.renderLanding({ user: { email: "a@b.co", displayName: '<b>x</b>' } });
     assert.ok(li.includes('data-acct-action="logout"') && !li.includes("<b>x</b>") && li.includes("&lt;b&gt;"));
     assert.ok(AV.renderAccountSlot({ user: { email: "a@b.co", displayName: "지은" } }).includes('data-acct-action="logout"') && AV.renderAccountSlot({}).includes("회원가입"));
-    const sign = AV.renderSignup({ form: { situation: "HAS_CHILD" }, regions: REGIONS });
+    const sign = [1, 2, 3].map((st) => AV.renderSignup({ form: { situation: "HAS_CHILD", step: st }, regions: REGIONS })).join(""); // G7: 3단계 스텝 — 모든 단계를 합쳐 필드 존재를 확인
     ["email", "password", "displayName", "familyCode", "province", "district"].forEach((k) => assert.ok(sign.includes(`data-acct-input="${k}"`), k));
     ["role", "situation"].forEach((k) => assert.ok(sign.includes(`data-acct-radio="${k}"`), k));
     ["childName", "birthDate", "dueDate", "institution", "gender"].forEach((k) => assert.ok(!sign.includes(k), "D5: " + k + " 없음"));
     assert.ok(sign.includes("현재 출생한 자녀가 있나요?") && sign.includes(">있어요<") && sign.includes(">없어요<") && sign.includes("가족이 함께 쓰려면 회원가입해 주세요.") && sign.includes("📍 사는 지역(시·도, 시·군·구)을 알려 주시면") && sign.includes("상세 주소는 받지 않아요"));
-    assert.ok(!AV.renderSignup({ form: {}, regions: REGIONS }).includes('data-acct-radio="role"'), "자녀 유무를 고르기 전에는 역할 선택지 없음");
-    assert.ok(AV.renderSignup({ form: { situation: "EXPECTING" }, regions: REGIONS }).includes(">예비엄마<"));
-    assert.ok(AV.renderSignup({ form: { situation: "HAS_CHILD", province: "서울특별시" }, regions: REGIONS }).includes("<option value=\"구로구\""));
+    assert.ok(!AV.renderSignup({ form: { step: 2 }, regions: REGIONS }).includes('data-acct-radio="role"'), "자녀 유무를 고르기 전에는 역할 선택지 없음");
+    assert.ok(AV.renderSignup({ form: { situation: "EXPECTING", step: 2 }, regions: REGIONS }).includes(">예비엄마<"));
+    assert.ok(AV.renderSignup({ form: { situation: "HAS_CHILD", province: "서울특별시", step: 3 }, regions: REGIONS }).includes("<option value=\"구로구\""));
     const joined = AV.renderSignup({ form: { familyCode: "ABCD2345" }, regions: REGIONS });
     assert.ok(!joined.includes('data-acct-radio="situation"') && !joined.includes('data-acct-input="province"') && !joined.includes('data-acct-radio="role"') && AV.renderRolePick({ form: {} }).includes(">이모님(기타 돌봄)<")) // H2: 합류 폼은 역할을 묻지 않고 자리/역할 단계에서 정한다;
     const evil = AV.renderSignup({ form: { email: '"><img src=x>', displayName: "<script>" }, errors: { email: "<i>" }, error: "<u>" });
@@ -213,7 +213,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
   await test("OFF 불변: index.html 에 정적 계정 마크업·Auth SDK 스크립트가 없다(플래그 ON 일 때 동적 로드), sw.js 에는 새 스크립트만 추가", () => {
     const html = read("index.html");
     assert.ok(!/firebase-auth-compat/.test(html) && !/acct-/.test(html));
-    assert.ok(html.includes('<script src="js/auth-service.js?v=3"></script>') && html.includes('<script src="js/account-view.js?v=12"></script>'));
+    assert.ok(html.includes('<script src="js/auth-service.js?v=3"></script>') && html.includes('<script src="js/account-view.js?v=16"></script>'));
     const sw = read("sw.js");
     assert.ok(sw.includes('"./js/auth-service.js"') && sw.includes('"./js/account-view.js"') && !sw.includes("firebase-auth-compat"));
     assert.ok(AS.SDK_URL === "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js");

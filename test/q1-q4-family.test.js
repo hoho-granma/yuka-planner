@@ -29,8 +29,9 @@ const J = (x) => JSON.parse(JSON.stringify(x));
   });
   await test("링크 가입 폼: 가족코드·역할이 미리 들어가고(바꿀 수 있음) 이메일·비밀번호·이름만 새로 입력, 상황·지역은 없다", () => {
     const form = { join: true, fromLink: true, familyCode: "ABCD2345", role: "DAD", from: "m1" };
-    const h = AV.renderSignup({ form, errors: {}, regions: [] });
-    assert.ok(h.includes('value="ABCD2345"') && h.includes('data-acct-radio="role"') && /aria-checked="true" class="acct-radio" data-acct-radio="role" data-value="DAD"/.test(h) && !h.includes('data-acct-radio="situation"') && h.includes("이메일·비밀번호·이름만"));
+    const h1 = AV.renderSignup({ form, errors: {}, regions: [] }), h2 = AV.renderSignup({ form: { ...form, step: 2 }, errors: {}, regions: [] }); // G7: 1단계 계정 / 2단계(마지막) 가족코드·역할
+    const h = h1 + h2;
+    assert.ok(h2.includes('value="ABCD2345"') && h2.includes('data-acct-radio="role"') && /aria-checked="true" class="acct-radio" data-acct-radio="role" data-value="DAD"/.test(h2) && !h.includes('data-acct-radio="situation"') && h1.includes("이메일·비밀번호·이름만") && h1.includes('data-acct-input="email"') && h2.includes('data-acct-action="submit-signup"') && h1.includes('data-acct-action="next-step"'));
     const v = AV.validateSignup({ ...form, email: "a@b.co", password: "12345678", displayName: "민", role: "OTHER" }, new Date(), null);
     assert.ok(v.ok);
     assert.deepStrictEqual([v.intent.role, v.intent.memberRole, v.intent.invitedFrom, v.intent.joiningCode], ["CAREGIVER", "OTHER", "m1", "ABCD2345"]);
@@ -68,7 +69,7 @@ const J = (x) => JSON.parse(JSON.stringify(x));
       acctShowSheet: (k) => log.sheets.push([k, sb.acct.busy, sb.acct.notice, sb.acct.error]), acctRefreshCalendar() {},
       navigator: { ...(o.share ? { share: async (d) => { if (o.share === "abort") throw Object.assign(new Error("a"), { name: "AbortError" }); log.shared.push(d); } } : {}), clipboard: { writeText: async (t) => { if (o.noClip) throw new Error("no"); log.copied.push(t); } } } };
     vm.createContext(sb);
-    vm.runInContext(fn("acctSendInvite", true) + "\n;globalThis.__t = { acctSendInvite };", sb);
+    vm.runInContext(fn("acctInvitePreview") + fn("acctSendInvite", true) + "\n;globalThis.__t = { acctSendInvite };", sb);
     return { sb, log, t: sb.__t };
   };
   const TEXT = "주연(엄마)님이 한눈육아 가족 캘린더에 초대했어요\nhttps://hoho-granma.github.io/yuka-planner/?join=ABCD2345&role=DAD&from=m1\n가족코드: ABCD2345";
@@ -193,7 +194,7 @@ const J = (x) => JSON.parse(JSON.stringify(x));
     assert.strictEqual(count([{ code: "A1", name: "수아" }, { code: "B2", name: "은찬" }]), 2);
     assert.strictEqual(count([{ code: "A1", name: "수아" }], { c1: { familyCode: "B2", displayName: "은찬" } }), 2, "가구 링크의 아이도 센다");
     assert.strictEqual(count([{ code: "A1", name: "수아" }], { c1: { familyCode: "B2", displayName: "은찬", removedAt: 5 } }), 1, "분리된 아이는 제외");
-    assert.ok(APP.includes("${acctEnabled() && acctKidCount() >= 2 ? '<button type=\"button\" class=\"btn-close\" id=\"btn-acct-child-switch\">아이 전환</button>' : \"\"}") || APP.includes('acctEnabled() && acctKidCount() >= 2 ?'));
+    assert.ok(APP.includes("acctKidCount() >= 2 ? '<button type=\"button\" class=\"btn-close\" id=\"btn-acct-child-switch\">아이 전환</button>' : \"\""));
     assert.ok(APP.includes('el("btn-acct-child-switch").addEventListener("click", showChildSwitchSheet)'));
   });
   await test("D5: 이름·이메일·가족코드 왼쪽 정렬(CSS), [가족 추가]는 로그아웃과 같은 전체 폭 보조 버튼, 내 구성원 줄은 '이름 (나)'+오른쪽 역할, 가입 직후 안내 삭제", () => {

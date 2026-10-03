@@ -18,6 +18,21 @@
       sub: "접종·검진·지원금은 아이 월령에 맞춰 자동으로, 엄마·아빠 일정은 가족과 함께 한 캘린더에서.",
       primary: "회원가입하고 시작하기",
       joinTitle: "가족에게 받은 가족코드로 함께하기",
+      joinShort: "가족코드로 함께하기",
+      ob1Title: "이번 달 우리 가족,\n이렇게 보여요",
+      ob1Sub: "자동 일정 + 가족이 등록한 일정",
+      ob1Sample: "예시 화면이에요",
+      ob1Ev1: "10/7 로타바이러스 2차 (자동)",
+      ob1Ev2: "10/9 아빠 · 하원 픽업",
+      ob1Ev3: "10/18 가족 · 보라매공원 (차로 약 8분)",
+      ob2Sub: "아이 월령에 맞춘 일정과 가족 일정을 한곳에서",
+      ob2Aria: "한눈육아 소개(옆으로 넘겨 보세요)",
+      ob2Feats: Object.freeze([
+        Object.freeze(["auto", "자동 일정", "접종·검진·지원금 신청일이 알아서"]),
+        Object.freeze(["family", "가족 캘린더", "엄마·아빠·할머니가 같이 보고 같이 등록"]),
+        Object.freeze(["places", "어디갈까", "우리 동네에서 차로 30분 안의 갈 곳"]),
+        Object.freeze(["record", "기록", "아이 성장 기록과 사진을 남겨요"]),
+      ]),
       joinDesc: "가족코드를 받았다면 여기로",
       login: "이미 계정이 있어요 · 로그인",
       browse: "가입 없이 둘러보기",
@@ -95,6 +110,13 @@
     genderLabel: "성별 (선택)",
     dueDateLabel: "출산 예정일",
     submitSignup: "가입하기",
+    stepLabel: (n, t) => `${n} / ${t} 단계`,
+    stepQ1: "계정을 만들어요",
+    stepQ2: "누가 함께 쓰나요?",
+    stepQ2Join: "어느 가족에 합류하나요?",
+    stepQ3: "사는 지역을 알려 주세요(선택)",
+    stepNext: "다음",
+    stepPrev: "이전",
     submitLogin: "로그인",
     signingUp: "가입하는 중이에요…",
     loggingIn: "로그인하는 중이에요…",
@@ -140,6 +162,15 @@
     cardChildHintExpecting: "출산 예정일을 등록해 주세요",
     inviteCopied: "복사했어요.",
     inviteSend: "초대 보내기",
+    addTitle: "추가하기",
+    addTabSchedule: "일정 추가",
+    addHint: "추가할 항목을 골라 주세요",
+    addNeedHousehold: "일정을 추가하려면 먼저 프로필에서 가족 캘린더를 만들어 주세요",
+    addChildLead: "이름·생년월일(또는 출산 예정일)·몇째·사는 지역을 입력하면 월령에 맞는 일정과 혜택이 가족 캘린더에 나와요.",
+    addChildFields: Object.freeze(["이름 또는 별칭", "생년월일 또는 출산 예정일", "몇째", "사는 지역"]),
+    addChildGo: "아이 입력하기",
+    invitePreview: "초대 문구 미리보기",
+    invitePreviewEmpty: "역할을 고르면 보낼 초대 문구가 여기에 보여요.",
     inviteWho: "누구를 초대하나요?",
     inviteTextCopied: "초대 문구를 복사했어요. 메신저에 붙여 넣어 보내 주세요.",
     inviteFail: "초대 자리를 만들지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.",
@@ -147,6 +178,11 @@
     copyIcon: "가족코드 복사",
     copiedShort: "복사했어요",
     codeLabelShort: "가족코드",
+    familyTitle: "우리 가족",
+    meShort: "나",
+    childFallback: "아이",
+    membersManage: "구성원 관리",
+    membersManageHint: "수정·삭제·아이 빼기",
     joinLinkLead: "초대받은 가족코드와 역할이 들어 있어요. 이메일·비밀번호·이름만 입력하면 돼요.",
     inviteNone: "가족 캘린더가 아직 연결되지 않았어요. 연결한 뒤에 초대할 수 있어요.",
     registerChild: "아이 등록하기",
@@ -278,13 +314,36 @@
     const s = state || {};
     const O = MSG.onboard;
     if (s.user) return `<div class="card acct-landing" id="acct-landing"><div class="acct-logo">${esc(MSG.logo)}</div><p class="fine-print">${esc(MSG.loggedInAs(s.user.displayName || s.user.email))}</p><div class="acct-actions"><button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div></div>`;
-    return `<div class="card acct-landing" id="acct-landing"><div class="acct-main"><div class="acct-logo">${esc(MSG.logo)}</div><h1 class="acct-title">${esc(O.title)}</h1><p class="acct-sub">${esc(O.sub)}</p>
-      <button type="button" class="acct-btn-primary" data-acct-action="open-signup">${esc(O.primary)}</button>
-      <button type="button" class="acct-btn-join" data-acct-action="open-join"><span class="acct-btn-ico">${ICO_FAMILY}</span><span class="acct-btn-txt"><strong>${esc(O.joinTitle)}</strong><small>${esc(O.joinDesc)}</small></span></button>
-      <button type="button" class="acct-link" data-acct-action="open-login">${esc(O.login)}</button>
-      <button type="button" class="acct-link acct-link-small" data-acct-action="browse">${esc(O.browse)}</button>
-      <button type="button" class="acct-link acct-link-small" data-acct-action="beta-off-ask">${esc(O.betaOff)}</button></div>
-      <button type="button" class="acct-link acct-back" data-acct-action="browse-close">${esc(O.browseBack)}</button></div>`;
+    // G7: 2장 슬라이드(1 달력 미리보기 / 2 히어로+기능 4개) + 아래 고정 버튼. 가입 없이 둘러보기·베타 끄기 버튼은 없다.
+    const day = (n, color) => `<div>${n}${color ? `<i style="background:${color}"></i>` : ""}</div>`;
+    const days = [[6], [7, "#c9b8ff"], [8], [9, "#7fb8ff"], [10], [11, "#ffc46b"], [12], [13], [14, "#ff9ec4"], [15], [16], [17, "#ffe1a8"], [18, "#c9b8ff"], [19]].map(([n, c]) => day(n, c)).join("");
+    const chips = [["나(엄마)", "#ff9ec4"], ["아빠", "#7fb8ff"], ["은찬", "#ffc46b"], ["가족", "#c9b8ff"]].map(([t, c]) => `<span style="background:${c}">${esc(t)}</span>`).join("");
+    const evs = [["#c9b8ff", O.ob1Ev1], ["#7fb8ff", O.ob1Ev2], ["#c9b8ff", O.ob1Ev3]].map(([c, t]) => `<div><i style="background:${c}"></i>${esc(t)}</div>`).join("");
+    const feats = O.ob2Feats.map(([k, t, d]) => `<div class="acct-feat"><span class="acct-feat-ic acct-feat-${k}">${FEAT_ICO[k]}</span><span><b>${esc(t)}</b><span>${esc(d)}</span></span></div>`).join("");
+    return `<div class="card acct-landing acct-ob" id="acct-landing"><div class="acct-main">
+      <div class="acct-slides" data-acct-slides tabindex="0" aria-label="${esc(O.ob2Aria)}">
+        <section class="acct-slide" data-acct-slide="0" aria-label="1/2"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title)}</h1><p class="acct-sub">${esc(O.ob1Sub)}</p></div>
+          <div class="acct-ob1-cal" aria-hidden="true"><div class="acct-ob1-chips">${chips}</div><div class="acct-ob1-days">${days}</div><div class="acct-ob1-ev">${evs}</div><small class="acct-ob1-sample">${esc(O.ob1Sample)}</small></div></section>
+        <section class="acct-slide" data-acct-slide="1" aria-label="2/2"><div class="acct-logo">${esc(MSG.logo)}</div><h1 class="acct-title">${esc(O.title)}</h1><p class="acct-sub">${esc(O.ob2Sub)}</p><div class="acct-feats">${feats}</div></section>
+      </div>
+      <div class="acct-dots" role="tablist" aria-label="${esc(O.ob2Aria)}"><button type="button" class="acct-dot on" role="tab" aria-selected="true" data-acct-action="slide-go" data-slide-to="0" aria-label="1/2"></button><button type="button" class="acct-dot" role="tab" aria-selected="false" data-acct-action="slide-go" data-slide-to="1" aria-label="2/2"></button></div>
+      <div class="acct-cta">
+        <button type="button" class="acct-btn-primary" data-acct-action="open-signup">${esc(O.primary)}</button>
+        <button type="button" class="acct-btn-outline" data-acct-action="open-join">${esc(O.joinShort)}</button>
+        <button type="button" class="acct-link" data-acct-action="open-login">${esc(O.login)}</button>
+      </div></div></div>`;
+  }
+  const FEAT_ICO = Object.freeze({
+    auto: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#8b5cf6" stroke-width="1.6" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 7h12M5 1.5v3M11 1.5v3"/></svg>',
+    family: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#e05a8e" stroke-width="1.6" aria-hidden="true"><circle cx="5.5" cy="5.5" r="2.3"/><circle cx="11" cy="6" r="2"/><path d="M1.5 13c.6-2.4 2.2-3.6 4-3.6s3.4 1.2 4 3.6M9.6 13c.4-1.7 1.4-2.6 2.6-2.6 1.1 0 2 .8 2.3 2.6"/></svg>',
+    places: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2f9e64" stroke-width="1.6" aria-hidden="true"><path d="M8 14.5s5-4.3 5-8a5 5 0 0 0-10 0c0 3.7 5 8 5 8z"/><circle cx="8" cy="6.5" r="1.7"/></svg>',
+    record: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#d98a1f" stroke-width="1.6" aria-hidden="true"><rect x="3" y="1.8" width="10" height="12.4" rx="2"/><path d="M5.5 5.5h5M5.5 8.5h5M5.5 11h3"/></svg>',
+  });
+  /** 슬라이드 스크롤 위치 → 현재 장 번호(0..count-1). 점 표시 갱신용(순수). */
+  function slideIndex(scrollLeft, width, count) {
+    const n = Number(count) || 1;
+    if (!(width > 0)) return 0;
+    return Math.max(0, Math.min(n - 1, Math.round(Number(scrollLeft) / width)));
   }
   /** OFF 첫 화면의 '새 버전 미리 써 보기 (베타)' 카드. */
   function renderBetaPreviewCard() {
@@ -309,12 +368,32 @@
   /** 내 계정 영역: 기본 아이콘 + 이름·역할 → 이메일 → 가족코드. */
   function renderAccountSlot(state) {
     const s = state || {};
+    if (s.user && s.family) return renderFamilySlot(s);
     if (s.user) {
       const name = (s.account && s.account.displayName) || s.user.displayName || "";
       const role = s.account && s.account.role ? ` · ${esc(MSG.myRole(roleLabel(s.account.role).replace(/\(.*\)/, "")))}` : "";
       return `<div class="detail-row acct-slot"><div class="label">${esc(MSG.myAccount)}</div><div class="acct-me"><span class="avatar acct-me-avatar">${ICO_PERSON}</span><div class="acct-me-text"><strong>${esc(name)}${role}</strong><span class="fine-print">${esc(s.user.email)}</span>${s.withCode ? codeBlock(s) : ""}</div></div><div class="acct-actions">${s.withCode && s.code ? `<button type="button" class="btn-close acct-btn-outline" data-acct-action="open-invite">${esc(MSG.inviteMenu)}</button>` : ""}<button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div>${s.notice && s.notice !== MSG.inviteCopied ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
     }
     return `<div class="detail-row acct-slot"><div class="label">${esc(MSG.myAccount)}</div><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-signup">${esc(MSG.signup)}</button><button type="button" class="btn-close" data-acct-action="open-login">${esc(MSG.login)}</button></div>${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
+  }
+  // ── G7 프로필 시트(D 가족 중심): 우리 가족 얼굴 + 가족코드 → 내 계정 줄(로그아웃). 가족 얼굴은 구성원·아이 링크에서 만든다. ──
+  const FACE_COLORS = Object.freeze({ MOM: "#ff9ec4", DAD: "#7fb8ff" });
+  const FACE_FAMILY = "#c9b8ff";
+  const FACE_CHILD = Object.freeze(["#ffc46b", "#7fe0b3", "#ffb3a7", "#a8d8ff"]);
+  const face = (color, label, me) => `<div class="acct-face"><span class="acct-face-dot" style="background:${color}">${esc(String(label || "").slice(0, 1))}</span><span class="acct-face-name">${esc(label)}${me ? ` (${esc(MSG.meShort)})` : ""}</span></div>`;
+  /** s.family = { members:[{memberId,role,label}], meId, meName, children:[{childKey,displayName}] } */
+  function renderFamilySlot(s) {
+    const f = s.family || {};
+    const name = (s.account && s.account.displayName) || s.user.displayName || "";
+    const role = s.account && s.account.role ? ` · ${esc(MSG.myRole(roleLabel(s.account.role).replace(/\(.*\)/, "")))}` : "";
+    const faces = (f.members || []).map((m) => face(FACE_COLORS[m.role] || FACE_FAMILY, f.meId && m.memberId === f.meId && f.meName ? f.meName : m.label, !!f.meId && m.memberId === f.meId)).join("")
+      + (f.children || []).map((c, i) => face(FACE_CHILD[i % FACE_CHILD.length], c.displayName || MSG.childFallback, false)).join("");
+    const add = s.code ? `<button type="button" class="acct-face acct-face-add" data-acct-action="open-invite"><span class="acct-face-dot">+</span><span class="acct-face-name">${esc(MSG.inviteMenu)}</span></button>` : "";
+    const pill = s.code
+      ? `<div class="acct-fam-code"><span class="acct-fam-pill"><span class="acct-fam-pill-l">${esc(MSG.codeLabelShort)}</span><b>${esc(s.code)}</b><button type="button" class="acct-copy-ico" data-acct-action="copy-me" aria-label="${esc(MSG.copyIcon)}" title="${esc(MSG.copyIcon)}">${ICO_COPY}</button></span>${s.notice === MSG.inviteCopied ? `<span class="acct-copied" role="status">${esc(MSG.copiedShort)}</span>` : ""}</div>`
+      : `<div class="acct-code-block"><p class="fine-print">${esc(MSG.codeNoneHint)}</p><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-recover">${esc(MSG.codeCreate)}</button></div></div>`;
+    return `<div class="detail-row acct-slot acct-fam"><div class="acct-fam-hero"><h4>${esc(MSG.familyTitle)}</h4><div class="acct-faces">${faces}${add}</div>${pill}</div>
+      <div class="acct-fam-me"><span class="avatar acct-me-avatar">${ICO_PERSON}</span><div class="acct-me-text"><strong>${esc(name)}${role}</strong><span class="fine-print">${esc(s.user.email)}</span></div><button type="button" class="acct-sm-btn" data-acct-action="logout">${esc(MSG.logout)}</button></div>${s.notice && s.notice !== MSG.inviteCopied ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
   }
   /** 가입 직후 아이가 없는 홈의 '내 정보' 카드: 이름 · 나(역할) / 아이를 등록해 주세요 / 이메일. 누르면 내 정보(가족코드). */
   function renderMyCard(state) {
@@ -342,11 +421,33 @@
     return `<div class="acct-form" data-acct-form="role"><h3>${esc(MSG.rolePickTitle)}</h3>${radios("role", MSG.roleLabel, ROLES, f.role, e)}${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}<button type="button" class="acct-btn-primary" data-acct-action="role-continue"${s.busy ? " disabled" : ""}>${esc(MSG.rolePickContinue)}</button></div>`;
   }
   const select = (k, placeholder, opts, cur, disabled) => `<select class="acct-input acct-select" data-acct-input="${k}" aria-label="${esc(placeholder)}"${disabled ? " disabled" : ""}><option value="">${esc(placeholder)}</option>${opts.map(([v, l]) => `<option value="${esc(v)}"${cur === v ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
+  // ── G7: 가입 폼 3단계 스텝(1 계정 / 2 누가 함께 쓰나요 / 3 사는 지역(선택)). 합류(코드 입력·초대 링크)는 2단계로 줄어든다. 입력 항목·검증(validateSignup)은 그대로. ──
+  /** 이 폼의 총 단계 수: 합류면 2(계정·가족코드), 새 가족이면 3. */
+  const signupTotal = (form) => (normCode((form || {}).familyCode) !== "" || (form || {}).join === true ? 2 : 3);
+  /** 현재 단계(1..total). 폼에 step 이 없으면 1. */
+  function signupStep(form) {
+    const n = Math.floor(Number((form || {}).step));
+    return Math.max(1, Math.min(signupTotal(form), Number.isFinite(n) && n > 0 ? n : 1));
+  }
+  /** 단계별 필드 키(검증 오류 키와 같다). 합류는 2단계에 코드(+링크 가입이면 역할)만. */
+  function signupStepKeys(form, step) {
+    const joining = signupTotal(form) === 2;
+    if (step === 1) return ["email", "password", "displayName"];
+    if (step === 2) return joining ? ["familyCode", "role"] : ["situation", "role", "familyCode"];
+    return ["region"];
+  }
+  /** 오류가 있는 가장 앞 단계(없으면 0). 제출 때 앞 단계 오류로 되돌아가는 데 쓴다. */
+  function firstErrorStep(form, errors) {
+    const e = errors || {}, total = signupTotal(form);
+    for (let st = 1; st <= total; st++) if (signupStepKeys(form, st).some((k) => e[k])) return st;
+    return 0;
+  }
   /** state: { form, errors, error(서버 오류 문구), busy, regions: [{code,name,districts}] } */
   function renderSignup(state) {
     const s = state || {}, f = s.form || {}, e = s.errors || {};
     const join = f.join === true;
     const joining = join || normCode(f.familyCode) !== "";
+    const total = signupTotal(f), step = signupStep(f), last = step === total;
     const regions = s.regions || [];
     const prov = regions.find((p) => p.code === f.province);
     const situation = joining ? "" : radios("situation", MSG.situationLabel, SITUATIONS, f.situation, e);
@@ -354,18 +455,25 @@
     const role = roles.length && (!joining || f.fromLink === true) ? radios("role", MSG.roleLabel, roles, f.role, e) : "";
     const region = joining || !regions.length ? "" : `<div class="acct-field"><label>${esc(MSG.regionLabel)}</label>${select("province", MSG.provincePlaceholder, regions.map((p) => [p.code, p.name]), f.province || "")}${select("district", MSG.districtPlaceholder, (prov ? prov.districts : []).map((d) => [d, d]), f.district || "", !prov)}${err(e, "region")}<p class="fine-print acct-region-hint">${esc(MSG.regionHint)}</p></div>`;
     const codeField = `<div class="acct-field"><label>${esc(join ? MSG.onboard.joinTitle : MSG.codeLabel)}</label><input type="text" class="acct-input acct-code" data-acct-input="familyCode" maxlength="8" placeholder="${esc(MSG.codePlaceholder)}" value="${esc(f.familyCode || "")}" autocapitalize="characters" autocomplete="off" spellcheck="false" />${join ? "" : `<p class="fine-print">${esc(MSG.codeHint)}</p>`}${err(e, "familyCode")}</div>`;
-    return `<div class="acct-form" data-acct-form="signup"><h3>${esc(join ? MSG.onboard.joinSheetTitle : MSG.signupTitle)}</h3><p class="fine-print">${esc(f.fromLink === true ? MSG.joinLinkLead : join ? MSG.onboard.joinSheetLead : MSG.signupLead)}</p>
-      ${join ? codeField : ""}
-      ${input("email", MSG.emailLabel, "email", f.email || "", 'inputmode="email" autocapitalize="off"')}${err(e, "email")}
+    const account = `${input("email", MSG.emailLabel, "email", f.email || "", 'inputmode="email" autocapitalize="off"')}${err(e, "email")}
       ${input("password", MSG.passwordLabel, "password", f.password || "", 'autocomplete="new-password"')}${err(e, "password")}
-      ${input("displayName", MSG.nameLabel, "text", f.displayName || "", 'maxlength="20"')}${err(e, "displayName")}
-      ${situation}${role}
-      ${join ? "" : codeField}
-      ${joining ? "" : region}
+      ${input("displayName", MSG.nameLabel, "text", f.displayName || "", 'maxlength="20"')}${err(e, "displayName")}`;
+    const q = step === 1 ? MSG.stepQ1 : step === 2 ? (joining ? MSG.stepQ2Join : MSG.stepQ2) : MSG.stepQ3;
+    const lead = step === 1 ? (f.fromLink === true ? MSG.joinLinkLead : joining ? "" : MSG.signupLead) : step === 2 && join && f.fromLink !== true ? MSG.onboard.joinSheetLead : "";
+    const body = step === 1 ? account : step === 2 ? `${situation}${role}${codeField}` : region;
+    const bars = Array.from({ length: total }, (_, k) => `<span class="acct-prog-seg${k < step ? " on" : ""}"></span>`).join("");
+    const dis = s.busy ? " disabled" : "";
+    const back = step > 1 ? `<button type="button" class="acct-step-back" data-acct-action="prev-step"${dis}>${esc(MSG.stepPrev)}</button>` : "";
+    const go = last
+      ? `<button type="button" class="acct-btn-primary acct-step-go" data-acct-action="submit-signup"${dis}>${esc(s.busy ? MSG.signingUp : MSG.submitSignup)}</button>`
+      : `<button type="button" class="acct-btn-primary acct-step-go" data-acct-action="next-step"${dis}>${esc(MSG.stepNext)}</button>`;
+    return `<div class="acct-form acct-steps" data-acct-form="signup" data-step="${step}" data-total="${total}"><div class="acct-step-top"><span class="acct-logo">${esc(MSG.logo)}</span><button type="button" class="acct-step-x" data-acct-action="close" aria-label="${esc(MSG.cancel)}"${dis}>×</button></div>
+      <div class="acct-prog" role="progressbar" aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${step}">${bars}</div>
+      <p class="acct-step-n">${esc(MSG.stepLabel(step, total))}</p><h3 class="acct-step-q">${esc(q)}</h3>${lead ? `<p class="fine-print acct-step-lead">${esc(lead)}</p>` : ""}
+      ${body}
       ${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}
-      <button type="button" class="acct-btn-primary" data-acct-action="submit-signup"${s.busy ? " disabled" : ""}>${esc(s.busy ? MSG.signingUp : MSG.submitSignup)}</button>
-      ${join ? `<button type="button" class="acct-link" data-acct-action="join-off"${s.busy ? " disabled" : ""}>${esc(MSG.onboard.joinOff)}</button>` : ""}
-      <button type="button" class="btn-close" data-acct-action="close"${s.busy ? " disabled" : ""}>${esc(MSG.cancel)}</button></div>`;
+      ${join && last ? `<button type="button" class="acct-link" data-acct-action="join-off"${dis}>${esc(MSG.onboard.joinOff)}</button>` : ""}
+      <div class="acct-step-foot">${back}${go}</div></div>`;
   }
   /** 내 정보 시트(아이가 없는 홈에서 열린다): 계정 슬롯 + 가족 캘린더 코드(있으면) + 닫기. */
   function renderMe(state) {
@@ -418,12 +526,37 @@
     const from = /^[A-Za-z0-9_-]{1,60}$/.test(p.get("from") || "") ? p.get("from") : "";
     return { code, role, from };
   }
-  /** 가족 추가 시트: 라디오(아빠/자녀/기타) + [초대 보내기]. state: { code, role, notice, busy, error } */
+  // ── G7 + 메뉴(B 타일 메뉴 + 접이식 시트): 위에 타일 3개(일정 추가·아이 등록하기·가족 추가), 아래에 고른 항목의 시트. 타일 id 는 기존 메뉴 버튼 id 를 그대로 쓴다. ──
+  const TILE_ICO = Object.freeze({
+    schedule: '<svg class="acct-tile-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>',
+    child: '<svg class="acct-tile-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>',
+    invite: '<svg class="acct-tile-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M16 14.5c2.6 0 5 1.6 5 4.5"/></svg>',
+  });
+  const TILE_ID = Object.freeze({ schedule: "btn-add-menu-schedule", child: "btn-add-menu-child", invite: "btn-add-menu-invite" });
+  /** 타일 줄. active: "schedule"|"child"|"invite"|null, o.canSchedule=false 면 일정 타일 비활성. */
+  function renderAddTiles(active, o) {
+    const can = !(o && o.canSchedule === false);
+    const tabs = [["schedule", MSG.addTabSchedule], ["child", MSG.registerChild], ["invite", MSG.inviteMenu]];
+    return `<div class="acct-tiles" role="tablist" aria-label="${esc(MSG.addTitle)}">${tabs.map(([k, label]) => `<button type="button" class="acct-tile${active === k ? " on" : ""}" id="${TILE_ID[k]}" data-add-tab="${k}" role="tab" aria-selected="${active === k ? "true" : "false"}"${k === "schedule" && !can ? " disabled" : ""}>${TILE_ICO[k]}<span>${esc(label)}</span></button>`).join("")}</div>`;
+  }
+  /** + 메뉴 시트(계정 모드): 타일 3개만. state: { canSchedule } */
+  function renderAddMenu(state) {
+    const s = state || {};
+    return `<div class="acct-add" data-acct-form="add-menu"><h3>${esc(MSG.addTitle)}</h3>${renderAddTiles(null, s)}${s.canSchedule === false ? `<p class="fine-print" id="add-menu-note">${esc(MSG.addNeedHousehold)}</p>` : `<p class="fine-print">${esc(MSG.addHint)}</p>`}<button type="button" class="btn-close" id="btn-add-menu-close">${esc(MSG.close)}</button></div>`;
+  }
+  /** 아이 등록하기 시트(계정 모드): 타일(아이 등록하기 선택) + 입력할 항목 미리보기 + [아이 입력하기]. */
+  function renderAddChild(state) {
+    const s = state || {};
+    return `<div class="acct-add" data-acct-form="add-child"><h3>${esc(MSG.addTitle)}</h3>${renderAddTiles("child", s)}<div class="acct-add-sheet"><h4>${esc(MSG.registerChild)}</h4><p class="fine-print">${esc(MSG.addChildLead)}</p><ul class="acct-add-fields">${MSG.addChildFields.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
+      <button type="button" class="btn-complete" id="btn-confirm-new-child">${esc(MSG.addChildGo)}</button></div><button type="button" class="btn-close" id="btn-cancel-new-child">${esc(MSG.cancel)}</button></div>`;
+  }
+  /** 가족 추가 시트: 타일(가족 추가 선택) + 라디오(아빠/자녀/기타) + 초대 문구 미리보기 + [초대 보내기]. state: { code, role, preview, notice, busy, error, canSchedule } */
   function renderInvite(state) {
     const s = state || {};
     const dis = s.busy ? " disabled" : "";
     if (!s.code) return `<div class="acct-form" data-acct-form="invite"><h3>${esc(MSG.inviteTitle)}</h3><p class="fine-print">${esc(MSG.inviteNone)}</p><button type="button" class="btn-close" data-acct-action="close">${esc(MSG.close)}</button></div>`;
-    return `<div class="acct-form" data-acct-form="invite"><h3>${esc(MSG.inviteTitle)}</h3><p class="fine-print">${lines(MSG.inviteBody)}</p>${radios("inviteRole", MSG.inviteWho, INVITE_ROLES, s.role, {})}${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}<button type="button" class="btn-complete" data-acct-action="send-invite"${dis || (s.role ? "" : " disabled")}>${esc(MSG.inviteSend)}</button><button type="button" class="btn-close" data-acct-action="close">${esc(MSG.close)}</button></div>`;
+    return `<div class="acct-form acct-add" data-acct-form="invite"><h3>${esc(MSG.addTitle)}</h3>${renderAddTiles("invite", s)}<div class="acct-add-sheet"><h4>${esc(MSG.inviteTitle)}</h4><p class="fine-print">${lines(MSG.inviteBody)}</p>${radios("inviteRole", MSG.inviteWho, INVITE_ROLES, s.role, {})}
+      <div class="acct-preview"><span class="acct-preview-l">${esc(MSG.invitePreview)}</span><div class="acct-preview-b">${s.preview ? lines(s.preview) : esc(MSG.invitePreviewEmpty)}</div></div>${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}<button type="button" class="btn-complete" data-acct-action="send-invite"${dis || (s.role ? "" : " disabled")}>${esc(MSG.inviteSend)}</button></div><button type="button" class="btn-close" data-acct-action="close">${esc(MSG.close)}</button></div>`;
   }
   /** 이 기기의 아이를 계정 가족에 추가할지 묻는 시트(D4). kids: [{name}] */
   function renderMigrate(state) {
@@ -451,5 +584,5 @@
       <button type="button" class="btn-complete" data-acct-action="confirm-logout">${esc(MSG.logout)}</button><button type="button" class="btn-close" data-acct-action="close">${esc(MSG.cancel)}</button></div>`;
   }
 
-  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, INVITE_ROLES, INVITE_LABEL, inviteLink, inviteText, parseJoinParams, renderLanding, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderMyCard, renderSlotPick, renderRolePick, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderMe, roleOptions, syncForm, SITUATIONS, esc };
+  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, signupTotal, signupStep, signupStepKeys, firstErrorStep, INVITE_ROLES, INVITE_LABEL, inviteLink, inviteText, parseJoinParams, renderLanding, slideIndex, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderFamilySlot, renderMyCard, renderSlotPick, renderRolePick, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderAddTiles, renderAddMenu, renderAddChild, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderMe, roleOptions, syncForm, SITUATIONS, esc };
 });

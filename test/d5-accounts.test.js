@@ -49,7 +49,7 @@ function env({ flag = true, profile = null, account = null, user = null, emptySt
   console.log("가입 시트 라디오 펼침");
   await test("자녀 유무를 고르면 역할 선택지가 펼쳐지고(있어요=엄마·아빠·자녀 / 없어요=예비엄마·예비아빠), 맞지 않는 이전 역할 선택은 지운다", async () => {
     const e = env();
-    e.acct.mode = "signup"; e.acct.form = {};
+    e.acct.mode = "signup"; e.acct.form = { step: 2 }; // G7: 자녀 유무·역할은 2단계
     await e.click({ radio: ["situation", "HAS_CHILD"] });
     assert.ok(e.sheet.innerHTML.includes(">엄마<") && e.sheet.innerHTML.includes(">자녀<") && !e.sheet.innerHTML.includes("예비엄마") && !e.sheet.innerHTML.includes("이모님"));
     await e.click({ radio: ["role", "CHILD"] });
@@ -63,10 +63,55 @@ function env({ flag = true, profile = null, account = null, user = null, emptySt
     assert.strictEqual(e.acct.form.role, "DAD", "공통 역할은 유지");
   });
   await test("가입 시트에 시·도→시·군·구 2단 선택(실제 regions.json)과 주소 안내가 있고, 코드를 입력하면(합류) 자녀 유무·지역이 숨겨지고 역할은 전체 선택지", () => {
-    const html = AV.renderSignup({ form: { situation: "HAS_CHILD", province: "서울특별시" }, regions: REGIONS });
+    const html = AV.renderSignup({ form: { situation: "HAS_CHILD", province: "서울특별시", step: 3 }, regions: REGIONS }); // G7: 지역은 3단계
     assert.ok(html.includes('data-acct-input="province"') && html.includes("구로구") && html.includes("상세 주소는 받지 않아요") && html.includes("신청 기한을 놓치지 않게"));
-    const joined = AV.renderSignup({ form: AV.syncForm({ familyCode: "abcd2345", situation: "HAS_CHILD", province: "서울특별시", district: "구로구" }), regions: REGIONS });
+    const joined = [1, 2].map((st) => AV.renderSignup({ form: AV.syncForm({ familyCode: "abcd2345", situation: "HAS_CHILD", province: "서울특별시", district: "구로구", step: st }), regions: REGIONS })).join("");
     assert.ok(!joined.includes("province") && !joined.includes("현재 출생한 자녀") && !joined.includes('data-acct-radio="role"') && AV.renderRolePick({ form: {} }).includes(">이모님(기타 돌봄)<") && AV.renderRolePick({ form: {} }).includes(">자녀<")) // H2;
+  });
+  console.log("G7 가입 3단계 스텝");
+  await test("3단계: 1 계정(이메일·비밀번호·이름) → 2 누가 함께 쓰나요(자녀 유무·역할·가족코드) → 3 사는 지역(선택·[가입하기]). 다음은 그 단계 필드만 검증하고 오류가 있으면 머문다, [이전]은 오류를 지우고 한 단계 뒤로", async () => {
+    const e = env();
+    e.acct.mode = "signup"; e.acct.form = {};
+    await e.click({ action: "next-step" });
+    assert.deepStrictEqual([e.acct.form.step, Object.keys(e.acct.errors).sort()], [undefined, ["displayName", "email", "password"]], "1단계 오류만(자녀 유무·역할 오류는 아직 안 나옴)");
+    assert.ok(e.sheet.innerHTML.includes("1 / 3 단계") && e.sheet.innerHTML.includes("계정을 만들어요") && e.sheet.innerHTML.includes('data-acct-action="next-step"') && !e.sheet.innerHTML.includes("submit-signup"));
+    Object.assign(e.acct.form, { email: "a@b.co", password: "12345678", displayName: "주연" });
+    await e.click({ action: "next-step" });
+    assert.deepStrictEqual([e.acct.form.step, Object.keys(e.acct.errors)], [2, []]);
+    assert.ok(e.sheet.innerHTML.includes("2 / 3 단계") && e.sheet.innerHTML.includes("누가 함께 쓰나요?") && e.sheet.innerHTML.includes('data-acct-radio="situation"') && e.sheet.innerHTML.includes('data-acct-input="familyCode"') && e.sheet.innerHTML.includes('data-acct-action="prev-step"'));
+    await e.click({ action: "next-step" });
+    assert.deepStrictEqual([e.acct.form.step, Object.keys(e.acct.errors).sort()], [2, ["role", "situation"]], "자녀 유무·역할을 골라야 넘어간다");
+    Object.assign(e.acct.form, { situation: "HAS_CHILD", role: "MOM" });
+    await e.click({ action: "next-step" });
+    assert.strictEqual(e.acct.form.step, 3);
+    assert.ok(e.sheet.innerHTML.includes("3 / 3 단계") && e.sheet.innerHTML.includes('data-acct-input="province"') && e.sheet.innerHTML.includes('data-acct-action="submit-signup"') && !e.sheet.innerHTML.includes('data-acct-action="next-step"'));
+    await e.click({ action: "prev-step" });
+    assert.deepStrictEqual([e.acct.form.step, Object.keys(e.acct.errors)], [2, []]);
+    e.acct.form.step = 1; await e.click({ action: "prev-step" });
+    assert.strictEqual(e.acct.form.step, 1, "1단계 이전은 그대로");
+  });
+  await test("합류(코드 입력·[가족코드로 함께하기])는 2단계로 줄고, 가족코드부터 시작(open-join)하며 마지막 단계에서 [가입하기]·[코드가 없어요]", async () => {
+    assert.deepStrictEqual([AV.signupTotal({}), AV.signupTotal({ familyCode: "abcd2345" }), AV.signupTotal({ join: true }), AV.signupStep({ step: 9 }), AV.signupStep({ join: true, step: 3 })], [3, 2, 2, 3, 2]);
+    const e = env();
+    await e.click({ action: "open-join" });
+    assert.deepStrictEqual([e.acct.form.join, e.acct.form.step], [true, 2]);
+    assert.ok(e.sheet.innerHTML.includes("2 / 2 단계") && e.sheet.innerHTML.includes("어느 가족에 합류하나요?") && e.sheet.innerHTML.includes('data-acct-action="submit-signup"') && e.sheet.innerHTML.includes('data-acct-action="join-off"'));
+    await e.click({ action: "prev-step" });
+    assert.ok(e.sheet.innerHTML.includes("1 / 2 단계") && e.sheet.innerHTML.includes('data-acct-input="email"'));
+    Object.assign(e.acct.form, { email: "a@b.co", password: "12345678", displayName: "민" });
+    await e.click({ action: "next-step" });
+    assert.strictEqual(e.acct.form.step, 2);
+    await e.click({ action: "submit-signup" });
+    assert.ok(e.acct.errors.familyCode && e.acct.form.step === 2, "코드 없이 가입하면 코드 단계에서 오류");
+  });
+  await test("제출 때 앞 단계 오류는 그 단계로 되돌리고(firstErrorStep), 단계별 필드 키가 검증 오류 키와 일치한다", async () => {
+    assert.deepStrictEqual([AV.signupStepKeys({}, 1), AV.signupStepKeys({}, 2), AV.signupStepKeys({}, 3), AV.signupStepKeys({ join: true }, 2)], [["email", "password", "displayName"], ["situation", "role", "familyCode"], ["region"], ["familyCode", "role"]]);
+    assert.deepStrictEqual([AV.firstErrorStep({}, { region: "x", role: "y" }), AV.firstErrorStep({}, { email: "x" }), AV.firstErrorStep({}, {})], [2, 1, 0]);
+    const e = env();
+    e.acct.mode = "signup"; e.acct.form = { step: 3, situation: "HAS_CHILD", role: "MOM", password: "12345678", displayName: "주연" }; // 이메일 누락
+    await e.click({ action: "submit-signup" });
+    assert.deepStrictEqual([e.acct.form.step, Object.keys(e.acct.errors)], [1, ["email"]]);
+    assert.ok(e.sheet.innerHTML.includes("1 / 3 단계"));
   });
   console.log("가입 intent");
   await test("가입 의도(저장값): situation·role·지역만 있고 아이 이름·생년월일·기관·비밀번호는 없다, 지역 없이도 가입된다", async () => {
@@ -147,7 +192,8 @@ function env({ flag = true, profile = null, account = null, user = null, emptySt
     off.t.acctRenderLanding();
     assert.deepStrictEqual([off.els["hero-title"].innerHTML, off.els["entry-fine-print"].textContent], ["기존", "기존 문구"]);
     const card = AV.renderLanding({});
-    for (const t of [O.title, O.sub, O.primary, O.joinTitle, O.joinDesc, O.login, O.browse, O.betaOff]) assert.ok(card.includes(t), t);
+    for (const t of [O.title, O.primary, O.joinShort, O.login, O.ob1Title.split("\n")[0], O.ob2Sub]) assert.ok(card.includes(t), t); // G7: 새 첫 화면(2장 슬라이드)
+    assert.ok(!card.includes(O.browse) && !card.includes(O.betaOff), "가입 없이 둘러보기·베타 끄기 버튼 삭제");
     assert.ok(read("index.html").includes('<p class="fine-print" id="entry-fine-print">회원가입 없이 바로 시작해요. 가족코드로 다른 기기에서도 이어볼 수 있어요.</p>'), "OFF 문구 원문 유지(id 만 추가)");
   });
   await Promise.all(pending);

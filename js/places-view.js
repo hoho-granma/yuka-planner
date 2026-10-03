@@ -30,6 +30,7 @@
     sortPopular: "인기순",
     noOrigin: "프로필에서 지역을 정하면 거리로 볼 수 있어요",
     driveBasis: (name) => `${name}에서 차로 걸리는 시간(직선거리로 추정)`,
+    driveTime: (min) => `차로 약 ${min}분`,
     driveNote: (min, name) => `차로 약 ${min}분 · ${name} 기준`,
     source: "거리: 직선거리로 추정한 차량 이동 시간 · 위치 © OpenStreetMap contributors",
     notice: "방문 전 공식 링크에서 운영 여부를 확인하세요",
@@ -162,6 +163,16 @@
     return `<li class="places-meta-item${known ? "" : " unknown"}"><span class="places-meta-label">${esc(label)}</span><span class="places-meta-value">${esc(known ? value : TEXT.unknown)}</span></li>`;
   }
 
+  // G7: 큰 카드 머리 영역(사진 데이터가 없어 분류별 색 + 선 아이콘으로 대신한다)
+  const PH_ICON = {
+    PARK: '<circle cx="12" cy="9" r="5"/><path d="M12 14v7M9 21h6"/>',
+    LIBRARY: '<path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v15H5.5C4.7 19 4 18.3 4 17.5zM20 5.5c0-.8-.7-1.5-1.5-1.5H13v15h5.5c.8 0 1.5-.7 1.5-1.5z"/>',
+    KIDSCAFE: '<path d="M5 11h14v3a7 7 0 0 1-14 0zM19 12h1.5a2 2 0 0 1 0 4H18M8 4v3M12 4v3M16 4v3"/>',
+    EXPERIENCE: '<path d="M12 3l2.6 5.6 6 .8-4.4 4.2 1.1 6L12 16.7 6.7 19.6l1.1-6L3.4 9.4l6-.8z"/>',
+    EDU: '<path d="M3 9l9-5 9 5-9 5zM7 11.5V16c0 1.5 2.2 3 5 3s5-1.5 5-3v-4.5"/>',
+    MUSEUM: '<path d="M3 9l9-5 9 5zM5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/>',
+    INDOOR: '<path d="M4 11l8-7 8 7v9H4zM10 20v-5h4v5"/>',
+  };
   function renderCard(p, today, origin) {
     const stale = Places.isStale(p, today);
     const badges = [`<span class="places-badge places-badge-cat">${esc(lookup(Places.CATEGORIES, p.category) || "")}</span>`];
@@ -172,16 +183,19 @@
       ? `<a class="places-link" href="${esc(p.officialUrl)}" target="_blank" rel="noopener noreferrer">${esc(TEXT.link)}</a>`
       : "";
     const min = origin ? Places.driveMinFrom(p, origin) : null;
-    const driveLine = min === null ? "" : `<p class="places-drive">${esc(TEXT.driveNote(Math.max(1, min), origin.name))}</p>`; // '약'은 추정이라 꼭 붙인다. 1분 미만은 1분으로 표시
     const where = [p.province, p.district].filter((s) => typeof s === "string" && s).join(" ");
+    const cat = Object.prototype.hasOwnProperty.call(PH_ICON, p.category) ? p.category : "PARK";
+    const tm = min === null ? "" : `<span class="places-ph-tm">${esc(TEXT.driveTime(Math.max(1, min)))}</span>`;
     return (
-      `<article class="places-card" data-places-id="${esc(p.id)}" data-places-open="${esc(p.id)}">` +
-      `<div class="places-badges">${badges.join("")}</div>` +
+      `<article class="places-card places-card-big" data-places-id="${esc(p.id)}" data-places-open="${esc(p.id)}">` +
+      `<div class="places-ph places-ph-${cat.toLowerCase()}" aria-hidden="false">` +
+      `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PH_ICON[cat]}</svg>` +
+      `<div class="places-badges places-ph-pin">${badges.join("")}</div>${tm}</div>` +
+      `<div class="places-card-bd">` +
       `<h3 class="places-name">${esc(p.name)}</h3>` +
       (p.summary ? `<p class="places-summary">${esc(p.summary)}</p>` : "") +
       (typeof p.notice === "string" && p.notice ? `<p class="places-card-notice">${esc(p.notice)}</p>` : "") +
       (p.address || where ? `<p class="places-address">${esc(p.address || where)}</p>` : "") +
-      driveLine +
       `<ul class="places-meta">` +
       metaItem("권장 나이", ageText(p.ageMonths)) +
       metaItem("실내·실외", lookup(Places.INDOOR, p.indoor)) +
@@ -190,7 +204,7 @@
       `</ul>` +
       (p.checkedAt ? `<p class="places-checked">${esc(p.checkedAt)} 확인</p>` : "") +
       `<div class="places-actions">${link}<button type="button" class="places-add" data-places-add="${esc(p.id)}">${esc(TEXT.add)}</button></div>` +
-      `</article>`
+      `</div></article>`
     );
   }
 

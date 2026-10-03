@@ -155,7 +155,7 @@ test("분류 선택 중 빈 목록은 분류 안내 + 해당 칩 active", () => 
 });
 test("카드 1개: 이름·설명·나이·실내외·비용·예약·링크·일정 추가·공통 안내", () => {
   const html = V.render({ places: [base], category: "LIBRARY", today: TODAY });
-  assert.strictEqual((html.match(/class="places-card"/g) || []).length, 1);
+  assert.strictEqual((html.match(/class="places-card places-card-big"/g) || []).length, 1);
   ["구로구립도서관", "영유아 자료실이 있는 구립 도서관", "0~72개월", "실내", "무료", "예약 없이 이용", "도서관", "예시"].forEach((s) => assert(html.includes(s), s));
   assert(html.includes('href="https://example.go.kr/lib" target="_blank" rel="noopener noreferrer"'));
   assert(html.includes('data-places-add="seoul-guro-lib-001"'));

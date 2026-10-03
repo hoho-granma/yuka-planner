@@ -477,7 +477,7 @@ const ST = { enabled: true, hasHousehold: true, members: MEMBERS, activeMemberId
     assert.ok(/us\.form\.assigneeMemberId = us\.form\.assigneeMemberId === v \? "" : v/.test(body));
   });
   await test("프로필 시트: 구성원 슬롯은 가구 슬롯 옆(플래그 ON 일 때만)이고, 시트를 열 때 구성원 UI 상태를 초기화·클릭을 연결한다", () => {
-    assert.ok(/<div id="hh-slot"><\/div>'\}<div id="members-slot"><\/div>/.test(APP)); // H1: 계정 모드에서는 hh-slot 생략, members-slot 은 유지
+    assert.ok(/<div id="hh-slot"><\/div><div id="members-slot"><\/div>' : ""\}/.test(APP) && APP.includes('<div id="members-slot"></div></details>')); // H1: 계정 모드에서는 hh-slot 생략, members-slot 은 유지
     const body = extract("function hhOpenSection(");
     assert.ok(/mem\.view = "list"; mem\.form = null; mem\.deleteId = null;/.test(body) && /addEventListener\("click", memOnClick\)/.test(body));
   });

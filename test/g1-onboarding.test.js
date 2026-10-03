@@ -60,7 +60,7 @@ test("[가족 코드로 함께하기]: 가입 시트를 합류 모드로 열고(
   e.setRoot({ addEventListener() {}, querySelector: (s) => (s === '[data-acct-input="familyCode"]' ? { focus: () => focused++ } : null) });
   await e.click("open-join");
   const h = e.sheet.innerHTML;
-  assert.ok(h.includes("가족과 함께하기") && h.includes('data-acct-input="familyCode"') && h.indexOf('data-acct-input="familyCode"') < h.indexOf('data-acct-input="email"'));
+  assert.ok(h.includes("어느 가족에 합류하나요?") && h.includes("2 / 2 단계") && h.includes('data-acct-input="familyCode"') && !h.includes('data-acct-input="email"'), "합류는 가족코드(2/2단계)부터, 이전 단계에서 계정 입력"); // G7
   assert.ok(!h.includes('data-acct-radio="situation"') && !h.includes('data-acct-input="province"') && !h.includes('data-acct-radio="role"') && AV.renderRolePick({ form: {} }).includes(">이모님(기타 돌봄)<") && h.includes('data-acct-action="join-off"')) // H2: 역할은 자리 선택/역할 단계에서;
   assert.deepStrictEqual([focused, e.acct.joinFocus], [1, false], "코드 칸 포커스 1회");
   e.acct.form = { ...e.acct.form, email: "d@x.co", password: "12345678", displayName: "민수", role: "DAD" };
@@ -74,7 +74,7 @@ test("[가족 코드로 함께하기]: 가입 시트를 합류 모드로 열고(
   assert.ok(!e.acct.form.join);
 });
 test("가입 시트 [가입하기]는 첫 화면 주 버튼과 같은 스타일 클래스(acct-btn-primary)", () => {
-  assert.ok(AV.renderSignup({ form: {} }).includes('class="acct-btn-primary" data-acct-action="submit-signup"'));
+  assert.ok(AV.renderSignup({ form: { step: 3 } }).includes('class="acct-btn-primary acct-step-go" data-acct-action="submit-signup"')); // G7: 마지막(3/3) 단계의 [가입하기]
   assert.ok(AV.renderLanding({}).includes('class="acct-btn-primary" data-acct-action="open-signup"'));
 });
 test("첫 화면 문구: 부제·버튼 라벨·링크가 합의한 문구이고 한곳(MSG.onboard, 동결)에 모여 있다", () => {
@@ -148,7 +148,7 @@ test("왕복: 켜기 확인 → household·accounts 키 '1' + reload, 새 첫 �
 
 console.log("버튼 스타일(CSS) · 390px 측정");
 test("CSS: 주 버튼 54px·둥근 16px·accent 채움·그림자·눌림·포커스 링, 보조 카드 56px·테두리·원형 아이콘, 새 색 도입 없음(var(--accent*)/기존 #fff·#fff7f2/accent rgba 만)", () => {
-  const g1 = CSS.slice(CSS.indexOf("/* G1: 첫 화면(계정 ON)"));
+  const g1 = CSS.slice(CSS.indexOf("/* G1: 첫 화면(계정 ON)"), CSS.indexOf("/* G6:")); // G7 슬라이드 CSS 는 아래 별도 블록
   const rule = (sel) => (g1.match(new RegExp("(^|\\n)" + sel.replace(/[.*+?^${}()|[\]\\:]/g, "\\$&") + "\\s*\\{([^}]*)\\}")) || [])[2] || "";
   const pri = rule(".acct-btn-primary");
   assert.ok(/min-height:\s*54px/.test(pri) && /border-radius:\s*16px/.test(pri) && /background:\s*var\(--accent\)/.test(pri) && /color:\s*#fff/.test(pri) && /box-shadow:/.test(pri) && /width:\s*100%/.test(pri));
