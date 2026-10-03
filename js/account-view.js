@@ -21,7 +21,7 @@
       codeHint: "가족코드를 받았다면 회원가입에서 입력해요",
       joinTitle: "가족에게 받은 가족코드로 함께하기",
       ob1Title: "우리 가족 일정,\n한눈에",
-      ob1Sub: "접종·지원금·가족 약속까지 한 달력에",
+      ob1Sub: "아빠, 엄마, 아이 일정을 한 달력에.\n가족 일정은 모으고, 육아 일정은 알아서 챙겨줘요.",
       // 1장 예시: 사람별 대표색(아빠·엄마·세현·수아). 일정 = [점 색(들), 앞글, 라벨 종류(vx 접종·hc 검진·sb 지원금, 없으면 ""), 라벨, 뒷글]
       ob1People: Object.freeze([["아빠", "#7fb8ff"], ["엄마", "#ff9ec4"], ["세현", "#ffc46b"], ["수아", "#7fe0b3"]]),
       ob1Days: Object.freeze([[5], [6, "수아"], [7, "", true], [8, "아빠"], [9], [10, "세현"], [11], [12, "엄마"], [13, "아빠"], [14], [15, "수아"], [16, "세현"], [17, "아빠 엄마"], [18, "아빠 엄마 세현 수아"]]),
@@ -325,7 +325,7 @@
     const feats = O.ob2Feats.map(([k, t, d]) => `<div class="acct-feat"><span class="acct-feat-ic acct-feat-${k}">${FEAT_ICO[k]}</span><span><b>${esc(t)}</b><span>${esc(d)}</span></span></div>`).join("");
     return `<div class="card acct-landing acct-ob" id="acct-landing"><div class="acct-main">
       <div class="acct-slides" data-acct-slides tabindex="0" aria-label="${esc(O.ob2Aria)}">
-        <section class="acct-slide" data-acct-slide="0" aria-label="1/2"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title)}</h1><p class="acct-sub">${esc(O.ob1Sub)}</p></div>
+        <section class="acct-slide" data-acct-slide="0" aria-label="1/2"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title)}</h1><p class="acct-sub">${lines(O.ob1Sub)}</p></div>
           <div class="acct-ob1-cal" aria-hidden="true"><div class="acct-ob1-chips">${chips}</div><div class="acct-ob1-wk">${O.ob1Weekdays.map((d) => `<span>${d}</span>`).join("")}</div><div class="acct-ob1-days">${days}</div><div class="acct-ob1-ev">${evs}</div></div></section>
         <section class="acct-slide acct-slide2" data-acct-slide="1" aria-label="2/2"><p class="acct-brand">${esc(O.ob2Brand)}</p><p class="acct-lead">${lines(O.ob2Lead)}</p><div class="acct-feats">${feats}</div></section>
       </div>

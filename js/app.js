@@ -977,6 +977,48 @@
     }
   }
 
+  // G17: 계정 모드(로그인)의 프로필 시트는 '내 프로필'이다 — 제목은 내 이름·역할, 아이는 '우리 아이' 한 줄(누르면 기존 아이 정보 시트). OFF·로그아웃 상태는 기존 시트 그대로.
+  const showProfileSheetBase = showProfileSheet;
+  let acctChildView = false; // '우리 아이' 줄에서 연 기존 아이 시트 안에서는 기존 시트로 다시 그린다(사진 저장·수정 취소 등)
+  function acctProfileSheet() {
+    acctChildView = false;
+    modalMode = "profile";
+    const id = acctIdentity();
+    const title = id ? (id.roleName ? `${id.name} · ${AccountView.MSG.myRole(id.roleName)}` : id.name) : AccountView.MSG.myAccount;
+    const acc = acct.account || {};
+    const region = acc.province ? `${acc.province} ${acc.district || ""}`.trim() : profile ? `${profile.province} ${profile.district}` : "";
+    const kid = profile ? acctHomeChildText() : "";
+    el("modal-content").innerHTML = `
+      <div class="profile-name-row acct-prof-head"><span class="avatar profile-sheet-avatar">${PERSON_ICON_SVG}</span><h3>${esc(title)}</h3></div>
+      <div id="acct-slot"></div>
+      ${region ? `<div class="detail-row"><div class="label">거주 지역</div>${esc(region)}</div>` : ""}
+      <details class="acct-members-det"><summary><strong>${esc(AccountView.MSG.membersManage)}</strong><small>${esc(AccountView.MSG.membersManageHint)}</small></summary><div id="members-slot"></div></details>
+      <div class="detail-row acct-kids"><div class="label">우리 아이</div>${
+        profile
+          ? `<button type="button" class="acct-kid-row" id="btn-acct-kid-row"><span>${esc(kid)}</span><span class="hr-chev">›</span></button>`
+          : `<button type="button" class="acct-kid-row" id="btn-acct-kid-add"><span>＋ ${esc(AccountView.MSG.emptyButton)}</span><span class="hr-chev">›</span></button>`
+      }</div>
+      <div class="acct-bottom-row">${acctKidCount() >= 2 ? '<button type="button" class="btn-close" id="btn-acct-child-switch">아이 전환</button>' : ""}${profile ? '<button type="button" class="btn-close" id="btn-view-records">기록 보기</button>' : ""}</div>
+      <button class="btn-close" id="btn-close-modal">닫기</button>`;
+    el("detail-modal").classList.remove("hidden");
+    el("btn-close-modal").addEventListener("click", closeDetail);
+    acctOpenSlot();
+    if (hhEnabled()) hhOpenSection();
+    if (el("btn-acct-child-switch")) el("btn-acct-child-switch").addEventListener("click", showChildSwitchSheet);
+    if (el("btn-view-records")) el("btn-view-records").addEventListener("click", openRecordView);
+    if (el("btn-acct-kid-row")) el("btn-acct-kid-row").addEventListener("click", () => { acctChildView = true; showProfileSheetBase(); });
+    if (el("btn-acct-kid-add")) el("btn-acct-kid-add").addEventListener("click", () => { closeDetail(); beginNewChildEntry(); });
+  }
+  showProfileSheet = function (pendingPhoto) {
+    if (acctEnabled() && acct.user && !acctChildView) return acctProfileSheet();
+    return showProfileSheetBase(pendingPhoto);
+  };
+  const closeDetailBase = closeDetail;
+  closeDetail = function () {
+    acctChildView = false;
+    return closeDetailBase.apply(this, arguments);
+  };
+
   /**
    * 아이 정보 수정 — 처음 화면으로 돌아가 새로 입력하지 않고, 저장된 정보를 그대로 채운 폼을 띄운다.
    * 가족코드·완료 내역·기록·사진은 그대로 두고 이름/생년월일(출산예정일)/몇째/지역만 바꾼다.
@@ -2668,6 +2710,45 @@
     // completed와 같은 이유로 코드 없는 임시 기록도 비운다(새 아이에게 이전 아이의 기록이 섞이지 않게).
     HNRecords.clearLocal();
     HNRecords.use(null);
+  }
+  // ── G17 로컬 아이 데이터의 주인(owner uid): 다른 계정의 아이가 이 기기 화면에 섞이지 않게 한다. 계정 모드에서만 쓴다(플래그 OFF 는 읽지도 쓰지도 않는다). ──
+  const ACCT_OWNER_KEY = "hannun_local_owner";
+  const acctChildKeys = () => [PROFILE_KEY, COMPLETED_KEY, "hannun_children", "hannun_child_births", "hannun_migrate_kept"]; // 아이별 로컬 키(기능 플래그·로그아웃 표시·온보딩 본 표시 등은 대상 아님)
+  function acctOwnerRead() {
+    try { return localStorage.getItem(ACCT_OWNER_KEY) || ""; } catch (e) { return ""; }
+  }
+  function acctOwnerWrite(uid) {
+    try { if (uid) localStorage.setItem(ACCT_OWNER_KEY, uid); else localStorage.removeItem(ACCT_OWNER_KEY); } catch (e) {}
+  }
+  /** 이 기기의 아이 관련 로컬 데이터를 비운다(서버는 건드리지 않는다). 화면 전환은 하지 않는다. */
+  function acctWipeLocalChild() {
+    try { applyNewChildReset(); } catch (e) { console.error("로컬 아이 데이터 정리 실패", e); }
+    try { acctChildKeys().forEach((k) => localStorage.removeItem(k)); } catch (e) {}
+    // 아이 코드·가구 id 를 뒤에 붙이는 접두어 키(직접 기록=비공개 메모 포함, 가구 미러·대기열)도 모두 지운다.
+    try {
+      const gone = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && ["hannun_records:", "hannun_household:", "hannun_household_pending:"].some((p) => k.indexOf(p) === 0)) gone.push(k);
+      }
+      gone.forEach((k) => localStorage.removeItem(k));
+    } catch (e) {}
+    profile = null;
+    familyCode = null;
+    completed = {};
+    const nm = el("childName");
+    if (nm) nm.value = "";
+  }
+  /** 로그인한 uid 가 로컬 데이터를 만든 uid 와 다르면 비운다. 기록이 없으면(로그인 기록 없는 기기·기존 사용자) 지우지 않고 이 uid 의 것으로 연결한다. */
+  function acctOwnerSync(u) {
+    if (!acctEnabled() || !u || !u.uid) return;
+    const owner = acctOwnerRead();
+    if (!owner) return acctOwnerWrite(u.uid);
+    if (owner === u.uid) return;
+    if (hh.hid) { try { hhLeaveLocal(); } catch (e) { console.error("다른 계정 로그인 뒤 가구 정리 실패", e); } }
+    acctWipeLocalChild();
+    acctOwnerWrite(u.uid);
+    if (typeof showEmptyHome === "function") showEmptyHome();
   }
   /** 저장·불러오기 성공 시점: 이전 아이를 비우고 입력 모드를 끝낸다. */
   function finishNewChildEntry() {
@@ -5027,6 +5108,7 @@
   /** 로그인 상태가 됐을 때: 끝나지 않은 가입이 있으면 이어서 마무리, 아니면 계정 가구를 이 기기에 복원(이 기기에 다른 가구가 있으면 건드리지 않는다 — D4). */
   async function acctRestore(u) {
     // G16: 복원을 못 하는 경우(계정 동기화 모듈 없음)에도 로그인한 사람이 첫 화면(아이 입력 폼)에 남지 않게 홈으로 보낸다.
+    if (typeof acctOwnerSync === "function") acctOwnerSync(u); // G17: 다른 계정의 로컬 아이 데이터가 남아 있으면 복원 전에 비운다
     if (!acct.sync) { await acctGoHome(); return; }
     if (acct.busy || acct.completing || acct.restoring) return;
     acct.restoring = true;
@@ -5256,9 +5338,16 @@
       const linked = await acctIsLinked(acct.user && acct.user.uid);
       // D4: 이 기기 가구가 이 계정의 가구면, 로그아웃 전에 대기열을 한 번 더 보내 보고 로그아웃 뒤 이 기기의 가구 연결을 정리한다(다른 계정 로그인 시 혼선 방지).
       const own = !!(hh.hid && hh.code && acct.account && acct.account.householdCode === hh.code);
+      // G17: 서버에 아직 못 올린 변경(대기열)이 남았거나 보내기에 실패하면 이 기기 데이터를 지우지 않는다(유실 방지). 주인(owner uid)은 남겨 다른 계정이 로그인하면 그때 비운다.
+      let unsynced = false;
       if (hh.hid) {
         try {
           await HouseholdSync.flush(hh.hid);
+        } catch (e) {
+          unsynced = true;
+        }
+        try {
+          if (typeof HouseholdSync.getStatus === "function" && HouseholdSync.getStatus(hh.hid).pending > 0) unsynced = true;
         } catch (e) {}
       }
       const r = await acct.svc.signOut();
@@ -5269,13 +5358,17 @@
       }
       // 정리 범위: 가구 id·코드·미러·대기열·이 기기 사용자 키만. 아이·완료·기록·사진은 그대로 둔다.
       // P1: 계정 모드에서는 이 기기의 가구 연결을 계정 가구와 같든 다르든 모두 정리한다(로그아웃한 계정의 가구가 다음 사람 화면에 남지 않게).
-      if (hh.hid) {
+      if (hh.hid && !unsynced) {
         try {
           hhLeaveLocal();
         } catch (e) {
           console.error("로그아웃 후 가구 정리 실패", e);
         }
         hhRender();
+      }
+      if (!unsynced && typeof acctWipeLocalChild === "function") {
+        acctWipeLocalChild(); // G17: 로그아웃하면 이 기기의 아이 데이터도 비운다(다음 사람 화면에 남지 않게)
+        acctOwnerWrite(null);
       }
       if (linked) acctClearIntent();
       acctSignedOutMark(true); // 오프라인으로 다시 열어도 첫 화면이 나오게 이 기기에 표시를 남긴다(로그인하면 지운다)

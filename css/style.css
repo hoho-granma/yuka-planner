@@ -1397,3 +1397,8 @@ body.acct-design .us-detail .us-dot { flex: none; width: 10px; height: 10px; bor
 body.acct-design .rec-add { display: block; width: 100%; min-height: 46px; margin: 4px 0 12px; border: 1.5px dashed var(--accent); border-radius: 14px; background: #fff; color: var(--accent); font-size: 15px; font-weight: 800; }
 /* G16: 온보딩 맨 아래 버전 표시(작은 회색, 높이 최소) */
 body.acct-design #view-landing .acct-ver { margin: 0; padding: 0; font-size: 10.5px; line-height: 1.2; text-align: center; color: #b3b3ba; letter-spacing: .2px; }
+/* G17: 계정 모드 '내 프로필' 시트 */
+body.acct-design .acct-prof-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+body.acct-design .acct-prof-head h3 { margin: 0; font-size: 20px; }
+body.acct-design .acct-kids .acct-kid-row { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; margin-top: 6px; padding: 0 14px; border: 1px solid var(--border); border-radius: 14px; background: #fff; font-size: 15px; font-weight: 700; color: var(--text); text-align: left; }
+body.acct-design .acct-prof-head ~ #acct-slot .acct-me-text > strong { display: none; } /* 시트 맨 위 제목과 계정 줄의 이름이 겹치지 않게(이메일·코드만 보인다) */
