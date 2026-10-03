@@ -11,7 +11,8 @@
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#ff8a5c" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
-<link rel="stylesheet" href="css/style.css?v=98" />
+<script>/* G19: 계정 모드(기본 ON)에서는 옛 상황 선택 화면이 첫 그림부터 한 번도 보이지 않게 한다(js/feature-flags.js 와 같은 규칙: accounts="0" 일 때만 OFF) */try{if(localStorage.getItem("hannun_feature_accounts")!=="0")document.documentElement.classList.add("hnacc-default");}catch(e){document.documentElement.classList.add("hnacc-default");}</script>
+<link rel="stylesheet" href="css/style.css?v=99" />
   <link rel="stylesheet" href="css/places.css?v=7" />
 </head>
 <body>
@@ -303,7 +304,7 @@
   <script src="js/schedule-kinds.js?v=1"></script>
   <script src="js/user-schedule-view.js?v=20"></script>
   <script src="js/records-view.js?v=9"></script>
-  <script src="js/app.js?v=126"></script>
+  <script src="js/app.js?v=128"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

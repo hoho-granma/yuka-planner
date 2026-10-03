@@ -68,8 +68,9 @@ const emptyHomeShown = (t) => t.hidden.landing === 1 && t.hidden.empty === 0 && 
     let release; const gate = new Promise((r) => (release = r));
     t.sb.acct.sync.restore = async () => { await gate; return { ok: true, account: { householdCode: "A8RZ7Q9X" } }; };
     const splash = { on: false };
-    Object.assign(t.sb, { RESTORE_MAX_MS: 10000, acctRestoreSlow() {}, acctSplashShow: () => (splash.on = true), acctSplashArm() {}, acctSplashHide: () => (splash.on = false) });
-    vm.runInContext([fn("acctLoginRestore"), fn("acctRestoreThenHide")].join("\n"), t.sb);
+    const spEl = { remove: () => (splash.on = false) }; const baseEl = t.sb.el;
+    Object.assign(t.sb, { RESTORE_MAX_MS: 10000, setTimeout, acctRestoreSlow() {}, acctSplashShow: () => (splash.on = true), acctSplashArm() {}, acctSplashTimer: null, el: (id) => (id === "acct-splash" && splash.on ? spEl : baseEl(id)) });
+    vm.runInContext([fn("acctLoginRestore", true), fn("acctRestoreThenHide"), fn("acctSplashHold"), fn("acctSplashRelease"), fn("acctSplashHide")].join("\n"), t.sb);
     const p = t.sb.acctLoginRestore({ uid: "u1" });
     await new Promise((r) => setImmediate(r));
     assert.ok(splash.on === true && t.hidden.landing === 0, "복원 대기 중: 스플래시가 덮고 있다(입력 폼 뒤에 있음)");
@@ -83,8 +84,9 @@ const emptyHomeShown = (t) => t.hidden.landing === 1 && t.hidden.empty === 0 && 
       let release; const gate = new Promise((r) => (release = r));
       t.sb.acct.sync.restore = async () => { await gate; return { ok: true, account: { householdCode: "A8RZ7Q9X" } }; };
       const splash = { on: false };
-      Object.assign(t.sb, { RESTORE_MAX_MS: 10000, acctRestoreSlow() {}, acctSplashShow: () => (splash.on = true), acctSplashArm() {}, acctSplashHide: () => (splash.on = false) });
-      vm.runInContext([fn("acctLoginRestore"), fn("acctRestoreThenHide")].join("\n"), t.sb);
+      const spEl = { remove: () => (splash.on = false) }; const baseEl = t.sb.el;
+    Object.assign(t.sb, { RESTORE_MAX_MS: 10000, setTimeout, acctRestoreSlow() {}, acctSplashShow: () => (splash.on = true), acctSplashArm() {}, acctSplashTimer: null, el: (id) => (id === "acct-splash" && splash.on ? spEl : baseEl(id)) });
+      vm.runInContext([fn("acctLoginRestore", true), fn("acctRestoreThenHide"), fn("acctSplashHold"), fn("acctSplashRelease"), fn("acctSplashHide")].join("\n"), t.sb);
       const u = { uid: "u1" };
       const first = order === "signIn 응답 먼저" ? t.sb.acctLoginRestore(u) : (t.sb.acctSplashShow(), t.sb.acctRestoreThenHide(u));
       await new Promise((r) => setImmediate(r));

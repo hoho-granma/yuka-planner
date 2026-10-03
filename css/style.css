@@ -1335,6 +1335,8 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .home-child-chip.active { background: #ffe3d6; border-color: #ffc9b0; color: var(--accent-dark); }
 .home-child-line { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--text-muted); }
 
+/* G19: 계정 모드 기본 ON — JS 가 acct-on 을 붙이기 전(첫 그림·로딩 중)에도 옛 시작 화면(제목·상황 선택)은 보이지 않는다 */
+html.hnacc-default #view-landing > .hero, html.hnacc-default #view-landing #stage-choice, html.hnacc-default #view-landing #btn-stage-back, html.hnacc-default #view-landing #beta-preview-slot { display: none !important; }
 /* ===== G14: 계정 모드 새 디자인(body.acct-design) — 플래그 OFF 에는 적용되지 않는다 ===== */
 /* G14-1 일정 상세: 라벨·값 줄 + 완료 버튼 전체 폭, 수정·삭제 2열, 닫기 */
 body.acct-design .us-detail { display: block; }

@@ -4620,6 +4620,7 @@
     if (acctJoinLinkStart()) return; // Q3: 계정 기능이 꺼진 기기는 켠 뒤 새로고침
     if (!acctEnabled()) return;
     if (typeof document !== "undefined" && document.body && document.body.classList) document.body.classList.add("acct-design"); // G14: 계정 모드에서만 새 화면 디자인(체크리스트·혜택·기록·상세 시트) CSS 가 적용된다
+    if (el("view-landing") && el("view-landing").classList) el("view-landing").classList.add("acct-on"); // G19: 계정 모드에선 로딩 중에도 옛 상황 선택 화면을 그리지 않는다
     // G16: 첫 화면 입력 폼의 OFF 안내문('회원가입 없이 바로 시작해요…')을 계정 모드에서는 처음부터 중립 문구로 바꾼다(로그인 직후 새 아이 입력 폼에도 OFF 문구가 보이지 않게).
     if (typeof el === "function" && el("entry-fine-print")) el("entry-fine-print").textContent = AccountView.MSG.onboard.formNote;
     acct.svc = AuthService.create();
@@ -4681,6 +4682,7 @@
   }
   /** 로그인됨인데 가구 복원이 10초를 넘기면: 중립 화면을 걷고 아이가 없으면 '아이를 등록해 주세요' 빈 홈(있으면 지금 홈 그대로). */
   function acctRestoreSlow() {
+    acct.splashHold = false;
     acctSplashHide();
     if (acct.user && !profile && !newChildMode && typeof showEmptyHome === "function") showEmptyHome();
   }
@@ -4688,10 +4690,26 @@
    * G16: 로그인 직후 복원(Firestore 읽기)이 느려도 아이 입력 폼(view-landing)이 비치지 않게, 복원이 끝날 때까지 중립 화면(스플래시)을 덮는다.
    * 10초를 넘기면 기존 규칙(acctRestoreSlow)대로 걷고 빈 홈. 다른 복원이 진행 중이면(onChange) 그쪽이 끝날 때 걷는다.
    */
-  function acctLoginRestore(u) {
+  async function acctLoginRestore(u) {
+    acctSplashHold();
+    try {
+      await acctRestoreThenHide(u);
+      // 다른 복원(onChange)이 진행 중이라 바로 돌아왔다면 그 복원이 끝날 때까지(최대 RESTORE_MAX_MS) 기다린다
+      for (let n = 0; acct.restoring && n < 200 && typeof setTimeout === "function"; n++) await new Promise((r) => setTimeout(r, 50));
+      if (typeof acctGoHome === "function") await acctGoHome();
+    } finally {
+      acctSplashRelease();
+    }
+  }
+  /** G19: 가입·로그인 성공 뒤 홈(또는 빈 홈)이 그려질 때까지 중립 화면을 붙잡는다 — 어떤 순서로 콜백이 와도 아이 입력 폼(view-landing)이 비치지 않게. 10초 뒤엔 acctRestoreSlow 가 푼다. */
+  function acctSplashHold() {
+    acct.splashHold = true;
     acctSplashShow();
     acctSplashArm(RESTORE_MAX_MS, acctRestoreSlow);
-    return acctRestoreThenHide(u);
+  }
+  function acctSplashRelease() {
+    acct.splashHold = false;
+    acctSplashHide();
   }
   /** 복원을 하고 끝나면 스플래시를 걷는다. 다른 복원이 이미 진행 중이라 바로 돌아온 경우(acct.restoring)는 걷지 않는다 — 진행 중인 복원이 끝날 때 걷는다(Auth 콜백·signIn 응답 순서와 무관). */
   function acctRestoreThenHide(u) {
@@ -4701,6 +4719,7 @@
     );
   }
   function acctSplashHide() {
+    if (acct.splashHold) return; // G19: 가입·로그인 직후에는 acctSplashRelease 만 걷는다
     if (acctSplashTimer) clearTimeout(acctSplashTimer);
     acctSplashTimer = null;
     const d = el("acct-splash");
@@ -5278,15 +5297,25 @@
     try {
       localStorage.setItem(ACCT_INTENT_KEY, JSON.stringify(intent));
     } catch (e) {}
-    const fin = acct.sync ? await acctFinishSignup(intent, true) : { ok: true };
+    acctSplashHold(); // G19: 가입 직후 홈이 그려질 때까지 중립 화면(가구 생성·accounts 쓰기가 느려도 view-landing 이 비치지 않게)
+    let fin;
+    try {
+      fin = acct.sync ? await acctFinishSignup(intent, true) : { ok: true };
+    } catch (e) {
+      fin = { ok: false };
+    }
     acct.busy = false;
-    if (!fin.ok) return acctShowSheet(acct.mode === "slot" ? "signup" : undefined);
+    if (!fin.ok) { acctSplashRelease(); return acctShowSheet(acct.mode === "slot" ? "signup" : undefined); }
     acct.form = {};
     acct.notice = null; // D5: 가입 직후 "가입했어요" 안내는 정보 가치가 낮아 없앤다
     closeDetail();
     acctRenderLanding();
     acctRenderSlot();
-    if (typeof acctGoHome === "function") await acctGoHome(); // G16: 가입 직후에도 첫 화면(아이 입력 폼)에 남지 않고 홈/빈 홈으로
+    try {
+      if (typeof acctGoHome === "function") await acctGoHome(); // G16: 가입 직후에도 첫 화면(아이 입력 폼)에 남지 않고 홈/빈 홈으로
+    } finally {
+      acctSplashRelease();
+    }
     acctMaybeShowMigrate();
   }
   async function acctOnClick(ev) {
