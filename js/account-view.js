@@ -12,43 +12,49 @@
 
   const MSG = Object.freeze({
     logo: "한눈육아",
-    // G1: 첫 화면(계정 기능 ON)·가입 없이 둘러보기·베타 미리 써 보기 — 문구는 여기 한곳에 모은다.
+    // G1: 첫 화면(계정 기능 ON)·베타 미리 써 보기 — 문구는 여기 한곳에 모은다.
     onboard: Object.freeze({
       title: "우리 가족 일정, 한눈에",
       sub: "접종·검진·지원금은 아이 월령에 맞춰 자동으로, 엄마·아빠 일정은 가족과 함께 한 캘린더에서.",
-      primary: "회원가입하고 시작하기",
+      primary: "회원가입",
+      loginBtn: "로그인",
+      codeHint: "가족코드를 받았다면 회원가입에서 입력해요",
       joinTitle: "가족에게 받은 가족코드로 함께하기",
-      joinShort: "가족코드로 함께하기",
-      ob1Title: "이번 달 우리 가족,\n이렇게 보여요",
-      ob1Sub: "자동 일정 + 가족이 등록한 일정",
-      ob1Sample: "예시 화면이에요",
-      ob1Ev1: "10/7 로타바이러스 2차 (자동)",
-      ob1Ev2: "10/9 아빠 · 하원 픽업",
-      ob1Ev3: "10/18 가족 · 보라매공원 (차로 약 8분)",
-      ob2Sub: "아이 월령에 맞춘 일정과 가족 일정을 한곳에서",
+      ob1Title: "우리 가족 일정,\n한눈에",
+      ob1Sub: "접종·지원금·가족 약속까지 한 달력에",
+      // 1장 예시: 사람별 대표색(아빠·엄마·세현·수아). 일정 = [점 색(들), 앞글, 라벨 종류(vx 접종·hc 검진·sb 지원금, 없으면 ""), 라벨, 뒷글]
+      ob1People: Object.freeze([["아빠", "#7fb8ff"], ["엄마", "#ff9ec4"], ["세현", "#ffc46b"], ["수아", "#7fe0b3"]]),
+      ob1Days: Object.freeze([[5], [6, "수아"], [7, "", true], [8, "아빠"], [9], [10, "세현"], [11], [12, "엄마"], [13, "아빠"], [14], [15, "수아"], [16, "세현"], [17, "아빠 엄마"], [18, "아빠 엄마 세현 수아"]]),
+      ob1Weekdays: Object.freeze(["월", "화", "수", "목", "금", "토", "일"]),
+      ob1Events: Object.freeze([
+        Object.freeze(["수아", "10/6 수아 ", "vx", "접종", "DTaP 4차"]),
+        Object.freeze(["아빠", "10/8 아빠 하원 픽업", "", "", ""]),
+        Object.freeze(["세현", "10/10 세현 어린이집 발표회", "", "", ""]),
+        Object.freeze(["수아", "10/15 수아 ", "hc", "검진", "영유아 검진"]),
+        Object.freeze(["세현 수아", "10/25 세현·수아 ", "sb", "지원금", "아동수당 지급"]),
+      ]),
+      ob2Brand: "한눈육아",
+      ob2Lead: "이것저것 흩어져 챙기기 어려웠다면,\n한눈육아에서 한방에 꼼꼼히 챙겨줘요",
       ob2Aria: "한눈육아 소개(옆으로 넘겨 보세요)",
       ob2Feats: Object.freeze([
-        Object.freeze(["auto", "자동 일정", "접종·검진·지원금 신청일이 알아서"]),
-        Object.freeze(["family", "가족 캘린더", "엄마·아빠·할머니가 같이 보고 같이 등록"]),
-        Object.freeze(["places", "어디갈까", "우리 동네에서 차로 30분 안의 갈 곳"]),
-        Object.freeze(["record", "기록", "아이 성장 기록과 사진을 남겨요"]),
+        Object.freeze(["auto", "육아 일정 자동 챙김", "월령에 맞춰 접종·검진 일정을 알아서 채워 줘요"]),
+        Object.freeze(["benefit", "지원금·혜택 챙김", "우리 지역 지원금 신청 기한까지 챙겨요"]),
+        Object.freeze(["manage", "육아 일정 관리", "아이 일정을 직접 추가하고 완료까지 체크해요"]),
+        Object.freeze(["family", "가족 일정 공유", "엄마·아빠·가족이 한 캘린더를 같이 봐요"]),
+        Object.freeze(["places", "집 근처 갈 만한 곳 추천", "차로 가까운 곳부터 아이 나이에 맞춰 골라요"]),
       ]),
       joinDesc: "가족코드를 받았다면 여기로",
-      login: "이미 계정이 있어요 · 로그인",
-      browse: "가입 없이 둘러보기",
       browseBack: "‹ 회원가입·로그인으로 돌아가기",
-      betaOff: "이전 화면으로 돌아가기(베타 끄기)",
-      browseHeroTitle: "가입 없이 먼저 써 볼게요",
-      stageQuestion: "아이 상황을 알려 주세요",
-      stagePregnant: "임신 중이에요",
-      stagePregnantDesc: "출산 예정일로 임신 중 챙길 것과 혜택을 보여 드려요",
-      stageBorn: "아이가 태어났어요",
-      stageBornDesc: "생년월일로 접종·검진·혜택을 월령에 맞춰 챙겨 드려요",
+      childFormTitle: "우리 아이 정보를 알려 주세요",
+      dateKindAria: "날짜 종류",
+      dateKindBorn: "생년월일",
+      dateKindDue: "출산 예정일",
+      browseHeroTitle: "우리 아이 정보를 알려 주세요",
       bornSub: "아이 생년월일과 사는 지역을 알려 주시면 접종·검진·지원금을 월령에 맞춰 챙겨 드려요.",
       pregnantSub: "출산 예정일과 사는 지역을 알려 주시면 임신 중 챙길 것과 혜택부터, 출산 후 접종·검진까지 이어서 챙겨 드려요.",
       bornSubmit: "우리 아이 일정 만들기",
       pregnantSubmit: "출산 전후 일정 만들기",
-      formNote: "가입하지 않아도 써 볼 수 있어요. 가족과 함께 쓰려면 나중에 회원가입하면 지금 기록이 그대로 이어져요.",
+      formNote: "입력한 정보로 월령에 맞는 일정과 혜택을 챙겨 드려요. 언제든 프로필에서 고칠 수 있어요.",
       joinSheetTitle: "가족과 함께하기",
       joinSheetLead: "가족에게 받은 8자리 가족코드를 입력하면 같은 가족 캘린더로 합류해요. 아이 정보는 가족 캘린더에 이미 있어요.",
       joinOff: "코드가 없어요 · 새 가족으로 시작하기",
@@ -67,7 +73,6 @@
     landingSub: "접종·검진·지원금을 아이 월령에 맞춰 자동으로 챙기고, 가족과 한 캘린더로 함께 관리해요.",
     landingLead: "가족이 함께 쓰려면 회원가입해 주세요.",
     landingNote: "계정 없이 아래에서 바로 시작할 수도 있어요.",
-    entryFine: "회원가입 없이도 바로 시작할 수 있어요. 가족과 함께 쓰거나 다른 기기에서 이어 보려면 위에서 회원가입해 주세요.",
     signupLead: "가족이 함께 쓰려면 회원가입해 주세요.",
     signup: "회원가입",
     login: "로그인",
@@ -166,9 +171,6 @@
     addTabSchedule: "일정 추가",
     addHint: "추가할 항목을 골라 주세요",
     addNeedHousehold: "일정을 추가하려면 먼저 프로필에서 가족 캘린더를 만들어 주세요",
-    addChildLead: "이름·생년월일(또는 출산 예정일)·몇째·사는 지역을 입력하면 월령에 맞는 일정과 혜택이 가족 캘린더에 나와요.",
-    addChildFields: Object.freeze(["이름 또는 별칭", "생년월일 또는 출산 예정일", "몇째", "사는 지역"]),
-    addChildGo: "아이 입력하기",
     invitePreview: "초대 문구 미리보기",
     invitePreviewEmpty: "역할을 고르면 보낼 초대 문구가 여기에 보여요.",
     inviteWho: "누구를 초대하나요?",
@@ -309,35 +311,37 @@
   const radios = (k, label, opts, cur, errors) => `<div class="acct-field"><label>${esc(label)}</label><div class="acct-radios" role="radiogroup" aria-label="${esc(label)}">${opts.map(([v, l]) => `<button type="button" role="radio" aria-checked="${cur === v ? "true" : "false"}" class="acct-radio" data-acct-radio="${k}" data-value="${esc(v)}">${esc(l)}</button>`).join("")}</div>${err(errors, k)}</div>`;
 
   const ICO_FAMILY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9.5" r="2.4"/><path d="M3.5 19c0-3.2 2.5-5.2 5.5-5.2s5.5 2 5.5 5.2"/><path d="M15.5 14.2c3 0 5 1.6 5 4.3"/></svg>';
-  /** 랜딩의 계정 카드(로그아웃 상태): 로고·제목·부제·[회원가입하고 시작하기]·[가족 코드로 함께하기]·로그인·가입 없이 둘러보기·베타 끄기. */
+  /** 랜딩의 계정 카드(로그아웃 상태): 로고·제목·부제·[회원가입하고 시작하기]·[가족 코드로 함께하기]·로그인. */
   function renderLanding(state) {
     const s = state || {};
     const O = MSG.onboard;
     if (s.user) return `<div class="card acct-landing" id="acct-landing"><div class="acct-logo">${esc(MSG.logo)}</div><p class="fine-print">${esc(MSG.loggedInAs(s.user.displayName || s.user.email))}</p><div class="acct-actions"><button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div></div>`;
-    // G7: 2장 슬라이드(1 달력 미리보기 / 2 히어로+기능 4개) + 아래 고정 버튼. 가입 없이 둘러보기·베타 끄기 버튼은 없다.
-    const day = (n, color) => `<div>${n}${color ? `<i style="background:${color}"></i>` : ""}</div>`;
-    const days = [[6], [7, "#c9b8ff"], [8], [9, "#7fb8ff"], [10], [11, "#ffc46b"], [12], [13], [14, "#ff9ec4"], [15], [16], [17, "#ffe1a8"], [18, "#c9b8ff"], [19]].map(([n, c]) => day(n, c)).join("");
-    const chips = [["나(엄마)", "#ff9ec4"], ["아빠", "#7fb8ff"], ["은찬", "#ffc46b"], ["가족", "#c9b8ff"]].map(([t, c]) => `<span style="background:${c}">${esc(t)}</span>`).join("");
-    const evs = [["#c9b8ff", O.ob1Ev1], ["#7fb8ff", O.ob1Ev2], ["#c9b8ff", O.ob1Ev3]].map(([c, t]) => `<div><i style="background:${c}"></i>${esc(t)}</div>`).join("");
+    // G11 확정안: 1장(달력 미리보기: 칩 아빠·엄마·세현·수아 + 사람별 대표색 점 + 일정 5개) / 2장(메인 기능 5개) + 아래 고정 버튼 [로그인]·[회원가입]·가족코드 안내 한 줄.
+    const color = Object.fromEntries(O.ob1People);
+    const bars = (who) => (who ? `<b>${who.split(" ").map((w) => `<i style="background:${color[w]}"></i>`).join("")}</b>` : "");
+    const days = O.ob1Days.map(([n, who, today]) => `<div${today ? ' class="t"' : ""}>${n}${bars(who)}</div>`).join("");
+    const chips = O.ob1People.map(([t, c]) => `<span style="background:${c}">${esc(t)}</span>`).join("");
+    const evs = O.ob1Events.map(([who, pre, k, tag, post]) => `<div>${who.split(" ").map((w, n) => `<i style="background:${color[w]}${n ? ";margin-left:-4px" : ""}"></i>`).join("")}${esc(pre)}${tag ? `<em class="${k}">${esc(tag)}</em>${esc(post)}` : ""}</div>`).join("");
     const feats = O.ob2Feats.map(([k, t, d]) => `<div class="acct-feat"><span class="acct-feat-ic acct-feat-${k}">${FEAT_ICO[k]}</span><span><b>${esc(t)}</b><span>${esc(d)}</span></span></div>`).join("");
     return `<div class="card acct-landing acct-ob" id="acct-landing"><div class="acct-main">
       <div class="acct-slides" data-acct-slides tabindex="0" aria-label="${esc(O.ob2Aria)}">
         <section class="acct-slide" data-acct-slide="0" aria-label="1/2"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title)}</h1><p class="acct-sub">${esc(O.ob1Sub)}</p></div>
-          <div class="acct-ob1-cal" aria-hidden="true"><div class="acct-ob1-chips">${chips}</div><div class="acct-ob1-days">${days}</div><div class="acct-ob1-ev">${evs}</div><small class="acct-ob1-sample">${esc(O.ob1Sample)}</small></div></section>
-        <section class="acct-slide" data-acct-slide="1" aria-label="2/2"><div class="acct-logo">${esc(MSG.logo)}</div><h1 class="acct-title">${esc(O.title)}</h1><p class="acct-sub">${esc(O.ob2Sub)}</p><div class="acct-feats">${feats}</div></section>
+          <div class="acct-ob1-cal" aria-hidden="true"><div class="acct-ob1-chips">${chips}</div><div class="acct-ob1-wk">${O.ob1Weekdays.map((d) => `<span>${d}</span>`).join("")}</div><div class="acct-ob1-days">${days}</div><div class="acct-ob1-ev">${evs}</div></div></section>
+        <section class="acct-slide acct-slide2" data-acct-slide="1" aria-label="2/2"><p class="acct-brand">${esc(O.ob2Brand)}</p><p class="acct-lead">${lines(O.ob2Lead)}</p><div class="acct-feats">${feats}</div></section>
       </div>
       <div class="acct-dots" role="tablist" aria-label="${esc(O.ob2Aria)}"><button type="button" class="acct-dot on" role="tab" aria-selected="true" data-acct-action="slide-go" data-slide-to="0" aria-label="1/2"></button><button type="button" class="acct-dot" role="tab" aria-selected="false" data-acct-action="slide-go" data-slide-to="1" aria-label="2/2"></button></div>
       <div class="acct-cta">
-        <button type="button" class="acct-btn-primary" data-acct-action="open-signup">${esc(O.primary)}</button>
-        <button type="button" class="acct-btn-outline" data-acct-action="open-join">${esc(O.joinShort)}</button>
-        <button type="button" class="acct-link" data-acct-action="open-login">${esc(O.login)}</button>
+        <button type="button" class="acct-btn-primary" data-acct-action="open-login">${esc(O.loginBtn)}</button>
+        <button type="button" class="acct-btn-text" data-acct-action="open-signup">${esc(O.primary)}</button>
+        <p class="acct-code-hint">${esc(O.codeHint)}</p>
       </div></div></div>`;
   }
   const FEAT_ICO = Object.freeze({
-    auto: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#8b5cf6" stroke-width="1.6" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 7h12M5 1.5v3M11 1.5v3"/></svg>',
-    family: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#e05a8e" stroke-width="1.6" aria-hidden="true"><circle cx="5.5" cy="5.5" r="2.3"/><circle cx="11" cy="6" r="2"/><path d="M1.5 13c.6-2.4 2.2-3.6 4-3.6s3.4 1.2 4 3.6M9.6 13c.4-1.7 1.4-2.6 2.6-2.6 1.1 0 2 .8 2.3 2.6"/></svg>',
-    places: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2f9e64" stroke-width="1.6" aria-hidden="true"><path d="M8 14.5s5-4.3 5-8a5 5 0 0 0-10 0c0 3.7 5 8 5 8z"/><circle cx="8" cy="6.5" r="1.7"/></svg>',
-    record: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#d98a1f" stroke-width="1.6" aria-hidden="true"><rect x="3" y="1.8" width="10" height="12.4" rx="2"/><path d="M5.5 5.5h5M5.5 8.5h5M5.5 11h3"/></svg>',
+    auto: '<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#8b5cf6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 7h12M5 1.5v3M11 1.5v3"/></svg>',
+    benefit: '<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#d98a1f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="12" height="8" rx="1.5"/><path d="M8 6v8M1.5 6h13V4h-13zM8 4c-1-2.2-3.4-2-3.4-.6S6.6 4 8 4zm0 0c1-2.2 3.4-2 3.4-.6S9.4 4 8 4z"/></svg>',
+    manage: '<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#3b82c4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="1.8" width="10" height="12.4" rx="2"/><path d="M5.5 5.5l1 1 2-2M5.5 9.5h5M5.5 12h3"/></svg>',
+    family: '<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#e05a8e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="5.5" r="2.3"/><circle cx="11" cy="6" r="2"/><path d="M1.5 13c.6-2.4 2.2-3.6 4-3.6s3.4 1.2 4 3.6M9.6 13c.4-1.7 1.4-2.6 2.6-2.6 1.1 0 2 .8 2.3 2.6"/></svg>',
+    places: '<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#2f9e64" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 14.5s5-4.3 5-8a5 5 0 0 0-10 0c0 3.7 5 8 5 8z"/><circle cx="8" cy="6.5" r="1.7"/></svg>',
   });
   /** 슬라이드 스크롤 위치 → 현재 장 번호(0..count-1). 점 표시 갱신용(순수). */
   function slideIndex(scrollLeft, width, count) {
@@ -545,11 +549,6 @@
     return `<div class="acct-add" data-acct-form="add-menu"><h3>${esc(MSG.addTitle)}</h3>${renderAddTiles(null, s)}${s.canSchedule === false ? `<p class="fine-print" id="add-menu-note">${esc(MSG.addNeedHousehold)}</p>` : `<p class="fine-print">${esc(MSG.addHint)}</p>`}<button type="button" class="btn-close" id="btn-add-menu-close">${esc(MSG.close)}</button></div>`;
   }
   /** 아이 등록하기 시트(계정 모드): 타일(아이 등록하기 선택) + 입력할 항목 미리보기 + [아이 입력하기]. */
-  function renderAddChild(state) {
-    const s = state || {};
-    return `<div class="acct-add" data-acct-form="add-child"><h3>${esc(MSG.addTitle)}</h3>${renderAddTiles("child", s)}<div class="acct-add-sheet"><h4>${esc(MSG.registerChild)}</h4><p class="fine-print">${esc(MSG.addChildLead)}</p><ul class="acct-add-fields">${MSG.addChildFields.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
-      <button type="button" class="btn-complete" id="btn-confirm-new-child">${esc(MSG.addChildGo)}</button></div><button type="button" class="btn-close" id="btn-cancel-new-child">${esc(MSG.cancel)}</button></div>`;
-  }
   /** 가족 추가 시트: 타일(가족 추가 선택) + 라디오(아빠/자녀/기타) + 초대 문구 미리보기 + [초대 보내기]. state: { code, role, preview, notice, busy, error, canSchedule } */
   function renderInvite(state) {
     const s = state || {};
@@ -584,5 +583,5 @@
       <button type="button" class="btn-complete" data-acct-action="confirm-logout">${esc(MSG.logout)}</button><button type="button" class="btn-close" data-acct-action="close">${esc(MSG.cancel)}</button></div>`;
   }
 
-  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, signupTotal, signupStep, signupStepKeys, firstErrorStep, INVITE_ROLES, INVITE_LABEL, inviteLink, inviteText, parseJoinParams, renderLanding, slideIndex, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderFamilySlot, renderMyCard, renderSlotPick, renderRolePick, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderAddTiles, renderAddMenu, renderAddChild, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderMe, roleOptions, syncForm, SITUATIONS, esc };
+  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, signupTotal, signupStep, signupStepKeys, firstErrorStep, INVITE_ROLES, INVITE_LABEL, inviteLink, inviteText, parseJoinParams, renderLanding, slideIndex, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderFamilySlot, renderMyCard, renderSlotPick, renderRolePick, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderAddTiles, renderAddMenu, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderMe, roleOptions, syncForm, SITUATIONS, esc };
 });

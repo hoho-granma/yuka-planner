@@ -2481,6 +2481,7 @@
     el("lbl-birth").innerHTML = `${t.birth} <span class="req">*</span>`;
     el("lbl-order").innerHTML = `${t.order} <span class="req">*</span>`;
     el("btn-submit").textContent = t.submit;
+    if (typeof acctSyncStageToggle === "function") acctSyncStageToggle(stage);
     el("stage-choice").classList.toggle("hidden", !!stage);
     el("query-form").classList.toggle("hidden", !stage);
     resetBirthDatePicker();
@@ -2600,7 +2601,8 @@
     newChildMode = true;
     newChildSnapshot = { hid: hhEnabled() ? hh.hid : null, code: hhEnabled() ? hh.code : null };
     el("query-form").reset();
-    setLandingStage(null);
+    // G10: 계정 모드는 상황 선택 화면 없이 바로 입력 폼(기본 날짜 종류는 가입 때 자녀 유무: 있어요=생년월일, 없어요=출산 예정일)
+    setLandingStage(typeof acctEnabled === "function" && acctEnabled() ? (acctExpecting() ? "pregnant" : "born") : null);
     if (opts && opts.codeEntry) el("code-entry").classList.remove("hidden");
     el("btn-new-child-cancel").textContent = NEW_CHILD_MSG.cancel;
     el("new-child-note").textContent = NEW_CHILD_MSG.note;
@@ -2706,14 +2708,10 @@
       if (b) b.addEventListener("click", () => addTabGo(tab));
     });
   }
-  /** G7: 계정 모드의 아이 등록하기 시트(타일 + 입력 항목 안내). 비계정 '새 아이 추가'(showNewChildSheet)는 그대로. */
+  /** G10: 계정 모드의 아이 등록하기는 안내 시트·상황 선택 없이 바로 입력 폼을 연다. 비계정 '새 아이 추가'(showNewChildSheet)는 그대로. */
   function showAddChildSheet() {
-    modalMode = "new-child";
-    el("modal-content").innerHTML = AccountView.renderAddChild({ canSchedule: usActive() });
-    el("detail-modal").classList.remove("hidden");
-    addTilesBind();
-    el("btn-cancel-new-child").addEventListener("click", closeDetail);
-    el("btn-confirm-new-child").addEventListener("click", () => beginNewChildEntry({ codeEntry: false }));
+    closeDetail();
+    return beginNewChildEntry({ codeEntry: false });
   }
   function showNewChildSheet() {
     modalMode = "new-child";
@@ -4395,6 +4393,9 @@
     acct.svc = AuthService.create();
     // D2: accounts 문서·가구 연결(가짜 어댑터로 테스트 가능). 같은 Firestore 어댑터를 쓰되 계정 문서 쓰기는 이 서비스만 한다.
     if (typeof AccountSync !== "undefined") acct.sync = AccountSync.create({ adapter: HouseholdSync.firestoreAdapter(() => firebase.firestore()), household: HouseholdSync });
+    // 인증 확인이 끝나기 전엔 중립 화면(로고)만 보여 준다(로그인한 사람이 온보딩을 잠깐 보고 로그아웃된 줄 알지 않게). 로그아웃 표시가 있는 기기는 기다리지 않고 바로 온보딩.
+    if (acctSignedOutMark()) acct.authKnown = true;
+    else acctSplashShow();
     acct.svc.onChange((u, info) => {
       acct.user = u;
       // 오프라인·SDK 로드 실패(확인 불가)는 '로그아웃됨'이 아니다: 이 기기에 로그아웃 표시가 있을 때만 로그아웃으로 본다(로그인했던 기기는 홈 유지).
@@ -4405,7 +4406,9 @@
       acctRenderSlot();
       if (u) acct.pendingLink = null; // 이미 로그인된 기기는 초대 링크를 무시한다
       else if (acct.pendingLink) acctOpenLinkSignup(); // Q3: 링크로 들어오면 바로 회원가입(합류) 시트
-      if (u) acctRestore(u); // 로그인 상태가 되면(다른 기기 로그인·앱 재시작) 계정 가구를 이 기기에 복원한다
+      if (u) acctSplashArm(RESTORE_MAX_MS, acctRestoreSlow); // 복원을 기다리는 동안엔 3초 타이머를 쓰지 않는다(Auth 응답은 이미 왔다)
+      if (u) Promise.resolve(acctRestore(u)).then(acctSplashHide, acctSplashHide); // 로그인 상태가 되면(다른 기기 로그인·앱 재시작) 계정 가구를 이 기기에 복원한다(끝난 뒤 중립 화면을 걷는다)
+      else acctSplashHide();
     });
     const ep = el("empty-panel");
     if (ep) ep.addEventListener("click", acctOnClick);
@@ -4425,6 +4428,34 @@
       else return localStorage.getItem(SIGNED_OUT_KEY) === "1";
     } catch (e) {}
     return set === undefined ? false : !!set;
+  }
+  const SPLASH_MAX_MS = 3000; // Auth 응답이 아예 없을 때만: G8 규칙대로(로그인했던 기기=홈, 로그아웃한 기기=온보딩) 화면을 내보낸다
+  const RESTORE_MAX_MS = 10000; // Auth 가 '로그인됨'을 돌려준 뒤 가구 복원을 기다리는 최대 시간(넘으면 빈 홈)
+  let acctSplashTimer = null;
+  function acctSplashShow() {
+    if (typeof document === "undefined" || !document.createElement || !document.body || el("acct-splash")) return;
+    const d = document.createElement("div");
+    d.id = "acct-splash";
+    d.className = "acct-splash";
+    d.setAttribute("aria-hidden", "true");
+    d.innerHTML = `<span class="acct-splash-logo">${AccountView.esc(AccountView.MSG.logo)}</span>`;
+    document.body.appendChild(d);
+    acctSplashArm(SPLASH_MAX_MS, acctSplashHide);
+  }
+  function acctSplashArm(ms, fn) {
+    if (acctSplashTimer) clearTimeout(acctSplashTimer);
+    acctSplashTimer = setTimeout(fn, ms);
+  }
+  /** 로그인됨인데 가구 복원이 10초를 넘기면: 중립 화면을 걷고 아이가 없으면 '아이를 등록해 주세요' 빈 홈(있으면 지금 홈 그대로). */
+  function acctRestoreSlow() {
+    acctSplashHide();
+    if (acct.user && !profile && !newChildMode && typeof showEmptyHome === "function") showEmptyHome();
+  }
+  function acctSplashHide() {
+    if (acctSplashTimer) clearTimeout(acctSplashTimer);
+    acctSplashTimer = null;
+    const d = el("acct-splash");
+    if (d && d.remove) d.remove();
   }
   function acctGateHome() {
     if (!acctEnabled() || acct.user || !acct.authKnown || newChildMode) return false;
@@ -4453,19 +4484,38 @@
     if (title) title.textContent = O.browseHeroTitle;
     const fine = el("entry-fine-print");
     if (fine) fine.textContent = O.formNote;
-    const q = el("view-landing").querySelector(".stage-question");
-    if (q) q.textContent = O.stageQuestion;
-    const sb = (k) => el("view-landing").querySelector(`.stage-btn[data-stage="${k}"]`);
-    for (const [k, t, d] of [["pregnant", O.stagePregnant, O.stagePregnantDesc], ["born", O.stageBorn, O.stageBornDesc]]) {
-      const b = sb(k);
-      if (b && b.querySelector("strong")) { b.querySelector("strong").textContent = t; b.querySelector("small").textContent = d; }
-    }
+    acctEnsureStageToggle();
     // H1: 아이 기록 코드 입력은 계정 모드에서 쓰지 않는다(가족코드로 합류는 '가족에게 받은 가족코드로 함께하기').
     const co = el("btn-show-code-entry");
     if (co) co.style.setProperty("display", "none", "important");
     const ce = el("code-entry");
     if (ce) ce.classList.add("hidden");
     acctApplyLandingMode();
+  }
+  /** G10 입력 폼 안의 '생년월일 / 출산 예정일' 전환(상황 선택 화면 대신). 값은 기존 landingStage(born/pregnant)를 그대로 쓴다. */
+  function acctEnsureStageToggle() {
+    const form = el("query-form");
+    if (!form || el("acct-stage-toggle") || !document.createElement) return;
+    const O = AccountView.MSG.onboard;
+    const box = document.createElement("div");
+    box.id = "acct-stage-toggle";
+    box.className = "acct-stage-toggle";
+    box.innerHTML = `<h2 class="acct-child-title">${AccountView.esc(O.childFormTitle)}</h2><div class="acct-seg" role="radiogroup" aria-label="${AccountView.esc(O.dateKindAria)}"><button type="button" role="radio" data-acct-stage="born">${AccountView.esc(O.dateKindBorn)}</button><button type="button" role="radio" data-acct-stage="pregnant">${AccountView.esc(O.dateKindDue)}</button></div>`;
+    form.insertBefore(box, form.firstChild);
+    box.addEventListener("click", (ev) => {
+      const b = ev.target.closest ? ev.target.closest("[data-acct-stage]") : null;
+      if (b && b.getAttribute("data-acct-stage") !== landingStage) setLandingStage(b.getAttribute("data-acct-stage"));
+    });
+    acctSyncStageToggle(landingStage);
+  }
+  function acctSyncStageToggle(stage) {
+    const box = el("acct-stage-toggle");
+    if (!box || !box.querySelectorAll) return;
+    box.querySelectorAll("[data-acct-stage]").forEach((b) => {
+      const on = b.getAttribute("data-acct-stage") === stage;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-checked", on ? "true" : "false");
+    });
   }
   /** G7 첫 화면 슬라이드: 스크롤(스와이프)·점·화살표 키로 장을 바꾸고 점 표시를 맞춘다. */
   function acctSlidesOf(slot) {
@@ -4499,7 +4549,7 @@
       acctGoSlide(slot, AccountView.slideIndex(sl.scrollLeft, sl.clientWidth, 2) + (ev.key === "ArrowRight" ? 1 : -1));
     });
   }
-  let acctBrowse = false; // '가입 없이 둘러보기'를 펼쳤는가(기본 접힘)
+  let acctBrowse = false; // (G7 이후 둘러보기 버튼은 없다 — 항상 false)
   /** 첫 화면 모드: 간단(기본: 로고·가입·가족 코드·로그인만) / 둘러보기(옛 상황 선택·아이 입력 폼 펼침) / 새 아이 입력 중(카드 숨김). OFF 는 클래스를 건드리지 않는다. */
   function acctApplyLandingMode() {
     const v = el("view-landing");
@@ -4508,6 +4558,7 @@
     v.classList.toggle("acct-simple", simple);
     v.classList.toggle("acct-browse", !simple && !acct.user && !newChildMode);
     v.classList.toggle("acct-hidecard", !!newChildMode);
+    v.classList.add("acct-on"); // G10: 계정 모드에선 옛 시작 화면(제목·아이 상황 선택)을 어떤 경로로도 보이지 않는다
   }
   // ── G1 OFF 첫 화면의 '새 버전 미리 써 보기 (베타)': 회원가입·가족 캘린더 플래그(household·accounts)를 이 기기에서만 켠다(서버 호출 없음). 끄기는 두 키를 지운다(= OFF). ──
   const PREVIEW_KEYS = ["hannun_feature_household", "hannun_feature_accounts"];
@@ -4791,6 +4842,22 @@
     renderProvinceChips();
     renderDistrictChips();
   }
+  /**
+   * 로그인 직후 첫 화면(온보딩·옛 아이 입력 화면)에 남지 않고 바로 홈으로 간다.
+   * 원인: 로그아웃 상태 첫 화면에서 로그인하면 인증만 바뀌고 화면은 첫 화면 그대로(옛 아이 입력 화면)였다.
+   * 이 기기에 아이가 있으면(복원 뒤 포함) 캘린더 홈, 없으면 '아이를 등록해 주세요' 빈 홈. 아이 추가 입력(newChildMode) 중이면 그대로 둔다.
+   */
+  async function acctGoHome() {
+    if (!acctEnabled() || !acct.user || newChildMode) return;
+    const lv = el("view-landing");
+    if (!lv || !lv.classList || typeof lv.classList.contains !== "function" || lv.classList.contains("hidden")) return;
+    if (profile) {
+      await buildAndRender();
+      hideEmptyHome();
+      showCalendarView();
+      acctRenderMeLine();
+    } else showEmptyHome();
+  }
   /** 로그인 상태가 됐을 때: 끝나지 않은 가입이 있으면 이어서 마무리, 아니면 계정 가구를 이 기기에 복원(이 기기에 다른 가구가 있으면 건드리지 않는다 — D4). */
   async function acctRestore(u) {
     if (!acct.sync || acct.busy || acct.completing || acct.restoring) return;
@@ -4838,6 +4905,7 @@
       acctRefreshCalendar();
       // D5: 계정이 연결됐는데 이 기기에 아이가 없고 입력 화면도 아니면(재시작·다른 기기 로그인) 아이가 없는 홈을 보인다.
       if (acct.user && acct.account && acct.account.householdCode && !profile && !newChildMode && !emptyHome) showEmptyHome();
+      await acctGoHome();
       acctMaybeShowMigrate();
     }
   }

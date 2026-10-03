@@ -17,9 +17,9 @@ test("+ 메뉴: 타일 3개(일정 추가·아이 등록하기·가족 추가, �
   const no = AV.renderAddMenu({ canSchedule: false });
   assert.ok(/id="btn-add-menu-schedule"[^>]*disabled/.test(no) && no.includes('id="add-menu-note"') && no.includes("먼저 프로필에서 가족 캘린더를 만들어 주세요"));
 });
-test("아이 등록하기 시트: 타일(아이 등록하기 선택) + 입력 항목(이름·생년월일·몇째·지역) + [아이 입력하기](기존 id)", () => {
-  const h = AV.renderAddChild({ canSchedule: true });
-  assert.ok(/acct-tile on" id="btn-add-menu-child"/.test(h) && h.includes('data-acct-form="add-child"') && ["이름 또는 별칭", "생년월일 또는 출산 예정일", "몇째", "사는 지역"].every((t) => h.includes(`<li>${t}</li>`)) && h.includes('id="btn-confirm-new-child">아이 입력하기') && h.includes('id="btn-cancel-new-child"'));
+test("G10 아이 등록하기: 안내 시트 없이 바로 입력 폼(renderAddChild·[아이 입력하기] 삭제)", () => {
+  assert.strictEqual(typeof AV.renderAddChild, "undefined");
+  assert.ok(!/addChildGo|addChildLead|addChildFields/.test(JSON.stringify(AV.MSG)));
 });
 test("가족 추가 시트: 타일(가족 추가 선택) + 아빠/자녀/기타 라디오 + 초대 문구 미리보기 + [초대 보내기](역할 선택 전 비활성)", () => {
   const empty = AV.renderInvite({ code: "A8RZ7Q9X", role: "" });
@@ -40,7 +40,7 @@ test("미리보기는 실제로 보내는 문구와 같다(acctInvitePreview 한
 test("앱 연결: 계정 모드 메뉴·아이 등록 시트만 새 타일 UI, 비계정(가구만 켠) 메뉴·'새 아이 추가' 시트는 이전 그대로, 타일 이동(addTabGo)·가족 추가 시트 타일 바인딩", () => {
   const menu = fn("showAddMenuSheet");
   assert.ok(menu.includes("if (acctOn) {") && menu.includes("AccountView.renderAddMenu({ canSchedule: can })") && menu.includes('<button class="btn-complete" id="btn-add-menu-schedule"') && menu.includes("if (!hhEnabled()) return showNewChildSheet();"));
-  assert.ok(fn("showAddChildSheet").includes("AccountView.renderAddChild") && fn("showNewChildSheet").includes("<h3>새 아이 추가</h3>") && !fn("showNewChildSheet").includes("renderAddChild"));
+  assert.ok(fn("showAddChildSheet").includes("beginNewChildEntry({ codeEntry: false })") && !fn("showAddChildSheet").includes("modal-content") && fn("showNewChildSheet").includes("<h3>새 아이 추가</h3>") && !fn("showNewChildSheet").includes("renderAddChild"));
   const go = fn("addTabGo");
   assert.ok(go.includes('tab === "schedule"') && go.includes("showAddChildSheet()") && go.includes("acctOpenInvite()"));
   assert.ok(APP.includes('if (acct.mode === "invite" && typeof addTilesBind === "function") addTilesBind();'));

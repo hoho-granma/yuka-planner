@@ -9,25 +9,34 @@ const APP = read("js/app.js"), CSS = read("css/style.css");
 let passed = 0;
 function test(name, fn) { try { fn(); passed++; console.log("  ok  - " + name); } catch (e) { process.exitCode = 1; console.log("  FAIL- " + name + "\n      " + (e.stack || e).split("\n").slice(0, 4).join("\n      ")); } }
 
-test("첫 장=달력 미리보기(이번 달 우리 가족, 칩 4·날짜 14칸·예시 일정 3·예시 표기), 둘째 장=히어로+기능 4개(자동 일정·가족 캘린더·어디갈까·기록)", () => {
+test("G11 1장: 타이틀 2줄, 칩 아빠·엄마·세현·수아(가족 없음)·사람별 색, 요일줄·날짜 14칸(오늘 표시), 일정 5개(라벨 접종·검진·지원금 3색), 예시 표기. 2장: 브랜드+회색 서브문구+기능 5개", () => {
   const h = AV.renderLanding({});
   const s0 = h.slice(h.indexOf('data-acct-slide="0"'), h.indexOf('data-acct-slide="1"'));
   const s1 = h.slice(h.indexOf('data-acct-slide="1"'), h.indexOf('class="acct-dots"'));
-  assert.ok(s0.includes("이번 달 우리 가족,<br>이렇게 보여요") && s0.includes("자동 일정 + 가족이 등록한 일정") && s0.includes("예시 화면이에요"));
-  assert.deepStrictEqual([(s0.match(/<span style="background:/g) || []).length, (s0.match(/<div>\d+/g) || []).length], [4, 14]);
-  assert.ok(["나(엄마)", "아빠", "은찬", "가족", "10/7 로타바이러스 2차 (자동)", "10/9 아빠 · 하원 픽업", "10/18 가족 · 보라매공원 (차로 약 8분)"].every((t) => s0.includes(t)));
-  assert.ok(s1.includes("우리 가족 일정, 한눈에") && s1.includes("아이 월령에 맞춘 일정과 가족 일정을 한곳에서"));
-  assert.deepStrictEqual([...s1.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]), ["자동 일정", "가족 캘린더", "어디갈까", "기록"]);
-  assert.ok(s1.includes("아이 성장 기록과 사진을 남겨요"));
+  assert.ok(s0.includes("우리 가족 일정,<br>한눈에") && s0.includes("접종·지원금·가족 약속까지 한 달력에") && !s0.includes("예시 화면이에요") && !s0.includes("엄마 회식"));
+  const chips = [...s0.matchAll(/<span style="background:(#[0-9a-f]{6})">([^<]+)<\/span>/g)].map((m) => [m[2], m[1]]);
+  assert.deepStrictEqual(chips, [["아빠", "#7fb8ff"], ["엄마", "#ff9ec4"], ["세현", "#ffc46b"], ["수아", "#7fe0b3"]]);
+  assert.strictEqual((s0.match(/<div( class="t")?>\d+/g) || []).length, 14);
+  assert.ok(s0.includes('class="acct-ob1-wk"') && s0.includes('<div class="t">7</div>'));
+  const evs = s0.slice(s0.indexOf('class="acct-ob1-ev"'));
+  assert.strictEqual((evs.match(/<div><i /g) || []).length, 5);
+  assert.deepStrictEqual([...evs.matchAll(/<em class="(\w+)">([^<]+)<\/em>/g)].map((m) => [m[1], m[2]]), [["vx", "접종"], ["hc", "검진"], ["sb", "지원금"]]);
+  assert.ok(["10/6 수아 ", "10/8 아빠 하원 픽업", "10/10 세현 어린이집 발표회", "영유아 검진", "아동수당 지급"].every((t) => evs.includes(t)));
+  assert.ok(/\.acct-ob1-ev \{ margin-top: 16px/.test(CSS));
+  assert.ok(s1.includes('class="acct-brand">한눈육아') && s1.includes("이것저것 흩어져 챙기기 어려웠다면,<br>한눈육아에서 한방에 꼼꼼히 챙겨줘요") && !s1.includes("우리 가족 일정, 한눈에"));
+  assert.deepStrictEqual([...s1.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]), ["육아 일정 자동 챙김", "지원금·혜택 챙김", "육아 일정 관리", "가족 일정 공유", "집 근처 갈 만한 곳 추천"]);
+  assert.ok(s1.includes("우리 지역 지원금 신청 기한까지 챙겨요") && /\.acct-lead \{ margin: 8px 0 34px/.test(CSS));
 });
-test("점 2개(첫 장 선택)·버튼은 두 장 공통으로 슬라이드 밖 아래(고정): 회원가입하고 시작하기·가족코드로 함께하기·로그인, 둘러보기·베타 끄기 없음", () => {
+test("점 2개(첫 장 선택)·버튼은 두 장 공통으로 슬라이드 밖 아래(고정): 주 버튼 [로그인], 아래 [회원가입], 회색 안내 한 줄. [가족코드로 함께하기]·'이미 계정이 있어요' 줄·둘러보기 없음", () => {
   const h = AV.renderLanding({});
   assert.deepStrictEqual([...h.matchAll(/data-slide-to="(\d)"/g)].map((m) => m[1]), ["0", "1"]);
   assert.ok(/class="acct-dot on" role="tab" aria-selected="true" data-acct-action="slide-go" data-slide-to="0"/.test(h));
   const cta = h.slice(h.indexOf('class="acct-cta"'));
   assert.ok(h.indexOf('class="acct-cta"') > h.indexOf('data-acct-slide="1"') && !h.slice(0, h.indexOf('class="acct-cta"')).includes("open-signup"));
-  assert.deepStrictEqual([...cta.matchAll(/data-acct-action="([^"]+)">([^<]+)</g)].map((m) => [m[1], m[2]]), [["open-signup", "회원가입하고 시작하기"], ["open-join", "가족코드로 함께하기"], ["open-login", "이미 계정이 있어요 · 로그인"]]);
-  assert.ok(!/가입 없이 둘러보기|이전 화면으로 돌아가기|data-acct-action="browse|beta-off-ask|browse-close/.test(h));
+  assert.deepStrictEqual([...cta.matchAll(/data-acct-action="([^"]+)">([^<]+)</g)].map((m) => [m[1], m[2]]), [["open-login", "로그인"], ["open-signup", "회원가입"]]);
+  assert.ok(cta.includes('class="acct-btn-text" data-acct-action="open-signup"') && /\.acct-btn-text \{[^}]*min-height: 48px[^}]*border: 0[^}]*background: transparent[^}]*font-weight: 400/.test(CSS));
+  assert.ok(cta.includes('class="acct-code-hint">가족코드를 받았다면 회원가입에서 입력해요'));
+  assert.ok(!/open-join|가족코드로 함께하기|이미 계정이 있어요|가입 없이 둘러보기|이전 화면으로 돌아가기|data-acct-action="browse|beta-off-ask|browse-close/.test(h));
   assert.ok(/\.acct-cta \{[^}]*position: sticky; bottom: 0/.test(CSS) && /\.acct-slides \{[^}]*overflow-x: auto; scroll-snap-type: x mandatory/.test(CSS) && /\.acct-slide \{[^}]*scroll-snap-align: start/.test(CSS));
 });
 test("slideIndex: 스크롤 위치 → 장 번호(반올림·범위 고정), 폭 0이면 0", () => {

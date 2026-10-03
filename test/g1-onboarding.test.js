@@ -75,15 +75,15 @@ test("[가족 코드로 함께하기]: 가입 시트를 합류 모드로 열고(
 });
 test("가입 시트 [가입하기]는 첫 화면 주 버튼과 같은 스타일 클래스(acct-btn-primary)", () => {
   assert.ok(AV.renderSignup({ form: { step: 3 } }).includes('class="acct-btn-primary acct-step-go" data-acct-action="submit-signup"')); // G7: 마지막(3/3) 단계의 [가입하기]
-  assert.ok(AV.renderLanding({}).includes('class="acct-btn-primary" data-acct-action="open-signup"'));
+  assert.ok(AV.renderLanding({}).includes('class="acct-btn-primary" data-acct-action="open-login"'));
 });
 test("첫 화면 문구: 부제·버튼 라벨·링크가 합의한 문구이고 한곳(MSG.onboard, 동결)에 모여 있다", () => {
   const O = AV.MSG.onboard;
   assert.ok(Object.isFrozen(O));
-  assert.deepStrictEqual([O.title, O.primary, O.joinTitle, O.joinDesc, O.login, O.browse, O.betaOff], ["우리 가족 일정, 한눈에", "회원가입하고 시작하기", "가족에게 받은 가족코드로 함께하기", "가족코드를 받았다면 여기로", "이미 계정이 있어요 · 로그인", "가입 없이 둘러보기", "이전 화면으로 돌아가기(베타 끄기)"]);
+  assert.deepStrictEqual([O.title, O.primary, O.loginBtn, O.codeHint, O.joinTitle, O.joinDesc], ["우리 가족 일정, 한눈에", "회원가입", "로그인", "가족코드를 받았다면 회원가입에서 입력해요", "가족에게 받은 가족코드로 함께하기", "가족코드를 받았다면 여기로"]);
   assert.strictEqual(O.sub, "접종·검진·지원금은 아이 월령에 맞춰 자동으로, 엄마·아빠 일정은 가족과 함께 한 캘린더에서.");
-  assert.deepStrictEqual([O.stageQuestion, O.stagePregnantDesc, O.stageBornDesc], ["아이 상황을 알려 주세요", "출산 예정일로 임신 중 챙길 것과 혜택을 보여 드려요", "생년월일로 접종·검진·혜택을 월령에 맞춰 챙겨 드려요"]);
-  assert.strictEqual(O.formNote, "가입하지 않아도 써 볼 수 있어요. 가족과 함께 쓰려면 나중에 회원가입하면 지금 기록이 그대로 이어져요.");
+  assert.ok(!("stageQuestion" in O) && !("stagePregnant" in O) && !("stageBorn" in O), "G10: 아이 상황 선택 문구 삭제");
+  assert.strictEqual(O.formNote, "입력한 정보로 월령에 맞는 일정과 혜택을 챙겨 드려요. 언제든 프로필에서 고칠 수 있어요.");
 });
 test("setLandingStage: 계정 ON 일 때만 새 부제·제출 문구, OFF 는 기존 STAGE_TEXT 그대로", () => {
   const a = APP.indexOf("  function setLandingStage(stage) {"), b = APP.indexOf("\n  }\n", a) + 5;

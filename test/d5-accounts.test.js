@@ -192,8 +192,8 @@ function env({ flag = true, profile = null, account = null, user = null, emptySt
     off.t.acctRenderLanding();
     assert.deepStrictEqual([off.els["hero-title"].innerHTML, off.els["entry-fine-print"].textContent], ["기존", "기존 문구"]);
     const card = AV.renderLanding({});
-    for (const t of [O.title, O.primary, O.joinShort, O.login, O.ob1Title.split("\n")[0], O.ob2Sub]) assert.ok(card.includes(t), t); // G7: 새 첫 화면(2장 슬라이드)
-    assert.ok(!card.includes(O.browse) && !card.includes(O.betaOff), "가입 없이 둘러보기·베타 끄기 버튼 삭제");
+    for (const t of [O.primary, O.loginBtn, O.codeHint, O.ob1Title.split("\n")[0], O.ob2Brand]) assert.ok(card.includes(t), t); // G7: 새 첫 화면(2장 슬라이드)
+    assert.ok(!card.includes("가입 없이 둘러보기") && !card.includes("베타 끄기"), "가입 없이 둘러보기·베타 끄기 버튼 삭제");
     assert.ok(read("index.html").includes('<p class="fine-print" id="entry-fine-print">회원가입 없이 바로 시작해요. 가족코드로 다른 기기에서도 이어볼 수 있어요.</p>'), "OFF 문구 원문 유지(id 만 추가)");
   });
   await Promise.all(pending);

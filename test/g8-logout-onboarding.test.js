@@ -15,19 +15,22 @@ function boot(opts) {
   const els = { "view-landing": mk("landing"), "view-calendar": mk("cal") };
   els["view-landing"] = (() => { const o = mk("landing"); return o; })();
   const ls = new Map(opts.signedOut ? [["hannun_acct_signed_out", "1"]] : []);
+  const body = []; const timers = [];
   let cb = null; const log = []; const store = { profile: opts.profile };
   const sb = {
     localStorage: { getItem: (k) => (ls.has(k) ? ls.get(k) : null), setItem: (k, v) => ls.set(k, String(v)), removeItem: (k) => ls.delete(k) },
     acct: { svc: null, user: opts.user || null, pendingLink: opts.pendingLink || null },
-    newChildMode: false, hh: {}, AccountSync: undefined,
-    el: (id) => els[id] || null, window: { scrollTo() {} },
+    newChildMode: false, hh: {}, AccountSync: undefined, profile: opts.profile || null,
+    document: { createElement: () => { const d = { id: "", className: "", innerHTML: "", setAttribute() {}, remove() { const i = body.indexOf(d); if (i >= 0) body.splice(i, 1); } }; return d; }, body: { appendChild: (d) => { body.push(d); els[d.id] = d; } } },
+    setTimeout: (f, ms) => { timers.push(f); timers.ms = (timers.ms || []).concat(ms); return timers.length; }, clearTimeout: (n) => { timers[n - 1] = null; }, AccountView: { esc: (x) => x, MSG: { logo: "한눈육아" } },
+    el: (id) => (id === "acct-splash" ? body.find((d) => d.id === id) || null : els[id] || null), window: { scrollTo() {} },
     acctEnabled: () => true, acctJoinLinkStart: () => false, acctRenderLanding: () => log.push("landing-card"), acctRenderSlot() {},
-    acctApplyLandingMode() {}, previewRender() {}, hideEmptyHome: () => log.push("hide-empty"), acctOpenLinkSignup: () => log.push("link-sheet"), acctRestore() {},
+    acctApplyLandingMode() {}, previewRender() {}, hideEmptyHome: () => log.push("hide-empty"), acctOpenLinkSignup: () => log.push("link-sheet"), acctRestore: opts.restore || (async () => {}), showEmptyHome: () => log.push("empty-home"),
     AuthService: { create: () => ({ onChange: (f) => (cb = f), signOut: async () => ({ ok: true }) }) }, HouseholdSync: { firestoreAdapter: () => ({}) }, firebase: {}, console,
   };
   vm.createContext(sb);
-  vm.runInContext(["const SIGNED_OUT_KEY = \"hannun_acct_signed_out\";", fn("showCalendarView"), fn("showLandingView"), fn("acctSignedOutMark"), fn("acctGateHome"), fn("acctInit")].join("\n"), sb);
-  return { sb, view, log, fire: (u, info) => cb(u, info), ls, store };
+  vm.runInContext(["const SIGNED_OUT_KEY = \"hannun_acct_signed_out\"; const SPLASH_MAX_MS = 3000; const RESTORE_MAX_MS = 10000; let acctSplashTimer = null;", fn("showCalendarView"), fn("showLandingView"), fn("acctSignedOutMark"), fn("acctSplashShow"), fn("acctSplashArm"), fn("acctRestoreSlow"), fn("acctSplashHide"), fn("acctGateHome"), fn("acctInit")].join("\n"), sb);
+  return { sb, view, log, fire: (u, info) => cb(u, info), ls, store, body, timers };
 }
 (async () => {
   await test("로그아웃 순서: 홈(로그인 상태) → signOut → onAuthStateChanged(null) → 첫 화면, 아이 프로필은 그대로", async () => {
@@ -85,6 +88,52 @@ function boot(opts) {
     s.onChange((u, info) => seen.push([u, info && info.unknown === true]));
     await new Promise((r) => setTimeout(r, 20));
     assert.deepStrictEqual(seen, [[null, true]]);
+  });
+  await test("깜빡임 방지: 인증 확인 전에는 중립 로고 화면, 확인되면(로그인=복원 뒤, 로그아웃) 걷는다", async () => {
+    const a = boot({ profile: { name: "은찬" } });
+    a.sb.acctInit();
+    assert.strictEqual(a.body.length, 1, "인증 확인 전 중립 화면");
+    assert.ok(a.body[0].innerHTML.includes("한눈육아"));
+    a.fire({ uid: "u1" }); await new Promise((r) => setImmediate(r));
+    assert.strictEqual(a.body.length, 0);
+    const b = boot({ profile: {} }); b.sb.acctInit(); assert.strictEqual(b.body.length, 1); b.fire(null);
+    assert.strictEqual(b.body.length, 0);
+  });
+  await test("로그아웃 표시가 있는 기기는 기다리지 않고 바로 온보딩(중립 화면 없음)", () => {
+    const t = boot({ profile: { name: "은찬" }, signedOut: true });
+    t.sb.acctInit(); t.sb.showCalendarView(); t.sb.acctGateHome();
+    assert.strictEqual(t.body.length, 0);
+    assert.deepStrictEqual([t.view.landing, t.view.cal], [0, 1]);
+  });
+  await test("3초 넘게 확인이 안 되면(타이머) 중립 화면을 걷고 G8 규칙: 로그인했던 기기는 홈 그대로, SDK 실패도 같다", () => {
+    const t = boot({ profile: { name: "은찬" } });
+    t.sb.acctInit(); t.sb.showCalendarView();
+    assert.strictEqual(t.body.length, 1);
+    const live = t.timers.filter(Boolean); assert.strictEqual(live.length, 1);
+    live[0]();
+    assert.strictEqual(t.body.length, 0);
+    assert.deepStrictEqual([t.view.landing, t.view.cal], [1, 0]);
+    const u = boot({ profile: {} }); u.sb.acctInit(); u.sb.showCalendarView(); u.fire(null, { unknown: true });
+    assert.strictEqual(u.body.length, 0); assert.deepStrictEqual([u.view.landing, u.view.cal], [1, 0]);
+  });
+  await test("Auth가 '로그인됨'을 준 뒤 복원 대기 중이면 3초 타이머로 걷지 않고(10초 타이머로 교체) 복원이 끝나면 걷는다", async () => {
+    let done; const t = boot({ profile: null, restore: () => new Promise((r) => (done = r)) });
+    t.sb.acctInit();
+    assert.strictEqual(t.timers.ms[0], 3000, "Auth 응답 전에는 3초");
+    t.timers[0] && 0;
+    t.fire({ uid: "u1" });
+    assert.strictEqual(t.timers.filter(Boolean).length, 1);
+    assert.strictEqual(t.timers.ms[t.timers.ms.length - 1], 10000, "복원 대기는 10초");
+    assert.strictEqual(t.body.length, 1, "복원 중 스플래시 유지");
+    done(); await new Promise((r) => setImmediate(r));
+    assert.strictEqual(t.body.length, 0);
+  });
+  await test("복원이 10초를 넘기면 스플래시를 걷고 아이가 없으면 빈 홈('아이를 등록해 주세요')", () => {
+    const t = boot({ profile: null, restore: () => new Promise(() => {}) });
+    t.sb.acctInit(); t.sb.acct.user = { uid: "u1" }; t.fire({ uid: "u1" });
+    t.timers.filter(Boolean)[0]();
+    assert.strictEqual(t.body.length, 0);
+    assert.ok(t.log.includes("empty-home"));
   });
   console.log(`\n${passed}개 통과`);
 })();

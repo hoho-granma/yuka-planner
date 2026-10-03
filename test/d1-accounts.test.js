@@ -159,7 +159,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
   });
   await test("마크업: 랜딩(로그아웃/로그인 상태)·내 계정 슬롯·가입/로그인/로그아웃 시트, 이스케이프·조건부 필드", () => {
     const l = AV.renderLanding({});
-    assert.ok(l.includes("한눈육아") && l.includes('data-acct-action="open-signup"') && l.includes('data-acct-action="open-login"') && l.includes("회원가입하고 시작하기") && l.includes("data-acct-action=\"open-join\"") && !l.includes("가입 없이 둘러보기"));
+    assert.ok(l.includes("한눈육아") && l.includes('data-acct-action="open-signup"') && l.includes('data-acct-action="open-login"') && l.includes(">회원가입<") && !l.includes("open-join") && !l.includes("가입 없이 둘러보기"));
     const li = AV.renderLanding({ user: { email: "a@b.co", displayName: '<b>x</b>' } });
     assert.ok(li.includes('data-acct-action="logout"') && !li.includes("<b>x</b>") && li.includes("&lt;b&gt;"));
     assert.ok(AV.renderAccountSlot({ user: { email: "a@b.co", displayName: "지은" } }).includes('data-acct-action="logout"') && AV.renderAccountSlot({}).includes("회원가입"));
@@ -213,7 +213,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
   await test("OFF 불변: index.html 에 정적 계정 마크업·Auth SDK 스크립트가 없다(플래그 ON 일 때 동적 로드), sw.js 에는 새 스크립트만 추가", () => {
     const html = read("index.html");
     assert.ok(!/firebase-auth-compat/.test(html) && !/acct-/.test(html));
-    assert.ok(html.includes('<script src="js/auth-service.js?v=4"></script>') && html.includes('<script src="js/account-view.js?v=16"></script>'));
+    assert.ok(html.includes('<script src="js/auth-service.js?v=4"></script>') && html.includes('<script src="js/account-view.js?v=19"></script>'));
     const sw = read("sw.js");
     assert.ok(sw.includes('"./js/auth-service.js"') && sw.includes('"./js/account-view.js"') && !sw.includes("firebase-auth-compat"));
     assert.ok(AS.SDK_URL === "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js");

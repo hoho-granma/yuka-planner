@@ -1224,3 +1224,37 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .acct-preview { margin: 10px 0 4px; }
 .acct-preview-l { display: block; margin-bottom: 4px; font-size: 11px; font-weight: 800; color: var(--accent-dark); }
 .acct-preview-b { padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: #fff; font-size: 12px; line-height: 1.55; color: var(--text); word-break: break-all; }
+
+/* G10: 계정 모드 — 옛 시작 화면(제목·아이 상황 선택)을 숨기고, 입력 폼 안에서 '생년월일 / 출산 예정일'을 고른다 */
+#view-landing.acct-on > .hero, #view-landing.acct-on #stage-choice, #view-landing.acct-on #btn-stage-back, #view-landing.acct-on #beta-preview-slot { display: none !important; }
+.acct-stage-toggle { margin-bottom: 14px; }
+.acct-child-title { margin: 0 0 12px; font-size: 20px; line-height: 1.3; font-weight: 800; color: var(--text); }
+.acct-seg { display: flex; gap: 6px; padding: 4px; background: var(--bg, #fff8f0); border: 1px solid var(--border); border-radius: 14px; }
+.acct-seg button { flex: 1 1 0; min-height: 44px; border: 0; border-radius: 10px; background: transparent; font-size: 15px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
+.acct-seg button.on { background: var(--accent); color: #fff; }
+
+/* G10: 인증 확인 전 중립 화면(가운데 로고) — 계정 모드에서만 만들어진다 */
+.acct-splash { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: flex; align-items: center; justify-content: center; }
+.acct-splash-logo { font-size: 24px; font-weight: 800; letter-spacing: -.02em; color: var(--accent-dark, var(--accent)); }
+
+/* G11 온보딩 확정안: 1장(요일줄·사람별 색 점·라벨 3색·일정 5개) / 2장(브랜드+회색 서브문구+기능 5개) / 아래 [로그인]·[회원가입]·회색 안내 */
+.acct-ob1-wk { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 2px; font-size: 11px; text-align: center; color: var(--text-muted); }
+.acct-ob1-days div.t { outline: 1.5px solid var(--accent); }
+.acct-ob1-days b { position: absolute; left: 3px; right: 3px; bottom: 3px; display: flex; gap: 2px; height: 5px; }
+.acct-ob1-days b i { position: static; flex: 1; height: auto; border-radius: 3px; }
+.acct-ob1-ev { margin-top: 16px; gap: 6px; }
+.acct-ob1-ev em { flex: none; margin-right: -2px; padding: 1px 6px; border-radius: 6px; font-size: 11px; font-style: normal; font-weight: 800; background: #f6eee7; color: var(--text-muted); }
+.acct-ob1-ev em.vx { background: #efe9ff; color: #6d48d6; }
+.acct-ob1-ev em.hc { background: #e3f0fb; color: #2c6aa8; }
+.acct-ob1-ev em.sb { background: #fff1d9; color: #b26b00; }
+.acct-slide2 { padding-top: 34px; }
+.acct-brand { margin: 0; font-size: 22px; font-weight: 900; color: var(--accent); }
+.acct-lead { margin: 8px 0 34px; font-size: 14px; line-height: 1.5; color: var(--text-muted); }
+.acct-feat-ic svg { width: 18px; height: 18px; }
+.acct-feat-benefit { background: #fff1d9; } .acct-feat-manage { background: #e3f0fb; }
+.acct-code-hint { margin: 2px 0 0; text-align: center; font-size: 12px; color: #a79a92; }
+
+/* G11 추가: [회원가입]은 테두리·굵은 글씨 없는 텍스트 버튼(주 버튼은 [로그인] 하나). 누를 영역 높이는 44px 이상 유지 */
+.acct-btn-text { box-sizing: border-box; width: 100%; min-height: 48px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; color: var(--text); font-family: inherit; font-size: 16px; font-weight: 400; cursor: pointer; }
+.acct-btn-text:active { background: rgba(58, 46, 42, .06); }
+.acct-btn-text:focus-visible { outline: 3px solid var(--accent-dark); outline-offset: 2px; }
