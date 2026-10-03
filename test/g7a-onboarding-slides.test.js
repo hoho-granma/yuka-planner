@@ -67,4 +67,10 @@ test("OFF 첫 화면 불변: 새 마크업은 계정 모드(acctRenderLanding)�
   const html = read("index.html");
   assert.ok(html.includes('id="beta-preview-slot"') && html.includes('data-stage="born"') && html.includes("아이 키우면서 챙겨야 할 모든 것") && !html.includes("acct-slide"));
 });
+test("G12 높이 대응: 온보딩 화면은 화면 높이에 맞추고(버튼 영역 맨 아래 고정·스크롤 없음), 높이 단계별(760/700/620/600)로 위 콘텐츠를 줄이고 일정 목록 5→4→3개", () => {
+  assert.ok(/#app:has\(> #view-landing\.acct-simple:not\(\.hidden\)\) \{[^}]*height: 100dvh[^}]*overflow: hidden/.test(CSS));
+  assert.ok(/#view-landing\.acct-simple \.acct-cta \{ flex: none; position: static; \}/.test(CSS));
+  for (const h of [760, 700, 620, 600]) assert.ok(CSS.includes(`@media (max-height: ${h}px)`), String(h));
+  assert.ok(/max-height: 700px\)[\s\S]*nth-child\(n\+5\)[\s\S]*max-height: 620px\)[\s\S]*nth-child\(n\+4\)/.test(CSS.slice(CSS.indexOf("/* G12:"))));
+});
 console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);
