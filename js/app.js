@@ -3705,9 +3705,9 @@
     const group = (title) => `<h4 class="us-group">${esc(title)}</h4>`;
     el("selected-day-list").innerHTML =
       group(panel.added.title) +
-      (panel.added.cards.length ? panel.added.cards.map(UserScheduleView.renderCard).join("") : `<p class="us-note">${esc(panel.emptyText)}</p>`) +
-      (day.benefit.length ? group(panel.benefit.title) + day.benefit.slice().sort(byUrgency).map((e) => eventItemHtml(e)).join("") : "") +
-      (day.planned.length ? group(panel.planned.title) + day.planned.slice().sort(byUrgency).map((e) => eventItemHtml(e)).join("") : "");
+      (panel.added.cards.length ? panel.added.cards.map((c) => UserScheduleView.sourceLabeled(UserScheduleView.renderCard(c), "user")).join("") : `<p class="us-note">${esc(panel.emptyText)}</p>`) +
+      (day.benefit.length ? group(panel.benefit.title) + day.benefit.slice().sort(byUrgency).map((e) => UserScheduleView.sourceLabeled(eventItemHtml(e), "auto")).join("") : "") +
+      (day.planned.length ? group(panel.planned.title) + day.planned.slice().sort(byUrgency).map((e) => UserScheduleView.sourceLabeled(eventItemHtml(e), "auto")).join("") : "");
     el("selected-day-empty").classList.add("hidden");
     addSlot.innerHTML = UserScheduleView.renderAddButton({ enabled: true, hasHousehold: true });
   }

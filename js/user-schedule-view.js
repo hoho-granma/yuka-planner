@@ -40,6 +40,8 @@
     groupBenefit: "혜택 신청 시작", // #6
     groupPlanned: "추천 항목 (정해진 날이 아니에요)", // #7
     dayEmpty: "이 날 추가한 일정이 없어요.", // #8
+    srcAuto: "자동", // G13-1: 날짜 패널의 출처 라벨(접종·검진·혜택 같은 자동 항목)
+    srcUser: "직접 입력", // G13-1: 가족이 등록한 일정
     // F1 홈 '다음 일정' 카드(승인 문구 1~5)
     upcomingTitle: "다가오는 우리 가족 일정",
     upcomingTitleFamily: "오늘·이번 주 우리 가족", // E(1-3): 36개월 이상 아이의 홈에서 이 카드가 먼저 올 때의 제목
@@ -497,6 +499,14 @@
       emptyAdded: cards.length === 0,
       emptyText: MSG.dayEmpty,
     };
+  }
+  /** G13-1: 날짜 패널 카드의 출처 라벨. kind = "auto"(자동 항목 카드 html) | "user"(직접 입력 일정 카드 html). 카드 제목 바로 앞에 작은 라벨을 끼운다(없으면 html 그대로). */
+  function sourceLabeled(html, kind) {
+    const label = kind === "auto" ? MSG.srcAuto : MSG.srcUser;
+    const mark = `<span class="us-src us-src-${kind === "auto" ? "auto" : "user"}">${esc(label)}</span>`;
+    const anchor = kind === "auto" ? '<p class="title">' : '<strong class="us-title">';
+    const i = String(html).indexOf(anchor);
+    return i < 0 ? html : html.slice(0, i) + mark + html.slice(i);
   }
   /** 캘린더 상단 개수 줄(퍼센트 없음). 자동 일정 진행률과 섞지 않는다. */
   function monthSummary(counts) {
@@ -1072,7 +1082,7 @@
     MSG, CATEGORIES, CHILD_PALETTE, FAMILY_COLOR, PICKER_PREFIXES, HOURS, MINUTES,
     categoryLabel, childColor, childColors, occurrenceColor, MEMBER_COLORS, ROLE_LABELS, CATEGORY_COLORS, autoCategoryGroup, selectionMode, toggleSelection, cellChips,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
-    cardData, cellMarks, dayPanel, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
+    cardData, cellMarks, dayPanel, sourceLabeled, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
     linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, renderChipDeleteConfirm, withObjectParticle, renderTodoLine, todoDeadlineText, TODO_LIMIT, TODO_MSG, assigneeEmphasis, applyTemplate, renderQuickChips,
     renderCard, detailView, renderDetail, renderDeleteConfirm, renderAddButton, renderPeriodSection,
     newForm, formFromSchedule, stripId, formToInput, validateForm, messagesFromErrors, prepareSave, changesFromForm, minuteOptions, splitTime,

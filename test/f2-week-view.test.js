@@ -50,7 +50,9 @@ test("usBuildModel: view 인자(F2)·C2 연결 옵션·칩 달력 필터(복수 
 test("usRenderDayPanel: C2 의 배지 옵션 한 곳만 다르다", () => {
   const now = fnSrc(app, "usRenderDayPanel");
   const old = fnSrc(head, "usRenderDayPanel");
-  assert.strictEqual(now.replace("{ docById: usDocById, ...(autoLinkOn() ? { autoTitleOf: usAutoTitleOf } : {}) }", "{ docById: usDocById }"), old);
+  // G13-1: 날짜 패널 출처 라벨(sourceLabeled 래핑)도 허용 — 양쪽을 같은 모양으로 되돌려 비교한다(커밋 전후 모두 통과).
+  const plain = (src) => src.replace("{ docById: usDocById, ...(autoLinkOn() ? { autoTitleOf: usAutoTitleOf } : {}) }", "{ docById: usDocById }").replace('panel.added.cards.map((c) => UserScheduleView.sourceLabeled(UserScheduleView.renderCard(c), "user"))', "panel.added.cards.map(UserScheduleView.renderCard)").split('UserScheduleView.sourceLabeled(eventItemHtml(e), "auto")').join("eventItemHtml(e)");
+  assert.strictEqual(plain(now), plain(old));
 });
 test("usRenderCalendarSlots: usRenderViewToggle() 호출은 플래그 OFF 가드 뒤에 있다(칩 달력 개편으로 필터 줄 마크업이 바뀜)", () => {
   const now = fnSrc(app, "usRenderCalendarSlots");
