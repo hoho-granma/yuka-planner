@@ -182,5 +182,19 @@ const J = (x) => JSON.parse(JSON.stringify(x));
     assert.deepStrictEqual(run({ c1: { familyCode: "OTHER1", displayName: "아이1" }, c2: { familyCode: "KID111", displayName: "아이1", removedAt: 5 } }, "수아"), []);
     assert.ok(APP.includes("hhSyncChildName(); // H1") && fn("showEditProfileSheet") !== "");
   });
+  await test("D4(나): 계정 모드 프로필 시트에 [아이 전환] 1개 — 아이가 2명 이상일 때만(분리된 아이 제외), 기존 showChildSwitchSheet 재사용, OFF 마크업 불변", () => {
+    const count = (kids, links) => {
+      const sb = { HouseholdView: HV, loadChildren: () => kids, hh: { hid: links ? "h1" : null }, HouseholdSync: { getMirror: () => ({ children: links || {} }) }, familyCode: "A1" };
+      vm.createContext(sb);
+      vm.runInContext(fn("acctKidCount") + ";globalThis.__n = acctKidCount;", sb);
+      return sb.__n();
+    };
+    assert.strictEqual(count([{ code: "A1", name: "수아" }]), 1);
+    assert.strictEqual(count([{ code: "A1", name: "수아" }, { code: "B2", name: "은찬" }]), 2);
+    assert.strictEqual(count([{ code: "A1", name: "수아" }], { c1: { familyCode: "B2", displayName: "은찬" } }), 2, "가구 링크의 아이도 센다");
+    assert.strictEqual(count([{ code: "A1", name: "수아" }], { c1: { familyCode: "B2", displayName: "은찬", removedAt: 5 } }), 1, "분리된 아이는 제외");
+    assert.ok(APP.includes("${acctEnabled() && acctKidCount() >= 2 ? '<button type=\"button\" class=\"btn-close\" id=\"btn-acct-child-switch\">아이 전환</button>' : \"\"}") || APP.includes('acctEnabled() && acctKidCount() >= 2 ?'));
+    assert.ok(APP.includes('el("btn-acct-child-switch").addEventListener("click", showChildSwitchSheet)'));
+  });
   console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);
 })();

@@ -845,6 +845,14 @@
     await buildAndRender();
     showProfileSheet();
   }
+  /** 계정 모드: 전환할 수 있는 아이 수(이 기기 목록 + 가구 링크, 분리된 아이 제외). */
+  function acctKidCount() {
+    try {
+      return HouseholdView.mergeChildren(loadChildren(), hh.hid ? HouseholdSync.getMirror(hh.hid) : null, familyCode).filter((c) => !c.removed).length;
+    } catch (e) {
+      return 0;
+    }
+  }
   function showProfileSheet(pendingPhoto) {
     if (pendingPhoto && pendingPhoto.type) pendingPhoto = undefined; // 클릭 이벤트가 인자로 넘어온 경우
     modalMode = "profile";
@@ -883,13 +891,14 @@
              </div>`
           : ""
       }
-      ${acctEnabled() ? '<div id="acct-slot"></div>' : ""}${hhEnabled() ? `${acctEnabled() ? "" : '<div id="hh-slot"></div>'}<div id="members-slot"></div>` : ""}${acctEnabled() ? "" : '<div id="beta-slot"></div>'}${hhEnabled() ? '<button type="button" class="btn-close" id="btn-view-records">기록 보기</button>' : ""}${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
+      ${acctEnabled() ? '<div id="acct-slot"></div>' : ""}${acctEnabled() && acctKidCount() >= 2 ? '<button type="button" class="btn-close" id="btn-acct-child-switch">아이 전환</button>' : ""}${hhEnabled() ? `${acctEnabled() ? "" : '<div id="hh-slot"></div>'}<div id="members-slot"></div>` : ""}${acctEnabled() ? "" : '<div id="beta-slot"></div>'}${hhEnabled() ? '<button type="button" class="btn-close" id="btn-view-records">기록 보기</button>' : ""}${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
       ${changed ? `<button class="btn-complete btn-photo-save" id="btn-photo-save">저장</button>` : ""}
       <button class="btn-close" id="btn-close-modal">닫기</button>
     `;
     el("detail-modal").classList.remove("hidden");
     el("btn-close-modal").addEventListener("click", closeDetail);
     if (acctEnabled()) acctOpenSlot();
+    if (el("btn-acct-child-switch")) el("btn-acct-child-switch").addEventListener("click", showChildSwitchSheet); // D4(나): 계정 모드는 아이가 2명 이상일 때만, 기존 전환 시트 재사용
     if (hhEnabled()) hhOpenSection();
     if (el("btn-view-records")) el("btn-view-records").addEventListener("click", openRecordView);
     betaConfirming = false;
