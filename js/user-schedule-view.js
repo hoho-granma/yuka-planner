@@ -1199,7 +1199,7 @@
   /** 홈 카드. 일정이 없으면 빈 상태 안내와 추가 버튼, 있으면 줄 목록과 '캘린더에서 보기'. */
   function renderUpcomingCard(data, opts) {
     const items = (data && data.items) || [];
-    const head = `<div class="home-sec-head"><h3>${esc(opts && opts.family === true ? MSG.upcomingTitleFamily : MSG.upcomingTitle)}</h3></div>`;
+    const head = `<div class="home-sec-head"><h3>${esc(opts && opts.title ? opts.title : opts && opts.family === true ? MSG.upcomingTitleFamily : MSG.upcomingTitle)}</h3></div>`;
     if (!items.length) {
       return `<section class="home-sec sec-us-upcoming">${head}<p class="home-empty-line">${esc(MSG.upcomingEmpty)}</p><button type="button" class="home-more" data-act="us-add">${esc(MSG.upcomingAdd)}</button></section>`;
     }

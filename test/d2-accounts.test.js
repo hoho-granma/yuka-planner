@@ -235,7 +235,7 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     assert.deepStrictEqual([acc.householdId, acc.situation, acc.province, acc.district], [e.log.setJoined[0][0], "HAS_CHILD", "서울특별시", "구로구"]);
     assert.deepStrictEqual([e.log.stage, e.log.landing, e.sb.el("childName").value, e.log.date], [null, 0, "", null], "아이 입력 화면·미리 채움 없음");
     const html = e.sb.el("empty-panel").innerHTML;
-    assert.ok(html.includes("아이를 등록하면 월령에 맞는 일정과 혜택이 나와요") && html.includes('data-acct-action="empty-register"'));
+    assert.ok(html.includes("아이를 등록하면 월령별 할 일·혜택이 열려요") && html.includes('data-acct-action="empty-register"'));
     assert.ok(!("hannun_account_intent" in e.store) && e.log.closed === 1 && !e.authAd.calls.includes("deleteUser"));
     assert.strictEqual(e.acct.notice, null, "D5: 가입 직후 안내 문구는 없앴다");
   });
@@ -248,7 +248,7 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     const acc = e.w.db.docs.get("accounts/uNew");
     assert.deepStrictEqual([acc.situation, acc.role, "province" in acc], ["EXPECTING", "DAD", false]);
     const html = e.sb.el("empty-panel").innerHTML;
-    assert.ok(html.includes("출산 예정일을 등록하면 임신 중 일정과 혜택이 나와요") && html.includes("출산 예정일 등록하기") && e.log.landing === 0);
+    assert.ok(html.includes("출산 예정일을 등록하면 임신 중 할 일·혜택이 열려요") && html.includes("등록 ›") && e.log.landing === 0);
   });
   await test("잘못된 코드: 계정을 만들기 전에 막고(Auth 호출 0) 코드 입력란에 안내", async () => {
     const e = appEnv();
@@ -313,7 +313,7 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     await e.restore(e.acct.user);
     assert.strictEqual(e.log.setJoined.length, 1);
     assert.ok(e.w.db.docs.get("accounts/uNew").householdId);
-    assert.ok(!("hannun_account_intent" in e.store) && e.sb.el("empty-panel").innerHTML.includes("아이 등록하기") && e.log.stage === null);
+    assert.ok(!("hannun_account_intent" in e.store) && e.sb.el("empty-panel").innerHTML.includes("등록 ›") && e.log.stage === null);
     // 규칙 미배포인 일시 상태에서는 로그인 사용자를 지우지 않는다
     const off = appEnv({ rules: false, local: { hannun_account_intent: JSON.stringify({ email: "m@x.co", displayName: "지은", role: "MOM", joiningCode: null, situation: "HAS_CHILD" }) } });
     off.init();

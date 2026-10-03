@@ -1404,3 +1404,66 @@ body.acct-design .acct-prof-head { display: flex; align-items: center; gap: 12px
 body.acct-design .acct-prof-head h3 { margin: 0; font-size: 20px; }
 body.acct-design .acct-kids .acct-kid-row { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; margin-top: 6px; padding: 0 14px; border: 1px solid var(--border); border-radius: 14px; background: #fff; font-size: 15px; font-weight: 700; color: var(--text); text-align: left; }
 body.acct-design .acct-prof-head ~ #acct-slot .acct-me-text > strong { display: none; } /* 시트 맨 위 제목과 계정 줄의 이름이 겹치지 않게(이메일·코드만 보인다) */
+/* ===== G20: 아이가 없는 계정(배너 한 줄 + 빈 자리) · 아이 등록 바텀시트 — 모두 body.acct-design 범위 ===== */
+body.acct-design .acct-nc-ban { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; padding: 9px 12px; background: #fff1e8; border: 1px solid #ffd9c4; border-radius: 12px; font-size: 13px; font-weight: 700; color: var(--text); }
+body.acct-design .acct-nc-ban svg { width: 18px; height: 18px; flex: none; color: var(--accent-dark); }
+body.acct-design .acct-nc-ban span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.acct-design .acct-nc-ban-go { flex: none; padding: 4px 2px; border: 0; background: transparent; color: var(--accent-dark); font-size: 13px; font-weight: 800; cursor: pointer; }
+body.acct-design .acct-nc-me { display: flex; align-items: center; gap: 12px; width: 100%; margin: 0 0 12px; padding: 12px 14px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; text-align: left; cursor: pointer; color: var(--text); }
+body.acct-design .acct-nc-av { flex: none; width: 44px; height: 44px; border-radius: 50%; background: #ffe6d6; color: var(--accent-dark); display: grid; place-items: center; }
+body.acct-design .acct-nc-av svg { width: 24px; height: 24px; }
+body.acct-design .acct-nc-me-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+body.acct-design .acct-nc-me-t b { font-size: 16px; }
+body.acct-design .acct-nc-me-t small { display: flex; align-items: center; gap: 3px; font-size: 12px; color: var(--text-muted); }
+body.acct-design .acct-nc-me-t small svg { width: 12px; height: 12px; }
+body.acct-design .acct-nc-ttl { margin: 4px 0 4px; font-size: 20px; font-weight: 800; }
+body.acct-design .acct-nc-hint { margin: 0 0 12px; font-size: 13px; color: var(--text-muted); }
+body.acct-design .acct-nc-ghost { display: flex; flex-direction: column; gap: 8px; margin: 0 0 12px; padding: 14px; border: 1.5px dashed var(--border); border-radius: 14px; }
+body.acct-design .acct-nc-ghost i { display: block; height: 11px; border-radius: 6px; background: #f6e9de; }
+body.acct-design .acct-nc-ghost i:nth-child(2) { width: 75%; }
+body.acct-design .acct-nc-ghost i:nth-child(3) { width: 55%; }
+body.acct-design .acct-nc-seg { display: flex; margin: 0 0 12px; padding: 3px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; }
+body.acct-design .acct-nc-seg span { flex: 1; padding: 8px 0; border-radius: 9px; text-align: center; font-size: 13px; font-weight: 700; color: var(--text-muted); }
+body.acct-design .acct-nc-seg span.on { background: var(--accent); color: #fff; }
+body.acct-design #empty-panel .home-sec { margin-bottom: 12px; }
+/* 아이 등록 시트 */
+body.acct-design .acct-cs { display: flex; flex-direction: column; gap: 8px; }
+body.acct-design .acct-cs-grab { width: 36px; height: 4px; margin: -8px auto 4px; border-radius: 2px; background: var(--border); }
+body.acct-design .acct-cs-head { display: flex; align-items: center; justify-content: space-between; }
+body.acct-design .acct-cs-head b { font-size: 18px; }
+body.acct-design .acct-cs-lb { margin-top: 4px; font-size: 14px; font-weight: 800; }
+body.acct-design .acct-cs-lb small, body.acct-design .acct-cs-phr small { font-weight: 500; font-size: 12px; color: var(--text-muted); }
+body.acct-design .acct-cs-inp, body.acct-design .acct-cs-sel { width: 100%; min-height: 48px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: #fff; font-size: 16px; color: var(--text); }
+body.acct-design .acct-cs-tg { display: flex; padding: 3px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; }
+body.acct-design .acct-cs-tg button { flex: 1; min-height: 40px; border: 0; border-radius: 9px; background: transparent; font-size: 14px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
+body.acct-design .acct-cs-tg button.on { background: var(--accent); color: #fff; }
+body.acct-design .acct-cs-date .date-picker-trigger { min-height: 48px; }
+body.acct-design .acct-cs-pv { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 9px 12px; border-radius: 12px; background: #f3edff; }
+body.acct-design .acct-cs-pv.hidden { display: none; }
+body.acct-design .acct-cs-pv b { font-size: 15px; color: #7a5fd0; }
+body.acct-design .acct-cs-pv span { font-size: 12px; color: #6a5a94; }
+body.acct-design .acct-cs-pv.born { background: #e8f8ef; }
+body.acct-design .acct-cs-pv.born b { color: #2f8f5b; }
+body.acct-design .acct-cs-gch { display: flex; gap: 6px; }
+body.acct-design .acct-cs-gch button { flex: 1; min-height: 40px; border: 1px solid var(--border); border-radius: 999px; background: #fff; font-size: 14px; font-weight: 700; color: var(--text); cursor: pointer; }
+body.acct-design .acct-cs-gch button.on { border-color: var(--accent); background: #fff1e8; color: var(--accent-dark); }
+body.acct-design .acct-cs-phr { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+body.acct-design .acct-cs-ph { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; flex: none; }
+body.acct-design .acct-cs-ph img { width: 100%; height: 100%; object-fit: cover; }
+body.acct-design .acct-cs-ph-empty { border: 1.5px dashed #e5cdb9; color: var(--text-muted); }
+body.acct-design .acct-cs-ph-empty svg { width: 20px; height: 20px; }
+body.acct-design .acct-cs-save { min-height: 52px; margin-top: 6px; border: 0; border-radius: 14px; background: var(--accent); color: #fff; font-size: 16px; font-weight: 800; cursor: pointer; }
+body.acct-design .acct-cs-save:disabled { opacity: .6; }
+/* G20 수정: 작은 화면에서도 [저장]이 항상 보이게 — 시트 본문만 스크롤, 저장은 아래 고정(safe-area 여백), 낮은 화면에서는 간격 축소 */
+body.acct-design .acct-cs-foot { position: sticky; bottom: -32px; z-index: 2; margin: 6px -20px -32px; padding: 10px 20px calc(14px + env(safe-area-inset-bottom)); background: linear-gradient(rgba(255,255,255,0), #fff 14px); }
+body.acct-design .acct-cs-save { width: 100%; margin-top: 0; }
+@media (max-height: 760px) {
+  body.acct-design .acct-cs { gap: 5px; }
+  body.acct-design .acct-cs-head b { font-size: 16px; }
+  body.acct-design .acct-cs-lb { margin-top: 0; font-size: 13px; }
+  body.acct-design .acct-cs-inp, body.acct-design .acct-cs-sel { min-height: 42px; }
+  body.acct-design .acct-cs-tg button, body.acct-design .acct-cs-gch button { min-height: 34px; }
+  body.acct-design .acct-cs-date .date-picker-trigger { min-height: 42px; }
+  body.acct-design .acct-cs-pv { padding: 6px 12px; }
+  body.acct-design .acct-cs-save { min-height: 48px; }
+}

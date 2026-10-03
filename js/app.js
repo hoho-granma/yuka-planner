@@ -1016,8 +1016,151 @@
   const closeDetailBase = closeDetail;
   closeDetail = function () {
     acctChildView = false;
+    if (modalMode === "child-register") { newChildMode = false; newChildSnapshot = null; crState = null; } // G20: 등록 시트를 저장 없이 닫으면 입력 모드도 끝낸다
     return closeDetailBase.apply(this, arguments);
   };
+
+  // G20: 아이가 없는 계정의 캘린더는 월령 배치(추천일) 없이 가족·내 일정만 그린다(원래 함수 본문은 그대로 두고 감싼다).
+  const computeCalendarDaysBase = computeCalendarDays;
+  computeCalendarDays = function () {
+    if (!profile) { calDisplayDays = new Map(); return; }
+    return computeCalendarDaysBase.apply(this, arguments);
+  };
+
+  // ── G20 아이 등록 바텀시트(시안 A): 계정 모드에서는 옛 첫 화면 폼(view-landing)을 쓰지 않는다. 저장은 기존 handleSubmit 을 그대로 호출한다(숨은 옛 폼 칸에 값을 넣고 제출). ──
+  let crState = null; // { kind, gender, photo, name, date }
+  const enterNewChildEntryBase = enterNewChildEntry;
+  enterNewChildEntry = function (opts) {
+    if (!acctEnabled()) return enterNewChildEntryBase(opts);
+    return acctChildSheetOpen();
+  };
+  function acctChildSheetOpen() {
+    rememberChild(); // 지금 아이를 이 기기 아이 목록에 남겨 둔다(저장 시 이전 아이를 비우는 handleSubmit 규칙 그대로)
+    newChildMode = true;
+    newChildSnapshot = { hid: hhEnabled() ? hh.hid : null, code: hhEnabled() ? hh.code : null };
+    crState = { kind: acctExpecting() ? "pregnant" : "born", gender: "", photo: null, name: "", date: "" };
+    acctChildSheetRender();
+  }
+  /** 가입 때 받은 지역(없으면 지금 아이의 지역) — 등록 시트는 지역을 묻지 않는다. */
+  function acctChildRegion() {
+    const ok = (code, dist) => {
+      const pv = regionsData && regionsData.provinces.find((x) => x.code === code);
+      return pv && pv.districts.includes(dist) ? { province: code, district: dist } : null;
+    };
+    const a = acct.account || {};
+    return ok(a.province, a.district) || (profile ? ok(profile.province, profile.district) : null);
+  }
+  function acctChildPreview() {
+    const box = el("cr-preview");
+    if (!box) return;
+    const v = el("cr-date") ? el("cr-date").value : "";
+    if (!v) { box.classList.add("hidden"); return; }
+    const d = new Date(v + "T00:00:00"), N = AccountView.MSG.nc, today = new Date();
+    let t;
+    if (crState.kind === "pregnant") { const pi = pregnancyInfo(d, today); t = N.previewDue(pi.weeks, pi.daysToDue, formatDateKR(d)); }
+    else t = N.previewBorn(ChildTimeline.ageLabelAt(d, today));
+    box.querySelector("b").textContent = t.main;
+    box.querySelector("span").textContent = t.sub;
+    box.classList.toggle("born", crState.kind !== "pregnant");
+    box.classList.remove("hidden");
+  }
+  let crPicker = null;
+  function acctChildSheetRender() {
+    modalMode = "child-register";
+    const needRegion = !acctChildRegion();
+    el("modal-content").innerHTML = AccountView.renderChildSheet({ ...crState, needRegion, regions: regionsData ? regionsData.provinces : [], dateMarkup: HNDatePicker.markup("cr") });
+    el("detail-modal").classList.remove("hidden");
+    crPicker = HNDatePicker.bindById("cr", { ...datePickerOpts(() => crState.kind), onChange: acctChildPreview });
+    if (crState.date) crPicker.set(new Date(crState.date + "T00:00:00"));
+    acctChildPreview();
+    const syncName = () => { crState.name = el("cr-name").value; };
+    el("cr-name").addEventListener("input", syncName);
+    el("modal-content").querySelectorAll("[data-cr-kind]").forEach((b) =>
+      b.addEventListener("click", () => {
+        if (crState.kind === b.dataset.crKind) return;
+        crState.kind = b.dataset.crKind;
+        crState.date = "";
+        crPicker.reset();
+        el("modal-content").querySelectorAll("[data-cr-kind]").forEach((x) => { x.classList.toggle("on", x === b); x.setAttribute("aria-checked", String(x === b)); });
+        acctChildPreview();
+      })
+    );
+    el("modal-content").querySelectorAll("[data-cr-gender]").forEach((b) =>
+      b.addEventListener("click", () => {
+        crState.gender = b.dataset.crGender;
+        el("modal-content").querySelectorAll("[data-cr-gender]").forEach((x) => { x.classList.toggle("on", x === b); x.setAttribute("aria-checked", String(x === b)); });
+      })
+    );
+    el("cr-photo-btn").addEventListener("click", (ev) => { ev.stopPropagation(); el("cr-photo-input").click(); });
+    el("cr-photo-input").addEventListener("change", async (ev) => {
+      const f = ev.target.files && ev.target.files[0];
+      if (!f) return;
+      try {
+        crState.name = el("cr-name").value; crState.date = el("cr-date").value;
+        crState.photo = await resizeImageFile(f, 240);
+        acctChildSheetRender();
+      } catch (e) { console.error("사진 등록 실패", e); }
+    });
+    if (el("cr-photo-remove")) el("cr-photo-remove").addEventListener("click", () => { crState.name = el("cr-name").value; crState.date = el("cr-date").value; crState.photo = null; acctChildSheetRender(); });
+    if (el("cr-province")) {
+      const fill = () => {
+        const pv = regionsData.provinces.find((x) => x.code === el("cr-province").value);
+        el("cr-district").innerHTML = (pv ? pv.districts : []).map((d) => `<option value="${esc(d)}">${esc(d)}</option>`).join("");
+      };
+      el("cr-province").addEventListener("change", fill);
+      fill();
+    }
+    el("cr-save").addEventListener("click", acctChildSheetSave);
+  }
+  function acctChildSheetError(msg) {
+    const e = el("cr-error");
+    if (!e) return;
+    e.textContent = msg;
+    e.classList.remove("hidden");
+  }
+  /** 검증(이름 필수·날짜 범위는 날짜 선택기와 같은 규칙) 뒤 기존 handleSubmit 에 맡긴다: 로컬 profile 저장·가족코드 생성·가구 children 연결은 모두 그쪽이 한다. */
+  async function acctChildSheetSave() {
+    const N = AccountView.MSG.nc;
+    const name = el("cr-name").value.trim();
+    const dateStr = el("cr-date").value;
+    if (!name) { acctChildSheetError(N.errName); el("cr-name").focus(); return; }
+    if (!dateStr) { acctChildSheetError(N.errDate); return; }
+    const d = new Date(dateStr + "T00:00:00");
+    if (!HNDatePicker.isSelectable(d, crState.kind, new Date(), ChildTimeline.SERVICE_RANGE.pickerYearsBack, null)) { acctChildSheetError(crState.kind === "pregnant" ? N.errDateDue : N.errDateBorn); return; }
+    let region = acctChildRegion();
+    if (!region && el("cr-province") && el("cr-district") && el("cr-district").value) region = { province: el("cr-province").value, district: el("cr-district").value };
+    if (!region) { acctChildSheetError(N.errRegion); return; }
+    const btn = el("cr-save");
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = N.saving;
+    const gender = crState.gender, photo = crState.photo, kind = crState.kind;
+    const orders = ["first", "second", "third", "fourthPlus"];
+    setLandingStage(kind); // 옛 폼의 날짜 종류(landingStage) — handleSubmit 이 profile.stage 로 쓴다
+    el("childName").value = name;
+    el("birthDate").value = dateStr;
+    el("birthOrder").value = orders[Math.min(acctKidCount(), orders.length - 1)];
+    el("province").value = region.province;
+    populateDistricts(region.province, region.district);
+    el("district").value = region.district;
+    const done = handleSubmit({ preventDefault() {} });
+    // 로컬 저장·일정 계산이 끝나면(가족코드 생성은 네트워크라 뒤에서 이어진다) 바로 홈을 보여 준다. 최대 8초만 기다린다.
+    await Promise.race([done, new Promise((r) => { const t0 = Date.now(); const iv = setInterval(() => { if ((profile && profile.name === name && schedule.length) || Date.now() - t0 > 8000) { clearInterval(iv); r(); } }, 40); })]);
+    if (!profile || profile.name !== name) { // 검증 실패 등으로 저장되지 않음
+      btn.disabled = false;
+      btn.textContent = N.save;
+      acctChildSheetError(N.errDate);
+      return;
+    }
+    if (gender === "M" || gender === "F" || photo) {
+      if (gender === "M" || gender === "F") profile.gender = gender;
+      if (photo) profile.photoDataUrl = photo;
+      saveProfile(profile);
+      if (photo) { pushProfileToFamily(); done.then(() => pushProfileToFamily()); } // 가족코드가 아직 없으면 생긴 뒤 한 번 더
+      await buildAndRender();
+    }
+    if (modalMode === "child-register") closeDetail();
+  }
 
   /**
    * 아이 정보 수정 — 처음 화면으로 돌아가 새로 입력하지 않고, 저장된 정보를 그대로 채운 폼을 띄운다.
@@ -2502,7 +2645,7 @@
   }
 
   function switchTab(name) {
-    if (emptyHome && !profile) return emptyRender(name); // D5: 아이가 없는 홈에서는 탭마다 빈 상태 안내만
+    if (emptyHome && !profile) return name === "calendar" || name === "places" ? acctNoChildTab(name) : emptyRender(name); // D5/G20: 아이가 없는 계정 — 캘린더·어디갈까는 평소 화면, 홈·체크리스트·혜택·기록은 배너 + 빈 자리
     // 체크리스트에서 특정 카테고리만 보다가 다른 탭으로 나가면, 돌아왔을 때 다시 전체 카테고리가 켜진 상태로 시작한다.
     if (currentTab === "checklist" && name !== "checklist" && Object.keys(CATEGORY_META).some((k) => !activeCats.has(k))) {
       activeCats = new Set(Object.keys(CATEGORY_META));
@@ -3759,6 +3902,7 @@
   }
   /** 가구 데이터·일정이 바뀐 뒤 홈 카드가 달라졌을 때만 홈을 다시 그린다(같으면 건너뜀 — 중복 호출 가드). */
   function usRefreshHome() {
+    if (!profile && hhEnabled()) return acctNcRefresh(); // G20: 아이 없는 계정도 가족·내 일정 변경을 바로 반영
     if (!profile || !hhEnabled()) return;
     const ord = usActive() && typeof HomeOrder !== "undefined" ? HomeOrder.homeSectionOrder({ children: homeKids(), pregnant: isPregnant(), asOf: new Date() }) : null;
     if (usHomeCardHtml(ord ? { family: ord[0] === "family" } : undefined) + usAutoLinkSig() !== (us.homeSig || "")) {
@@ -4645,6 +4789,7 @@
     });
     const ep = el("empty-panel");
     if (ep) ep.addEventListener("click", acctOnClick);
+    if (ep) ep.addEventListener("click", acctNcOnClick);
     acctRenderLanding();
   }
   /**
@@ -5083,10 +5228,68 @@
     const p = el("empty-panel");
     p.classList.remove("hidden");
     const st = { expecting: acctExpecting(), user: acct.user, account: acct.account };
-    p.innerHTML = tab === "home" ? AccountView.renderEmptyHome(st) : AccountView.renderEmptyTab(tab, st);
+    // G20: 공용 빈 화면(큰 [아이 등록하기] 버튼) 대신 배너 한 줄 + 탭별 빈 자리. 배너는 화면마다 한 번만 그린다.
+    p.innerHTML = tab === "home" ? AccountView.renderNoChildHome({ ...st, familyHtml: typeof acctNcFamilyHtml === "function" ? acctNcFamilyHtml() : "", mineHtml: typeof acctNcMineHtml === "function" ? acctNcMineHtml() : "" }) : AccountView.renderNoChildTab(tab, st);
     currentTab = tab;
     document.querySelectorAll(".nav-item").forEach((btn) => btn.classList.toggle("active", btn.dataset.nav === tab));
     window.scrollTo(0, 0);
+  }
+  /** G20 아이 없는 홈의 '이번 주 가족 일정'(가구가 있을 때만) */
+  function acctNcFamilyHtml() {
+    return typeof usHomeCardHtml === "function" ? usHomeCardHtml({ family: true, title: AccountView.MSG.nc.familyTitle }) : "";
+  }
+  /** G20 아이 없는 홈의 '내 일정'(내 구성원 담당 일정) */
+  function acctNcMineHtml() {
+    try {
+      if (typeof usActive !== "function" || typeof usMeId !== "function" || !usActive() || !usMeId()) return "";
+      const meId = usMeId();
+      const todayIso = toISODate(new Date());
+      const f = UserScheduleView.toModelFilter(["MEMBER:" + meId], false, usLinks(), usMembers(), usSelOpts());
+      const model = usBuildModel(todayIso, UserSchedule.addDays(todayIso, 6), { ...f, showAuto: false });
+      return UserScheduleView.renderUpcomingCard(UserScheduleView.upcomingItems(model, { todayIso, links: usLinks() }), { title: AccountView.MSG.nc.mineTitle });
+    } catch (e) {
+      console.error("내 일정 카드 실패", e);
+      return "";
+    }
+  }
+  /** G20: 아이가 없는 계정의 캘린더·어디갈까 — 빈 화면이 아니라 평소 탭 그대로(캘린더는 가족·내 일정만, 어디갈까는 지역 기반 장소, 월령 필터 없음). */
+  function acctNoChildTab(name) {
+    const p = el("empty-panel");
+    if (p) p.classList.add("hidden");
+    const changed = currentTab !== name;
+    currentTab = name;
+    TAB_NAMES.forEach((t) => el(`tab-${t}`).classList.toggle("hidden", t !== name));
+    document.querySelectorAll(".nav-item").forEach((btn) => btn.classList.toggle("active", btn.dataset.nav === name));
+    if (changed) window.scrollTo(0, 0);
+    if (name === "calendar") {
+      renderCalendar();
+      renderSelectedDayPanel();
+      attachListHandlers();
+    } else renderPlacesTab();
+  }
+  /** G20 아이 없는 홈의 일정 카드(가족·내 일정) 안의 줄·버튼: 그 날짜의 캘린더로 / 일정 추가. */
+  function acctNcOnClick(ev) {
+    if (!emptyHome || profile) return;
+    const row = ev.target.closest("[data-home-date]");
+    if (row) {
+      const [y, mo, d] = row.dataset.homeDate.split("-").map(Number);
+      viewMonth = new Date(y, mo - 1, 1);
+      selectedCalendarDate = new Date(y, mo - 1, d);
+      return switchTab("calendar");
+    }
+    const b = ev.target.closest("[data-act]");
+    if (!b) return;
+    if (b.dataset.act === "us-cal") {
+      viewMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      selectedCalendarDate = new Date();
+      switchTab("calendar");
+    } else if (b.dataset.act === "us-add") usOpenForm(null, toISODate(new Date()));
+  }
+  /** G20: 가구 데이터·일정이 바뀐 뒤 아이 없는 화면을 다시 그린다(홈·체크리스트·혜택·기록은 빈 자리, 캘린더·어디갈까는 평소 화면). */
+  function acctNcRefresh() {
+    if (!acctEnabled() || profile || !emptyHome) return;
+    if (currentTab === "calendar" || currentTab === "places") acctNoChildTab(currentTab);
+    else emptyRender(currentTab);
   }
   function showEmptyHome() {
     if (!acctEnabled() || profile) return;
@@ -5462,6 +5665,7 @@
       closeDetail();
       return beginNewChildEntry(); // 기존 아이 입력 흐름(임신 중 선택 포함)
     }
+    if (action === "nc-me") return showProfileSheet(); // G20: 아이 없는 홈의 내 카드 → 내 프로필 시트
     if (action === "empty-me") {
       acct.notice = null;
       return acctShowSheet("me");

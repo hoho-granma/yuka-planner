@@ -102,6 +102,25 @@
     emptyBody: "아이 이름과 생년월일만 있으면 돼요. 가족에게 받은 코드가 있으면 내 정보에서 합류할 수도 있어요.",
     emptyBodyExpecting: "출산 예정일과 사는 지역만 있으면 돼요. 아이가 태어나면 생년월일로 바꿀 수 있어요.",
     emptyTab: { calendar: "아이를 등록하면 캘린더에 접종·검진·혜택 일정이 표시돼요.", checklist: "아이를 등록하면 월령별 체크리스트가 만들어져요.", subsidy: "아이를 등록하면 우리 동네 지원금·혜택을 찾아 드려요.", record: "아이를 등록하면 성장·접종 기록을 남길 수 있어요.", places: "아이를 등록하면 우리 동네·월령에 맞는 갈 만한 곳을 보여 드려요." },
+    // G20: 아이가 없는 계정의 기본 화면(얇은 배너 한 줄 + 빈 자리 줄) · 아이 등록 시트
+    nc: {
+      banner: "아이를 등록하면 월령별 할 일·혜택이 열려요",
+      bannerExpecting: "출산 예정일을 등록하면 임신 중 할 일·혜택이 열려요",
+      bannerGo: "등록 ›",
+      checklistTitle: "체크리스트", checklistHint: "아이 나이를 알면 여기에 월령별 할 일이 채워져요.",
+      subsidyHint: "아이 나이를 알면 받을 수 있는 혜택이 여기 나와요.", subsidySeg: ["신청 가능", "예정", "완료"],
+      recordTitle: "기록", recordHint: "아이를 등록하면 성장·접종 기록을 남길 수 있어요.",
+      familyTitle: "이번 주 가족 일정", mineTitle: "내 일정",
+      sheetTitle: "아이 등록", close: "닫기",
+      nameLabel: "이름", nameHint: "별명도 괜찮아요", namePlaceholder: "예: 하은이, 콩이",
+      dateLabel: "날짜", kindBorn: "생년월일", kindDue: "출산 예정일",
+      genderLabel: "성별", optional: "선택", genders: [["", "아직 몰라요"], ["M", "남아"], ["F", "여아"]],
+      photoLabel: "사진", photoHint: "나중에 프로필에서 바꿀 수 있어요", photoAdd: "사진 추가", photoChange: "사진 변경", photoRemove: "삭제",
+      save: "저장", saving: "저장 중…", regionProvince: "시·도", regionDistrict: "시·군·구",
+      errName: "이름(별명)을 입력해 주세요.", errDate: "날짜를 선택해 주세요.", errDateBorn: "생년월일은 오늘 이전이어야 해요.", errDateDue: "출산 예정일은 오늘부터 300일 안이어야 해요.", errRegion: "사는 지역을 골라 주세요.",
+      previewDue: (w, d, dateKr) => ({ main: `임신 ${w}주`, sub: d > 0 ? `출산까지 ${d}일 · ${dateKr}` : d === 0 ? `오늘이 출산 예정일 · ${dateKr}` : `출산 예정일이 지났어요 · ${dateKr}` }),
+      previewBorn: (age) => ({ main: age, sub: "" }),
+    },
     myInfo: "내 정보",
     emptyButton: "아이 등록하기",
     emptyButtonExpecting: "출산 예정일 등록하기",
@@ -485,6 +504,55 @@
     const st = { ...(state || {}), withCode: true };
     return `<div class="acct-form" data-acct-form="me">${renderAccountSlot(st)}<button type="button" class="btn-close" data-acct-action="close">${esc(MSG.close)}</button></div>`;
   }
+  // ── G20 아이가 없는 계정(emptyHome && !profile)의 화면: 공용 빈 화면 대신 탭마다 평소 화면 + 얇은 배너 한 줄 ──
+  const ICO_BANNER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9 11v.01M15 11v.01M9.5 15c1.4 1 3.6 1 5 0"/></svg>';
+  const ICO_PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s6.5-5.6 6.5-11a6.5 6.5 0 1 0-13 0c0 5.4 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>';
+  /** 맨 위 배너 한 줄 — '등록 ›' 은 새 아이 등록 시트를 연다(data-acct-action="empty-register"). 화면에는 항상 한 번만 그린다. */
+  function renderNoChildBanner(state) {
+    const x = !!(state && state.expecting);
+    return `<div class="acct-nc-ban" id="acct-nc-banner" role="note">${ICO_BANNER}<span>${esc(x ? MSG.nc.bannerExpecting : MSG.nc.banner)}</span><button type="button" class="acct-nc-ban-go" data-acct-action="empty-register">${esc(MSG.nc.bannerGo)}</button></div>`;
+  }
+  const ghosts = '<div class="acct-nc-ghost" aria-hidden="true"><i></i><i></i><i></i></div><div class="acct-nc-ghost" aria-hidden="true"><i></i><i></i><i></i></div>';
+  /** 홈: 배너 → 내 카드 → 이번 주 가족 일정 → 내 일정(두 카드 HTML 은 app 이 만들어 넘긴다). */
+  function renderNoChildHome(state) {
+    const s = state || {};
+    if (!s.user) return renderNoChildBanner(s);
+    const name = (s.account && s.account.displayName) || s.user.displayName || "";
+    const role = s.account && s.account.role ? MSG.myRole(roleLabel(s.account.role).replace(/\(.*\)/, "")) : "";
+    const region = s.account && s.account.province ? `${s.account.province} ${s.account.district || ""}`.trim() : "";
+    const me = `<button type="button" class="acct-nc-me" data-acct-action="nc-me"><span class="avatar acct-nc-av">${ICO_PERSON}</span><span class="acct-nc-me-t"><b>${esc(name)}${role ? ` · ${esc(role)}` : ""}</b>${region ? `<small>${ICO_PIN} ${esc(region)}</small>` : ""}</span><span class="chevron">›</span></button>`;
+    return `${renderNoChildBanner(s)}${me}${s.familyHtml || ""}${s.mineHtml || ""}`;
+  }
+  /** 체크리스트·혜택·기록: 배너 한 줄 + 빈 자리 줄(큰 [아이 등록하기] 버튼은 두지 않는다). */
+  function renderNoChildTab(tab, state) {
+    const N = MSG.nc;
+    const head = renderNoChildBanner(state);
+    if (tab === "checklist") return `${head}<h2 class="acct-nc-ttl">${esc(N.checklistTitle)}</h2><p class="acct-nc-hint">${esc(N.checklistHint)}</p>${ghosts}`;
+    if (tab === "subsidy") return `${head}<div class="acct-nc-seg">${N.subsidySeg.map((t, i) => `<span${i === 0 ? ' class="on"' : ""}>${esc(t)}</span>`).join("")}</div><p class="acct-nc-hint">${esc(N.subsidyHint)}</p>${ghosts}`;
+    if (tab === "record") return `${head}<h2 class="acct-nc-ttl">${esc(N.recordTitle)}</h2><p class="acct-nc-hint">${esc(N.recordHint)}</p>${ghosts}`;
+    return `${head}${ghosts}`;
+  }
+  /** 아이 등록 바텀시트(시안 A, 한 장): 이름 → 날짜 종류 토글 → 날짜 → 미리보기 → 성별(선택) → 사진(선택) → 저장. 날짜 입력칸 마크업(dateMarkup)은 app 이 넣는다. */
+  function renderChildSheet(state) {
+    const s = state || {}, N = MSG.nc;
+    const kind = s.kind === "pregnant" ? "pregnant" : "born";
+    const gender = s.gender || "";
+    const region = s.needRegion
+      ? `<div class="lb acct-cs-lb">${esc(N.regionProvince)}</div><select id="cr-province" class="acct-cs-sel">${(s.regions || []).map((p) => `<option value="${esc(p.code)}">${esc(p.name)}</option>`).join("")}</select><select id="cr-district" class="acct-cs-sel"></select>`
+      : "";
+    const photo = s.photo
+      ? `<span class="avatar acct-cs-ph"><img src="${esc(s.photo)}" alt="" /></span><button type="button" class="btn-photo" id="cr-photo-btn">${esc(N.photoChange)}</button><button type="button" class="btn-photo-remove" id="cr-photo-remove">${esc(N.photoRemove)}</button>`
+      : `<span class="acct-cs-ph acct-cs-ph-empty" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><button type="button" class="btn-photo" id="cr-photo-btn">${esc(N.photoAdd)}</button>`;
+    return `<div class="acct-cs" data-acct-child-sheet="1"><div class="acct-cs-grab"></div><div class="acct-cs-head"><b>${esc(N.sheetTitle)}</b></div>
+      <div class="lb acct-cs-lb"><label for="cr-name">${esc(N.nameLabel)}</label> <small>${esc(N.nameHint)}</small></div><input type="text" id="cr-name" class="acct-cs-inp" maxlength="${CHILD_NAME_MAX}" placeholder="${esc(N.namePlaceholder)}" value="${esc(s.name || "")}" />
+      <div class="lb acct-cs-lb">${esc(N.dateLabel)}</div><div class="acct-cs-tg" role="radiogroup" aria-label="${esc(N.dateLabel)}"><button type="button" role="radio" data-cr-kind="born" aria-checked="${kind === "born"}" class="${kind === "born" ? "on" : ""}">${esc(N.kindBorn)}</button><button type="button" role="radio" data-cr-kind="pregnant" aria-checked="${kind === "pregnant"}" class="${kind === "pregnant" ? "on" : ""}">${esc(N.kindDue)}</button></div>
+      <div class="acct-cs-date" id="cr-date-slot">${s.dateMarkup || ""}</div><div class="acct-cs-pv hidden" id="cr-preview" aria-live="polite"><b></b><span></span></div>
+      <div class="lb acct-cs-lb">${esc(N.genderLabel)} <small>${esc(N.optional)}</small></div><div class="acct-cs-gch" role="radiogroup" aria-label="${esc(N.genderLabel)}">${N.genders.map(([v, l]) => `<button type="button" role="radio" data-cr-gender="${esc(v)}" aria-checked="${gender === v}" class="${gender === v ? "on" : ""}">${esc(l)}</button>`).join("")}</div>
+      ${region}
+      <div class="lb acct-cs-lb">${esc(N.photoLabel)} <small>${esc(N.optional)}</small></div><div class="acct-cs-phr">${photo}<input type="file" accept="image/*" id="cr-photo-input" class="hidden" /><small>${esc(N.photoHint)}</small></div>
+      <p class="acct-err hidden" id="cr-error" role="alert"></p>
+      <div class="acct-cs-foot"><button type="button" class="acct-cs-save" id="cr-save">${esc(N.save)}</button></div></div>`;
+  }
   /** 아이가 없는 홈(D5) 안내 카드. expecting=true 면 예비 부모 문구. */
   function renderEmptyHome(state) {
     const x = !!(state && state.expecting);
@@ -584,5 +652,5 @@
       <button type="button" class="btn-complete" data-acct-action="confirm-logout">${esc(MSG.logout)}</button><button type="button" class="btn-close" data-acct-action="close">${esc(MSG.cancel)}</button></div>`;
   }
 
-  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, signupTotal, signupStep, signupStepKeys, firstErrorStep, INVITE_ROLES, INVITE_LABEL, inviteLink, inviteText, parseJoinParams, renderLanding, slideIndex, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderFamilySlot, renderMyCard, renderSlotPick, renderRolePick, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderAddTiles, renderAddMenu, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderMe, roleOptions, syncForm, SITUATIONS, esc };
+  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, signupTotal, signupStep, signupStepKeys, firstErrorStep, INVITE_ROLES, INVITE_LABEL, inviteLink, inviteText, parseJoinParams, renderLanding, slideIndex, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderFamilySlot, renderMyCard, renderSlotPick, renderRolePick, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderAddTiles, renderAddMenu, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderNoChildBanner, renderNoChildHome, renderNoChildTab, renderChildSheet, renderMe, roleOptions, syncForm, SITUATIONS, esc };
 });

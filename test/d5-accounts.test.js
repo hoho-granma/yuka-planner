@@ -133,12 +133,12 @@ function env({ flag = true, profile = null, account = null, user = null, emptySt
     e.t.showEmptyHome();
     assert.ok(e.t.emptyHome && e.els["view-calendar"].classList.hidden === false && e.els["view-landing"].classList.hidden === true && e.els["empty-panel"].classList.hidden === false);
     assert.ok(["home", "calendar", "record", "subsidy", "checklist"].every((t) => e.els["tab-" + t].classList.hidden === true));
-    assert.ok(e.els["empty-panel"].innerHTML.includes("아이를 등록하면 월령에 맞는 일정과 혜택이 나와요") && e.els["empty-panel"].innerHTML.includes("아이 등록하기") && e.els["empty-panel"].innerHTML.includes('data-acct-action="empty-me"'));
-    const want = { calendar: "캘린더에", checklist: "체크리스트", subsidy: "지원금·혜택", record: "기록" };
-    for (const [tab, word] of Object.entries(want)) { e.t.emptyRender(tab); assert.ok(e.els["empty-panel"].innerHTML.includes(word) && e.els["empty-panel"].innerHTML.includes("empty-register"), tab); }
+    assert.ok(e.els["empty-panel"].innerHTML.includes("아이를 등록하면 월령별 할 일·혜택이 열려요") && e.els["empty-panel"].innerHTML.includes("등록 ›") && e.els["empty-panel"].innerHTML.includes('data-acct-action="nc-me"')); // G20: 배너 한 줄 + 내 카드
+    const want = { checklist: "체크리스트", subsidy: "신청 가능", record: "기록" }; // G20: 캘린더·어디갈까는 평소 화면(빈 안내 패널 없음)
+    for (const [tab, word] of Object.entries(want)) { e.t.emptyRender(tab); const h = e.els["empty-panel"].innerHTML; assert.ok(h.includes(word) && h.includes("empty-register") && (h.match(/acct-nc-banner/g) || []).length === 1 && !h.includes("btn-complete"), tab); }
     const x = env({ account: { situation: "EXPECTING" }, user: { uid: "u1" } });
     x.t.showEmptyHome();
-    assert.ok(x.els["empty-panel"].innerHTML.includes("출산 예정일을 등록하면") && x.els["empty-panel"].innerHTML.includes("출산 예정일 등록하기"));
+    assert.ok(x.els["empty-panel"].innerHTML.includes("출산 예정일을 등록하면 임신 중 할 일·혜택이 열려요"));
   });
   await test("프로필이 있으면(기존 이용자) 빈 홈으로 가지 않고, 계정 OFF 면 어떤 경우에도 가지 않는다", () => {
     const withP = env({ profile: { name: "수아" }, user: { uid: "u1" } });
@@ -161,7 +161,7 @@ function env({ flag = true, profile = null, account = null, user = null, emptySt
     assert.ok(!e.t.emptyHome && e.log.landing === 1 && e.els["empty-panel"].classList.hidden === true && e.acct.user === null);
   });
   await test("연결: 탭 전환은 빈 홈이면 안내만(switchTab 가드), 아이를 등록하면(buildAndRender) 빈 패널을 숨기고, 취소하고 돌아오면 빈 홈", () => {
-    assert.ok(/function switchTab\(name\) \{\n\s*if \(emptyHome && !profile\) return emptyRender\(name\);/.test(APP));
+    assert.ok(/function switchTab\(name\) \{\n\s*if \(emptyHome && !profile\) return name === "calendar" \|\| name === "places" \? acctNoChildTab\(name\) : emptyRender\(name\);/.test(APP));
     assert.ok(/async function buildAndRender\(\) \{\n\s*hideEmptyHome\(\);/.test(APP));
     assert.ok(/if \(!profile && acctEnabled\(\)\) return showEmptyHome\(\);[^\n]*\n\s*showCalendarView\(\);/.test(APP));
     assert.ok(/if \(typeof acctPrefillRegion === "function"\) acctPrefillRegion\(\);\n\s*showLandingView\(\);/.test(APP));
