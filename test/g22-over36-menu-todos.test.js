@@ -157,7 +157,7 @@ const mkHS = (flag = true, extra = {}) => { const adapter = extra.adapter || fak
   console.log("36개월 이상 메뉴(app.js)");
   const sbFor = (o) => {
     const cls = new Set(), navSub = { hidden: false, classList: { toggle: (c, on) => (navSub.hidden = on) } }, ck = { textContent: "체크리스트" };
-    const sb = { acctEnabled: () => o.on !== false, ageInMonths: (b) => b.months, profile: o.profile, currentTab: o.tab || "home", switched: [], switchTab: (n) => sb.switched.push(n), Over36View: V,
+    const sb = { acctEnabled: () => o.on !== false, ChildTimeline: { completedMonths: (b) => b.months, OVER36_FROM_MONTHS: 36 }, profile: o.profile, currentTab: o.tab || "home", switched: [], switchTab: (n) => sb.switched.push(n), Over36View: V,
       window: { buildSchedule: () => ["AUTO1", "AUTO2"] }, document: { body: { classList: { toggle: (c, on) => (on ? cls.add(c) : cls.delete(c)) } }, querySelector: (q) => (q.includes("subsidy") ? navSub : q.includes("trend") ? null : ck) }, cls, navSub, ck, Date };
     vm.createContext(sb);
     vm.runInContext([fn("acct36Child"), "const acct36Active = () => acct36Child(profile);", fn("acct36Sync")].join("\n"), sb);

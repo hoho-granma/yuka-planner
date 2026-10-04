@@ -3,12 +3,12 @@
  *   가장 어린 아이가 36개월 미만이거나 임신 중이거나 아이가 없으면 ["todo","family"], 36개월 이상이면 ["family","todo"].
  */
 (function (root, factory) {
-  if (typeof module !== "undefined" && module.exports) module.exports = factory();
-  else root.HomeOrder = factory();
-})(typeof window !== "undefined" ? window : global, function () {
+  if (typeof module !== "undefined" && module.exports) module.exports = factory(require("./child-timeline.js"));
+  else root.HomeOrder = factory(root.ChildTimeline);
+})(typeof window !== "undefined" ? window : global, function (ChildTimeline) {
   "use strict";
 
-  const THRESHOLD_MONTHS = 36;
+  const THRESHOLD_MONTHS = ChildTimeline.OVER36_FROM_MONTHS;
   const TODO_FIRST = Object.freeze(["todo", "family"]);
   const FAMILY_FIRST = Object.freeze(["family", "todo"]);
 
@@ -19,9 +19,7 @@
   };
   /** 만 개월 수(생일의 '일'이 지나야 한 달 채움). 미래 생일이면 0. */
   function monthsBetween(birth, asOf) {
-    let m = (asOf.getFullYear() - birth.getFullYear()) * 12 + (asOf.getMonth() - birth.getMonth());
-    if (asOf.getDate() < birth.getDate()) m -= 1;
-    return Math.max(0, m);
+    return ChildTimeline.completedMonths(birth, asOf); // 정본(W1): 같은 규칙(일이 지나야 한 달, 하한 0)
   }
   /**
    * children: [{ birthDate: Date|"YYYY-MM-DD", stage?: "pregnant"|"born" }](출산예정일인 임신 중 아이는 stage "pregnant"), pregnant: 현재 아이가 임신 중인가(선택), asOf: 기준일(기본 오늘).

@@ -784,7 +784,7 @@
   function renderProfileHeader() {
     updateBrandText();
     const today = new Date();
-    const ageNow = ageInMonths(profile.birthDate, today);
+    const ageNow = ChildTimeline.completedMonths(profile.birthDate, today);
     if (isPregnant()) {
       const pi = pregnancyInfo(profile.birthDate, today);
       const dLabel = pi.daysToDue > 0 ? `출산까지 D-${pi.daysToDue}` : pi.daysToDue === 0 ? "오늘이 출산 예정일" : "출산 예정일이 지났어요";
@@ -851,7 +851,7 @@
     hint: "기본은 출생연도 기준이에요. 조기입학·입학 연기를 신청했다면 바꿔 주세요(신청 10/1~12/31).",
   });
   function enrollmentRowHtml() {
-    if (isPregnant() || ageInMonths(profile.birthDate, new Date()) < 36) return "";
+    if (isPregnant() || ChildTimeline.completedMonths(profile.birthDate, new Date()) < ChildTimeline.OVER36_FROM_MONTHS) return "";
     const o = ChildTimeline.enrollmentOptions(profile.birthDate, new Date(), schoolPolicy, profile.enrollmentYearOverride);
     if (!o) return "";
     const chips = o.options.map((x) => `<button type="button" class="hh-chip${o.current === x.key ? " active" : ""}" data-enroll="${x.key}">${esc(ENROLL_MSG.chips[x.key])}</button>`).join("");
@@ -880,7 +880,7 @@
     if (pendingPhoto && pendingPhoto.type) pendingPhoto = undefined; // 클릭 이벤트가 인자로 넘어온 경우
     modalMode = "profile";
     const today = new Date();
-    const ageNow = ageInMonths(profile.birthDate, today);
+    const ageNow = ChildTimeline.completedMonths(profile.birthDate, today);
     const changed = pendingPhoto !== undefined;
     const shownPhoto = changed ? pendingPhoto : profile.photoDataUrl;
     el("modal-content").innerHTML = `
@@ -1145,7 +1145,7 @@
   // 기준: 지금 고른 아이(현재 profile)가 36개월 이상(임신 중 제외)이면 36+ 메뉴, 아니면 기존 5탭. 칩을 바꾸면(switchToChild → buildAndRender → renderAll) 바로 전환된다.
   /** p: 아이 프로필({birthDate, stage}). 계정 모드에서 36개월 이상이면 true. */
   function acct36Child(p) {
-    return typeof acctEnabled === "function" && acctEnabled() && !!p && p.stage !== "pregnant" && ageInMonths(p.birthDate, new Date()) >= 36;
+    return typeof acctEnabled === "function" && acctEnabled() && !!p && p.stage !== "pregnant" && ChildTimeline.completedMonths(p.birthDate, new Date()) >= ChildTimeline.OVER36_FROM_MONTHS;
   }
   const acct36Active = () => acct36Child(profile);
   // 36개월 이상의 자동(AUTO) 일정: 항목별 허용 목록(data/policy/auto-after36.json)에 있는 것만 보인다(ChildTimeline.isEventVisible 의 autoAfter36 판정). 다가오는 항목은 홈 카드·날짜 시트에 '자동' 표시로 나온다.
@@ -1166,9 +1166,9 @@
   const acct36All = () => (acct36CanTodo() ? ChildTodos.listFor(HouseholdSync.getTodos(hh.hid), acct36Keys()) : []);
   function acct36AgeText(code) {
     let months = null;
-    if (code === familyCode && profile) months = profile.stage === "pregnant" ? null : ageInMonths(profile.birthDate, new Date());
+    if (code === familyCode && profile) months = profile.stage === "pregnant" ? null : ChildTimeline.completedMonths(profile.birthDate, new Date());
     else {
-      try { const b = (JSON.parse(localStorage.getItem(CHILD_BIRTHS_KEY) || "{}") || {})[code]; if (b) months = ageInMonths(new Date(b + "T00:00:00"), new Date()); } catch (e) {}
+      try { const b = (JSON.parse(localStorage.getItem(CHILD_BIRTHS_KEY) || "{}") || {})[code]; if (b) months = ChildTimeline.completedMonths(new Date(b + "T00:00:00"), new Date()); } catch (e) {}
     }
     if (months == null) return "";
     return months < 24 ? `${months}개월` : `${Math.floor(months / 12)}세`;
@@ -1184,7 +1184,7 @@
     if (ck) ck.textContent = on ? Over36View.MSG.navTodo : "체크리스트";
     if (on && currentTab === "subsidy") switchTab("home");
     // G25: 36개월 이상(G22 4탭 기준)이면 '교육 트렌드' 탭을 4탭 사이에 하나 더 둔다(5번째).
-    const trend = on && typeof EduTrend !== "undefined" && ageInMonths(profile.birthDate, new Date()) >= EduTrend.MENU_FROM_MONTHS;
+    const trend = on && typeof EduTrend !== "undefined" && ChildTimeline.completedMonths(profile.birthDate, new Date()) >= EduTrend.MENU_FROM_MONTHS;
     if (trend) acct36EnsureTrend();
     const tn = document.querySelector('.nav-item[data-nav="trend"]');
     if (tn) tn.classList.toggle("hidden", !trend);
@@ -1214,7 +1214,7 @@
   function acct36RenderTrend() {
     const panel = el("tab-trend");
     if (!panel || !profile) return;
-    const g = EduTrend.gradeOf(profile.birthDate, new Date());
+    const g = EduTrend.gradeOf(profile.birthDate, new Date(), { policy: schoolPolicy, enrollmentYearOverride: profile.enrollmentYearOverride });
     const keys = [acct36LinkKey(), familyCode].filter(Boolean);
     const docs = typeof usDocs === "function" && usActive() ? usDocs() : [];
     const pv = regionsData && regionsData.provinces.find((x) => x.code === profile.province);
@@ -1621,7 +1621,7 @@
     const sel = UserScheduleView.normalizeSelection(usSel(), usLinks(), usMembers(), usSelOpts());
     const picked = sel.filter((id) => id.startsWith("CHILD:")).map((id) => id.slice(6));
     const target = picked.length ? picked : keys;
-    const under36 = target.some((k) => { const a = usChildAge(k); return !(typeof a === "number" && a >= 36); });
+    const under36 = target.some((k) => { const a = usChildAge(k); return !(typeof a === "number" && a >= ChildTimeline.OVER36_FROM_MONTHS); });
     if (!under36 && !(profile && visibleSchedule(true).length)) return false; // 36개월 이상도 허용된 자동 일정이 있으면 범례가 필요하다
     return UserScheduleView.toModelFilter(usSel(), us.onlyUser, usLinks(), usMembers(), usSelOpts()).showAuto !== false;
   }
@@ -2062,7 +2062,7 @@
     }
     if (e.isLegacySubsidy) {
       const today = new Date();
-      const ageNow = ageInMonths(profile.birthDate, today);
+      const ageNow = ChildTimeline.completedMonths(profile.birthDate, today);
       const pr = subsidyPeriodRows(e.id, e.detail, profile.birthDate);
       if (isPregnant() && e.periods && e.periods.length) {
         dateLine = `${pr[0].label} ${pr[0].text}`;
@@ -2097,7 +2097,7 @@
     if (openMonthGroups === null) {
       // 현재 월령 그룹만 펼쳐 두고 나머지는 접는다.
       // (학교·입학 그룹은 해당 항목이 있을 때만 그려지므로 같이 펼쳐 두어도 다른 아이에게는 영향이 없다.)
-      openMonthGroups = new Set([checklistBucket(Math.max(0, ageInMonths(profile.birthDate, new Date()))), SCHOOL_GROUP]);
+      openMonthGroups = new Set([checklistBucket(Math.max(0, ChildTimeline.completedMonths(profile.birthDate, new Date()))), SCHOOL_GROUP]);
     }
   }
 
@@ -2134,7 +2134,7 @@
   }
 
   /**
-   * 체크리스트를 묶을 "대표 월령"은 항목이 실제로 계산된 날짜(ageInMonths(e.date))가 아니라
+   * 체크리스트를 묶을 "대표 월령"은 항목이 실제로 계산된 날짜(ChildTimeline.completedMonths(e.date))가 아니라
    * TodoDefinition에 큐레이션돼 있는 displayMonth를 우선 써야 한다 — e.date는 엔진이 계산한
    * windowStart라, 예를 들어 4개월 트리거 항목이 생년월일의 일(day) 차이 때문에 10/18처럼 4개월
    * 정각보다 이틀 이르게 나오면 ageInMonths가 그걸 3개월로 오분류해버린다(실제로 발견된 버그:
@@ -2163,7 +2163,7 @@
     if (isMultiOccurrence) {
       const occMonth = occurrenceStartMonth(td, inst.occurrenceKey);
       if (occMonth !== null) return occMonth;
-      return Math.max(0, ageInMonths(profile.birthDate, e.date));
+      return Math.max(0, ChildTimeline.completedMonths(profile.birthDate, e.date));
     }
     return td.displayMonth === null || td.displayMonth === undefined ? NEED_CHECK_GROUP : td.displayMonth;
   }
@@ -2238,7 +2238,7 @@
     // 학령기(72개월 초과 월령) 항목은 영유아 항목이 아니므로 숨기지 않는다.
     const pastKeep = (e) => monthKeysOf(e).some((k) => k === NEED_CHECK_GROUP || k === SCHOOL_GROUP || (typeof k === "number" && k > ChildTimeline.SERVICE_RANGE.maxMonths));
     const items = HNLogic.hidePastInfantItems(visibleSchedule().filter(inScope).filter(statusOk), completed, { birthDate: profile.birthDate, today: new Date(), showPast: !pastHidden, isKeep: pastKeep }).sort((a, b) => a.date - b.date);
-    const nowAge = Math.max(0, ageInMonths(profile.birthDate, new Date()));
+    const nowAge = Math.max(0, ChildTimeline.completedMonths(profile.birthDate, new Date()));
     const curKey = checklistBucket(nowAge);
     const nextKey = checklistBucket(nowAge + 1);
     document.querySelectorAll("#status-filter-checklist .sf-btn").forEach((b) => b.classList.toggle("active", b.dataset.status === checklistStatus));
@@ -2615,7 +2615,7 @@
     // 지자체(지역) 지원금 — 기존 로직 그대로
     const s = e.detail;
     const today = new Date();
-    const ageNow = ageInMonths(profile.birthDate, today);
+    const ageNow = ChildTimeline.completedMonths(profile.birthDate, today);
     const active = subsidyIsActiveNow(e, ageNow, today);
     const dueNote = isPregnant() ? `<div class="detail-row"><div class="label">안내</div>출산 예정일(${formatDateKR(profile.birthDate)}) 기준으로 계산한 기간이에요. 실제 출산일에 따라 달라질 수 있어요.</div>` : "";
     const statusLine = isPregnant() && e.periods && e.periods.length
@@ -2879,7 +2879,7 @@
   function placesViewHtml() {
     const d = placesData || { places: [] };
     const valid = d.places.filter((p) => Places.validatePlace(p).length === 0);
-    const age = profile && !isPregnant() ? ageInMonths(profile.birthDate, new Date()) : null;
+    const age = profile && !isPregnant() ? ChildTimeline.completedMonths(profile.birthDate, new Date()) : null;
     const origin = profile ? Places.originOf(placesOffices, profile.province, profile.district) : null;
     const sort = placesSort === "near" && !origin ? "near" : placesSort;
     let list = Places.filterPlaces(valid, { ageMonths: age, category: placesCat, ...placesFilters });
@@ -4490,7 +4490,7 @@
     if (typeof acctEnabled !== "function" || !acctEnabled()) return false;
     const keys = usLinks().filter((l) => !l.removedAt).map((l) => l.childKey);
     if (profile && visibleSchedule(true).length) return false; // 허용된 자동 일정이 있으면 '직접 입력만 보기' 등이 의미가 있다
-    return keys.length > 0 && keys.every((k) => { const a = usChildAge(k); return typeof a === "number" && a >= 36; });
+    return keys.length > 0 && keys.every((k) => { const a = usChildAge(k); return typeof a === "number" && a >= ChildTimeline.OVER36_FROM_MONTHS; });
   }
   // G21: 날짜 상세 패널의 '직접 입력' 뱃지는 36개월 이상 판정이면 뺀다(패널을 그린 뒤 DOM 에서 지운다 — 원래 함수 본문은 그대로).
   const usRenderDayPanelBase = usRenderDayPanel;
@@ -5144,7 +5144,7 @@
       familyCode,
       today,
       pregnant: isPregnant(),
-      ageNow: ageInMonths(profile.birthDate, today),
+      ageNow: ChildTimeline.completedMonths(profile.birthDate, today),
       // G13-3: 계정 모드 홈(가족 일정 먼저 → 아이별 챙길 것 → 혜택). 꺼져 있으면 아래 4개는 없다(기존 홈 그대로).
       ...(acctEnabled() ? { accountDesign: true } : {}), // G14: 계정 모드 화면 디자인(기록 타임라인 등)
       ...(acctEnabled() && acct.user ? { accountHome: true, homeChildText: acctHomeChildText(), homeChildren: acctHomeChildren(), switchChild: (code) => { if (code && code !== familyCode) switchToChild(code); } } : {}),
@@ -5214,7 +5214,7 @@
         checklistStatus = scope && scope.status ? scope.status : "all";
         if (scope) {
           // 범위 보기는 한 그룹만 펼친다: 이번 달 = 지금 월령, 다가오는 일정 = 가장 가까운 월령, 지난 일정 = 가장 최근 월령.
-          const nowKey = checklistBucket(Math.max(0, ageInMonths(profile.birthDate, new Date())));
+          const nowKey = checklistBucket(Math.max(0, ChildTimeline.completedMonths(profile.birthDate, new Date())));
           const keys = schedule
             .filter((e) => scope.ids.includes(e.id))
             .flatMap((e) => (scope.keys && scope.keys[e.id] ? scope.keys[e.id] : monthKeysOf(e)))

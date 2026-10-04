@@ -70,15 +70,15 @@ test("데이터 부족: 평균·순위·비교 수치를 만들지 않는다(숫
 });
 test("메뉴: 36개월 이상 아이에게만 5번째 탭(JS 가 만든다), 35개월·임신 중·OFF 는 없음, 정적 index.html·OFF 화면 변경 없음", () => {
   const src = fn("acct36Sync");
-  assert.ok(src.includes('ageInMonths(profile.birthDate, new Date()) >= EduTrend.MENU_FROM_MONTHS') && /const trend = on && typeof EduTrend !== "undefined"/.test(src), "36+ 판정 안에서만");
+  assert.ok(src.includes('ChildTimeline.completedMonths(profile.birthDate, new Date()) >= EduTrend.MENU_FROM_MONTHS') && /const trend = on && typeof EduTrend !== "undefined"/.test(src), "36+ 판정 안에서만");
   assert.ok(src.includes('if (!trend && currentTab === "trend") switchTab("home");'));
   assert.ok(fn("acct36EnsureTrend").includes('btn.dataset.nav = "trend"') && fn("acct36EnsureTrend").includes('TAB_NAMES.push("trend")'));
   assert.ok(/switchTabBase\.call[\s\S]*?name === "trend" && acct36Active\(\)/.test(APP));
   assert.ok(!HTML.includes('data-nav="trend"') && !HTML.includes("tab-trend") && !HTML.includes("교육 트렌드"));
   assert.ok(/<script src="js\/edu-trend\.js\?v=\d+"><\/script>/.test(HTML) && read("sw.js").includes('"./js/edu-trend.js"'));
-  const sb = { EduTrend: ET, ageInMonths: (b) => b.m, acctEnabled: () => true };
+  const sb = { EduTrend: ET, ChildTimeline: { completedMonths: (b) => b.m }, acctEnabled: () => true };
   vm.createContext(sb);
-  const trendOn = (m, stage, on = true) => vm.runInContext(`(() => { const profile = { birthDate: { m: ${m} }, stage: "${stage}" }; const on = ${on} && profile.stage !== "pregnant" && ${m} >= 36; return on && typeof EduTrend !== "undefined" && ageInMonths(profile.birthDate, new Date()) >= EduTrend.MENU_FROM_MONTHS; })()`, sb);
+  const trendOn = (m, stage, on = true) => vm.runInContext(`(() => { const profile = { birthDate: { m: ${m} }, stage: "${stage}" }; const on = ${on} && profile.stage !== "pregnant" && ${m} >= 36; return on && typeof EduTrend !== "undefined" && ChildTimeline.completedMonths(profile.birthDate, new Date()) >= EduTrend.MENU_FROM_MONTHS; })()`, sb);
   assert.deepStrictEqual([trendOn(84, "born"), trendOn(36, "born"), trendOn(35, "born"), trendOn(100, "pregnant"), trendOn(100, "born", false)], [true, true, false, false, false]);
 });
 test("CSS 는 body.acct-design 범위, 탭 스와이프 순서에는 보이는 탭이라 자동 포함(DOM 순서)", () => {

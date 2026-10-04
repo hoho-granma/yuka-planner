@@ -25,10 +25,12 @@
   // A6-3: "기존 Todo·지원금의 보존 상한". 서비스 상한을 72로 올려도 아래 isLegacyCapped 에 해당하는 항목은 이 값까지만 보인다
   // (기존 0~36개월 동작 보존. "72개월에는 필요 없다"는 판단이 아니라 이번 단계에서 새로 설계하지 않는다는 뜻 — 후속 단계에서 재검토).
   // 적용 위치: isEventVisible(app.js visibleSchedule) · effectiveMaxMonths(app.js repeatMonthRangeOf 반복 cap). 엔진(todo-engine.js)에는 상한이 없다.
-  const LEGACY_TODO_CAP_MONTHS = 36;
+  // 36개월: 세는 나이 표기 시작 · '36개월 이상' 메뉴/AUTO 경계 · 영유아/학령전 경계 · 기존 Todo 보존 상한이 모두 같은 값이다. 값의 출처는 이 한 곳(W1) — 아래 이름들은 의미만 다르다.
+  const OVER36_FROM_MONTHS = 36;
+  const LEGACY_TODO_CAP_MONTHS = OVER36_FROM_MONTHS;
 
   // stageBand 의 영유아/학령전 경계(INFANT_TODDLER ↔ PRESCHOOL). "Todo 노출 상한"과 다른 개념이라 SERVICE_RANGE.maxMonths 를 따라 움직이면 안 된다.
-  const INFANT_TODDLER_MAX_MONTHS = 36;
+  const INFANT_TODDLER_MAX_MONTHS = OVER36_FROM_MONTHS;
 
   const CHECKLIST_BUCKETS = Object.freeze([
     Object.freeze({ start: 13, end: 17, label: "만 1세 (13~17개월)" }),
@@ -52,9 +54,13 @@
 
   /** 완료된 개월 수 — 기존 ageInMonths/ageMonthsAt 과 동일한 규칙(말일 clamp 아님). */
   function completedMonths(birthDate, asOf) {
+    return Math.max(0, signedMonths(birthDate, asOf));
+  }
+  /** 하한 없는 완료 개월 수(출산 전이면 음수). 월령 계산의 유일한 구현 — completedMonths 는 이것의 하한 0 판이다. */
+  function signedMonths(birthDate, asOf) {
     let m = (asOf.getFullYear() - birthDate.getFullYear()) * 12 + (asOf.getMonth() - birthDate.getMonth());
     if (asOf.getDate() < birthDate.getDate()) m -= 1;
-    return Math.max(0, m);
+    return m;
   }
 
   /** 화면 표기 "생후 N개월"(현재 헤더·기록 탭과 같은 문자열). */
@@ -63,7 +69,7 @@
   }
 
   /** 36개월부터는 개월 수 대신 세는 나이(한국 나이)로 표기한다: asOf 연도 − 출생 연도 + 1(생일과 무관). */
-  const COUNTING_AGE_FROM_MONTHS = 36;
+  const COUNTING_AGE_FROM_MONTHS = OVER36_FROM_MONTHS;
   /**
    * 화면 표기: 36개월 미만은 "생후 N개월"(ageLabel 그대로), 36개월 이상은 "N세"(세는 나이).
    * 36개월 이상 판정은 완료 개월 수(completedMonths) 기준, 연도 차는 asOf 연도 기준이다. 임신 중 표기는 호출하는 쪽(app.js)이 따로 한다.
@@ -269,6 +275,47 @@
    * 한 시점의 연령 요약. 임신 중(stage "pregnant")은 birthDate 가 출산 예정일이라 개월 수 표기를 만들지 않는다(label null, 기존 임신 표기는 app.js).
    * years/months 는 totalMonths 의 분해. days 는 넣지 않는다(말일 규칙 결정 전).
    */
+  // ── W1: stage·나이·학년 단일 진입점(내부 판단용 — 화면 메뉴가 아니다) ──────────────────────────────
+  // 학년 기본값: 정책이 없거나 확인되지 않았을 때 쓰는 법령 기본값(입학 = 출생연도 + 7, 학년도 3월 시작 — data/policy/school.json 과 같은 값).
+  const DEFAULT_ENROLLMENT_OFFSET_YEARS = 7;
+  const DEFAULT_SCHOOL_YEAR_START_MONTH = 3;
+  const STAGES = Object.freeze({ PREGNANT: "PREGNANT", INFANT: "INFANT", TODDLER: "TODDLER", AGE_3_5: "AGE_3_5", AGE_6_7: "AGE_6_7", ELEMENTARY: "ELEMENTARY", SECONDARY: "SECONDARY" });
+  // 월령 경계(완료 개월): 0~11 영아 · 12~35 유아 · 36~71 만 3~5세 · 72~95 만 6~7세 · 학년이 1~6이면 초등(학년이 월령보다 우선)
+  const STAGE_EDGES = Object.freeze({ TODDLER_FROM: 12, AGE_3_5_FROM: OVER36_FROM_MONTHS, AGE_6_7_FROM: 72 });
+
+  /**
+   * 초등 학년 번호: 0 = 입학 전, 1~6 = 초N, 7 = 초등 이후. 정책(확인됨)이 있으면 computeSchool 과 같은 규칙, 없으면 법령 기본값.
+   * opts.enrollmentYearOverride(조기입학·유예)가 있으면 입학 학년도를 그 값으로 바꾼다. 교육 트렌드(edu-trend)와 일정 계산이 같은 규칙을 쓰게 한다.
+   */
+  function gradeNumber(birthDate, asOf, policy, opts) {
+    const s = policy ? computeSchool(birthDate, asOf, policy, opts) : null;
+    if (s) return typeof s.grade === "number" ? s.grade : s.grade === "AFTER_ELEMENTARY" ? 7 : 0;
+    const override = opts && opts.enrollmentYearOverride;
+    const enrollmentYear = isInt(override) ? override : birthDate.getFullYear() + DEFAULT_ENROLLMENT_OFFSET_YEARS;
+    const schoolYear = asOf.getMonth() + 1 >= DEFAULT_SCHOOL_YEAR_START_MONTH ? asOf.getFullYear() : asOf.getFullYear() - 1;
+    const n = schoolYear - enrollmentYear + 1;
+    return n < 1 ? 0 : n > 6 ? 7 : n;
+  }
+
+  /**
+   * 입력 { birthDate, asOf?, stage?("pregnant"|"born"), policy?, enrollmentYearOverride? } → { stage, ageMonths, grade, isPregnant }.
+   *   임신 중이면 { stage:"PREGNANT", ageMonths:null, grade:null, isPregnant:true }.
+   *   grade: 0(입학 전)·1~6·7(초등 이후). stage 는 위 STAGES — 초등(grade 1~6)은 학년이 월령보다 우선한다.
+   */
+  function stageOf({ birthDate, asOf, stage, policy, enrollmentYearOverride }) {
+    if (stage === "pregnant") return { stage: STAGES.PREGNANT, ageMonths: null, grade: null, isPregnant: true };
+    const now = asOf || new Date();
+    const ageMonths = completedMonths(birthDate, now);
+    const grade = gradeNumber(birthDate, now, policy, { enrollmentYearOverride });
+    const st = grade === 7 ? STAGES.SECONDARY // 초등 이후(중1~)
+      : grade >= 1 && grade <= 6 ? STAGES.ELEMENTARY
+      : ageMonths < STAGE_EDGES.TODDLER_FROM ? STAGES.INFANT
+      : ageMonths < STAGE_EDGES.AGE_3_5_FROM ? STAGES.TODDLER
+      : ageMonths < STAGE_EDGES.AGE_6_7_FROM ? STAGES.AGE_3_5
+      : STAGES.AGE_6_7; // 72개월 이상이어도 아직 입학 전(grade 0)이면 만 6~7세
+    return { stage: st, ageMonths, grade, isPregnant: false };
+  }
+
   function compute({ birthDate, asOf, stage, policy, enrollmentYearOverride }) {
     const totalMonths = completedMonths(birthDate, asOf);
     return {
@@ -279,5 +326,5 @@
     };
   }
 
-  return { SERVICE_RANGE, EXTENDED_MAX_MONTHS, LEGACY_TODO_CAP_MONTHS, INFANT_TODDLER_MAX_MONTHS, CHECKLIST_BUCKETS, completedMonths, ageLabel, ageLabelAt, isWithinServiceRange, isLegacyCappedDefinition, isLegacyCapped, extendedRuleOf, effectiveMaxMonths, isEventVisible, isEventShown, isSchoolTermDefinition, enrollmentOptions, checklistBucket, checklistGroupLabel, computeSchool, compute };
+  return { SERVICE_RANGE, EXTENDED_MAX_MONTHS, OVER36_FROM_MONTHS, STAGES, STAGE_EDGES, gradeNumber, stageOf, LEGACY_TODO_CAP_MONTHS, INFANT_TODDLER_MAX_MONTHS, CHECKLIST_BUCKETS, completedMonths, signedMonths, ageLabel, ageLabelAt, isWithinServiceRange, isLegacyCappedDefinition, isLegacyCapped, extendedRuleOf, effectiveMaxMonths, isEventVisible, isEventShown, isSchoolTermDefinition, enrollmentOptions, checklistBucket, checklistGroupLabel, computeSchool, compute };
 });

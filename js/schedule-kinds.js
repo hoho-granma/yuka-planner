@@ -8,9 +8,9 @@
  *   - 나이 구간(개월, 만 나이 기준): BABY 0~11 / TODDLER 12~47(1~3세) / KINDER 48~83(4~6세) / ELEM 84 이상(초등, 만 7세~). 임신 중(출산 전)은 BABY.
  */
 (function (root, factory) {
-  if (typeof module !== "undefined" && module.exports) module.exports = factory();
-  else root.ScheduleKinds = factory();
-})(typeof window !== "undefined" ? window : global, function () {
+  if (typeof module !== "undefined" && module.exports) module.exports = factory(require("./child-timeline.js"));
+  else root.ScheduleKinds = factory(root.ChildTimeline);
+})(typeof window !== "undefined" ? window : global, function (ChildTimeline) {
   "use strict";
 
   const k = (label, category) => Object.freeze({ label, category });
@@ -40,7 +40,7 @@
     if (!re.test(birthIso || "") || !re.test(todayIso || "")) return null;
     const [by, bm, bd] = birthIso.split("-").map(Number);
     const [ty, tm, td] = todayIso.split("-").map(Number);
-    return (ty - by) * 12 + (tm - bm) - (td < bd ? 1 : 0);
+    return ChildTimeline.signedMonths(new Date(by, bm - 1, bd), new Date(ty, tm - 1, td)); // 정본(W1) — 출산 전은 음수 그대로(PREGNANT 판별용)
   }
   /** 개월 수 → 나이 구간 키. 모르면(null)·음수(출산 전)는 BABY. */
   function bandOf(months) {

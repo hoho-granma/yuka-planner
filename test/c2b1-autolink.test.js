@@ -30,7 +30,7 @@ process.on("exit", () => { if (started !== finished) { console.log(`FAIL- 끝나
 
 const app = read("js/app.js");
 const headApp = baseSrc("js/app.js");
-const fnSrc = (src, name) => { const a = src.indexOf(`  function ${name}(`); assert.ok(a >= 0, name); const b = src.indexOf("\n  }\n", a); return src.slice(a, b + 5); };
+const fnSrc = (src, name) => { const a = src.indexOf(`  function ${name}(`); assert.ok(a >= 0, name); const b = src.indexOf("\n  }\n", a); return src.slice(a, b + 5).replace(/ChildTimeline\.completedMonths\(/g, "ageInMonths("); }; // W1: 월령 호출이 정본(ChildTimeline.completedMonths)으로 바뀐 것은 같은 동작이라 옛 이름으로 맞춰 비교한다
 // 이전 커밋의 view 모듈을 그대로 불러 현재 것과 출력을 비교한다.
 function loadBaseView() {
   const m = { exports: {} };

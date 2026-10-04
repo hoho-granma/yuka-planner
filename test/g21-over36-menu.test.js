@@ -15,7 +15,7 @@ const env = (o) => {
   const sb = {
     UserScheduleView: V, acctEnabled: () => o.on !== false, usSel: () => o.sel || [], usLinks: () => o.kids.map(([childKey]) => ({ childKey, order: 1, displayName: childKey, familyCode: childKey })), usMembers: () => [{ memberId: "m1", role: "MOM", label: "주연" }], usSelOpts: () => ({ memberMode: true, meId: "m1" }),
     usChildAge: (k) => (o.kids.find(([x]) => x === k) || [])[1],
-    profile: null, visibleSchedule: () => [],
+    profile: null, visibleSchedule: () => [], ChildTimeline: { OVER36_FROM_MONTHS: 36 },
   };
   vm.createContext(sb);
   vm.runInContext(fn("usKidsAre36Plus"), sb);

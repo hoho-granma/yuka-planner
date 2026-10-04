@@ -72,7 +72,7 @@ test("실제 places.json: 전부 validateData 통과(top-level coverage 같은 �
 console.log("앱 연결");
 function env(o) {
   const a = APP.indexOf("  let placesFilters ="), b = APP.indexOf("  async function renderPlacesTab() {");
-  const sb = { Places: P, PlacesView: PV, ChildTimeline: { ageLabelAt: () => "7개월" }, placesData: o.data, placesOffices: null, placesStats: {}, placesDriveMax: null, placesSort: "near", placesCat: "ALL", profile: o.profile === undefined ? { name: "수아", province: "경기도", district: "성남시", birthDate: new Date(2026, 2, 2) } : o.profile, isPregnant: () => false, childDisplayName: () => "수아", ageInMonths: () => 7 };
+  const sb = { Places: P, PlacesView: PV, ChildTimeline: { ageLabelAt: () => "7개월", completedMonths: () => 7, OVER36_FROM_MONTHS: 36 }, placesData: o.data, placesOffices: null, placesStats: {}, placesDriveMax: null, placesSort: "near", placesCat: "ALL", profile: o.profile === undefined ? { name: "수아", province: "경기도", district: "성남시", birthDate: new Date(2026, 2, 2) } : o.profile, isPregnant: () => false, childDisplayName: () => "수아", ageInMonths: () => 7 };
   vm.createContext(sb);
   vm.runInContext(APP.slice(a, b).replace(/^  let (\w+) =/gm, "var $1 =") + "\n;globalThis.__t = { placesViewHtml, get filters() { return placesFilters; } };", sb);
   return sb.__t;

@@ -33,7 +33,7 @@ test("[A] 정책 없음·미확인이면 null(섹션 숨김), 입력 불변", ()
   assert.strictEqual(CT.enrollmentOptions(b, asOf, { ...POLICY, enrollmentOffsetYears: { value: 7, verificationStatus: "확인필요" } }, undefined), null);
 });
 test("[A] app.js: 36개월 이상·임신 아님일 때만 노출, 기본이면 필드 삭제, 저장·동기화·재계산, plain 변환에 필드 추가", () => {
-  assert.ok(/if \(isPregnant\(\) \|\| ageInMonths\(profile\.birthDate, new Date\(\)\) < 36\) return "";/.test(APP));
+  assert.ok(/if \(isPregnant\(\) \|\| ChildTimeline\.completedMonths\(profile\.birthDate, new Date\(\)\) < ChildTimeline\.OVER36_FROM_MONTHS\) return "";/.test(APP));
   assert.ok(/if \(key === "default"\) delete profile\.enrollmentYearOverride;\s*\n\s*else profile\.enrollmentYearOverride = pick\.year;\s*\n\s*saveProfile\(profile\);\s*\n\s*pushProfileToFamily\(\);\s*\n\s*await buildAndRender\(\);/.test(APP));
   assert.ok(/enrollmentYearOverride: Number\.isInteger\(p\.enrollmentYearOverride\) \? p\.enrollmentYearOverride : null,/.test(APP));
   assert.ok(/\.\.\.\(Number\.isInteger\(p\.enrollmentYearOverride\) \? \{ enrollmentYearOverride: p\.enrollmentYearOverride \} : \{\}\)/.test(APP));

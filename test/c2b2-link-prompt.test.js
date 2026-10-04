@@ -35,7 +35,7 @@ process.on("exit", () => { if (started !== finished) { console.log(`FAIL- 끝나
 
 const app = read("js/app.js");
 const headApp = baseSrc("js/app.js");
-const fnSrc = (src, name, pre = "  function ") => { const a = src.indexOf(`${pre}${name}(`); assert.ok(a >= 0, name); const b = src.indexOf("\n  }\n", a); return src.slice(a, b + 5); };
+const fnSrc = (src, name, pre = "  function ") => { const a = src.indexOf(`${pre}${name}(`); assert.ok(a >= 0, name); const b = src.indexOf("\n  }\n", a); return src.slice(a, b + 5).replace(/ChildTimeline\.completedMonths\(/g, "ageInMonths("); }; // W1: 월령 호출이 정본(ChildTimeline.completedMonths)으로 바뀐 것은 같은 동작이라 옛 이름으로 맞춰 비교한다
 
 console.log("승인 문구 #6~#10");
 test("제목·본문·버튼 문구가 확정본과 같고, 접종/검진/그 밖 분기", () => {

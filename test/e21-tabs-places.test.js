@@ -41,7 +41,7 @@ function env(o) {
   nodes.close.addEventListener = (t, f) => (nodes.close.listeners[t] = f);
   const log = { switched: [], closed: 0, form: null, profileSheet: 0, shown: 0 };
   const us = { form: null, messages: ["x"], saving: true };
-  const sb = { console, JSON, Promise, Places: P, PlacesView: PV, ChildTimeline: { ageLabelAt: () => "7개월" }, UserScheduleView: V, us,
+  const sb = { console, JSON, Promise, Places: P, PlacesView: PV, ChildTimeline: { ageLabelAt: () => "7개월", completedMonths: () => 7, OVER36_FROM_MONTHS: 36 }, UserScheduleView: V, us,
     document: { querySelector: (sel) => (sel.includes("record") ? nodes.rec : sel.includes("places") ? nodes.pl : null) },
     el: (id) => ({ "btn-record-back": nodes.back, "places-body": nodes.body, "modal-content": nodes.content, "detail-modal": nodes.modal, "btn-places-close": nodes.close }[id] || null),
     hhEnabled: () => o.on, usActive: () => o.active !== false, usActiveChildKey: () => "c1", usLinks: () => [{ childKey: "c1", displayName: "수아", order: 1 }], memActiveId: () => "m1", usShowForm: () => { log.shown++; log.form = { ...sb.us.form }; },

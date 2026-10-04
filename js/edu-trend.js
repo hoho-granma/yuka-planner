@@ -7,14 +7,14 @@
  * 이 단계에서는 집계 소스가 없으므로 항상 '데이터 부족'(n 을 모름 = 0 으로 본다).
  */
 (function (root, factory) {
-  if (typeof module !== "undefined" && module.exports) module.exports = factory();
-  else root.EduTrend = factory();
-})(typeof window !== "undefined" ? window : global, function () {
+  if (typeof module !== "undefined" && module.exports) module.exports = factory(require("./child-timeline.js"));
+  else root.EduTrend = factory(root.ChildTimeline);
+})(typeof window !== "undefined" ? window : global, function (ChildTimeline) {
   "use strict";
 
   const MIN_REFERENCE = 30;
   const MIN_SUFFICIENT = 100;
-  const MENU_FROM_MONTHS = 36; // G22 36+ 메뉴와 같은 기준(36개월 이상, 임신 중 제외)
+  const MENU_FROM_MONTHS = ChildTimeline.OVER36_FROM_MONTHS; // G22 36+ 메뉴와 같은 기준(36개월 이상, 임신 중 제외)
 
   const STATUS = Object.freeze({
     INSUFFICIENT: Object.freeze({ key: "INSUFFICIENT", label: "데이터 부족", showNumbers: false }),
@@ -29,10 +29,9 @@
   }
 
   /** 학년도(3월 시작) 기준 초등 학년: 1~6. 초등 입학 전이면 0, 졸업 뒤면 7(= 초등 범위 밖). birthDate: Date, today: Date */
-  function gradeOf(birthDate, today) {
-    const schoolYear = today.getMonth() >= 2 ? today.getFullYear() : today.getFullYear() - 1;
-    const g = schoolYear - birthDate.getFullYear() - 6;
-    return g < 1 ? 0 : g > 6 ? 7 : g;
+  function gradeOf(birthDate, today, opts) {
+    // 정본(W1): ChildTimeline.gradeNumber — 일정 계산(computeSchool)과 같은 규칙. opts = { policy, enrollmentYearOverride }(조기입학·유예가 있으면 반영)
+    return ChildTimeline.gradeNumber(birthDate, today, opts && opts.policy, opts);
   }
   const gradeLabel = (g) => (g >= 1 && g <= 6 ? `초${g}` : g === 0 ? "취학 전" : "초등 이후");
 

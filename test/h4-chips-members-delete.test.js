@@ -77,7 +77,7 @@ const fnSrc = (name, async) => { const i = APP.indexOf(`  ${async ? "async " : "
   const legendEnv = (o) => {
     const box = { hidden: null, classList: { toggle: (c, on) => (box.hidden = on) } };
     const sb = {
-      acctEnabled: () => o.acct !== false, visibleSchedule: () => o.visible || [], usActive: () => o.active !== false, profile: o.profile === undefined ? {} : o.profile, acct36Active: () => !!o.is36,
+      acctEnabled: () => o.acct !== false, visibleSchedule: () => o.visible || [], ChildTimeline: { OVER36_FROM_MONTHS: 36 }, usActive: () => o.active !== false, profile: o.profile === undefined ? {} : o.profile, acct36Active: () => !!o.is36,
       usLinks: () => o.links || [], usMembers: () => [], usSel: () => o.sel || [], usSelOpts: () => ({ memberMode: false, noFamily: true }),
       usChildAge: (k) => o.ages[k], us: { onlyUser: !!o.onlyUser }, UserScheduleView: V, el: () => box,
     };

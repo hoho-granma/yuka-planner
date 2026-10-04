@@ -145,7 +145,7 @@ test("엔진 무변경: todo-engine.js 는 HEAD 와 동일, schedule.js 는 36�
   const { execSync } = require("child_process");
   assert.strictEqual(execSync("git diff --name-only HEAD -- js/todo-engine.js", { cwd: ROOT }).toString().trim(), "");
   const stat = execSync("git diff --numstat HEAD -- js/schedule.js", { cwd: ROOT }).toString().trim().split(/\s+/);
-  assert.strictEqual(stat[1], "0", "schedule.js 는 줄 삭제가 없다(추가만)");
+  assert.ok(!stat[1] || stat[1] === "0", "schedule.js 는 줄 삭제가 없다(추가만 — 커밋된 뒤에는 차이 없음)");
 });
 
 test("레거시·지역 지원금: 나이 상한 판정이 바뀌지 않는다(상한 필드 없음 → 기존 min/max 판정 그대로)", () => {
