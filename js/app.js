@@ -45,6 +45,8 @@
   let dataset = null;
   let nextStagePolicy = null;
   let homeReappearDays = 7;
+  let infoActions = {}; // 정보 항목의 '관련 행동 한 줄'(data/policy/info-actions.json)
+  const asInfoSaved = new Map(); // 이번에 '관련 행동'을 일정으로 넣은 정보 항목 id → 날짜(독립 일정이라 정보 항목은 그대로 남으므로 시트에 '넣었어요'를 보인다)
   let regionsData = null;
   let schedule = [];
   let profile = null;
@@ -192,7 +194,7 @@
   }
 
   async function loadAll() {
-    const [regions, reform, policy, allow36, pregTiming, nsRaw, reappearRaw, ...categoryFiles] = await Promise.all([
+    const [regions, reform, policy, allow36, pregTiming, nsRaw, reappearRaw, infoRaw, ...categoryFiles] = await Promise.all([
       loadJson("data/regions.json"),
       loadJsonOrNull("data/subsidies/reform-2027.json"),
       loadSchoolPolicy(),
@@ -200,10 +202,12 @@
       loadJsonOrNull("data/policy/pregnancy-timing.json"),
       loadJsonOrNull("data/policy/next-stage.json"),
       loadJsonOrNull("data/policy/home-reappear.json"),
+      loadJsonOrNull("data/policy/info-actions.json"),
       ...TODO_CATEGORY_FILES.map(loadJson),
     ]);
     regionsData = regions;
     homeReappearDays = reappearRaw && Number.isInteger(reappearRaw.reappearDaysBefore) && reappearRaw.reappearDaysBefore >= 0 ? reappearRaw.reappearDaysBefore : 7; // 홈 카드 재등장 창(data/policy/home-reappear.json)
+    infoActions = typeof AutoSteps === "undefined" ? {} : AutoSteps.normalizeInfoActions(infoRaw);
     nextStagePolicy = typeof NextStage === "undefined" ? null : NextStage.normalizePolicy(nsRaw); // 다음 단계 안내(W5) 정책 — 못 읽으면 빈 정책(배너 없음)
     schoolPolicy = policy;
     reformConfig = reform;
@@ -1365,6 +1369,7 @@
     }
     if (a === "quick") { usOpenForm(null, toISODate(new Date())); us.form.title = act.dataset.a36Quick; usShowForm(); return; }
     if (a === "trend-add") return usOpenForm(null, toISODate(new Date()));
+    if (a === "trend-region") return showEditProfileSheet(); // 지역이 없는 아이: 아이 정보 수정 시트에서 지역을 넣는다
     if (a === "menu-close") { A36.menuId = null; return acct36RenderTodoTab(); }
     if (a === "menu-edit") { A36.editId = A36.menuId; A36.menuId = null; A36.adding = false; return acct36RenderTodoTab(); }
     if (a === "menu-top") { const id = A36.menuId; A36.menuId = null; return acct36Patch(id, ChildTodos.patchMoveTop(acct36All(), Date.now())); }
@@ -2741,6 +2746,16 @@
     const dl = hasDeadline ? (e.deadlineDate || e.windowEnd) : null;
     return AutoSteps.pickDate({ deadlineIso: asIso(dl), recommendedIso: asIso(rec), todayIso: toISODate(new Date()), uncertain: !!(def && def.category === "SC") || !!e.needsCheck });
   }
+  /** 정보 항목 시트의 '관련 행동 한 줄' 제안(구분 라벨 없음). 일정을 넣을 수 있는 상태(가구·아이·autoLink)이고 정해 둔 행동이 있을 때만. */
+  function asInfoSuggest(box, e, ck, links) {
+    const action = AutoSteps.infoActionOf(infoActions, e);
+    if (!action || !links || ck == null || completed[e.id] || box.querySelector("[data-as-info]")) return;
+    const saved = asInfoSaved.get(e.id);
+    const anchor = box.querySelector(".acct-sub-head") || box.querySelector("h3");
+    if (!anchor) return;
+    anchor.insertAdjacentHTML("afterend", AutoSteps.renderInfoAction(action, saved ? AutoSteps.md(saved) : ""));
+    asCur = { e, form: null, info: action };
+  }
   function acctDesignSteps(box, e) {
     if (!box || !box.querySelector || !e || box.querySelector(".as-steps")) return;
     const applyLink = usApplyLinkOf(e);
@@ -2751,7 +2766,10 @@
     const done = !!completed[e.id];
     const link = (existing || family) && links ? AutoSteps.linkOf(links, e) : null;
     const canLink = !!(links && ck != null && (existing || family) && !done && !isNotApplicable(e.id));
-    if (!applyLink && !canLink && !link && !(done && (existing || family))) return; // 보여 줄 단계가 알아보기·완료뿐이면 기존 시트 그대로(단, 완료한 정보 항목은 '완료한 사람'을 보이려고 스텝을 유지한다)
+    if (!applyLink && !canLink && !link && !(done && (existing || family))) { // 보여 줄 단계가 알아보기·완료뿐이면 기존 시트 그대로(단, 완료한 정보 항목은 '완료한 사람'을 보이려고 스텝을 유지한다)
+      asInfoSuggest(box, e, ck, links); // 정보만 있는 항목: 정해 둔 관련 행동이 있으면 한 줄만 제안한다
+      return;
+    }
     const subsidy = e.category === "행정·지원금";
     const rec = completed[e.id];
     const di = asDateFor(e);
@@ -2781,7 +2799,7 @@
     if (!e || ck == null || !autoLinkOn()) return;
     const di = asDateFor(e);
     const link = usLinks().find((l) => l.childKey === ck);
-    asCur.form = { title: usAutoTitleOfEvent(e), date: di.iso, dateKind: di.kind, dateUncertain: di.uncertain, childName: link ? link.displayName || "" : "", memo: "", error: "", saving: false };
+    asCur.form = { title: asCur.info ? asCur.info.label : usAutoTitleOfEvent(e), date: di.iso || (asCur.info ? toISODate(new Date()) : ""), dateKind: di.kind, dateUncertain: di.uncertain, childName: link ? link.displayName || "" : "", memo: "", error: "", saving: false };
     asRenderSheet();
   }
   async function asSave() {
@@ -2794,7 +2812,7 @@
     if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date)) { f.error = AutoSteps.MSG.errDate; return asRenderSheet(); }
     const ck = usActiveChildKey();
     if (ck == null) return;
-    const input = { sourceType: "MANUAL", title: f.title.slice(0, 100), category: AutoSteps.categoryOf(c.e), scope: "CHILD", childKeys: [ck], dateKind: "FIXED", allDay: true, eventDate: f.date, autoRef: AutoSteps.autoRefOf(c.e), ...(f.memo ? { memo: f.memo } : {}) }; // 담당자·반복 없음: 완료한 사람이 자동으로 담당이 된다
+    const input = { sourceType: "MANUAL", title: f.title.slice(0, 100), category: AutoSteps.categoryOf(c.e), scope: "CHILD", childKeys: [ck], dateKind: "FIXED", allDay: true, eventDate: f.date, ...(c.info ? {} : { autoRef: AutoSteps.autoRefOf(c.e) }), ...(f.memo ? { memo: f.memo } : {}) }; // 관련 행동 제안(c.info)은 정보 항목과 연결하지 않는 독립 일정 // 담당자·반복 없음: 완료한 사람이 자동으로 담당이 된다
     const r = UserSchedule.buildCreateDoc(input, Date.now());
     if (!r.ok) { f.error = AutoSteps.MSG.saveFail; return asRenderSheet(); }
     f.saving = true; f.error = ""; asRenderSheet();
@@ -2803,7 +2821,7 @@
       if (!res.ok) throw new Error(res.reason || "create-failed");
       closeDetail();
       usRefreshCalendar();
-      const e = c.e; asCur = null;
+      const e = c.e; if (c.info) asInfoSaved.set(e.id, f.date); asCur = null;
       setTimeout(() => openDetail(e), 0); // 저장하면 상세로 돌아가 '일정 넣기'가 완료된 모습을 보여 준다
     } catch (err) {
       console.error("정보 항목 일정 저장 실패", err);
@@ -2816,7 +2834,7 @@
     const act = t.getAttribute("data-as");
     if (act === "apply") return; // 링크는 그대로 새 창으로 연다
     ev.preventDefault();
-    if (act === "link") return asOpenSheet();
+    if (act === "link" || act === "info-add") return asOpenSheet();
     if (act === "view") return usOpenDetail(t.getAttribute("data-as-id"), null);
     if (act === "toggle") { const b = el("btn-toggle-complete"); if (b) b.click(); return; }
     if (act === "save") return asSave();

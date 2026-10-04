@@ -83,7 +83,9 @@
   // ── 지역 교육 트렌드(G25 틀): ① 우리 아이 현재 상태 → ② 또래 범위 → ③ 지역·학년 트렌드 → ④ 다음 확인. 집계 데이터가 없는 동안은 수치를 만들지 않고 '데이터 부족'으로 보인다. ──
   const TREND = Object.freeze({
     nav: "교육 트렌드",
-    title: (region, grade) => `${region} ${grade} 교육 트렌드`.trim(),
+    title: (region, grade) => [String(region || "").trim(), String(grade || "").trim(), "교육 트렌드"].filter(Boolean).join(" "), // 지역이 없으면 학년만(앞이 비지 않게)
+    noRegionNote: "지역을 설정하면 더 정확해져요",
+    noRegionBtn: "지역 설정하기",
     lead: "우리 동네 같은 학년 아이들은 어떻게 하고 있을까?",
     mineTitle: "우리 아이 현재 상태",
     mineCount: (n) => `등록한 학원 일정 ${n}개`,
@@ -114,6 +116,7 @@
     const locked = TREND.sections.map((t) => `<div class="a36t-sec"><h4>${esc(t)}</h4><div class="a36t-ghost" aria-hidden="true"><i></i><i></i></div><p class="a36t-note">${esc(TREND.sectionLocked)}</p></div>`).join("");
     return `<div class="a36t" id="a36-trend">
       <div class="a36t-head"><h2>${esc(TREND.title(st.region || "", st.gradeLabel || ""))}</h2><p>${esc(TREND.lead)}</p></div>
+      ${st.region ? "" : `<section class="a36t-card a36t-region" data-a36t="region"><p class="a36t-note">${esc(TREND.noRegionNote)}</p><button type="button" class="a36t-btn" data-a36="trend-region">${esc(TREND.noRegionBtn)}</button></section>`}
       <section class="a36t-card" data-a36t="mine"><h3>${esc(TREND.mineTitle)}</h3>${mine.count ? `<p class="a36t-big">${esc(TREND.mineCount(mine.count))}</p>` : ""}${lessons}</section>
       <section class="a36t-card" data-a36t="peer"><div class="a36t-row"><h3>${esc(TREND.peerTitle)}</h3><span class="a36t-badge${insufficient ? " warn" : ""}" data-a36t-status="${esc(st.status ? st.status.key : "INSUFFICIENT")}">${esc(st.status ? st.status.label : TREND.insufficient)}</span></div>${insufficient ? `<p class="a36t-note">${esc(TREND.insufficientBody)}</p><p class="a36t-note">${esc(TREND.sampleRule)}</p>` : `<p class="a36t-note">${esc(TREND.peerLead)}</p>`}</section>
       <section class="a36t-card" data-a36t="trend"><h3>${esc(TREND.trendTitle)}</h3>${st.inRange === false ? `<p class="a36t-note">${esc(TREND.outOfRange)}</p>` : locked}</section>

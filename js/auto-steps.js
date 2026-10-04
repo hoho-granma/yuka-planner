@@ -20,6 +20,7 @@
     dateAuto: "항목에서 자동 입력", dateCheck: "확인 필요",
     sheetTitle: "가족 캘린더에 넣기", sheetFrom: "정보 항목에서 가져왔어요",
     fTitle: "일정 이름", fDate: "날짜", fChild: "아이", fRepeat: "반복", noRepeat: "반복 없음", fMemo: "메모", optional: "선택", memoPh: "링크·준비물 적어 두기",
+    infoActionLabel: "관련 행동 한 줄", infoActionChip: "일정 +", infoActionDone: (md) => `${md}에 넣었어요`,
     save: "일정 저장", saving: "저장하는 중…", cancel: "닫기",
     errTitle: "일정 이름을 입력해 주세요.", errDate: "날짜를 확인해 주세요.", saveFail: "저장하지 못했어요. 잠시 후 다시 해 주세요.",
   });
@@ -43,6 +44,29 @@
   const linkOf = (links, event) => (links && event ? links.get(event.id) || links.get(autoRefOf(event)) || null : null);
   /** 일정 분류(규칙 허용 5종): 학교 단계는 기관, 나머지(신청·행정)는 기타. */
   const categoryOf = (event) => { const d = event && event.detail && event.detail.definition; return d && d.category === "SC" ? "INSTITUTION" : d && (d.category === "HC" || d.category === "VX") ? "MEDICAL" : "ETC"; }; // 학교=기관, 검진·접종=병원(다음 단계 안내에서 넣는 경우), 그 밖(신청·행정)=기타
+
+  /** 정보 항목의 '관련 행동 한 줄'(data/policy/info-actions.json). raw → { id: { label } } (형식이 틀린 항목은 버린다). */
+  function normalizeInfoActions(raw) {
+    const out = {};
+    const a = raw && typeof raw === "object" && raw.actions && typeof raw.actions === "object" ? raw.actions : {};
+    for (const [id, v] of Object.entries(a)) if (v && typeof v.label === "string" && v.label.trim() && v.label.length <= 40) out[id] = { label: v.label.trim() };
+    return out;
+  }
+  /** 이 항목의 제안 행동({label}) — 이벤트 id 그대로, 없으면 "__default" 를 붙이거나 뗀 id 로도 찾는다. 없으면 null(행동을 만들지 않는다). */
+  function infoActionOf(actions, event) {
+    if (!actions || !event) return null;
+    const id = String(event.id);
+    const alt = id.endsWith("__default") ? id.slice(0, -"__default".length) : id + "__default";
+    return actions[id] || actions[alt] || null;
+  }
+  /** 정보 항목 시트의 '관련 행동 한 줄'. savedMd 가 있으면 이미 넣은 것(버튼 없이 '○월 ○일에 넣었어요'). */
+  function renderInfoAction(action, savedMd) {
+    if (!action) return "";
+    const row = savedMd
+      ? `<div class="as-info-row done"><b>${esc(action.label)}</b><span class="as-info-chip">${CHECK}${esc(MSG.infoActionDone(savedMd))}</span></div>`
+      : `<button type="button" class="as-info-row" data-as="info-add"><b>${esc(action.label)}</b><span class="as-info-chip">${CAL}${esc(MSG.infoActionChip)}</span></button>`;
+    return `<div class="as-info" data-as-info><small>${esc(MSG.infoActionLabel)}</small>${row}</div>`;
+  }
 
   /**
    * 일정 날짜 자동 입력: 지금 이후의 마감일 → 없으면 권장일(추천일·시작일). 이미 지났으면 오늘. 반환 { iso, kind: "deadline"|"recommended", uncertain }.
@@ -107,5 +131,5 @@
     </div>`;
   }
 
-  return { MSG, FAMILY_LINK_CODES, isFamilyLinkable, autoRefOf, linkOf, categoryOf, pickDate, model, renderSteps, renderAddSheet, md, esc };
+  return { MSG, normalizeInfoActions, infoActionOf, renderInfoAction, FAMILY_LINK_CODES, isFamilyLinkable, autoRefOf, linkOf, categoryOf, pickDate, model, renderSteps, renderAddSheet, md, esc };
 });
