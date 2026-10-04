@@ -325,7 +325,7 @@ test("usPatchAction: 실패(invalid-patch·서버 거부)면 제안하지 않고
   assert.strictEqual(p.log.notes.length, 2);
 });
 test("연결: 비반복 일정의 '완료' 버튼만 suggestOnDone 을 켠다(반복 회차·복원·삭제는 아님) · 시트 버튼 4종이 모달 클릭 처리에 연결", () => {
-  assert.ok(app.includes("UserSchedule.markDone(before, now)), { suggestOnDone: true });"));
+  assert.ok(app.includes("usMarkDoneBy(before, now)), { suggestOnDone: true });")); // W4: 담당이 없으면 완료한 구성원을 담당으로 기록(markDone 래퍼));
   assert.ok(!/suggestOnDone/.test(app.slice(app.indexOf("if (rec) return usPatchAction"), app.indexOf("if (rec) return usPatchAction") + 330)));
   assert.strictEqual((app.match(/suggestOnDone: true/g) || []).length, 1);
   ["link-record", "link-skip", "link-keep", "link-complete"].forEach((a) => assert.ok(app.includes(`"${a}"`), a));
@@ -334,7 +334,8 @@ test("연결: 비반복 일정의 '완료' 버튼만 suggestOnDone 을 켠다(�
 
 console.log("OFF·연결 없음 불변(이전 커밋 소스 대비)");
 test("toggleComplete: 훅 한 줄만 다르다", () => {
-  assert.strictEqual(toggleSrc.replace(/\n    if \(!wasDone && completed\[id\]\) usAfterAutoComplete\(id\);[^\n]*/, ""), fnSrc(headApp, "toggleComplete"));
+  // W4: 완료 기록에 completedBy(완료한 구성원)를 더한 부분도 같은 동작의 추가라 떼고 비교한다
+  assert.strictEqual(toggleSrc.replace(/\n    if \(!wasDone && completed\[id\]\) usAfterAutoComplete\(id\);[^\n]*/, "").replace(", ...(typeof usCompletedByField === \"function\" ? usCompletedByField() : {})", ""), fnSrc(headApp, "toggleComplete"));
 });
 test("usPatchAction: opts 인자와 제안 호출 한 줄만 다르다", () => {
   const headPatch = headApp.slice(headApp.indexOf("  async function usPatchAction("), headApp.indexOf("\n  }\n", headApp.indexOf("  async function usPatchAction(")) + 5);

@@ -28,6 +28,7 @@
    */
   function forTodo(def, subsidiesById) {
     if (!def) return null;
+    if (def.applyUrl) return ok(def.applyUrl, def.applyLabel); // 정의 자체의 신청 링크(SC-01·SC-12·PG-01·PG-02·SB-08 등, 공식 페이지를 직접 확인한 것만)
     if (def.subsidyRef) return forSubsidy(subsidiesById && subsidiesById[def.subsidyRef]);
     const id = String(def.todo_id || def.id || "");
     const d = CATEGORY_DEFAULTS[id.slice(0, 2)];

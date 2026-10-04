@@ -104,7 +104,7 @@
     const head = `<div class="a36-dhead"><b>${esc(`${st.month}월 ${st.day}일 ${MSG.weekdays[st.weekday]}요일`)}</b><button type="button" class="a36-dadd" data-a36="day-add">${esc(MSG.dayAdd)}</button></div>`;
     const rows = (st.rows || [])
       .map((r) => r.auto
-        ? `<button type="button" class="a36-tlr a36-auto" data-a36-auto="${esc(r.autoId)}">${timeCell(r)}<i style="background:#9aa5b1"></i><span class="a36-ti"><b>${esc(r.title)}</b><small><em class="a36-autob">${esc(MSG.autoBadge)}</em>${r.sub ? ` ${esc(r.sub)}` : ""}</small></span></button>`
+        ? `<button type="button" class="a36-tlr a36-auto${r.done ? " done" : ""}" data-a36-auto="${esc(r.autoId)}">${timeCell(r)}<i style="background:#9aa5b1"></i><span class="a36-ti"><b>${esc(r.title)}</b><small><em class="a36-autob">${esc(MSG.autoBadge)}</em>${r.done ? ` ${esc(MSG.doneLabel)}` : r.sub ? ` ${esc(r.sub)}` : ""}</small></span></button>`
         : `<button type="button" class="a36-tlr${r.done ? " done" : ""}" data-a36-ev="${esc(r.scheduleId)}|${esc(r.key)}">${timeCell(r)}<i style="background:${esc(r.color || "#c9b8ff")}"></i><span class="a36-ti"><b>${esc(r.title)}</b>${r.sub ? `<small>${esc(r.sub)}</small>` : ""}</span></button>`)
       .join("");
     const body = rows || `<div class="a36-dempty"><p>${esc(MSG.dayEmpty(st.month, st.day))}</p><button type="button" class="a36-dadd2" data-a36="day-add">${esc(MSG.dayEmptyAdd)}</button></div>`;

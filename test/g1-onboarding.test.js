@@ -106,7 +106,7 @@ console.log("OFF 첫 화면: 베타 미리 써 보기");
 test("OFF 기본 HTML 은 '베타 버튼 슬롯' 한 줄만 다르다(그 외 HEAD 와 동일 — 기간형 AUTO 삭제로 빠진 #auto-period-slot 은 양쪽에서 뺀다)", () => {
   let head;
   try { head = cp.execFileSync("git", ["show", "5ec3e02:index.html"], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); } catch (e) { return; }
-  const norm = (h) => h.replace(/\?v=\d+/g, "").replace(/\n\s*<div id="beta-preview-slot"><\/div>/, "").replace(/\n\s*<script src="js\/schedule-kinds\.js[^>]*><\/script>/, "").replace(/ *<div id="auto-period-slot"><\/div>\n/, "").replace(/\n\s*<script src="js\/auto-after36\.js[^>]*><\/script>/, "").replace(/<script>\/\* G19:[\s\S]*?<\/script>\n/, "").replace(/\n\s*<script src="js\/(child-todos|over36-view|tab-swipe|edu-trend)\.js[^>]*><\/script>/g, ""); // G13/G19: 순수 모듈 스크립트 한 줄·계정 기본 ON 부팅 클래스 스크립트(OFF 에서는 아무 클래스도 붙지 않는다): 순수 모듈 스크립트 한 줄(전역 정의만, OFF 동작 없음)
+  const norm = (h) => h.replace(/\?v=\d+/g, "").replace(/\n\s*<div id="beta-preview-slot"><\/div>/, "").replace(/\n\s*<script src="js\/schedule-kinds\.js[^>]*><\/script>/, "").replace(/ *<div id="auto-period-slot"><\/div>\n/, "").replace(/\n\s*<script src="js\/(?:auto-after36|auto-steps)\.js[^>]*><\/script>/g, "").replace(/<script>\/\* G19:[\s\S]*?<\/script>\n/, "").replace(/\n\s*<script src="js\/(child-todos|over36-view|tab-swipe|edu-trend)\.js[^>]*><\/script>/g, ""); // G13/G19: 순수 모듈 스크립트 한 줄·계정 기본 ON 부팅 클래스 스크립트(OFF 에서는 아무 클래스도 붙지 않는다): 순수 모듈 스크립트 한 줄(전역 정의만, OFF 동작 없음)
   assert.strictEqual(norm(read("index.html")), norm(head));
   assert.ok(read("index.html").includes('<div id="beta-preview-slot"></div>'));
 });

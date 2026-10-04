@@ -4,6 +4,8 @@
   "todos": [
     {
       "todo_id": "SC-01",
+      "applyUrl": "https://www.gov.kr/portal/service/serviceInfo/134200005008",
+      "applyLabel": "안내 보기",
       "category": "SC",
       "title": "취학통지서 확인",
       "parentAction": "12월에 취학통지서가 오면 입학할 학교와 입학기일을 확인해요",

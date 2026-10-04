@@ -1328,7 +1328,7 @@
     const occs = ((day && day.user) || []).slice().sort((x, y) => (x.allDay ? 1 : 0) - (y.allDay ? 1 : 0) || String(x.startTime || "").localeCompare(String(y.startTime || "")));
     // 달력 칸에 올라간 항목(지원금 신청 시작 fixed + 그날로 추천된 항목)과 같은 기준으로 고른다 — 칸에는 있는데 시트는 비는 일이 없게(calendarDayItems 공용)
     const dayItems = calendarDayItems(new Date(iso + "T00:00:00"));
-    const autoRows = [...dayItems.fixed, ...dayItems.planned.filter((e) => !dayItems.fixed.includes(e))].map((e) => ({ autoId: e.id, title: e.title, allDay: true, startTime: "", color: "", done: false, sub: e.dateLabel || "", auto: true }));
+    const autoRows = [...dayItems.fixed, ...dayItems.planned.filter((e) => !dayItems.fixed.includes(e))].map((e) => ({ autoId: e.id, title: e.title, allDay: true, startTime: "", color: "", done: !!completed[e.id], sub: e.dateLabel || "", auto: true }));
     return autoRows.concat(occs.map((o) => {
       const doc = usDocById(o.scheduleId);
       const rep = doc && doc.recurrence ? UserScheduleView.repeatSummary(doc.recurrence) : "";
@@ -2394,7 +2394,7 @@
       const todoId = sepIdx === -1 ? id : id.slice(0, sepIdx);
       const occurrenceKey = sepIdx === -1 ? "default" : id.slice(sepIdx + 2);
       const nowIso = new Date().toISOString();
-      completed[id] = { done: true, todo_id: todoId, occurrenceKey, recordType: "TODO_COMPLETED", recordedAt: nowIso };
+      completed[id] = { done: true, todo_id: todoId, occurrenceKey, recordType: "TODO_COMPLETED", recordedAt: nowIso, ...(typeof usCompletedByField === "function" ? usCompletedByField() : {}) };
       // MILESTONE_EVENT형 Todo는 이번 버전에 "마일스톤 보고"와 "완료 처리"를 분리하는 UI가
       // 따로 없어서, "완료로 표시하기" 클릭 한 번으로 둘 다 기록한다(보고 완료: docs 참고).
       const evt = schedule.find((x) => x.id === id);
@@ -2783,7 +2783,117 @@
     if (!acctEnabled() || !e) return;
     if (e.category === "행정·지원금") acctDesignSubsidy(el("modal-content"));
     else acctDesignAccordion(el("modal-content"));
+    if (typeof AutoSteps !== "undefined") acctDesignSteps(el("modal-content"), e); // W4: 알아보기 → 신청 → 일정 넣기 → 완료
   };
+
+
+  // ═══ W4 패키지 1: 정보(AUTO) 상세 시트의 4단계 스텝 + '가족 캘린더에 넣기' 한 장 시트 + 완료한 사람 자동 기록 ═══
+  // 완료한 사람: AUTO 완료 기록(completed 맵 항목)에 completedBy(구성원 id)를 넣고, 가족 일정을 완료할 때 담당이 비어 있으면 완료한 구성원을 담당으로 둔다.
+  // 둘 다 기존 필드·기존 규칙 안이다(families.completed 는 맵이라 항목 모양을 규칙이 보지 않고, 일정은 assigneeMemberId 가 허용 필드) — 규칙 변경 없음.
+  function usCompletedByField() {
+    const me = typeof usMeId === "function" ? usMeId() : null;
+    return me ? { completedBy: me } : {};
+  }
+  /** 일정 완료 패치: 담당이 비어 있는 비반복 일정은 완료한 구성원을 담당으로 함께 기록한다. 그 밖(이미 담당 있음·반복·내 구성원을 모름)은 기존 markDone 그대로. */
+  function usMarkDoneBy(before, now) {
+    const me = typeof usMeId === "function" ? usMeId() : null;
+    if (!me || before.assigneeMemberId || before.recurrence) return UserSchedule.markDone(before, now);
+    const r = UserSchedule.buildPatch(before, { status: "DONE", assigneeMemberId: me }, now);
+    return r.ok ? r : UserSchedule.markDone(before, now);
+  }
+  const asMemberLabel = (id) => { const m = id ? usMembers().find((x) => x.memberId === id && !x.deletedAt) : null; return m ? String(m.label || "") : ""; };
+  let asCur = null; // { e, form } — 지금 열린 스텝 시트의 항목 / 한 장 시트의 입력값
+  const asIso = (d) => (d instanceof Date && !isNaN(d.getTime()) ? toISODate(d) : "");
+  /** 일정 날짜 자동 입력용 값: 마감이 있는 신청·법정 항목은 마감일, 그 밖은 권장일(추천일·시작일). 학교 단계 등 정확한 날짜가 없는 항목은 '확인 필요'. */
+  function asDateFor(e) {
+    const def = e.detail && e.detail.definition;
+    const rec = (calDisplayDays && calDisplayDays.get(e.id) || [])[0] || e.fixedDate || e.windowStart || e.date;
+    const hasDeadline = e.category === "행정·지원금" || (def && def.category === "PG");
+    const dl = hasDeadline ? (e.deadlineDate || e.windowEnd) : null;
+    return AutoSteps.pickDate({ deadlineIso: asIso(dl), recommendedIso: asIso(rec), todayIso: toISODate(new Date()), uncertain: !!(def && def.category === "SC") || !!e.needsCheck });
+  }
+  function acctDesignSteps(box, e) {
+    if (!box || !box.querySelector || !e || box.querySelector(".as-steps")) return;
+    const applyLink = usApplyLinkOf(e);
+    const links = autoLinks();
+    const existing = CalendarModel.isLinkableAuto(e);
+    const family = AutoSteps.isFamilyLinkable(e, CalendarModel.isLinkableAuto);
+    const ck = usActiveChildKey();
+    const done = !!completed[e.id];
+    const link = (existing || family) && links ? AutoSteps.linkOf(links, e) : null;
+    const canLink = !!(links && ck != null && (existing || family) && !done && !isNotApplicable(e.id));
+    if (!applyLink && !canLink && !link && !(done && (existing || family))) return; // 보여 줄 단계가 알아보기·완료뿐이면 기존 시트 그대로(단, 완료한 정보 항목은 '완료한 사람'을 보이려고 스텝을 유지한다)
+    const subsidy = e.category === "행정·지원금";
+    const rec = completed[e.id];
+    const di = asDateFor(e);
+    const dateText = existing ? "예약일을 넣어요" : di.iso ? `${di.kind === "deadline" ? "마감" : "권장"} ${AutoSteps.md(di.iso)}${di.uncertain ? " · 정확한 날짜는 확인 필요" : ""}` : "";
+    const html = AutoSteps.renderSteps(AutoSteps.model({
+      applyLink, canLink, link: link && link.date ? link : null, dateText, externalPlan: existing,
+      done, doneIso: rec && rec.recordedAt ? localDateInputValue(new Date(rec.recordedAt)) : "", doneBy: rec ? asMemberLabel(rec.completedBy) : "",
+      category: e.category, toggleLabel: !subsidy && el("btn-toggle-complete") ? el("btn-toggle-complete").textContent.trim() : "",
+    }));
+    const anchor = box.querySelector(".acct-sub-head") || box.querySelector("h3");
+    if (!anchor) return;
+    anchor.insertAdjacentHTML("afterend", html);
+    asCur = { e, form: null };
+    if (existing) { // 기존 예약 버튼(예약 일정 만들기/일정 보기)을 일정 넣기 줄로 옮긴다 — 핸들러는 그대로
+      const btn = box.querySelector(".auto-link-btn"), slot = box.querySelector('[data-as-step="plan"] .as-b');
+      if (btn && slot) slot.appendChild(btn);
+    }
+    if (!subsidy && el("btn-toggle-complete")) el("btn-toggle-complete").classList.add("as-orig-hide"); // 완료 체크는 4단계 줄의 버튼으로 한다(원래 버튼은 그대로 두고 숨김)
+  }
+  function asRenderSheet() {
+    modalMode = "profile";
+    el("modal-content").innerHTML = AutoSteps.renderAddSheet(asCur.form);
+    el("detail-modal").classList.remove("hidden");
+  }
+  function asOpenSheet() {
+    const e = asCur && asCur.e, ck = usActiveChildKey();
+    if (!e || ck == null || !autoLinkOn()) return;
+    const di = asDateFor(e);
+    const link = usLinks().find((l) => l.childKey === ck);
+    asCur.form = { title: usAutoTitleOfEvent(e), date: di.iso, dateKind: di.kind, dateUncertain: di.uncertain, childName: link ? link.displayName || "" : "", memo: "", error: "", saving: false };
+    asRenderSheet();
+  }
+  async function asSave() {
+    const c = asCur;
+    if (!c || !c.form || c.form.saving) return;
+    const f = c.form, box = el("modal-content");
+    const val = (k) => { const n = box.querySelector(`[data-as-field="${k}"]`); return n ? String(n.value || "") : ""; };
+    f.title = val("title").trim(); f.date = val("date"); f.memo = val("memo").trim();
+    if (!f.title) { f.error = AutoSteps.MSG.errTitle; return asRenderSheet(); }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date)) { f.error = AutoSteps.MSG.errDate; return asRenderSheet(); }
+    const ck = usActiveChildKey();
+    if (ck == null) return;
+    const input = { sourceType: "MANUAL", title: f.title.slice(0, 100), category: AutoSteps.categoryOf(c.e), scope: "CHILD", childKeys: [ck], dateKind: "FIXED", allDay: true, eventDate: f.date, autoRef: AutoSteps.autoRefOf(c.e), ...(f.memo ? { memo: f.memo } : {}) }; // 담당자·반복 없음: 완료한 사람이 자동으로 담당이 된다
+    const r = UserSchedule.buildCreateDoc(input, Date.now());
+    if (!r.ok) { f.error = AutoSteps.MSG.saveFail; return asRenderSheet(); }
+    f.saving = true; f.error = ""; asRenderSheet();
+    try {
+      const res = await HouseholdSync.createSchedule(hh.hid, r.doc);
+      if (!res.ok) throw new Error(res.reason || "create-failed");
+      closeDetail();
+      usRefreshCalendar();
+      const e = c.e; asCur = null;
+      setTimeout(() => openDetail(e), 0); // 저장하면 상세로 돌아가 '일정 넣기'가 완료된 모습을 보여 준다
+    } catch (err) {
+      console.error("정보 항목 일정 저장 실패", err);
+      f.saving = false; f.error = AutoSteps.MSG.saveFail; asRenderSheet();
+    }
+  }
+  function asOnClick(ev) {
+    const t = ev.target && ev.target.closest ? ev.target.closest("[data-as]") : null;
+    if (!t) return;
+    const act = t.getAttribute("data-as");
+    if (act === "apply") return; // 링크는 그대로 새 창으로 연다
+    ev.preventDefault();
+    if (act === "link") return asOpenSheet();
+    if (act === "view") return usOpenDetail(t.getAttribute("data-as-id"), null);
+    if (act === "toggle") { const b = el("btn-toggle-complete"); if (b) b.click(); return; }
+    if (act === "save") return asSave();
+    if (act === "cancel") { const e = asCur && asCur.e; if (e) { asCur = null; return openDetail(e); } return closeDetail(); }
+  }
+  if (typeof document !== "undefined" && el("modal-content")) el("modal-content").addEventListener("click", asOnClick);
 
   function closeDetail() {
     el("detail-modal").classList.add("hidden");
@@ -4238,7 +4348,7 @@
     const sepIdx = id.indexOf("__");
     const todoId = sepIdx === -1 ? id : id.slice(0, sepIdx);
     const occurrenceKey = sepIdx === -1 ? "default" : id.slice(sepIdx + 2);
-    completed[id] = { done: true, todo_id: todoId, occurrenceKey, recordType: "TODO_COMPLETED", recordedAt: new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0).toISOString() };
+    completed[id] = { done: true, todo_id: todoId, occurrenceKey, recordType: "TODO_COMPLETED", recordedAt: new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0).toISOString(), ...(typeof usCompletedByField === "function" ? usCompletedByField() : {}) };
     saveCompleted();
     syncCompletedChanges(before);
     refreshSchedule();
@@ -4264,7 +4374,7 @@
     const p = us.linkPrompt;
     us.linkPrompt = null;
     if (!p || p.kind !== "toUser") return closeDetail();
-    return usPatchAction(p.scheduleId, (before, now) => UserSchedule.markDone(before, now));
+    return usPatchAction(p.scheduleId, (before, now) => (typeof usMarkDoneBy === "function" ? usMarkDoneBy(before, now) : UserSchedule.markDone(before, now)));
   }
   /** E(1-4): 담당이 필요한 빠른 추가 칩을 눌렀는데 담당이 비어 있으면 담당 영역을 강조하고 안내 한 줄을 보인다(폼은 다시 그리지 않는다). */
   function usRefreshAssigneeEmph(root) {
@@ -4896,7 +5006,7 @@
       if (act === "link-complete") return usLinkCompleteSchedule();
       if (act === "toggle-done") {
         if (rec) return usPatchAction(id, (before, now) => (occ.status === "DONE" ? UserSchedule.restoreOccurrence(before, occ.originalDate, now) : UserSchedule.markDone(before, now, { date: occ.originalDate })));
-        return usPatchAction(id, (before, now) => (before.status === "DONE" ? UserSchedule.setStatus(before, "TODO", now) : UserSchedule.markDone(before, now)), { suggestOnDone: true });
+        return usPatchAction(id, (before, now) => (before.status === "DONE" ? UserSchedule.setStatus(before, "TODO", now) : usMarkDoneBy(before, now)), { suggestOnDone: true });
       }
       if (act === "restore") return usPatchAction(id, (before, now) => UserSchedule.restoreOccurrence(before, occ.originalDate, now));
       if (act === "edit") {

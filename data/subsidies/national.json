@@ -944,7 +944,9 @@
       "auditNotes": {
         "sourceName": "복지로 서비스 상세(교육부, Chrome으로 직접 확인)"
       },
-      "conditionLabel": "유치원 이용 시"
+      "conditionLabel": "유치원 이용 시",
+      "applyUrl": "https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00000969&wlfareInfoReldBztpCd=01",
+      "applyLabel": "신청하러 가기"
     },
     {
       "id": "NAT-021",

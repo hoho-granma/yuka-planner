@@ -223,6 +223,8 @@
     },
     {
       "todo_id": "SB-08",
+      "applyUrl": "https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00000969&wlfareInfoReldBztpCd=01",
+      "applyLabel": "신청하러 가기",
       "category": "SB",
       "title": "누리과정(유아학비/보육료) 신청",
       "parentAction": "만3세 진입 시 기관을 통해 신청",

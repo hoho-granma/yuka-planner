@@ -5,6 +5,8 @@
   "todos": [
     {
       "todo_id": "PG-01",
+      "applyUrl": "https://efamily.scourt.go.kr/index.jsp",
+      "applyLabel": "신청하러 가기",
       "category": "PG",
       "title": "출생신고",
       "parentAction": "출생 후 1개월 이내에 주민센터 방문 또는 정부24로 출생신고를 해요. 부모급여·아동수당·첫만남이용권 신청도 이때 함께 할 수 있어요.",
@@ -32,6 +34,8 @@
     },
     {
       "todo_id": "PG-02",
+      "applyUrl": "https://www.nhis.or.kr/nhis/minwon/minwonServiceBoard.do?article.offset=0&articleLimit=12&articleNo=10946946&mode=view",
+      "applyLabel": "안내 보기",
       "subsidyRef": "NAT-008",
       "category": "PG",
       "title": "국민행복카드 임신·출산 진료비 바우처 신청",

@@ -353,6 +353,8 @@
     },
     {
       "todo_id": "SC-12",
+      "applyUrl": "https://nip.kdca.go.kr/irhp/infm/goVcntInfo.do?menuLv=1&menuCd=136",
+      "applyLabel": "안내 보기",
       "category": "SC",
       "title": "입학 후 예방접종 완료 확인",
       "parentAction": "초등학교 입학 후 90일 이내에 학교에서 예방접종 완료 여부를 확인해요. 입학 전에 접종 기록을 미리 보고 빠진 접종은 보건소·접종기관에서 맞아요",

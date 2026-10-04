@@ -120,7 +120,9 @@ test("허용 목록 로더: 형식 오류 항목은 버리고, 읽기 실패·�
 test("복원 데이터는 HEAD 와 같다(내용 변경 없음): school·school-age·health-checkup·national-todos·지원금 파일", { skip: !HEAD_OK }, () => {
   const md5 = (s) => crypto.createHash("md5").update(s).digest("hex");
   for (const p of ["data/todos/school.json", "data/todos/school-age.json", "data/todos/health-checkup.json", "data/subsidies/national-todos.json", "data/subsidies/national.json", "data/policy/school.json"]) {
-    assert.strictEqual(md5(fs.readFileSync(path.join(ROOT, p), "utf8")), md5(headSrc(p)), p);
+    // W4: 신청 링크 필드(applyUrl·applyLabel)만 더해졌다 — 그 키를 빼면 HEAD 와 같다(내용 변경 없음)
+    const strip = (t) => JSON.stringify(JSON.parse(t), (k, v) => (k === "applyUrl" || k === "applyLabel" ? undefined : v));
+    assert.strictEqual(md5(strip(fs.readFileSync(path.join(ROOT, p), "utf8"))), md5(strip(headSrc(p))), p);
   }
 });
 
