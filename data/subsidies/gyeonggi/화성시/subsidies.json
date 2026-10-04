@@ -56,6 +56,31 @@
       "officialUrl": "https://www.hscity.go.kr/www/partInfo/femaleFamily/Welfare1/Welfare1_1.jsp",
       "sourceName": "화성시청 결혼·임신 지원 페이지",
       "notes": "[2026-10-01 신규] 원문: '검사비 본인부담금 최대 100,000원 지원'. 시 자체 재원인지는 원문에 없음. 임신 중 검사 지원이라 prenatalOnly 지정."
+    },
+    {
+      "id": "GGM-HWASEONG-03",
+      "name": "화성시 초등학교 입학축하금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:화성시"
+      ],
+      "target": "2026년 화성시 초등학교 1학년 입학생(전학생 제외), 입학일 기준 화성시 주민등록 보호자 1인",
+      "minAgeMonths": 72,
+      "maxAgeMonths": 95,
+      "amountText": "1인 20만 원(화성지역화폐, 1회)",
+      "paymentMethod": "화성지역화폐",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "입학일 기준 화성시 주민등록 보호자 1인(보호자 중 1명이 화성시 주민등록이면 외국인도 가능)",
+      "additionalConditions": "2026년 신청 3/3 9:00~11/27 23:50. 온라인 통합예약시스템(지원/방문→지원) 또는 오프라인 읍면동 방문. 입학일 이후 전입한 보호자는 제외",
+      "officialUrl": "https://www.hscity.go.kr/www/partInfo/eduEmpymn/elechssdyInfo/elechssdyReqst.jsp",
+      "sourceName": "화성시청 초등학교 입학축하금 신청 안내 + 신청 Q&A(elechssdyReqstQnA.jsp, 2026-10-04 직접 열람)",
+      "lastVerified": "2026-10-04",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-04 신규] 공식 페이지에 최종수정일 표시 없음. 2026년 신청 기간 기준이며 2027학년도 공지 후 갱신(월간 점검 대상).",
+      "conditionLabel": "초1 입학",
+      "audience": "parent"
     }
   ]
 }

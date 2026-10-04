@@ -102,6 +102,31 @@
       "officialUrl": "https://www.seongnam.go.kr/wf-pm020101/21003",
       "sourceName": "성남시청 복지사업 '장애인가정 출산장려금' 페이지",
       "notes": "[2026-10-01 신규] 원문: '장애인가정 영유아 1인 100만원 지급 / 쌍생아 이상 일 시 50% 가산지원'. 신청기한이 페이지마다 달라 ongoing으로 두고 조건에 기록."
+    },
+    {
+      "id": "GGM-SEONGNAM-05",
+      "name": "성남시 초등 입학준비금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:성남시"
+      ],
+      "target": "성남시 초등학교 신입생",
+      "minAgeMonths": 72,
+      "maxAgeMonths": 95,
+      "amountText": "1인 20만 원(성남사랑상품권)",
+      "paymentMethod": "성남사랑상품권",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "성남시",
+      "additionalConditions": "2026년 신청은 3/3~4/10에 종료됨",
+      "officialUrl": "https://www.seongnam.go.kr/bbs010101/383031",
+      "sourceName": "성남시청 공지(2026-10-04 열람)",
+      "lastVerified": "2026-10-04",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "[2026-10-04 신규] 2026년 신청이 종료돼 노출하지 않는다. 2027학년도 공지(2~3월경) 후 갱신하고 확인완료로 승격(월간 점검 대상).",
+      "conditionLabel": "초1 입학",
+      "audience": "parent"
     }
   ]
 }

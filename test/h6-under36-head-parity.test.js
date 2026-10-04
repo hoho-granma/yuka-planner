@@ -94,7 +94,7 @@ test("36개월 이상: 허용 목록에 있는 항목만 보이고, 목록이 �
       const inst = e.isEngineEvent ? e.detail.instance : null;
       assert.ok(SNAP_ALLOW.has(inst ? inst.todo_id : e.id, inst ? inst.occurrenceKey : "default"), `${m}개월: 허용 목록 밖 항목이 보인다 ${e.id}`);
       assert.strictEqual(e.autoAfter36, true);
-      assert.ok(cur.CT.isEventVisible(k.birthDate, e), "월령·학교 단계 판정도 통과");
+      if (e.isEngineEvent) assert.ok(cur.CT.isEventVisible(k.birthDate, e), "월령·학교 단계 판정도 통과"); // 허용 표식이 있는 지역 지원금(GG-016·SEOUL-S02 등)은 월령 보존 상한을 건너뛰어 isEventShown 으로만 판정한다
     }
     assert.ok(ev.filter((e) => e.autoAfter36).length >= shown.length);
   }

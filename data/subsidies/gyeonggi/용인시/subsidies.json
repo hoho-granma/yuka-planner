@@ -56,6 +56,31 @@
       "officialUrl": "https://www.yongin.go.kr/home/www/www18/www18_05/www18_05_02/www18_05_02_03.jsp",
       "sourceName": "용인시청 출산지원 '임신지원금' 페이지",
       "notes": "[2026-10-01 신규] 원문: '지원내용 : 태아 당 30만원(지역화폐) 지급', '신청기간 : 임신 20주 이후부터 출산 전까지 (출산 후 신청 불가)'. 종료 공지 없음. 임신 중에만 신청 가능해 prenatalOnly 지정."
+    },
+    {
+      "id": "GGM-YONGIN-03",
+      "name": "용인시 입학준비금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:용인시"
+      ],
+      "target": "초·중·고 1학년(앱은 초1 기준 연령만 반영)",
+      "minAgeMonths": 72,
+      "maxAgeMonths": 95,
+      "amountText": "1인 10만 원(용인와이페이)",
+      "paymentMethod": "용인와이페이",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "용인시",
+      "additionalConditions": "2026년 1차 3/3~3/31·2차 5/11~6/30 신청이 모두 종료됨",
+      "officialUrl": "https://www.yongin.go.kr/user/bbs/BD_selectBbs.do?q_bbsCode=1001&q_bbscttSn=20260511173648128&q_clCode=1",
+      "sourceName": "용인시청 공지(2026-10-04 열람)",
+      "lastVerified": "2026-10-04",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "[2026-10-04 신규] 2026년 신청이 종료돼 노출하지 않는다. 2027학년도 공지(2~3월경) 후 갱신하고 확인완료로 승격(월간 점검 대상). 금액은 매년 시장이 정한다는 조례 근거가 있어 해마다 확인.",
+      "conditionLabel": "초1 입학",
+      "audience": "parent"
     }
   ]
 }

@@ -710,6 +710,58 @@
       "verified": true,
       "notes": "SEOUL-N07과 같은 체계(서울시 특화 틈새 돌봄, 요금·정부지원은 국가 아이돌봄 기준). 문의 서울시 가족담당관 02-2133-6558, 서비스제공기관 1577-2514.",
       "periods": []
+    },
+    {
+      "id": "SEOUL-S01",
+      "name": "아동치과주치의 건강보험 시범사업(서울 초등)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "서울 소재 초등학교 전 학년 학생(의료급여·차상위는 본인부담 면제)",
+      "minAgeMonths": 72,
+      "maxAgeMonths": 155,
+      "amountText": "학기마다 1회 이용, 1회 진료비 48,160원 중 본인부담 10%(약 4,810원)",
+      "paymentMethod": "건강보험 현물급여(참여 치과 이용)",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "서울 소재 초등학교 재학",
+      "additionalConditions": "2026년 3월~2027년 2월까지 서비스 기간(시범사업). 1학기 3~8월, 2학기 9월~다음해 2월 각 1회. 신청: 국민건강보험공단 홈페이지·앱 사전 신청 후 치과 예약, 또는 치과에서 현장 신청",
+      "officialUrl": "https://www.seoul.go.kr/news/news_report.do?nttNo=462157&srchCtgry=475",
+      "sourceName": "서울특별시 보도자료(2026-07-22, 직접 열람) + 국민건강보험공단 아동치과주치의 안내(https://www.nhis.or.kr/nhis/healthin/wbhach05000m01.do, 10% 본인부담·기간 일치)",
+      "lastVerified": "2026-10-04",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-04 신규] 서울시 보도자료 원문(지자체 공식 보도자료는 검증기준 §2-1 1차 출처)에서 대상·금액·기간·신청 방법 확인. 공단 페이지는 금액 없이 본인부담 10%만 있고 충돌 없음. 시범사업 서비스 기간 2027년 2월까지이며 2027년 3월 이후 연장 여부는 미확인(월간 점검). 참여 치과 목록과 신청 화면은 로그인이 필요해 미확인. 구별 차이는 확인하지 못함.",
+      "conditionLabel": "서울 초등 재학",
+      "audience": "child"
+    },
+    {
+      "id": "SEOUL-S02",
+      "name": "서울 초등 입학준비금(1인 20만 원)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "서울특별시:ALL"
+      ],
+      "target": "서울 관내 초등학교 1학년 입학생(전·편입생 포함)",
+      "minAgeMonths": 72,
+      "maxAgeMonths": 95,
+      "amountText": "1인 20만 원(제로페이 포인트, 식당·학원 사용 불가)",
+      "paymentMethod": "제로페이 포인트",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "서울 관내 초등학교 입학",
+      "additionalConditions": "2026학년도 기준 상시 신청 4/1~11/30(1차 2/23~2/27, 2차 3/9~3/13은 종료). 제로페이 마이데이터(on.zeropaypoint.or.kr)에서 본인 명의 휴대폰으로 신청. 다른 지자체·교육청 입학준비금과 중복 불가",
+      "officialUrl": "https://www.sen.go.kr/user/bbs/BD_selectBbs.do?q_bbsSn=1488&q_bbsDocNo=20260112165724494",
+      "sourceName": "서울특별시교육청 공고(2026-01-12, 직접 열람)",
+      "lastVerified": "2026-10-04",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-04 신규] 2026학년도 기준으로만 확인. 2027학년도 일정·금액은 확인필요(월간 점검 대상, 공고가 나오면 4/1~11/30 문구와 금액을 갱신). 11/30 이후에는 신청 기간 종료.",
+      "conditionLabel": "초1 입학",
+      "audience": "parent",
+      "applyUrl": "https://on.zeropaypoint.or.kr",
+      "applyLabel": "신청하러 가기"
     }
   ]
 }

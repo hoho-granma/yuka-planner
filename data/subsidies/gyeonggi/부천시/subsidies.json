@@ -104,6 +104,31 @@
       "officialUrl": "https://www.bucheon.go.kr/site/program/board/basicboard/list?boardtypeid=28004&menuid=148006011&boardtext1=01",
       "sourceName": "부천시청 맞춤형복지 '장애인 출산비용 지원' 페이지",
       "notes": "[2026-10-01 신규] 목록 페이지 URL(상세 encid 주소는 미저장). 원문: '부천시 다자녀 출산지원금 지원대상인 장애인가정은 중복 지급 가능'. 국가 여성장애인 출산비용과 같은 사업인지는 원문에 구분 없음."
+    },
+    {
+      "id": "GGM-BUCHEON-05",
+      "name": "부천시 초등 입학준비금",
+      "scope": "municipal",
+      "applicableRegions": [
+        "경기도:부천시"
+      ],
+      "target": "부천시 주민등록을 유지한 초등학교 1학년 학생",
+      "minAgeMonths": 72,
+      "maxAgeMonths": 95,
+      "amountText": "1인 10만 원(부천페이)",
+      "paymentMethod": "부천페이 지급",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "부천시 주민등록 유지",
+      "additionalConditions": "2026년 신청 3/3~10/30. 시 홈페이지 또는 동 행정복지센터에서 신청, 부천페이카드 사전 등록 필요. 다른 조례 수혜자는 제외",
+      "officialUrl": "https://www.bucheon.go.kr/site/homepage/menu/viewMenu?menuid=148006002014001",
+      "sourceName": "부천시청 초등학생 입학준비금 안내(2026-10-04 직접 열람)",
+      "lastVerified": "2026-10-04",
+      "status": "확인완료",
+      "verified": true,
+      "notes": "[2026-10-04 신규] 금액 10만 원은 시 공식 페이지 직접 열람으로 확정(이전 '금액 미확인' 갱신). 2026년 신청 기간(3/3~10/30) 기준이며 2027년 일정은 추가검증 필요(월간 점검). 경기는 도 공통 제도가 아니라 시·군 조례별로 달라 확인된 시만 노출한다.",
+      "conditionLabel": "초1 입학",
+      "audience": "parent"
     }
   ]
 }
