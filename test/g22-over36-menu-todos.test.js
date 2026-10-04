@@ -1,0 +1,247 @@
+/* G22 36개월 이상 아이의 메뉴(4탭·AUTO 없음·날짜 하프 시트) + 메모장형 할 일(households/{hid}/todos) + 규칙. 실행: node test/g22-over36-menu-todos.test.js */
+const assert = require("assert");
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
+const CT = require("../js/child-todos.js");
+const V = require("../js/over36-view.js");
+const HS = require("../js/household-sync.js");
+const read = (f) => fs.readFileSync(path.join(__dirname, "..", f), "utf8");
+const APP = read("js/app.js"), RULES = read("firestore.rules"), CSS = read("css/style.css");
+let passed = 0;
+async function test(name, f) { try { await f(); passed++; console.log("  ok  - " + name); } catch (e) { process.exitCode = 1; console.log("  FAIL- " + name + "\n      " + (e.stack || e).split("\n").slice(0, 4).join("\n      ")); } }
+function fn(name, async_) { const i = APP.indexOf(`  ${async_ ? "async " : ""}function ${name}(`); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf("\n  }\n", i) + 4); }
+
+// ── 가짜 어댑터·저장소 ──
+function memStorage() { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), m }; }
+function fakeAdapter() {
+  const docs = new Map(), calls = [], listeners = [];
+  const a = { docs, calls, listeners, fail: null,
+    async get(p) { return docs.has(p) ? { exists: true, data: { ...docs.get(p) } } : { exists: false, data: null }; },
+    async set(p, d, o) { calls.push(["set", p, d, o]); if (a.fail) throw Object.assign(new Error(a.fail), { code: a.fail }); docs.set(p, o && o.merge ? { ...(docs.get(p) || {}), ...d } : { ...d }); },
+    async update(p, d) { calls.push(["update", p, d]); if (a.fail) throw Object.assign(new Error(a.fail), { code: a.fail }); docs.set(p, { ...docs.get(p), ...d }); },
+    async list(p) { return [...docs.entries()].filter(([k]) => k.startsWith(p + "/") && k.split("/").length === p.split("/").length + 1).map(([k, v]) => ({ id: k.split("/").pop(), data: { ...v } })); },
+    listen(p, onData) { const l = { p, onData, off: false }; listeners.push(l); return () => (l.off = true); } };
+  return a;
+}
+let T = 5000;
+const mkHS = (flag = true, extra = {}) => { const adapter = extra.adapter || fakeAdapter(), storage = extra.storage || memStorage(); return { adapter, storage, hs: HS.create({ adapter, storage, features: () => ({ household: flag }), now: () => ++T, rand: () => 0.5 }) }; };
+
+(async () => {
+  console.log("할 일 문서(ChildTodos)");
+  await test("추가: 제목 1~100자(공백 정리)·childKey 필수, order 는 맨 아래, 필드 v1 모양", () => {
+    const list = [];
+    let r = CT.buildCreate({ childKey: "c1", title: "  수학   숙제 ", list }, 10);
+    assert.ok(r.ok && r.doc.title === "수학 숙제" && r.doc.done === false && r.doc.v === 1 && r.doc.order === 1000 && r.doc.createdAt === 10 && r.doc.updatedAt === 10);
+    assert.deepStrictEqual(CT.validate(r.doc), { ok: true, errors: [] });
+    assert.strictEqual(CT.buildCreate({ childKey: "c1", title: "   ", list }, 1).error, "EMPTY");
+    assert.strictEqual(CT.buildCreate({ childKey: "c1", title: "가".repeat(101), list }, 1).error, "TOO_LONG");
+    assert.ok(CT.buildCreate({ childKey: "c1", title: "가".repeat(100), list }, 1).ok);
+    assert.strictEqual(CT.buildCreate({ childKey: "", title: "x", list }, 1).error, "NO_CHILD");
+    const l2 = [{ id: "a", order: 1000, childKey: "c1" }, { id: "b", order: 2500, childKey: "c1" }];
+    assert.strictEqual(CT.buildCreate({ childKey: "c1", title: "x", list: l2, createdBy: "m1" }, 1).doc.order, 3500);
+    assert.strictEqual(CT.buildCreate({ childKey: "c1", title: "x", list: l2, createdBy: "m1" }, 1).doc.createdBy, "m1");
+  });
+  await test("목록: 그 아이의 것만·삭제 제외·order 순, 완료 숨기기, 홈 카드 줄(미완료 3 + 완료 1)", () => {
+    const todos = [
+      { id: "t3", childKey: "c1", title: "c", done: false, order: 3000, createdAt: 1 }, { id: "t1", childKey: "c1", title: "a", done: false, order: 1000, createdAt: 1 },
+      { id: "t2", childKey: "c1", title: "b", done: true, order: 2000, createdAt: 1 }, { id: "x", childKey: "c2", title: "다른 아이", done: false, order: 0, createdAt: 1 },
+      { id: "d", childKey: "c1", title: "삭제됨", done: false, order: 500, createdAt: 1, deletedAt: 9 },
+      { id: "t4", childKey: "c1", title: "d", done: false, order: 4000, createdAt: 1 }, { id: "t5", childKey: "c1", title: "e", done: true, order: 5000, createdAt: 1 }, { id: "t6", childKey: "c1", title: "f", done: false, order: 6000, createdAt: 1 },
+    ];
+    assert.deepStrictEqual(CT.listFor(todos, "c1").map((d) => d.id), ["t1", "t2", "t3", "t4", "t5", "t6"]);
+    assert.deepStrictEqual(CT.listFor(todos, "c1", { hideDone: true }).map((d) => d.id), ["t1", "t3", "t4", "t6"]);
+    const h = CT.homeLines(CT.listFor(todos, "c1"), 3);
+    assert.deepStrictEqual([h.open.map((d) => d.id), h.done.map((d) => d.id), h.openTotal], [["t1", "t3", "t4"], ["t2"], 4]);
+  });
+  await test("완료·되돌리기·고치기·맨 위로·삭제 patch 모양(순서·소프트 삭제)", () => {
+    assert.deepStrictEqual(CT.patchToggle(true, 7), { done: true, doneAt: 7, updatedAt: 7 });
+    assert.deepStrictEqual(CT.patchToggle(false, 8), { done: false, doneAt: null, updatedAt: 8 });
+    assert.deepStrictEqual(CT.patchRename("  새   제목 ", 9), { ok: true, patch: { title: "새 제목", updatedAt: 9 } });
+    assert.strictEqual(CT.patchRename("", 9).ok, false);
+    assert.strictEqual(CT.patchRename("가".repeat(101), 9).error, "TOO_LONG");
+    assert.strictEqual(CT.patchMoveTop([{ order: 1000 }, { order: 2000 }], 5).order, 0);
+    assert.deepStrictEqual(CT.patchDelete(11), { deletedAt: 11, updatedAt: 11 });
+  });
+
+  console.log("동기화(HouseholdSync 미러·대기열)");
+  await test("추가·완료·맨 위로·삭제: 미러에 즉시 반영되고 서버로도 간다(set + merge)", async () => {
+    const { hs, adapter } = mkHS();
+    const base = CT.buildCreate({ childKey: "c1", title: "A", list: [] }, 1).doc;
+    const a = await hs.createTodo("h1", base);
+    const b = await hs.createTodo("h1", CT.buildCreate({ childKey: "c1", title: "B", list: CT.listFor(hs.getTodos("h1"), "c1") }, 2).doc);
+    assert.ok(a.ok && a.pending === false && a.todoId && b.todoId !== a.todoId);
+    assert.deepStrictEqual(CT.listFor(hs.getTodos("h1"), "c1").map((d) => d.title), ["A", "B"]);
+    await hs.patchTodo("h1", a.todoId, CT.patchToggle(true, 3));
+    assert.strictEqual(hs.getTodos("h1").find((d) => d.id === a.todoId).done, true);
+    await hs.patchTodo("h1", a.todoId, CT.patchToggle(false, 4));
+    const m = hs.getTodos("h1").find((d) => d.id === a.todoId);
+    assert.ok(m.done === false && !("doneAt" in m), "null 패치는 미러에서 필드 삭제");
+    await hs.patchTodo("h1", b.todoId, CT.patchMoveTop(CT.listFor(hs.getTodos("h1"), "c1"), 5));
+    assert.deepStrictEqual(CT.listFor(hs.getTodos("h1"), "c1").map((d) => d.title), ["B", "A"]);
+    await hs.patchTodo("h1", a.todoId, CT.patchDelete(6));
+    assert.deepStrictEqual(CT.listFor(hs.getTodos("h1"), "c1").map((d) => d.title), ["B"]);
+    const w = adapter.calls.filter((c) => c[0] === "set");
+    assert.ok(w.every((c) => c[1].startsWith("households/h1/todos/")) && w.slice(2).every((c) => c[3] && c[3].merge === true));
+    assert.ok(w.length === 6 && adapter.docs.get(`households/h1/todos/${a.todoId}`).deletedAt === 6, "서버 문서는 소프트 삭제(문서 유지)");
+  });
+  await test("오프라인에서 추가하면 대기열에 들어가고(미러엔 바로 보임), 연결되면 순서대로 flush 된다", async () => {
+    const { hs, adapter } = mkHS();
+    adapter.fail = "unavailable";
+    const r = await hs.createTodo("h1", CT.buildCreate({ childKey: "c1", title: "오프라인 추가", list: [] }, 1).doc);
+    await hs.patchTodo("h1", r.todoId, CT.patchToggle(true, 2));
+    assert.ok(r.pending === true && hs.getStatus("h1").pending === 2);
+    assert.deepStrictEqual(hs.getTodos("h1").map((d) => [d.title, d.done]), [["오프라인 추가", true]]);
+    adapter.fail = null;
+    const f = await hs.flush("h1");
+    assert.deepStrictEqual([f.sent, f.remaining], [2, 0]);
+    assert.strictEqual(adapter.docs.get(`households/h1/todos/${r.todoId}`).done, true);
+  });
+  await test("합류·리스너: todos 도 미러에 합친다(대기열 문서는 로컬 우선), 리스너 5개, 규칙 미배포(list 실패)여도 합류는 계속", async () => {
+    const A = mkHS();
+    A.adapter.docs.set("householdCodes/ABCD2345", { householdId: "h9", active: true });
+    A.adapter.docs.set("households/h9", { v: 1 });
+    A.adapter.docs.set("households/h9/todos/t1", CT.buildCreate({ childKey: "c1", title: "서버 할 일", list: [] }, 1).doc);
+    const j = await A.hs.joinHousehold("ABCD2345");
+    assert.ok(j.ok && A.hs.getTodos("h9").length === 1);
+    A.hs.startListening("h9");
+    assert.ok(A.adapter.listeners.some((l) => l.p === "households/h9/todos") && A.adapter.listeners.length === 5);
+    const B = mkHS();
+    B.adapter.docs.set("householdCodes/ABCD2345", { householdId: "h9", active: true });
+    B.adapter.docs.set("households/h9", { v: 1 });
+    const orig = B.adapter.list;
+    B.adapter.list = async (p) => { if (p.endsWith("/todos")) throw Object.assign(new Error("denied"), { code: "permission-denied" }); return orig(p); };
+    assert.ok((await B.hs.joinHousehold("ABCD2345")).ok);
+  });
+  await test("OFF: 할 일 메서드도 어댑터·저장소를 건드리지 않는다", async () => {
+    const { hs, adapter, storage } = mkHS(false);
+    assert.strictEqual((await hs.createTodo("h1", {})).reason, "disabled");
+    assert.strictEqual((await hs.patchTodo("h1", "t", {})).reason, "disabled");
+    assert.deepStrictEqual(hs.getTodos("h1"), []);
+    assert.strictEqual(adapter.calls.length, 0);
+    assert.strictEqual(storage.m.size, 0);
+  });
+
+  console.log("규칙(firestore.rules todos 블록 — JS 재현 + 문구 대조)");
+  const block = RULES.slice(RULES.indexOf("match /households/{householdId}/todos/{todoId}"), RULES.indexOf("[D2] 계정(accounts) 블록"));
+  const listIn = (re) => [...(re.exec(block)[1].matchAll(/'([A-Za-z]+)'/g))].map((m) => m[1]);
+  const REQ = listIn(/hasAll\(\[([^\]]*)\]\)/), ALLOW = listIn(/hasOnly\(\[([^\]]*)\]\)/);
+  const todoOk = (d) => REQ.every((k) => k in d) && Object.keys(d).every((k) => ALLOW.includes(k)) && d.v === 1
+    && typeof d.childKey === "string" && d.childKey.length >= 1 && d.childKey.length <= 60 && typeof d.title === "string" && d.title.length >= 1 && d.title.length <= 100
+    && typeof d.done === "boolean" && typeof d.order === "number" && typeof d.createdAt === "number" && typeof d.updatedAt === "number"
+    && (!("createdBy" in d) || d.createdBy == null || (typeof d.createdBy === "string" && d.createdBy.length <= 60)) && (!("doneAt" in d) || d.doneAt == null || typeof d.doneAt === "number") && (!("deletedAt" in d) || d.deletedAt == null || typeof d.deletedAt === "number");
+  const createOk = (d) => todoOk(d);
+  const updateOk = (before, after) => todoOk(after) && after.v === before.v && after.createdAt === before.createdAt && after.childKey === before.childKey;
+  await test("규칙 문구: 필수·허용 키가 ChildTodos 와 같고, delete 금지·소프트 삭제·schedules 와 같은 읽기 범위, 기존 블록은 그대로(추가만)", () => {
+    assert.deepStrictEqual(REQ.slice().sort(), CT.REQUIRED_KEYS.slice().sort());
+    assert.deepStrictEqual(ALLOW.slice().sort(), [...CT.REQUIRED_KEYS, ...CT.OPTIONAL_KEYS].sort());
+    assert.ok(/allow get, list: if true;/.test(block) && /allow delete: if false;/.test(block) && /allow create: if todoOk\(request\.resource\.data\);/.test(block));
+    assert.ok(/request\.resource\.data\.childKey == resource\.data\.childKey/.test(block) && /request\.resource\.data\.createdAt == resource\.data\.createdAt/.test(block));
+    assert.ok(/d\.title\.size\(\) >= 1 && d\.title\.size\(\) <= 100/.test(block) && /d\.childKey\.size\(\) >= 1 && d\.childKey\.size\(\) <= 60/.test(block));
+    assert.ok(RULES.includes("match /households/{householdId}/schedules/{scheduleId}") && RULES.includes("match /accounts/{uid}"), "기존 블록 유지");
+    assert.strictEqual((RULES.match(/\{/g) || []).length, (RULES.match(/\}/g) || []).length, "중괄호 짝");
+  });
+  await test("규칙 허용: ChildTodos 가 만드는 문서·patch 결과는 통과(생성·완료·고치기·맨 위로·소프트 삭제·되돌리기 null)", () => {
+    const doc = CT.buildCreate({ childKey: "c1", title: "A", list: [], createdBy: "m1" }, 1).doc;
+    assert.ok(createOk(doc));
+    for (const patch of [CT.patchToggle(true, 2), CT.patchToggle(false, 3), CT.patchRename("B", 4).patch, CT.patchMoveTop([doc], 5), CT.patchDelete(6)]) assert.ok(updateOk(doc, { ...doc, ...patch }), JSON.stringify(patch));
+  });
+  await test("규칙 거부: 키 누락·초과, 제목 0/101자, done 타입, v≠1, childKey 길이, 불변 필드(childKey·createdAt·v) 변경", () => {
+    const ok = CT.buildCreate({ childKey: "c1", title: "A", list: [] }, 1).doc;
+    const bad = [{ ...ok, extra: 1 }, (({ order, ...r }) => r)(ok), { ...ok, title: "" }, { ...ok, title: "가".repeat(101) }, { ...ok, done: "yes" }, { ...ok, v: 2 }, { ...ok, childKey: "" }, { ...ok, childKey: "k".repeat(61) }, { ...ok, order: "1" }, { ...ok, createdBy: 5 }, { ...ok, deletedAt: "x" }];
+    bad.forEach((d, i) => assert.ok(!createOk(d), "거부되어야 함 #" + i));
+    assert.ok(!updateOk(ok, { ...ok, childKey: "c2" }) && !updateOk(ok, { ...ok, createdAt: 99 }) && !updateOk(ok, { ...ok, v: 2 }));
+    assert.ok(/allow delete: if false;/.test(block));
+  });
+
+  console.log("36개월 이상 메뉴(app.js)");
+  const sbFor = (o) => {
+    const cls = new Set(), navSub = { hidden: false, classList: { toggle: (c, on) => (navSub.hidden = on) } }, ck = { textContent: "체크리스트" };
+    const sb = { acctEnabled: () => o.on !== false, ageInMonths: (b) => b.months, profile: o.profile, currentTab: o.tab || "home", switched: [], switchTab: (n) => sb.switched.push(n), Over36View: V,
+      window: { buildSchedule: () => ["AUTO1", "AUTO2"] }, document: { body: { classList: { toggle: (c, on) => (on ? cls.add(c) : cls.delete(c)) } }, querySelector: (q) => (q.includes("subsidy") ? navSub : ck) }, cls, navSub, ck, Date };
+    vm.createContext(sb);
+    vm.runInContext([fn("acct36Child"), "const acct36Active = () => acct36Child(profile);", fn("buildSchedule"), fn("acct36Sync")].join("\n"), sb);
+    return sb;
+  };
+  await test("판정: 만 36개월 정각부터 4탭(혜택 숨김·체크리스트→할 일), 35개월·임신 중·OFF·아이 없음은 기존 5탭", () => {
+    const on = sbFor({ profile: { birthDate: { months: 36 }, stage: "born" } }); on.acct36Sync();
+    assert.ok(on.cls.has("acct-36") && on.navSub.hidden === true && on.ck.textContent === "할 일");
+    for (const [name, o] of [["35개월", { profile: { birthDate: { months: 35 }, stage: "born" } }], ["임신 중", { profile: { birthDate: { months: 40 }, stage: "pregnant" } }], ["OFF", { on: false, profile: { birthDate: { months: 80 }, stage: "born" } }], ["아이 없음", { profile: null }]]) {
+      const x = sbFor(o); x.acct36Sync();
+      assert.ok(!x.cls.has("acct-36") && x.navSub.hidden === false && x.ck.textContent === "체크리스트", name);
+    }
+  });
+  await test("칩으로 아이를 바꿔(profile 교체) 다시 맞추면 바로 전환: 36+ → 미만 → 36+, 혜택 탭이던 화면은 홈으로", () => {
+    const x = sbFor({ profile: { birthDate: { months: 120 }, stage: "born" } });
+    x.acct36Sync(); assert.ok(x.cls.has("acct-36"));
+    x.profile = { birthDate: { months: 3 }, stage: "born" }; x.acct36Sync(); assert.ok(!x.cls.has("acct-36") && x.ck.textContent === "체크리스트");
+    x.profile = { birthDate: { months: 50 }, stage: "born" }; x.currentTab = "subsidy"; x.acct36Sync();
+    assert.ok(x.cls.has("acct-36") && x.switched.includes("home"));
+    assert.ok(/renderAll = function renderAll\(\) \{\n\s*renderAllBase\.apply\(this, arguments\);\n\s*if \(acctEnabled\(\)\) acct36Sync\(\);/.test(APP), "renderAll(아이 전환·저장의 끝)에서 맞춘다");
+  });
+  await test("36개월 이상에서는 AUTO 0건(buildSchedule 대체), 36개월 미만·OFF 는 원래 함수 그대로", () => {
+    assert.strictEqual(JSON.stringify(sbFor({ profile: null }).buildSchedule({ birthDate: { months: 40 }, stage: "born" }, {}, [])), "[]");
+    assert.strictEqual(JSON.stringify(sbFor({ profile: null }).buildSchedule({ birthDate: { months: 36 }, stage: "born" }, {}, [])), "[]");
+    assert.strictEqual(JSON.stringify(sbFor({ profile: null }).buildSchedule({ birthDate: { months: 35 }, stage: "born" }, {}, [])), "[\"AUTO1\",\"AUTO2\"]");
+    assert.strictEqual(JSON.stringify(sbFor({ profile: null }).buildSchedule({ birthDate: { months: 90 }, stage: "pregnant" }, {}, [])), "[\"AUTO1\",\"AUTO2\"]");
+    assert.strictEqual(JSON.stringify(sbFor({ on: false, profile: null }).buildSchedule({ birthDate: { months: 90 }, stage: "born" }, {}, [])), "[\"AUTO1\",\"AUTO2\"]", "OFF");
+    assert.ok(/schedule = buildSchedule\(\{ \.\.\.profile, schoolPolicy \}, dataset, completionsForEngine\(\)\)/.test(APP), "기존 호출부는 그대로");
+  });
+  await test("홈·체크리스트 탭: 36+ 일 때만 새 화면(래퍼), 아니면 원래 함수 — switchTab 은 36+ 에서 혜택 탭을 막는다", () => {
+    assert.ok(/renderHome = function renderHome\(\) \{\n\s*if \(!acct36Active\(\)\) return renderHomeBase\.apply\(this, arguments\);\n\s*acct36RenderHome\(\);/.test(APP));
+    assert.ok(/renderChecklistTab = function renderChecklistTab\(\) \{\n\s*if \(!acct36Active\(\)\) return renderChecklistTabBase\.apply\(this, arguments\);/.test(APP));
+    assert.ok(APP.includes('acct36Active() && name === "subsidy" ? "home" : name'));
+    const h = V.renderHome({ kids: [{ code: "A", name: "수아", ageText: "10세", current: true }, { code: "B", name: "은찬", ageText: "3개월" }], name: "수아", familyHtml: "<section>가족</section>", todos: CT.homeLines([{ id: "1", title: "숙제", done: false }, { id: "2", title: "빨래", done: true }], 3), canTodo: true });
+    assert.ok(h.indexOf("home-child-chips") < h.indexOf("가족") && h.indexOf("가족") < h.indexOf("수아 할 일") && h.indexOf("수아 할 일") < h.indexOf("자주 쓰는 일정"), "칩 → 가족 카드 → 할 일 카드 → 자주 쓰는 일정");
+    assert.ok(h.includes('data-a36="add-home"') && h.includes("체크리스트 추가 +") && h.includes("10세") && h.includes('data-a36-quick="학원"') && h.includes('data-a36-quick="숙제"') && h.includes('data-a36-quick="준비물"'));
+  });
+
+  console.log("날짜 하프 시트·할 일 탭 화면");
+  await test("하프 시트: 머리 'n월 n일 요일' + '+ 추가', 시간 열(오후 3:30·종일)·제목·'반복·장소·담당' 줄, 아래 '‹ n일 · 좌우로 넘겨 다른 날 보기 · n일 ›'", () => {
+    const h = V.renderDaySheet({ iso: "2026-10-13", month: 10, day: 13, weekday: 2, prevDay: 12, nextDay: 14, rows: [{ scheduleId: "s1", key: "k1", title: "학교 상담", allDay: false, startTime: "15:30", sub: "담임 선생님 · 담당 아빠" }, { scheduleId: "s2", key: "k2", title: "수학 숙제 제출", allDay: true, sub: "담당 엄마" }] });
+    assert.ok(h.includes("10월 13일 화요일") && h.includes('data-a36="day-add">+ 추가') && h.includes("오후<br>3:30") && h.includes(">종일<") && h.includes("담임 선생님 · 담당 아빠") && h.includes('data-a36-ev="s1|k1"'));
+    assert.ok(h.includes("‹ 12일") && h.includes("좌우로 넘겨 다른 날 보기") && h.includes("14일 ›") && h.includes('data-a36="day-prev"') && h.includes('data-a36="day-next"'));
+    assert.ok(h.indexOf("a36-dhead") < h.indexOf("a36-tlr") && h.indexOf("a36-tlr") < h.indexOf("a36-dnav"));
+    const e = V.renderDaySheet({ iso: "2026-10-15", month: 10, day: 15, weekday: 4, prevDay: 14, nextDay: 16, rows: [] });
+    assert.ok(e.includes("10월 15일은 비어 있어요.") && e.includes("이 날 일정 추가") && !e.includes("a36-tlr"));
+    assert.strictEqual(V.clockParts("00:05").join(" "), "오전 12:05");
+  });
+  await test("날짜 칸 클릭 → 하프 시트(36+ 일 때만, 달력 모양·36개월 미만 상세는 그대로), 좌우 스와이프(|dx|>50, 가로 우세)·버튼으로 날 넘김", () => {
+    assert.ok(APP.includes('if (grid) grid.addEventListener("click", acct36OnGridClick);') && /function acct36OnGridClick\(ev\) \{\n\s*if \(!acct36Active\(\) \|\| !usActive\(\)\) return;/.test(APP));
+    const calls = [];
+    const sb = { a36Touch: null, acct36GoDay: (d) => calls.push(d) };
+    vm.createContext(sb);
+    vm.runInContext(["let a36Touch = null;", fn("acct36OnTouchStart"), fn("acct36OnTouchEnd")].join("\n"), sb);
+    const swipe = (dx, dy, inside = true) => { sb.acct36OnTouchStart({ target: { closest: () => (inside ? {} : null) }, touches: [{ clientX: 200, clientY: 300 }] }); sb.acct36OnTouchEnd({ changedTouches: [{ clientX: 200 + dx, clientY: 300 + dy }] }); };
+    swipe(-80, 10); swipe(80, -5); swipe(-40, 0); swipe(-100, 90); swipe(-90, 10, false);
+    assert.deepStrictEqual(calls, [1, -1], "왼쪽 스와이프=다음 날, 오른쪽=이전 날, 짧거나 세로 우세·시트 밖은 무시");
+    assert.ok(CSS.includes("body.acct-design.acct-36 .selected-day-card { display: none; }"));
+  });
+  await test("할 일 탭(메모장형): 머리 '[아이] 체크리스트' + '완료 숨기기' 스위치, 체크박스 줄, 맨 아래 '체크리스트 추가 +', 입력 줄·고치기 입력·길게 누르는 메뉴", () => {
+    const list = [{ id: "a", title: "숙제", done: false }, { id: "b", title: "빨래", done: true }];
+    const h = V.renderTodoTab({ name: "수아", list, hideDone: false, canTodo: true });
+    assert.ok(h.includes("수아 체크리스트") && h.includes('data-a36="hide-done"') && h.includes('role="switch"') && h.includes("완료 숨기기") && h.includes('data-a36-toggle="a"') && h.includes('a36-t done">빨래') && h.includes('data-a36="add">체크리스트 추가 +'));
+    assert.ok(V.renderTodoTab({ name: "수아", list, adding: true, canTodo: true }).includes('data-a36-input="add"') && !V.renderTodoTab({ name: "수아", list, adding: true, canTodo: true }).includes('data-a36="add"'));
+    assert.ok(V.renderTodoTab({ name: "수아", list, editId: "a", canTodo: true }).includes('data-a36-input="edit"'));
+    assert.ok(V.renderTodoTab({ name: "수아", list, canTodo: false }).includes("가족 캘린더가 만들어지면"));
+    const m = V.renderTodoMenu("a");
+    assert.ok(["menu-edit", "menu-top", "menu-del"].every((k) => m.includes(`data-a36="${k}"`)) && m.includes("고치기") && m.includes("맨 위로") && m.includes("삭제"));
+    assert.ok(APP.includes("}, 500) };") || /setTimeout\(\(\) => \{ A36\.press = null;[\s\S]*?\}, 500\)/.test(APP), "500ms 길게 누르기");
+    assert.ok(/ev\.key !== "Enter"/.test(APP) && APP.includes("// 엔터 → 추가되고 다음 줄 입력이 이어진다(adding 유지)"));
+  });
+
+  console.log("OFF 보존");
+  await test("OFF('0'): 새 코드는 계정 모드 가드(acct36Child → acctEnabled) 뒤, 새 CSS 는 body.acct-design 범위, OFF 의 홈·탭 DOM 은 그대로", () => {
+    assert.ok(/function acct36Child\(p\) \{\n\s*return typeof acctEnabled === "function" && acctEnabled\(\)/.test(APP));
+    assert.ok(/function acct36Init\(\) \{\n\s*if \(!acctEnabled\(\)/.test(APP));
+    const i = CSS.indexOf("/* ===== G22:");
+    const rules = CSS.slice(i).replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "").split("}").map((r) => r.split("{")[0].trim()).filter(Boolean);
+    rules.forEach((sel) => sel.split(",").forEach((x) => assert.ok(x.trim().startsWith("body.acct-design"), x)));
+    const html = read("index.html");
+    assert.ok(/<script src="js\/child-todos\.js\?v=\d+"><\/script>/.test(html) && /<script src="js\/over36-view\.js\?v=\d+"><\/script>/.test(html));
+    const sw = read("sw.js");
+    assert.ok(sw.includes('"./js/child-todos.js"') && sw.includes('"./js/over36-view.js"'));
+    assert.ok(!html.includes("a36-todo-box"), "정적 index.html 에 새 DOM 없음(계정 모드에서 JS 가 만든다)");
+  });
+  console.log(`\n${passed}개 통과`);
+})();

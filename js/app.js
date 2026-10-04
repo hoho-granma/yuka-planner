@@ -1162,6 +1162,315 @@
     if (modalMode === "child-register") closeDetail();
   }
 
+  // ═══ G22 36개월 이상 아이의 메뉴(계정 모드만): 4탭(홈·캘린더·할 일·어디갈까) · AUTO 일정 없음 · 날짜 하프 시트 · 메모장형 할 일(가구 공유) ═══
+  // 기준: 지금 고른 아이(현재 profile)가 36개월 이상(임신 중 제외)이면 36+ 메뉴, 아니면 기존 5탭. 칩을 바꾸면(switchToChild → buildAndRender → renderAll) 바로 전환된다.
+  /** p: 아이 프로필({birthDate, stage}). 계정 모드에서 36개월 이상이면 true. */
+  function acct36Child(p) {
+    return typeof acctEnabled === "function" && acctEnabled() && !!p && p.stage !== "pregnant" && ageInMonths(p.birthDate, new Date()) >= 36;
+  }
+  const acct36Active = () => acct36Child(profile);
+  // 36개월 이상은 자동(AUTO) 일정이 없다: 일정 계산을 빈 목록으로 대신한다(schedule.js 의 buildSchedule 은 그대로, 36개월 미만·OFF 는 그대로 호출).
+  function buildSchedule(p, d, c) {
+    return acct36Child(p) ? [] : window.buildSchedule(p, d, c);
+  }
+  const A36 = { hideDone: (() => { try { return localStorage.getItem("hannun_a36_hidedone") === "1"; } catch (e) { return false; } })(), adding: false, editId: null, menuId: null, press: null, swallow: false };
+  const acct36ChildKey = () => (typeof usActiveChildKey === "function" && usActiveChildKey()) || familyCode || "";
+  const acct36CanTodo = () => typeof usActive === "function" && usActive() && !!acct36ChildKey() && typeof ChildTodos !== "undefined";
+  const acct36All = () => (acct36CanTodo() ? ChildTodos.listFor(HouseholdSync.getTodos(hh.hid), acct36ChildKey()) : []);
+  function acct36AgeText(code) {
+    let months = null;
+    if (code === familyCode && profile) months = profile.stage === "pregnant" ? null : ageInMonths(profile.birthDate, new Date());
+    else {
+      try { const b = (JSON.parse(localStorage.getItem(CHILD_BIRTHS_KEY) || "{}") || {})[code]; if (b) months = ageInMonths(new Date(b + "T00:00:00"), new Date()); } catch (e) {}
+    }
+    if (months == null) return "";
+    return months < 24 ? `${months}개월` : `${Math.floor(months / 12)}세`;
+  }
+  /** 36개월 이상이면 하단 탭 4개(혜택 숨김·체크리스트→할 일), 아니면 기존 5탭. renderAll 끝에서 맞춘다. */
+  function acct36Sync() {
+    const on = acct36Active();
+    if (typeof document === "undefined" || !document.body) return;
+    document.body.classList.toggle("acct-36", on);
+    const sub = document.querySelector('.nav-item[data-nav="subsidy"]');
+    if (sub) sub.classList.toggle("hidden", on);
+    const ck = document.querySelector('.nav-item[data-nav="checklist"] > span:last-child');
+    if (ck) ck.textContent = on ? Over36View.MSG.navTodo : "체크리스트";
+    if (on && currentTab === "subsidy") switchTab("home");
+  }
+  const renderAllBase = renderAll;
+  renderAll = function renderAll() {
+    renderAllBase.apply(this, arguments);
+    if (acctEnabled()) acct36Sync();
+  };
+  const renderHomeBase = renderHome;
+  renderHome = function renderHome() {
+    if (!acct36Active()) return renderHomeBase.apply(this, arguments);
+    acct36RenderHome();
+  };
+  const renderChecklistTabBase = renderChecklistTab;
+  renderChecklistTab = function renderChecklistTab() {
+    if (!acct36Active()) return renderChecklistTabBase.apply(this, arguments);
+    acct36RenderTodoTab();
+  };
+  const switchTabBase = switchTab;
+  switchTab = function switchTab(name) {
+    return switchTabBase.call(this, acct36Active() && name === "subsidy" ? "home" : name);
+  };
+  const usRefreshHomeBase = usRefreshHome;
+  usRefreshHome = function usRefreshHome() {
+    if (!acct36Active() || !hhEnabled()) return usRefreshHomeBase.apply(this, arguments);
+    const sig = usHomeCardHtml({ family: true }) + usAutoLinkSig() + JSON.stringify(acct36All().map((d) => [d.id, d.title, d.done, d.order]));
+    if (sig !== (us.homeSig36 || "")) {
+      renderHome();
+      if (currentTab === "checklist") acct36RenderTodoTab();
+    }
+  };
+
+  function acct36RenderHome() {
+    const wrap = el("home-body");
+    if (!wrap) return;
+    const kids = acctHomeChildren().map((c) => ({ ...c, ageText: acct36AgeText(c.code) }));
+    const list = acct36All();
+    const familyHtml = typeof usHomeCardHtml === "function" ? usHomeCardHtml({ family: true }) : "";
+    us.homeSig36 = familyHtml + usAutoLinkSig() + JSON.stringify(list.map((d) => [d.id, d.title, d.done, d.order]));
+    wrap.innerHTML = Over36View.renderHome({ kids, name: childDisplayName(), familyHtml, todos: ChildTodos.homeLines(list, 3), canTodo: acct36CanTodo() });
+  }
+  function acct36RenderTodoTab(focusSel) {
+    const tab = el("tab-checklist");
+    if (!tab) return;
+    let box = el("a36-todo-box");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "a36-todo-box";
+      tab.appendChild(box);
+    }
+    const list = ChildTodos && acct36CanTodo() ? ChildTodos.listFor(HouseholdSync.getTodos(hh.hid), acct36ChildKey(), { hideDone: A36.hideDone }) : [];
+    box.innerHTML = Over36View.renderTodoTab({ name: childDisplayName(), list, hideDone: A36.hideDone, canTodo: acct36CanTodo(), adding: A36.adding, editId: A36.editId });
+    if (A36.menuId) {
+      const row = box.querySelector(`[data-a36-row="${A36.menuId}"]`);
+      box.insertAdjacentHTML("beforeend", Over36View.renderTodoMenu(A36.menuId));
+      const menu = box.querySelector(".a36-menu");
+      if (row && menu && row.offsetTop != null) menu.style.top = `${row.offsetTop + row.offsetHeight}px`;
+    }
+    const f = box.querySelector(focusSel || (A36.adding ? '[data-a36-input="add"]' : A36.editId ? '[data-a36-input="edit"]' : "x-none"));
+    if (f && f.focus) { f.focus(); if (A36.editId && f.select) f.select(); }
+  }
+  function acct36Err(show) {
+    const e = el("a36-err");
+    if (e) e.classList.toggle("hidden", !show);
+  }
+  async function acct36AddTodo(title) {
+    const r = ChildTodos.buildCreate({ childKey: acct36ChildKey(), title, list: acct36All(), createdBy: (typeof usMeId === "function" && usMeId()) || undefined }, Date.now());
+    if (!r.ok) { acct36Err(r.error === "TOO_LONG"); return false; }
+    acct36Err(false);
+    await HouseholdSync.createTodo(hh.hid, r.doc);
+    return true;
+  }
+  const acct36Todo = (id) => HouseholdSync.getTodos(hh.hid).find((d) => d.id === id);
+  async function acct36Patch(id, patch) {
+    await HouseholdSync.patchTodo(hh.hid, id, patch);
+    renderHome();
+    if (currentTab === "checklist") acct36RenderTodoTab();
+  }
+  function acct36OpenAdd() {
+    A36.adding = true; A36.editId = null; A36.menuId = null;
+    if (currentTab !== "checklist") switchTab("checklist");
+    acct36RenderTodoTab();
+  }
+  // ── 날짜 하프 시트(cal36 B) ──
+  function acct36DayRows(iso) {
+    const day = usBuildModel(iso, iso).days.get(iso);
+    // 시간이 있는 일정을 시간순으로 먼저, 종일은 그 아래
+    const occs = ((day && day.user) || []).slice().sort((x, y) => (x.allDay ? 1 : 0) - (y.allDay ? 1 : 0) || String(x.startTime || "").localeCompare(String(y.startTime || "")));
+    return occs.map((o) => {
+      const doc = usDocById(o.scheduleId);
+      const rep = doc && doc.recurrence ? UserScheduleView.repeatSummary(doc.recurrence) : "";
+      return { scheduleId: o.scheduleId, key: o.key, title: o.title, allDay: !!o.allDay, startTime: o.startTime || "", color: UserScheduleView.occurrenceColor(o, usLinks()), done: o.status === "DONE", sub: [rep, o.location, o.assigneeLabel ? `담당 ${o.assigneeLabel}` : ""].filter(Boolean).join(" · ") };
+    });
+  }
+  function acct36OpenDay(date) {
+    if (!acct36Active() || !usActive()) return;
+    const iso = toISODate(date);
+    const prev = new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1), next = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+    modalMode = "day36";
+    el("modal-content").innerHTML = Over36View.renderDaySheet({ iso, month: date.getMonth() + 1, day: date.getDate(), weekday: date.getDay(), prevDay: prev.getDate(), nextDay: next.getDate(), rows: acct36DayRows(iso) });
+    el("detail-modal").classList.remove("hidden");
+  }
+  function acct36GoDay(delta) {
+    const d = new Date(selectedCalendarDate.getFullYear(), selectedCalendarDate.getMonth(), selectedCalendarDate.getDate() + delta);
+    selectedCalendarDate = d;
+    viewMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+    renderCalendar();
+    acct36OpenDay(d);
+  }
+  /** 날짜 칸을 누르면(기존 칸 핸들러가 선택일을 바꾼 뒤) 하프 시트를 올린다. */
+  function acct36OnGridClick(ev) {
+    if (!acct36Active() || !usActive()) return;
+    const cell = ev.target.closest && ev.target.closest(".day-cell");
+    if (!cell || cell.classList.contains("other-month")) return;
+    acct36OpenDay(selectedCalendarDate);
+  }
+  function acct36OnClick(ev) {
+    if (!acct36Active()) return;
+    const t = ev.target;
+    if (A36.swallow) { A36.swallow = false; if (t.closest && t.closest("[data-a36-row]")) return; }
+    const act = t.closest && t.closest("[data-a36]");
+    const tog = t.closest && t.closest("[data-a36-toggle]");
+    const chip = t.closest && t.closest("#home-body [data-home-child]");
+    if (A36.menuId && !(act && /^menu-/.test(act.dataset.a36))) { A36.menuId = null; if (currentTab === "checklist") acct36RenderTodoTab(); if (!tog && !act) return; }
+    if (tog) {
+      const d = acct36Todo(tog.dataset.a36Toggle);
+      if (d) acct36Patch(d.id, ChildTodos.patchToggle(!d.done, Date.now()));
+      return;
+    }
+    if (chip) { if (chip.dataset.homeChild !== familyCode) switchToChild(chip.dataset.homeChild); return; }
+    const home = t.closest && t.closest("#home-body");
+    if (home && !act) {
+      const row = t.closest("[data-home-date]");
+      if (row) { const [y, mo, d] = row.dataset.homeDate.split("-").map(Number); return hnCtx().goCalendar(new Date(y, mo - 1, d)); }
+      const g = t.closest("[data-act]");
+      if (g && g.dataset.act === "us-cal") return hnCtx().goCalendar(new Date());
+      if (g && g.dataset.act === "us-add") return usOpenForm(null, toISODate(new Date()));
+      return;
+    }
+    if (!act) return;
+    const a = act.dataset.a36;
+    if (a === "todos") return switchTab("checklist");
+    if (a === "add-home" || a === "add") return acct36OpenAdd();
+    if (a === "hide-done") {
+      A36.hideDone = !A36.hideDone;
+      try { localStorage.setItem("hannun_a36_hidedone", A36.hideDone ? "1" : "0"); } catch (e) {}
+      return acct36RenderTodoTab();
+    }
+    if (a === "quick") { usOpenForm(null, toISODate(new Date())); us.form.title = act.dataset.a36Quick; usShowForm(); return; }
+    if (a === "menu-close") { A36.menuId = null; return acct36RenderTodoTab(); }
+    if (a === "menu-edit") { A36.editId = A36.menuId; A36.menuId = null; A36.adding = false; return acct36RenderTodoTab(); }
+    if (a === "menu-top") { const id = A36.menuId; A36.menuId = null; return acct36Patch(id, ChildTodos.patchMoveTop(acct36All(), Date.now())); }
+    if (a === "menu-del") { const id = A36.menuId; A36.menuId = null; return acct36Patch(id, ChildTodos.patchDelete(Date.now())); }
+    if (a === "day-add") return usOpenForm(null, el("modal-content").querySelector("[data-a36-day]").dataset.a36Day);
+    if (a === "day-prev") return acct36GoDay(-1);
+    if (a === "day-next") return acct36GoDay(1);
+  }
+  async function acct36OnKey(ev) {
+    const inp = ev.target.closest && ev.target.closest("[data-a36-input]");
+    if (!inp || !acct36Active()) return;
+    if (ev.key === "Escape") { A36.adding = false; A36.editId = null; return acct36RenderTodoTab(); }
+    if (ev.key !== "Enter" || ev.isComposing) return;
+    ev.preventDefault();
+    const v = inp.value;
+    if (inp.dataset.a36Input === "edit") {
+      const r = ChildTodos.patchRename(v, Date.now());
+      if (!r.ok) { if (r.error === "TOO_LONG") return acct36Err(true); A36.editId = null; return acct36RenderTodoTab(); }
+      const id = A36.editId;
+      A36.editId = null;
+      return acct36Patch(id, r.patch);
+    }
+    if (!String(v).trim()) { A36.adding = false; return acct36RenderTodoTab(); }
+    if (await acct36AddTodo(v)) { renderHome(); acct36RenderTodoTab(); } // 엔터 → 추가되고 다음 줄 입력이 이어진다(adding 유지)
+  }
+  function acct36OnFocusOut(ev) {
+    const inp = ev.target.closest && ev.target.closest("[data-a36-input]");
+    if (!inp || !acct36Active()) return;
+    setTimeout(() => {
+      if (inp.dataset.a36Input === "add" && !String(inp.value).trim() && A36.adding && document.activeElement !== inp) { A36.adding = false; acct36RenderTodoTab(); }
+    }, 120);
+  }
+  // 길게 누르면 메뉴(할 일 줄) · 날짜 시트 좌우 넘기기
+  function acct36OnPointerDown(ev) {
+    if (!acct36Active()) return;
+    const row = ev.target.closest && ev.target.closest("#a36-todo-box [data-a36-row]");
+    if (row && !ev.target.closest("[data-a36-toggle], input")) {
+      A36.press = { id: row.dataset.a36Row, x: ev.clientX, y: ev.clientY, timer: setTimeout(() => { A36.press = null; A36.swallow = true; A36.menuId = row.dataset.a36Row; acct36RenderTodoTab(); }, 500) };
+    }
+  }
+  function acct36PressCancel(ev) {
+    if (!A36.press) return;
+    if (ev && ev.type === "pointermove" && Math.abs(ev.clientX - A36.press.x) < 8 && Math.abs(ev.clientY - A36.press.y) < 8) return;
+    clearTimeout(A36.press.timer);
+    A36.press = null;
+  }
+  let a36Touch = null;
+  function acct36OnTouchStart(ev) {
+    const day = ev.target.closest && ev.target.closest(".a36-day");
+    a36Touch = day && ev.touches && ev.touches[0] ? { x: ev.touches[0].clientX, y: ev.touches[0].clientY } : null;
+  }
+  function acct36OnTouchEnd(ev) {
+    if (!a36Touch || !ev.changedTouches || !ev.changedTouches[0]) return;
+    const dx = ev.changedTouches[0].clientX - a36Touch.x, dy = ev.changedTouches[0].clientY - a36Touch.y;
+    a36Touch = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) acct36GoDay(dx < 0 ? 1 : -1);
+  }
+  function acct36Init() {
+    if (!acctEnabled() || typeof document === "undefined") return;
+    document.addEventListener("click", acct36OnClick);
+    document.addEventListener("keydown", acct36OnKey);
+    document.addEventListener("focusout", acct36OnFocusOut);
+    document.addEventListener("pointerdown", acct36OnPointerDown);
+    ["pointerup", "pointercancel", "pointermove", "scroll"].forEach((t) => document.addEventListener(t, acct36PressCancel, true));
+    document.addEventListener("contextmenu", (ev) => { if (acct36Active() && ev.target.closest && ev.target.closest("#a36-todo-box [data-a36-row]")) ev.preventDefault(); });
+    document.addEventListener("touchstart", acct36OnTouchStart, { passive: true });
+    document.addEventListener("touchend", acct36OnTouchEnd, { passive: true });
+    const grid = el("calendar-grid");
+    if (grid) grid.addEventListener("click", acct36OnGridClick);
+  }
+
+  // ═══ G23 본문 좌우 스와이프로 이전·다음 탭(계정 모드만) — 판정은 js/tab-swipe.js, 탭 순서는 하단 바에 보이는 순서(36+ 4탭 / 미만 5탭), 이동은 기존 switchTab ═══
+  let a23 = null;
+  /** 가로로 스크롤되는 조상(칩 줄·가로 목록 등)에서 시작한 제스처인가 */
+  function acct23InHScroll(node) {
+    for (let n = node; n && n.nodeType === 1 && n !== document.body; n = n.parentElement) {
+      if (n.scrollWidth > n.clientWidth + 2) {
+        const ox = getComputedStyle(n).overflowX;
+        if (ox === "auto" || ox === "scroll") return true;
+      }
+    }
+    return false;
+  }
+  const acct23Order = () => [...document.querySelectorAll(".bottom-nav .nav-item:not(.hidden), nav .nav-item:not(.hidden)")].map((b) => b.dataset.nav).filter((v, i, a) => v && a.indexOf(v) === i);
+  function acct23Ctx(target, touches) {
+    const ae = document.activeElement;
+    const modal = el("detail-modal");
+    return {
+      disabled: !acctEnabled() || !el("view-calendar") || el("view-calendar").classList.contains("hidden") || !el("view-landing").classList.contains("hidden"),
+      modalOpen: !!modal && !modal.classList.contains("hidden"),
+      popupOpen: !!document.querySelector(".date-popup:not(.hidden)"),
+      inputFocused: !!ae && (/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) || ae.isContentEditable === true),
+      multiTouch: touches > 1,
+      inHorizontalScroll: acct23InHScroll(target),
+    };
+  }
+  function acct23Start(ev) {
+    a23 = null;
+    const t = ev.touches && ev.touches[0];
+    if (!t || !acctEnabled()) return;
+    if (TabSwipe.shouldIgnore(acct23Ctx(ev.target, ev.touches.length))) return;
+    a23 = { x: t.clientX, y: t.clientY, t: Date.now() };
+  }
+  function acct23End(ev) {
+    const s = a23;
+    a23 = null;
+    const t = ev.changedTouches && ev.changedTouches[0];
+    if (!s || !t) return;
+    const dir = TabSwipe.direction(t.clientX - s.x, t.clientY - s.y, Date.now() - s.t);
+    if (!dir) return;
+    const next = TabSwipe.nextTab(acct23Order(), currentTab, dir);
+    if (next) acct23Go(next, dir);
+  }
+  /** switchTab 으로 넘기고, 새 화면에 짧은 슬라이드 전환을 준다(prefers-reduced-motion 이면 전환 없이 바로). */
+  function acct23Go(name, dir) {
+    switchTab(name);
+    if (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const panel = emptyHome && !profile && name !== "calendar" && name !== "places" ? el("empty-panel") : el(`tab-${currentTab}`);
+    if (!panel || !panel.classList) return;
+    if (typeof panel.animate === "function") panel.animate([{ opacity: 0.4, transform: `translateX(${dir > 0 ? 28 : -28}px)` }, { opacity: 1, transform: "none" }], { duration: 220, easing: "ease-out" });
+  }
+  function acct23Init() {
+    if (!acctEnabled() || typeof document === "undefined" || typeof TabSwipe === "undefined") return;
+    document.addEventListener("touchstart", acct23Start, { passive: true });
+    document.addEventListener("touchend", acct23End, { passive: true });
+    document.addEventListener("touchcancel", () => { a23 = null; }, { passive: true });
+  }
+
   /**
    * 아이 정보 수정 — 처음 화면으로 돌아가 새로 입력하지 않고, 저장된 정보를 그대로 채운 폼을 띄운다.
    * 가족코드·완료 내역·기록·사진은 그대로 두고 이름/생년월일(출산예정일)/몇째/지역만 바꾼다.
@@ -3920,7 +4229,8 @@
   // ── F2 주 보기 시작 ─────────────────────────────────────────────────────────────
   // 월 보기(renderCalendar)는 그대로 두고, 가구가 있고 플래그가 켜졌을 때만 "월 | 주" 전환이 생긴다. 선택 날짜(selectedCalendarDate)가 주·월 공용 상태다.
   // 주 = 선택 날짜가 속한 일요일~토요일. 주 이동은 같은 요일을 유지(선택일 ±7일). 날짜 클릭·주 이동·보기 전환은 모두 usCalRefreshAll() 한 곳으로 다시 그린다.
-  const calWeekAvailable = () => typeof CalendarWeek !== "undefined" && usActive();
+  // G23: 계정 모드는 월 보기만(월|주 전환 없음) — 주 보기는 계정 모드가 꺼진(OFF) 기기에서만 그대로 남는다.
+  const calWeekAvailable = () => typeof CalendarWeek !== "undefined" && usActive() && !(typeof acctEnabled === "function" && acctEnabled());
   const calWeekOn = () => calView === "week" && calWeekAvailable();
   /** 캘린더 · 선택일 패널 · 항목 클릭 연결 — 셋은 항상 함께(하나라도 빠지면 새로 그린 카드가 반응하지 않는다). */
   function usCalRefreshAll() {
@@ -5981,6 +6291,8 @@
     hhInit();
     usInit();
     acctInit();
+    acct36Init();
+    acct23Init();
 
     if (profile) {
       populateDistricts(profile.province, profile.district);

@@ -286,6 +286,39 @@ service cloud.firestore {
     }
 
     // ===============================================================
+    // [G22] 할 일(todos) 블록 — 추가만 한다(위 블록은 수정하지 않았다). 36개월 이상 아이의 체크리스트(메모장형), 가구 공유.
+    //   - 경로는 households/{hid}/todos/{tid}. 문서 모양은 js/child-todos.js(ChildTodos.validate)와 같다.
+    //   - 필수 키: v(=1) · childKey(1~60자) · title(1~100자) · done(bool) · order(number) · createdAt · updatedAt. 선택: createdBy(≤60자) · doneAt · deletedAt.
+    //   - 삭제 금지(소프트 삭제: deletedAt). 불변: v · createdAt · childKey.
+    //   - 읽기·쓰기 범위는 위 schedules 블록과 같다: 이 앱의 가구 구조에는 인증 주체가 없어 '구성원만'을 규칙으로 가를 수 없다
+    //     (householdId 를 아는 경로에서만 접근 — schedules 와 동일한 판정). 구성원 전용 강화는 후속(schedules 와 함께).
+    // ===============================================================
+    match /households/{householdId}/todos/{todoId} {
+      allow get, list: if true; // 이미 householdId 를 아는 경로
+
+      function todoOk(d) {
+        return d.keys().hasAll(['v', 'childKey', 'title', 'done', 'order', 'createdAt', 'updatedAt'])
+            && d.keys().hasOnly(['v', 'childKey', 'title', 'done', 'order', 'createdAt', 'updatedAt', 'createdBy', 'doneAt', 'deletedAt'])
+            && d.v == 1
+            && d.childKey is string && d.childKey.size() >= 1 && d.childKey.size() <= 60
+            && d.title is string && d.title.size() >= 1 && d.title.size() <= 100
+            && d.done is bool
+            && d.order is number
+            && d.createdAt is number && d.updatedAt is number
+            && (!('createdBy' in d) || d.createdBy == null || (d.createdBy is string && d.createdBy.size() <= 60))
+            && (!('doneAt' in d) || d.doneAt == null || d.doneAt is number)
+            && (!('deletedAt' in d) || d.deletedAt == null || d.deletedAt is number);
+      }
+
+      allow create: if todoOk(request.resource.data);
+      allow update: if todoOk(request.resource.data)
+                    && request.resource.data.v == resource.data.v
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.childKey == resource.data.childKey;
+      allow delete: if false; // 소프트 삭제(deletedAt)만
+    }
+
+    // ===============================================================
     // [D2] 계정(accounts) 블록 — 추가만 한다(위 블록은 members 의 uid·role CHILD 허용 외에는 수정하지 않았다).
     //   설계: docs/한눈육아-D1-계정설계.md §1·§2. accounts/{uid} = 로그인한 사람 1명이 속한 가구·구성원을 가리키는 문서.
     //   - 본인(request.auth.uid == uid)만 읽고 쓴다. 목록 열람·삭제 금지. v·createdAt 은 생성 후 불변.

@@ -284,13 +284,14 @@ const mk = (flag, extra = {}) => {
     assert.strictEqual(A.hs.getMirror(r.householdId).children[r.childKey].displayName, "은찬(로컬)");
   });
 
-  await test("리스너: 4개 등록(가구·아이·담당자·일정), stopListening 이 모두 해제하고 재시작 시 중복 등록하지 않는다", async () => {
+  await test("리스너: 5개 등록(가구·아이·담당자·일정·할 일(G22)), stopListening 이 모두 해제하고 재시작 시 중복 등록하지 않는다", async () => {
     const A = mk(true);
     A.hs.startListening("h1");
-    assert.strictEqual(A.adapter.listeners.length, 4);
+    assert.strictEqual(A.adapter.listeners.length, 5);
     assert(A.adapter.listeners.some((l) => l.p === "households/h1/schedules"));
+    assert(A.adapter.listeners.some((l) => l.p === "households/h1/todos"));
     A.hs.startListening("h1");
-    assert.strictEqual(A.adapter.listeners.filter((x) => !x.off).length, 4);
+    assert.strictEqual(A.adapter.listeners.filter((x) => !x.off).length, 5);
     A.hs.stopListening();
     assert(A.adapter.listeners.every((x) => x.off));
   });

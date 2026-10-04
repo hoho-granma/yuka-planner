@@ -116,10 +116,11 @@
       }
     }
     const getSavedCode = () => (enabled() && storage ? storage.getItem(CODE_KEY) : null);
-    const emptyMirror = (hid) => ({ householdId: hid, household: null, children: {}, members: {}, schedules: {} });
+    const emptyMirror = (hid) => ({ householdId: hid, household: null, children: {}, members: {}, schedules: {}, todos: {} });
     const loadMirror = (hid) => {
       const m = readJson(MIRROR_PREFIX + hid, null) || emptyMirror(hid);
       if (!m.schedules) m.schedules = {}; // B3 까지 저장된 예전 미러에는 schedules 가 없다
+      if (!m.todos) m.todos = {}; // G22 이전 미러에는 todos(36개월 이상 아이의 할 일)가 없다
       return m;
     };
     const saveMirror = (m) => writeJson(MIRROR_PREFIX + m.householdId, m);
@@ -139,8 +140,18 @@
       else if (seg[2] === "children") m.children[seg[3]] = { ...(m.children[seg[3]] || {}), ...data };
       else if (seg[2] === "members") m.members[seg[3]] = { ...(m.members[seg[3]] || {}), ...data };
       else if (seg[2] === "schedules") applyScheduleOp(m, seg[3], op);
+      else if (seg[2] === "todos") m.todos[seg[3]] = op.merge ? mergeNulls(m.todos[seg[3]], op.payload) : { ...data };
     }
 
+    /** merge 패치를 미러 문서에 얹는다: null 값은 그 필드를 지운다(Firestore 의 필드 삭제와 같은 의미). */
+    function mergeNulls(cur, patch) {
+      const o = { ...(cur || {}) };
+      for (const [k, v] of Object.entries(patch || {})) {
+        if (v === null) delete o[k];
+        else o[k] = v;
+      }
+      return o;
+    }
     /** 일정: set(전체 문서)는 통째로, update 는 "exceptions.2026-10-08" 같은 dot-path 와 null(=필드 삭제)을 Firestore 와 같은 규칙으로 반영한다. */
     function applyScheduleOp(m, id, op) {
       if (op.op === "set") {
@@ -287,11 +298,13 @@
       const h = await a.get("households/" + hid);
       if (!h.exists) return { ok: false, reason: "not-found" };
       const [kids, members, schedules] = await Promise.all([a.list(`households/${hid}/children`), a.list(`households/${hid}/members`), a.list(`households/${hid}/schedules`)]);
+      const todos = await a.list(`households/${hid}/todos`).catch(() => []); // G22: 규칙 미배포(permission-denied)여도 합류는 계속한다
       const m = loadMirror(hid);
       m.household = h.data;
       mergeCollection(m, "children", kids, hid);
       mergeCollection(m, "members", members, hid);
       mergeCollection(m, "schedules", schedules, hid);
+      mergeCollection(m, "todos", todos, hid);
       saveMirror(m);
       if (storage) storage.setItem(CODE_KEY, code);
       return { ok: true, householdId: hid, mirror: m };
@@ -365,6 +378,24 @@
       if (!enabled()) return DISABLED;
       return write(hid, { op: "update", path: `households/${hid}/schedules/${scheduleId}`, payload: { ...patch } });
     }
+    // ── 할 일(households/{hid}/todos/{tid}) — 36개월 이상 아이의 체크리스트(G22). 문서 모양·검증은 ChildTodos 가 정한다. 같은 미러·대기열을 쓴다(오프라인에서 추가하면 대기열에 들어간다).
+    /** doc: ChildTodos.buildCreate 의 doc. 문서 ID 는 클라이언트가 만든다. */
+    async function createTodo(hid, doc) {
+      if (!enabled()) return DISABLED;
+      const todoId = newId("t");
+      const r = await write(hid, { op: "set", path: `households/${hid}/todos/${todoId}`, payload: { ...doc } });
+      return { ...r, todoId };
+    }
+    /** patch: ChildTodos.patch* 의 결과. 문서 하나에 set+merge(null 값은 미러에서 필드 삭제로 반영). */
+    async function patchTodo(hid, todoId, patch) {
+      if (!enabled()) return DISABLED;
+      return write(hid, { op: "set", merge: true, path: `households/${hid}/todos/${todoId}`, payload: { ...patch } });
+    }
+    /** 미러의 할 일 목록 [{id, ...문서}] */
+    function getTodos(hid) {
+      if (!enabled() || !hid) return [];
+      return Object.entries(loadMirror(hid).todos || {}).map(([id, d]) => ({ ...d, id }));
+    }
     /** 미러의 일정 목록 [{id, ...문서}]. CalendarModel 의 user.schedules 입력 형태. */
     function getSchedules(hid) {
       if (!enabled() || !hid) return [];
@@ -409,6 +440,7 @@
         a.listen(`households/${hid}/children`, (docs) => apply((m) => mergeCollection(m, "children", docs, hid)), err),
         a.listen(`households/${hid}/members`, (docs) => apply((m) => mergeCollection(m, "members", docs, hid)), err),
         a.listen(`households/${hid}/schedules`, (docs) => apply((m) => mergeCollection(m, "schedules", docs, hid)), err),
+        a.listen(`households/${hid}/todos`, (docs) => apply((m) => mergeCollection(m, "todos", docs, hid)), err),
       ];
       return { ok: true };
     }
@@ -488,6 +520,9 @@
       createSchedule,
       patchSchedule,
       getSchedules,
+      createTodo,
+      patchTodo,
+      getTodos,
       reissueCode,
       peekMembers,
       leaveLocal,

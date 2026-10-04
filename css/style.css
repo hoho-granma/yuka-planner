@@ -1467,3 +1467,55 @@ body.acct-design .acct-cs-save { width: 100%; margin-top: 0; }
   body.acct-design .acct-cs-pv { padding: 6px 12px; }
   body.acct-design .acct-cs-save { min-height: 48px; }
 }
+/* ===== G22: 36개월 이상 아이의 메뉴(4탭·메모장형 할 일·날짜 하프 시트) — 모두 body.acct-design 범위 ===== */
+body.acct-design #a36-todo-box { display: none; }
+body.acct-design.acct-36 #tab-checklist > :not(#a36-todo-box) { display: none !important; }
+body.acct-design.acct-36 #a36-todo-box { display: block; position: relative; }
+body.acct-design.acct-36 .selected-day-card { display: none; }
+body.acct-design .a36-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 10px; }
+body.acct-design .a36-head h2 { margin: 0; font-size: 20px; font-weight: 800; }
+body.acct-design .a36-sw { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 4px; border: 0; background: transparent; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
+body.acct-design .a36-sw i { position: relative; width: 38px; height: 22px; border-radius: 999px; background: #e5d6c8; transition: background .15s; }
+body.acct-design .a36-sw i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; }
+body.acct-design .a36-sw[aria-checked="true"] i { background: var(--accent); }
+body.acct-design .a36-sw[aria-checked="true"] i::after { transform: translateX(16px); }
+body.acct-design .a36-list { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+body.acct-design .a36-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 8px 14px; border: 0; border-top: 1px solid var(--border); background: transparent; text-align: left; font-size: 15px; color: var(--text); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+body.acct-design .a36-row:first-child { border-top: 0; }
+body.acct-design .a36-t { flex: 1; min-width: 0; word-break: break-all; }
+body.acct-design .a36-t.done { color: #b6a89d; text-decoration: line-through; }
+body.acct-design .a36-row small { color: var(--text-muted); font-size: 12px; }
+body.acct-design .a36-cb { flex: none; width: 24px; height: 24px; border-radius: 7px; border: 2px solid #e5cdb9; background: #fff; padding: 0; cursor: pointer; position: relative; }
+body.acct-design .a36-cb.on { background: var(--accent); border-color: var(--accent); }
+body.acct-design .a36-cb.on::after { content: ""; position: absolute; left: 6px; top: 2px; width: 6px; height: 11px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+body.acct-design .a36-in { flex: 1; min-width: 0; min-height: 40px; border: 0; border-bottom: 2px solid var(--accent); background: transparent; font-size: 16px; color: var(--text); outline: none; }
+body.acct-design .a36-addrow { color: var(--accent-dark); font-weight: 800; cursor: pointer; }
+body.acct-design .a36-hint { margin: 10px 2px 0; font-size: 12px; color: var(--text-muted); }
+body.acct-design .a36-err { margin: 6px 2px 0; font-size: 12px; color: #e0524e; }
+body.acct-design .a36-menu { position: absolute; right: 14px; z-index: 5; display: flex; flex-direction: column; min-width: 150px; padding: 6px; background: #fff; border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 8px 24px rgba(58,46,42,.18); }
+body.acct-design .a36-menu button { min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; text-align: left; font-size: 15px; font-weight: 700; color: var(--text); cursor: pointer; }
+body.acct-design .a36-menu button.del { color: #e0524e; }
+body.acct-design .a36-card .a36-row { min-height: 44px; padding: 6px 0; font-size: 14px; }
+body.acct-design .a36-card .a36-add { display: block; width: 100%; margin-top: 4px; padding: 10px 0 2px; border: 0; background: transparent; text-align: left; font-size: 14px; font-weight: 800; color: var(--accent-dark); cursor: pointer; }
+body.acct-design .a36-more { border: 0; background: transparent; font-size: 13px; font-weight: 800; color: var(--accent-dark); cursor: pointer; }
+body.acct-design .a36-chips .home-child-chip small { font-size: 11px; opacity: .8; }
+body.acct-design .a36-quick { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+body.acct-design .a36-quick small { color: var(--text-muted); font-size: 12px; margin-right: 2px; }
+body.acct-design .a36-quick button { min-height: 34px; padding: 0 14px; border: 1px solid var(--border); border-radius: 999px; background: #fff; font-size: 13px; font-weight: 700; color: var(--text); cursor: pointer; }
+body.acct-design .a36-day { display: flex; flex-direction: column; gap: 4px; }
+body.acct-design .a36-dhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+body.acct-design .a36-dhead b { font-size: 18px; }
+body.acct-design .a36-dadd { min-height: 34px; padding: 0 14px; border: 1.5px solid var(--accent); border-radius: 999px; background: #fff; color: var(--accent-dark); font-size: 13px; font-weight: 800; cursor: pointer; }
+body.acct-design .a36-tlr { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 0; border: 0; border-top: 1px solid var(--border); background: transparent; text-align: left; cursor: pointer; color: var(--text); }
+body.acct-design .a36-tlr:first-child { border-top: 0; }
+body.acct-design .a36-tlr.done .a36-ti b { color: #b6a89d; text-decoration: line-through; }
+body.acct-design .a36-tm { flex: none; width: 46px; text-align: right; font-size: 12px; font-weight: 700; color: var(--text-muted); line-height: 1.25; }
+body.acct-design .a36-tlr > i { flex: none; width: 4px; align-self: stretch; border-radius: 2px; }
+body.acct-design .a36-ti { display: flex; flex-direction: column; min-width: 0; }
+body.acct-design .a36-ti b { font-size: 15px; }
+body.acct-design .a36-ti small { font-size: 12px; color: var(--text-muted); }
+body.acct-design .a36-dempty { text-align: center; padding: 18px 0 8px; }
+body.acct-design .a36-dempty p { margin: 0 0 10px; color: var(--text-muted); }
+body.acct-design .a36-dadd2 { min-height: 40px; padding: 0 18px; border: 0; border-radius: 12px; background: #fff1e8; color: var(--accent-dark); font-size: 14px; font-weight: 800; cursor: pointer; }
+body.acct-design .a36-dnav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+body.acct-design .a36-dnav button { min-height: 36px; padding: 0 8px; border: 0; background: transparent; font-size: 13px; font-weight: 800; color: var(--accent-dark); cursor: pointer; }
