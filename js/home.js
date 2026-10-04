@@ -13,7 +13,7 @@
 
   function row(ctx, e, sub, extraClass) {
     const g = ctx.calGroupFor(e);
-    const title = ctx.esc(e.title.replace(/^⚠️ 확인 필요 · /, ""));
+    const title = ctx.esc(e.title.replace(/^(?:⚠️ )?확인 필요 · /, ""));
     return `<button type="button" class="home-row ${extraClass || ""}" data-open-event="${ctx.esc(e.id)}">
       <span class="cat-dot" style="background:${g.color}"></span>
       <span class="hr-body"><strong>${title}</strong><small>${sub}</small></span>
@@ -78,7 +78,7 @@
       if (!byCat.has(x.e.category)) byCat.set(x.e.category, []);
       byCat.get(x.e.category).push(x);
     }
-    const shortTitle = (t) => t.replace(/^⚠️ 확인 필요 · /, "").replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+    const shortTitle = (t) => t.replace(/^(?:⚠️ )?확인 필요 · /, "").replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
     const catLines = Object.keys(ctx.CATEGORY_META)
       .filter((c) => byCat.has(c))
       .map((c) => {

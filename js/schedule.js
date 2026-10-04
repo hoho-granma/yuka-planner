@@ -154,8 +154,8 @@ function buildTodoEngineEvents(profile, todoDefinitions, completions) {
     if (byId.get(inst.todo_id) && byId.get(inst.todo_id).verificationStatus === "확인필요") continue;
     if (inst.windowStart === null && inst.status !== "PENDING_MILESTONE") continue; // 아직 계산 불가(선행 회차 대기)
     const td = byId.get(inst.todo_id);
+    const reviewTag = inst.needsReview ? "확인 필요 · " : ""; // 글자만(⚠️ 이모지 없음)
     const isDateSpecific = computeIsDateSpecific(inst);
-    const reviewTag = inst.needsReview ? "⚠️ 확인 필요 · " : "";
     const isSubsidyEvt = ((td && td.categoryGroup) || ENGINE_CATEGORY_GROUP[inst.category]) === "행정·지원금";
     events.push({
       id: `${inst.todo_id}__${inst.occurrenceKey}`,

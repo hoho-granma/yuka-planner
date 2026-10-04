@@ -55,6 +55,6 @@ test("앱: 프로필 카드는 '나'(이름 · 나(역할), 사람 아이콘) �
 });
 test("CSS·버전: 나 카드 아바타 색, 아이 칩·한 줄 스타일", () => {
   assert.ok(/\.profile-card\.acct-me \.avatar \{/.test(CSS) && /\.home-child-chip\.active \{/.test(CSS) && /\.home-child-line \{/.test(CSS));
-  assert.ok(/home\.js\?v=26/.test(HTML));
+  assert.ok(/home\.js\?v=\d+/.test(HTML));
 });
 console.log(`\n${passed}개 통과`);

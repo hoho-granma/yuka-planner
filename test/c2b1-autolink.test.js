@@ -264,7 +264,7 @@ test("eventItemHtml: 보조 문구 삽입 한 곳만 다르다", () => {
   assert.strictEqual(fnSrc(app, "eventItemHtml").replace("</p>${autoLinkNoteHtml(e)}\n", "</p>\n"), fnSrc(headApp, "eventItemHtml"));
 });
 test("remainingItemHtml: 인라인 문구 삽입 한 곳만 다르다", () => {
-  assert.strictEqual(fnSrc(app, "remainingItemHtml").replace("${autoLinkInlineHtml(e)}", "").replace('"var(--line)"', '"#cfc7bf"'), fnSrc(headApp, "remainingItemHtml"));
+  assert.strictEqual(fnSrc(app, "remainingItemHtml").replace("${autoLinkInlineHtml(e)}", "").replace('"var(--line)"', '"#cfc7bf"').replace("/^(?:⚠️ )?확인 필요 · /", "/^⚠️ 확인 필요 · /"), fnSrc(headApp, "remainingItemHtml"));
 });
 test("openDetail: 버튼 자리와 핸들러 두 줄만 다르다", () => {
   const now = fnSrc(app, "openDetail").replace("      ${autoLinkButtonHtml(e, isDone)}\n", "").replace(/    if \(el\("btn-auto-reserve"\)\)[^\n]*\n    if \(el\("btn-auto-view"\)\)[^\n]*\n/, "");

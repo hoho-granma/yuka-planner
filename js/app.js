@@ -1899,7 +1899,7 @@
   function remainingItemHtml(e) {
     const g = calGroupFor(e);
     const done = !!completed[e.id];
-    const title = e.title.replace(/^⚠️ 확인 필요 · /, "");
+    const title = e.title.replace(/^(?:⚠️ )?확인 필요 · /, "");
     return `<button type="button" class="remaining-item${done ? " done" : ""}" data-id="${e.id}"><span class="dot" style="background:${done ? "var(--line)" : g.color}"></span>${title}${autoLinkInlineHtml(e)}${done ? '<span class="ri-check">✓</span>' : ""}</button>`;
   }
 
@@ -4451,7 +4451,7 @@
   function acctKidsSig() {
     return typeof acctEnabled === "function" && acctEnabled() && typeof acctHomeChildren === "function" ? "|kids:" + acctHomeChildren().map((c) => c.code).join(",") : "";
   }
-  const usAutoTitleOfEvent = (e) => String(e.title || "").replace(/^⚠️ 확인 필요 · /, "").slice(0, 100);
+  const usAutoTitleOfEvent = (e) => String(e.title || "").replace(/^(?:⚠️ )?확인 필요 · /, "").slice(0, 100);
   /** autoRef(별칭 해석 후)에 해당하는 현재 AUTO 항목의 제목. 찾지 못하면 ""(연결이 끊긴 일정은 일반 일정으로만 보인다). */
   function usAutoTitleOf(autoRef) {
     const id = Object.prototype.hasOwnProperty.call(autoIdAliases, autoRef) ? autoIdAliases[autoRef] : autoRef;
@@ -6806,7 +6806,7 @@
     // 모든 팝업 오른쪽 위에 ✕ 닫기 버튼을 달고, 맨 아래의 "닫기" 버튼은 숨긴다(내용이 바뀔 때마다 적용).
     const ensureModalX = () => {
       const box = el("modal-content");
-      if (!box.querySelector(".modal-x")) {
+      if (!box.querySelector(".modal-x") && !box.querySelector(".acct-step-x")) { // 가입 단계 시트는 자체 ✕(.acct-step-x)가 있다
         const b = document.createElement("button");
         b.type = "button";
         b.className = "modal-x";

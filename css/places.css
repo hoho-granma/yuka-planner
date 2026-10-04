@@ -37,13 +37,13 @@
 .places-list { display: flex; flex-direction: column; gap: 12px; }
 .places-card {
   min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 16px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  padding: 16px; box-shadow: 0 2px 8px rgba(36, 37, 42, .04);
 }
 .places-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
-.places-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--bg, #fff8f0); color: var(--text-muted); }
+.places-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--bg); color: var(--text-muted); }
 .places-badge-cat { color: var(--accent-dark, var(--accent)); }
 .places-badge-example { border: 1px dashed var(--border); }
-.places-badge-stale { color: var(--warn, #e0a52e); }
+.places-badge-stale { color: var(--text); }
 .places-name { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
 .places-summary { margin: 0 0 6px; font-size: 14px; color: var(--text); line-height: 1.45; overflow-wrap: anywhere; }
 .places-address { margin: 0 0 10px; font-size: 12px; color: var(--text-muted); overflow-wrap: anywhere; }
@@ -78,18 +78,18 @@
 .places-detail .places-name { margin: 6px 0 4px; }
 .places-detail-addr { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0; font-size: 14px; overflow-wrap: anywhere; }
 .places-detail-addr .btn-close { width: auto; flex: 0 0 auto; margin: 0; padding: 6px 12px; font-size: 13px; }
-.places-reserve-note { margin: 8px 0; padding: 8px 10px; border-radius: 10px; background: #fff7f2; color: var(--accent-dark); font-size: 13px; font-weight: 700; }
+.places-reserve-note { margin: 8px 0; padding: 8px 10px; border-radius: 10px; background: var(--bg); color: var(--accent-dark); font-size: 13px; font-weight: 700; }
 .places-reg-field { margin: 12px 0; }
 .places-reg-field > label { display: block; margin-bottom: 4px; font-size: 13px; font-weight: 800; }
 .places-chips-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
 .places-times { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
 .places-time { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; }
 .places-time-sel { padding: 6px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 14px; background: #fff; }
-.places-reg-err { margin: 6px 0; font-size: 12px; font-weight: 700; color: #b4552a; }
+.places-reg-err { margin: 6px 0; font-size: 12px; font-weight: 700; color: var(--c-danger); }
 
 /* G3: 보조 필터·준비 중 지역 안내·이용 제한 안내 */
 .places-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
-.places-fallback { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: #fff7f2; border: 1px solid var(--border); font-size: 13px; line-height: 1.5; }
+.places-fallback { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); font-size: 13px; line-height: 1.5; }
 .places-fallback p { margin: 0 0 6px; }
 .places-fallback-title { font-weight: 800; }
 .places-chips-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -109,18 +109,18 @@
 
 /* G7: 큰 카드(분류별 색 머리 영역 — 사진 데이터가 없어 CSS·SVG로 대신) */
 .places-card-big { padding: 0; overflow: hidden; }
-.places-ph { height: 128px; position: relative; background: linear-gradient(135deg, #ffd9a8, #ff9ec4); }
-.places-ph-park { background: linear-gradient(135deg, #bfe9c9, #7fb8ff); }
-.places-ph-library { background: linear-gradient(135deg, #ffd9a8, #ff9ec4); }
-.places-ph-kidscafe { background: linear-gradient(135deg, #ffe08a, #ffa98a); }
-.places-ph-experience { background: linear-gradient(135deg, #d9c6ff, #8fb4ff); }
-.places-ph-edu { background: linear-gradient(135deg, #b9e6f0, #8fd0b4); }
-.places-ph-museum { background: linear-gradient(135deg, #e6d3b8, #c9a4d6); }
-.places-ph-indoor { background: linear-gradient(135deg, #ffd0d0, #ffc27a); }
+.places-ph { height: 128px; position: relative; background: linear-gradient(135deg, var(--d1), var(--d6)); }
+.places-ph-park { background: linear-gradient(135deg, var(--d2), var(--d9)); }
+.places-ph-library { background: linear-gradient(135deg, var(--d1), var(--d6)); }
+.places-ph-kidscafe { background: linear-gradient(135deg, var(--d1), var(--d5)); }
+.places-ph-experience { background: linear-gradient(135deg, var(--d4), var(--d9)); }
+.places-ph-edu { background: linear-gradient(135deg, var(--d3), var(--d8)); }
+.places-ph-museum { background: linear-gradient(135deg, var(--d10), var(--d4)); }
+.places-ph-indoor { background: linear-gradient(135deg, var(--d7), var(--d5)); }
 .places-ph > svg { position: absolute; right: 10px; bottom: 8px; width: 56px; height: 56px; opacity: .55; }
 .places-ph-pin { position: absolute; left: 10px; top: 10px; right: 96px; margin: 0; }
 .places-ph-pin .places-badge { background: #fff; }
-.places-ph-tm { position: absolute; right: 10px; top: 10px; background: rgba(58, 46, 42, .85); color: #fff; font-weight: 800; font-size: 12px; padding: 3px 9px; border-radius: 999px; }
+.places-ph-tm { position: absolute; right: 10px; top: 10px; background: rgba(36, 37, 42, .85); color: #fff; font-weight: 800; font-size: 12px; padding: 3px 9px; border-radius: 999px; }
 .places-card-bd { padding: 12px 16px 16px; }
 
 /* G14: 어디갈까 필터 — 분류 한 줄 + [필터 N] 버튼, 고른 조건은 지울 수 있는 칩, 결과 줄(N곳 · 정렬) */
@@ -138,7 +138,7 @@
 .places-active { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 2px; }
 .places-active-chip {
   display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 4px 10px; border-radius: 999px;
-  border: 1px solid #ffd2bd; background: #fff1e9; color: var(--accent-dark);
+  border: 1px solid var(--line); background: var(--bg); color: var(--accent-dark);
   font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
 }
 .places-active-chip span { font-size: 13px; line-height: 1; }
@@ -155,17 +155,17 @@
 /* 필터 시트(아래에서 올라오는 시트 — 하단 탭(z 30) 위, 상세 팝업(z 50) 아래) */
 .places-sheet { display: none; position: fixed; inset: 0; z-index: 40; }
 .places-view.is-sheet-open .places-sheet { display: block; }
-.places-sheet-dim { position: absolute; inset: 0; background: rgba(58, 46, 42, .32); }
+.places-sheet-dim { position: absolute; inset: 0; background: rgba(36, 37, 42, .32); }
 .places-sheet-panel {
   position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 480px; box-sizing: border-box;
   max-height: 85vh; max-height: 85dvh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
-  background: #fff; border-radius: 22px 22px 0 0; box-shadow: 0 -8px 24px rgba(58, 46, 42, .16);
+  background: #fff; border-radius: 22px 22px 0 0; box-shadow: 0 -8px 24px rgba(36, 37, 42, .16);
   padding: 10px 20px max(16px, calc(env(safe-area-inset-bottom) + 12px)); display: flex; flex-direction: column; gap: 16px;
 }
 .places-sheet-grip { width: 40px; height: 4px; border-radius: 2px; background: var(--border); margin: 0 auto -6px; flex: 0 0 auto; }
 .places-sheet-head { display: flex; align-items: center; justify-content: space-between; }
 .places-sheet-head strong { font-size: 17px; color: var(--text); }
-.places-sheet-x { width: 32px; height: 32px; border: none; border-radius: 50%; background: #f3ece3; color: var(--text-muted); font-size: 15px; cursor: pointer; }
+.places-sheet-x { width: 32px; height: 32px; border: none; border-radius: 50%; background: var(--line); color: var(--text-muted); font-size: 15px; cursor: pointer; }
 .places-sheet-sec h4 { margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--text-muted); }
 .places-sheet .places-drive-basis { margin: -4px 0 8px; text-align: left; }
 .places-sheet .places-drive-row, .places-sheet .places-sort-row { flex-wrap: wrap; overflow: visible; padding: 0; }
@@ -186,45 +186,45 @@
    팝업 안쪽 여백(위 24px·좌우 20px)을 음수 여백으로 덮어 머리를 끝까지 붙인다. 오른쪽 위 ✕ 는 app.js 가 붙이는 .modal-x. */
 .places-detail-map { margin-top: -24px; }
 /* overflow:hidden 은 BFC 를 만들어 ✕(float)를 피해 좁아지므로 clip-path 로 자른다 */
-.places-dmap { position: relative; height: 188px; margin: 0 -20px; clip-path: inset(0 round 20px 20px 0 0); background: #e8efe6; }
+.places-dmap { position: relative; height: 188px; margin: 0 -20px; clip-path: inset(0 round 20px 20px 0 0); background: var(--bg); }
 .places-dmap::before {
   content: ""; position: absolute; inset: 0;
-  background-image: linear-gradient(#d5dfd2 1px, transparent 1px), linear-gradient(90deg, #d5dfd2 1px, transparent 1px);
+  background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 .places-dmap::after {
   content: ""; position: absolute; top: -20px; bottom: -20px; left: 70%; width: 10px; background: #fff;
-  transform: rotate(18deg); box-shadow: 0 0 0 1px #d9d4c8;
+  transform: rotate(18deg); box-shadow: 0 0 0 1px var(--border);
 }
-.places-dmap-road { position: absolute; left: -20px; right: -20px; top: 74px; height: 16px; background: #fff; transform: rotate(-12deg); box-shadow: 0 0 0 1px #d9d4c8; z-index: 1; }
+.places-dmap-road { position: absolute; left: -20px; right: -20px; top: 74px; height: 16px; background: #fff; transform: rotate(-12deg); box-shadow: 0 0 0 1px var(--border); z-index: 1; }
 .places-dmap-pin {
   position: absolute; left: 50%; top: 50px; width: 34px; height: 34px; margin-left: -17px; z-index: 2;
-  border-radius: 50% 50% 50% 0; background: var(--accent-dark); transform: rotate(-45deg); box-shadow: -2px 3px 6px rgba(58, 46, 42, .25);
+  border-radius: 50% 50% 50% 0; background: var(--accent-dark); transform: rotate(-45deg); box-shadow: -2px 3px 6px rgba(36, 37, 42, .25);
 }
 .places-dmap-pin::after { content: ""; position: absolute; left: 11px; top: 11px; width: 12px; height: 12px; border-radius: 50%; background: #fff; }
 .places-dmap .places-dmap-tm { left: 16px; right: auto; top: 18px; z-index: 2; }
 .places-dmap-btns { position: absolute; left: 16px; right: 16px; bottom: 12px; z-index: 2; }
 .places-dmap-btns .places-link {
   min-height: 40px; border: none; border-radius: 12px; background: #fff; color: var(--text);
-  font-size: 14px; font-weight: 800; box-shadow: 0 2px 8px rgba(0, 0, 0, .12);
+  font-size: 14px; font-weight: 800; box-shadow: 0 2px 8px rgba(36, 37, 42, .14);
 }
 .places-dmap-btns .places-route { background: var(--accent); color: #fff; }
 .places-detail-bd { display: flex; flex-direction: column; gap: 9px; padding-top: 14px; min-width: 0; }
 .places-detail-bd > * { margin: 0; }
 .places-detail-bd .places-badges { margin: 0; }
-.places-badge-cat.places-cat-park { background: #e3f5e8; color: #2f8a55; }
-.places-badge-cat.places-cat-library { background: #fff0e0; color: #b8601c; }
-.places-badge-cat.places-cat-kidscafe { background: #fff4d6; color: #9a6a0c; }
-.places-badge-cat.places-cat-experience { background: #efe9ff; color: #5b3fb5; }
-.places-badge-cat.places-cat-edu { background: #e2f4f6; color: #2a7783; }
-.places-badge-cat.places-cat-museum { background: #f6ebe0; color: #84563a; }
-.places-badge-cat.places-cat-indoor { background: #ffe9e6; color: #b8433a; }
-.places-detail-bd .places-badge-district { background: #f3ebe3; border-color: transparent; }
+.places-badge-cat.places-cat-park { background: color-mix(in srgb, var(--d2) 32%, #fff); color: var(--text); }
+.places-badge-cat.places-cat-library { background: color-mix(in srgb, var(--d5) 32%, #fff); color: var(--text); }
+.places-badge-cat.places-cat-kidscafe { background: color-mix(in srgb, var(--d1) 32%, #fff); color: var(--text); }
+.places-badge-cat.places-cat-experience { background: color-mix(in srgb, var(--d4) 32%, #fff); color: var(--text); }
+.places-badge-cat.places-cat-edu { background: color-mix(in srgb, var(--d3) 32%, #fff); color: var(--text); }
+.places-badge-cat.places-cat-museum { background: color-mix(in srgb, var(--d10) 32%, #fff); color: var(--text); }
+.places-badge-cat.places-cat-indoor { background: color-mix(in srgb, var(--d7) 32%, #fff); color: var(--text); }
+.places-detail-bd .places-badge-district { background: var(--line); border-color: transparent; }
 .places-detail-map .places-name { margin: 0; font-size: 20px; font-weight: 800; }
 .places-detail-map .places-detail-addr { margin: 0; font-size: 14px; line-height: 1.4; }
 .modal-panel .places-detail-addr .places-copy {
   width: auto; flex: 0 0 auto; min-height: 36px; margin: 0; padding: 7px 12px; border-radius: 12px;
-  background: #f3ebe3; color: var(--text); font-size: 13px; font-weight: 800;
+  background: var(--line); color: var(--text); font-size: 13px; font-weight: 800;
 }
 .places-detail-map .places-detail-drive { font-size: 13px; font-weight: 800; color: var(--accent-dark); }
 .places-detail-est { font-weight: 600; color: var(--text-muted); }
@@ -232,7 +232,7 @@
 .places-detail-map .places-meta { gap: 8px 12px; }
 .places-detail-map .places-meta-value { font-size: 14px; }
 .places-detail-map .places-reserve-note {
-  padding: 9px 12px; border-radius: 12px; border: 1px solid #f6dfaa; background: #fff7e6; color: #5a4a2a;
+  padding: 9px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--text);
   font-size: 13px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere;
 }
 .places-detail-bd .places-actions .places-link { min-height: 44px; }

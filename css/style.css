@@ -27,6 +27,7 @@
   --c-badge-nation: #cfe6ff; --c-badge-nation-ink: #0f2a4a;   /* 혜택 '전국 공통' */
   --c-badge-region: #c4f0d8; --c-badge-region-ink: #0c3a24;   /* 혜택 지역 */
   /* S4 완료 = 틸(흰 글자) */
+  --c-hl: #fff0a8;           /* 온보딩 형광펜 */
   --c-ok: #167c8a;
   --c-ok-ink: #ffffff;
   --success: #167c8a;       /* (옛 이름 = S4) */
@@ -1442,7 +1443,7 @@ body.acct-design .modal-panel .acct-sub-head { margin: -24px -20px 0; padding: 2
 body.acct-design .modal-panel .acct-sub-head h3 { margin: 6px 0 0; font-size: 20px; color: #fff; }
 body.acct-design .modal-panel .acct-sub-head .cat-badge { background: #fff !important; color: var(--c-ink); margin-bottom: 0; }
 body.acct-design .modal-panel .acct-sub-head .detail-tag, body.acct-design .modal-panel .acct-sub-head .prov-tag { margin: 0 0 0 6px; color: rgba(255,255,255,.78) !important; background: transparent !important; }
-body.acct-design .modal-panel .acct-sub-status { position: relative; margin: -20px 0 8px; padding: 14px 16px; border-radius: 16px; background: #fff; border: 1px solid var(--line); box-shadow: 0 6px 16px rgba(38, 71, 92, 0.15); }
+body.acct-design .modal-panel .acct-sub-status { position: relative; margin: -20px 0 8px; padding: 14px 16px; border-radius: 16px; background: #fff; border: 1px solid var(--line); box-shadow: 0 6px 16px rgba(36, 37, 42, 0.15); }
 body.acct-design .modal-panel .acct-sub-status > strong { display: block; margin-bottom: 4px; font-size: 15px; color: var(--c-ok); }
 body.acct-design .modal-panel .acct-sub-status .completion-row { margin: 0; padding: 4px 0 0; border: 0; }
 body.acct-design .modal-panel .acct-sub-status .apply-choice { margin-top: 10px; }
@@ -1743,7 +1744,7 @@ body.acct-design .as-info-chip { background: var(--c-badge-auto); color: var(--c
 .us-tchip[aria-checked="true"] { background: var(--c-active); border-color: var(--c-active); color: var(--c-active-ink); }
 
 /* 온보딩 '한눈에' 강조: 연한 노랑 형광펜 + 굵은 글자 */
-.acct-hl { background: linear-gradient(transparent 55%, #fff0a8 55%); color: inherit; font-weight: 800; padding: 0 2px; }
+.acct-hl { background: linear-gradient(transparent 55%, var(--c-hl) 55%); color: inherit; font-weight: 800; padding: 0 2px; }
 
 /* 시간 입력(휠): 흰 배경, 폼 입력칸과 어울리는 글자 크기 */
 .tw { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 8px; }
@@ -1758,3 +1759,39 @@ body.acct-design .as-info-chip { background: var(--c-badge-auto); color: var(--c
 
 /* v1.12.93: 일정 추가 시트 체크박스(종일·여러 날)는 브라우저 기본 파랑 대신 주 버튼색(S1) */
 .us-check input[type="checkbox"], .past-infant-toggle input[type="checkbox"] { accent-color: var(--c-primary); }
+
+/* ═══ v1.12.95 온보딩(로그인·가입·아이 정보) 시안 B 형태 + 어디갈까·잔여 색 정리 ═══ */
+input, select, textarea, button { color: var(--text); } /* 브라우저 기본 순검정 글자 방지(클래스가 색을 정하면 그쪽이 우선) */
+.acct-ob1-top { position: relative; overflow: hidden; }
+.acct-ob1-top > * { position: relative; z-index: 1; }
+.acct-ob1-top::before { content: ""; position: absolute; z-index: 0; right: -70px; top: -80px; width: 210px; height: 210px; border-radius: 50%; background: color-mix(in srgb, var(--c-primary) 78%, #fff); }
+.acct-ob1-top::after { content: ""; position: absolute; z-index: 0; left: -28px; bottom: 30px; width: 84px; height: 84px; border-radius: 50%; background: color-mix(in srgb, var(--c-primary) 55%, #fff); }
+.acct-ob1-top .acct-hl { color: var(--text); }
+.acct-btn-primary, .acct-step-foot .acct-btn-primary { border-radius: 999px; }
+.acct-step-back { border-radius: 999px; }
+.acct-form[data-acct-form="login"] .btn-complete { background: var(--c-primary); color: var(--c-primary-ink); border: 1px solid var(--c-primary); border-radius: 999px; font-weight: 800; min-height: 54px; }
+.acct-form[data-acct-form="login"] .btn-close { background: transparent; border-color: transparent; color: var(--text-muted); }
+.acct-radio { border-radius: 999px; background: var(--bg); border: 1.5px solid var(--line); }
+.acct-radio[aria-checked="true"] { background: var(--c-select); border-color: var(--c-select); color: var(--c-primary-ink); font-weight: 800; }
+.acct-input, .acct-select, #view-landing.acct-on #query-form input[type="text"], #view-landing.acct-on #query-form select, #view-landing.acct-on #query-form .date-picker-trigger { border: 0; border-bottom: 1.5px solid var(--line); border-radius: 0; background: transparent; padding-left: 2px; padding-right: 2px; }
+.acct-input:focus, .acct-select:focus, #view-landing.acct-on #query-form input[type="text"]:focus, #view-landing.acct-on #query-form select:focus { border-bottom: 2px solid var(--c-active); outline: none; }
+.acct-prog { gap: 4px; }
+.acct-prog-seg { flex: 0 0 22px; }
+.acct-prog-seg.on { background: var(--c-progress); }
+.acct-err { color: var(--c-danger); }
+.acct-seg { gap: 0; padding: 0; background: var(--surface); border: 1px solid var(--c-active); border-radius: 10px; overflow: hidden; }
+.acct-seg button { border-radius: 0; min-height: 40px; }
+.acct-seg button.on { background: var(--c-active); color: var(--c-active-ink); }
+.month-group-card.open::before { display: none; }
+.order-chip { border-radius: 999px; }
+.order-chip.active { background: var(--c-select); border-color: var(--c-select); color: var(--c-primary-ink); box-shadow: none; font-weight: 800; }
+.order-chip.active .order-num { background: var(--c-primary-ink); color: var(--c-select); }
+
+/* v1.12.95 보정: 아이 등록 시트·아이 정보 전환 탭은 차콜 분할 탭, 입력칸은 밑줄형, 히어로 원은 글자 뒤로 */
+body.acct-design .acct-cs-tg, body.acct-design .acct-nc-seg { gap: 0; padding: 0; background: var(--surface); border: 1px solid var(--c-active); border-radius: 10px; overflow: hidden; }
+body.acct-design .acct-cs-tg button, body.acct-design .acct-nc-seg span { border-radius: 0; }
+body.acct-design .acct-cs-tg button.on, body.acct-design .acct-nc-seg span.on { background: var(--c-active); color: var(--c-active-ink); }
+body.acct-design .acct-cs-inp, body.acct-design .acct-cs-sel, body.acct-design .acct-cs-date .date-picker-trigger { border: 0; border-bottom: 1.5px solid var(--line); border-radius: 0; background: transparent; padding-left: 2px; padding-right: 2px; }
+body.acct-design .acct-cs-inp:focus, body.acct-design .acct-cs-sel:focus { border-bottom: 2px solid var(--c-active); outline: none; }
+.acct-ob1-top::after { left: auto; right: 24px; bottom: 8px; width: 56px; height: 56px; }
+.acct-ob1-top > * { z-index: 2; }

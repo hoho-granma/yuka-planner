@@ -508,7 +508,7 @@
         eventId: e.id,
         category: recordCategoryOf(e.category),
         eventCategory: e.category,
-        title: e.title.replace(/^⚠️ 확인 필요 · /, ""),
+        title: e.title.replace(/^(?:⚠️ )?확인 필요 · /, ""),
         date,
         ageMonths: ageMonthsAt(birthDate, date),
         memo: (typeof c === "object" && c.memo) || "",
