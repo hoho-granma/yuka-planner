@@ -125,7 +125,7 @@ test("defaultScope:'FAMILY' 면 활성 아이가 링크돼 있어도 대상은 �
   assert.deepStrictEqual(rest, rest2);
   assert.strictEqual(base.scope, "CHILD");
 });
-test("가구는 있는데 활성 아이 링크가 없는 경우에도 가족 전체로 열리고 저장 가능(prepareSave 통과), 아이 일정으로 바꿀 대상 칩은 폼에 있다", () => {
+test("가구는 있는데 활성 아이 링크가 없는 경우에도 가족 전체로 열리고 저장 가능(prepareSave 통과), 아이 일정으로 바꿀 대상 칩은 폼에 있다(담당 선택은 없다)", () => {
   const f = { ...V.newForm(args({ activeChildKey: null, defaultScope: "FAMILY" })), title: "엄마 병원", category: "MEDICAL" };
   assert.strictEqual(f.scope, "FAMILY");
   const r = V.prepareSave(f, 1790000000000);
@@ -133,7 +133,7 @@ test("가구는 있는데 활성 아이 링크가 없는 경우에도 가족 전
   assert.deepStrictEqual([r.input.scope, "childKeys" in r.input], ["FAMILY", false]);
   assert.ok(US.buildCreateDoc(r.input, 1790000000000).ok);
   const html = V.renderForm(f, LINKS, { members: [{ memberId: "m1", label: "엄마" }], messages: [] });
-  assert.ok(html.includes('data-us-target="c1"') && html.includes('data-us-target="FAMILY"') && html.includes('data-us-assignee="m1"'));
+  assert.ok(html.includes('data-us-target="c1"') && html.includes('data-us-target="FAMILY"') && !html.includes('data-us-assignee="m1"'));
 });
 test("usOpenForm: 새 일정에만 defaultScope 를 넘기고(옵션 없으면 이전과 동일), 수정·AUTO 예약 경로는 그대로", () => {
   const now = fnSrc(app, "usOpenForm");

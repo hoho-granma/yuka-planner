@@ -33,7 +33,7 @@ test("일정 카드·상세·홈 '다음 일정' 모두 같은 표기(timeText)�
   assert.ok(/timeText: timeText\(o\), tag: tagText\(o\)/.test(src), "홈 다음 일정 카드");
   assert.ok(src.includes('require("./time-range.js")'));
   const html = read("index.html"), sw = read("sw.js");
-  assert.ok(/time-range\.js\?v=\d+"><\/script>\s*<script src="js\/schedule-kinds\.js/.test(html) && sw.includes('"./js/time-range.js"'));
+  assert.ok(/time-range\.js\?v=\d+"><\/script>\s*<script src="js\/time-wheel\.js\?v=\d+"><\/script>\s*<script src="js\/schedule-kinds\.js/.test(html) && sw.includes('"./js/time-range.js"') && sw.includes('"./js/time-wheel.js"'));
 });
 
 console.log("시간 범위(B): 15분 단위");
@@ -81,6 +81,23 @@ test("36개월 이상 패널: 칸에 점은 없지만 그날 시작하는 자동
   const app = read("js/app.js");
   assert.ok(/const startsToday = acct36Active\(\) \? visibleSchedule\(true\)\.filter\(\(e\) => toISODate\(e\.fixedDate \|\| e\.date\) === iso && !day\.benefit\.includes\(e\) && !day\.planned\.includes\(e\) && !autoLinkedHidden\(e\)\) : \[\];/.test(app));
   assert.ok(/const plannedRows = day\.planned\.concat\(startsToday\);/.test(app));
+});
+
+console.log("기간(PERIOD) 일정 표시");
+test("시작일 칸 칩에 '기간 ' 표식, 날짜 패널에 '날짜 미정 · 12/1~12/31' 카드, 주 보기 제목에도 표식", () => {
+  const CM = require("../js/calendar-model.js"), US = require("../js/user-schedule.js");
+  const doc = { ...US.buildCreateDoc({ sourceType: "MANUAL", title: "취학통지서 확인", category: "ETC", scope: "CHILD", childKeys: ["c1"], allDay: true, dateKind: "PERIOD", periodStart: "2026-12-01", periodEnd: "2026-12-31", autoRef: "SC-03__default" }, 1).doc, id: "p1" };
+  const m = CM.buildCalendarModel({ view: "month", range: { start: "2026-12-01", end: "2026-12-31" }, filter: { scope: "ALL", showAuto: true }, auto: { events: [], displayDates: new Map(), completed: {}, childKey: "c1" }, user: { schedules: [doc], childLinks: [{ childKey: "c1", displayName: "수아", order: 1 }], members: [] } });
+  const day = m.days.get("2026-12-01");
+  const panel = V.dayPanel(day, [{ childKey: "c1", displayName: "수아", order: 1 }]);
+  assert.strictEqual(panel.added.cards.length, 1);
+  assert.ok(V.renderCard(panel.added.cards[0]).includes("날짜 미정 · 12/1~12/31") && panel.added.cards[0].title === "취학통지서 확인");
+  const chip = V.cellChips([{ t: "u", occ: day.periodStarts[0], period: true }], { links: [] });
+  assert.ok(chip.includes("기간 취학통지서 확인") && chip.includes("cal-chip u p"));
+  assert.strictEqual(V.cellChips([{ t: "u", occ: day.periodStarts[0] }], { links: [] }).includes("기간 "), false);
+  const app = read("js/app.js");
+  assert.ok(/periodBars = dm \? dm\.periodStarts \|\| \[\] : \[\]/.test(app) && /periodBars\.map\(\(occ\) => \(\{ t: "u", occ, period: true \}\)\)/.test(app));
+  assert.ok(/dm\.user\.concat\(dm\.periodStarts \|\| \[\]\)\.map/.test(app) && app.includes("marks.length + userBars.length + periodBars.length"));
 });
 
 console.log(`\n${passed}개 통과`);

@@ -1003,6 +1003,20 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .us-time { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .us-time label { flex: 0 0 100%; }
 .us-time select { flex: 1; min-width: 0; width: auto; }
+/* 시간 입력 휠(시안 B): 한 줄 범위를 탭해 아래 휠(오전/오후·시·분)로 조정. 새 색·토큰 없이 기존 변수만 쓴다. */
+.us-times.us-tw { display: block; }
+.tw { border: 1px solid var(--border); border-radius: 14px; background: var(--card-bg); padding: 10px 8px 8px; }
+.tw-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px; }
+.tw-row > b { color: var(--text-muted); font-weight: 700; }
+.tw-tm { min-height: 44px; padding: 0 14px; border: 1.5px solid var(--border); border-radius: 12px; background: #fff; color: var(--text); font-family: inherit; font-size: 18px; font-weight: 800; cursor: pointer; }
+.tw-tm.on { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255, 138, 92, .25); }
+.tw-wheel { display: flex; justify-content: center; gap: 8px; touch-action: none; }
+.tw-col { flex: 1; max-width: 96px; display: flex; flex-direction: column; align-items: center; user-select: none; -webkit-user-select: none; }
+.tw-arr { width: 100%; min-height: 40px; border: 0; background: transparent; color: var(--text-muted); font-size: 14px; cursor: pointer; }
+.tw-v { display: block; min-height: 28px; line-height: 28px; font-size: 16px; color: var(--text-muted); }
+.tw-v.cur { min-height: 36px; line-height: 36px; width: 100%; text-align: center; font-size: 22px; font-weight: 800; color: var(--text); background: #fff1e8; border-radius: 10px; }
+.tw-warn { margin: 8px 0 0; text-align: center; font-size: 13px; font-weight: 700; color: var(--accent-dark); }
+.tw-hint { margin: 6px 0 0; text-align: center; font-size: 12px; color: var(--text-muted); }
 .us-error { margin: 6px 0 0; font-size: 13px; color: #e0524e; }
 .us-card.cancelled { opacity: .55; }
 .us-card.cancelled .us-title { text-decoration: line-through; }

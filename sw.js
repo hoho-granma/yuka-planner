@@ -52,6 +52,7 @@ const SHELL_ASSETS = [
   "./js/tab-swipe.js",
   "./js/edu-trend.js",
   "./js/time-range.js",
+  "./js/time-wheel.js",
   "./js/user-schedule-view.js",
   "./js/records-view.js",
   "./js/app.js",

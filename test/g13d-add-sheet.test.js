@@ -103,10 +103,10 @@ test("공개 범위: G21 — 화면에서 숨김(공개/비공개 항목·안내
   const f = fresh(); V.g13PickKind(f, "회사", ctx);
   assert.ok(!Object.keys(V.prepareSave(f, 1).input).some((k) => /vis|private|public/i.test(k)));
 });
-test("담당: 어른 일정은 대상=담당이라 숨기고, 아이·가족 전체에서만 담당 칩(미정 포함)을 보인다", () => {
+test("담당 선택은 화면에서 뺐다: 어른 일정이든 아이·가족 전체든 폼에 담당 영역이 없다", () => {
   assert.ok(!render(fresh()).includes("data-us-assignee-field"));
   const f = fresh(); V.g13ApplyWho(f, "CHILD:c1", ctx);
-  assert.ok(render(f).includes("data-us-assignee-field") && /data-us-assignee=""/.test(render(f)));
+  assert.ok(!render(f).includes("data-us-assignee-field") && !/data-us-assignee=/.test(render(f)));
 });
 test("수정: 저장된 제목은 덮어쓰지 않고(titleTouched), 어른 일정은 본인 칩, 제목이 카테고리 이름이면 그 칩이 선택돼 있다", () => {
   const doc = { id: "s1", title: "병원", category: "MEDICAL", scope: "FAMILY", dateKind: "FIXED", eventDate: "2026-10-20", allDay: true, assigneeMemberId: "m-dad" };

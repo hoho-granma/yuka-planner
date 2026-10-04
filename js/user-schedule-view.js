@@ -18,11 +18,12 @@
     () => (typeof module !== "undefined" && module.exports ? require("./user-schedule.js") : root.UserSchedule),
     () => (typeof module !== "undefined" && module.exports ? require("./date-picker.js") : root.HNDatePicker),
     () => (typeof module !== "undefined" && module.exports ? require("./schedule-kinds.js") : root.ScheduleKinds),
-    () => (typeof module !== "undefined" && module.exports ? require("./time-range.js") : root.TimeRange)
+    () => (typeof module !== "undefined" && module.exports ? require("./time-range.js") : root.TimeRange),
+    () => (typeof module !== "undefined" && module.exports ? require("./time-wheel.js") : root.TimeWheel)
   );
   if (typeof module !== "undefined" && module.exports) module.exports = mod;
   else root.UserScheduleView = mod;
-})(typeof window !== "undefined" ? window : global, function (getUS, getDP, getSK, getTR) {
+})(typeof window !== "undefined" ? window : global, function (getUS, getDP, getSK, getTR, getTW) {
   "use strict";
 
   // ── 승인된 문구 (번호는 B4 문구 목록 #) ─────────────────────────────────────
@@ -137,6 +138,7 @@
     cardFamily: "가족 일정", // #47
     removedChild: "(분리된 아이)", // #49
     timeAllDay: "종일", // #50
+    cellPeriod: "기간 ", // 시작일 칸의 기간 일정 표식
     timeRange: (a, b) => `${a} ~ ${b}`, // #50
     timeFrom: (a) => `${a}부터`, // #50
     dateRange: (a, b) => `${a} ~ ${b}`, // #51
@@ -408,7 +410,7 @@
       if (it.t === "u") {
         const col = catMode ? occurrenceColor(it.occ, c.links, "category") : occurrenceColor(it.occ, c.links, c.mode === "kids" ? "child" : "owner");
         const done = it.occ.status === "DONE" || it.occ.done === true;
-        return `<span class="cal-chip u${done ? " done" : ""}" style="background:${safeColor(col)}">${esc(it.occ.title)}</span>`;
+        return `<span class="cal-chip u${done ? " done" : ""}${it.period ? " p" : ""}" style="background:${safeColor(col)}">${it.period ? esc(MSG.cellPeriod) : ""}${esc(it.occ.title)}</span>`;
       }
       const col = catMode ? CATEGORY_COLORS[autoCategoryGroup(it)] : c.autoColor || FAMILY_COLOR;
       return `<span class="cal-chip a${it.done ? " done" : ""}" style="--chip-c:${safeColor(col)}">${esc(catMode ? autoCategoryGroup(it) : it.title)}</span>`;
@@ -531,7 +533,7 @@
       return title ? { ...(recOf(o) || {}), autoTitle: title } : recOf(o);
     };
     // 취소한 반복 회차(B5 D4)는 칸 표식·집계에서는 빠지지만 그날 패널에는 흐리게 남아 되돌릴 수 있다. 맨 뒤에 둔다.
-    const cards = (day.user || []).concat(day.cancelled || []).map((o) => cardData(o, links, extraOf(o)));
+    const cards = (day.user || []).concat(day.periodStarts || [], day.cancelled || []).map((o) => cardData(o, links, extraOf(o))); // 기간 일정은 시작일에 '날짜 미정 · 12/1~12/31' 카드로
     return {
       added: { title: MSG.groupAdded, cards },
       benefit: { title: MSG.groupBenefit, count: (day.benefit || []).length },
@@ -919,17 +921,14 @@
     const dates = fixed
       ? `<div class="us-field"><label>${esc(repeating ? MSG.firstDayLabel : MSG.dateField)}</label>${picker(PICKER_PREFIXES.date, f.eventDate)}</div>
          <label class="us-check"><input type="checkbox" id="us-allday"${f.allDay ? " checked" : ""} /> ${esc(MSG.allDay)}</label>
-         ${f.allDay ? "" : `<div class="us-times">${timeSelect("us-start", f.startTime, MSG.startField)}${timeSelect("us-end", f.endTime, MSG.endTimeField)}</div>`}
+         ${f.allDay ? "" : timesBlock(f)}
          ${repeating ? "" : `<label class="us-check"><input type="checkbox" id="us-multi"${f.multiDay ? " checked" : ""} /> ${esc(MSG.multiDay)}</label>
          ${f.multiDay ? `<div class="us-field"><label>${esc(MSG.endField)}</label>${picker(PICKER_PREFIXES.end, f.endDate)}</div>` : ""}`}
          ${repeatBlock}${repeatDetail}`
       : `<div class="us-field"><label>${esc(MSG.periodStart)}</label>${picker(PICKER_PREFIXES.periodStart, f.periodStart)}</div>
          <div class="us-field"><label>${esc(MSG.periodEnd)}</label>${picker(PICKER_PREFIXES.periodEnd, f.periodEnd)}</div>
          <p class="us-note">${esc(MSG.periodHint)}</p>`;
-    const staleAssignee = !f.whoPerson && f.assigneeMemberId && !members.some((m) => m.memberId === f.assigneeMemberId);
-    const assignee = !f.whoPerson && (members.length || staleAssignee)
-      ? `<div class="us-field us-assignee-field" data-us-assignee-field><label>${esc(MSG.assigneeLabel)}</label><div class="us-chips">${members.map((m) => chip("", `data-us-assignee="${esc(m.memberId)}"`, m.label || "", f.assigneeMemberId === m.memberId)).join("")}${staleAssignee ? chip("", `data-us-assignee="${esc(f.assigneeMemberId)}"`, MSG.deletedAssignee, true) : ""}${chip("", 'data-us-assignee=""', MSG.assigneeNone, !f.assigneeMemberId)}</div><p class="us-note">${esc(MSG.assigneeHint)}</p></div>`
-      : "";
+    // 담당 선택은 화면에서 뺐다(데이터·색·완료 자동 기록은 그대로, 기존 담당 값은 폼이 보존)
     const errors = (o.messages || []).map((m) => `<p class="us-error">${esc(m)}</p>`).join("");
     const edit = f.mode === "edit";
     return `<div class="us-form us-form-g13" data-us-mode="${esc(f.mode)}">
@@ -940,7 +939,6 @@
       <div class="us-field"><label>${esc(MSG.dateLabel)}</label><div class="us-chips">${chip("", 'data-us-kind="FIXED"', MSG.kindFixed, fixed)}${repeating ? `<button type="button" class="us-chip" disabled>${esc(MSG.kindPeriod)}</button>` : chip("", 'data-us-kind="PERIOD"', MSG.kindPeriod, !fixed)}</div></div>
       ${dates}
       <div class="us-field"><label for="us-location">${esc(MSG.locationLabel)}</label><input type="text" id="us-location" maxlength="100" placeholder="${esc(MSG.locationHint)}" value="${esc(f.location)}" /></div>
-      ${assignee}
       <div class="us-field"><label for="us-memo">${esc(MSG.memoLabel)}</label><textarea id="us-memo" maxlength="500" placeholder="${esc(MSG.memoHint)}">${esc(f.memo)}</textarea></div>
       ${/* G21: 공개 범위(공개/비공개) 항목은 화면에서 숨긴다(저장 필드는 그대로) */""}
       <div id="us-errors">${errors}</div>
@@ -984,6 +982,13 @@
     const p = splitTime(value);
     return `<span class="us-time"><label for="${id}-h">${esc(label)}</label><select id="${id}-h" data-us-time="${id}"><option value="">--</option>${HOURS.map((h) => `<option value="${h}"${p.h === h ? " selected" : ""}>${h}</option>`).join("")}</select><select id="${id}-m" data-us-time="${id}"><option value="">--</option>${minuteOptions(p.m).map((m) => `<option value="${m}"${p.m === m ? " selected" : ""}>${m}</option>`).join("")}</select></span>`;
   };
+  /** 시간 입력(시안 B): 한 줄 범위 + 휠. 시작·끝은 'HH:MM' 두 필드 그대로, 시간이 비어 있으면 기본값(오전 9:00~10:00)을 보여 주고 앱이 폼에 채운다. 활성 칸·경고는 폼의 twActive·twWarn. */
+  function timesBlock(f) {
+    const TW = getTW();
+    const base = TW.initState(f.startTime, f.endTime);
+    const st = { start: f.startTime || base.start, end: f.endTime || base.end, active: f.twActive === "end" ? "end" : "start", warn: f.twWarn || "" };
+    return `<div class="us-times us-tw">${TW.markup("us", st)}</div>`;
+  }
   function picker(prefix, value, placeholder) {
     const DP = getDP();
     const html = DP ? DP.markup(prefix, placeholder) : `<div id="${prefix}-slot"></div>`;
@@ -999,12 +1004,6 @@
       kids.map((l) => chip("", `data-us-target="${esc(linkKey(l))}"`, l.displayName || "", f.scope === "CHILD" && (f.childKeys || []).includes(linkKey(l)), colors[linkKey(l)])).join("") +
       chip("", 'data-us-target="FAMILY"', MSG.targetFamily, f.scope === "FAMILY");
     // 담당(B6-lite): 구성원이 있을 때만. 단일 선택, 다시 누르면 해제(정하지 않음). 저장된 담당이 삭제된 구성원이면 그 사실을 칩으로 보여 준다.
-    const hasMembers = Array.isArray(o.members); // 호출부가 구성원 목록을 주지 않으면(옛 호출) 담당 영역을 그리지 않는다
-    const members = hasMembers ? o.members : [];
-    const staleAssignee = hasMembers && f.assigneeMemberId && !members.some((m) => m.memberId === f.assigneeMemberId);
-    const assignee = hasMembers && (members.length || staleAssignee)
-      ? `<div class="us-field us-assignee-field${assigneeEmphasis(f) ? " us-emph" : ""}" data-us-assignee-field><label>${esc(MSG.assigneeLabel)}</label><div class="us-chips">${members.map((m) => chip("", `data-us-assignee="${esc(m.memberId)}"`, m.label || "", f.assigneeMemberId === m.memberId)).join("")}${staleAssignee ? chip("", `data-us-assignee="${esc(f.assigneeMemberId)}"`, MSG.deletedAssignee, true) : ""}${chip("", 'data-us-assignee=""', MSG.assigneeNone, !f.assigneeMemberId)}</div><p class="us-note">${esc(MSG.assigneeHint)}</p><p class="us-emph-note" data-us-assignee-note${assigneeEmphasis(f) ? "" : " hidden"}>${esc(MSG.assigneeEmph)}</p></div>`
-      : "";
     const locked = !!f.autoRef; // C2: 연결된 AUTO 예약은 대상(아이 1명)·날짜 종류(날짜 정함)·반복을 바꿀 수 없다
     const fixed = f.dateKind !== "PERIOD";
     const repeating = fixed && isRepeating(f);
@@ -1023,7 +1022,7 @@
          ${repeating ? repeatDetail : `<label class="us-check"><input type="checkbox" id="us-multi"${f.multiDay ? " checked" : ""} /> ${esc(MSG.multiDay)}</label>
          ${f.multiDay ? `<div class="us-field"><label>${esc(MSG.endField)}</label>${picker(PICKER_PREFIXES.end, f.endDate)}</div>` : ""}`}
          <label class="us-check"><input type="checkbox" id="us-allday"${f.allDay ? " checked" : ""} /> ${esc(MSG.allDay)}</label>
-         ${f.allDay ? "" : `<div class="us-times">${timeSelect("us-start", f.startTime, MSG.startField)}${timeSelect("us-end", f.endTime, MSG.endTimeField)}</div>`}`
+         ${f.allDay ? "" : timesBlock(f)}`
       : `<div class="us-field"><label>${esc(MSG.periodStart)}</label>${picker(PICKER_PREFIXES.periodStart, f.periodStart)}</div>
          <div class="us-field"><label>${esc(MSG.periodEnd)}</label>${picker(PICKER_PREFIXES.periodEnd, f.periodEnd)}</div>
          <p class="us-note">${esc(MSG.periodHint)}</p>`;
@@ -1034,7 +1033,6 @@
       <div class="us-field"><label for="us-title">${esc(MSG.titleLabel)}</label><input type="text" id="us-title" maxlength="100" placeholder="${esc(MSG.titleHint)}" value="${esc(f.title)}" /></div>
       <div class="us-field"><label>${esc(MSG.categoryLabel)}</label><div class="us-chips">${cats}</div></div>
       ${locked ? "" : `<div class="us-field"><label>${esc(MSG.targetLabel)}</label><div class="us-chips">${targets}</div></div>`}
-      ${assignee}
       ${locked ? "" : `<div class="us-field"><label>${esc(MSG.dateLabel)}</label><div class="us-chips">${chip("", 'data-us-kind="FIXED"', MSG.kindFixed, fixed)}${repeating ? `<button type="button" class="us-chip" disabled>${esc(MSG.kindPeriod)}</button>` : chip("", 'data-us-kind="PERIOD"', MSG.kindPeriod, !fixed)}</div></div>`}
       ${dates}
       <div class="us-field"><label for="us-location">${esc(MSG.locationLabel)}</label><input type="text" id="us-location" maxlength="100" placeholder="${esc(MSG.locationHint)}" value="${esc(f.location)}" /></div>
@@ -1048,7 +1046,7 @@
   function renderDayForm(f, opts) {
     const o = opts || {};
     const errors = (o.messages || []).map((m) => `<p class="us-error">${esc(m)}</p>`).join("");
-    const times = f.allDay ? "" : `<div class="us-times">${timeSelect("us-start", f.startTime, MSG.startField)}${timeSelect("us-end", f.endTime, MSG.endTimeField)}</div>`;
+    const times = f.allDay ? "" : timesBlock(f);
     return `<div class="us-form" data-us-mode="day">
       <h3>${esc(MSG.editDayTitle)}</h3><p class="us-note">${esc(MSG.editDayNote(dayLabel(f.originalDate)))}</p>
       <div class="us-field"><label>${esc(MSG.dateField)}</label>${picker(PICKER_PREFIXES.day, f.date)}</div>

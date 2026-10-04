@@ -123,23 +123,21 @@ const ST = { enabled: true, hasHousehold: true, members: MEMBERS, activeMemberId
   console.log("user-schedule-view: 담당 칩·저장 payload·카드 라벨");
   const LINKS = [{ childKey: "c1", displayName: "은찬", order: 1 }, { childKey: "c2", displayName: "서윤", order: 2 }];
   const visible = HV.visibleMembers(MEMBERS);
-  await test("새 일정 폼: 기본 담당 = 이 기기 사용자(없으면 미지정), 담당 칩은 구성원이 있을 때만(+정하지 않음), 구성원이 없으면 영역 숨김", () => {
+  await test("새 일정 폼: 기본 담당 = 이 기기 사용자(없으면 미지정) — 값은 폼이 들고 있고 담당 선택 화면은 없다", () => {
     const f = V.newForm({ date: "2026-10-06", activeChildKey: "c1", links: LINKS, defaultAssigneeId: "m1" });
     assert.strictEqual(f.assigneeMemberId, "m1");
     assert.strictEqual(V.newForm({ date: "2026-10-06", activeChildKey: "c1", links: LINKS }).assigneeMemberId, "");
     const h = V.renderForm(f, LINKS, { members: visible });
-    assert.ok(text(h).includes("담당") && text(h).includes(V.MSG.assigneeHint));
-    assert.ok(/us-chip[^"]*active[^>]*data-us-assignee="m1"|data-us-assignee="m1"[^>]*us-chip[^"]*active|us-chip active" data-us-assignee="m1"/.test(h) || /data-us-assignee="m1"/.test(h));
-    assert.ok(h.includes('data-us-assignee=""') && text(h).includes("정하지 않음"));
-    assert.ok(!h.includes('data-us-assignee="m4"'), "삭제된 구성원은 칩이 아니다");
+    assert.ok(!h.includes("data-us-assignee") && !text(h).includes(V.MSG.assigneeHint), "담당 선택 화면 없음");
     const none = V.renderForm(V.newForm({ date: "2026-10-06", activeChildKey: "c1", links: LINKS }), LINKS, { members: [] });
     assert.ok(!none.includes("data-us-assignee") && !none.includes(V.MSG.assigneeHint));
     assert.ok(!V.renderForm(f, LINKS, {}).includes("data-us-assignee"), "opts.members 가 없으면 그리지 않는다(기존 호출 호환)");
   });
-  await test("저장된 담당이 삭제된 구성원이면 '(삭제된 담당자)' 칩이 active 로 보인다", () => {
+  await test("저장된 담당(삭제된 구성원 포함)은 화면에 안 나오고, formToInput 으로 보존된다", () => {
     const f = { ...V.newForm({ date: "2026-10-06", activeChildKey: "c1", links: LINKS }), assigneeMemberId: "m4" };
     const h = V.renderForm(f, LINKS, { members: visible });
-    assert.ok(text(h).includes("(삭제된 담당자)") && /us-chip active" data-us-assignee="m4"/.test(h));
+    assert.ok(!text(h).includes("(삭제된 담당자)") && !h.includes("data-us-assignee"));
+    assert.strictEqual(V.formToInput({ ...f, title: "t", category: "HEALTH" }).assigneeMemberId, "m4", "기존 담당 값은 그대로 저장");
   });
   await test("formToInput: 담당이 있으면 assigneeMemberId(문자열) 추가, 미지정이면 필드 자체가 없다 · UserSchedule 검증 통과", () => {
     const base = { ...V.newForm({ date: "2026-10-06", activeChildKey: "c1", links: LINKS }), title: "소아과", category: "HEALTH" };
@@ -363,15 +361,14 @@ const ST = { enabled: true, hasHousehold: true, members: MEMBERS, activeMemberId
     noRaw(h, "delete");
     assert.ok(h.includes(ESC_EVIL) && h.includes(`data-member-id="${ESC_ID}"`));
   });
-  await test("일정 폼 담당 칩: 이름·data-us-assignee id 이스케이프(저장된 삭제 구성원 id 칩도)", () => {
+  await test("일정 폼: 담당 칩이 없어도 위험한 이름·id 가 폼에 날것으로 나오지 않는다(이스케이프 불변)", () => {
     const members = [{ memberId: EVIL_ID, role: "OTHER", label: EVIL, order: 1 }];
     const f = { ...V.newForm({ date: "2026-10-06", activeChildKey: "c1", links: LINKS }), assigneeMemberId: EVIL_ID };
     const h = V.renderForm(f, LINKS, { members });
     noRaw(h, "form");
-    assert.ok(h.includes(`data-us-assignee="${ESC_ID}"`) && h.includes(ESC_EVIL));
+    assert.ok(!h.includes("data-us-assignee"));
     const stale = V.renderForm({ ...f, assigneeMemberId: EVIL_ID + "2" }, LINKS, { members });
     noRaw(stale, "stale");
-    assert.ok(stale.includes(`data-us-assignee="${ESC_ID}2"`));
   });
   await test("카드·상세: 담당 라벨(태그·담당 줄)도 이스케이프", () => {
     const card = V.renderCard({ key: "k", scheduleId: "s", title: "t", categoryLabel: "건강", timeText: "", dateText: "10/6", tag: EVIL, color: "#aaa", done: false, doneLabel: "" });

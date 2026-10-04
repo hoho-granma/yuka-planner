@@ -141,7 +141,7 @@ test("range 검증: 역순·400일 초과는 RangeError", () => {
 test("정적 확인: 자동 일정 생성·추천일 배치·완료 쓰기를 호출하지 않는다", () => {
   const src = fs.readFileSync(path.join(__dirname, "..", "js", "calendar-model.js"), "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
   ["TodoEngine", "buildSchedule", "assignDisplayDays", "localStorage", "firebase", "toISOString"].forEach((w) => assert(!src.includes(w), w));
-  assert(!/\.sort\(/.test(src.replace(/d\.user\.sort|d\.cancelled\.sort|periodList\.sort|open\.sort\(cmp\)|all\.sort\(cmp\)/g, "") /* 마지막 둘은 C2 linksByAutoId 가 USER 일정 복사본을 정렬 */), "AUTO 입력 배열을 정렬하지 않는다");
+  assert(!/\.sort\(/.test(src.replace(/d\.user\.sort|d\.cancelled\.sort|d\.periodStarts\.sort|periodList\.sort|open\.sort\(cmp\)|all\.sort\(cmp\)/g, "") /* 마지막 둘은 C2 linksByAutoId 가 USER 일정 복사본을 정렬 */), "AUTO 입력 배열을 정렬하지 않는다");
 });
 
 console.log("\n반복 일정 (B5)");
@@ -210,12 +210,25 @@ test("입력(반복 문서·링크·AUTO)을 변경하지 않는다", () => {
   df(frozen);
   assert.doesNotThrow(() => model([frozen]));
 });
-test("비반복 일정의 칸 구조는 B4 와 같다(cancelled 는 빈 배열이 추가될 뿐)", () => {
+test("비반복 일정의 칸 구조는 B4 와 같다(cancelled·periodStarts 는 빈 배열이 추가될 뿐)", () => {
   const m = model([sched({ eventDate: "2026-10-12" })]);
   const c = m.days.get("2026-10-12");
-  assert.deepStrictEqual(Object.keys(c).sort(), ["benefit", "cancelled", "marks", "more", "planned", "total", "user"]);
+  assert.deepStrictEqual(Object.keys(c).sort(), ["benefit", "cancelled", "marks", "more", "periodStarts", "planned", "total", "user"]);
   assert.strictEqual(c.user.length, 1);
   assert.deepStrictEqual(c.cancelled, []);
+  assert.deepStrictEqual(c.periodStarts, []);
+});
+
+test("기간(PERIOD) 일정: 시작일 칸의 periodStarts 에 들어가고(칸 표식·집계 user 는 그대로), 기간 목록에도 남는다 / 취소·범위 밖 시작은 칸에 넣지 않는다", () => {
+  const P = (over) => sched({ dateKind: "PERIOD", eventDate: undefined, endDate: undefined, periodStart: "2026-10-20", periodEnd: "2026-10-30", ...over });
+  const m = model([P()]);
+  const c = m.days.get("2026-10-20");
+  assert.strictEqual(c.periodStarts.length, 1); assert.strictEqual(c.user.length, 0); assert.strictEqual(c.total, 0);
+  assert.strictEqual(m.periodList.length, 1);
+  assert.strictEqual(m.days.get("2026-10-21").periodStarts.length, 0);
+  assert.strictEqual(m.counts.userItems, 0);
+  const before = model([P({ periodStart: "2026-09-20", periodEnd: "2026-10-05" })]);
+  assert.strictEqual(before.periodList.length, 1); assert.ok([...before.days.values()].every((d) => d.periodStarts.length === 0));
 });
 
 console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);

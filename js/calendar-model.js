@@ -148,7 +148,7 @@
     };
 
     const dayKeys = eachDay(US, range.start, range.end);
-    const days = new Map(dayKeys.map((k) => [k, { user: [], benefit: [], planned: [], marks: [], more: 0, total: 0, cancelled: [] }]));
+    const days = new Map(dayKeys.map((k) => [k, { user: [], benefit: [], planned: [], marks: [], more: 0, total: 0, cancelled: [], periodStarts: [] }]));
 
     // ── USER ──
     const periodList = [];
@@ -163,6 +163,7 @@
         const occ = decorate(o);
         if (occ.dateKind === "PERIOD") {
           periodList.push(occ);
+          if (occ.status !== "CANCELLED" && days.has(occ.periodStart)) days.get(occ.periodStart).periodStarts.push(occ); // 기간 일정은 시작일 칸·날짜 패널에도 보인다(칸 표식·집계는 그대로 — 기간 구역과 별개)
           continue;
         }
         if (occ.status === "CANCELLED") {
@@ -175,6 +176,7 @@
     }
     for (const d of days.values()) {
       d.user.sort(byTimeThenTitle);
+      d.periodStarts.sort(byTimeThenTitle);
       d.cancelled.sort(byTimeThenTitle);
     }
     periodList.sort((a, b) => (a.periodEnd !== b.periodEnd ? (a.periodEnd < b.periodEnd ? -1 : 1) : a.title < b.title ? -1 : a.title > b.title ? 1 : 0));

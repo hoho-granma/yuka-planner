@@ -66,11 +66,11 @@ test("autoRef 가 없으면 newForm·formFromSchedule 은 이전 커밋과 같�
   assert.deepStrictEqual(J(V.formFromSchedule(doc)), J(OLD.formFromSchedule(doc)));
   assert.ok(!("autoRef" in V.newForm(args)) && !("autoRef" in V.formFromSchedule(doc)));
 });
-test("연결 폼: 안내 문구 · 대상/날짜 종류/반복/빠른 추가 칩이 없고 날짜·시간·제목·분류·담당은 있다", () => {
+test("연결 폼: 안내 문구 · 대상/날짜 종류/반복/빠른 추가 칩이 없고 날짜·시간·제목·분류는 있다(담당 선택은 화면에서 뺐다)", () => {
   const h = render(af(), { autoLabel: "DTaP 접종 (2차)" });
   assert.ok(h.includes("‘DTaP 접종 (2차)’ 예약 일정이에요. 날짜와 시간을 입력해 주세요."));
   assert.ok(!h.includes("data-us-target") && !h.includes("data-us-kind") && !h.includes("data-us-repeat") && !h.includes("data-us-quick"));
-  assert.ok(h.includes('id="us-title"') && h.includes("data-us-cat") && h.includes("data-us-assignee") && h.includes('id="us-allday"') && h.includes("us-location"));
+  assert.ok(h.includes('id="us-title"') && h.includes("data-us-cat") && !h.includes("data-us-assignee") && h.includes('id="us-allday"') && h.includes("us-location"));
 });
 test("라벨이 없으면(수정 폼 등) 안내 문구 없이 잠금만, 수정 모드도 잠금", () => {
   const f = af();
@@ -90,7 +90,8 @@ test("autoRef 없는 폼 렌더(추가·수정·기간·반복·다자녀)는 �
   ];
   const opts = { members: [{ memberId: "m1", label: "엄마" }], messages: ["x"], saving: false };
   // E(1-4) 로 늘어난 빠른 추가 칩 줄·담당 영역 강조 마크업은 비교에서 뺀다(그 밖의 글자는 같아야 한다).
-  const NORM = (h) => h.replace(/<div class="us-field us-quick">.*?<\/div><\/div>/s, "").replace(" us-assignee-field", "").replace(" data-us-assignee-field", "").replace(/<p class="us-emph-note"[^>]*>[^<]*<\/p>/, "");
+  // 시간 입력 휠(시안 B)·담당 선택 제거는 의도된 변경: 시각 블록과 담당 영역은 양쪽에서 뺀다.
+  const NORM = (h) => h.replace(/<div class="us-field[^"]*"[^>]*><label>담당<\/label><div class="us-chips">.*?<\/div>(?:<p[^>]*>[^<]*<\/p>)*<\/div>\n?\s*/s, "").replace(/<div class="us-times us-tw">.*?<p class="tw-hint">[^<]*<\/p><\/div><\/div>/s, "<TIMES/>").replace(/<div class="us-times">.*?<\/span><\/div>/s, "<TIMES/>").replace(/<div class="us-field us-quick">.*?<\/div><\/div>/s, "").replace(/\n\s*\n/g, "\n").replace(" us-assignee-field", "").replace(" data-us-assignee-field", "").replace(/<p class="us-emph-note"[^>]*>[^<]*<\/p>/, "");
   forms.forEach((f, i) => assert.strictEqual(NORM(V.renderForm(f, LINKS, opts)), NORM(RECOLOR(OLD.renderForm(f, LINKS, opts))), "form " + i));
 });
 test("저장: 날짜를 넣으면 prepareSave 통과·autoRef 포함 입력, 날짜 없으면 거부, scope/childKeys 가 어긋나면 거부(I13)", () => {

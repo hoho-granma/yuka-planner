@@ -1700,7 +1700,8 @@
       const { fixed, planned } = dm ? { fixed: dm.benefit, planned: dm.planned } : calendarDayItems(date);
       const marks = [...fixed, ...planned].sort(byUrgency);
       const userBars = dm ? dm.user : [];
-      const totalMarks = marks.length + userBars.length;
+      const periodBars = dm ? dm.periodStarts || [] : []; // 기간 일정은 시작일 칸에 '기간' 표식 칩으로
+      const totalMarks = marks.length + userBars.length + periodBars.length;
       const cell = document.createElement("div");
       cell.className =
         "day-cell" + (sameDay(date, today) ? " today" : "") + (sameDay(date, selectedCalendarDate) ? " selected" : "") + (totalMarks ? " has-event" : "");
@@ -1721,7 +1722,7 @@
       cell.setAttribute("aria-label", `${month + 1}월 ${day}일 · 항목 ${totalMarks}건`);
       // 가구가 있을 때(칩 달력): 직접 등록=꽉 찬 칩, 자동=옅은 칩+같은 색 테두리, 최대 2개+N. 가구가 없으면(dm 없음) 기존 점 표식 그대로.
       cell.innerHTML = dm
-        ? `<span class="num">${day}</span><span class="markers chips">${UserScheduleView.cellChips([...userBars.map((occ) => ({ t: "u", occ })), ...marks.map((e) => ({ t: "a", title: usAutoTitleOfEvent(e), category: e.category, done: !!completed[e.id] }))], { links: usLinks(), mode: usSelectionMode(), catColor: us.catColor, autoColor: usAutoChipColor() })}</span>`
+        ? `<span class="num">${day}</span><span class="markers chips">${UserScheduleView.cellChips([...userBars.map((occ) => ({ t: "u", occ })), ...periodBars.map((occ) => ({ t: "u", occ, period: true })), ...marks.map((e) => ({ t: "a", title: usAutoTitleOfEvent(e), category: e.category, done: !!completed[e.id] }))], { links: usLinks(), mode: usSelectionMode(), catColor: us.catColor, autoColor: usAutoChipColor() })}</span>`
         : `<span class="num">${day}</span><span class="markers">${dotHtml}${moreHtml}</span>`;
       cell.addEventListener("click", () => {
         selectedCalendarDate = date;
@@ -4542,7 +4543,7 @@
         date,
         today: date === todayIso,
         selected: date === selIso,
-        user: dm.user.map((o) => ({ title: o.title, color: UserScheduleView.occurrenceColor(o, links), done: o.status === "DONE" })),
+        user: dm.user.concat(dm.periodStarts || []).map((o) => ({ title: o.dateKind === "PERIOD" ? UserScheduleView.MSG.cellPeriod + o.title : o.title, color: UserScheduleView.occurrenceColor(o, links), done: o.status === "DONE" })),
         autoCount: dm.benefit.length + dm.planned.length,
       };
     });
@@ -4706,6 +4707,7 @@
   };
   /** 폼에 들어 있는 날짜 칸에 공통 달력(HNDatePicker, 일정용 범위)을 연결한다. "이 날만 수정" 중이면 그 폼의 날짜 칸. */
   function usBindPickers() {
+    usEnsureTimes();
     const P = UserScheduleView.PICKER_PREFIXES;
     const form = us.dayForm || us.form;
     const parse = (iso) => (iso ? new Date(`${iso}T00:00:00`) : null);
@@ -4730,12 +4732,31 @@
     bind(P.until, "until", "eventDate");
     bind(P.day, "date");
   }
-  function usReadTime(group) {
-    const h = el(`${group}-h`).value;
-    let m = el(`${group}-m`).value;
-    if (!h) return "";
-    if (!m) m = "00"; // 시만 고르면 정각으로
-    return `${h}:${m}`;
+  // ── 시간 입력 휠(시안 B): 한 줄 범위 + 휠. 값은 폼의 startTime·endTime('HH:MM') 그대로, 활성 칸·경고는 twActive·twWarn(저장하지 않음).
+  const usTwForm = () => (us.dayForm && us.dayForm.allDay === false ? us.dayForm : us.form && us.form.allDay === false && us.form.dateKind !== "PERIOD" ? us.form : null);
+  function usTwState() {
+    const f = usTwForm();
+    return f && f.startTime && f.endTime ? { start: f.startTime, end: f.endTime, active: f.twActive === "end" ? "end" : "start", warn: f.twWarn || "" } : null;
+  }
+  function usTwApply(st) {
+    const f = usTwForm();
+    if (!f) return;
+    f.startTime = st.start; f.endTime = st.end; f.twActive = st.active; f.twWarn = st.warn;
+    const box = el("modal-content").querySelector('[data-tw="us"]');
+    if (box) box.outerHTML = TimeWheel.markup("us", st);
+  }
+  /** 시간 일정인 폼을 보여 줄 때 화면의 기본 시간(오전 9:00~10:00, 이미 있으면 그 값)을 폼 값으로 채운다 — 화면에 보이는 값과 저장 값이 같도록. */
+  function usEnsureTimes() {
+    const f = us.dayForm && us.dayForm.allDay === false ? us.dayForm : us.form && us.form.allDay === false && us.form.dateKind !== "PERIOD" ? us.form : null;
+    if (!f) return;
+    if (!f.startTime) {
+      const s = TimeWheel.initState("", "");
+      f.startTime = s.start;
+      if (!f.endTime) f.endTime = s.end;
+    } else if (!f.endTime) { // 끝이 없던 일정: 시작에서 기본 길이(1시간) 뒤
+      const m = TimeRange.toMin(f.startTime);
+      f.endTime = TimeRange.fromMin(Math.min(24 * 60 - TimeRange.STEP, (m == null ? 9 * 60 : m) + TimeRange.DEFAULT_LENGTH));
+    }
   }
   async function usSave() {
     if (us.saving || !us.form) return;
@@ -5331,9 +5352,6 @@
       if (t.id === "us-allday") {
         us.dayForm.allDay = t.checked;
         usShowDayForm();
-      } else if (t.getAttribute("data-us-time")) {
-        us.dayForm.startTime = el("us-start-h") ? usReadTime("us-start") : "";
-        us.dayForm.endTime = el("us-end-h") ? usReadTime("us-end") : "";
       }
       return;
     }
@@ -5344,10 +5362,8 @@
       usShowForm();
     } else if (t.id === "us-allday") {
       us.form.allDay = t.checked;
+      if (t.checked) { us.form.startTime = ""; us.form.endTime = ""; }
       usShowForm();
-    } else if (t.getAttribute("data-us-time")) {
-      us.form.startTime = el("us-start-h") ? usReadTime("us-start") : "";
-      us.form.endTime = el("us-end-h") ? usReadTime("us-end") : "";
     }
   }
   function usOnModalInput(ev) {
@@ -5368,6 +5384,7 @@
     m.addEventListener("click", usOnModalClick);
     m.addEventListener("change", usOnModalChange);
     m.addEventListener("input", usOnModalInput);
+    if (typeof TimeWheel !== "undefined") TimeWheel.bind(m, usTwState, usTwApply);
   }
 
   function showChildSwitchSheet() {

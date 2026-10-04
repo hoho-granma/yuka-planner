@@ -494,21 +494,21 @@ test("폼 마크업: 분류·대상·날짜 종류 칩의 선택 상태, 분리�
 test("폼 마크업: 모드별 제목, 종일/시각 선택, 여러 날/기간 미정 전환, 달력 요소 ID", () => {
   const add = V.renderForm(F({}), LINKS);
   assert(add.includes("<h3>일정 추가</h3>") && add.includes('id="usd-date"') && add.includes('id="usd-dp-btn"'));
-  assert(!add.includes('id="us-start-h"'), "종일이면 시각 선택 없음");
+  assert(!add.includes('data-tw="us"'), "종일이면 시간 입력 없음");
   assert(!add.includes('id="use-date"'), "여러 날이 아니면 마지막 날 없음");
   const timed = V.renderForm(F({ allDay: false, startTime: "16:05", endTime: "17:00", multiDay: true, endDate: "2026-10-08" }), LINKS);
-  assert(timed.includes('id="us-start-h"') && timed.includes('id="us-end-m"') && timed.includes('id="use-date"'));
-  assert(/<option value="16" selected>/.test(timed) && /<option value="05" selected>/.test(timed));
-  assert.strictEqual((timed.match(/<option value="\d\d">/g) || []).length + (timed.match(/<option value="\d\d" selected>/g) || []).length, 2 * (24 + 12), "시 24 + 분 12(5분 단위) × 시작·종료");
+  assert(timed.includes('data-tw="us"') && timed.includes('data-tw-field="end"') && timed.includes('id="use-date"'), "시간 입력은 한 줄 범위 + 휠(시안 B)");
+  assert(timed.includes(">오후 4:05<") && timed.includes(">5:00<"), "시작·끝이 한 줄에 보인다(기존 5분 단위 값도 그대로)");
+  assert.strictEqual((timed.match(/data-tw-col="/g) || []).length, 3, "오전/오후·시·분 휠 3열");
   const edit = V.renderForm({ ...F({}), mode: "edit" }, LINKS);
   assert(edit.includes("<h3>일정 수정</h3>") && edit.includes('data-us-mode="edit"'));
   const period = V.renderForm(F({ dateKind: "PERIOD", periodStart: "2026-10-01", periodEnd: "2026-10-31" }), LINKS);
   assert(period.includes('id="usps-date" value="2026-10-01"') && period.includes('id="uspe-date" value="2026-10-31"') && period.includes(V.esc(M.periodHint)));
   assert(!period.includes('id="us-allday"') && !period.includes('id="usd-date"'));
 });
-test("폼 마크업: 5분 단위가 아닌 기존 시각(16:07)도 선택된 채 보인다", () => {
+test("폼 마크업: 15분 단위가 아닌 기존 시각(16:07)도 그대로 보인다", () => {
   const h = V.renderForm(F({ allDay: false, startTime: "16:07" }), LINKS);
-  assert(/<option value="07" selected>/.test(h));
+  assert(h.includes(">오후 4:07<") && h.includes('<b class="tw-v cur" aria-live="polite">07</b>'));
   assert.deepStrictEqual(V.minuteOptions("07").includes("07"), true);
   assert.deepStrictEqual(V.minuteOptions("10"), V.MINUTES);
   assert.deepStrictEqual(V.splitTime("09:30"), { h: "09", m: "30" });

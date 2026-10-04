@@ -154,15 +154,13 @@ test("폼 날짜만 오늘로 열고 캘린더 선택일(selectedCalendarDate)�
 console.log("E(1-4) 담당 강조");
 const EM_MEMBERS = [{ memberId: "m1", label: "엄마" }, { memberId: "m2", label: "아빠" }];
 const emRender = (f) => V.renderForm(f, [], { members: EM_MEMBERS, messages: [], saving: false });
-test("픽업·라이딩 칩 + 담당 미지정이면 담당 영역이 강조되고 안내 한 줄이 보이며, 담당을 고르거나 다른 칩이면 숨는다", () => {
+test("담당 선택은 화면에서 뺐다: 픽업·라이딩 칩이어도 담당 영역·강조·안내가 폼에 없다(판정 함수 assigneeEmphasis 는 순수 함수로 남음)", () => {
   for (const key of ["pickup", "ride"]) {
     const on = emRender(form({ quickKey: key, assigneeMemberId: "" }));
-    assert.ok(on.includes("us-assignee-field us-emph") && /<p class="us-emph-note" data-us-assignee-note>누가 맡을지 골라 주세요/.test(on), key);
-    const picked = emRender(form({ quickKey: key, assigneeMemberId: "m1" }));
-    assert.ok(!picked.includes("us-emph\"") && /data-us-assignee-note hidden>/.test(picked), key + " 담당 지정");
+    assert.ok(!on.includes("us-assignee-field") && !on.includes("data-us-assignee") && !on.includes("us-emph"), key);
+    assert.strictEqual(V.assigneeEmphasis(form({ quickKey: key, assigneeMemberId: "" })), true, "판정 자체는 남아 있다");
   }
-  for (const key of [undefined, "hospital", "outing"]) assert.ok(!emRender(form({ quickKey: key })).includes("us-assignee-field us-emph"), String(key));
-  assert.ok(!V.renderForm(form({ quickKey: "pickup" }), [], { messages: [] }).includes("us-emph"), "구성원 목록이 없으면 담당 영역 자체가 없다(불변)");
+  for (const key of [undefined, "hospital", "outing"]) assert.ok(!emRender(form({ quickKey: key })).includes("us-assignee-field"), String(key));
   assert.strictEqual(V.assigneeEmphasis(null), false);
 });
 test("usRefreshAssigneeEmph: 강조 클래스·안내 hidden 만 토글하고 폼을 다시 그리지 않는다 · 담당 칩 클릭 뒤에도 호출", () => {
