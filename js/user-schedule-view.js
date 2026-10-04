@@ -295,7 +295,7 @@
     const kids = activeLinks(links).map((l) => `CHILD:${linkKey(l)}`);
     const roles = members === undefined ? new Set(["MOM", "DAD"]) : roleSet(members);
     const memberIds = opts && opts.memberMode ? visibleMembersOf(members).map((m) => `MEMBER:${memberKey(m)}`) : null;
-    const valid = [...(memberIds || ["MOM", "DAD"].filter((r) => roles.has(r))), ...kids, "FAMILY"];
+    const valid = [...(memberIds || ["MOM", "DAD"].filter((r) => roles.has(r))), ...kids, ...(opts && opts.noFamily === true ? [] : ["FAMILY"])]; // G21: noFamily(계정 모드)는 '가족' 칩이 없다 — 저장된 'FAMILY' 선택은 걸러져 '전체'가 된다
     const picked = valid.filter((id) => raw.includes(id));
     return picked.length === valid.length ? [] : picked; // 전부 골랐으면 전체와 같다
   }
@@ -322,7 +322,7 @@
       if (m) chips.push({ id: role, label: m.label || (role === "MOM" ? "엄마" : "아빠"), selected: sel.includes(role), color: MEMBER_COLORS[role] });
     }
     activeLinks(links).forEach((l) => chips.push({ id: `CHILD:${linkKey(l)}`, label: l.displayName || "", selected: sel.includes(`CHILD:${linkKey(l)}`), color: childColors(links)[linkKey(l)] }));
-    chips.push({ id: "FAMILY", label: MSG.filterFamily, selected: sel.includes("FAMILY"), color: FAMILY_COLOR });
+    if (!(opts && opts.noFamily === true)) chips.push({ id: "FAMILY", label: MSG.filterFamily, selected: sel.includes("FAMILY"), color: FAMILY_COLOR });
     return chips;
   }
   /** 칩 하나를 눌렀을 때의 새 선택: "ALL" 은 비우기, 그 밖은 토글. */
@@ -353,7 +353,7 @@
       .join("");
     const editBtn = o.canEdit === true && (del.size > 0 || edit) ? `<button type="button" class="us-chip-edit" data-us-action="chip-edit" aria-pressed="${edit ? "true" : "false"}">${esc(edit ? MSG.chipEditDone : MSG.chipEdit)}</button>` : "";
     const sw = (action, label, on) => `<button type="button" class="us-tchip" role="switch" aria-checked="${on ? "true" : "false"}" data-us-action="${action}">${esc(label)}</button>`;
-    const switches = o.mode === "kids" ? `<div class="us-optrows">${sw("toggle-only-user", MSG.onlyUserSwitch, o.onlyUser === true)}${sw("toggle-cat-color", MSG.catColorSwitch, o.catColor === true)}</div>` : "";
+    const switches = o.mode === "kids" && o.hideSwitches !== true ? `<div class="us-optrows">${sw("toggle-only-user", MSG.onlyUserSwitch, o.onlyUser === true)}${sw("toggle-cat-color", MSG.catColorSwitch, o.catColor === true)}</div>` : "";
     return `<div class="us-filter">${items}${editBtn}</div>${switches}`;
   }
   /** 칩 지우기 확인 시트. d: { kind:"MEMBER"|"CHILD", id, name, uidWarn?, blocked?, busy?, error? } — 버튼 data-us-chipdel-act(confirm|cancel). */
@@ -913,7 +913,7 @@
       <div class="us-field"><label for="us-location">${esc(MSG.locationLabel)}</label><input type="text" id="us-location" maxlength="100" placeholder="${esc(MSG.locationHint)}" value="${esc(f.location)}" /></div>
       ${assignee}
       <div class="us-field"><label for="us-memo">${esc(MSG.memoLabel)}</label><textarea id="us-memo" maxlength="500" placeholder="${esc(MSG.memoHint)}">${esc(f.memo)}</textarea></div>
-      <div class="us-field"><label>${esc(MSG.g13Visibility)}</label><div class="us-chips">${chip("", 'data-us-vis="FAMILY"', MSG.g13VisFamily, true)}${soonChip(MSG.g13VisPrivate)}</div><p class="us-note">${esc(MSG.g13VisNote)}</p></div>
+      ${/* G21: 공개 범위(공개/비공개) 항목은 화면에서 숨긴다(저장 필드는 그대로) */""}
       <div id="us-errors">${errors}</div>
       ${o.saving ? `<p class="us-note">${esc(MSG.saving)}</p>` : ""}
       <div class="us-actions"><button type="button" class="us-btn us-primary" data-us-action="save"${o.saving ? " disabled" : ""}>${esc(f.wasRecurring && edit ? MSG.editAllSave : MSG.save)}</button><button type="button" class="us-btn" data-us-action="cancel">${esc(MSG.cancel)}</button></div>

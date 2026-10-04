@@ -84,7 +84,7 @@ test("기본 선택은 '전체'(E 1-1): 계정 모드에서도 [] , 내 구성�
   assert.deepStrictEqual(JSON.parse(JSON.stringify(touchedAll.usSel())), [], "전체를 눌렀으면 전체");
   for (const over of [{ on: false }, { user: null }, { account: null }, { account: { memberId: "zz" } }, { members: [MEMBERS[1]] }]) {
     const x = selEnv(over);
-    assert.deepStrictEqual([x.usMeId(), JSON.parse(JSON.stringify(x.usSel())), JSON.parse(JSON.stringify(x.usSelOpts()))], [null, [], { memberMode: false, meId: null }], JSON.stringify(over));
+    assert.deepStrictEqual([x.usMeId(), JSON.parse(JSON.stringify(x.usSel())), JSON.parse(JSON.stringify(x.usSelOpts()))], [null, [], over.on === false ? { memberMode: false, meId: null } : { memberMode: false, meId: null, noFamily: true }], JSON.stringify(over)); // G21: 계정 모드는 '가족' 칩 없음
   }
 });
 test("일정 담당자 기본값=나: memActiveId 가 계정 모드에서는 내 구성원을 먼저 돌려준다(없으면 기기 저장값)", () => {

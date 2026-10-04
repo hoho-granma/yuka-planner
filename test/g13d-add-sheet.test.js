@@ -97,11 +97,9 @@ test("반복: 반복 안 함·매주 활성, 매월·매월 같은 요일은 '�
   assert.ok(V.prepareSave((V.g13PickKind(w, "회사", ctx), w), 1).ok);
   assert.ok(/UserSchedule\.weekdayOf\(us\.form\.eventDate\)/.test(APP));
 });
-test("공개 범위: [공개(가족 캘린더)] 선택, [비공개(나만 보기)]는 '곧 추가돼요' 비활성, 저장 문서에 공개 범위 필드 없음", () => {
+test("공개 범위: G21 — 화면에서 숨김(공개/비공개 항목·안내 없음), 저장 문서에 공개 범위 필드 없음", () => {
   const h = render(fresh());
-  assert.ok(/us-chip active" data-us-vis="FAMILY">공개 \(가족 캘린더\)/.test(h));
-  assert.ok(/us-chip us-chip-soon" disabled aria-disabled="true">비공개 \(나만 보기\)<small>곧 추가돼요<\/small>/.test(h));
-  assert.ok(h.includes("지금은 모든 일정이 가족 캘린더에 공개로 저장돼요."));
+  assert.ok(!h.includes("data-us-vis") && !h.includes("공개 범위") && !h.includes("비공개 (나만 보기)") && !h.includes("지금은 모든 일정이 가족 캘린더에 공개로"));
   const f = fresh(); V.g13PickKind(f, "회사", ctx);
   assert.ok(!Object.keys(V.prepareSave(f, 1).input).some((k) => /vis|private|public/i.test(k)));
 });

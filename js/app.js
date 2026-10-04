@@ -3742,7 +3742,7 @@
     if (!acctEnabled() || !acct.user || !acct.account || !acct.account.memberId) return null;
     return usMembers().some((m) => m.memberId === acct.account.memberId && !m.deletedAt) ? acct.account.memberId : null;
   };
-  const usSelOpts = () => ({ memberMode: !!usMeId(), meId: usMeId() });
+  const usSelOpts = () => ({ memberMode: !!usMeId(), meId: usMeId(), ...(acctEnabled() ? { noFamily: true } : {}) }); // G21: 계정 모드는 '가족' 칩 없음(가족 범위 일정은 그대로 '전체'에서 보인다)
   /** 현재 선택: 기본은 '전체'(E 1-1 — 내 일정만 보려면 '나' 칩 한 번). 칩을 누른 뒤에는 그 선택. 저장하지 않는다. */
   const usSel = () => us.selection;
   const usSelectionMode = () => UserScheduleView.selectionMode(UserScheduleView.normalizeSelection(usSel(), usLinks(), usMembers(), usSelOpts()));
@@ -4014,8 +4014,8 @@
     const counts = { userItems: model.counts.userItems + model.counts.periodItems, userDone: model.counts.userDone + periodDone };
     top.innerHTML =
       `<div class="card us-top"><p class="us-summary">${esc(UserScheduleView.monthSummary(counts))}</p>` +
-      UserScheduleView.renderFilterChips(UserScheduleView.filterChips(links, usSel(), usMembers(), usSelOpts()), { mode: usSelectionMode(), onlyUser: us.onlyUser, catColor: us.catColor }) +
-      `<p class="us-note">${esc(UserScheduleView.MSG.legend)}</p></div>`;
+      UserScheduleView.renderFilterChips(UserScheduleView.filterChips(links, usSel(), usMembers(), usSelOpts()), { mode: usSelectionMode(), onlyUser: us.onlyUser, catColor: us.catColor, hideSwitches: usKidsAre36Plus() }) +
+      (usKidsAre36Plus() ? "" : `<p class="us-note">${esc(UserScheduleView.MSG.legend)}</p>`) + `</div>`;
     const skipped = UserScheduleView.skippedNote(model.skipped);
     const period = UserScheduleView.renderPeriodSection(UserScheduleView.periodSection(model.periodList, links));
     bottom.innerHTML = period || skipped ? `<div class="card us-period-card">${period}${skipped ? `<p class="us-note">${esc(skipped)}</p>` : ""}</div>` : "";
@@ -4095,6 +4095,25 @@
   // 폼을 보여 주는 순간에만 계정 모드 시트로 바꿔 그린다. 플래그 OFF·가구만 켠 기기·AUTO 연결 예약은 이 분기를 타지 않는다.
   const usG13 = () => acctEnabled() && typeof ScheduleKinds !== "undefined";
   /** 아이 한 명의 나이 출처: ① 지금 보는 아이 프로필 ② 이 기기에 저장된 아이 목록(출산 예정 표시)·기억해 둔 아이별 생일(CHILD_BIRTHS_KEY) — 둘 다 모르면 null(공통 아이 목록). 새로 서버를 읽지 않는다. */
+  /**
+   * G21: 계정 모드에서 '등록된 아이가 모두 36개월 이상'일 때만 true(1명 이상이고 전원 ≥36 — 만 36개월 정각부터 이상, 임신 중·나이를 모르는 아이는 미만으로 본다).
+   * 어떤 칩을 골라도 같은 결과다. 36개월 이상은 자동 일정이 없어 '직접 등록한 일정만 보기'·'카테고리별 색' 토글·'꽉 찬 칩은…' 안내·'직접 입력' 뱃지가 필요 없다.
+   */
+  function usKidsAre36Plus() {
+    if (typeof acctEnabled !== "function" || !acctEnabled()) return false;
+    const keys = usLinks().filter((l) => !l.removedAt).map((l) => l.childKey);
+    return keys.length > 0 && keys.every((k) => { const a = usChildAge(k); return typeof a === "number" && a >= 36; });
+  }
+  // G21: 날짜 상세 패널의 '직접 입력' 뱃지는 36개월 이상 판정이면 뺀다(패널을 그린 뒤 DOM 에서 지운다 — 원래 함수 본문은 그대로).
+  const usRenderDayPanelBase = usRenderDayPanel;
+  usRenderDayPanel = function usRenderDayPanel() {
+    const r = usRenderDayPanelBase.apply(this, arguments);
+    if (usKidsAre36Plus()) {
+      const box = el("selected-day-list");
+      if (box && box.querySelectorAll) box.querySelectorAll(".us-src-user").forEach((n) => n.remove());
+    }
+    return r;
+  };
   function usChildAge(childKey) {
     const l = usLinks().find((x) => x.childKey === childKey);
     const code = l && l.familyCode;
