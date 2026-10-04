@@ -4742,6 +4742,7 @@
     const f = usTwForm();
     if (!f) return;
     f.startTime = st.start; f.endTime = st.end; f.twActive = st.active; f.twWarn = st.warn;
+    f.endAuto = false; // 휠을 조작했으니 끝 시간은 사용자가 정한 값
     const box = el("modal-content").querySelector('[data-tw="us"]');
     if (box) box.outerHTML = TimeWheel.markup("us", st);
   }
@@ -4756,6 +4757,7 @@
     } else if (!f.endTime) { // 끝이 없던 일정: 시작에서 기본 길이(1시간) 뒤
       const m = TimeRange.toMin(f.startTime);
       f.endTime = TimeRange.fromMin(Math.min(24 * 60 - TimeRange.STEP, (m == null ? 9 * 60 : m) + TimeRange.DEFAULT_LENGTH));
+      f.endAuto = true; // 화면에 보이려고 채운 값(휠을 조작하기 전까지는 '끝 시간 없음' 일정을 바꾸지 않는다)
     }
   }
   async function usSave() {

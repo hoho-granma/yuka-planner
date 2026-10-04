@@ -69,7 +69,7 @@
     const oldS = toMin(range.start), oldE = toMin(range.end);
     const s = snap(toMin(newStart));
     const len = oldS != null && oldE != null && oldE > oldS ? oldE - oldS : DEFAULT_LENGTH;
-    let e = s + len;
+    let e = snap(s + len); // 조작한 시작·끝 모두 15분 칸으로(기존 시각이 15분 단위가 아니어도)
     if (e > DAY - STEP) e = DAY - STEP;
     if (e <= s) e = Math.min(DAY - STEP, s + STEP);
     return { start: fromMin(s), end: fromMin(e), warn: "" };

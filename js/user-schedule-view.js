@@ -968,10 +968,11 @@
   function dayFormToMove(f, doc) {
     const to = { date: f.date };
     if (f.allDay) return to;
-    const same = doc && doc.allDay === false && f.startTime === doc.startTime && (f.endTime || null) === (doc.endTime || null);
+    const autoEnd = !!(f.endAuto && doc && !doc.endTime); // 끝 시간이 없던 일정에 화면용으로 채운 끝은 사용자가 만지기 전까지 없는 것으로 본다
+    const same = doc && doc.allDay === false && f.startTime === doc.startTime && (autoEnd || (f.endTime || null) === (doc.endTime || null));
     if (!same || f.date !== f.originalDate) {
       to.startTime = f.startTime;
-      if (f.endTime) to.endTime = f.endTime;
+      if (f.endTime && !autoEnd) to.endTime = f.endTime;
     }
     return to;
   }

@@ -111,4 +111,93 @@ test("폼 마크업: 시간 입력은 한 줄 범위+휠 하나(시작·끝 선�
   assert.ok(/TimeWheel\.bind\(m, usTwState, usTwApply\)/.test(APP));
 });
 
+console.log("비15분 기존 시각 · 반복 '이 날만 수정' · AUTO 연결 예약 경로");
+const V2 = require("../js/user-schedule-view.js"), US2 = require("../js/user-schedule.js");
+test("비15분 기존 시각(16:07~17:07): 시작을 한 칸 돌리면 시작·끝 모두 15분 칸에 맞는다, 끝만 돌리면 시작(조작 안 함)은 기존 값 유지", () => {
+  let s = { start: "16:07", end: "17:07", active: "start", warn: "" };
+  s = W.reduce(s, { type: "step", part: "min", dir: 1 });
+  assert.deepStrictEqual([s.start, s.end], ["16:15", "17:15"]);
+  const e = W.reduce({ start: "16:07", end: "17:07", active: "end", warn: "" }, { type: "step", part: "min", dir: 1 });
+  assert.deepStrictEqual([e.start, e.end], ["16:07", "17:15"], "끝만 조작: 시작은 그대로, 끝은 15분 칸");
+  const h = W.reduce({ start: "16:07", end: "17:08", active: "start", warn: "" }, { type: "step", part: "hour", dir: 1 });
+  assert.ok(Number(h.start.slice(3)) % 15 === 0 && Number(h.end.slice(3)) % 15 === 0, h.start + "~" + h.end);
+});
+const glue2 = (us) => {
+  const a = APP.indexOf("  const usTwForm = () =>"), b = APP.indexOf("  async function usSave() {");
+  const box = { outerHTML: "" };
+  const sb = { TimeWheel: W, TimeRange: require("../js/time-range.js"), us, el: () => ({ querySelector: () => box }) };
+  vm.createContext(sb);
+  vm.runInContext(APP.slice(a, b) + ";globalThis.g={usTwState,usTwApply,usEnsureTimes};", sb);
+  return sb.g;
+};
+const changeHandler = (us, calls) => {
+  const a = APP.indexOf("  function usOnModalChange(ev) {"), b = APP.indexOf("  function usOnModalInput(ev) {");
+  const sb = { us, usActive: () => true, usShowForm: () => calls.push("form"), usShowDayForm: () => calls.push("day") };
+  vm.createContext(sb);
+  vm.runInContext(APP.slice(a, b) + ";globalThis.fn=usOnModalChange;", sb);
+  return (id, checked) => sb.fn({ target: { id, checked, closest: () => ({}) } });
+};
+test("반복 일정 '이 날만 수정'(시간 있는 일정): 폼 값이 휠 상태가 되고, 끝 없는 일정은 끝을 채워 보여도 만지기 전엔 이동 payload 에 끝을 넣지 않는다", () => {
+  const doc = { id: "s1", allDay: false, startTime: "16:00", recurrence: { freq: "WEEKLY" } };
+  const us = { dayForm: V2.dayFormFromOccurrence({ scheduleId: "s1", date: "2026-10-13", originalDate: "2026-10-13", allDay: false, startTime: "16:00", endTime: "" }, doc), form: null };
+  const g = glue2(us);
+  g.usEnsureTimes();
+  assert.deepStrictEqual([us.dayForm.startTime, us.dayForm.endTime, us.dayForm.endAuto], ["16:00", "17:00", true]);
+  assert.strictEqual(g.usTwState().end, "17:00", "휠은 시작·끝을 한 줄로 보인다");
+  assert.deepStrictEqual(V2.dayFormToMove(us.dayForm, doc), { date: "2026-10-13" }, "아무것도 안 바꾸면 이동 없음(예외 안 만듦)");
+  assert.deepStrictEqual(V2.dayFormToMove({ ...us.dayForm, date: "2026-10-14" }, doc), { date: "2026-10-14", startTime: "16:00" }, "날짜만 바꾸면 끝은 만들지 않는다");
+  g.usTwApply(W.reduce(g.usTwState(), { type: "step", part: "hour", dir: 1 }));
+  assert.deepStrictEqual([us.dayForm.startTime, us.dayForm.endTime, us.dayForm.endAuto], ["17:00", "18:00", false]);
+  assert.deepStrictEqual(V2.dayFormToMove(us.dayForm, doc), { date: "2026-10-13", startTime: "17:00", endTime: "18:00" }, "휠을 돌리면 시작·끝 모두 이동 payload");
+  assert.ok(V2.validateDayForm(us.dayForm).ok);
+});
+test("반복 '이 날만 수정'(끝 있는 일정): 이미 있는 시간 값이 그대로 휠에 채워지고 그대로 두면 이동 없음, 종일 문서는 토글로 시간 일정이 되고 기본 9:00~10:00", () => {
+  const doc = { id: "s1", allDay: false, startTime: "16:00", endTime: "17:30" };
+  const us = { dayForm: V2.dayFormFromOccurrence({ scheduleId: "s1", date: "2026-10-13", allDay: false, startTime: "16:00", endTime: "17:30" }, doc), form: null };
+  const g = glue2(us);
+  g.usEnsureTimes();
+  assert.deepStrictEqual([us.dayForm.startTime, us.dayForm.endTime, us.dayForm.endAuto], ["16:00", "17:30", undefined]);
+  assert.deepStrictEqual(V2.dayFormToMove(us.dayForm, doc), { date: "2026-10-13" });
+  const allDocU = { dayForm: V2.dayFormFromOccurrence({ scheduleId: "s2", date: "2026-10-13", allDay: true }, { id: "s2", allDay: true }), form: null };
+  const calls = [];
+  changeHandler(allDocU, calls)("us-allday", false);
+  assert.strictEqual(allDocU.dayForm.allDay, false); assert.deepStrictEqual(calls, ["day"]);
+  glue2(allDocU).usEnsureTimes();
+  assert.deepStrictEqual([allDocU.dayForm.startTime, allDocU.dayForm.endTime], ["09:00", "10:00"]);
+  assert.strictEqual(V2.validateDayForm(allDocU.dayForm).ok, true);
+  assert.deepStrictEqual(V2.dayFormToMove(allDocU.dayForm, { id: "s2", allDay: true }), { date: "2026-10-13", startTime: "09:00", endTime: "10:00" });
+});
+test("AUTO 연결 예약(VX·HC) 폼: 종일을 끄면 기본 시간이 채워지고, 휠 값이 저장 입력(startTime·endTime·autoRef)에 그대로 들어가며, 다시 종일로 켜면 시간이 비워진다", () => {
+  const links = [{ childKey: "c1", displayName: "수아", order: 1 }];
+  const form = V2.newForm({ date: "", activeChildKey: "c1", links, autoRef: "VX-DTAP__dose-2", title: "DTaP 접종 (2차)" });
+  form.eventDate = "2026-10-14";
+  const us = { form, dayForm: null };
+  const calls = [];
+  const change = changeHandler(us, calls);
+  change("us-allday", false);
+  assert.strictEqual(form.allDay, false); assert.deepStrictEqual(calls, ["form"]);
+  const g = glue2(us);
+  g.usEnsureTimes();
+  assert.deepStrictEqual([form.startTime, form.endTime], ["09:00", "10:00"]);
+  g.usTwApply(W.reduce(W.reduce(g.usTwState(), { type: "step", part: "hour", dir: 1 }), { type: "step", part: "mer", dir: 1 }));
+  assert.deepStrictEqual([form.startTime, form.endTime], ["22:00", "23:00"]);
+  const prep = V2.prepareSave(form, 1790000000000);
+  assert.ok(prep.ok, JSON.stringify(prep.messages));
+  assert.deepStrictEqual([prep.input.autoRef, prep.input.allDay, prep.input.startTime, prep.input.endTime], ["VX-DTAP__dose-2", false, "22:00", "23:00"]);
+  assert.ok(US2.buildCreateDoc(prep.input, 1790000000000).ok, "저장 문서 검증 통과");
+  const html = V2.renderForm(form, links, { autoLabel: "DTaP 접종 (2차)" });
+  assert.ok(html.includes('data-tw="us"') && html.includes(">오후 10:00<") && !html.includes("data-us-assignee"));
+  change("us-allday", true);
+  assert.deepStrictEqual([form.allDay, form.startTime, form.endTime], [true, "", ""]);
+  assert.ok(!V2.renderForm(form, links).includes('data-tw="us"'));
+});
+test("끝이 시작보다 빠르게 만들면 경고와 자동 값, 저장 검증(끝<=시작 거부)도 안전망으로 남는다", () => {
+  const form = V2.newForm({ date: "2026-10-14", activeChildKey: null, links: [] });
+  Object.assign(form, { allDay: false, startTime: "16:00", endTime: "17:00", title: "t", category: "ETC", scope: "FAMILY", childKeys: [] });
+  const g = glue2({ form, dayForm: null });
+  g.usTwApply(W.reduce({ ...g.usTwState(), active: "end" }, { type: "step", part: "hour", dir: -1 }));
+  assert.ok(form.twWarn.includes("빨라요") && form.endTime === "17:00");
+  assert.strictEqual(V2.validateForm({ ...form, endTime: "15:00" }).ok, false);
+});
+
 console.log(`\n${passed}개 통과`);
