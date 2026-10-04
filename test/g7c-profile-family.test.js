@@ -15,7 +15,7 @@ test("가족 얼굴(구성원·아이)·[가족 추가] 얼굴·가족코드 알
   const h = slot();
   assert.ok(h.indexOf("우리 가족") < h.indexOf("acct-faces") && h.indexOf("acct-faces") < h.indexOf("A8RZ7Q9X") && h.indexOf("A8RZ7Q9X") < h.indexOf("acct-fam-me"));
   assert.ok(h.includes('<span class="acct-face-name">주연 (나)</span>') && h.includes('<span class="acct-face-name">아빠</span>') && h.includes('<span class="acct-face-name">할머니</span>') && h.includes('<span class="acct-face-name">은찬</span>'));
-  assert.ok(h.includes("background:#ff9ec4") && h.includes("background:#7fb8ff") && h.includes("background:#c9b8ff") && h.includes("background:#ffc46b"));
+  assert.ok(h.includes("background:#ff66b3") && h.includes("background:#4d9bff") && h.includes("background:#c9b8ff") && h.includes("background:#ffc233"));
   assert.ok(/acct-face acct-face-add" data-acct-action="open-invite"><span class="acct-face-dot">\+<\/span><span class="acct-face-name">가족 추가<\/span>/.test(h));
   assert.ok(/<span class="acct-fam-pill-l">가족코드<\/span><b>A8RZ7Q9X<\/b><button type="button" class="acct-copy-ico" data-acct-action="copy-me" aria-label="가족코드 복사"/.test(h));
 });

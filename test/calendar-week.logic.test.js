@@ -92,7 +92,7 @@ test("일정 4개 이상이면 3개만 + '+N', 완료는 done 클래스", () => 
 });
 test("제목은 이스케이프, 색은 #RRGGBB 만(스타일 주입 불가)", () => {
   const h = W.renderWeekCols([day("2026-10-07", { user: [{ title: '<img onerror=x>"', color: 'red;background:url(x)', done: false }] })]);
-  assert.ok(!h.includes("<img") && h.includes("&lt;img") && !h.includes("url(x)") && h.includes("--wk-color:#6b5b53"));
+  assert.ok(!h.includes("<img") && h.includes("&lt;img") && !h.includes("url(x)") && h.includes("--wk-color:#62656b"));
 });
 test("입력을 바꾸지 않는다 · 빈 입력은 빈 문자열", () => {
   const days = [day("2026-10-07", { user: [{ title: "a", color: "#ff7a59", done: false }] })];

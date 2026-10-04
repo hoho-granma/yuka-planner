@@ -204,7 +204,7 @@ const mkHS = (flag = true, extra = {}) => { const adapter = extra.adapter || fak
     assert.ok(APP.includes('acct36Active() && name === "subsidy" ? "home" : name'));
     const h = V.renderHome({ kids: [{ code: "A", name: "수아", ageText: "10세", current: true }, { code: "B", name: "은찬", ageText: "3개월" }], name: "수아", familyHtml: "<section>가족</section>", todos: CT.homeLines([{ id: "1", title: "숙제", done: false }, { id: "2", title: "빨래", done: true }], 3), canTodo: true });
     assert.ok(h.indexOf("home-child-chips") < h.indexOf("가족") && h.indexOf("가족") < h.indexOf("수아 할 일") && h.indexOf("수아 할 일") < h.indexOf("자주 쓰는 일정"), "칩 → 가족 카드 → 할 일 카드 → 자주 쓰는 일정");
-    assert.ok(h.includes('data-a36="add-home"') && h.includes("체크리스트 추가 +") && h.includes("10세") && h.includes('data-a36-quick="학원"') && h.includes('data-a36-quick="숙제"') && h.includes('data-a36-quick="준비물"'));
+    assert.ok(h.includes('data-a36="add-home"') && h.includes("체크리스트 추가 +") && h.includes('data-a36-quick="학원"') && h.includes('data-a36-quick="숙제"') && h.includes('data-a36-quick="준비물"'));
   });
 
   console.log("날짜 일정은 달력 아래 패널(하프 시트 없음)·할 일 탭 화면");
@@ -232,7 +232,7 @@ const mkHS = (flag = true, extra = {}) => { const adapter = extra.adapter || fak
     assert.ok(/function acct36Child\(p\) \{\n\s*return typeof acctEnabled === "function" && acctEnabled\(\)/.test(APP));
     assert.ok(/function acct36Init\(\) \{\n\s*if \(!acctEnabled\(\)/.test(APP));
     const i = CSS.indexOf("/* ===== G22:");
-    const rules = CSS.slice(i).replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "").split("}").map((r) => r.split("{")[0].trim()).filter(Boolean);
+    const rules = CSS.slice(i).split("/* ═══ v1.12.92")[0].replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "").split("}").map((r) => r.split("{")[0].trim()).filter(Boolean);
     rules.forEach((sel) => sel.split(",").forEach((x) => assert.ok(x.trim().startsWith("body.acct-design"), x)));
     const html = read("index.html");
     assert.ok(/<script src="js\/child-todos\.js\?v=\d+"><\/script>/.test(html) && /<script src="js\/over36-view\.js\?v=\d+"><\/script>/.test(html));

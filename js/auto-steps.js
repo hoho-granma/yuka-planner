@@ -122,8 +122,8 @@
       <div class="as-sh"><div><small>${esc(MSG.sheetFrom)}</small><b>${esc(MSG.sheetTitle)}</b></div></div>
       <div class="as-lb">${esc(MSG.fTitle)}</div><input class="as-in" type="text" maxlength="100" data-as-field="title" value="${esc(f.title)}" />
       <div class="as-lb">${esc(MSG.fDate)}<span class="as-au">${esc(MSG.dateAuto)}</span></div><input class="as-in" type="date" data-as-field="date" value="${esc(f.date)}" />${dateSub ? `<div class="as-note">${f.dateKind === "deadline" ? "마감일" : "권장일"}${dateSub}</div>` : ""}
-      ${f.childName ? `<div class="as-lb">${esc(MSG.fChild)}</div><div class="as-chips"><span class="on">${esc(f.childName)}</span></div>` : ""}
-      <div class="as-lb">${esc(MSG.fRepeat)}</div><div class="as-chips"><span class="on">${esc(MSG.noRepeat)}</span></div>
+      ${f.childName ? `<div class="as-lb">${esc(MSG.fChild)}</div><div class="as-chips"><span class="on"${/^#[0-9a-fA-F]{6}$/.test(String(f.childColor || "")) ? ` style="--us-color:${f.childColor}"` : ""}>${esc(f.childName)}</span></div>` : ""}
+      <div class="as-lb">${esc(MSG.fRepeat)}</div><div class="as-chips"><span class="on as-nr">${esc(MSG.noRepeat)}</span></div>
       <div class="as-lb">${esc(MSG.fMemo)}<small>${esc(MSG.optional)}</small></div><textarea class="as-in as-mm" maxlength="500" data-as-field="memo" placeholder="${esc(MSG.memoPh)}">${esc(f.memo || "")}</textarea>
       ${f.error ? `<p class="as-err" role="alert">${esc(f.error)}</p>` : ""}
       <button type="button" class="as-save" data-as="save" ${f.saving ? "disabled" : ""}>${esc(f.saving ? MSG.saving : MSG.save)}</button>

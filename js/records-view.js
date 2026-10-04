@@ -125,7 +125,7 @@
       ? `<div class="detail-row"><div class="label">관련 다음 일정</div><button type="button" class="rv-next" data-open-event="${ctx.esc(next.id)}">${ctx.esc(next.title)}<small>${ctx.kindTagHtml(next)}${ctx.esc(L.periodText(next) || "월령별로 살펴보세요")}</small></button></div>`
       : "";
     ctx.showModal(
-      `<span class="cat-badge" style="background:#8a7b73">${ctx.esc(r.category)}</span><span class="scope-tag detail-tag">${isAuto ? "자동 기록" : "직접 기록"}</span>
+      `<span class="cat-badge" style="background:var(--text-muted)">${ctx.esc(r.category)}</span><span class="scope-tag detail-tag">${isAuto ? "자동 기록" : "직접 기록"}</span>
        <h3>${ctx.esc(r.title)}</h3>
        ${notice ? `<p class="sync-note ${notice.warn ? "warn" : ""}">${ctx.esc(notice.text)}</p>` : ""}
        <div class="detail-row"><div class="label">기록 날짜</div>${ctx.formatDateKR(r.date)}</div>
@@ -182,7 +182,7 @@
        <div class="rv-field"><label for="rv-date">날짜 <span class="req">*</span></label><input type="date" id="rv-date" max="${todayIso}" value="${existing ? existing.date : todayIso}" /><small id="rv-age" class="rv-age"></small></div>
        <div class="rv-field"><label for="rv-memo-new">메모</label><textarea id="rv-memo-new" class="rv-textarea" rows="3" maxlength="500" placeholder="그날의 모습이나 느낌을 적어 보세요">${existing ? ctx.esc(existing.memo || "") : ""}</textarea></div>
        <div class="rv-field"><label for="rv-author">작성자 <small>(가족이 볼 때 표시돼요)</small></label><input type="text" id="rv-author" maxlength="10" placeholder="예: 엄마, 아빠" value="${ctx.esc(existing ? existing.authorLabel || "" : HNRecords.authorLabel())}" /></div>
-       <p id="rv-error" class="fine-print hidden" style="color:#e0524e">제목과 날짜를 입력해 주세요.</p>
+       <p id="rv-error" class="fine-print hidden" style="color:var(--c-danger)">제목과 날짜를 입력해 주세요.</p>
        <button class="btn-complete" id="rv-save">${existing ? "저장" : "기록 남기기"}</button>
        <button class="btn-close" id="rv-cancel">취소</button>`,
       "record"

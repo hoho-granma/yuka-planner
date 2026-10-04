@@ -6,7 +6,7 @@ const read = (f) => fs.readFileSync(path.join(__dirname, "..", f), "utf8");
 const CSS = read("css/style.css"), APP = read("js/app.js");
 let passed = 0;
 function test(name, fn) { try { fn(); passed++; console.log("  ok  - " + name); } catch (e) { process.exitCode = 1; console.log("  FAIL- " + name + "\n      " + (e.stack || e).split("\n").slice(0, 4).join("\n      ")); } }
-const g14 = CSS.slice(CSS.indexOf("/* ===== G14:"));
+const g14 = CSS.slice(CSS.indexOf("/* ===== G14:")).split("/* ═══ v1.12.92")[0];
 const selectors = (css) => [...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/(^|\})\s*([^{}@]+)\{/g)].flatMap((m) => m[2].split(",").map((x) => x.trim())).filter(Boolean);
 
 test("모든 G14 CSS 규칙은 body.acct-design 범위 안(플래그 OFF 화면에 영향 없음)", () => {
@@ -127,7 +127,7 @@ test("G14-5 혜택 상세: 머리(라벨·제목) + 상태 카드(신청 전/신
   assert.ok(d.nodes.choice.parent === d.box.children[1] && d.nodes.comp.parent === d.box.children[1], "확인일·버튼 요소가 그대로 옮겨졌다");
   const n = run(false, true);
   assert.deepStrictEqual([n.status[1], n.status[n.status.length - 1]], ["btn-complete", "해당 없음으로 표시했어요"]);
-  assert.ok(/body\.acct-design \.modal-panel \.acct-sub-head \{[^}]*background: #26475c/.test(g14) && /\.acct-sub-status \{ position: relative; margin: -20px 0 8px/.test(g14));
+  assert.ok(/body\.acct-design \.modal-panel \.acct-sub-head \{[^}]*background: var\(--c-ink\)/.test(g14) && /\.acct-sub-status \{ position: relative; margin: -20px 0 8px/.test(g14));
 });
 test("G14-6 기록: 계정 모드(ctx.accountDesign)는 큰 날짜 숫자 + 자동/직접 태그, 꺼져 있으면 기존 마크업 그대로(날짜 'M/D'·태그 없음)", () => {
   const vm = require("vm");
@@ -147,7 +147,7 @@ test("G14-6 기록: 계정 모드(ctx.accountDesign)는 큰 날짜 숫자 + 자�
   assert.ok(on.includes('<span class="rec-day"><b>2</b>10월</span>') && on.includes('<span class="rec-src auto">자동</span> IPV 1차 접종 완료') && on.includes('<span class="rec-src manual">직접</span> 첫 뒤집기'));
   assert.ok(on.includes('data-rec="c:VX-A"') && on.includes('data-rec="m1"') && on.includes("직접 · 엄마"), "클릭 대상·작성자 표시 그대로");
   assert.strictEqual(on.replace(/<span class="rec-day"><b>(\d+)<\/b>(\d+)월<\/span>/g, (m, d, mo) => `<span class="rec-day">${mo}/${d}</span>`).replace(/<span class="rec-src (auto|manual)">[^<]*<\/span> /g, "").replace(/<button type="button" class="rec-add"[^>]*>[^<]*<\/button>/, ""), off, "태그·날짜 표기 말고는 같다");
-  assert.ok(/body\.acct-design #list-record \.rec-day b \{/.test(g14) && /\.rec-src\.auto \{ background: #e8f0fe/.test(g14));
+  assert.ok(/body\.acct-design #list-record \.rec-day b \{/.test(g14) && /\.rec-src\.auto \{ background: var\(--c-badge-auto\)/.test(g14));
   assert.ok(APP.includes("...(acctEnabled() ? { accountDesign: true } : {})"));
 });
 console.log(`\n${passed}개 통과`);

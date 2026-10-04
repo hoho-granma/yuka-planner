@@ -83,7 +83,7 @@ test("메뉴: 36개월 이상 아이에게만 5번째 탭(JS 가 만든다), 35�
 });
 test("CSS 는 body.acct-design 범위, 탭 스와이프 순서에는 보이는 탭이라 자동 포함(DOM 순서)", () => {
   const i = CSS.indexOf("/* ===== G25:");
-  const rules = CSS.slice(i).replace(/\/\*[\s\S]*?\*\//g, "").split("}").map((r) => r.split("{")[0].trim()).filter(Boolean);
+  const rules = CSS.slice(i).split("/* ═══ v1.12.92")[0].replace(/\/\*[\s\S]*?\*\//g, "").split("}").map((r) => r.split("{")[0].trim()).filter(Boolean);
   assert.ok(rules.length > 10);
   rules.forEach((sel) => sel.split(",").forEach((x) => assert.ok(x.trim().startsWith("body.acct-design"), x)));
   assert.ok(/acct23Order = \(\) => \[\.\.\.document\.querySelectorAll\("\.bottom-nav \.nav-item:not\(\.hidden\)/.test(APP));

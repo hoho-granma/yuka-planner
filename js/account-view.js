@@ -23,7 +23,7 @@
       ob1Title: "우리 가족 일정,\n한눈에",
       ob1Sub: "아빠, 엄마, 아이 일정을 한 달력에.\n가족 일정은 모으고, 육아 일정은 알아서 챙겨줘요.",
       // 1장 예시: 사람별 대표색(아빠·엄마·세현·수아). 일정 = [점 색(들), 앞글, 라벨 종류(vx 접종·hc 검진·sb 지원금, 없으면 ""), 라벨, 뒷글]
-      ob1People: Object.freeze([["아빠", "#7fb8ff"], ["엄마", "#ff9ec4"], ["세현", "#ffc46b"], ["수아", "#7fe0b3"]]),
+      ob1People: Object.freeze([["아빠", "#4d9bff"], ["엄마", "#ff66b3"], ["세현", "#ffc233"], ["수아", "#2fe0a0"]]),
       ob1Days: Object.freeze([[5], [6, "수아"], [7, "", true], [8, "아빠"], [9], [10, "세현"], [11], [12, "엄마"], [13, "아빠"], [14], [15, "수아"], [16, "세현"], [17, "아빠 엄마"], [18, "아빠 엄마 세현 수아"]]),
       ob1Weekdays: Object.freeze(["월", "화", "수", "목", "금", "토", "일"]),
       ob1Events: Object.freeze([
@@ -344,7 +344,7 @@
     const feats = O.ob2Feats.map(([k, t, d]) => `<div class="acct-feat"><span class="acct-feat-ic acct-feat-${k}">${FEAT_ICO[k]}</span><span><b>${esc(t)}</b><span>${esc(d)}</span></span></div>`).join("");
     return `<div class="card acct-landing acct-ob" id="acct-landing"><div class="acct-main">
       <div class="acct-slides" data-acct-slides tabindex="0" aria-label="${esc(O.ob2Aria)}">
-        <section class="acct-slide" data-acct-slide="0" aria-label="1/2"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title)}</h1><p class="acct-sub">${lines(O.ob1Sub)}</p></div>
+        <section class="acct-slide" data-acct-slide="0" aria-label="1/2"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title).replace("한눈에", '<mark class="acct-hl">한눈에</mark>')}</h1><p class="acct-sub">${lines(O.ob1Sub)}</p></div>
           <div class="acct-ob1-cal" aria-hidden="true"><div class="acct-ob1-chips">${chips}</div><div class="acct-ob1-wk">${O.ob1Weekdays.map((d) => `<span>${d}</span>`).join("")}</div><div class="acct-ob1-days">${days}</div><div class="acct-ob1-ev">${evs}</div></div></section>
         <section class="acct-slide acct-slide2" data-acct-slide="1" aria-label="2/2"><p class="acct-brand">${esc(O.ob2Brand)}</p><p class="acct-lead">${lines(O.ob2Lead)}</p><div class="acct-feats">${feats}</div></section>
       </div>
@@ -401,9 +401,9 @@
     return `<div class="detail-row acct-slot"><div class="label">${esc(MSG.myAccount)}</div><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-signup">${esc(MSG.signup)}</button><button type="button" class="btn-close" data-acct-action="open-login">${esc(MSG.login)}</button></div>${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
   }
   // ── G7 프로필 시트(D 가족 중심): 우리 가족 얼굴 + 가족코드 → 내 계정 줄(로그아웃). 가족 얼굴은 구성원·아이 링크에서 만든다. ──
-  const FACE_COLORS = Object.freeze({ MOM: "#ff9ec4", DAD: "#7fb8ff" });
+  const FACE_COLORS = Object.freeze({ MOM: "#ff66b3", DAD: "#4d9bff" });
   const FACE_FAMILY = "#c9b8ff";
-  const FACE_CHILD = Object.freeze(["#ffc46b", "#7fe0b3", "#ffb3a7", "#a8d8ff"]);
+  const FACE_CHILD = Object.freeze(["#ffc233", "#2fe0a0", "#ff5f6d", "#17d3ee"]);
   const face = (color, label, me) => `<div class="acct-face"><span class="acct-face-dot" style="background:${color}">${esc(String(label || "").slice(0, 1))}</span><span class="acct-face-name">${esc(label)}${me ? ` (${esc(MSG.meShort)})` : ""}</span></div>`;
   /** s.family = { members:[{memberId,role,label}], meId, meName, children:[{childKey,displayName}] } */
   function renderFamilySlot(s) {

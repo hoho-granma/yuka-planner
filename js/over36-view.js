@@ -43,7 +43,7 @@
   function renderHome(st) {
     const kids = st.kids || [];
     const chips = kids.length >= 2
-      ? `<div class="home-child-chips a36-chips" role="tablist">${kids.map((c) => `<button type="button" role="tab" aria-selected="${c.current ? "true" : "false"}" class="home-child-chip${c.current ? " active" : ""}" data-home-child="${esc(c.code)}">${esc(c.name)}${c.ageText ? ` <small>${esc(c.ageText)}</small>` : ""}</button>`).join("")}</div>`
+      ? `<div class="home-child-chips a36-chips" role="tablist">${kids.map((c) => `<button type="button" role="tab" aria-selected="${c.current ? "true" : "false"}" class="home-child-chip${c.current ? " active" : ""}" data-home-child="${esc(c.code)}">${esc(c.name)}</button>`).join("")}</div>`
       : "";
     const t = st.todos || { open: [], done: [] };
     const rows = [...t.open, ...t.done]

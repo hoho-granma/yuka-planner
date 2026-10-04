@@ -29,8 +29,8 @@ test("앱 연결: 날짜 패널 세 구역(추가한 일정=직접 입력, 혜�
   assert.strictEqual((fnSrc.match(/, "user"\)/g) || []).length, 1);
   assert.strictEqual((fnSrc.split('sourceLabeled(eventItemHtml(e), "auto")').length - 1), 2);
 });
-test("CSS: 자동=파랑 작은 라벨(직접 입력 라벨은 화면에 쓰지 않는다), MSG 문구", () => {
-  assert.ok(/\.us-src-auto \{ background: #e8f0fe/.test(CSS) && /\.us-src-user \{ background: #ffe9f1/.test(CSS));
+test("CSS: 자동=작은 라벨(S3 자동 뱃지색)(직접 입력 라벨은 화면에 쓰지 않는다), MSG 문구", () => {
+  assert.ok(/\.us-src-auto \{ background: var\(--c-badge-auto\)/.test(CSS) && /\.us-src-user \{/.test(CSS));
   assert.deepStrictEqual([USV.MSG.srcAuto, USV.MSG.srcUser], ["자동", "직접 입력"]);
 });
 console.log(`\n${passed}개 통과`);

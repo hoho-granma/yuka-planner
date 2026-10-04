@@ -30,12 +30,12 @@
   const WRITE_ROOTS = ["householdCodes", "households"];
   // 칩·일정 막대의 대표색 키(p1~p10). 색 값은 user-schedule-view.js 의 PALETTE 와 같은 순서다. 만들 때 한 번 정해 문서에 남기면 이후 바뀌지 않는다.
   const COLOR_KEYS = Object.freeze(Array.from({ length: 10 }, (_, i) => "p" + (i + 1)));
-  const LEGACY_ROLE_KEY = Object.freeze({ MOM: "p5", DAD: "p4" });
+  const LEGACY_ROLE_KEY = Object.freeze({ MOM: "p6", DAD: "p9" });
   /** 아직 가장 적게 쓰인 색 키(같으면 앞 번호). 삭제됐거나 분리된 아이·구성원은 세지 않는다. */
   function pickColorKey(m) {
     const live = [...Object.values((m && m.children) || {}).filter((d) => d && !d.removedAt), ...Object.values((m && m.members) || {}).filter((d) => d && !d.deletedAt)];
     const count = Object.fromEntries(COLOR_KEYS.map((k) => [k, 0]));
-    // colorKey 가 없는 엄마·아빠(옛 가구)는 옛 고정색(엄마 #ff9ec4=p5, 아빠 #7fb8ff≈p4)을 그대로 쓰므로 그 칸을 이미 쓰는 것으로 센다 — 새 구성원 색이 겹치지 않게.
+    // colorKey 가 없는 엄마·아빠(옛 가구)는 옛 고정색(엄마 #ff66b3=p6, 아빠 #4d9bff=p9)을 그대로 쓰므로 그 칸을 이미 쓰는 것으로 센다 — 새 구성원 색이 겹치지 않게.
     live.forEach((d) => { const k = d.colorKey || LEGACY_ROLE_KEY[d.role]; if (count[k] != null) count[k]++; });
     return COLOR_KEYS.reduce((best, k) => (count[k] < count[best] ? k : best), COLOR_KEYS[0]);
   }

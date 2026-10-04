@@ -18,7 +18,7 @@ const HNLogicCompat = { ...HNLogic, classifyHomeItems: (...a) => ({ period: [], 
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
 const BASE = "84286f3"; // C2-a 커밋(이번 변경 직전)
 // 칩 달력 개편으로 팔레트가 파스텔로 바뀌었다 — 이전 커밋의 출력도 새 색으로 바꿔 비교한다(그 밖의 마크업은 글자까지 같아야 한다)
-const RECOLOR = (s) => String(s).replace(/#ff7a59/g, "#ffc46b").replace(/#14b8a6/g, "#7fe0b3").replace(/#ec4899/g, "#ff8a7a").replace(/#a16207/g, "#86b6ff").replace(/#6b5b53/g, "#c9b8ff");
+const RECOLOR = (s) => String(s).replace(/#ff7a59/g, "#ffc233").replace(/#14b8a6/g, "#a8e12a").replace(/#ec4899/g, "#17d3ee").replace(/#a16207/g, "#9a7bff").replace(/#6b5b53/g, "#c9b8ff");
 const baseSrc = (f) => execSync(`git show ${BASE}:${f}`, { cwd: ROOT, encoding: "utf8" });
 let passed = 0, started = 0, finished = 0;
 function test(name, fn) {
@@ -264,7 +264,7 @@ test("eventItemHtml: 보조 문구 삽입 한 곳만 다르다", () => {
   assert.strictEqual(fnSrc(app, "eventItemHtml").replace("</p>${autoLinkNoteHtml(e)}\n", "</p>\n"), fnSrc(headApp, "eventItemHtml"));
 });
 test("remainingItemHtml: 인라인 문구 삽입 한 곳만 다르다", () => {
-  assert.strictEqual(fnSrc(app, "remainingItemHtml").replace("${autoLinkInlineHtml(e)}", ""), fnSrc(headApp, "remainingItemHtml"));
+  assert.strictEqual(fnSrc(app, "remainingItemHtml").replace("${autoLinkInlineHtml(e)}", "").replace('"var(--line)"', '"#cfc7bf"'), fnSrc(headApp, "remainingItemHtml"));
 });
 test("openDetail: 버튼 자리와 핸들러 두 줄만 다르다", () => {
   const now = fnSrc(app, "openDetail").replace("      ${autoLinkButtonHtml(e, isDone)}\n", "").replace(/    if \(el\("btn-auto-reserve"\)\)[^\n]*\n    if \(el\("btn-auto-view"\)\)[^\n]*\n/, "");

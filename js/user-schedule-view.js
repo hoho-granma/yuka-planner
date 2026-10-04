@@ -242,8 +242,8 @@
   // ── 아이별 색(링크 order 기반 파생 — 저장하지 않는다) ─────────────────────────
   // 칩 달력 개편(B 마카롱 파스텔): 아이 첫째·둘째·셋째·넷째 이상 / 가족·기타 구성원 / 엄마·아빠(역할 고정, 저장하지 않는다)
   // 대표색 팔레트 10색: 아이·구성원마다 키(colorKey p1~p10, 없으면 childKey/memberId 해시)로 정해 한 번 정해지면 사람이 늘거나 줄어도 바뀌지 않는다.
-  // 모두 본문 글자색(#3a2e2a) 대비 5.7:1 이상, 서로 색차(Lab ΔE) 20 이상(test/h4-chips-members-delete.test.js 가 확인).
-  const PALETTE = Object.freeze(["#ffc46b", "#7fe0b3", "#ff8a7a", "#86b6ff", "#ff9ec4", "#b79cff", "#6fd6e6", "#d3e060", "#d9a98a", "#a3b4c6"]);
+  // 색 적용(v1.12.92): '선명 팝' 순서. 모두 칩 글자색(--chip-ink #1a1410) 대비 5.7:1 이상, 서로 색차(Lab ΔE) 20 이상(test/h4-chips-members-delete.test.js 가 확인). css/style.css 의 --d1~--d10 과 같은 값이다.
+  const PALETTE = Object.freeze(["#ffc233", "#a8e12a", "#17d3ee", "#9a7bff", "#ff9a4d", "#ff66b3", "#ff5f6d", "#2fe0a0", "#4d9bff", "#7f9fc0"]);
   const COLOR_KEYS = Object.freeze(PALETTE.map((_, i) => `p${i + 1}`));
   const CHILD_PALETTE = PALETTE; // (옛 이름)
   const hashIndex = (key) => { let h = 0; for (const ch of String(key == null ? "" : key)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h % PALETTE.length; };
@@ -251,8 +251,8 @@
   const keyColor = (key, colorKey) => { const i = COLOR_KEYS.indexOf(colorKey); return PALETTE[i >= 0 ? i : hashIndex(key)]; };
   const FAMILY_COLOR = "#c9b8ff";
   // 옛 고정색: colorKey 가 없는 엄마·아빠 구성원(예전에 만든 가구)은 계속 이 색을 쓴다(바뀌면 이미 익숙한 색이 달라진다). 새 구성원은 colorKey(팔레트)를 받는다.
-  // 엄마 #ff9ec4 = 팔레트 p5 와 같은 색, 아빠 #7fb8ff 는 p4(#86b6ff)와 구분되지 않을 만큼 가깝다(ΔE≈2.7) — 가장 덜 쓰인 색을 고를 때 이 두 칸을 쓰는 것으로 센다(household-sync pickColorKey).
-  const MEMBER_COLORS = Object.freeze({ MOM: "#ff9ec4", DAD: "#7fb8ff" });
+  // 엄마 #ff66b3 = 팔레트 p6 와 같은 색, 아빠 #4d9bff = p9 와 같은 색(옛 분홍·파랑 느낌을 그대로 이은 값) — 가장 덜 쓰인 색을 고를 때 이 두 칸을 쓰는 것으로 센다(household-sync LEGACY_ROLE_KEY).
+  const MEMBER_COLORS = Object.freeze({ MOM: "#ff66b3", DAD: "#4d9bff" });
   // 카테고리별 색(칩 전용 맵 — 앱의 CATEGORY_META 색과 별개): 자동 6분류 + 등록 일정(병원=검진색·수업/기관=주황·가족/기타=회색)
   const CATEGORY_COLORS = Object.freeze({ "접종": "#86b6ff", "검진": "#c9a2ff", "발달": "#86e0a5", "생활": "#ffe27a", "안전": "#ff9a9a", "혜택": "#a9b6c8", "수업·기관": "#ffb87a", "가족·기타": "#d8cdc4" });
   const NEUTRAL_COLOR = FAMILY_COLOR;

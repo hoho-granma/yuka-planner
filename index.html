@@ -9,10 +9,10 @@
 <meta name="apple-mobile-web-app-title" content="한눈육아" />
 <title>한눈육아 | 우리 아이 육아 통합 캘린더</title>
 <link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#ff8a5c" />
+<meta name="theme-color" content="#ff6a1a" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
 <script>/* G19: 계정 모드(기본 ON)에서는 옛 상황 선택 화면이 첫 그림부터 한 번도 보이지 않게 한다(js/feature-flags.js 와 같은 규칙: accounts="0" 일 때만 OFF) */try{if(localStorage.getItem("hannun_feature_accounts")!=="0")document.documentElement.classList.add("hnacc-default");}catch(e){document.documentElement.classList.add("hnacc-default");}</script>
-<link rel="stylesheet" href="css/style.css?v=111" />
+<link rel="stylesheet" href="css/style.css?v=112" />
   <link rel="stylesheet" href="css/places.css?v=7" />
 </head>
 <body>
@@ -121,7 +121,7 @@
         <div id="hh-code-hint"></div>
         <div id="beta-landing-slot"></div>
         <button type="button" id="btn-load-code" class="btn-primary">불러오기</button>
-        <p id="code-error" class="fine-print hidden" style="color:#e0524e;">코드를 찾을 수 없어요. 다시 확인해주세요.</p>
+        <p id="code-error" class="fine-print hidden" style="color:var(--c-danger);">코드를 찾을 수 없어요. 다시 확인해주세요.</p>
       </div>
     </section>
 
@@ -275,17 +275,17 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="js/sync.js?v=5"></script>
   <script src="js/feature-flags.js?v=5"></script>
-  <script src="js/household-sync.js?v=7"></script>
+  <script src="js/household-sync.js?v=8"></script>
   <script src="js/household-view.js?v=15"></script>
   <script src="js/auth-service.js?v=4"></script>
-  <script src="js/account-view.js?v=28"></script>
+  <script src="js/account-view.js?v=29"></script>
   <script src="js/account-sync.js?v=5"></script>
   <script src="js/version.js?v=1"></script>
   <script src="js/date-calc.js?v=1"></script>
   <script src="js/child-timeline.js?v=8"></script>
   <script src="js/school-policy.js?v=1"></script>
   <script src="js/auto-after36.js?v=1"></script>
-  <script src="js/auto-steps.js?v=3"></script>
+  <script src="js/auto-steps.js?v=4"></script>
   <script src="js/next-stage.js?v=2"></script>
   <script src="js/todo-engine.js?v=3"></script>
   <script src="js/schedule.js?v=15"></script>
@@ -296,7 +296,7 @@
   <script src="js/date-picker.js?v=2"></script>
   <script src="js/user-schedule.js?v=2"></script>
   <script src="js/calendar-model.js?v=7"></script>
-  <script src="js/calendar-week.js?v=1"></script>
+  <script src="js/calendar-week.js?v=2"></script>
   <script src="js/apply-links.js?v=2"></script>
   <script src="js/places.js?v=3"></script>
   <script src="js/places-view.js?v=11"></script>
@@ -305,13 +305,13 @@
   <script src="js/time-range.js?v=2"></script>
   <script src="js/time-wheel.js?v=1"></script>
   <script src="js/schedule-kinds.js?v=2"></script>
-  <script src="js/user-schedule-view.js?v=26"></script>
+  <script src="js/user-schedule-view.js?v=27"></script>
   <script src="js/child-todos.js?v=2"></script>
-  <script src="js/over36-view.js?v=7"></script>
+  <script src="js/over36-view.js?v=8"></script>
   <script src="js/tab-swipe.js?v=1"></script>
   <script src="js/edu-trend.js?v=3"></script>
-  <script src="js/records-view.js?v=9"></script>
-  <script src="js/app.js?v=154"></script>
+  <script src="js/records-view.js?v=10"></script>
+  <script src="js/app.js?v=155"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

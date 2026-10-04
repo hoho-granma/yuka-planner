@@ -106,7 +106,7 @@ console.log("OFF 첫 화면: 베타 미리 써 보기");
 test("OFF 기본 HTML 은 '베타 버튼 슬롯' 한 줄만 다르다(그 외 HEAD 와 동일 — 기간형 AUTO 삭제로 빠진 #auto-period-slot·달력 아래 안내 문구(W5 후속 4번 삭제)는 양쪽에서 뺀다)", () => {
   let head;
   try { head = cp.execFileSync("git", ["show", "5ec3e02:index.html"], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); } catch (e) { return; }
-  const norm = (h) => h.replace(/\?v=\d+/g, "").replace(/\n\s*<div id="beta-preview-slot"><\/div>/, "").replace(/\n\s*<script src="js\/schedule-kinds\.js[^>]*><\/script>/, "").replace(/ *<div id="auto-period-slot"><\/div>\n/, "").replace(/ *<div class="cal-kind-legend" id="cal-kind-legend">\n[^\n]*\n *<\/div>\n/, "").replace(/\n\s*<script src="js\/(?:auto-after36|auto-steps|next-stage|time-range|time-wheel|pregnancy-basis)\.js[^>]*><\/script>/g, "").replace(/<script>\/\* G19:[\s\S]*?<\/script>\n/, "").replace(/\n\s*<script src="js\/(child-todos|over36-view|tab-swipe|edu-trend)\.js[^>]*><\/script>/g, ""); // G13/G19: 순수 모듈 스크립트 한 줄·계정 기본 ON 부팅 클래스 스크립트(OFF 에서는 아무 클래스도 붙지 않는다): 순수 모듈 스크립트 한 줄(전역 정의만, OFF 동작 없음)
+  const norm = (h) => h.replace(/\?v=\d+/g, "").replace(/(name="theme-color" content=")#ff8a5c/, "$1#ff6a1a").replace(/style="color:#e0524e;"/, 'style="color:var(--c-danger);"').replace(/\n\s*<div id="beta-preview-slot"><\/div>/, "").replace(/\n\s*<script src="js\/schedule-kinds\.js[^>]*><\/script>/, "").replace(/ *<div id="auto-period-slot"><\/div>\n/, "").replace(/ *<div class="cal-kind-legend" id="cal-kind-legend">\n[^\n]*\n *<\/div>\n/, "").replace(/\n\s*<script src="js\/(?:auto-after36|auto-steps|next-stage|time-range|time-wheel|pregnancy-basis)\.js[^>]*><\/script>/g, "").replace(/<script>\/\* G19:[\s\S]*?<\/script>\n/, "").replace(/\n\s*<script src="js\/(child-todos|over36-view|tab-swipe|edu-trend)\.js[^>]*><\/script>/g, ""); // G13/G19: 순수 모듈 스크립트 한 줄·계정 기본 ON 부팅 클래스 스크립트(OFF 에서는 아무 클래스도 붙지 않는다): 순수 모듈 스크립트 한 줄(전역 정의만, OFF 동작 없음)
   assert.strictEqual(norm(read("index.html")), norm(head));
   assert.ok(read("index.html").includes('<div id="beta-preview-slot"></div>'));
 });
@@ -157,7 +157,7 @@ test("CSS: 주 버튼 54px·둥근 16px·accent 채움·그림자·눌림·포�
   assert.ok(/min-height:\s*56px/.test(join) && /border:\s*1px solid var\(--border\)/.test(join) && /border-radius:\s*16px/.test(join) && /background:\s*#fff/.test(join));
   assert.ok(/border-radius:\s*50%/.test(rule(".acct-btn-ico")));
   const colors = (g1.match(/#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)/g) || []).map((c) => c.toLowerCase().replace(/\s+/g, ""));
-  const allowed = new Set(["#fff", "#fff7f2", "rgba(255,138,92,.3)"]);
+  const allowed = new Set(["#fff", "#fff7f2", "rgba(255,138,92,.3)", "rgba(255,106,26,.3)"]);
   colors.forEach((c) => assert.ok(allowed.has(c), "허용 밖 색: " + c));
   assert.ok(/#view-landing\.acct-simple #btn-show-code-entry, #view-landing\.acct-simple #code-entry \{ display: none !important; \}/.test(g1), "인라인 display:block 을 이기려면 !important");
   assert.ok(read("index.html").includes('id="btn-show-code-entry" class="btn-text" style="display:block'), "인라인 style 이 실제로 있다(그래서 !important)");

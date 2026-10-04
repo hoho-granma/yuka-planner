@@ -1596,7 +1596,7 @@
         .map((pv) => `<option value="${esc(pv.code)}" ${pv.code === profile.province ? "selected" : ""}>${esc(pv.name)}</option>`)
         .join("")}</select></div>
       <div class="rv-field"><label for="ep-district">시·군·구</label><select id="ep-district" class="ep-select"></select></div>
-      <p id="ep-error" class="fine-print hidden" style="color:#e0524e">이름과 날짜를 입력해 주세요.</p>
+      <p id="ep-error" class="fine-print hidden" style="color:var(--c-danger)">이름과 날짜를 입력해 주세요.</p>
       <button class="btn-complete" id="ep-save">저장</button>
       <button class="btn-close" id="ep-cancel">취소</button>
     `;
@@ -1900,7 +1900,7 @@
     const g = calGroupFor(e);
     const done = !!completed[e.id];
     const title = e.title.replace(/^⚠️ 확인 필요 · /, "");
-    return `<button type="button" class="remaining-item${done ? " done" : ""}" data-id="${e.id}"><span class="dot" style="background:${done ? "#cfc7bf" : g.color}"></span>${title}${autoLinkInlineHtml(e)}${done ? '<span class="ri-check">✓</span>' : ""}</button>`;
+    return `<button type="button" class="remaining-item${done ? " done" : ""}" data-id="${e.id}"><span class="dot" style="background:${done ? "var(--line)" : g.color}"></span>${title}${autoLinkInlineHtml(e)}${done ? '<span class="ri-check">✓</span>' : ""}</button>`;
   }
 
   /** "이 달 월령 체크" — 특정 날짜가 없는 월령별 항목(달력 칸에는 찍지 않는다). 미완료를 먼저 보여준다. */
@@ -2013,7 +2013,6 @@
     const s = e.detail;
     const tags = [];
     if (s.prenatalOnly) tags.push(["임신 중", ""]);
-    else if (s.postpartumOk && !isPregnant()) tags.push(["출산 후에도 신청 가능", "aud-ok"]);
     if (s.conditionLabel) tags.push([s.conditionLabel, "aud-cond"]);
     return tags.map(([t, c]) => `<span class="aud-tag ${c} ${extraClass || ""}">${esc(t)}</span>`).join("");
   }
@@ -2054,19 +2053,12 @@
     return e.windowEnd ? `${f(e.windowStart)} ~ ${f(e.windowEnd)}` : `${f(e.windowStart)}부터`;
   }
 
-  /** 지원금을 주는 주체 뱃지 — 전국 공통은 고정 파랑, 시·도/시·군·구는 이름마다 고유색. */
+  /** 지원금을 주는 주체 뱃지 — 전국 공통은 밝은 파랑(#cfe6ff/#0f2a4a), 시·도/시·군·구(지역)는 밝은 초록(#c4f0d8/#0c3a24). 색은 css 의 --c-badge-nation·--c-badge-region 슬롯. */
   function providerTagHtml(e, extra) {
     const p = subsidyProvider(e);
     if (!p) return "";
-    let fg = "#2f6db3";
-    let bg = "#e8f1fb";
-    if (p.short !== "전국 공통") {
-      let h = 0;
-      for (const ch of p.short) h = (h * 31 + ch.charCodeAt(0)) % 360;
-      fg = `hsl(${h},55%,34%)`;
-      bg = `hsl(${h},70%,92%)`;
-    }
-    return `<span class="prov-tag${extra ? " " + extra : ""}" style="color:${fg}">${esc(p.short)}</span>`;
+    const kind = p.short === "전국 공통" ? "prov-nation" : "prov-region";
+    return `<span class="prov-tag ${kind}${extra ? " " + extra : ""}">${esc(p.short)}</span>`;
   }
 
   /** 지원금 카드에 신청 기간(시작~마감)을 항상 보여준다. 마감이 없으면 상시. */
@@ -2694,16 +2686,9 @@
   }
 
   /** 확인·완료(취소) 버튼 색 — 카테고리 대표색(CATEGORY_META)에 맞춘 파스텔. 혜택은 살구색 스타일을 따로 쓴다. */
-  const CAT_BUTTON_COLORS = {
-    "발달관찰": ["#e6f7ec", "#1d7a45", "#9bdbb5"],
-    "예방접종": ["#e8f0fe", "#1f5fbf", "#a9c6f5"],
-    "영유아검진": ["#f1e8fd", "#7a34c4", "#d3b7f2"],
-    "생활·수유": ["#fdf4d8", "#8a6a05", "#f0d885"],
-    "안전·돌봄": ["#fde8e8", "#c23a37", "#f2b3b1"],
-  };
+  // 색 적용(v1.12.92): 완료 버튼은 분류와 상관없이 한 가지 색(완료 = 틸, css --c-ok)으로 통일한다.
   function catButtonStyle(category) {
-    const c = CAT_BUTTON_COLORS[category];
-    return c ? `data-cat="1" style="--bc-bg:${c[0]};--bc-fg:${c[1]};--bc-bd:${c[2]}"` : "";
+    return "";
   }
 
   function openDetail(e, cameFromDayList) {
@@ -2904,7 +2889,7 @@
     if (!e || ck == null || !autoLinkOn()) return;
     const di = asDateFor(e);
     const link = usLinks().find((l) => l.childKey === ck);
-    asCur.form = { title: asCur.info ? asCur.info.label : usAutoTitleOfEvent(e), date: di.iso || (asCur.info ? toISODate(new Date()) : ""), dateKind: di.kind, dateUncertain: di.uncertain, childName: link ? link.displayName || "" : "", memo: "", error: "", saving: false };
+    asCur.form = { title: asCur.info ? asCur.info.label : usAutoTitleOfEvent(e), date: di.iso || (asCur.info ? toISODate(new Date()) : ""), dateKind: di.kind, dateUncertain: di.uncertain, childName: link ? link.displayName || "" : "", childColor: link ? UserScheduleView.keyColor(link.childKey, link.colorKey) : "", memo: "", error: "", saving: false };
     asRenderSheet();
   }
   async function asSave() {
@@ -5540,7 +5525,7 @@
               .join("")
           : '<p class="empty">저장된 아이가 아직 없어요.</p>'
       }</div>
-      <p id="child-switch-error" class="fine-print hidden" style="color:#e0524e">불러오지 못했어요. 인터넷 연결을 확인해 주세요.</p>
+      <p id="child-switch-error" class="fine-print hidden" style="color:var(--c-danger)">불러오지 못했어요. 인터넷 연결을 확인해 주세요.</p>
       <button class="cs-add" id="btn-child-add">${plus}새 아이 추가</button>
       ${acctEnabled() ? "" : '<button class="cs-code" id="btn-child-code">가족코드로 아이 불러오기</button>'}
     `;

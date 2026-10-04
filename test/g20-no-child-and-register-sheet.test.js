@@ -119,7 +119,7 @@ const st = { user: { uid: "u1", displayName: "주연" }, account: { displayName:
     const css = read("css/style.css");
     const i = css.indexOf("/* ===== G20:");
     assert.ok(i > 0);
-    const rules = css.slice(i).replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "").split("}").map((r) => r.split("{")[0].trim()).filter(Boolean);
+    const rules = css.slice(i).split("/* ═══ v1.12.92")[0].replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "").split("}").map((r) => r.split("{")[0].trim()).filter(Boolean);
     rules.forEach((sel) => sel.split(",").forEach((s) => assert.ok(s.trim().startsWith("body.acct-design"), s)));
   });
   await test("작은 화면: [저장]은 시트 아래 고정(sticky + safe-area), 낮은 화면(≤760px)에서는 간격 축소 — 모두 body.acct-design 범위", () => {

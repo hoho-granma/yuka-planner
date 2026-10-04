@@ -272,7 +272,10 @@ const fnSrc = (name, async) => { const i = APP.indexOf(`  ${async ? "async " : "
     const cr = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
     const lab = (h) => { const [r, g, b] = rgb(h).map(lin); const f = (t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116); const X = f((0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047), Y = f(0.2126 * r + 0.7152 * g + 0.0722 * b), Z = f((0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883); return [116 * Y - 16, 500 * (X - Y), 200 * (Y - Z)]; };
     const de = (a, b) => Math.hypot(...lab(a).map((v, i) => v - lab(b)[i]));
-    V.PALETTE.forEach((c) => assert.ok(cr(c, "#3a2e2a") >= 4.5, `${c} 글자 대비 ${cr(c, "#3a2e2a").toFixed(1)}`));
+    const INK = /--chip-ink: (#[0-9a-f]{6});/i.exec(CSS)[1]; // 칩 글자색(css 슬롯)
+    assert.strictEqual(INK, "#1a1410");
+    V.PALETTE.forEach((c) => assert.ok(cr(c, INK) >= 5.7, `${c} 글자 대비 ${cr(c, INK).toFixed(1)}`));
+    V.PALETTE.forEach((c, i) => assert.ok(new RegExp(`--d${i + 1}: ${c};`, "i").test(CSS), `css --d${i + 1} 이 팔레트와 같은 값(${c})`));
     for (let i = 0; i < 10; i++) for (let j = i + 1; j < 10; j++) assert.ok(de(V.PALETTE[i], V.PALETTE[j]) >= 20, `${V.PALETTE[i]} / ${V.PALETTE[j]} ΔE ${de(V.PALETTE[i], V.PALETTE[j]).toFixed(1)}`);
     assert.strictEqual(new Set(V.COLOR_KEYS.map((k) => V.keyColor("x", k))).size, 10);
     const ms = [{ memberId: "m1", role: "MOM", label: "엄마", colorKey: "p5" }, { memberId: "m2", role: "MOM", label: "새엄마", colorKey: "p6" }, { memberId: "m3", role: "DAD", label: "아빠" }];

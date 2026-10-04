@@ -74,7 +74,7 @@
         const dow = dowOf(d.date);
         const day = Number(d.date.slice(8, 10));
         const user = d.user || [];
-        const items = user.slice(0, MAX_ITEMS).map((o) => `<span class="wk-item${o.done ? " done" : ""}" style="--wk-color:${SAFE_COLOR.test(o.color) ? o.color : "#6b5b53"}">${esc(o.title)}</span>`).join("");
+        const items = user.slice(0, MAX_ITEMS).map((o) => `<span class="wk-item${o.done ? " done" : ""}" style="--wk-color:${SAFE_COLOR.test(o.color) ? o.color : "#62656b"}">${esc(o.title)}</span>`).join("");
         const more = user.length > MAX_ITEMS ? `<span class="wk-more">${esc(MSG.more(user.length - MAX_ITEMS))}</span>` : "";
         const auto = d.autoCount > 0 ? `<span class="wk-auto">${esc(MSG.autoCount(d.autoCount))}</span>` : "";
         const empty = !user.length && !(d.autoCount > 0) ? `<span class="wk-empty">${esc(MSG.dayEmpty)}</span>` : "";

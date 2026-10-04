@@ -13,9 +13,9 @@ test("G11 1장: 타이틀 2줄, 칩 아빠·엄마·세현·수아(가족 없음
   const h = AV.renderLanding({});
   const s0 = h.slice(h.indexOf('data-acct-slide="0"'), h.indexOf('data-acct-slide="1"'));
   const s1 = h.slice(h.indexOf('data-acct-slide="1"'), h.indexOf('class="acct-dots"'));
-  assert.ok(s0.includes("우리 가족 일정,<br>한눈에") && s0.includes("아빠, 엄마, 아이 일정을 한 달력에.<br>가족 일정은 모으고, 육아 일정은 알아서 챙겨줘요.") && !s0.includes("예시 화면이에요") && !s0.includes("엄마 회식"));
+  assert.ok(s0.includes('우리 가족 일정,<br><mark class="acct-hl">한눈에</mark>') && s0.includes("아빠, 엄마, 아이 일정을 한 달력에.<br>가족 일정은 모으고, 육아 일정은 알아서 챙겨줘요.") && !s0.includes("예시 화면이에요") && !s0.includes("엄마 회식"));
   const chips = [...s0.matchAll(/<span style="background:(#[0-9a-f]{6})">([^<]+)<\/span>/g)].map((m) => [m[2], m[1]]);
-  assert.deepStrictEqual(chips, [["아빠", "#7fb8ff"], ["엄마", "#ff9ec4"], ["세현", "#ffc46b"], ["수아", "#7fe0b3"]]);
+  assert.deepStrictEqual(chips, [["아빠", "#4d9bff"], ["엄마", "#ff66b3"], ["세현", "#ffc233"], ["수아", "#2fe0a0"]]);
   assert.strictEqual((s0.match(/<div( class="t")?>\d+/g) || []).length, 14);
   assert.ok(s0.includes('class="acct-ob1-wk"') && s0.includes('<div class="t">7</div>'));
   const evs = s0.slice(s0.indexOf('class="acct-ob1-ev"'));

@@ -98,13 +98,13 @@ test('"내 일정"·"개인" 표현이 문구·마크업 어디에도 없다', (
 console.log("\n아이색(order 파생)");
 test("아이 색: 링크의 colorKey(p1~p10) → 10색 팔레트, 아이마다 서로 다르다(order 로 정하지 않는다)", () => {
   const c = V.childColors(LINKS);
-  assert.deepStrictEqual([c.c1, c.c2, c.c3, c.c4, c.c5], ["#ffc46b", "#7fe0b3", "#ff8a7a", "#86b6ff", "#ff9ec4"]);
+  assert.deepStrictEqual([c.c1, c.c2, c.c3, c.c4, c.c5], ["#ffc233", "#a8e12a", "#17d3ee", "#9a7bff", "#ff9a4d"]);
   assert.strictEqual(new Set(Object.values(c)).size, 6);
 });
 test("링크 배열 순서와 무관하고, 분리된 아이도 자기 색을 유지한다", () => {
   const rev = [...LINKS].reverse();
   assert.deepStrictEqual(V.childColors(rev), V.childColors(LINKS));
-  assert.strictEqual(V.childColors(LINKS).cx, "#b79cff");
+  assert.strictEqual(V.childColors(LINKS).cx, "#ff66b3");
 });
 test("colorKey 가 없는 옛 링크는 childKey 해시로 항상 같은 색(목록 순서·인원이 바뀌어도 불변)", () => {
   const c = V.childColors([{ childKey: "a" }, { childKey: "b" }]);
@@ -114,8 +114,8 @@ test("colorKey 가 없는 옛 링크는 childKey 해시로 항상 같은 색(목
 });
 test("일정 막대 색: 가족 일정=가족색, 아이 일정=그 아이색, 공동 일정=order 가 앞선 아이색", () => {
   assert.strictEqual(V.occurrenceColor({ scope: "FAMILY", childKeys: [] }, LINKS), V.FAMILY_COLOR);
-  assert.strictEqual(V.occurrenceColor({ scope: "CHILD", childKeys: ["c2"] }, LINKS), "#7fe0b3");
-  assert.strictEqual(V.occurrenceColor({ scope: "CHILD", childKeys: ["c3", "c2"] }, LINKS), "#7fe0b3");
+  assert.strictEqual(V.occurrenceColor({ scope: "CHILD", childKeys: ["c2"] }, LINKS), "#a8e12a");
+  assert.strictEqual(V.occurrenceColor({ scope: "CHILD", childKeys: ["c3", "c2"] }, LINKS), "#a8e12a");
   assert.strictEqual(V.occurrenceColor({ scope: "CHILD", childKeys: ["unknown"] }, LINKS), V.FAMILY_COLOR, "알 수 없는 아이는 중립색");
 });
 test("자동 일정 색 6가지와 겹치지 않는다(파랑·보라·초록·노랑·빨강·슬레이트)", () => {
@@ -129,7 +129,7 @@ test("칩: (전체 버튼 없음) · 엄마·아빠(있는 구성원만) · 아�
   const chips = V.filterChips(LINKS, ["CHILD:c2", "CHILD:c1"], MEMBERS);
   assert.deepStrictEqual(chips.map((c) => c.id), ["MOM", "DAD", "CHILD:c1", "CHILD:c2", "CHILD:c3", "CHILD:c4", "CHILD:c5", "FAMILY"]);
   assert.deepStrictEqual(chips.filter((c) => c.selected).map((c) => c.id), ["CHILD:c1", "CHILD:c2"]);
-  assert.deepStrictEqual([chips[0].color, chips[1].color, chips.at(-1).color], ["#ff9ec4", "#7fb8ff", "#c9b8ff"]);
+  assert.deepStrictEqual([chips[0].color, chips[1].color, chips.at(-1).color], ["#ff66b3", "#4d9bff", "#c9b8ff"]);
   assert.ok(!chips.some((c) => c.id === "ALL" || c.label === "전체"), "'전체' 버튼은 없다");
   assert.ok(chips.every((c) => /^#[0-9a-f]{6}$/i.test(c.color)), "칩마다 대표색이 있다");
   assert.strictEqual(chips.at(-1).label, "가족");
@@ -205,11 +205,11 @@ test("필터 칩 마크업: 복수 선택(aria-pressed)·아이 이름 이스케
 });
 test("색 모드: 홈·주·상세 기본=담당 구성원(각자 자기 색)→아이→가족, 아이만 선택=아이색, 카테고리=분류색(병원=검진·수업/기관=주황·가족/기타=회색)", () => {
   const o = (x) => ({ scope: "CHILD", childKeys: ["c1"], category: "LESSON", ...x });
-  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "MOM", assigneeMemberId: "m1", assigneeColorKey: "p5" }), LINKS), "#ff9ec4");
-  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "DAD", assigneeMemberId: "m2", assigneeColorKey: "p4" }), LINKS), "#86b6ff");
-  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "GRANDMA", assigneeMemberId: "m3", assigneeColorKey: "p6" }), LINKS), "#b79cff", "조부모 등 다른 역할도 자기 색");
+  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "MOM", assigneeMemberId: "m1", assigneeColorKey: "p5" }), LINKS), "#ff9a4d");
+  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "DAD", assigneeMemberId: "m2", assigneeColorKey: "p4" }), LINKS), "#9a7bff");
+  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "GRANDMA", assigneeMemberId: "m3", assigneeColorKey: "p6" }), LINKS), "#ff66b3", "조부모 등 다른 역할도 자기 색");
   assert.strictEqual(V.occurrenceColor(o({ assigneeRole: null, assigneeMemberId: "gone" }), LINKS), V.childColors(LINKS).c1, "삭제된 담당자는 아이색");
-  assert.strictEqual(V.occurrenceColor({ scope: "FAMILY", assigneeRole: "GRANDMA", assigneeMemberId: "m3", assigneeColorKey: "p6" }, LINKS), "#b79cff");
+  assert.strictEqual(V.occurrenceColor({ scope: "FAMILY", assigneeRole: "GRANDMA", assigneeMemberId: "m3", assigneeColorKey: "p6" }, LINKS), "#ff66b3");
   assert.strictEqual(V.occurrenceColor({ scope: "FAMILY" }, LINKS), "#c9b8ff", "담당자 없는 가족 일정=가족색");
   assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "MOM", assigneeMemberId: "m1", assigneeColorKey: "p5" }), LINKS, "child"), V.childColors(LINKS).c1);
   assert.deepStrictEqual(["MEDICAL", "LESSON", "INSTITUTION", "FAMILY", "ETC"].map((c) => V.occurrenceColor(o({ category: c }), LINKS, "category")), ["#c9a2ff", "#ffb87a", "#ffb87a", "#d8cdc4", "#d8cdc4"]);
@@ -218,19 +218,19 @@ test("색 모드: 홈·주·상세 기본=담당 구성원(각자 자기 색)→
 test("칩 칸 마크업: 직접=꽉 찬 칩·자동=옅은 칩, 최대 2개+N, 완료 흐림, 카테고리 모드는 자동 칩에 분류명, 이스케이프", () => {
   const u = (title, extra) => ({ t: "u", occ: { title, scope: "CHILD", childKeys: ["c1"], category: "MEDICAL", status: "TODO", ...extra } });
   const a = (title, extra) => ({ t: "a", title, category: "예방접종", done: false, ...extra });
-  const ctx = { links: LINKS, mode: "member", catColor: false, autoColor: "#ffc46b" };
+  const ctx = { links: LINKS, mode: "member", catColor: false, autoColor: "#ffc233" };
   const h = V.cellChips([a("자동1"), u("직접1"), u("직접2"), a("자동2")], ctx);
   assert.strictEqual((h.match(/class="cal-chip /g) || []).length, 2);
   assert(h.indexOf("직접1") < h.indexOf("직접2") && !h.includes("자동1") && h.includes("cal-chip-more\">+2<"), "직접 등록이 앞, 나머지는 +N");
-  assert(/cal-chip u" style="background:#ffc46b">직접1/.test(h));
+  assert(/cal-chip u" style="background:#ffc233">직접1/.test(h));
   const auto = V.cellChips([a("접종", { done: true })], ctx);
-  assert(auto.includes("cal-chip a done") && auto.includes("--chip-c:#ffc46b"));
+  assert(auto.includes("cal-chip a done") && auto.includes("--chip-c:#ffc233"));
   const cat = V.cellChips([a("접종 제목"), u("병원")], { ...ctx, mode: "kids", catColor: true });
   assert(cat.includes("background:#c9a2ff") && cat.includes("--chip-c:#86b6ff") && cat.includes(">접종<") && !cat.includes("접종 제목"));
   const noCat = V.cellChips([a("접종 제목")], { ...ctx, mode: "member", catColor: true });
   assert(noCat.includes("접종 제목"), "카테고리 색은 아이만 선택했을 때만");
   const evil = V.cellChips([u('<img src=x onerror="a">', { assigneeRole: "MOM", assigneeMemberId: "m1", assigneeColorKey: "p5" })], ctx);
-  assert(!evil.includes("<img") && evil.includes("&lt;img") && evil.includes("#ff9ec4"));
+  assert(!evil.includes("<img") && evil.includes("&lt;img") && evil.includes("#ff9a4d"));
   assert.strictEqual(V.cellChips([], ctx), "");
 });
 
@@ -238,7 +238,7 @@ console.log("\n표시 데이터 변환(완료·삭제 포함)");
 const occOf = (doc, links) => model([doc]).days.get(doc.eventDate || "2026-10-06").user[0];
 test("카드 데이터: 분류 라벨·시각·태그·색·미완료", () => {
   const c = V.cardData(occOf(sched({ title: "피아노", category: "LESSON" })), LINKS);
-  assert.deepStrictEqual({ title: c.title, label: c.categoryLabel, time: c.timeText, date: c.dateText, tag: c.tag, color: c.color, done: c.done, doneLabel: c.doneLabel }, { title: "피아노", label: "수업·학원", time: "오후 4:00 ~ 4:50 (50분)", date: "", tag: "은찬이", color: "#ffc46b", done: false, doneLabel: "" });
+  assert.deepStrictEqual({ title: c.title, label: c.categoryLabel, time: c.timeText, date: c.dateText, tag: c.tag, color: c.color, done: c.done, doneLabel: c.doneLabel }, { title: "피아노", label: "수업·학원", time: "오후 4:00 ~ 4:50 (50분)", date: "", tag: "은찬이", color: "#ffc233", done: false, doneLabel: "" });
 });
 test("시각 표기(D): 종일 / 오후 4:00 ~ 4:50 (50분) / 끝이 없으면 시작만", () => {
   const T = (over) => V.cardData(occOf(sched(over)), LINKS).timeText;
@@ -331,7 +331,7 @@ test("입력 객체를 변경하지 않는다(deep freeze 한 모델·링크)", 
 console.log("\n마크업·이스케이프");
 const EVIL = '<img src=x onerror="alert(1)">&"\'';
 test("카드: 제목·태그·분류·ID·키의 HTML 은 실행되지 않는다", () => {
-  const html = V.renderCard({ key: EVIL, scheduleId: EVIL, title: EVIL, categoryLabel: EVIL, timeText: EVIL, dateText: EVIL, tag: EVIL, color: "#ffc46b", done: true, doneLabel: "완료" });
+  const html = V.renderCard({ key: EVIL, scheduleId: EVIL, title: EVIL, categoryLabel: EVIL, timeText: EVIL, dateText: EVIL, tag: EVIL, color: "#ffc233", done: true, doneLabel: "완료" });
   assert(!html.includes("<img"), html);
   assert(html.includes("&lt;img") && html.includes("&quot;"));
 });
@@ -357,7 +357,7 @@ test("추가 버튼: 플래그 OFF → '', 가구 없음 → 안내만, 가구 �
   assert(on.includes('data-us-action="add"') && on.includes("＋ 일정 추가"));
 });
 test("상세: 미완료는 '완료했어요', 완료는 '완료 취소', 수정·삭제·닫기, 본문 이스케이프", () => {
-  const c = { key: "k", scheduleId: "s", title: EVIL, categoryLabel: "병원·검진", timeText: "종일", dateText: "", tag: "은찬이", color: "#ffc46b", done: false, location: EVIL, memo: EVIL };
+  const c = { key: "k", scheduleId: "s", title: EVIL, categoryLabel: "병원·검진", timeText: "종일", dateText: "", tag: "은찬이", color: "#ffc233", done: false, location: EVIL, memo: EVIL };
   const html = V.renderDetail(c);
   assert(!html.includes("<img") && html.includes("&lt;img"));
   assert(html.includes(">완료했어요<") && !html.includes("완료 취소"));
@@ -535,7 +535,7 @@ test("정적 확인: DOM·저장소·네트워크·Firestore·자동 일정 완�
   ["document.", "window.", "localStorage", "sessionStorage", "firebase", "fetch(", "FamilySync", "HouseholdSync", "navigator", "innerHTML", "addEventListener", "completed", "toISOString", "new Date"].forEach((w) => assert(!src.includes(w), w + " 참조"));
 });
 test("data-us-action 은 정해진 값만 쓴다", () => {
-  const all = [V.renderForm(F({}), LINKS), V.renderDetail({ key: "k", scheduleId: "s", title: "t", categoryLabel: "", timeText: "", dateText: "", tag: "", color: "#ffc46b", done: false }), V.renderDeleteConfirm(), V.renderAddButton({ enabled: true, hasHousehold: true }), V.renderFilterChips(V.filterChips(LINKS, []), { mode: "kids" })].join("");
+  const all = [V.renderForm(F({}), LINKS), V.renderDetail({ key: "k", scheduleId: "s", title: "t", categoryLabel: "", timeText: "", dateText: "", tag: "", color: "#ffc233", done: false }), V.renderDeleteConfirm(), V.renderAddButton({ enabled: true, hasHousehold: true }), V.renderFilterChips(V.filterChips(LINKS, []), { mode: "kids" })].join("");
   const acts = new Set([...all.matchAll(/data-us-action="([^"]+)"/g)].map((m) => m[1]));
   assert.deepStrictEqual([...acts].sort(), ["add", "cancel", "cancel-delete", "close", "confirm-delete", "delete", "edit", "save", "toggle-cat-color", "toggle-done", "toggle-only-user"]);
 });
