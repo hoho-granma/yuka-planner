@@ -1,0 +1,24 @@
+{
+  "_설명": "임신 중(stage=pregnant) 지원금 AUTO 일정의 알림 시점 보정. 출산 예정일 기준 일수(startDays/endDays, 음수=출산 전) 또는 절대 날짜(startDate/endDate, 절기 한정). hide=true 는 같은 일을 하는 새 임신 항목(supersededBy)이 있어 임신 중 달력에서만 뺀다(혜택 탭은 그대로). 임신 확인 시기 가정값(-252일≈6주)은 근사 — 추가검증 필요.",
+  "items": {
+    "NAT-008": {
+      "hide": true,
+      "supersededBy": "PG-02",
+      "reason": "임신 중 달력에는 신청 시점이 있는 PG-02 로 보인다(옛 기준은 출산 후 2년 뒤 마감일에 찍힘)"
+    },
+    "PREG-005": {
+      "startDate": "2026-09-21",
+      "endDate": "2027-04-30",
+      "reason": "2026~27절기 임신부 독감 무료접종(질병관리청)"
+    },
+    "PREG-001": {
+      "startDays": -252,
+      "endDays": -196,
+      "reason": "임신 확인 후 12주 이내 보건소 등록(지역별 상이 — 추가검증 필요)"
+    },
+    "PREG-007": {
+      "startDays": -252,
+      "reason": "임신 확인 후 신청(영양플러스)"
+    }
+  }
+}

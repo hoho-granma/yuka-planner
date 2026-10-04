@@ -1,0 +1,61 @@
+{
+  "category": "PG",
+  "count": 2,
+  "_설명": "임신 중(stage=pregnant)에만 계산되는 행동 알림(pregnancyOnly). 출산 예정일(profile.birthDate)을 기준으로 한다. 출처: docs/한눈육아-W2-공식데이터-범위.md 임신 절. 36개월 미만·이상 아이의 일정에는 나오지 않는다.",
+  "todos": [
+    {
+      "todo_id": "PG-01",
+      "category": "PG",
+      "title": "출생신고",
+      "parentAction": "출생 후 1개월 이내에 주민센터 방문 또는 정부24로 출생신고를 해요. 부모급여·아동수당·첫만남이용권 신청도 이때 함께 할 수 있어요.",
+      "completionCriteria": "출생신고 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "AGE_WINDOW",
+      "basis": "CALENDAR",
+      "triggerParams": {
+        "startMonth": 0,
+        "endMonth": 1
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 14,
+      "regionCondition": null,
+      "source": "가족관계의 등록 등에 관한 법률 제44조 · 정부24",
+      "verificationStatus": "확인완료",
+      "displayMonth": 0,
+      "displayMonthLabel": "출생 직후 (1개월 이내)",
+      "displayMonthBasis": "법정 신고 기한(출생 후 1개월 이내)",
+      "categoryGroup": "행정·지원금",
+      "cardSummary": "출생 후 1개월 이내 · 주민센터·정부24",
+      "pregnancyOnly": true,
+      "verificationNote": "확인됨(법령). 기한은 출생일 기준 1개월(달력)."
+    },
+    {
+      "todo_id": "PG-02",
+      "subsidyRef": "NAT-008",
+      "category": "PG",
+      "title": "국민행복카드 임신·출산 진료비 바우처 신청",
+      "parentAction": "임신 확인서를 받은 직후에 국민행복카드 임신·출산 진료비 바우처를 신청해요. 임신 확인서는 병원에서 받고, 신청은 건강보험공단 지사·카드사·온라인(정부24·복지로)에서 해요.",
+      "completionCriteria": "바우처 신청 완료",
+      "exposureLevel": "MUST",
+      "triggerType": "DATE_FROM_BIRTH",
+      "triggerParams": {
+        "offsetDays": -252,
+        "deadlineDays": 252
+      },
+      "catchUp": "ALLOWED",
+      "priority": 1,
+      "leadDays": 0,
+      "regionCondition": null,
+      "source": "보건복지부 · 국민행복카드(voucher.go.kr)",
+      "verificationStatus": "확인완료",
+      "displayMonth": null,
+      "displayMonthLabel": "임신 확인 직후",
+      "displayMonthBasis": "임신 확인 직후 신청. 시작 시점(출산예정일 252일 전 ≈ 임신 6주)은 임신 확인 시기를 가정한 근사값",
+      "categoryGroup": "행정·지원금",
+      "cardSummary": "임신 확인서 발급 후 바로 신청 (금액·사용기한은 혜택 상세에서 확인)",
+      "pregnancyOnly": true,
+      "verificationNote": "신청 시기·방법은 확인됨. 금액·사용기한은 이 항목에 넣지 않았다(혜택 NAT-008 상세 참조). 시작 시점 -252일은 근사값(추가검증 필요)."
+    }
+  ]
+}

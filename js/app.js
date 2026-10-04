@@ -111,6 +111,7 @@
     "data/todos/childcare.json",
     "data/todos/school.json",
     "data/todos/school-age.json",
+    "data/todos/pregnancy.json",
     "data/subsidies/national-todos.json",
   ];
 
@@ -189,11 +190,12 @@
   }
 
   async function loadAll() {
-    const [regions, reform, policy, allow36, ...categoryFiles] = await Promise.all([
+    const [regions, reform, policy, allow36, pregTiming, ...categoryFiles] = await Promise.all([
       loadJson("data/regions.json"),
       loadJsonOrNull("data/subsidies/reform-2027.json"),
       loadSchoolPolicy(),
       typeof AutoAfter36 === "undefined" ? null : AutoAfter36.load(fetch),
+      loadJsonOrNull("data/policy/pregnancy-timing.json"),
       ...TODO_CATEGORY_FILES.map(loadJson),
     ]);
     regionsData = regions;
@@ -203,7 +205,7 @@
     // (data/todos/*.json, 총 75개 TodoDefinition) + js/todo-engine.js로 계산한다.
     // 지자체 지원금(dataset.subsidy)은 프로필의 지역이 정해진 뒤 ensureRegionSubsidyLoaded()가 채운다.
     const todoDefinitions = categoryFiles.flatMap((f) => f.todos).map(applyBirthRule);
-    dataset = { todoDefinitions, subsidy: { subsidies: [] }, autoAfter36: allow36 || undefined };
+    dataset = { todoDefinitions, subsidy: { subsidies: [] }, autoAfter36: allow36 || undefined, pregnancyTiming: (pregTiming && pregTiming.items) || undefined };
     // C2: autoLink 플래그가 켜진 기기만 별칭 파일을 읽는다(꺼져 있으면 네트워크 요청도 없다). 실패·형식 오류는 빈 맵으로 진행한다.
     autoIdAliases = window.FEATURES && window.FEATURES.autoLink === true ? sanitizeAliases(await loadJsonOrNull("data/auto-id-aliases.json")) : {};
   }

@@ -31,11 +31,11 @@ const ENGINE_CATEGORY_GROUP = {
   DV: "발달관찰",
   FD: "생활·수유", OR: "생활·수유", SL: "생활·수유", LF: "생활·수유",
   SF: "안전·돌봄", CR: "생활·수유", // 어린이집·보육은 안전이 아니라 생활 영역
-  SB: "행정·지원금",
+  SB: "행정·지원금", PG: "행정·지원금",
 };
 const ENGINE_CATEGORY_LABEL = {
   HC: "건강검진", VX: "예방접종", DV: "성장발달", FD: "이유식·영양", OR: "구강",
-  SL: "수면", SF: "안전", LF: "생활", CR: "보육", SB: "혜택·제도", SC: "학교·입학",
+  SL: "수면", SF: "안전", LF: "생활", CR: "보육", SB: "혜택·제도", SC: "학교·입학", PG: "임신·출산",
 };
 const ENGINE_STATUS_LABEL = {
   SCHEDULED: "예정",
@@ -135,6 +135,8 @@ function buildTodoEngineEvents(profile, todoDefinitions, completions) {
   const timeline = profile.schoolPolicy
     ? ChildTimeline.compute({ birthDate: profile.birthDate, asOf: today, stage: profile.stage, policy: profile.schoolPolicy, enrollmentYearOverride: profile.enrollmentYearOverride })
     : undefined;
+  // 임신 전용 항목(pregnancyOnly, data/todos/pregnancy.json)은 임신 중 프로필에서만 계산한다 — 그 밖의 아이의 일정은 이 파일이 있든 없든 같다.
+  if (profile.stage !== "pregnant") todoDefinitions = todoDefinitions.filter((d) => !d.pregnancyOnly);
   const instances = TodoEngine.calculateTodoInstances({
     today,
     ...(timeline ? { timeline } : {}),
@@ -209,7 +211,7 @@ function birthRuleAllows(s, birthDate) {
   return true;
 }
 
-function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrder, stage) {
+function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrder, stage, pregnancyTiming) {
   const events = [];
   for (const s of subsidyData.subsidies) {
     if (SUBSIDIES_SUPERSEDED_BY_ENGINE.includes(s.id)) continue;
@@ -255,6 +257,20 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrd
       if (ends.length) deadlineDate = addDays(birthDate, Math.max(...ends));
     }
 
+    // 임신 중 알림 시점 보정(data/policy/pregnancy-timing.json): 출산 예정일 기준 일수 또는 절대 날짜. 임신 중 프로필에만 적용한다.
+    let entryOverride = null;
+    if (stage === "pregnant" && pregnancyTiming && pregnancyTiming[s.id]) {
+      const t = pregnancyTiming[s.id];
+      if (t.hide === true) continue;
+      const iso = (v) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? new Date(v + "T00:00:00") : null);
+      const startAbs = iso(t.startDate), endAbs = iso(t.endDate);
+      if (startAbs) { if (birthDate < startAbs) continue; entryOverride = anchorDate = startAbs; if (endAbs) deadlineDate = endAbs; } // 출산 예정일이 절기 시작 전이면 해당 없음
+      else {
+        if (Number.isInteger(t.startDays)) entryOverride = anchorDate = addDays(birthDate, t.startDays);
+        if (Number.isInteger(t.endDays)) deadlineDate = addDays(birthDate, t.endDays);
+      }
+    }
+
     // 마감·연령조건이 있는 지원금은 "지금 신청 가능한지"가 캘린더의 어느 달에 있는지보다
     // 훨씬 중요하다 — 리스트 노출 판단은 app.js가 minAgeMonths/maxAgeMonths/deadlineDate로 직접 한다.
     events.push({
@@ -271,14 +287,14 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrd
       needsCheck: s.status === "확인필요" || !!s.proposed,
       minAgeMonths: minA,
       maxAgeMonths: maxA,
-      entryDate,
+      entryDate: entryOverride || entryDate,
       deadlineDate,
       periods: s.periods || null,
       isPrenatalOnly: !!s.prenatalOnly,
       isLegacySubsidy: true, // 지자체(지역) 지원금 — 기존 subsidyIsActiveNow() 특수 로직을 그대로 쓴다
       // 지원금은 신청 시작일(entryDate)에 표시한다. 신청 기간(시작~마감)은 카드·상세에 함께 보여준다.
       scheduleKind: "fixed",
-      fixedDate: entryDate,
+      fixedDate: entryOverride || entryDate,
       isDateSpecific: true, // 상세보기에 실제 날짜(entryDate/deadlineDate)를 보여줄지 여부(달력 배치와는 무관, js/app.js eventItemHtml 참고)
     });
   }
@@ -288,7 +304,7 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrd
 function buildSchedule({ birthDate, province, district, gender, birthOrder, stage, schoolPolicy, enrollmentYearOverride }, dataset, completions) {
   const events = [
     ...buildTodoEngineEvents({ birthDate, province, district, gender, stage, schoolPolicy, enrollmentYearOverride }, dataset.todoDefinitions, completions),
-    ...buildSubsidyEvents(birthDate, province, district, dataset.subsidy, birthOrder, stage),
+    ...buildSubsidyEvents(birthDate, province, district, dataset.subsidy, birthOrder, stage, dataset.pregnancyTiming),
   ];
   // 36개월 이상 아이에게는 허용 목록(data/policy/auto-after36.json, js/auto-after36.js)에 있는 항목만 보인다 — 표식 autoAfter36 을 달아 두고 ChildTimeline.isEventVisible 이 판정한다.
   // 목록이 없으면(dataset.autoAfter36 없음) 표식이 하나도 달리지 않는다. 36개월 미만 노출에는 영향이 없다.
