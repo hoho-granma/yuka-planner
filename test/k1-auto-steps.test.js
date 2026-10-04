@@ -113,13 +113,9 @@ test("pregnancy·36개월 미만 회귀: 새 모듈은 앱 로드 목록에 있�
   assert.ok(/openDetailBase\(e, cameFromDayList\);\n    if \(!acctEnabled\(\) \|\| !e\) return;/.test(APP) && /acctDesignSteps\(el\("modal-content"\), e\)/.test(APP));
 });
 
-test("완료한 정보 항목도 상세에서 스텝이 유지돼 '완료한 사람'이 보인다(링크·연결이 없는 SC-02 같은 항목 포함) / 36개월 이상 날짜 시트는 완료한 자동 일정을 '완료'로 보여 준다", () => {
+test("완료한 정보 항목도 상세에서 스텝이 유지돼 '완료한 사람'이 보인다(링크·연결이 없는 SC-02 같은 항목 포함) ", () => {
   const APP = read("js/app.js");
   assert.ok(/!applyLink && !canLink && !link && !\(done && \(existing \|\| family\)\)/.test(APP), "완료했고 정보 항목이면 스텝 유지");
-  assert.ok(/done: !!completed\[e\.id\], sub: e\.dateLabel \|\| "", auto: true/.test(APP), "날짜 시트 자동 행에 완료 상태 전달");
-  const V = require("../js/over36-view.js");
-  const h = V.renderDaySheet({ iso: "2026-12-01", month: 12, day: 1, weekday: 2, prevDay: 30, nextDay: 2, rows: [{ autoId: "SC-02__default", title: "예비소집 확인", allDay: true, startTime: "", color: "", done: true, sub: "지금 챙기세요", auto: true }] });
-  assert.ok(/a36-auto done/.test(h) && h.includes("완료") && !h.includes("지금 챙기세요"));
   // 완료 상태 모델: 링크·일정 없이도 알아보기 → 완료 두 단계로 완료한 사람이 나온다
   const st = AS.model({ applyLink: null, canLink: false, link: null, done: true, doneIso: "2026-10-04", doneBy: "엄마", category: "생활·수유", toggleLabel: "확인 취소" });
   assert.deepStrictEqual(st.map((s) => s.key), ["learn", "done"]);

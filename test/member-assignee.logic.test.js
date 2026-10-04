@@ -170,26 +170,26 @@ const ST = { enabled: true, hasHousehold: true, members: MEMBERS, activeMemberId
     const plan = V.planFullEdit({ ...V.formFromSchedule(rec), assigneeMemberId: "m2" }, V.stripId(rec), 9);
     assert.ok(plan.ok && plan.changes.assigneeMemberId === "m2" && plan.patch.assigneeMemberId === "m2", JSON.stringify(plan.messages));
   });
-  await test("카드 태그(Q1): FAMILY 는 '가족' 대신 담당 라벨, CHILD 는 아이 배지 + ' · 담당', 담당 없으면 기존 표기, 삭제된 구성원은 '(삭제된 담당자)'", () => {
+  await test("카드 태그: 담당은 화면에 표시하지 않는다(FAMILY='가족 일정', CHILD=아이 이름들) — 담당 데이터(assigneeText)는 그대로", () => {
     const mk = (extra) => {
       const doc = { id: "s", sourceType: "MANUAL", title: "일정", category: US.CATEGORIES[0], dateKind: "FIXED", eventDate: "2026-10-06", allDay: true, status: "TODO", createdAt: 1, updatedAt: 1, v: 1, ...extra };
       const m = CM.buildCalendarModel({ view: "month", range: { start: "2026-10-01", end: "2026-10-31" }, filter: { scope: "ALL" }, auto: { events: [], displayDates: new Map(), completed: {}, childKey: null }, user: { schedules: [doc], childLinks: LINKS, members: MEMBERS } });
       return V.cardData(m.days.get("2026-10-06").user[0], LINKS);
     };
     assert.strictEqual(mk({ scope: "FAMILY" }).tag, V.MSG.cardFamily);
-    assert.strictEqual(mk({ scope: "FAMILY", assigneeMemberId: "m1" }).tag, "엄마");
+    assert.strictEqual(mk({ scope: "FAMILY", assigneeMemberId: "m1" }).tag, V.MSG.cardFamily);
     assert.strictEqual(mk({ scope: "CHILD", childKeys: ["c1"] }).tag, "은찬");
-    assert.strictEqual(mk({ scope: "CHILD", childKeys: ["c1"], assigneeMemberId: "m2" }).tag, "은찬 · 아빠");
-    assert.strictEqual(mk({ scope: "CHILD", childKeys: ["c1", "c2"], assigneeMemberId: "m3" }).tag, "은찬 · 서윤 · 이모님");
-    assert.strictEqual(mk({ scope: "FAMILY", assigneeMemberId: "m4" }).tag, "(삭제된 담당자)");
-    assert.strictEqual(mk({ scope: "FAMILY", assigneeMemberId: "없는id" }).tag, "(삭제된 담당자)");
+    assert.strictEqual(mk({ scope: "CHILD", childKeys: ["c1"], assigneeMemberId: "m2" }).tag, "은찬");
+    assert.strictEqual(mk({ scope: "CHILD", childKeys: ["c1", "c2"], assigneeMemberId: "m3" }).tag, "은찬 · 서윤");
+    assert.strictEqual(mk({ scope: "FAMILY", assigneeMemberId: "m4" }).tag, V.MSG.cardFamily);
+    assert.strictEqual(mk({ scope: "FAMILY", assigneeMemberId: "없는id" }).tag, V.MSG.cardFamily);
     const c = mk({ scope: "CHILD", childKeys: ["c1"], assigneeMemberId: "m2" });
     assert.strictEqual(c.assigneeText, "아빠"); assert.strictEqual(c.targetText, "은찬");
   });
-  await test("상세: '대상' 줄은 대상만, '담당' 줄은 구성원 이름(없으면 줄 없음)", () => {
+  await test("상세: '대상' 줄은 대상만, 담당 줄은 화면에 없다(담당 데이터가 있어도)", () => {
     const base = { title: "t", categoryLabel: "건강", scope: "CHILD", dateText: "10/6", timeText: "", color: "#aaa", location: "", memo: "", done: false };
     const withA = V.renderDetail({ ...base, tag: "은찬 · 아빠", targetText: "은찬", assigneeText: "아빠" });
-    assert.ok(/<div class="label">대상<\/div>은찬<\/div>/.test(withA) && /<div class="label">담당<\/div>아빠<\/div>/.test(withA));
+    assert.ok(/<div class="label">대상<\/div>은찬<\/div>/.test(withA) && !withA.includes(">담당<") && !withA.includes("아빠"));
     const without = V.renderDetail({ ...base, tag: "은찬", targetText: "은찬", assigneeText: "" });
     assert.ok(!without.includes(">담당<"));
     const legacy = V.renderDetail({ ...base, tag: "가족" }); // targetText 가 없는 옛 객체도 tag 로 대상 줄을 그린다

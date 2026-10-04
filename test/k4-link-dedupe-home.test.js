@@ -46,11 +46,10 @@ test("다른 아이에게 연결된 일정은 이 아이 칸의 자동 추천을
   const other = linkedDoc("GG-016__default", { childKeys: ["c2"] });
   assert.strictEqual(cell(model([mk("GG-016")], [other])).benefit.length, 1);
 });
-test("앱: 날짜 시트(36개월 이상)·달력 목록 경로도 같은 판정(autoLinkedHidden)을 쓴다", () => {
+test("앱: 달력 아래 패널·날짜 칸(calendarDayItems) 경로도 같은 판정(autoLinkedHidden)을 쓴다", () => {
   assert.ok(/function autoLinkedHidden\(e\) \{[^}]*AutoSteps\.linkOf\(m, e\)/.test(APP));
   assert.ok(/e\.scheduleKind === "fixed" && HNLogic\.coversDay\(e, date\) && !autoLinkedHidden\(e\)/.test(APP));
   assert.ok(/plannedOnDay\(cal, calDisplayDays, date\)\.filter\(\(e\) => !autoLinkedHidden\(e\)\)/.test(APP));
-  assert.ok(/!dayItems\.planned\.includes\(e\) && !autoLinkedHidden\(e\)/.test(APP));
 });
 
 console.log("2. 홈 카드 문구");

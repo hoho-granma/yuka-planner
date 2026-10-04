@@ -32,28 +32,9 @@
     tooLong: "100자 이내로 적어 주세요.",
     quickTitle: "자주 쓰는 일정",
     quick: Object.freeze(["학원", "숙제", "준비물"]),
-    dayAdd: "+ 추가",
-    dayEmpty: (m, d) => `${m}월 ${d}일은 비어 있어요.`,
-    dayEmptyAdd: "이 날 일정 추가",
-    daySwipeHint: "좌우로 넘겨 다른 날 보기",
-    dayPrev: (p) => `‹ ${p}일`,
-    dayNext: (n) => `${n}일 ›`,
     allDay: "종일",
     weekdays: Object.freeze(["일", "월", "화", "수", "목", "금", "토"]),
   });
-
-  /** 'HH:MM' → ["오후","3:30"] (시트 왼쪽 시간 열은 두 줄) */
-  function clockParts(t) {
-    const m = /^(\d{2}):(\d{2})$/.exec(String(t || ""));
-    if (!m) return null;
-    const h = Number(m[1]);
-    return [h < 12 ? "오전" : "오후", `${h % 12 === 0 ? 12 : h % 12}:${m[2]}`];
-  }
-  const timeCell = (r) => {
-    if (r.allDay || !r.startTime) return `<span class="a36-tm">${esc(MSG.allDay)}</span>`;
-    const p = clockParts(r.startTime);
-    return p ? `<span class="a36-tm">${esc(p[0])}<br>${esc(p[1])}</span>` : `<span class="a36-tm">${esc(MSG.allDay)}</span>`;
-  };
 
   const check = (id, done) => `<button type="button" class="a36-cb${done ? " on" : ""}" data-a36-toggle="${esc(id)}" role="checkbox" aria-checked="${done ? "true" : "false"}" aria-label="${esc(MSG.doneLabel)}"></button>`;
 
@@ -99,19 +80,6 @@
     return `<div class="a36-menu" role="menu" data-a36-id="${esc(id)}"><button type="button" role="menuitem" data-a36="menu-edit">${esc(MSG.menuEdit)}</button><button type="button" role="menuitem" data-a36="menu-top">${esc(MSG.menuTop)}</button><button type="button" role="menuitem" class="del" data-a36="menu-del">${esc(MSG.menuDel)}</button><button type="button" role="menuitem" data-a36="menu-close">${esc(MSG.menuClose)}</button></div>`;
   }
 
-  /** 날짜 하프 시트. st: { iso, month, day, weekday(0~6), prevDay, nextDay, rows:[{scheduleId,key,title,allDay,startTime,sub,color,done}] } */
-  function renderDaySheet(st) {
-    const head = `<div class="a36-dhead"><b>${esc(`${st.month}월 ${st.day}일 ${MSG.weekdays[st.weekday]}요일`)}</b><button type="button" class="a36-dadd" data-a36="day-add">${esc(MSG.dayAdd)}</button></div>`;
-    const rows = (st.rows || [])
-      .map((r) => r.auto
-        ? `<button type="button" class="a36-tlr a36-auto${r.done ? " done" : ""}" data-a36-auto="${esc(r.autoId)}">${timeCell(r)}<i style="background:#9aa5b1"></i><span class="a36-ti"><b>${esc(r.title)}</b><small><em class="a36-autob">${esc(MSG.autoBadge)}</em>${r.done ? ` ${esc(MSG.doneLabel)}` : r.sub ? ` ${esc(r.sub)}` : ""}</small></span></button>`
-        : `<button type="button" class="a36-tlr${r.done ? " done" : ""}" data-a36-ev="${esc(r.scheduleId)}|${esc(r.key)}">${timeCell(r)}<i style="background:${esc(r.color || "#c9b8ff")}"></i><span class="a36-ti"><b>${esc(r.title)}</b>${r.sub ? `<small>${esc(r.sub)}</small>` : ""}</span></button>`)
-      .join("");
-    const body = rows || `<div class="a36-dempty"><p>${esc(MSG.dayEmpty(st.month, st.day))}</p><button type="button" class="a36-dadd2" data-a36="day-add">${esc(MSG.dayEmptyAdd)}</button></div>`;
-    const nav = `<div class="a36-dnav"><button type="button" data-a36="day-prev" aria-label="이전 날">${esc(MSG.dayPrev(st.prevDay))}</button><span>${esc(MSG.daySwipeHint)}</span><button type="button" data-a36="day-next" aria-label="다음 날">${esc(MSG.dayNext(st.nextDay))}</button></div>`;
-    return `<div class="a36-day" data-a36-day="${esc(st.iso)}">${head}<div class="a36-dlist">${body}</div>${nav}</div>`;
-  }
-
   // ── 지역 교육 트렌드(G25 틀): ① 우리 아이 현재 상태 → ② 또래 범위 → ③ 지역·학년 트렌드 → ④ 다음 확인. 집계 데이터가 없는 동안은 수치를 만들지 않고 '데이터 부족'으로 보인다. ──
   const TREND = Object.freeze({
     nav: "교육 트렌드",
@@ -153,5 +121,5 @@
       <p class="a36t-privacy">${esc(TREND.privacy)}</p></div>`;
   }
 
-  return { MSG, clockParts, renderHome, renderTodoTab, renderTodoMenu, renderDaySheet, TREND, renderTrend, esc };
+  return { MSG, renderHome, renderTodoTab, renderTodoMenu, TREND, renderTrend, esc };
 });

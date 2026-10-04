@@ -68,9 +68,10 @@ const fnSrc = (name, async) => { const i = APP.indexOf(`  ${async ? "async " : "
     assert.deepStrictEqual(V.toggleSelection([], "CHILD:a", links, mem, o), ["CHILD:a"]);
     assert.deepStrictEqual(V.toggleSelection(["CHILD:a"], "CHILD:a", links, mem, o), []);
   });
-  await test("CSS: 선택하지 않은 칩에도 대표색(점+테두리)이 보인다", () => {
-    assert.ok(/\.us-chip\[style\*="--us-color"\]::before \{[^}]*background: var\(--us-color\)/.test(CSS));
-    assert.ok(/\.us-chip\[style\*="--us-color"\] \{[^}]*border-color: var\(--us-color\)/.test(CSS));
+  await test("CSS: 대표색 칩은 선택하지 않아도 칩 전체가 대표색으로 채워지고, 선택하면 진한 테두리·✓ 로 구분한다(점 표식 없음)", () => {
+    assert.ok(/\.us-chip\[style\*="--us-color"\] \{[^}]*background: var\(--us-color\)[^}]*color: var\(--text\)/.test(CSS));
+    assert.ok(/\.us-chip\.active\[style\*="--us-color"\] \{[^}]*border-color: var\(--text\)/.test(CSS) && /\.us-chip\.active\[style\*="--us-color"\]::before \{ content: "✓"/.test(CSS));
+    assert.ok(!/\.us-chip\[style\*="--us-color"\]::before/.test(CSS));
   });
 
   console.log("5. 달력 아래 안내 문구(삭제됨)");

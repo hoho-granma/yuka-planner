@@ -52,7 +52,8 @@ test("usRenderDayPanel: C2 의 배지 옵션 한 곳만 다르다", () => {
   const old = fnSrc(head, "usRenderDayPanel");
   // G13-1: 날짜 패널 출처 라벨(sourceLabeled 래핑)도 허용 — 양쪽을 같은 모양으로 되돌려 비교한다(커밋 전후 모두 통과).
   const plain = (src) => src.replace("{ docById: usDocById, ...(autoLinkOn() ? { autoTitleOf: usAutoTitleOf } : {}) }", "{ docById: usDocById }").replace('panel.added.cards.map((c) => UserScheduleView.sourceLabeled(UserScheduleView.renderCard(c), "user"))', "panel.added.cards.map(UserScheduleView.renderCard)").split('UserScheduleView.sourceLabeled(eventItemHtml(e), "auto")').join("eventItemHtml(e)");
-  assert.strictEqual(plain(now), plain(old));
+  const noA36 = (src) => src.replace(/\n    \/\/ 36개월 이상: 칸에 점은[^\n]*\n    const startsToday[^\n]*\n    const plannedRows[^\n]*/, "").replace(/plannedRows/g, "day.planned"); // W5 후속: 36개월 이상일 때만 그날 시작하는 자동 항목을 더한다(36개월 미만은 그대로)
+  assert.strictEqual(plain(noA36(now)), plain(old));
 });
 test("usRenderCalendarSlots: usRenderViewToggle() 호출은 플래그 OFF 가드 뒤에 있다(칩 달력 개편으로 필터 줄 마크업이 바뀜)", () => {
   const now = fnSrc(app, "usRenderCalendarSlots");

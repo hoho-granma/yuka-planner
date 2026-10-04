@@ -164,12 +164,11 @@ test("W0-3: 36개월 이상은 끝이 이번 달 1일 이전인 허용 AUTO를 �
   assert.strictEqual(JSON.stringify(snapshot(cur, young, { ...base, autoAfter36: SNAP_ALLOW }, (CT, b, e) => CT.isEventShown(b, e)).ids), JSON.stringify(snapshot(head || cur, young, base, (CT, b, e) => CT.isEventVisible(b, e)).ids));
 });
 
-test("W0-2: 날짜 하프 시트는 달력 칸과 같은 기준(calendarDayItems: fixed + 추천일 planned)으로 AUTO 행을 만든다", () => {
+test("W0-2: 달력 아래 일정 패널(36개월 이상 포함)의 AUTO 행은 달력 칸과 같은 기준(calendarDayItems: fixed + 추천일 planned)이다", () => {
   const APP = fs.readFileSync(path.join(ROOT, "js/app.js"), "utf8");
-  const i = APP.indexOf("function acct36DayRows(");
+  const i = APP.indexOf("function calendarDayItems(");
   const body = APP.slice(i, APP.indexOf("\n  }\n", i));
-  assert.ok(/calendarDayItems\(new Date\(iso \+ "T00:00:00"\)\)/.test(body) && /dayItems\.fixed/.test(body) && /dayItems\.planned/.test(body));
-  assert.ok(/startsToday/.test(body) && /\.\.\.startsToday/.test(body), "기간형처럼 칸에 점은 안 찍지만 그날 시작하는 항목(완료 포함)도 더한다(fixed+planned 에 보태는 것)");
+  assert.ok(/e\.scheduleKind === "fixed" && HNLogic\.coversDay\(e, date\)/.test(body) && /plannedOnDay\(cal, calDisplayDays, date\)/.test(body));
 });
 
 test("SB-04 ageCap: 2017년생(예외 2026~2029)은 창이 지나도 노출, 2016년생·상한 초과·2031년은 숨김, 2019년생 일반 경로 그대로", () => {

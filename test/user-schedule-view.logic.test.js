@@ -238,13 +238,13 @@ console.log("\n표시 데이터 변환(완료·삭제 포함)");
 const occOf = (doc, links) => model([doc]).days.get(doc.eventDate || "2026-10-06").user[0];
 test("카드 데이터: 분류 라벨·시각·태그·색·미완료", () => {
   const c = V.cardData(occOf(sched({ title: "피아노", category: "LESSON" })), LINKS);
-  assert.deepStrictEqual({ title: c.title, label: c.categoryLabel, time: c.timeText, date: c.dateText, tag: c.tag, color: c.color, done: c.done, doneLabel: c.doneLabel }, { title: "피아노", label: "수업·학원", time: "16:00 ~ 16:50", date: "", tag: "은찬이", color: "#ffc46b", done: false, doneLabel: "" });
+  assert.deepStrictEqual({ title: c.title, label: c.categoryLabel, time: c.timeText, date: c.dateText, tag: c.tag, color: c.color, done: c.done, doneLabel: c.doneLabel }, { title: "피아노", label: "수업·학원", time: "오후 4:00 ~ 4:50 (50분)", date: "", tag: "은찬이", color: "#ffc46b", done: false, doneLabel: "" });
 });
-test("시각 표기: 종일 / 시작~종료 / 시작만(…부터)", () => {
+test("시각 표기(D): 종일 / 오후 4:00 ~ 4:50 (50분) / 끝이 없으면 시작만", () => {
   const T = (over) => V.cardData(occOf(sched(over)), LINKS).timeText;
   assert.strictEqual(T({ allDay: true, startTime: undefined, endTime: undefined }), "종일");
-  assert.strictEqual(T({ endTime: undefined }), "16:00부터");
-  assert.strictEqual(T({}), "16:00 ~ 16:50");
+  assert.strictEqual(T({ endTime: undefined }), "오후 4:00");
+  assert.strictEqual(T({}), "오후 4:00 ~ 4:50 (50분)");
 });
 test("연속 일정 표기 '10/16 ~ 10/17', 단일 일정은 날짜 표기 없음", () => {
   const d = sched({ eventDate: "2026-10-16", endDate: "2026-10-17", allDay: true, startTime: undefined, endTime: undefined });
@@ -613,7 +613,7 @@ test("반복 회차 cardData: 배지·요약·원래 날짜·취소·이동 / �
   assert(moved.recurring && moved.repeatBadge === "반복" && moved.repeatSummary === "매주 화·목 · 10/6부터" && moved.originalDate === "2026-10-13" && moved.date === "2026-10-14");
   assert.strictEqual(moved.movedText, "10/13(화)에서 옮겨 왔어요");
   assert.strictEqual(moved.dayLabel, "10/14(수)", "상세의 날짜 줄은 옮겨진 날짜");
-  assert.strictEqual(moved.timeText, "17:00부터");
+  assert.strictEqual(moved.timeText, "오후 5:00");
   const canc = V.cardData(cell("2026-10-08").cancelled[0], LINKS, { recurrence: d.recurrence });
   assert(canc.cancelled && canc.cancelledLabel === "취소됨" && !canc.done && canc.doneLabel === "");
   const done = V.cardData(cell("2026-10-15").user[0], LINKS);
@@ -861,7 +861,7 @@ test("엔드투엔드(순수): 이 날만 수정 폼 → moveOccurrence, 취소/
   const m2 = occsOf([after]);
   assert.strictEqual(m2.days.get("2026-10-13").user.length, 0, "옮긴 회차는 원래 날짜에 표시하지 않는다(G3)");
   assert.strictEqual(m2.days.get("2026-10-13").cancelled.length, 0);
-  assert.strictEqual(V.cardData(m2.days.get("2026-10-14").user[0], LINKS).timeText, "17:00 ~ 17:50");
+  assert.strictEqual(V.cardData(m2.days.get("2026-10-14").user[0], LINKS).timeText, "오후 5:00 ~ 5:50 (50분)");
   const c = US.cancelOccurrence(mv.after, "2026-10-15", NOW + 1);
   assert.strictEqual(occsOf([{ ...c.after, id: "e1" }]).days.get("2026-10-15").cancelled.length, 1);
   const back = US.restoreOccurrence(c.after, "2026-10-15", NOW + 2);

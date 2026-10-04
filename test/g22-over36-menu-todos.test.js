@@ -207,26 +207,12 @@ const mkHS = (flag = true, extra = {}) => { const adapter = extra.adapter || fak
     assert.ok(h.includes('data-a36="add-home"') && h.includes("체크리스트 추가 +") && h.includes("10세") && h.includes('data-a36-quick="학원"') && h.includes('data-a36-quick="숙제"') && h.includes('data-a36-quick="준비물"'));
   });
 
-  console.log("날짜 하프 시트·할 일 탭 화면");
-  await test("하프 시트: 머리 'n월 n일 요일' + '+ 추가', 시간 열(오후 3:30·종일)·제목·'반복·장소·담당' 줄, 아래 '‹ n일 · 좌우로 넘겨 다른 날 보기 · n일 ›'", () => {
-    const h = V.renderDaySheet({ iso: "2026-10-13", month: 10, day: 13, weekday: 2, prevDay: 12, nextDay: 14, rows: [{ scheduleId: "s1", key: "k1", title: "학교 상담", allDay: false, startTime: "15:30", sub: "담임 선생님 · 담당 아빠" }, { scheduleId: "s2", key: "k2", title: "수학 숙제 제출", allDay: true, sub: "담당 엄마" }] });
-    assert.ok(h.includes("10월 13일 화요일") && h.includes('data-a36="day-add">+ 추가') && h.includes("오후<br>3:30") && h.includes(">종일<") && h.includes("담임 선생님 · 담당 아빠") && h.includes('data-a36-ev="s1|k1"'));
-    assert.ok(h.includes("‹ 12일") && h.includes("좌우로 넘겨 다른 날 보기") && h.includes("14일 ›") && h.includes('data-a36="day-prev"') && h.includes('data-a36="day-next"'));
-    assert.ok(h.indexOf("a36-dhead") < h.indexOf("a36-tlr") && h.indexOf("a36-tlr") < h.indexOf("a36-dnav"));
-    const e = V.renderDaySheet({ iso: "2026-10-15", month: 10, day: 15, weekday: 4, prevDay: 14, nextDay: 16, rows: [] });
-    assert.ok(e.includes("10월 15일은 비어 있어요.") && e.includes("이 날 일정 추가") && !e.includes("a36-tlr"));
-    assert.strictEqual(V.clockParts("00:05").join(" "), "오전 12:05");
-  });
-  await test("날짜 칸 클릭 → 하프 시트(36+ 일 때만, 달력 모양·36개월 미만 상세는 그대로), 좌우 스와이프(|dx|>50, 가로 우세)·버튼으로 날 넘김", () => {
-    assert.ok(APP.includes('if (grid) grid.addEventListener("click", acct36OnGridClick);') && /function acct36OnGridClick\(ev\) \{\n\s*if \(!acct36Active\(\) \|\| !usActive\(\)\) return;/.test(APP));
-    const calls = [];
-    const sb = { a36Touch: null, acct36GoDay: (d) => calls.push(d) };
-    vm.createContext(sb);
-    vm.runInContext(["let a36Touch = null;", fn("acct36OnTouchStart"), fn("acct36OnTouchEnd")].join("\n"), sb);
-    const swipe = (dx, dy, inside = true) => { sb.acct36OnTouchStart({ target: { closest: () => (inside ? {} : null) }, touches: [{ clientX: 200, clientY: 300 }] }); sb.acct36OnTouchEnd({ changedTouches: [{ clientX: 200 + dx, clientY: 300 + dy }] }); };
-    swipe(-80, 10); swipe(80, -5); swipe(-40, 0); swipe(-100, 90); swipe(-90, 10, false);
-    assert.deepStrictEqual(calls, [1, -1], "왼쪽 스와이프=다음 날, 오른쪽=이전 날, 짧거나 세로 우세·시트 밖은 무시");
-    assert.ok(CSS.includes("body.acct-design.acct-36 .selected-day-card { display: none; }"));
+  console.log("날짜 일정은 달력 아래 패널(하프 시트 없음)·할 일 탭 화면");
+  await test("36개월 이상도 달력 아래 일정 패널을 쓴다: 하프 시트·날짜 칸 시트 열기·좌우 넘기기 코드가 없고 패널을 숨기는 CSS도 없다", () => {
+    assert.ok(!APP.includes("acct36OpenDay") && !APP.includes("acct36OnGridClick") && !APP.includes("acct36GoDay") && !APP.includes('modalMode = "day36"'));
+    assert.ok(!V.renderDaySheet && !V.clockParts, "하프 시트 마크업 없음");
+    assert.ok(!CSS.includes("acct-36 .selected-day-card { display: none; }") && !/\.a36-(day|tlr|dnav|dhead)\b/.test(CSS));
+    assert.ok(/function calendarDayItems\(date\)/.test(APP) && /usRenderDayPanel\(date, byUrgency\)/.test(APP), "달력 아래 패널(자동 행·사용자 카드·+ 추가)은 36개월 미만과 같은 렌더");
   });
   await test("할 일 탭(메모장형): 머리 '[아이] 체크리스트' + '완료 숨기기' 스위치, 체크박스 줄, 맨 아래 '체크리스트 추가 +', 입력 줄·고치기 입력·길게 누르는 메뉴", () => {
     const list = [{ id: "a", title: "숙제", done: false }, { id: "b", title: "빨래", done: true }];

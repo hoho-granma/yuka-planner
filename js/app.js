@@ -1331,53 +1331,10 @@
     if (currentTab !== "checklist") switchTab("checklist");
     acct36RenderTodoTab();
   }
-  // ── 날짜 하프 시트(cal36 B) ──
-  function acct36DayRows(iso) {
-    const day = usBuildModel(iso, iso).days.get(iso);
-    // 시간이 있는 일정을 시간순으로 먼저, 종일은 그 아래
-    const occs = ((day && day.user) || []).slice().sort((x, y) => (x.allDay ? 1 : 0) - (y.allDay ? 1 : 0) || String(x.startTime || "").localeCompare(String(y.startTime || "")));
-    // 달력 칸에 올라간 항목(지원금 신청 시작 fixed + 그날로 추천된 항목)과 같은 기준으로 고른다 — 칸에는 있는데 시트는 비는 일이 없게(calendarDayItems 공용)
-    const dayItems = calendarDayItems(new Date(iso + "T00:00:00"));
-    const startsToday = visibleSchedule(true).filter((e) => toISODate(e.fixedDate || e.date) === iso && !dayItems.fixed.includes(e) && !dayItems.planned.includes(e) && !autoLinkedHidden(e)); // 기간형처럼 칸에 점은 안 찍지만 그날 시작하는 자동 항목(완료한 것 포함)
-    const autoRows = [...dayItems.fixed, ...dayItems.planned.filter((e) => !dayItems.fixed.includes(e)), ...startsToday].map((e) => ({ autoId: e.id, title: e.title, allDay: true, startTime: "", color: "", done: !!completed[e.id], sub: e.dateLabel || "", auto: true }));
-    return autoRows.concat(occs.map((o) => {
-      const doc = usDocById(o.scheduleId);
-      const rep = doc && doc.recurrence ? UserScheduleView.repeatSummary(doc.recurrence) : "";
-      return { scheduleId: o.scheduleId, key: o.key, title: o.title, allDay: !!o.allDay, startTime: o.startTime || "", color: UserScheduleView.occurrenceColor(o, usLinks()), done: o.status === "DONE", sub: [rep, o.location, o.assigneeLabel ? `담당 ${o.assigneeLabel}` : ""].filter(Boolean).join(" · ") };
-    }));
-  }
-  function acct36OpenDay(date) {
-    if (!acct36Active() || !usActive()) return;
-    const iso = toISODate(date);
-    const prev = new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1), next = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-    modalMode = "day36";
-    el("modal-content").innerHTML = Over36View.renderDaySheet({ iso, month: date.getMonth() + 1, day: date.getDate(), weekday: date.getDay(), prevDay: prev.getDate(), nextDay: next.getDate(), rows: acct36DayRows(iso) });
-    el("detail-modal").classList.remove("hidden");
-  }
-  function acct36GoDay(delta) {
-    const d = new Date(selectedCalendarDate.getFullYear(), selectedCalendarDate.getMonth(), selectedCalendarDate.getDate() + delta);
-    selectedCalendarDate = d;
-    viewMonth = new Date(d.getFullYear(), d.getMonth(), 1);
-    renderCalendar();
-    acct36OpenDay(d);
-  }
-  /** 날짜 칸을 누르면(기존 칸 핸들러가 선택일을 바꾼 뒤) 하프 시트를 올린다. */
-  function acct36OnGridClick(ev) {
-    if (!acct36Active() || !usActive()) return;
-    const cell = ev.target.closest && ev.target.closest(".day-cell");
-    if (!cell || cell.classList.contains("other-month")) return;
-    acct36OpenDay(selectedCalendarDate);
-  }
   function acct36OnClick(ev) {
     if (!acct36Active()) return;
     const t = ev.target;
     if (A36.swallow) { A36.swallow = false; if (t.closest && t.closest("[data-a36-row]")) return; }
-    const autoEl = t.closest && t.closest("[data-a36-auto]");
-    if (autoEl) { // 자동(AUTO) 일정 — 내 일정·할 일 메모장과 섞이지 않게 기존 상세 시트로 연다
-      const e = schedule.find((x) => x.id === autoEl.dataset.a36Auto);
-      if (e) { ev.preventDefault && ev.preventDefault(); openDetail(e); }
-      return;
-    }
     const act = t.closest && t.closest("[data-a36]");
     const tog = t.closest && t.closest("[data-a36-toggle]");
     const chip = t.closest && t.closest("#home-body [data-home-child]");
@@ -1412,9 +1369,6 @@
     if (a === "menu-edit") { A36.editId = A36.menuId; A36.menuId = null; A36.adding = false; return acct36RenderTodoTab(); }
     if (a === "menu-top") { const id = A36.menuId; A36.menuId = null; return acct36Patch(id, ChildTodos.patchMoveTop(acct36All(), Date.now())); }
     if (a === "menu-del") { const id = A36.menuId; A36.menuId = null; return acct36Patch(id, ChildTodos.patchDelete(Date.now())); }
-    if (a === "day-add") return usOpenForm(null, el("modal-content").querySelector("[data-a36-day]").dataset.a36Day);
-    if (a === "day-prev") return acct36GoDay(-1);
-    if (a === "day-next") return acct36GoDay(1);
   }
   async function acct36OnKey(ev) {
     const inp = ev.target.closest && ev.target.closest("[data-a36-input]");
@@ -1440,7 +1394,7 @@
       if (inp.dataset.a36Input === "add" && !String(inp.value).trim() && A36.adding && document.activeElement !== inp) { A36.adding = false; acct36RenderTodoTab(); }
     }, 120);
   }
-  // 길게 누르면 메뉴(할 일 줄) · 날짜 시트 좌우 넘기기
+  // 길게 누르면 메뉴(할 일 줄)
   function acct36OnPointerDown(ev) {
     if (!acct36Active()) return;
     const row = ev.target.closest && ev.target.closest("#a36-todo-box [data-a36-row]");
@@ -1454,17 +1408,6 @@
     clearTimeout(A36.press.timer);
     A36.press = null;
   }
-  let a36Touch = null;
-  function acct36OnTouchStart(ev) {
-    const day = ev.target.closest && ev.target.closest(".a36-day");
-    a36Touch = day && ev.touches && ev.touches[0] ? { x: ev.touches[0].clientX, y: ev.touches[0].clientY } : null;
-  }
-  function acct36OnTouchEnd(ev) {
-    if (!a36Touch || !ev.changedTouches || !ev.changedTouches[0]) return;
-    const dx = ev.changedTouches[0].clientX - a36Touch.x, dy = ev.changedTouches[0].clientY - a36Touch.y;
-    a36Touch = null;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) acct36GoDay(dx < 0 ? 1 : -1);
-  }
   function acct36Init() {
     if (!acctEnabled() || typeof document === "undefined") return;
     document.addEventListener("click", acct36OnClick);
@@ -1473,10 +1416,6 @@
     document.addEventListener("pointerdown", acct36OnPointerDown);
     ["pointerup", "pointercancel", "pointermove", "scroll"].forEach((t) => document.addEventListener(t, acct36PressCancel, true));
     document.addEventListener("contextmenu", (ev) => { if (acct36Active() && ev.target.closest && ev.target.closest("#a36-todo-box [data-a36-row]")) ev.preventDefault(); });
-    document.addEventListener("touchstart", acct36OnTouchStart, { passive: true });
-    document.addEventListener("touchend", acct36OnTouchEnd, { passive: true });
-    const grid = el("calendar-grid");
-    if (grid) grid.addEventListener("click", acct36OnGridClick);
   }
 
   // ═══ G23 본문 좌우 스와이프로 이전·다음 탭(계정 모드만) — 판정은 js/tab-swipe.js, 탭 순서는 하단 바에 보이는 순서(36+ 4탭 / 미만 5탭), 이동은 기존 switchTab ═══
@@ -4360,7 +4299,7 @@
     if (!acctEnabled() || !acct.user || !acct.account || !acct.account.memberId) return null;
     return usMembers().some((m) => m.memberId === acct.account.memberId && !m.deletedAt) ? acct.account.memberId : null;
   };
-  const usSelOpts = () => ({ memberMode: !!usMeId(), meId: usMeId(), ...(acctEnabled() ? { noFamily: true } : {}) }); // G21: 계정 모드는 '가족' 칩 없음(가족 범위 일정은 그대로 '전체'에서 보인다)
+  const usSelOpts = () => ({ memberMode: !!usMeId(), meId: usMeId(), meName: (typeof acct !== "undefined" && acct && acct.account && acct.account.displayName) || "", ...(acctEnabled() ? { noFamily: true } : {}) }); // G21: 계정 모드는 '가족' 칩 없음(가족 범위 일정은 그대로 '전체'에서 보인다)
   /** 현재 선택: 기본은 '전체'(E 1-1 — 내 일정만 보려면 '나' 칩 한 번). 칩을 누른 뒤에는 그 선택. 저장하지 않는다. */
   const usSel = () => us.selection;
   const usSelectionMode = () => UserScheduleView.selectionMode(UserScheduleView.normalizeSelection(usSel(), usLinks(), usMembers(), usSelOpts()));
@@ -4658,11 +4597,14 @@
     const day = usBuildModel(iso, iso).days.get(iso);
     const panel = UserScheduleView.dayPanel(day, usLinks(), { docById: usDocById, ...(autoLinkOn() ? { autoTitleOf: usAutoTitleOf } : {}) });
     const group = (title) => `<h4 class="us-group">${esc(title)}</h4>`;
+    // 36개월 이상: 칸에 점은 안 찍지만 그날 시작하는 자동 항목(완료한 줄 포함)도 보인다(예: 12월 1일 취학통지서·예비소집 확인)
+    const startsToday = acct36Active() ? visibleSchedule(true).filter((e) => toISODate(e.fixedDate || e.date) === iso && !day.benefit.includes(e) && !day.planned.includes(e) && !autoLinkedHidden(e)) : [];
+    const plannedRows = day.planned.concat(startsToday);
     el("selected-day-list").innerHTML =
       group(panel.added.title) +
       (panel.added.cards.length ? panel.added.cards.map((c) => UserScheduleView.sourceLabeled(UserScheduleView.renderCard(c), "user")).join("") : `<p class="us-note">${esc(panel.emptyText)}</p>`) +
       (day.benefit.length ? group(panel.benefit.title) + day.benefit.slice().sort(byUrgency).map((e) => UserScheduleView.sourceLabeled(eventItemHtml(e), "auto")).join("") : "") +
-      (day.planned.length ? group(panel.planned.title) + day.planned.slice().sort(byUrgency).map((e) => UserScheduleView.sourceLabeled(eventItemHtml(e), "auto")).join("") : "");
+      (plannedRows.length ? group(panel.planned.title) + plannedRows.slice().sort(byUrgency).map((e) => UserScheduleView.sourceLabeled(eventItemHtml(e), "auto")).join("") : "");
     el("selected-day-empty").classList.add("hidden");
     addSlot.innerHTML = UserScheduleView.renderAddButton({ enabled: true, hasHousehold: true });
   }

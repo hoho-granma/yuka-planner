@@ -17,11 +17,12 @@
   const mod = factory(
     () => (typeof module !== "undefined" && module.exports ? require("./user-schedule.js") : root.UserSchedule),
     () => (typeof module !== "undefined" && module.exports ? require("./date-picker.js") : root.HNDatePicker),
-    () => (typeof module !== "undefined" && module.exports ? require("./schedule-kinds.js") : root.ScheduleKinds)
+    () => (typeof module !== "undefined" && module.exports ? require("./schedule-kinds.js") : root.ScheduleKinds),
+    () => (typeof module !== "undefined" && module.exports ? require("./time-range.js") : root.TimeRange)
   );
   if (typeof module !== "undefined" && module.exports) module.exports = mod;
   else root.UserScheduleView = mod;
-})(typeof window !== "undefined" ? window : global, function (getUS, getDP, getSK) {
+})(typeof window !== "undefined" ? window : global, function (getUS, getDP, getSK, getTR) {
   "use strict";
 
   // ── 승인된 문구 (번호는 B4 문구 목록 #) ─────────────────────────────────────
@@ -321,6 +322,16 @@
     if (!sel || !sel.length) return "all";
     return sel.every((id) => id.startsWith("CHILD:")) ? "kids" : "member";
   }
+  /** 칩 라벨: 표시 이름(구성원 label, 내 구성원이면 계정 표시 이름)이 있으면 이름만('나(엄마)' 대신 '주연'). 이름이 없는 옛 구성원(엄마·아빠 시드)은 역할 라벨, 내 구성원은 기존 '나(역할)'. */
+  function memberChipLabel(m, opts) {
+    const role = ROLE_LABELS[m.role] || ROLE_LABELS.OTHER;
+    const isMe = !!(opts && opts.meId && memberKey(m) === opts.meId);
+    const own = String(m.label || "").trim();
+    const named = own && own !== role && own !== ROLE_LABELS.MOM && own !== ROLE_LABELS.DAD ? own : "";
+    if (named) return named;
+    if (isMe) return String((opts && opts.meName) || "").trim() || MSG.meChip(role);
+    return own || role;
+  }
   /** 칩: 엄마·아빠(있는 구성원만) / 아이들(분리된 아이 제외) / 가족. selected 는 복수. */
   function filterChips(links, selection, members, opts) {
     const sel = normalizeSelection(selection, links, members, opts);
@@ -330,7 +341,7 @@
       // 계정 모드: 구성원마다 칩 하나(내 구성원은 '나(역할)'), 합류한 구성원은 목록에 들어오는 즉시 칩이 늘어난다.
       for (const m of visibleMembersOf(members)) {
         const id = `MEMBER:${memberKey(m)}`;
-        const label = opts.meId && memberKey(m) === opts.meId ? MSG.meChip(ROLE_LABELS[m.role] || ROLE_LABELS.OTHER) : m.label || ROLE_LABELS[m.role] || "";
+        const label = memberChipLabel(m, opts);
         chips.push({ id, label, selected: sel.includes(id), color: memberColor(m) });
       }
     } else
@@ -433,23 +444,19 @@
     } else if (start) range = `${start}부터`;
     return [`${every} ${days}`.trim(), range].filter(Boolean).join(" · ");
   }
+  /** 시간 표기(시안 D): 종일 / 오후 4:00 ~ 5:00 (1시간) / 끝이 없으면 시작만. 일정 시간이 보이는 모든 곳이 이 함수를 쓴다. */
   function timeText(o) {
-    if (o.allDay) return MSG.timeAllDay;
-    if (o.startTime && o.endTime) return MSG.timeRange(o.startTime, o.endTime);
-    if (o.startTime) return MSG.timeFrom(o.startTime);
-    return "";
+    return getTR().displayText({ allDay: !!o.allDay, startTime: o.startTime, endTime: o.endTime });
   }
   function dateText(o) {
     if (o.dateKind === "PERIOD") return MSG.periodRow(`${md(o.periodStart)}~${md(o.periodEnd)}`);
     return o.endDate && o.endDate !== o.date ? MSG.dateRange(md(o.date), md(o.endDate)) : "";
   }
   /** 칸·카드의 대상 표시: 가족 일정이면 "가족 일정", 아이 일정이면 아이 이름들("A · B"). 분리된 아이는 "(분리된 아이)". */
-  /** 카드 태그. 담당(assigneeLabel)이 있으면 FAMILY 일정은 '가족' 대신 그 라벨, CHILD 일정은 아이 배지 뒤에 " · 담당". 없으면 기존 표기. */
+  /** 카드 태그: 가족 일정이면 '가족 일정', 아이 일정이면 아이 이름들. 담당은 화면에 표시하지 않는다(데이터는 그대로 — 완료한 사람이 자동 기록되는 방식과 별개). */
   function tagText(o) {
-    const who = o.assigneeLabel || "";
-    if (o.scope === "FAMILY") return who || MSG.cardFamily;
-    const kids = (o.badges || []).map((b) => (b.removed ? MSG.removedChild : b.displayName)).join(" · ");
-    return who ? [kids, who].filter(Boolean).join(" · ") : kids;
+    if (o.scope === "FAMILY") return MSG.cardFamily;
+    return (o.badges || []).map((b) => (b.removed ? MSG.removedChild : b.displayName)).join(" · ");
   }
   /** 상세의 '대상' 줄: 담당과 별도로 대상만(가족 / 아이 이름들). */
   function targetText(o) {
@@ -594,7 +601,6 @@
       [MSG.dateLabel, v.recurring ? [v.dayLabel, v.timeText].filter(Boolean).join(" · ") : [v.dateText, v.timeText].filter(Boolean).join(" · ")],
       ...(v.recurring ? [[MSG.repeatLabel, v.repeatSummary], ["", v.movedText]] : []),
       [MSG.targetLabel, v.targetText !== undefined ? v.targetText : v.tag, "target"],
-      [MSG.assigneeLabel, v.assigneeText, "assignee"],
       [MSG.locationLabel.replace(/ \(선택\)$/, ""), v.location],
       [MSG.memoLabel.replace(/ \(선택\)$/, ""), v.memo],
     ]
@@ -1183,13 +1189,7 @@
   // ── F1 홈 '다음 일정' 카드 (순수) ─────────────────────────────────────────────
   const UPCOMING_DAYS = 7;
   const UPCOMING_MAX = 3;
-  /** "14:30" → "오후 2:30", "09:05" → "오전 9:05", "00:00" → "오전 12:00", "12:10" → "오후 12:10". 형식이 다르면 "". */
-  function clock12(t) {
-    const m = /^(\d{2}):(\d{2})$/.exec(String(t || ""));
-    if (!m) return "";
-    const h = Number(m[1]);
-    return `${h < 12 ? "오전" : "오후"} ${h % 12 === 0 ? 12 : h % 12}:${m[2]}`;
-  }
+  const clock12 = (t) => getTR().clock12(t);
   /** 날짜 표기: 오늘 / 내일 / "10/5(일)". */
   function upcomingWhen(date, todayIso) {
     if (date === todayIso) return MSG.upcomingToday;
@@ -1214,7 +1214,7 @@
         if (o.status === "DONE" || o.status === "CANCELLED" || o.dateKind === "PERIOD" || seen.has(o.key)) continue;
         seen.add(o.key);
         total++;
-        if (out.length < UPCOMING_MAX) out.push({ key: o.key, scheduleId: o.scheduleId, date, title: o.title, whenText: upcomingWhen(date, todayIso), timeText: o.allDay ? MSG.timeAllDay : clock12(o.startTime), tag: tagText(o), color: occurrenceColor(o, links) });
+        if (out.length < UPCOMING_MAX) out.push({ key: o.key, scheduleId: o.scheduleId, date, title: o.title, whenText: upcomingWhen(date, todayIso), timeText: timeText(o), tag: tagText(o), color: occurrenceColor(o, links) });
       }
     }
     return { items: out, more: total - out.length };
