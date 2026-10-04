@@ -223,7 +223,7 @@ const mkHS = (flag = true, extra = {}) => { const adapter = extra.adapter || fak
     assert.ok(h.includes("수아 체크리스트") && h.includes('data-a36="hide-done"') && h.includes('role="switch"') && h.includes("완료 숨기기") && h.includes('data-a36-toggle="a"') && h.includes('a36-t done">빨래') && h.includes('data-a36="add">체크리스트 추가 +'));
     assert.ok(V.renderTodoTab({ name: "수아", list, adding: true, canTodo: true }).includes('data-a36-input="add"') && !V.renderTodoTab({ name: "수아", list, adding: true, canTodo: true }).includes('data-a36="add"'));
     assert.ok(V.renderTodoTab({ name: "수아", list, editId: "a", canTodo: true }).includes('data-a36-input="edit"'));
-    assert.ok(V.renderTodoTab({ name: "수아", list, canTodo: false }).includes("가족 캘린더가 만들어지면"));
+    assert.ok(V.renderTodoTab({ name: "수아", list, canTodo: false }).includes("준비 중이에요"));
     const m = V.renderTodoMenu("a");
     assert.ok(["menu-edit", "menu-top", "menu-del"].every((k) => m.includes(`data-a36="${k}"`)) && m.includes("고치기") && m.includes("맨 위로") && m.includes("삭제"));
     assert.ok(APP.includes("}, 500) };") || /setTimeout\(\(\) => \{ A36\.press = null;[\s\S]*?\}, 500\)/.test(APP), "500ms 길게 누르기");

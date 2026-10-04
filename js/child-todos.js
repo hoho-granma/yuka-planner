@@ -26,11 +26,13 @@
     return { ok: true, title };
   }
 
-  /** 아이의 살아 있는(삭제 안 한) 할 일, order 오름차순(같으면 만든 순). todos: [{id, ...doc}] */
+  /** 아이의 살아 있는(삭제 안 한) 할 일, order 오름차순(같으면 만든 순). todos: [{id, ...doc}]. childKey 는 문자열 또는 키 배열
+   *  (가구 링크가 만들어지기 전에 가족코드로 적은 할 일이, 링크가 생긴 뒤에도 같은 아이 것으로 보이게 — 둘 다 넘긴다). */
   function listFor(todos, childKey, opts) {
     const hideDone = !!(opts && opts.hideDone);
+    const keys = (Array.isArray(childKey) ? childKey : [childKey]).filter(Boolean);
     return (todos || [])
-      .filter((d) => d && d.childKey === childKey && d.deletedAt == null && !(hideDone && d.done === true))
+      .filter((d) => d && keys.includes(d.childKey) && d.deletedAt == null && !(hideDone && d.done === true))
       .slice()
       .sort((a, b) => (a.order - b.order) || (a.createdAt - b.createdAt) || (a.id < b.id ? -1 : 1));
   }

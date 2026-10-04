@@ -26,6 +26,7 @@
     menuEdit: "고치기", menuTop: "맨 위로", menuDel: "삭제", menuClose: "닫기",
     doneLabel: "완료",
     noHousehold: "가족 캘린더가 만들어지면 할 일을 적을 수 있어요.",
+    preparing: "준비 중이에요… 잠시만 기다려 주세요.",
     tooLong: "100자 이내로 적어 주세요.",
     quickTitle: "자주 쓰는 일정",
     quick: Object.freeze(["학원", "숙제", "준비물"]),
@@ -65,7 +66,7 @@
     const rows = [...t.open, ...t.done]
       .map((d) => `<div class="a36-row${d.done ? " done" : ""}" data-a36-row="${esc(d.id)}">${check(d.id, d.done)}<span class="a36-t">${esc(d.title)}</span>${d.done ? `<small>${esc(MSG.doneLabel)}</small>` : ""}</div>`)
       .join("");
-    const todo = `<section class="home-sec a36-card" id="a36-home-todo"><div class="home-sec-head"><h3>${esc(MSG.homeTodoTitle(st.name || ""))}</h3><button type="button" class="a36-more" data-a36="todos">${esc(MSG.homeTodoMore)}</button></div>${st.canTodo === false ? `<p class="home-empty-line">${esc(MSG.noHousehold)}</p>` : `${rows || `<p class="home-empty-line">${esc(MSG.emptyHint)}</p>`}<button type="button" class="a36-add" data-a36="add-home">${esc(MSG.add)}</button>`}</section>`;
+    const todo = `<section class="home-sec a36-card" id="a36-home-todo"><div class="home-sec-head"><h3>${esc(MSG.homeTodoTitle(st.name || ""))}</h3><button type="button" class="a36-more" data-a36="todos">${esc(MSG.homeTodoMore)}</button></div>${st.canTodo === false ? `<p class="home-empty-line" data-a36-preparing>${esc(MSG.preparing)}</p>` : `${rows || `<p class="home-empty-line">${esc(MSG.emptyHint)}</p>`}<button type="button" class="a36-add" data-a36="add-home">${esc(MSG.add)}</button>`}</section>`;
     const quick = `<div class="a36-quick"><small>${esc(MSG.quickTitle)}</small>${MSG.quick.map((q) => `<button type="button" data-a36="quick" data-a36-quick="${esc(q)}">${esc(q)}</button>`).join("")}</div>`;
     return `${chips}${st.familyHtml || ""}${todo}${quick}`;
   }
@@ -73,7 +74,7 @@
   /** 할 일 탭(메모장형). st: { name, list:[{id,title,done}], hideDone, canTodo, adding, editId } — 입력 줄은 app 이 열고 닫는다(adding=true 면 맨 아래에 입력 줄). */
   function renderTodoTab(st) {
     const head = `<div class="a36-head"><h2>${esc(MSG.todoTitle(st.name || ""))}</h2><button type="button" class="a36-sw" role="switch" aria-checked="${st.hideDone ? "true" : "false"}" data-a36="hide-done"><span>${esc(MSG.hideDone)}</span><i></i></button></div>`;
-    if (st.canTodo === false) return `${head}<p class="a36-hint">${esc(MSG.noHousehold)}</p>`;
+    if (st.canTodo === false) return `${head}<p class="a36-hint" data-a36-preparing>${esc(MSG.preparing)}</p>`; // 가구·아이 연결이 준비되면 앱이 다시 그린다
     const rows = (st.list || [])
       .map((d) => {
         const body = st.editId === d.id

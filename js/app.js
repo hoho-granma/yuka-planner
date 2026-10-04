@@ -1174,9 +1174,13 @@
     return acct36Child(p) ? [] : window.buildSchedule(p, d, c);
   }
   const A36 = { hideDone: (() => { try { return localStorage.getItem("hannun_a36_hidedone") === "1"; } catch (e) { return false; } })(), adding: false, editId: null, menuId: null, press: null, swallow: false };
-  const acct36ChildKey = () => (typeof usActiveChildKey === "function" && usActiveChildKey()) || familyCode || "";
+  const acct36LinkKey = () => (typeof usActiveChildKey === "function" && usActiveChildKey()) || "";
+  /** 새 할 일에 붙일 아이 키: 가구 링크가 있으면 링크 키, 아직 없으면 가족코드(첫 등록 직후). */
+  const acct36ChildKey = () => acct36LinkKey() || familyCode || "";
+  /** 보여 줄 때는 두 키를 모두 본다 — 링크가 생기기 전에 가족코드로 적은 할 일이 링크가 생긴 뒤에도 사라지지 않는다. */
+  const acct36Keys = () => [acct36LinkKey(), familyCode].filter(Boolean);
   const acct36CanTodo = () => typeof usActive === "function" && usActive() && !!acct36ChildKey() && typeof ChildTodos !== "undefined";
-  const acct36All = () => (acct36CanTodo() ? ChildTodos.listFor(HouseholdSync.getTodos(hh.hid), acct36ChildKey()) : []);
+  const acct36All = () => (acct36CanTodo() ? ChildTodos.listFor(HouseholdSync.getTodos(hh.hid), acct36Keys()) : []);
   function acct36AgeText(code) {
     let months = null;
     if (code === familyCode && profile) months = profile.stage === "pregnant" ? null : ageInMonths(profile.birthDate, new Date());
@@ -1219,20 +1223,35 @@
   const usRefreshHomeBase = usRefreshHome;
   usRefreshHome = function usRefreshHome() {
     if (!acct36Active() || !hhEnabled()) return usRefreshHomeBase.apply(this, arguments);
-    const sig = usHomeCardHtml({ family: true }) + usAutoLinkSig() + JSON.stringify(acct36All().map((d) => [d.id, d.title, d.done, d.order]));
+    const sig = acct36Sig();
     if (sig !== (us.homeSig36 || "")) {
       renderHome();
       if (currentTab === "checklist") acct36RenderTodoTab();
     }
   };
 
+  /** 홈·할 일 탭이 다시 그려야 하는지 비교하는 표식: 가족 카드 + 할 일 목록 + 준비 상태(가구·아이 연결 — 첫 등록 직후에는 가족코드·링크가 조금 늦게 생긴다). */
+  const acct36Sig = () => usHomeCardHtml({ family: true }) + usAutoLinkSig() + `|ready:${acct36CanTodo()}:${acct36Keys().join(",")}|` + JSON.stringify(acct36All().map((d) => [d.id, d.title, d.done, d.order]));
+  // 첫 아이 등록 직후: 가족코드 생성(ensureFamilyCode) 뒤 가구에 아이 링크가 생기거나 가구가 시작되는 순간 할 일 화면을 다시 그린다.
+  const hhLinkNewChildBase = hhLinkNewChild;
+  hhLinkNewChild = function hhLinkNewChild() {
+    const r = hhLinkNewChildBase.apply(this, arguments);
+    if (acctEnabled()) usRefreshHome(); // 링크는 미러에 바로 반영된다(write 의 동기 구간)
+    return r;
+  };
+  const hhStartBase = hhStart;
+  hhStart = function hhStart() {
+    const r = hhStartBase.apply(this, arguments);
+    if (acctEnabled() && typeof usRefreshHome === "function") usRefreshHome();
+    return r;
+  };
   function acct36RenderHome() {
     const wrap = el("home-body");
     if (!wrap) return;
     const kids = acctHomeChildren().map((c) => ({ ...c, ageText: acct36AgeText(c.code) }));
     const list = acct36All();
     const familyHtml = typeof usHomeCardHtml === "function" ? usHomeCardHtml({ family: true }) : "";
-    us.homeSig36 = familyHtml + usAutoLinkSig() + JSON.stringify(list.map((d) => [d.id, d.title, d.done, d.order]));
+    us.homeSig36 = acct36Sig();
     wrap.innerHTML = Over36View.renderHome({ kids, name: childDisplayName(), familyHtml, todos: ChildTodos.homeLines(list, 3), canTodo: acct36CanTodo() });
   }
   function acct36RenderTodoTab(focusSel) {
@@ -1244,7 +1263,7 @@
       box.id = "a36-todo-box";
       tab.appendChild(box);
     }
-    const list = ChildTodos && acct36CanTodo() ? ChildTodos.listFor(HouseholdSync.getTodos(hh.hid), acct36ChildKey(), { hideDone: A36.hideDone }) : [];
+    const list = ChildTodos && acct36CanTodo() ? ChildTodos.listFor(HouseholdSync.getTodos(hh.hid), acct36Keys(), { hideDone: A36.hideDone }) : [];
     box.innerHTML = Over36View.renderTodoTab({ name: childDisplayName(), list, hideDone: A36.hideDone, canTodo: acct36CanTodo(), adding: A36.adding, editId: A36.editId });
     if (A36.menuId) {
       const row = box.querySelector(`[data-a36-row="${A36.menuId}"]`);
