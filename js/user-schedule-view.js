@@ -902,7 +902,7 @@
     const meId = ctx.meId || "";
     const ordered = members.slice().sort((a, b) => (a.memberId === meId ? -1 : 0) - (b.memberId === meId ? -1 : 0));
     const whoChips =
-      ordered.map((m) => chip("", `data-us-who="MEMBER:${esc(m.memberId)}"`, m.memberId === meId ? MSG.g13WhoMe : m.label || "", f.whoPerson && f.assigneeMemberId === m.memberId)).join("") +
+      ordered.map((m) => chip("", `data-us-who="MEMBER:${esc(m.memberId)}"`, m.memberId === meId ? MSG.g13WhoMe : m.label || "", f.whoPerson && f.assigneeMemberId === m.memberId, memberColor(m))).join("") +
       kids.map((l) => chip("", `data-us-who="CHILD:${esc(linkKey(l))}"`, l.displayName || "", f.scope === "CHILD" && (f.childKeys || []).includes(linkKey(l)), colors[linkKey(l)])).join("") +
       chip("", 'data-us-who="FAMILY"', MSG.targetFamily, f.scope === "FAMILY" && !f.whoPerson);
     const kindChips = g13Kinds(f, ctx).map((x) => chip("", `data-us-sk="${esc(x.label)}"`, x.label, f.kindPick === x.label)).join("");

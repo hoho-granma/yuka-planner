@@ -1755,3 +1755,6 @@ body.acct-design .as-info-chip { background: var(--c-badge-auto); color: var(--c
 .tw-v { min-height: 20px; line-height: 20px; font-size: 11px; }
 .tw-v.cur { min-height: 24px; line-height: 24px; font-size: 12.5px; font-weight: 800; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
 .tw-warn { color: var(--c-danger); }
+
+/* v1.12.93: 일정 추가 시트 체크박스(종일·여러 날)는 브라우저 기본 파랑 대신 주 버튼색(S1) */
+.us-check input[type="checkbox"], .past-infant-toggle input[type="checkbox"] { accent-color: var(--c-primary); }
