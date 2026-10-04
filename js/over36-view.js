@@ -26,7 +26,7 @@
     menuEdit: "고치기", menuTop: "맨 위로", menuDel: "삭제", menuClose: "닫기",
     doneLabel: "완료",
     autoBadge: "자동",
-    homeAutoTitle: "곧 챙길 자동 일정",
+    homeAutoTitle: "놓치기 쉬운 것, 챙겨 드려요",
     noHousehold: "가족 캘린더가 만들어지면 할 일을 적을 수 있어요.",
     preparing: "준비 중이에요… 잠시만 기다려 주세요.",
     tooLong: "100자 이내로 적어 주세요.",

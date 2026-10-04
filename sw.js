@@ -24,6 +24,7 @@ const SHELL_ASSETS = [
   "./js/school-policy.js",
   "./js/auto-after36.js",
   "./js/auto-steps.js",
+  "./js/next-stage.js",
   "./js/sync.js",
   "./js/feature-flags.js",
   "./js/household-sync.js",

@@ -36,6 +36,12 @@
     return a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
   };
 
+  /** 연결된 autoRef 키 → 숨길 AUTO 항목 id 집합. 규칙상 id 에 "__" 가 없는 항목(지역 지원금 등)의 autoRef 는 "<id>__default" 이므로 그 원래 id 도 함께 숨긴다. */
+  function hiddenIdsOf(keys) {
+    const out = new Set();
+    for (const k of keys) { out.add(k); if (typeof k === "string" && k.endsWith("__default")) out.add(k.slice(0, -"__default".length)); }
+    return out;
+  }
   /**
    * C2: autoRef 연결 색인(순수, 읽기 전용). childKey 의 아이에게 연결된(autoRef 가 있고 삭제·취소되지 않은 비반복) 일정을 AUTO 항목 id 별로 모은다.
    *   childKey 가 없으면 빈 Map(어느 아이의 AUTO 인지 모르면 연결을 적용하지 않는다). aliases: { 옛 id: 새 id } — 데이터 수정으로 AUTO id 가 바뀐 경우의 해석.
@@ -177,7 +183,7 @@
     if (autoVisible(filter, auto)) {
       const events = auto.events || [];
       const displayDates = auto.displayDates || new Map();
-      const hiddenAutoIds = auto.hideLinked === false ? new Set() : new Set(linksByAutoId(user.schedules, auto.childKey, auto.autoIdAliases).keys()); // hideLinked:false 면 숨기지 않는다(앱의 autoLink 플래그 OFF)
+      const hiddenAutoIds = auto.hideLinked === false ? new Set() : hiddenIdsOf(linksByAutoId(user.schedules, auto.childKey, auto.autoIdAliases).keys()); // hideLinked:false 면 숨기지 않는다(앱의 autoLink 플래그 OFF)
       for (const k of dayKeys) {
         const date = toDate(k);
         const cell = days.get(k);
@@ -185,6 +191,7 @@
         cell.planned = HN.plannedOnDay(events, displayDates, date);
         // C2: 연결된(예약이 있는) AUTO 항목의 추천일 표식은 숨긴다. events/displayDates 는 그대로, 이 칸의 표시 목록에서만 뺀다. 아이를 모르면(childKey 없음) 숨기지 않는다.
         if (hiddenAutoIds.size && cell.planned.length) cell.planned = cell.planned.filter((e) => !hiddenAutoIds.has(e.id));
+        if (hiddenAutoIds.size && cell.benefit.length) cell.benefit = cell.benefit.filter((e) => !hiddenAutoIds.has(e.id)); // 신청 기간(혜택)도 같은 규칙: 일정으로 넣으면 사용자 일정만 보인다
       }
     }
 

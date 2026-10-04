@@ -73,40 +73,11 @@ const fnSrc = (name, async) => { const i = APP.indexOf(`  ${async ? "async " : "
     assert.ok(/\.us-chip\[style\*="--us-color"\] \{[^}]*border-color: var\(--us-color\)/.test(CSS));
   });
 
-  console.log("5. 달력 아래 안내 문구");
-  const legendEnv = (o) => {
-    const box = { hidden: null, classList: { toggle: (c, on) => (box.hidden = on) } };
-    const sb = {
-      acctEnabled: () => o.acct !== false, visibleSchedule: () => o.visible || [], ChildTimeline: { OVER36_FROM_MONTHS: 36 }, usActive: () => o.active !== false, profile: o.profile === undefined ? {} : o.profile, acct36Active: () => !!o.is36,
-      usLinks: () => o.links || [], usMembers: () => [], usSel: () => o.sel || [], usSelOpts: () => ({ memberMode: false, noFamily: true }),
-      usChildAge: (k) => o.ages[k], us: { onlyUser: !!o.onlyUser }, UserScheduleView: V, el: () => box,
-    };
-    vm.createContext(sb);
-    vm.runInContext(fnSrc("calAutoLegendOn") + fnSrc("calUpdateKindLegend") + ";globalThis.run=calUpdateKindLegend", sb);
-    return { run: () => { sb.run(); return box.hidden; } };
-  };
-  const L = (...ks) => ks.map((k, i) => ({ childKey: k, order: i + 1, displayName: k }));
-  await test("36개월 미만 아이가 있고 자동 일정이 켜져 있으면 보인다(숨김=false)", () => {
-    assert.strictEqual(legendEnv({ links: L("a"), ages: { a: 10 } }).run(), false);
-    assert.strictEqual(legendEnv({ links: L("a", "b"), ages: { a: 40, b: 10 } }).run(), false, "한 명이라도 미만이면 보임");
-    assert.strictEqual(legendEnv({ links: L("a"), ages: { a: "PREGNANT" } }).run(), false, "임신 중은 미만");
-  });
-  await test("36개월 이상만 있거나 · 아이가 없거나 · '직접 등록한 일정만 보기'(자동 끔)이면 숨긴다", () => {
-    assert.strictEqual(legendEnv({ links: L("a"), ages: { a: 40 } }).run(), true);
-    assert.strictEqual(legendEnv({ links: [], ages: {} }).run(), true);
-    assert.strictEqual(legendEnv({ links: L("a", "b"), ages: { a: 10, b: 10 }, sel: ["CHILD:a"], onlyUser: true }).run(), true);
-    assert.strictEqual(legendEnv({ links: L("a", "b"), ages: { a: 10, b: 10 }, sel: ["CHILD:a"], onlyUser: false }).run(), false);
-    assert.strictEqual(legendEnv({ links: L("a", "b"), ages: { a: 40, b: 10 }, sel: ["CHILD:a"] }).run(), true, "36개월 이상 아이 칩만 고르면 숨김");
-    assert.strictEqual(legendEnv({ links: L("a", "b"), ages: { a: 40, b: 10 }, sel: ["CHILD:b"] }).run(), false);
-  });
-  await test("계정 모드가 아니면 예전처럼 항상 보인다 / 가구가 없으면 지금 아이 기준", () => {
-    assert.strictEqual(legendEnv({ acct: false, links: L("a"), ages: { a: 40 } }).run(), false);
-    assert.strictEqual(legendEnv({ active: false, is36: true }).run(), true);
-    assert.strictEqual(legendEnv({ active: false, is36: false }).run(), false);
-  });
-  await test("연결: renderCalendar 와 칩 슬롯 갱신에서 안내 문구를 갱신한다", () => {
-    assert.ok(/renderCalLegend\(\);\n\s+calUpdateKindLegend\(\);/.test(APP));
-    assert.ok(/function usRenderCalendarSlots\(model\) \{\n\s+calUpdateKindLegend\(\);/.test(APP));
+  console.log("5. 달력 아래 안내 문구(삭제됨)");
+  await test("'혜택은 신청 시작일 · 그 외는 추천일' 문구는 어떤 조건에서도 없다(마크업·코드 모두)", () => {
+    const HTML = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+    assert.ok(!HTML.includes("혜택은 신청 시작일") && !HTML.includes("cal-kind-legend"));
+    assert.ok(!APP.includes("calAutoLegendOn") && !APP.includes("calUpdateKindLegend") && !APP.includes("cal-kind-legend"));
   });
 
   console.log("1. 아이 삭제(서버에서 진짜 삭제)");

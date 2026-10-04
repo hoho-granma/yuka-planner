@@ -43,6 +43,8 @@
   }
 
   let dataset = null;
+  let nextStagePolicy = null;
+  let homeReappearDays = 7;
   let regionsData = null;
   let schedule = [];
   let profile = null;
@@ -190,15 +192,19 @@
   }
 
   async function loadAll() {
-    const [regions, reform, policy, allow36, pregTiming, ...categoryFiles] = await Promise.all([
+    const [regions, reform, policy, allow36, pregTiming, nsRaw, reappearRaw, ...categoryFiles] = await Promise.all([
       loadJson("data/regions.json"),
       loadJsonOrNull("data/subsidies/reform-2027.json"),
       loadSchoolPolicy(),
       typeof AutoAfter36 === "undefined" ? null : AutoAfter36.load(fetch),
       loadJsonOrNull("data/policy/pregnancy-timing.json"),
+      loadJsonOrNull("data/policy/next-stage.json"),
+      loadJsonOrNull("data/policy/home-reappear.json"),
       ...TODO_CATEGORY_FILES.map(loadJson),
     ]);
     regionsData = regions;
+    homeReappearDays = reappearRaw && Number.isInteger(reappearRaw.reappearDaysBefore) && reappearRaw.reappearDaysBefore >= 0 ? reappearRaw.reappearDaysBefore : 7; // 홈 카드 재등장 창(data/policy/home-reappear.json)
+    nextStagePolicy = typeof NextStage === "undefined" ? null : NextStage.normalizePolicy(nsRaw); // 다음 단계 안내(W5) 정책 — 못 읽으면 빈 정책(배너 없음)
     schoolPolicy = policy;
     reformConfig = reform;
     // 건강검진·예방접종·성장발달(및 이유식/구강/수면/안전/생활/보육)은 카테고리별 파일
@@ -1155,7 +1161,10 @@
   function acct36AutoItems(limit) {
     if (!acct36Active()) return [];
     const t0 = new Date(); t0.setHours(0, 0, 0, 0);
-    const list = visibleSchedule(true).filter((e) => !completed[e.id] && (e.deadlineDate || e.date) >= t0).sort((a, b) => a.date - b.date);
+    const reappear = new Date(t0.getTime() + homeReappearDays * 86400000); // 일정으로 넣은 항목은 그 날짜 N일 전부터 다시 나온다
+    const links = autoLinks();
+    const hiddenUntilNear = (e) => { const l = links ? AutoSteps.linkOf(links, e) : null; return !!(l && l.date && new Date(l.date + "T00:00:00") > reappear); };
+    const list = visibleSchedule(true).filter((e) => !completed[e.id] && (e.deadlineDate || e.date) >= t0 && !hiddenUntilNear(e)).sort((a, b) => a.date - b.date);
     return limit ? list.slice(0, limit) : list;
   }
   const A36 = { hideDone: (() => { try { return localStorage.getItem("hannun_a36_hidedone") === "1"; } catch (e) { return false; } })(), adding: false, editId: null, menuId: null, press: null, swallow: false };
@@ -1229,8 +1238,9 @@
   };
   const renderHomeBase = renderHome;
   renderHome = function renderHome() {
-    if (!acct36Active()) return renderHomeBase.apply(this, arguments);
-    acct36RenderHome();
+    if (!acct36Active()) renderHomeBase.apply(this, arguments);
+    else acct36RenderHome();
+    nsSync(); // W5: 다음 단계 안내 한 줄 배너(홈 맨 아래, 계정 모드)
   };
   const renderChecklistTabBase = renderChecklistTab;
   renderChecklistTab = function renderChecklistTab() {
@@ -1328,7 +1338,7 @@
     const occs = ((day && day.user) || []).slice().sort((x, y) => (x.allDay ? 1 : 0) - (y.allDay ? 1 : 0) || String(x.startTime || "").localeCompare(String(y.startTime || "")));
     // 달력 칸에 올라간 항목(지원금 신청 시작 fixed + 그날로 추천된 항목)과 같은 기준으로 고른다 — 칸에는 있는데 시트는 비는 일이 없게(calendarDayItems 공용)
     const dayItems = calendarDayItems(new Date(iso + "T00:00:00"));
-    const startsToday = visibleSchedule(true).filter((e) => toISODate(e.fixedDate || e.date) === iso && !dayItems.fixed.includes(e) && !dayItems.planned.includes(e)); // 기간형처럼 칸에 점은 안 찍지만 그날 시작하는 자동 항목(완료한 것 포함)
+    const startsToday = visibleSchedule(true).filter((e) => toISODate(e.fixedDate || e.date) === iso && !dayItems.fixed.includes(e) && !dayItems.planned.includes(e) && !autoLinkedHidden(e)); // 기간형처럼 칸에 점은 안 찍지만 그날 시작하는 자동 항목(완료한 것 포함)
     const autoRows = [...dayItems.fixed, ...dayItems.planned.filter((e) => !dayItems.fixed.includes(e)), ...startsToday].map((e) => ({ autoId: e.id, title: e.title, allDay: true, startTime: "", color: "", done: !!completed[e.id], sub: e.dateLabel || "", auto: true }));
     return autoRows.concat(occs.map((o) => {
       const doc = usDocById(o.scheduleId);
@@ -1612,27 +1622,6 @@
     }
   }
 
-  /**
-   * 달력 아래 '혜택은 신청 시작일 · 그 외는 추천일' 안내: 자동 일정이 실제로 달력에 올라오는 경우에만 보인다.
-   * 계정 모드: 보려는 아이(칩으로 고른 아이, 없으면 전체) 중 36개월 미만(임신 중·나이 미상 포함)이 있고, '직접 등록한 일정만 보기'로 자동 일정을 끄지 않았을 때.
-   * 가구가 없을 때는 지금 아이가 36개월 미만일 때. 계정 모드가 아니면 예전처럼 항상 보인다.
-   */
-  function calAutoLegendOn() {
-    if (typeof acctEnabled !== "function" || !acctEnabled()) return true;
-    if (typeof usActive !== "function" || !usActive()) return !!profile && !acct36Active();
-    const keys = usLinks().filter((l) => !l.removedAt).map((l) => l.childKey);
-    const sel = UserScheduleView.normalizeSelection(usSel(), usLinks(), usMembers(), usSelOpts());
-    const picked = sel.filter((id) => id.startsWith("CHILD:")).map((id) => id.slice(6));
-    const target = picked.length ? picked : keys;
-    const under36 = target.some((k) => { const a = usChildAge(k); return !(typeof a === "number" && a >= ChildTimeline.OVER36_FROM_MONTHS); });
-    if (!under36 && !(profile && visibleSchedule(true).length)) return false; // 36개월 이상도 허용된 자동 일정이 있으면 범례가 필요하다
-    return UserScheduleView.toModelFilter(usSel(), us.onlyUser, usLinks(), usMembers(), usSelOpts()).showAuto !== false;
-  }
-  function calUpdateKindLegend() {
-    const box = el("cal-kind-legend");
-    if (box) box.classList.toggle("hidden", !calAutoLegendOn());
-  }
-
   function renderCalLegend() {
     el("cal-legend").innerHTML = Object.values(CATEGORY_META)
       .map((g) => `<span class="cal-legend-item"><span class="dot" style="background:${g.color}"></span>${g.label}</span>`)
@@ -1649,8 +1638,8 @@
   /** 그 날짜에 달력에 표시할 항목: 지원금 신청 시작(fixed) + 그날로 추천된 항목. */
   function calendarDayItems(date) {
     const cal = calendarDotSchedule();
-    const fixed = cal.filter((e) => e.scheduleKind === "fixed" && HNLogic.coversDay(e, date));
-    const planned = HNLogic.plannedOnDay(cal, calDisplayDays, date);
+    const fixed = cal.filter((e) => e.scheduleKind === "fixed" && HNLogic.coversDay(e, date) && !autoLinkedHidden(e));
+    const planned = HNLogic.plannedOnDay(cal, calDisplayDays, date).filter((e) => !autoLinkedHidden(e));
     return { fixed, planned };
   }
 
@@ -1748,7 +1737,6 @@
     el("calendar-title").textContent = `${year}년 ${month + 1}월`;
     computeCalendarDays();
     renderCalLegend();
-    calUpdateKindLegend();
     renderCalendarProgress();
 
     const firstDay = new Date(year, month, 1);
@@ -2895,6 +2883,133 @@
     if (act === "cancel") { const e = asCur && asCur.e; if (e) { asCur = null; return openDetail(e); } return closeDetail(); }
   }
   if (typeof document !== "undefined" && el("modal-content")) el("modal-content").addEventListener("click", asOnClick);
+
+
+  // ═══ W5 다음 단계 안내: 곧 생길 고민 한 줄 배너(홈 맨 아래) → 미리 알아보기(시기 타임라인) → 일정으로 넣기(항목별 체크) ═══
+  // 판단은 js/next-stage.js(순수), 정책은 data/policy/next-stage.json. 지금 보는 아이 기준 가장 가까운 단계 하나만. 일정 저장은 W4 한 장 시트와 같은 경로(HouseholdSync.createSchedule + autoRef).
+  const NSS = { m: null, checked: new Set(), saving: false, error: "", message: "", saved: new Map() }; // saved: 방금 일정으로 넣은 항목 id → 시각(서버 반영이 늦어도 시트·되돌아가기에서 바로 '일정 있음'으로 본다)
+  function nsModel() {
+    if (!acctEnabled() || !profile || typeof NextStage === "undefined" || !nextStagePolicy || !nextStagePolicy.stages.length) return null;
+    const pregnant = isPregnant();
+    const st = ChildTimeline.stageOf({ birthDate: profile.birthDate, stage: profile.stage, policy: schoolPolicy, enrollmentYearOverride: profile.enrollmentYearOverride });
+    const events = new Map(schedule.map((e) => [e.id, e]));
+    const links = autoLinks();
+    const m = NextStage.pick({
+      policy: nextStagePolicy,
+      kid: { name: childDisplayName(), pregnant, stage: st.stage, ageMonths: st.ageMonths, dueDate: pregnant ? profile.birthDate : null },
+      today: new Date(), events,
+      isDone: (id) => !!completed[id],
+      isLinked: (e) => { const l = links ? AutoSteps.linkOf(links, e) : null; return !!(l && l.date); },
+      isNA: (id) => isNotApplicable(id),
+    });
+    if (m) for (const it of m.items) { // 방금 넣은 항목: 연결 색인이 따라잡으면 목록에서 지우고, 아직이면(10분 안) 일정 있음으로 덮는다
+      const at = NSS.saved.get(it.id);
+      if (at == null) continue;
+      if (it.state !== "open" || Date.now() - at > 600000) NSS.saved.delete(it.id); else it.state = "planned";
+    }
+    return m;
+  }
+  /** 계산 결과가 없을 때(남은 항목이 없어 숨김 포함 — 색인이 따라잡으면 pick 이 null) 직전 모델을 쓰고, 방금 넣은 항목은 연결 색인과 무관하게 '일정 있음'으로 둔다. */
+  function nsKeepModel(m) {
+    const base = m || NSS.m;
+    if (base) for (const it of base.items) if (it.state === "open" && NSS.saved.has(it.id)) it.state = "planned";
+    return base;
+  }
+  /** 홈 맨 아래 배너를 다시 놓는다(이미 있으면 지우고 새로). 아이가 없거나 계정 모드가 아니거나 남은 항목이 없으면 아무것도 두지 않는다. */
+  function nsSync() {
+    const body = el("home-body");
+    if (!body || !body.querySelector) return;
+    const old = body.querySelector("#ns-banner");
+    if (old) old.remove();
+    let m = null;
+    try { m = nsModel(); } catch (e) { console.error("다음 단계 안내 계산 실패", e); }
+    if (m) body.insertAdjacentHTML("beforeend", NextStage.renderBanner(m));
+  }
+  const nsCanPlan = () => autoLinkOn() && usActiveChildKey() != null;
+  function nsShow(html) {
+    modalMode = "profile";
+    el("modal-content").innerHTML = html;
+    el("detail-modal").classList.remove("hidden");
+  }
+  function nsOpenSheet() {
+    let m = null;
+    try { m = nsModel(); } catch (err) { console.error("다음 단계 안내 계산 실패", err); }
+    NSS.m = nsKeepModel(m);
+    if (!NSS.m) return closeDetail();
+    NSS.error = ""; NSS.message = ""; NSS.saving = false;
+    nsShow(NextStage.renderSheet(NSS.m, { applyOf: (id) => { const e = schedule.find((x) => x.id === id); return e ? usApplyLinkOf(e) : null; }, canPlan: nsCanPlan() }));
+  }
+  /** 일정 넣기 시트의 줄: 아직 안 한 항목만. 날짜를 만들지 않는다(정해진 날이 없으면 시기만, 그것도 없으면 선택 불가). */
+  function nsPlanRows() {
+    const todayIso = toISODate(new Date());
+    return NSS.m.items.filter((it) => it.state === "open" && !NSS.saved.has(it.id)).map((it) => {
+      const p = NextStage.proposal(it.event, it.dateMode, todayIso);
+      const none = p.kind === "NONE";
+      return { id: it.id, label: it.label, sub: p.text + (it.needsCheck ? ` · ${NextStage.MSG.checkNeeded}` : ""), disabled: none, proposal: p, checked: !none && NSS.checked.has(it.id) };
+    });
+  }
+  function nsOpenPlan() {
+    if (!NSS.m || !nsCanPlan()) return;
+    const todayIso = toISODate(new Date());
+    NSS.checked = new Set(NSS.m.items.filter((it) => it.state === "open" && !NSS.saved.has(it.id) && !it.needsCheck && NextStage.proposal(it.event, it.dateMode, todayIso).kind !== "NONE").map((it) => it.id));
+    NSS.error = ""; NSS.message = ""; NSS.saving = false;
+    nsRenderPlan();
+  }
+  const nsRenderPlan = () => nsShow(NextStage.renderPlanSheet(NSS.m, nsPlanRows(), { saving: NSS.saving, error: NSS.error, message: NSS.message }));
+  async function nsSavePlan() {
+    if (!NSS.m || NSS.saving) return;
+    const ck = usActiveChildKey();
+    const rows = nsPlanRows().filter((r) => r.checked);
+    if (ck == null || !rows.length) return;
+    NSS.saving = true; NSS.error = ""; nsRenderPlan();
+    let failed = 0, okN = 0;
+    for (const r of rows) {
+      try {
+        const it = NSS.m.items.find((x) => x.id === r.id), e = it && it.event, p = r.proposal;
+        const input = { sourceType: "MANUAL", title: usAutoTitleOfEvent(e).slice(0, 100), category: AutoSteps.categoryOf(e), scope: "CHILD", childKeys: [ck], allDay: true, autoRef: AutoSteps.autoRefOf(e),
+          ...(p.kind === "FIXED" ? { dateKind: "FIXED", eventDate: p.eventDate } : { dateKind: "PERIOD", periodStart: p.periodStart, periodEnd: p.periodEnd }) }; // 담당자·반복 없음(완료한 사람이 자동 기록)
+        const doc = UserSchedule.buildCreateDoc(input, Date.now());
+        if (!doc.ok) throw new Error("invalid");
+        const res = await HouseholdSync.createSchedule(hh.hid, doc.doc);
+        if (!res || !res.ok) throw new Error((res && res.reason) || "create-failed");
+        okN++; NSS.saved.set(r.id, Date.now());
+      } catch (err) { console.error("다음 단계 일정 저장 실패", err); failed++; }
+    }
+    NSS.saving = false;
+    try { usRefreshCalendar(); } catch (err) { console.error("다음 단계 저장 뒤 화면 갱신 실패", err); }
+    let m2 = null;
+    try { m2 = nsModel(); } catch (err) { console.error("다음 단계 안내 계산 실패", err); }
+    NSS.m = nsKeepModel(m2);
+    NSS.checked = new Set([...NSS.checked].filter((id) => !NSS.saved.has(id) && NSS.m.items.some((x) => x.id === id && x.state === "open")));
+    NSS.message = okN ? NextStage.MSG.planDone(okN) : "";
+    NSS.error = failed ? NextStage.MSG.planFail(failed) : "";
+    try { nsSync(); } catch (err) { console.error(err); }
+    nsRenderPlan();
+  }
+  function nsOnClick(ev) {
+    const t = ev.target && ev.target.closest ? ev.target.closest("[data-ns]") : null;
+    if (!t) return;
+    const act = t.getAttribute("data-ns");
+    if (t.tagName === "A") return;
+    ev.preventDefault();
+    if (act === "open") return nsOpenSheet();
+    if (act === "plan") return nsOpenPlan();
+    if (act === "back") return nsOpenSheet();
+    if (act === "save") return nsSavePlan();
+    if (act === "close") return closeDetail();
+    if (act === "detail") { const e = schedule.find((x) => x.id === t.getAttribute("data-ns-id")); if (e) openDetail(e); }
+  }
+  function nsOnChange(ev) {
+    const c = ev.target && ev.target.getAttribute ? ev.target.getAttribute("data-ns-check") : null;
+    if (!c || !NSS.m) return;
+    if (ev.target.checked) NSS.checked.add(c); else NSS.checked.delete(c);
+    nsRenderPlan();
+  }
+  if (typeof document !== "undefined" && el("modal-content") && el("home-body")) {
+    el("modal-content").addEventListener("click", nsOnClick);
+    el("modal-content").addEventListener("change", nsOnChange);
+    el("home-body").addEventListener("click", nsOnClick);
+  }
 
   function closeDetail() {
     el("detail-modal").classList.add("hidden");
@@ -4261,6 +4376,12 @@
   }
   // ── C2-b1 AUTO 항목 연결(autoLink 서브 플래그 — 가구 플래그가 켜져 있고 가구가 있을 때만) ───────────────────
   const autoLinkOn = () => usActive() && !!window.FEATURES && window.FEATURES.autoLink === true;
+  /** 일정으로 넣어 연결된(autoRef) AUTO 항목은 달력 칸·날짜 시트·목록에서 자동 추천 표시를 뺀다(사용자 일정만 보인다). 연결을 끊으면(일정 삭제·취소) 다시 보인다. */
+  function autoLinkedHidden(e) {
+    const m = autoLinks();
+    const l = m && e ? AutoSteps.linkOf(m, e) : null;
+    return !!(l && l.date);
+  }
   let autoLinkMemo = null;
   /** 이 아이의 연결 색인(Map: AUTO id → {scheduleId,date,status,count}). 꺼져 있으면 null. 한 번의 화면 갱신(같은 동기 구간) 안에서만 재사용한다. */
   function autoLinks() {
@@ -4502,7 +4623,6 @@
   // ── F2 주 보기 끝 ───────────────────────────────────────────────────────────────
   /** 캘린더 위(개수 줄·필터·범례)와 그리드 아래(이번 달 기간 일정) 영역. 가구가 없으면 비워 둔다. */
   function usRenderCalendarSlots(model) {
-    calUpdateKindLegend(); // 칩 선택·토글이 바뀌면 안내 문구 조건도 다시 본다
     if (!hhEnabled()) return;
     usRenderViewToggle();
     const top = el("us-filter-slot");

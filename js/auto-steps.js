@@ -42,7 +42,7 @@
   /** 연결 색인(linksByAutoId)에서 이 항목의 현재 연결을 찾는다. */
   const linkOf = (links, event) => (links && event ? links.get(event.id) || links.get(autoRefOf(event)) || null : null);
   /** 일정 분류(규칙 허용 5종): 학교 단계는 기관, 나머지(신청·행정)는 기타. */
-  const categoryOf = (event) => { const d = event && event.detail && event.detail.definition; return d && d.category === "SC" ? "INSTITUTION" : "ETC"; };
+  const categoryOf = (event) => { const d = event && event.detail && event.detail.definition; return d && d.category === "SC" ? "INSTITUTION" : d && (d.category === "HC" || d.category === "VX") ? "MEDICAL" : "ETC"; }; // 학교=기관, 검진·접종=병원(다음 단계 안내에서 넣는 경우), 그 밖(신청·행정)=기타
 
   /**
    * 일정 날짜 자동 입력: 지금 이후의 마감일 → 없으면 권장일(추천일·시작일). 이미 지났으면 오늘. 반환 { iso, kind: "deadline"|"recommended", uncertain }.

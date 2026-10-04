@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#ff8a5c" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
 <script>/* G19: 계정 모드(기본 ON)에서는 옛 상황 선택 화면이 첫 그림부터 한 번도 보이지 않게 한다(js/feature-flags.js 와 같은 규칙: accounts="0" 일 때만 OFF) */try{if(localStorage.getItem("hannun_feature_accounts")!=="0")document.documentElement.classList.add("hnacc-default");}catch(e){document.documentElement.classList.add("hnacc-default");}</script>
-<link rel="stylesheet" href="css/style.css?v=107" />
+<link rel="stylesheet" href="css/style.css?v=108" />
   <link rel="stylesheet" href="css/places.css?v=7" />
 </head>
 <body>
@@ -186,9 +186,6 @@
             <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
           </div>
           <div id="calendar-grid" class="calendar-grid calendar-grid-v2"></div>
-          <div class="cal-kind-legend" id="cal-kind-legend">
-            <span><i class="kl-dot"></i>혜택은 신청 시작일 · 그 외는 추천일(정해진 예정일이 아니에요)</span>
-          </div>
         </div>
 
         <div id="auto-period-slot"></div>
@@ -288,7 +285,8 @@
   <script src="js/child-timeline.js?v=8"></script>
   <script src="js/school-policy.js?v=1"></script>
   <script src="js/auto-after36.js?v=1"></script>
-  <script src="js/auto-steps.js?v=1"></script>
+  <script src="js/auto-steps.js?v=2"></script>
+  <script src="js/next-stage.js?v=2"></script>
   <script src="js/todo-engine.js?v=3"></script>
   <script src="js/schedule.js?v=14"></script>
   <script src="js/hn-logic.js?v=9"></script>
@@ -297,7 +295,7 @@
   <script src="js/subsidy-view.js?v=4"></script>
   <script src="js/date-picker.js?v=2"></script>
   <script src="js/user-schedule.js?v=2"></script>
-  <script src="js/calendar-model.js?v=5"></script>
+  <script src="js/calendar-model.js?v=6"></script>
   <script src="js/calendar-week.js?v=1"></script>
   <script src="js/apply-links.js?v=2"></script>
   <script src="js/places.js?v=3"></script>
@@ -306,11 +304,11 @@
   <script src="js/schedule-kinds.js?v=2"></script>
   <script src="js/user-schedule-view.js?v=22"></script>
   <script src="js/child-todos.js?v=2"></script>
-  <script src="js/over36-view.js?v=4"></script>
+  <script src="js/over36-view.js?v=5"></script>
   <script src="js/tab-swipe.js?v=1"></script>
   <script src="js/edu-trend.js?v=3"></script>
   <script src="js/records-view.js?v=9"></script>
-  <script src="js/app.js?v=142"></script>
+  <script src="js/app.js?v=146"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
