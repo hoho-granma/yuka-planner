@@ -20,22 +20,23 @@ function test(name, fn) {
 const today = new Date(2026, 9, 1); // 2026-10-01
 const BACK = CT.SERVICE_RANGE.pickerYearsBack;
 
-test("연도 하한은 올해 초등 6학년의 출생연도: 2026 → 2015 (올해 − 11)", () => {
-  assert.strictEqual(BACK, 11);
+test("연도 하한은 올해 − 13: 2026 → 2013 (초6 졸업 학년도 학생: 3월~12월 출생연도 올해−12, 1~2월 올해−13)", () => {
+  assert.strictEqual(BACK, 13);
   const ys = DP.birthYears("born", today, BACK);
   assert.strictEqual(ys[0], 2026);
-  assert.strictEqual(ys[ys.length - 1], 2015);
-  assert.strictEqual(ys.length, 12);
+  assert.strictEqual(ys[ys.length - 1], 2013);
+  assert.strictEqual(ys.length, 14);
   assert.deepStrictEqual(ys, [...ys].sort((a, b) => b - a), "내림차순");
 });
-test("초6 출생연도 검증: 올해 초1 = 6년 전 출생(2020) → 초6 = 2015", () => {
-  const firstGrade = today.getFullYear() - 6;
-  assert.strictEqual(firstGrade - 5, today.getFullYear() - BACK);
+test("초6 출생연도 검증: 입학 학년도 = 출생연도+7 → 올해(3월~) 초6 = 올해−12, 1~2월에는 직전 학년도라 올해−13 이 하한", () => {
+  const sixth = today.getFullYear() - 12; // 2026-10 기준 초6 = 2014년생
+  assert.ok(sixth >= today.getFullYear() - BACK);
+  assert.strictEqual(today.getFullYear() - 13, today.getFullYear() - BACK);
 });
-test("연도 목록은 해가 바뀌면 같이 이동한다(2027 → 2016)", () => {
+test("연도 목록은 해가 바뀌면 같이 이동한다(2027 → 2014)", () => {
   const ys = DP.birthYears("born", new Date(2027, 0, 5), BACK);
   assert.strictEqual(ys[0], 2027);
-  assert.strictEqual(ys[ys.length - 1], 2016);
+  assert.strictEqual(ys[ys.length - 1], 2014);
 });
 test("임신 중 연도: 올해·내년", () => assert.deepStrictEqual(DP.birthYears("pregnant", today, BACK), [2027, 2026]));
 test("태어난 아이: 오늘까지 선택 가능, 내일부터 불가", () => {
@@ -43,9 +44,9 @@ test("태어난 아이: 오늘까지 선택 가능, 내일부터 불가", () => 
   assert(DP.isSelectable(new Date(2026, 5, 20), "born", today, BACK));
   assert(!DP.isSelectable(new Date(2026, 9, 2), "born", today, BACK));
 });
-test("태어난 아이: 연도 하한(2015-01-01 가능, 2014-12-31 불가) — 시각이 섞인 today 도 같다", () => {
-  assert(DP.isSelectable(new Date(2015, 0, 1), "born", new Date(2026, 9, 1, 15, 30), BACK));
-  assert(!DP.isSelectable(new Date(2014, 11, 31), "born", today, BACK));
+test("태어난 아이: 연도 하한(2013-01-01 가능, 2012-12-31 불가) — 시각이 섞인 today 도 같다", () => {
+  assert(DP.isSelectable(new Date(2013, 0, 1), "born", new Date(2026, 9, 1, 15, 30), BACK));
+  assert(!DP.isSelectable(new Date(2012, 11, 31), "born", today, BACK));
 });
 test("임신 중: 오늘~오늘+300일만 선택 가능", () => {
   assert(DP.isSelectable(new Date(2026, 9, 1), "pregnant", today, BACK));
@@ -80,8 +81,8 @@ test("minDate: 그 날짜 이전은 막고(연속 일정의 마지막 날), 당�
   assert(DP.isSelectable(new Date(2026, 9, 5), "schedule", today, BACK, null), "null 이면 제한 없음");
 });
 test("기존 호출(minDate 인자 없음)은 동작이 같다 — born/pregnant 결과 불변", () => {
-  assert(DP.isSelectable(new Date(2015, 0, 1), "born", today, BACK));
-  assert(!DP.isSelectable(new Date(2014, 11, 31), "born", today, BACK));
+  assert(DP.isSelectable(new Date(2013, 0, 1), "born", today, BACK));
+  assert(!DP.isSelectable(new Date(2012, 11, 31), "born", today, BACK));
   assert(DP.isSelectable(new Date(2026, 9, 1), "pregnant", today, BACK));
   assert.deepStrictEqual(DP.birthYears("pregnant", today, BACK), [2027, 2026]);
 });

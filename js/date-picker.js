@@ -8,7 +8,7 @@
  *   - bind(els, opts): 요소에 동작을 연결하고 { set, reset, get } 을 돌려준다(브라우저 전용).
  *
  * 선택 범위(stage)
- *   - "born"      태어난 아이: 오늘까지, 연도 하한 = 올해 − yearsBack (ChildTimeline.SERVICE_RANGE.pickerYearsBack — 올해 초등 6학년의 출생연도).
+ *   - "born"      태어난 아이: 오늘까지, 연도 하한 = 올해 − yearsBack (ChildTimeline.SERVICE_RANGE.pickerYearsBack — 올해 − 13 = 초6 졸업 학년도 학생의 출생연도).
  *   - "pregnant"  임신 중(출산 예정일): 오늘 ~ 오늘+300일, 연도는 올해와 내년.
  *   - "schedule"  가족 일정 날짜(B4): 작년 1월 1일 ~ 후년 12월 31일(과거·미래 모두 선택 가능). 연도 목록은 내림차순 [올해+2 … 올해−1].
  *   - 어느 stage 든 opts.getMinDate 가 있으면 그 날짜 이전은 막는다(예: 연속 일정의 마지막 날은 시작일 이후).

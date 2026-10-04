@@ -143,7 +143,9 @@ test("스윕: 0~215개월(월 경계 포함) × today(2026·2027·2029·2030) �
 
 test("엔진 무변경: todo-engine.js 는 HEAD 와 동일(schedule.js 는 허용 표식·임신 시점 보정만 바뀌며 36개월 미만 비교는 test/h6 가 고정)", () => {
   const { execSync } = require("child_process");
-  assert.strictEqual(execSync("git diff --name-only HEAD -- js/todo-engine.js", { cwd: ROOT }).toString().trim(), "");
+  // v1.12.96: SCHOOL_TERM_WINDOW 에 선택 필드 startDay/endDay 만 더해졌다(없으면 기존 계산) — 그 밖의 줄은 HEAD 와 같아야 한다(커밋 뒤에는 diff 가 비어 통과).
+  const changed = execSync("git diff -U0 HEAD -- js/todo-engine.js", { cwd: ROOT }).toString().split("\n").filter((l) => /^[+-]/.test(l) && !/^(\+\+\+|---)/.test(l));
+  changed.forEach((l) => assert.ok(/anchor, yearOffset|startDay|endDay|endYear|windowStart|windowEnd|선택 필드|시작월 1일|SCHOOL_TERM_WINDOW|^[+-]\s*(return \{|\}|\{|\)?[,;]?|\};?)\s*$|^[+-]\s*$/.test(l), "엔진 변경은 SCHOOL_TERM_WINDOW 선택 필드뿐: " + l));
 });
 
 test("레거시·지역 지원금: 나이 상한 판정이 바뀌지 않는다(상한 필드 없음 → 기존 min/max 판정 그대로)", () => {

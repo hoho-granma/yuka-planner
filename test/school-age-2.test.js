@@ -31,16 +31,16 @@ function visible(defs, birth) {
 }
 const ids = (evs) => evs.map((e) => e.id).sort();
 const todoIds = (evs) => new Set(evs.map((e) => e.id.split("__")[0]));
-const NEW_IDS = ["VX-TDAP", "VX-HPV", "SC-04", "SC-05", "SC-06", "SC-07", "SC-08", "SC-09", "SC-10", "SC-11", "SC-12"];
+const NEW_IDS = ["VX-TDAP", "VX-HPV", "SC-04", "SC-05", "SC-06", "SC-07", "SC-08", "SC-09", "SC-10", "SC-11", "SC-12", "SC-13", "SC-14", "SC-15", "SC-16", "SC-17", "SC-18"]; // SC-13~18 은 v1.12.96(서울 초6 중학교 배정·초2·3·5·6 구강검진)
 
-test("데이터: 11개 신규 정의·ID 중복 없음·출처(법령/지침 쪽수)와 열람일·확인필요(숨김) 아님·배지 없음", () => {
-  assert.strictEqual(SA.todos.length, 11);
-  assert.strictEqual(SA.count, 11);
+test("데이터: 17개 정의(기존 11 + v1.12.96 6)·ID 중복 없음·출처(법령/지침 쪽수)와 열람일·확인필요(숨김) 아님·배지 없음", () => {
+  assert.strictEqual(SA.todos.length, 17);
+  assert.strictEqual(SA.count, 17);
   assert.deepStrictEqual(SA.todos.map((d) => d.todo_id), NEW_IDS);
   const base = new Set(baseDefs.map((d) => d.todo_id));
   SA.todos.forEach((d) => {
     assert.ok(!base.has(d.todo_id), d.todo_id);
-    assert.ok(/2026-10-02/.test(d.source), d.todo_id + " 열람일");
+    assert.ok(/2026-10-0[25]/.test(d.source), d.todo_id + " 열람일");
     assert.ok(d.verificationStatus.startsWith("확인됨") && d.verificationStatus !== "확인필요", d.todo_id);
     assert.ok(d.parentAction && d.why && d.categoryGroup);
   });
@@ -122,7 +122,7 @@ test("사실 점검 반영: Tdap 창 132~155·'백일해 백신을 맞을 수 �
 });
 test("제외 확인: 구강검진·돌봄·늘봄·인플루엔자 항목은 없다", () => {
   const txt = JSON.stringify(SA.todos);
-  assert.ok(!/구강|늘봄|돌봄교실|인플루엔자/.test(SA.todos.map((d) => d.title).join("")));
+  assert.ok(!/구강|늘봄|돌봄교실|인플루엔자/.test(SA.todos.filter((d) => !/^SC-1[5-8]$/.test(d.todo_id)).map((d) => d.title).join(""))) // SC-15~18 구강검진은 v1.12.96 에서 정보 항목으로 추가;
   assert.ok(!/VX-FLU/.test(txt));
 });
 console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);

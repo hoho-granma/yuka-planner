@@ -121,7 +121,13 @@ test("복원 데이터는 HEAD 와 같다(내용 변경 없음): school·school-
   const md5 = (s) => crypto.createHash("md5").update(s).digest("hex");
   for (const p of ["data/todos/school.json", "data/todos/school-age.json", "data/todos/health-checkup.json", "data/subsidies/national-todos.json", "data/subsidies/national.json", "data/policy/school.json"]) {
     // W4: 신청 링크 필드(applyUrl·applyLabel)만 더해졌다 — 그 키를 빼면 HEAD 와 같다(내용 변경 없음)
-    const strip = (t) => JSON.stringify(JSON.parse(t), (k, v) => (k === "applyUrl" || k === "applyLabel" ? undefined : v));
+    // v1.12.96: school-age.json 에 SC-13~18 만 더해졌다(count·설명 제외) — 그 항목들을 빼면 HEAD 와 같다.
+    const strip = (t) => JSON.stringify(JSON.parse(t), function (k, v) {
+      if (k === "applyUrl" || k === "applyLabel") return undefined;
+      if (Array.isArray(v) && v.length && v[0] && /^(VX|SC)-/.test(v[0].todo_id || "")) return v.filter((x) => !/^SC-1[3-8]$/.test(x.todo_id));
+      if (p === "data/todos/school-age.json" && (k === "count" || k === "_설명")) return undefined;
+      return v;
+    });
     assert.strictEqual(md5(strip(fs.readFileSync(path.join(ROOT, p), "utf8"))), md5(strip(headSrc(p))), p);
   }
 });

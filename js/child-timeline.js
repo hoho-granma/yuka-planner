@@ -17,10 +17,10 @@
 })(typeof window !== "undefined" ? window : global, function () {
   "use strict";
 
-  // pickerYearsBack: 생년월일 선택기의 연도 하한 = 올해 − 11 = 올해 초등 6학년의 출생연도(예: 2026년 → 2015년생).
-  // 근거: 출생연도 기준 6년 뒤에 초1 입학 → 초6 = 출생연도 + 11. 취학 기준의 공식 확인(설계 Q-C)은 별도이며 이 값은 입력 가능한 연도 범위일 뿐 일정 계산에 쓰지 않는다.
+  // pickerYearsBack: 생년월일 선택기의 연도 하한 = 올해 − 13 (예: 2026년 → 2013년생까지).
+  // 근거: 입학 학년도 = 출생연도 + 7(school.json enrollmentOffsetYears)이라 초6 졸업 학년도(3월~다음 해 2월)의 학생은 출생연도 = 올해 − 12(1~2월에는 올해 − 13)다. 초6이 학년도 끝까지 등록되도록 13으로 둔다. 입력 가능한 연도 범위일 뿐 일정 계산에 쓰지 않는다.
   // 서비스 전체 상한. 이 값 이하의 이벤트만 화면에 나올 수 있다(A6-3: 36 → 72). 개별 Todo가 더 일찍 끊기는 것은 아래 LEGACY_TODO_CAP_MONTHS.
-  const SERVICE_RANGE = Object.freeze({ maxMonths: 72, pickerYearsBack: 11 });
+  const SERVICE_RANGE = Object.freeze({ maxMonths: 72, pickerYearsBack: 13 });
 
   // A6-3: "기존 Todo·지원금의 보존 상한". 서비스 상한을 72로 올려도 아래 isLegacyCapped 에 해당하는 항목은 이 값까지만 보인다
   // (기존 0~36개월 동작 보존. "72개월에는 필요 없다"는 판단이 아니라 이번 단계에서 새로 설계하지 않는다는 뜻 — 후속 단계에서 재검토).

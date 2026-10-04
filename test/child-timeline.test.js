@@ -62,7 +62,7 @@ test("isWithinServiceRange: 범위를 36으로 주면 기존 공식 ageInMonths(
 });
 
 test("SERVICE_RANGE는 72개월(선택기 11년), 보존 상한·영유아 경계는 36으로 분리되어 있고 변경 불가", () => {
-  assert.deepStrictEqual({ ...CT.SERVICE_RANGE }, { maxMonths: 72, pickerYearsBack: 11 });
+  assert.deepStrictEqual({ ...CT.SERVICE_RANGE }, { maxMonths: 72, pickerYearsBack: 13 });
   assert.strictEqual(CT.LEGACY_TODO_CAP_MONTHS, 36);
   assert.strictEqual(CT.INFANT_TODDLER_MAX_MONTHS, 36);
   assert.ok(Object.isFrozen(CT.SERVICE_RANGE) && Object.isFrozen(CT.CHECKLIST_BUCKETS));

@@ -2834,6 +2834,9 @@
     const rec = (calDisplayDays && calDisplayDays.get(e.id) || [])[0] || e.fixedDate || e.windowStart || e.date;
     const hasDeadline = e.category === "행정·지원금" || (def && def.category === "PG");
     const dl = hasDeadline ? (e.deadlineDate || e.windowEnd) : null;
+    // 정의에 정확한 날짜(startDay/endDay)가 있으면 그 시작~끝을 확정 날짜로 쓴다(권장일·'확인 필요' 문구 없음).
+    const tp = def && def.triggerParams, exact = !!(tp && (tp.startDay != null || tp.endDay != null)) && e.windowStart instanceof Date;
+    if (exact) return AutoSteps.pickDate({ exact: true, recommendedIso: asIso(e.windowStart), endIso: asIso(e.windowEnd), todayIso: toISODate(new Date()) });
     return AutoSteps.pickDate({ deadlineIso: asIso(dl), recommendedIso: asIso(rec), todayIso: toISODate(new Date()), uncertain: !!(def && def.category === "SC") || !!e.needsCheck });
   }
   /** 정보 항목 시트의 '관련 행동 한 줄' 제안(구분 라벨 없음). 일정을 넣을 수 있는 상태(가구·아이·autoLink)이고 정해 둔 행동이 있을 때만. */
@@ -2863,7 +2866,7 @@
     const subsidy = e.category === "행정·지원금";
     const rec = completed[e.id];
     const di = asDateFor(e);
-    const dateText = existing ? "예약일을 넣어요" : di.iso ? `${di.kind === "deadline" ? "마감" : "권장"} ${AutoSteps.md(di.iso)}${di.uncertain ? " · 정확한 날짜는 확인 필요" : ""}` : "";
+    const dateText = existing ? "예약일을 넣어요" : di.iso ? (di.kind === "exact" ? `${AutoSteps.md(di.iso)}${di.endIso ? "~" + AutoSteps.md(di.endIso) : ""}` : `${di.kind === "deadline" ? "마감" : "권장"} ${AutoSteps.md(di.iso)}${di.uncertain ? " · 정확한 날짜는 확인 필요" : ""}`) : "";
     const html = AutoSteps.renderSteps(AutoSteps.model({
       applyLink, canLink, link: link && link.date ? link : null, dateText, externalPlan: existing,
       done, doneIso: rec && rec.recordedAt ? localDateInputValue(new Date(rec.recordedAt)) : "", doneBy: rec ? asMemberLabel(rec.completedBy) : "",
@@ -2889,7 +2892,7 @@
     if (!e || ck == null || !autoLinkOn()) return;
     const di = asDateFor(e);
     const link = usLinks().find((l) => l.childKey === ck);
-    asCur.form = { title: asCur.info ? asCur.info.label : usAutoTitleOfEvent(e), date: di.iso || (asCur.info ? toISODate(new Date()) : ""), dateKind: di.kind, dateUncertain: di.uncertain, childName: link ? link.displayName || "" : "", childColor: link ? UserScheduleView.keyColor(link.childKey, link.colorKey) : "", memo: "", error: "", saving: false };
+    asCur.form = { title: asCur.info ? asCur.info.label : usAutoTitleOfEvent(e), date: di.iso || (asCur.info ? toISODate(new Date()) : ""), dateKind: di.kind, dateUncertain: di.uncertain, endDate: di.endIso || "", childName: link ? link.displayName || "" : "", childColor: link ? UserScheduleView.keyColor(link.childKey, link.colorKey) : "", memo: "", error: "", saving: false };
     asRenderSheet();
   }
   async function asSave() {
@@ -2897,12 +2900,12 @@
     if (!c || !c.form || c.form.saving) return;
     const f = c.form, box = el("modal-content");
     const val = (k) => { const n = box.querySelector(`[data-as-field="${k}"]`); return n ? String(n.value || "") : ""; };
-    f.title = val("title").trim(); f.date = val("date"); f.memo = val("memo").trim();
+    f.title = val("title").trim(); f.date = val("date"); f.memo = val("memo").trim(); if (f.endDate) f.endDate = val("endDate");
     if (!f.title) { f.error = AutoSteps.MSG.errTitle; return asRenderSheet(); }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date)) { f.error = AutoSteps.MSG.errDate; return asRenderSheet(); }
     const ck = usActiveChildKey();
     if (ck == null) return;
-    const input = { sourceType: "MANUAL", title: f.title.slice(0, 100), category: AutoSteps.categoryOf(c.e), scope: "CHILD", childKeys: [ck], dateKind: "FIXED", allDay: true, eventDate: f.date, ...(c.info ? {} : { autoRef: AutoSteps.autoRefOf(c.e) }), ...(f.memo ? { memo: f.memo } : {}) }; // 관련 행동 제안(c.info)은 정보 항목과 연결하지 않는 독립 일정 // 담당자·반복 없음: 완료한 사람이 자동으로 담당이 된다
+    const input = { sourceType: "MANUAL", title: f.title.slice(0, 100), category: AutoSteps.categoryOf(c.e), scope: "CHILD", childKeys: [ck], dateKind: "FIXED", allDay: true, eventDate: f.date, ...(/^\d{4}-\d{2}-\d{2}$/.test(f.endDate || "") && f.endDate > f.date ? { endDate: f.endDate } : {}), ...(c.info ? {} : { autoRef: AutoSteps.autoRefOf(c.e) }), ...(f.memo ? { memo: f.memo } : {}) }; // 관련 행동 제안(c.info)은 정보 항목과 연결하지 않는 독립 일정 // 담당자·반복 없음: 완료한 사람이 자동으로 담당이 된다
     const r = UserSchedule.buildCreateDoc(input, Date.now());
     if (!r.ok) { f.error = AutoSteps.MSG.saveFail; return asRenderSheet(); }
     f.saving = true; f.error = ""; asRenderSheet();

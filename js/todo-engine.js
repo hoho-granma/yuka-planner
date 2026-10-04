@@ -156,13 +156,21 @@
         };
       case "SCHOOL_TERM_WINDOW": {
         // computeStandardInstance 가 timeline.school 이 없는 경우를 먼저 걸러낸다. 여기서는 올바른 파라미터만 확인한다.
-        const { anchor, yearOffset, startMonth, endMonth } = trigger;
+        const { anchor, yearOffset, startMonth, endMonth, startDay, endDay } = trigger;
         if (anchor !== "ENROLLMENT" || !isInt(yearOffset) || !isInt(startMonth) || !isInt(endMonth) || startMonth < 1 || startMonth > 12 || endMonth < 1 || endMonth > 12) {
           throw new TodoDefinitionError("SCHOOL_TERM_WINDOW 는 {anchor:'ENROLLMENT', yearOffset(정수), startMonth(1~12), endMonth(1~12)} 여야 합니다");
         }
+        // 선택 필드 startDay/endDay(1~31): 있으면 시작·끝을 그 날짜로 정확히 잡는다(예: 서울 중학교 배정원서 10.26~11.6). 없으면 아래 기존 규칙 그대로.
+        if ((startDay != null && (!isInt(startDay) || startDay < 1 || startDay > 31)) || (endDay != null && (!isInt(endDay) || endDay < 1 || endDay > 31))) {
+          throw new TodoDefinitionError("SCHOOL_TERM_WINDOW 의 startDay·endDay 는 1~31 정수여야 합니다");
+        }
         const year = ctx.timeline.school.enrollmentYear + yearOffset;
-        // 시작월 1일 ~ 끝월 말일(끝월이 시작월보다 앞서면 다음 해 끝월)
-        return { windowStart: new Date(year, startMonth - 1, 1), windowEnd: new Date(endMonth >= startMonth ? year : year + 1, endMonth, 0) };
+        const endYear = endMonth >= startMonth ? year : year + 1;
+        // 시작월 1일(또는 startDay) ~ 끝월 말일(또는 endDay)(끝월이 시작월보다 앞서면 다음 해 끝월)
+        return {
+          windowStart: new Date(year, startMonth - 1, startDay == null ? 1 : startDay),
+          windowEnd: endDay == null ? new Date(endYear, endMonth, 0) : new Date(endYear, endMonth - 1, endDay),
+        };
       }
       case "DATE_FROM_BIRTH":
         return {

@@ -1,7 +1,7 @@
 {
   "category": "SA",
-  "count": 11,
-  "_설명": "학령기(만 7~12세) 확장 2단계 신규 항목. 근거가 확인된 것만 담는다(구강검진·돌봄/늘봄·인플루엔자·HPV 13~14세 안내는 제외·후속). VX-* 는 extendedVisibility(아이 73개월 이상일 때만 노출), SC-* 는 학교 단계(GRADE_n)로 노출한다. 출처·열람일 2026-10-02.",
+  "count": 17,
+  "_설명": "학령기(만 7~12세) 확장 2단계 신규 항목. 근거가 확인된 것만 담는다(돌봄/늘봄·인플루엔자·HPV 13~14세 안내는 제외·후속). VX-* 는 extendedVisibility(아이 73개월 이상일 때만 노출), SC-* 는 학교 단계(GRADE_n)로 노출한다. 출처·열람일 2026-10-02. [2026-10-05] SC-13·14 서울 초6 중학교 배정(서울만, startDay/endDay로 정확한 날짜), SC-15~18 초2·3·5·6 구강검진(정보만, familyLinkable:false).",
   "todos": [
     {
       "todo_id": "VX-TDAP",
@@ -386,6 +386,229 @@
         "예방접종 기록(예방접종도우미 등)에서 접종 이력",
         "빠진 접종이 있는지",
         "학교의 접종 확인 서류 안내"
+      ]
+    },
+    {
+      "category": "SC",
+      "exposureLevel": "MUST",
+      "triggerType": "SCHOOL_TERM_WINDOW",
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "displayMonth": null,
+      "displayMonthBasis": "학교 단계(재학 학년) 기준 — 월령 그룹이 아니라 '학교·입학' 그룹에 표시",
+      "categoryGroup": "생활·수유",
+      "schoolGroup": "학교·입학",
+      "guideType": "SCHEDULED",
+      "todo_id": "SC-13",
+      "title": "중학교 배정 원서 접수(2027학년도, 서울 초6)",
+      "parentAction": "서울 초등학교 6학년은 2026.10.26(월)~11.6(금) 평일 9~17시에 재학 중인 초등학교에서 중학교 배정 원서를 써요(학교가 NEIS로 일괄 제출). 서류는 배정 원서와 주민등록등본(1개월 이내)이에요",
+      "completionCriteria": "재학 학교에 배정 원서 제출",
+      "triggerParams": {
+        "anchor": "ENROLLMENT",
+        "yearOffset": 5,
+        "startMonth": 10,
+        "endMonth": 11,
+        "startDay": 26,
+        "endDay": 6
+      },
+      "regionCondition": {
+        "include": [
+          "서울특별시:ALL"
+        ]
+      },
+      "source": "서울 중부교육지원청 공고 2026-108(2026.8.3, 본문 직접 확인) · 서울 강서양천교육지원청 공고(2026.7.31, 본문 직접 확인) · 조사 문서 docs/한눈육아-서울경기-초등일정-조사-20261005.md (열람 2026-10-05)",
+      "verificationStatus": "확인됨(2027학년도, 서울 3개 교육지원청 중 2곳 공고 본문 직접 확인·강남서초는 검색 결과만. 나머지 8개 교육지원청 공고는 추가검증 필요). 검정고시 합격자·타 시도 졸업자는 거주지 교육지원청에 개별 접수. 2027학년도 기준이라 해마다 일정을 갱신해야 한다",
+      "visibleStages": [
+        "GRADE_6"
+      ],
+      "cardSummary": "중학교 배정 원서 · 10.26~11.6 · 재학 초등학교에서 작성",
+      "why": "서울은 초등학교 6학년 때 중학교 배정 원서를 내요. 학교가 일괄 접수하니 기간 안에 서류만 챙기면 돼요.",
+      "observationGuide": [
+        "학교 가정통신문의 배정 원서 안내",
+        "주민등록등본(발급 후 1개월 이내)",
+        "타 시도 졸업자·검정고시 합격자는 거주지 교육지원청 접수"
+      ]
+    },
+    {
+      "category": "SC",
+      "exposureLevel": "MUST",
+      "triggerType": "SCHOOL_TERM_WINDOW",
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "displayMonth": null,
+      "displayMonthBasis": "학교 단계(재학 학년) 기준 — 월령 그룹이 아니라 '학교·입학' 그룹에 표시",
+      "categoryGroup": "생활·수유",
+      "schoolGroup": "학교·입학",
+      "guideType": "SCHEDULED",
+      "todo_id": "SC-14",
+      "title": "중학교 본배정 발표(2027학년도, 서울 초6)",
+      "parentAction": "2027.1.27(수) 10:00에 보호자 문자로 본배정이 발표돼요. 등록 기간은 교육지원청마다 달라서 배정 안내 문자와 공고를 확인하세요",
+      "completionCriteria": "배정 결과와 등록 기간 확인",
+      "triggerParams": {
+        "anchor": "ENROLLMENT",
+        "yearOffset": 6,
+        "startMonth": 1,
+        "endMonth": 1,
+        "startDay": 27,
+        "endDay": 27
+      },
+      "regionCondition": {
+        "include": [
+          "서울특별시:ALL"
+        ]
+      },
+      "source": "서울 중부교육지원청 공고 2026-108(2026.8.3, 본문 직접 확인) · 서울 강서양천교육지원청 공고(2026.7.31, 본문 직접 확인) · 조사 문서 docs/한눈육아-서울경기-초등일정-조사-20261005.md (열람 2026-10-05)",
+      "verificationStatus": "확인됨(본배정 발표 2027.1.27 10:00, 중부·강서양천·강남서초 공고 동일). 본배정 등록 기간은 교육지원청별 상이(중부·강서양천 1.27~1.28, 강남서초 1.27~1.30)라 넣지 않았고, 재배정(2.1~2.3 접수·2.18 발표 등)은 일부 교육지원청만 확인돼 제외했다. 2027학년도 기준이라 해마다 갱신해야 한다",
+      "visibleStages": [
+        "GRADE_6"
+      ],
+      "cardSummary": "중학교 본배정 발표 · 1.27 10:00 · 보호자 문자",
+      "why": "서울 초6은 1월 말에 중학교 본배정 결과를 문자로 받아요. 등록 기간은 교육지원청마다 달라요.",
+      "observationGuide": [
+        "보호자 문자 수신 여부",
+        "등록 기간·방법(교육지원청별 안내)"
+      ]
+    },
+    {
+      "category": "SC",
+      "exposureLevel": "MUST",
+      "triggerType": "SCHOOL_TERM_WINDOW",
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "displayMonth": null,
+      "displayMonthBasis": "학교 단계(재학 학년) 기준 — 월령 그룹이 아니라 '학교·입학' 그룹에 표시",
+      "categoryGroup": "생활·수유",
+      "schoolGroup": "학교·입학",
+      "guideType": "SCHEDULED",
+      "todo_id": "SC-15",
+      "title": "학교 구강검진(초2)",
+      "parentAction": "학교보건법에 따라 초등학교는 모든 학년이 구강검진 대상이에요. 시기와 방법은 학교 안내를 확인하세요",
+      "completionCriteria": "학교 안내에 따라 구강검진 확인(또는 결과 확인)",
+      "triggerParams": {
+        "anchor": "ENROLLMENT",
+        "yearOffset": 1,
+        "startMonth": 3,
+        "endMonth": 2
+      },
+      "source": "학교보건법 제7조 제2항 제1호 단서(국가법령정보센터) · 학생건강정보센터 안내 · 조사 문서 docs/한눈육아-서울경기-초등일정-조사-20261005.md (열람 2026-10-05)",
+      "verificationStatus": "확인됨(학교보건법 제7조 제2항 제1호 단서: 초등 전 학년 구강검진 대상, 초1·4는 학생 건강검진에 포함). 월 단위 시기는 확인하지 못해 표시 기간은 학년도 전체이고 일정 넣기는 제공하지 않는다. 2027.3.1 시행 예정 개정(검진 위탁 주체 명시) 후 규칙 개정 여부는 추가검증 필요",
+      "visibleStages": [
+        "GRADE_2"
+      ],
+      "familyLinkable": false,
+      "cardSummary": "초2 구강검진 — 학교 안내에 따라 (시기는 학교별)",
+      "why": "학교보건법에 따라 초등학교는 모든 학년이 구강검진 대상이에요. 일정과 방법은 학교 안내를 확인하세요.",
+      "observationGuide": [
+        "학교 가정통신문의 구강검진 안내",
+        "검진 일정과 결과 통보 방법"
+      ]
+    },
+    {
+      "category": "SC",
+      "exposureLevel": "MUST",
+      "triggerType": "SCHOOL_TERM_WINDOW",
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "displayMonth": null,
+      "displayMonthBasis": "학교 단계(재학 학년) 기준 — 월령 그룹이 아니라 '학교·입학' 그룹에 표시",
+      "categoryGroup": "생활·수유",
+      "schoolGroup": "학교·입학",
+      "guideType": "SCHEDULED",
+      "todo_id": "SC-16",
+      "title": "학교 구강검진(초3)",
+      "parentAction": "학교보건법에 따라 초등학교는 모든 학년이 구강검진 대상이에요. 시기와 방법은 학교 안내를 확인하세요",
+      "completionCriteria": "학교 안내에 따라 구강검진 확인(또는 결과 확인)",
+      "triggerParams": {
+        "anchor": "ENROLLMENT",
+        "yearOffset": 2,
+        "startMonth": 3,
+        "endMonth": 2
+      },
+      "source": "학교보건법 제7조 제2항 제1호 단서(국가법령정보센터) · 학생건강정보센터 안내 · 조사 문서 docs/한눈육아-서울경기-초등일정-조사-20261005.md (열람 2026-10-05)",
+      "verificationStatus": "확인됨(학교보건법 제7조 제2항 제1호 단서: 초등 전 학년 구강검진 대상, 초1·4는 학생 건강검진에 포함). 월 단위 시기는 확인하지 못해 표시 기간은 학년도 전체이고 일정 넣기는 제공하지 않는다. 2027.3.1 시행 예정 개정(검진 위탁 주체 명시) 후 규칙 개정 여부는 추가검증 필요",
+      "visibleStages": [
+        "GRADE_3"
+      ],
+      "familyLinkable": false,
+      "cardSummary": "초3 구강검진 — 학교 안내에 따라 (시기는 학교별)",
+      "why": "학교보건법에 따라 초등학교는 모든 학년이 구강검진 대상이에요. 일정과 방법은 학교 안내를 확인하세요.",
+      "observationGuide": [
+        "학교 가정통신문의 구강검진 안내",
+        "검진 일정과 결과 통보 방법"
+      ]
+    },
+    {
+      "category": "SC",
+      "exposureLevel": "MUST",
+      "triggerType": "SCHOOL_TERM_WINDOW",
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "displayMonth": null,
+      "displayMonthBasis": "학교 단계(재학 학년) 기준 — 월령 그룹이 아니라 '학교·입학' 그룹에 표시",
+      "categoryGroup": "생활·수유",
+      "schoolGroup": "학교·입학",
+      "guideType": "SCHEDULED",
+      "todo_id": "SC-17",
+      "title": "학교 구강검진(초5)",
+      "parentAction": "학교보건법에 따라 초등학교는 모든 학년이 구강검진 대상이에요. 시기와 방법은 학교 안내를 확인하세요",
+      "completionCriteria": "학교 안내에 따라 구강검진 확인(또는 결과 확인)",
+      "triggerParams": {
+        "anchor": "ENROLLMENT",
+        "yearOffset": 4,
+        "startMonth": 3,
+        "endMonth": 2
+      },
+      "source": "학교보건법 제7조 제2항 제1호 단서(국가법령정보센터) · 학생건강정보센터 안내 · 조사 문서 docs/한눈육아-서울경기-초등일정-조사-20261005.md (열람 2026-10-05)",
+      "verificationStatus": "확인됨(학교보건법 제7조 제2항 제1호 단서: 초등 전 학년 구강검진 대상, 초1·4는 학생 건강검진에 포함). 월 단위 시기는 확인하지 못해 표시 기간은 학년도 전체이고 일정 넣기는 제공하지 않는다. 2027.3.1 시행 예정 개정(검진 위탁 주체 명시) 후 규칙 개정 여부는 추가검증 필요",
+      "visibleStages": [
+        "GRADE_5"
+      ],
+      "familyLinkable": false,
+      "cardSummary": "초5 구강검진 — 학교 안내에 따라 (시기는 학교별)",
+      "why": "학교보건법에 따라 초등학교는 모든 학년이 구강검진 대상이에요. 일정과 방법은 학교 안내를 확인하세요.",
+      "observationGuide": [
+        "학교 가정통신문의 구강검진 안내",
+        "검진 일정과 결과 통보 방법"
+      ]
+    },
+    {
+      "category": "SC",
+      "exposureLevel": "MUST",
+      "triggerType": "SCHOOL_TERM_WINDOW",
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "displayMonth": null,
+      "displayMonthBasis": "학교 단계(재학 학년) 기준 — 월령 그룹이 아니라 '학교·입학' 그룹에 표시",
+      "categoryGroup": "생활·수유",
+      "schoolGroup": "학교·입학",
+      "guideType": "SCHEDULED",
+      "todo_id": "SC-18",
+      "title": "학교 구강검진(초6)",
+      "parentAction": "학교보건법에 따라 초등학교는 모든 학년이 구강검진 대상이에요. 시기와 방법은 학교 안내를 확인하세요",
+      "completionCriteria": "학교 안내에 따라 구강검진 확인(또는 결과 확인)",
+      "triggerParams": {
+        "anchor": "ENROLLMENT",
+        "yearOffset": 5,
+        "startMonth": 3,
+        "endMonth": 2
+      },
+      "source": "학교보건법 제7조 제2항 제1호 단서(국가법령정보센터) · 학생건강정보센터 안내 · 조사 문서 docs/한눈육아-서울경기-초등일정-조사-20261005.md (열람 2026-10-05)",
+      "verificationStatus": "확인됨(학교보건법 제7조 제2항 제1호 단서: 초등 전 학년 구강검진 대상, 초1·4는 학생 건강검진에 포함). 월 단위 시기는 확인하지 못해 표시 기간은 학년도 전체이고 일정 넣기는 제공하지 않는다. 2027.3.1 시행 예정 개정(검진 위탁 주체 명시) 후 규칙 개정 여부는 추가검증 필요",
+      "visibleStages": [
+        "GRADE_6"
+      ],
+      "familyLinkable": false,
+      "cardSummary": "초6 구강검진 — 학교 안내에 따라 (시기는 학교별)",
+      "why": "학교보건법에 따라 초등학교는 모든 학년이 구강검진 대상이에요. 일정과 방법은 학교 안내를 확인하세요.",
+      "observationGuide": [
+        "학교 가정통신문의 구강검진 안내",
+        "검진 일정과 결과 통보 방법"
       ]
     }
   ]

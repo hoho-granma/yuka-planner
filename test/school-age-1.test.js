@@ -55,7 +55,7 @@ test("학교 단계 가시성: GRADE_<n> 일반화(GRADE_1 동작 불변)", () =
   assert.strictEqual(CT.isEventVisible(birth, e(["GRADE_4"], null)), false);
 });
 test("전역 상수·N5 연결: SERVICE_RANGE 72 유지, 확장 상한 144, isKeep 이 72 초과 월령 키를 유지", () => {
-  assert.deepStrictEqual({ ...CT.SERVICE_RANGE }, { maxMonths: 72, pickerYearsBack: 11 });
+  assert.deepStrictEqual({ ...CT.SERVICE_RANGE }, { maxMonths: 72, pickerYearsBack: 13 });
   assert.strictEqual(CT.EXTENDED_MAX_MONTHS, 144);
   const app = fs.readFileSync(path.join(__dirname, "..", "js", "app.js"), "utf8");
   assert.ok(app.includes('(typeof k === "number" && k > ChildTimeline.SERVICE_RANGE.maxMonths)'));

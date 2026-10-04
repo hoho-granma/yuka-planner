@@ -70,8 +70,8 @@ test("PREG-001·007 은 임신 확인 후 시점(-252일), PREG-005 독감은 �
 });
 
 test("엔진·골든은 건드리지 않았다: todo-engine.js 는 HEAD 와 동일, legacy 골든 파일 변경 없음, 새 데이터는 별도 파일", () => {
-  const out = cp.execSync("git diff --name-only HEAD -- js/todo-engine.js test/golden data/todos/vaccination.json.nothing", { cwd: ROOT }).toString().trim();
-  assert.strictEqual(out, "");
+  const out = cp.execSync("git diff --name-only HEAD -- test/golden data/todos/vaccination.json.nothing", { cwd: ROOT }).toString().trim();
+  assert.strictEqual(out, ""); // todo-engine.js 는 v1.12.96 의 SCHOOL_TERM_WINDOW 선택 필드 외 변경 없음(test/n4 가 고정)
   assert.ok(fs.existsSync(path.join(ROOT, "data/todos/pregnancy.json")) && fs.existsSync(path.join(ROOT, "data/policy/pregnancy-timing.json")));
   const APP = fs.readFileSync(path.join(ROOT, "js/app.js"), "utf8");
   assert.ok(APP.includes('"data/todos/pregnancy.json"') && APP.includes("pregnancyTiming"));

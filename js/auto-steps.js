@@ -19,7 +19,7 @@
     doneTitle: "완료", doneHint: (cat) => (cat === "행정·지원금" ? "신청이 끝나면 체크해요" : "끝나면 체크해요"), doneBy: (md, who) => `${md}${who ? ` · ${who}` : ""}`,
     dateAuto: "항목에서 자동 입력", dateCheck: "확인 필요",
     sheetTitle: "가족 캘린더에 넣기", sheetFrom: "정보 항목에서 가져왔어요",
-    fTitle: "일정 이름", fDate: "날짜", fChild: "아이", fRepeat: "반복", noRepeat: "반복 없음", fMemo: "메모", optional: "선택", memoPh: "링크·준비물 적어 두기",
+    fTitle: "일정 이름", fDate: "날짜", fEndDate: "끝나는 날", dateExact: "공고로 확정된 날짜예요", fChild: "아이", fRepeat: "반복", noRepeat: "반복 없음", fMemo: "메모", optional: "선택", memoPh: "링크·준비물 적어 두기",
     infoActionLabel: "관련 행동 한 줄", infoActionChip: "일정 +", infoActionDone: (md) => `${md}에 넣었어요`,
     save: "일정 저장", saving: "저장하는 중…", cancel: "닫기",
     errTitle: "일정 이름을 입력해 주세요.", errDate: "날짜를 확인해 주세요.", saveFail: "저장하지 못했어요. 잠시 후 다시 해 주세요.",
@@ -35,6 +35,7 @@
   function isFamilyLinkable(event, isLinkableAuto) {
     if (!event || (isLinkableAuto && isLinkableAuto(event))) return false;
     const def = event.detail && event.detail.definition;
+    if (def && def.familyLinkable === false) return false; // 정의가 일정 넣기를 막은 항목(정보만 있는 항목)
     if (def && typeof def.todo_id === "string" && FAMILY_LINK_CODES.includes(def.category)) return true;
     return event.autoAfter36 === true; // 36개월 이상 허용 목록(지역 지원금 NAT-020·GG-* 포함)
   }
@@ -74,6 +75,12 @@
    */
   function pickDate(input) {
     const t = input.todayIso;
+    // 정의가 정확한 날짜(SCHOOL_TERM_WINDOW startDay/endDay)를 가진 항목: 확정 날짜라 '확인 필요'를 붙이지 않고, 기간이면 끝나는 날도 함께 돌려준다.
+    if (input.exact && input.recommendedIso) {
+      const end = input.endIso && input.endIso > input.recommendedIso ? input.endIso : "";
+      if (end && end < t) return { iso: t, kind: "exact", uncertain: false, endIso: "" };
+      return { iso: input.recommendedIso >= t ? input.recommendedIso : t, kind: "exact", uncertain: false, endIso: end };
+    }
     if (input.deadlineIso && input.deadlineIso >= t) return { iso: input.deadlineIso, kind: "deadline", uncertain: !!input.uncertain };
     const r = input.recommendedIso || input.deadlineIso || "";
     if (!r) return { iso: "", kind: "recommended", uncertain: true };
@@ -121,7 +128,7 @@
     return `<div class="as-sheet" data-as-sheet="add">
       <div class="as-sh"><div><small>${esc(MSG.sheetFrom)}</small><b>${esc(MSG.sheetTitle)}</b></div></div>
       <div class="as-lb">${esc(MSG.fTitle)}</div><input class="as-in" type="text" maxlength="100" data-as-field="title" value="${esc(f.title)}" />
-      <div class="as-lb">${esc(MSG.fDate)}<span class="as-au">${esc(MSG.dateAuto)}</span></div><input class="as-in" type="date" data-as-field="date" value="${esc(f.date)}" />${dateSub ? `<div class="as-note">${f.dateKind === "deadline" ? "마감일" : "권장일"}${dateSub}</div>` : ""}
+      <div class="as-lb">${esc(MSG.fDate)}<span class="as-au">${esc(MSG.dateAuto)}</span></div><input class="as-in" type="date" data-as-field="date" value="${esc(f.date)}" />${f.endDate ? `<div class="as-lb">${esc(MSG.fEndDate)}</div><input class="as-in" type="date" data-as-field="endDate" value="${esc(f.endDate)}" />` : ""}${f.dateKind === "exact" ? `<div class="as-note">${esc(MSG.dateExact)}</div>` : dateSub ? `<div class="as-note">${f.dateKind === "deadline" ? "마감일" : "권장일"}${dateSub}</div>` : ""}
       ${f.childName ? `<div class="as-lb">${esc(MSG.fChild)}</div><div class="as-chips"><span class="on"${/^#[0-9a-fA-F]{6}$/.test(String(f.childColor || "")) ? ` style="--us-color:${f.childColor}"` : ""}>${esc(f.childName)}</span></div>` : ""}
       <div class="as-lb">${esc(MSG.fRepeat)}</div><div class="as-chips"><span class="on as-nr">${esc(MSG.noRepeat)}</span></div>
       <div class="as-lb">${esc(MSG.fMemo)}<small>${esc(MSG.optional)}</small></div><textarea class="as-in as-mm" maxlength="500" data-as-field="memo" placeholder="${esc(MSG.memoPh)}">${esc(f.memo || "")}</textarea>
