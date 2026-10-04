@@ -95,7 +95,7 @@
       };
     })();
 
-    const state = { permissionDenied: false, lastError: null };
+    const state = { permissionDenied: false, lastError: null, childrenLoaded: {} }; // childrenLoaded[hid]: 이번 실행에서 서버의 아이 링크 목록을 한 번 받았는가(오프라인·첫 로드 중에는 false — 미러가 옛 값일 수 있다)
 
     const enabled = () => !!features().household;
     const DISABLED = Object.freeze({ ok: false, reason: "disabled" });
@@ -466,6 +466,7 @@
     function startListening(hid, onChange) {
       if (!enabled()) return DISABLED;
       stopListening();
+      state.childrenLoaded[hid] = false;
       const a = getAdapter();
       const apply = (fn) => {
         const m = loadMirror(hid);
@@ -476,7 +477,7 @@
       const err = (e) => noteError(e);
       unsubs = [
         a.listen("households/" + hid, (d) => d && apply((m) => (m.household = { ...d.data })), err),
-        a.listen(`households/${hid}/children`, (docs) => apply((m) => mergeCollection(m, "children", docs, hid)), err),
+        a.listen(`households/${hid}/children`, (docs) => apply((m) => { mergeCollection(m, "children", docs, hid); state.childrenLoaded[hid] = true; }), err),
         a.listen(`households/${hid}/members`, (docs) => apply((m) => mergeCollection(m, "members", docs, hid)), err),
         a.listen(`households/${hid}/schedules`, (docs) => apply((m) => mergeCollection(m, "schedules", docs, hid)), err),
         a.listen(`households/${hid}/todos`, (docs) => apply((m) => mergeCollection(m, "todos", docs, hid)), err),
@@ -529,6 +530,7 @@
         return { ok: false, reason: "storage" };
       }
       state.permissionDenied = false;
+      state.childrenLoaded = {};
       return { ok: true, discarded };
     }
 
@@ -537,6 +539,7 @@
         enabled: enabled(),
         pending: enabled() && hid ? loadPending(hid).length : 0,
         permissionDenied: state.permissionDenied,
+        childrenLoaded: !!(hid && state.childrenLoaded[hid]),
         lastError: state.lastError ? String(state.lastError.code || state.lastError.message || state.lastError) : null,
       };
     }

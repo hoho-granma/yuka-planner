@@ -169,7 +169,7 @@ test("W0-2: 날짜 하프 시트는 달력 칸과 같은 기준(calendarDayItems
   const i = APP.indexOf("function acct36DayRows(");
   const body = APP.slice(i, APP.indexOf("\n  }\n", i));
   assert.ok(/calendarDayItems\(new Date\(iso \+ "T00:00:00"\)\)/.test(body) && /dayItems\.fixed/.test(body) && /dayItems\.planned/.test(body));
-  assert.ok(!/toISODate\(e\.fixedDate \|\| e\.date\) === iso/.test(body), "날짜 일치(fixedDate||date)만 보던 옛 기준이 아니다");
+  assert.ok(/startsToday/.test(body) && /\.\.\.startsToday/.test(body), "기간형처럼 칸에 점은 안 찍지만 그날 시작하는 항목(완료 포함)도 더한다(fixed+planned 에 보태는 것)");
 });
 
 test("SB-04 ageCap: 2017년생(예외 2026~2029)은 창이 지나도 노출, 2016년생·상한 초과·2031년은 숨김, 2019년생 일반 경로 그대로", () => {

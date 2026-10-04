@@ -225,7 +225,7 @@ const ST = { enabled: true, hasHousehold: true, members: MEMBERS, activeMemberId
       HouseholdView: HV,
       el: (id) => (id === "members-slot" ? slot : null),
       hhEnabled: () => true,
-      usRefreshCalendar: () => { log.usRefresh++; },
+      usRefreshCalendar: () => { log.usRefresh++; }, usOrphanChildren: () => [],
       localStorage: {
         getItem: (k) => (k in log.store ? log.store[k] : null),
         setItem: (k, v) => { if (storageThrows) throw new Error("denied"); log.store[k] = v; log.setCalls.push(["set", k, v]); },

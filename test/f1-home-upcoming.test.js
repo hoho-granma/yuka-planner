@@ -263,7 +263,7 @@ test("usHomeCardHtml 이 던져도 홈은 깨지지 않는다(\"\" 반환)", () 
 });
 test("연결: usRefreshCalendar 는 캘린더가 숨겨져 있어도 홈 갱신을 먼저 호출하고, hnCtx 가 카드·추가 진입을 제공한다", () => {
   const body = slice("  function usRefreshCalendar()", "  /** 캘린더 위");
-  assert.ok(/^\s*function usRefreshCalendar\(\) \{\n\s*usRefreshHome\(\);\n\s*if \(!profile/.test(body));
+  assert.ok(/^\s*function usRefreshCalendar\(\) \{\n\s*usRefreshHome\(\);\n\s*if \(\(!profile && !acctEnabled\(\)\)/.test(body)); // 계정 모드는 아이가 없어도 칩·가족 일정 칸을 다시 그린다(마지막 아이 삭제 직후)
   const ctxSrc = slice("      usUpcomingHtml:", "      openDetail,");
   assert.ok(/us\.homeSig = h \+ usAutoLinkSig\(\)/.test(ctxSrc) && /const h = usHomeCardHtml\(opts\);/.test(ctxSrc) && /usOpenForm\(null, toISODate\(new Date\(\)\)\)/.test(ctxSrc));
 });

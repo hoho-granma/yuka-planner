@@ -144,10 +144,10 @@ const fnSrc = (name, async) => { const i = APP.indexOf(`  ${async ? "async " : "
       },
       FamilySync: { deleteFamily: async (code) => { calls.push(["family", code]); if (fail.family) { const e = new Error("x"); e.code = fail.family; if (!fail.keep) fail.family = null; throw e; } } },
       loadChildren: () => JSON.parse(store.hannun_children),
-      usChipDelShow() {}, us: {},
+      usChipDelShow() {}, us: {}, usGone: { busy: false }, LINKED_KEY: "hannun_linked_codes", loadLinkedCodes: () => [],
     };
     vm.createContext(sb);
-    vm.runInContext(fnSrc("usCreatorField") + fnSrc("usIsOwnChild") + fnSrc("loadCreatedCodes") + fnSrc("removeCreatedCode") + fnSrc("usChildDeleteWork") + fnSrc("usChildDeleteRun", true) + fnSrc("usChildDeleteCurrent", true) + fnSrc("usChipDelAsk")
+    vm.runInContext(fnSrc("usCreatorField") + fnSrc("usIsOwnChild") + fnSrc("loadCreatedCodes") + fnSrc("removeCreatedCode") + fnSrc("usForgetChildLocal") + fnSrc("usSwitchAwayFromCurrent", true) + fnSrc("usChildDeleteWork") + fnSrc("usChildDeleteRun", true) + fnSrc("usChildDeleteCurrent", true) + fnSrc("usChipDelAsk")
       + ";const usDeleteFail = (reason) => Object.assign(new Error('child-delete-' + reason), { reason });globalThis.t={usIsOwnChild,usCreatorField,loadCreatedCodes,usChildDeleteWork,usChildDeleteRun,usChildDeleteCurrent,usChipDelAsk}", sb);
     return { sb, calls, store };
   };
@@ -260,9 +260,9 @@ const fnSrc = (name, async) => { const i = APP.indexOf(`  ${async ? "async " : "
   });
   await test("연결: 삭제 클릭은 ask-delete-child → usChipDelAsk('CHILD_DELETE:…'), 확인은 usChildDeleteCurrent, 실패는 사유별 문구, 아이 만들 때 createdByUid 를 기록", () => {
     assert.ok(APP.includes('action === "ask-delete-child"') && APP.includes("usChipDelAsk(`CHILD_DELETE:${id}`)"));
-    assert.ok(APP.includes('if (d.kind === "CHILD_DELETE") await usChildDeleteCurrent(d.id);'));
+    assert.ok(APP.includes('if (d.kind === "CHILD_DELETE" && d.orphan) await usOrphanDelete(d.id);') && APP.includes('else if (d.kind === "CHILD_DELETE") await usChildDeleteCurrent(d.id);'));
     assert.ok(APP.includes('d.error = d.kind === "CHILD_DELETE" ? usDeleteFailNote(e && e.reason)'));
-    assert.strictEqual((APP.match(/usCreatorField\(\)/g) || []).length, 6, "정의 1 + addChild·firstChild 5곳");
+    assert.strictEqual((APP.match(/usCreatorField\(\)/g) || []).length, 7, "정의 1 + addChild·firstChild 5곳 + 연결 안 된 아이 연결 1곳");
     assert.ok(!/removeChild\(hh\.hid, key\)/.test(fnSrc("usChildDeleteRun", true)), "삭제는 소프트 분리(removedAt)가 아니라 문서 삭제");
   });
 

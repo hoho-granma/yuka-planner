@@ -1328,7 +1328,8 @@
     const occs = ((day && day.user) || []).slice().sort((x, y) => (x.allDay ? 1 : 0) - (y.allDay ? 1 : 0) || String(x.startTime || "").localeCompare(String(y.startTime || "")));
     // 달력 칸에 올라간 항목(지원금 신청 시작 fixed + 그날로 추천된 항목)과 같은 기준으로 고른다 — 칸에는 있는데 시트는 비는 일이 없게(calendarDayItems 공용)
     const dayItems = calendarDayItems(new Date(iso + "T00:00:00"));
-    const autoRows = [...dayItems.fixed, ...dayItems.planned.filter((e) => !dayItems.fixed.includes(e))].map((e) => ({ autoId: e.id, title: e.title, allDay: true, startTime: "", color: "", done: !!completed[e.id], sub: e.dateLabel || "", auto: true }));
+    const startsToday = visibleSchedule(true).filter((e) => toISODate(e.fixedDate || e.date) === iso && !dayItems.fixed.includes(e) && !dayItems.planned.includes(e)); // 기간형처럼 칸에 점은 안 찍지만 그날 시작하는 자동 항목(완료한 것 포함)
+    const autoRows = [...dayItems.fixed, ...dayItems.planned.filter((e) => !dayItems.fixed.includes(e)), ...startsToday].map((e) => ({ autoId: e.id, title: e.title, allDay: true, startTime: "", color: "", done: !!completed[e.id], sub: e.dateLabel || "", auto: true }));
     return autoRows.concat(occs.map((o) => {
       const doc = usDocById(o.scheduleId);
       const rep = doc && doc.recurrence ? UserScheduleView.repeatSummary(doc.recurrence) : "";
@@ -3723,6 +3724,7 @@
   }
   /** 가구 데이터가 바뀐 뒤(리스너·재전송·참여): 프로필 시트의 상태 줄과 캘린더(추가한 일정)를 다시 그린다. */
   function hhAfterSync() {
+    usReconcileLocalChildren(); // 다른 기기에서 지운·뺀 아이를 이 기기도 따라간다(미러를 한 번 받은 뒤에만)
     hhRender();
     usRefreshCalendar();
   }
@@ -3906,7 +3908,7 @@
       console.warn("이 기기 사용자를 저장하지 못했어요(저장소 사용 불가).", e);
     }
   }
-  const memState = () => ({ acctMode: acctEnabled(), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt), ownChildKeys: usLinks().filter((l) => !l.removedAt && usIsOwnChild(l)).map((l) => l.childKey), enabled: hhEnabled(), hasHousehold: !!(hh.hid && hh.code), members: usMembers(), activeMemberId: memActiveId(), view: mem.view, form: mem.form, deleteId: mem.deleteId, saving: mem.saving });
+  const memState = () => ({ acctMode: acctEnabled(), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt), ownChildKeys: usLinks().filter((l) => !l.removedAt && usIsOwnChild(l)).map((l) => l.childKey), orphanChildren: usOrphanChildren(), enabled: hhEnabled(), hasHousehold: !!(hh.hid && hh.code), members: usMembers(), activeMemberId: memActiveId(), view: mem.view, form: mem.form, deleteId: mem.deleteId, saving: mem.saving });
   function memRender() {
     const slot = el("members-slot");
     if (!slot || !hhEnabled()) return;
@@ -3955,6 +3957,10 @@
         mem.view = "delete";
       } else if (action === "ask-remove-child") {
         return usChipDelAsk(`CHILD:${id}`); // 아이 빼기: 확인 시트(G6 문구 재사용)
+      } else if (action === "ask-delete-orphan") {
+        return usChipDelAsk(`ORPHAN:${b.getAttribute("data-child-code")}`); // 가구에 연결되지 않은 아이 삭제: 같은 확인 시트
+      } else if (action === "link-orphan") {
+        return usOrphanLink(b.getAttribute("data-child-code"));
       } else if (action === "ask-delete-child") {
         return usChipDelAsk(`CHILD_DELETE:${id}`); // 아이 삭제(내가 만든 아이만): 일정·할 일까지 함께 지우는 확인 시트
       } else if (action === "cancel") {
@@ -4250,7 +4256,7 @@
       range: { start: startIso, end: endIso },
       filter: filterOverride || UserScheduleView.toModelFilter(usSel(), us.onlyUser, usLinks(), usMembers(), usSelOpts()),
       auto: { events: calendarDotSchedule(), displayDates: calDisplayDays, completed, childKey: usActiveChildKey(), autoIdAliases, hideLinked: autoLinkOn() },
-      user: { schedules: usDocs(), childLinks: usLinks(), members: usMembers() },
+      user: { schedules: usVisibleDocs(), childLinks: usLinks(), members: usMembers() },
     });
   }
   // ── C2-b1 AUTO 항목 연결(autoLink 서브 플래그 — 가구 플래그가 켜져 있고 가구가 있을 때만) ───────────────────
@@ -4409,7 +4415,7 @@
   }
   function usRefreshCalendar() {
     usRefreshHome();
-    if (!profile || !hhEnabled() || el("view-calendar").classList.contains("hidden")) return;
+    if ((!profile && !acctEnabled()) || !hhEnabled() || el("view-calendar").classList.contains("hidden")) return; // 계정 모드는 아이가 없어도(마지막 아이를 지운 직후) 칩·가족 일정 칸을 다시 그린다
     renderCalendar();
     renderSelectedDayPanel();
     attachListHandlers();
@@ -4845,6 +4851,10 @@
       if (!l || !usIsOwnChild(l)) return; // 내가 만들지 않은 아이는 삭제 대상이 아니다
       const w = usChildDeleteWork(key);
       us.chipDel = { kind: "CHILD_DELETE", id: key, name: l.displayName || "", current: usActiveChildKey() === key, eventCount: w.events.length, todoCount: w.todos.length };
+    } else if (kind === "ORPHAN") {
+      const o = usOrphanChildren().find((c) => c.code === key);
+      if (!o) return;
+      us.chipDel = { kind: "CHILD_DELETE", orphan: true, id: key, name: o.name, current: o.current, eventCount: 0, todoCount: HouseholdSync.getTodos(hh.hid).filter((t) => t.childKey === key && t.deletedAt == null).length };
     } else return;
     usChipDelShow();
   }
@@ -4893,15 +4903,7 @@
       try { await FamilySync.deleteFamily(w.familyCode); } catch (e) { throw usDeleteFail(e && e.code === "permission-denied" ? "permission-denied" : "network"); }
     }
     for (const k of w.linkKeys) await hard(`households/${hh.hid}/children/${k}`);
-    if (l && l.familyCode) {
-      removeCreatedCode(l.familyCode);
-      try {
-        localStorage.setItem(CHILDREN_KEY, JSON.stringify(loadChildren().filter((c) => c.code !== l.familyCode)));
-        const births = JSON.parse(localStorage.getItem(CHILD_BIRTHS_KEY) || "{}") || {};
-        delete births[l.familyCode];
-        localStorage.setItem(CHILD_BIRTHS_KEY, JSON.stringify(births));
-      } catch (e) {}
-    }
+    if (l && l.familyCode) usForgetChildLocal(l.familyCode);
   }
   /**
    * 지금 보고 있는 아이를 지울 때: 서버 삭제 전에 그 아이 문서 구독을 멈추고(지운 문서를 다시 쓰지 않게), 삭제가 끝나면 남은 아이 중 첫째(order 순)로 전환한다.
@@ -4910,18 +4912,129 @@
   async function usChildDeleteCurrent(key) {
     const wasCurrent = usActiveChildKey() === key;
     if (wasCurrent && unsubscribeFamily) { unsubscribeFamily(); unsubscribeFamily = null; }
+    usGone.busy = true; // 삭제 중에 오는 가구 변경 알림이 같은 정리를 또 하지 않게
     try {
-      await usChildDeleteRun(key);
-    } catch (e) {
-      if (wasCurrent && familyCode) startListeningFamily();
-      throw e;
-    }
-    if (!wasCurrent) return;
-    const next = usLinks().filter((x) => !x.removedAt && x.childKey !== key).sort((a, b) => (a.order || 0) - (b.order || 0) || (a.addedAt || 0) - (b.addedAt || 0))[0];
+      try {
+        await usChildDeleteRun(key);
+      } catch (e) {
+        if (wasCurrent && familyCode) startListeningFamily();
+        throw e;
+      }
+      if (!wasCurrent) return;
+      await usSwitchAwayFromCurrent(key);
+    } finally { usGone.busy = false; }
+  }
+  /** 지금 보던 아이가 사라졌다: 남은 아이(가구 링크, order 순) 중 첫째로 전환하고, 없으면 마지막 아이 상태(이 기기의 프로필·완료·기록·코드만 비움 — 가구 미러·대기열·계정은 그대로)로 빈 화면. */
+  async function usSwitchAwayFromCurrent(key) {
+    const gone = usLinks().find((x) => x.childKey === key);
+    const next = usLinks().filter((x) => !x.removedAt && x.childKey !== key && (!gone || !gone.familyCode || x.familyCode !== gone.familyCode)).sort((a, b) => (a.order || 0) - (b.order || 0) || (a.addedAt || 0) - (b.addedAt || 0))[0];
     if (next && next.familyCode) { await switchToChild(next.familyCode); return; }
-    applyNewChildReset(); // 마지막 아이: 이 기기의 프로필·완료·기록·코드만 비우고(가구 미러·대기열·계정은 그대로) 빈 화면으로
+    applyNewChildReset();
     el("view-landing").classList.add("hidden");
     showEmptyHome();
+  }
+  // ═══ 아이가 사라졌을 때의 정합(링크 없는 아이 · 다른 기기에서 삭제·빼기 · 빼기한 아이의 일정 숨김) ═══
+  // 판단 근거는 '이 실행에서 가구의 아이 링크 목록을 한 번 받은 뒤'(HouseholdSync.getStatus.childrenLoaded)에만 쓴다 — 오프라인·첫 로드 중에는 옛 미러라 아무것도 정리하지 않는다.
+  // 로컬(이 기기)만 정리하고 서버 데이터는 건드리지 않는다(서버 삭제는 사용자가 [삭제]를 눌렀을 때만).
+  const LINKED_KEY = "hannun_linked_codes"; // 이 기기가 가구 링크가 있는 걸 본 적 있는 아이 코드(링크가 처음부터 없던 아이와 '지워진' 아이를 가른다)
+  const usGone = { busy: false };
+  const loadLinkedCodes = () => { try { const l = JSON.parse(localStorage.getItem(LINKED_KEY) || "[]"); return Array.isArray(l) ? l : []; } catch (e) { return []; } };
+  function noteLinkedCodes() {
+    try {
+      const cur = loadLinkedCodes();
+      const add = usLinks().filter((l) => !l.removedAt && l.familyCode && !cur.includes(l.familyCode)).map((l) => l.familyCode);
+      if (add.length) localStorage.setItem(LINKED_KEY, JSON.stringify(cur.concat(add).slice(-40)));
+    } catch (e) {}
+  }
+  const usMirrorReady = () => !!(hh.hid && HouseholdSync.getStatus(hh.hid).childrenLoaded === true);
+  /** 이 기기 아이 목록에서 코드를 지운다(+ 생일 표식·만든 아이 표식·링크 본 기록). 서버는 건드리지 않는다. */
+  function usForgetChildLocal(code) {
+    removeCreatedCode(code);
+    try {
+      localStorage.setItem(CHILDREN_KEY, JSON.stringify(loadChildren().filter((c) => c.code !== code)));
+      const births = JSON.parse(localStorage.getItem(CHILD_BIRTHS_KEY) || "{}") || {};
+      delete births[code];
+      localStorage.setItem(CHILD_BIRTHS_KEY, JSON.stringify(births));
+      localStorage.setItem(LINKED_KEY, JSON.stringify(loadLinkedCodes().filter((c) => c !== code)));
+    } catch (e) {}
+  }
+  /** 이 기기에는 있는데 가구에 링크가 없는 아이(처음부터 없던 아이만 — 예전에 링크가 있다 사라진 아이는 자동 정리 대상이라 제외). 미러를 받기 전에는 빈 목록. */
+  function usOrphanChildren() {
+    if (!acctEnabled() || !hh.hid || !usMirrorReady()) return [];
+    const linked = new Set(usLinks().map((l) => l.familyCode).filter(Boolean));
+    const known = loadLinkedCodes();
+    const list = loadChildren().filter((c) => c && c.code && !linked.has(c.code) && !known.includes(c.code)).map((c) => ({ code: c.code, name: c.name || "", current: c.code === familyCode }));
+    if (familyCode && profile && !linked.has(familyCode) && !known.includes(familyCode) && !list.some((c) => c.code === familyCode)) list.push({ code: familyCode, name: childDisplayName(), current: true });
+    return list;
+  }
+  /** 서버 변경 알림마다: 이 기기가 갖고 있던(링크를 본 적 있는) 아이가 가구에서 사라졌거나, 보던 아이가 빼기됐으면 이 기기의 정리를 따라간다. */
+  function usReconcileLocalChildren() {
+    if (usGone.busy || !acctEnabled() || !hh.hid || !usMirrorReady()) return;
+    const links = usLinks();
+    const linkedNow = new Set(links.filter((l) => l.familyCode).map((l) => l.familyCode));
+    const aliveNow = new Set(links.filter((l) => l.familyCode && !l.removedAt).map((l) => l.familyCode));
+    const known = loadLinkedCodes();
+    const local = new Set(loadChildren().map((c) => c.code));
+    if (familyCode) local.add(familyCode);
+    const gone = [...local].filter((c) => known.includes(c) && !linkedNow.has(c)); // 링크 문서가 없어졌다(다른 기기에서 삭제)
+    const curRemoved = !!familyCode && linkedNow.has(familyCode) && !aliveNow.has(familyCode); // 보던 아이가 빼기됐다(다른 기기)
+    noteLinkedCodes();
+    if (!gone.length && !curRemoved) return;
+    usGone.busy = true;
+    (async () => {
+      try {
+        gone.filter((c) => c !== familyCode).forEach(usForgetChildLocal);
+        const cur = familyCode;
+        if (cur && (gone.includes(cur) || curRemoved)) {
+          const l = links.find((x) => x.familyCode === cur);
+          if (gone.includes(cur)) usForgetChildLocal(cur);
+          if (unsubscribeFamily) { unsubscribeFamily(); unsubscribeFamily = null; }
+          await usSwitchAwayFromCurrent(l ? l.childKey : "__gone__");
+        }
+      } catch (e) { console.error("아이 정리 따라가기 실패", e); }
+      finally { usGone.busy = false; hhRender(); usRefreshCalendar(); }
+    })();
+  }
+  /** 연결 안 된 아이 → 가구에 링크 만들기(아이 문서는 건드리지 않는다). */
+  async function usOrphanLink(code) {
+    const o = usOrphanChildren().find((c) => c.code === code);
+    if (!o) return;
+    const order = usLinks().filter((l) => !l.removedAt).length + 1;
+    try {
+      const r = await HouseholdSync.addChild(hh.hid, { familyCode: code, displayName: o.name, order, ...(code === familyCode ? usCreatorField() : {}) });
+      if (!r || !r.ok) throw new Error((r && r.reason) || "link-failed");
+    } catch (e) { console.error("아이 가구 연결 실패", e); }
+    hhRender();
+    usRefreshCalendar();
+  }
+  /** 연결 안 된 아이 삭제: 그 아이의 할 일(코드로 붙은 것)과 — 이 기기에서 만든 아이면 — 아이 문서를 서버에서 지우고 이 기기를 정리한다. 실패하면 { reason } 오류. */
+  async function usOrphanDelete(code) {
+    usGone.busy = true;
+    try {
+      const wasCurrent = code === familyCode;
+      if (wasCurrent && unsubscribeFamily) { unsubscribeFamily(); unsubscribeFamily = null; }
+      try {
+        for (const t of HouseholdSync.getTodos(hh.hid).filter((x) => x.childKey === code)) {
+          const r = await HouseholdSync.hardDelete(hh.hid, `households/${hh.hid}/todos/${t.id}`);
+          if (!r || !r.ok) throw usDeleteFail((r && r.reason) || "network");
+        }
+        if (loadCreatedCodes().includes(code)) {
+          try { await FamilySync.deleteFamily(code); } catch (e) { throw usDeleteFail(e && e.code === "permission-denied" ? "permission-denied" : "network"); }
+        }
+      } catch (e) {
+        if (wasCurrent && familyCode) startListeningFamily();
+        throw e;
+      }
+      usForgetChildLocal(code);
+      if (wasCurrent) await usSwitchAwayFromCurrent("__orphan__");
+    } finally { usGone.busy = false; }
+  }
+  /** 빼기(분리)한 아이만 대상인 일정은 캘린더·홈에서 숨긴다(데이터는 그대로 — 다시 연결하면 보인다). 여러 아이 공동 일정은 남아 있다. */
+  function usVisibleDocs() {
+    const links = usLinks();
+    const removed = new Set(links.filter((l) => l.removedAt).map((l) => l.childKey));
+    if (!removed.size) return usDocs();
+    return usDocs().filter((d) => !(d.scope === "CHILD" && Array.isArray(d.childKeys) && d.childKeys.length && d.childKeys.every((k) => removed.has(k))));
   }
   async function usChipDelClick(ev) {
     const b = ev.target.closest("[data-us-chipdel-act]");
@@ -4932,7 +5045,8 @@
     d.busy = true; d.error = "";
     usChipDelShow();
     try {
-      if (d.kind === "CHILD_DELETE") await usChildDeleteCurrent(d.id);
+      if (d.kind === "CHILD_DELETE" && d.orphan) await usOrphanDelete(d.id);
+      else if (d.kind === "CHILD_DELETE") await usChildDeleteCurrent(d.id);
       else {
         const r = d.kind === "MEMBER" ? await HouseholdSync.removeMember(hh.hid, d.id) : await HouseholdSync.removeChild(hh.hid, d.id);
         if (!r || !r.ok) throw new Error((r && r.reason) || "chip-delete-failed");

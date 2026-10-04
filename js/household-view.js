@@ -104,6 +104,10 @@
     memNoteAcct: "가족코드를 받은 사람이 가입할 때 아직 가입하지 않은 자리를 고르면 역할이 자동으로 정해져요. 이름은 일정에 보여 주는 표시용이에요.",
     memMe: "나",
     memChildTitle: "아이",
+    memOrphanTitle: "이 기기에만 있는 아이",
+    memOrphanNote: "가족 캘린더에 연결되지 않은 아이예요. 연결하거나, 지우면 이 기기의 정보가 정리돼요.",
+    memOrphanLink: "연결",
+    memOrphanDelete: "삭제",
     memChildRemove: "빼기",
     memChildDelete: "삭제",
     memNamePlaceholder: "이름 (예: 이모님, 할머니)",
@@ -386,8 +390,11 @@
       const kids = acctMode && Array.isArray(state.children) && state.children.length
         ? `<h4 class="hh-title">${esc(MSG.memChildTitle)}</h4><ul class="hh-members">${state.children.map((c) => `<li class="hh-member" data-child-key="${esc(c.childKey)}"><span class="hh-member-name">${esc(c.displayName || "")}</span><button type="button" class="hh-btn hh-small" data-mem-action="ask-remove-child" data-member-id="${esc(c.childKey)}">${esc(MSG.memChildRemove)}</button>${ownKids.has(c.childKey) ? `<button type="button" class="hh-btn hh-small hh-danger" data-mem-action="ask-delete-child" data-member-id="${esc(c.childKey)}">${esc(MSG.memChildDelete)}</button>` : ""}</li>`).join("")}</ul>`
         : "";
+      const orphans = acctMode && Array.isArray(state.orphanChildren) && state.orphanChildren.length
+        ? `<h4 class="hh-title">${esc(MSG.memOrphanTitle)}</h4><p class="hh-note">${esc(MSG.memOrphanNote)}</p><ul class="hh-members">${state.orphanChildren.map((c) => `<li class="hh-member" data-orphan-code="${esc(c.code)}"><span class="hh-member-name">${esc(c.name || "")}</span><button type="button" class="hh-btn hh-small" data-mem-action="link-orphan" data-child-code="${esc(c.code)}">${esc(MSG.memOrphanLink)}</button><button type="button" class="hh-btn hh-small hh-danger" data-mem-action="ask-delete-orphan" data-child-code="${esc(c.code)}">${esc(MSG.memOrphanDelete)}</button></li>`).join("")}</ul>`
+        : "";
       const add = acctMode ? "" : list.length >= MEMBER_MAX ? note(MSG.memMax) : `<div class="hh-actions"><button type="button" class="hh-btn" data-mem-action="add">${esc(MSG.memAdd)}</button></div>`;
-      body = `${device}<ul class="hh-members">${rows}</ul>${add}${kids}`;
+      body = `${device}<ul class="hh-members">${rows}</ul>${add}${kids}${orphans}`;
     }
     return `<section class="hh-section" data-mem="${esc(state.view || "list")}">${head}${body}</section>`;
   }
