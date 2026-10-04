@@ -105,5 +105,46 @@
     return `<div class="a36-day" data-a36-day="${esc(st.iso)}">${head}<div class="a36-dlist">${body}</div>${nav}</div>`;
   }
 
-  return { MSG, clockParts, renderHome, renderTodoTab, renderTodoMenu, renderDaySheet, esc };
+  // ── 지역 교육 트렌드(G25 틀): ① 우리 아이 현재 상태 → ② 또래 범위 → ③ 지역·학년 트렌드 → ④ 다음 확인. 집계 데이터가 없는 동안은 수치를 만들지 않고 '데이터 부족'으로 보인다. ──
+  const TREND = Object.freeze({
+    nav: "교육 트렌드",
+    title: (region, grade) => `${region} ${grade} 교육 트렌드`.trim(),
+    lead: "우리 동네 같은 학년 아이들은 어떻게 하고 있을까?",
+    mineTitle: "우리 아이 현재 상태",
+    mineCount: (n) => `등록한 학원 일정 ${n}개`,
+    mineNone: "아직 등록한 학원 일정이 없어요. 학원을 등록하면 우리 아이 현황이 여기에 나와요.",
+    weekly: (n) => `주 ${n}회`,
+    noRepeat: "반복 없음",
+    peerTitle: "또래 범위",
+    peerLead: "같은 지역·학년 또래와 비교해 볼 수 있어요.",
+    insufficient: "데이터 부족",
+    insufficientBody: "아직 같은 지역·학년의 비교할 수 있는 데이터가 충분하지 않아요. 충분히 모이기 전에는 평균이나 순위를 보여 드리지 않아요.",
+    sampleRule: "표본이 일정 수 이상 모이면 '참고용', 더 모이면 '충분한 데이터'로 바뀌어요.",
+    trendTitle: "지역·학년 트렌드",
+    sections: Object.freeze(["학원", "많이 선택하는 과목", "영어", "수학"]),
+    sectionLocked: "데이터가 모이면 여기에 나와요.",
+    nextTitle: "다음에 확인할 것",
+    nextAdd: "학원 일정 추가",
+    nextNote: "학원 일정을 등록하면 우리 아이 현황에 반영돼요.",
+    privacy: "내가 입력한 정보가 통계에 쓰이려면 동의가 필요해요. 지금은 통계용으로 수집하지 않아요. 통계에는 개인을 알아볼 수 있는 정보가 나오지 않아요.",
+    outOfRange: "초등 학년 범위를 벗어났어요.",
+  });
+  /** st: { region, gradeLabel, inRange, mine:{count,lessons:[{title,weekly}]}, status:{key,label}, canAdd } */
+  function renderTrend(st) {
+    const mine = st.mine || { count: 0, lessons: [] };
+    const lessons = mine.lessons.length
+      ? `<ul class="a36t-lessons">${mine.lessons.map((l) => `<li><b>${esc(l.title)}</b><small>${esc(l.weekly ? TREND.weekly(l.weekly) : TREND.noRepeat)}</small></li>`).join("")}</ul>`
+      : `<p class="a36t-note">${esc(TREND.mineNone)}</p>`;
+    const insufficient = !st.status || st.status.key === "INSUFFICIENT";
+    const locked = TREND.sections.map((t) => `<div class="a36t-sec"><h4>${esc(t)}</h4><div class="a36t-ghost" aria-hidden="true"><i></i><i></i></div><p class="a36t-note">${esc(TREND.sectionLocked)}</p></div>`).join("");
+    return `<div class="a36t" id="a36-trend">
+      <div class="a36t-head"><h2>${esc(TREND.title(st.region || "", st.gradeLabel || ""))}</h2><p>${esc(TREND.lead)}</p></div>
+      <section class="a36t-card" data-a36t="mine"><h3>${esc(TREND.mineTitle)}</h3>${mine.count ? `<p class="a36t-big">${esc(TREND.mineCount(mine.count))}</p>` : ""}${lessons}</section>
+      <section class="a36t-card" data-a36t="peer"><div class="a36t-row"><h3>${esc(TREND.peerTitle)}</h3><span class="a36t-badge${insufficient ? " warn" : ""}" data-a36t-status="${esc(st.status ? st.status.key : "INSUFFICIENT")}">${esc(st.status ? st.status.label : TREND.insufficient)}</span></div>${insufficient ? `<p class="a36t-note">${esc(TREND.insufficientBody)}</p><p class="a36t-note">${esc(TREND.sampleRule)}</p>` : `<p class="a36t-note">${esc(TREND.peerLead)}</p>`}</section>
+      <section class="a36t-card" data-a36t="trend"><h3>${esc(TREND.trendTitle)}</h3>${st.inRange === false ? `<p class="a36t-note">${esc(TREND.outOfRange)}</p>` : locked}</section>
+      <section class="a36t-card" data-a36t="next"><h3>${esc(TREND.nextTitle)}</h3><p class="a36t-note">${esc(TREND.nextNote)}</p>${st.canAdd === false ? "" : `<button type="button" class="a36t-btn" data-a36="trend-add">${esc(TREND.nextAdd)}</button>`}</section>
+      <p class="a36t-privacy">${esc(TREND.privacy)}</p></div>`;
+  }
+
+  return { MSG, clockParts, renderHome, renderTodoTab, renderTodoMenu, renderDaySheet, TREND, renderTrend, esc };
 });

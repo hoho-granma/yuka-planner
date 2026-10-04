@@ -1200,6 +1200,42 @@
     const ck = document.querySelector('.nav-item[data-nav="checklist"] > span:last-child');
     if (ck) ck.textContent = on ? Over36View.MSG.navTodo : "체크리스트";
     if (on && currentTab === "subsidy") switchTab("home");
+    // G25: 36개월 이상(G22 4탭 기준)이면 '교육 트렌드' 탭을 4탭 사이에 하나 더 둔다(5번째).
+    const trend = on && typeof EduTrend !== "undefined" && ageInMonths(profile.birthDate, new Date()) >= EduTrend.MENU_FROM_MONTHS;
+    if (trend) acct36EnsureTrend();
+    const tn = document.querySelector('.nav-item[data-nav="trend"]');
+    if (tn) tn.classList.toggle("hidden", !trend);
+    if (!trend && currentTab === "trend") switchTab("home");
+    if (trend && currentTab === "trend") acct36RenderTrend();
+  }
+  /** 교육 트렌드 탭(하단 버튼 + 화면 패널)은 계정 모드·초등 이상일 때 JS 가 한 번 만든다(정적 index.html·OFF 화면에는 없다). */
+  function acct36EnsureTrend() {
+    if (el("tab-trend")) return;
+    const ck = document.querySelector('.nav-item[data-nav="checklist"]');
+    const places = document.querySelector('.nav-item[data-nav="places"]');
+    const panel = document.createElement("div");
+    panel.id = "tab-trend";
+    panel.className = "tab-panel hidden";
+    const host = el("tab-checklist");
+    if (!host || !host.parentNode || !ck) return;
+    host.parentNode.insertBefore(panel, host.nextSibling);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "nav-item hidden";
+    btn.dataset.nav = "trend";
+    btn.innerHTML = `<span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><span>${Over36View.TREND.nav}</span>`;
+    ck.parentNode.insertBefore(btn, places || ck.nextSibling);
+    btn.addEventListener("click", () => switchTab("trend"));
+    if (!TAB_NAMES.includes("trend")) TAB_NAMES.push("trend");
+  }
+  function acct36RenderTrend() {
+    const panel = el("tab-trend");
+    if (!panel || !profile) return;
+    const g = EduTrend.gradeOf(profile.birthDate, new Date());
+    const keys = [acct36LinkKey(), familyCode].filter(Boolean);
+    const docs = typeof usDocs === "function" && usActive() ? usDocs() : [];
+    const pv = regionsData && regionsData.provinces.find((x) => x.code === profile.province);
+    panel.innerHTML = Over36View.renderTrend({ region: profile.district || (pv && pv.name) || "", gradeLabel: EduTrend.gradeLabel(g), inRange: g >= 0 && g <= 6, mine: EduTrend.myLessons(docs, keys), status: EduTrend.statusFor(null), canAdd: usActive() });
   }
   const renderAllBase = renderAll;
   renderAll = function renderAll() {
@@ -1218,7 +1254,9 @@
   };
   const switchTabBase = switchTab;
   switchTab = function switchTab(name) {
-    return switchTabBase.call(this, acct36Active() && name === "subsidy" ? "home" : name);
+    const r = switchTabBase.call(this, acct36Active() && name === "subsidy" ? "home" : name);
+    if (name === "trend" && acct36Active() && el("tab-trend")) acct36RenderTrend();
+    return r;
   };
   const usRefreshHomeBase = usRefreshHome;
   usRefreshHome = function usRefreshHome() {
@@ -1227,6 +1265,7 @@
     if (sig !== (us.homeSig36 || "")) {
       renderHome();
       if (currentTab === "checklist") acct36RenderTodoTab();
+      if (currentTab === "trend" && el("tab-trend")) acct36RenderTrend();
     }
   };
 
@@ -1362,6 +1401,7 @@
       return acct36RenderTodoTab();
     }
     if (a === "quick") { usOpenForm(null, toISODate(new Date())); us.form.title = act.dataset.a36Quick; usShowForm(); return; }
+    if (a === "trend-add") return usOpenForm(null, toISODate(new Date()));
     if (a === "menu-close") { A36.menuId = null; return acct36RenderTodoTab(); }
     if (a === "menu-edit") { A36.editId = A36.menuId; A36.menuId = null; A36.adding = false; return acct36RenderTodoTab(); }
     if (a === "menu-top") { const id = A36.menuId; A36.menuId = null; return acct36Patch(id, ChildTodos.patchMoveTop(acct36All(), Date.now())); }

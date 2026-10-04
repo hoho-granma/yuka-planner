@@ -47,6 +47,7 @@ const SHELL_ASSETS = [
   "./js/child-todos.js",
   "./js/over36-view.js",
   "./js/tab-swipe.js",
+  "./js/edu-trend.js",
   "./js/user-schedule-view.js",
   "./js/records-view.js",
   "./js/app.js",
