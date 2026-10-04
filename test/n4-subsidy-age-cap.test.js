@@ -141,10 +141,11 @@ test("스윕: 0~215개월(월 경계 포함) × today(2026·2027·2029·2030) �
   assert.ok(n > 5000, "스윕 규모: " + n);
 });
 
-test("엔진 무변경: todo-engine.js·schedule.js 는 HEAD 와 동일(이 변경이 건드리지 않음)", () => {
+test("엔진 무변경: todo-engine.js 는 HEAD 와 동일, schedule.js 는 36개월 이상 허용 표식(autoAfter36) 추가만(기존 줄 삭제·수정 없음)", () => {
   const { execSync } = require("child_process");
-  const out = execSync("git diff --name-only HEAD -- js/todo-engine.js js/schedule.js", { cwd: ROOT }).toString().trim();
-  assert.strictEqual(out, "");
+  assert.strictEqual(execSync("git diff --name-only HEAD -- js/todo-engine.js", { cwd: ROOT }).toString().trim(), "");
+  const stat = execSync("git diff --numstat HEAD -- js/schedule.js", { cwd: ROOT }).toString().trim().split(/\s+/);
+  assert.strictEqual(stat[1], "0", "schedule.js 는 줄 삭제가 없다(추가만)");
 });
 
 test("레거시·지역 지원금: 나이 상한 판정이 바뀌지 않는다(상한 필드 없음 → 기존 min/max 판정 그대로)", () => {

@@ -22,6 +22,34 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ---------------------------------------------------------------
+    // [H4] 삭제 허용용 공통 판정 — 로그인한 계정(request.auth)이 그 가구의 구성원인지 본다.
+    //   구성원 = accounts/{내 uid} 가 그 가구를 가리키고(householdId), 그 계정의 memberId 구성원 문서의 uid 가 내 uid 이며 삭제되지 않았을 것.
+    //   한계: accounts.householdId 는 본인이 쓰는 값이지만, 구성원 문서의 uid 는 한 번 달리면 바꿀 수 없어(members 규칙 uidOk)
+    //   남의 가구 구성원인 척하려면 그 가구의 아직 주인 없는 구성원 자리를 먼저 차지해야 한다(그러려면 가구 코드를 알아야 한다).
+    //   로그인하지 않은 옛 사용자는 삭제할 수 없다.
+    // ---------------------------------------------------------------
+    function signedIn() { return request.auth != null; }
+    function acctDoc() { return get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data; }
+    function memberDocOf(hid) { return get(/databases/$(database)/documents/households/$(hid)/members/$(acctDoc().memberId)).data; }
+    function isMemberOf(hid) {
+      return signedIn()
+          && exists(/databases/$(database)/documents/accounts/$(request.auth.uid))
+          && acctDoc().get('householdId', null) == hid
+          && acctDoc().get('memberId', null) is string
+          && exists(/databases/$(database)/documents/households/$(hid)/members/$(acctDoc().memberId))
+          && memberDocOf(hid).get('uid', null) == request.auth.uid
+          && memberDocOf(hid).get('deletedAt', null) == null;
+    }
+    // 아무 가구의 구성원이면 true — families/{코드} 문서에는 가구 연결 정보가 없어 '어느 가구인지'까지는 규칙으로 가를 수 없다.
+    function isAnyHouseholdMember() {
+      return signedIn()
+          && exists(/databases/$(database)/documents/accounts/$(request.auth.uid))
+          && acctDoc().get('householdId', null) is string
+          && acctDoc().get('memberId', null) is string
+          && isMemberOf(acctDoc().householdId);
+    }
+
+    // ---------------------------------------------------------------
     // familyCodes/{code} — 코드→familyId 조회 및 코드 유일성 보장 전용
     // ---------------------------------------------------------------
     match /familyCodes/{code} {
@@ -82,7 +110,9 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['province', 'district', 'familyDeclaredAttributes', 'currentCode', 'updatedAt', 'archived', 'migratedTo', 'migratedAt']);
 
-      allow delete: if false; // 삭제는 이번 단계 기능이 아님(기존 데이터 보존 원칙)
+      // [H4] 아이 삭제(구성원 관리 > 삭제): 로그인한 가구 구성원만, 이미 없는 문서의 삭제(재시도)는 허용. v1 구조는 아이 한 명의 데이터(프로필·완료·직접 기록)가
+      //   이 문서 하나에 다 들어 있다. 하위 컬렉션(children/completions)은 앱이 쓰지 않아 삭제를 열지 않았다.
+      allow delete: if resource == null || isAnyHouseholdMember();
 
       // -------------------------------------------------------------
       // families/{familyId}/children/{childId} — 아이 프로필
@@ -158,14 +188,22 @@ service cloud.firestore {
       // 이 가구에 속한 아이 링크 — 이미 householdId 를 아는 경로이므로 list 허용.
       match /children/{childKey} {
         allow get, list: if true;
-        allow create, update: if request.resource.data.keys().hasOnly(['v', 'familyCode', 'displayName', 'order', 'colorKey', 'addedAt', 'removedAt'])
+        // [H4] createdByUid: 이 아이를 만든 계정. 만들 때는 내 uid 와 같을 때만 쓸 수 있고, 이후에는 바꾸거나 지울 수 없다.
+        allow create, update: if request.resource.data.keys().hasOnly(['v', 'familyCode', 'displayName', 'order', 'colorKey', 'addedAt', 'removedAt', 'createdByUid'])
                               && request.resource.data.keys().hasAll(['v', 'familyCode', 'displayName', 'order', 'addedAt'])
+                              && (resource == null
+                                  ? (!('createdByUid' in request.resource.data)
+                                     || (signedIn() && request.resource.data.createdByUid is string && request.resource.data.createdByUid == request.auth.uid))
+                                  : request.resource.data.get('createdByUid', null) == resource.data.get('createdByUid', null))
                               && request.resource.data.v == 1
                               && request.resource.data.familyCode is string
                               && request.resource.data.familyCode.size() <= 8
                               && request.resource.data.displayName is string
                               && request.resource.data.displayName.size() <= 40;
-        allow delete: if false;
+        // [H4] 삭제: 만든 사람(createdByUid == 내 uid), 또는 만든 사람 기록이 없는 옛 링크는 가구 구성원. 이미 없는 문서의 삭제(재시도)는 허용.
+        allow delete: if resource == null
+                      || (signedIn() && resource.data.get('createdByUid', null) == request.auth.uid)
+                      || (resource.data.get('createdByUid', null) == null && isMemberOf(householdId));
       }
 
       // 담당자가 될 수 있는 사람들(계정이 아니라 표시 라벨).
@@ -282,7 +320,7 @@ service cloud.firestore {
                     && request.resource.data.createdAt == resource.data.createdAt
                     && request.resource.data.sourceType == resource.data.sourceType
                     && request.resource.data.get('autoRef', null) == resource.data.get('autoRef', null); // C2: 연결은 생성 때만 정한다
-      allow delete: if false; // 소프트 삭제(deletedAt)만
+      allow delete: if resource == null || isMemberOf(householdId); // [H4] 아이 삭제 때 그 아이의 일정을 지운다(가구 구성원만). 평소에는 소프트 삭제(deletedAt)를 쓴다.
     }
 
     // ===============================================================
@@ -315,7 +353,7 @@ service cloud.firestore {
                     && request.resource.data.v == resource.data.v
                     && request.resource.data.createdAt == resource.data.createdAt
                     && request.resource.data.childKey == resource.data.childKey;
-      allow delete: if false; // 소프트 삭제(deletedAt)만
+      allow delete: if resource == null || isMemberOf(householdId); // [H4] 아이 삭제 때 그 아이의 할 일을 지운다(가구 구성원만). 평소에는 소프트 삭제(deletedAt)를 쓴다.
     }
 
     // ===============================================================

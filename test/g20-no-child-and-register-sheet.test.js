@@ -85,16 +85,16 @@ const st = { user: { uid: "u1", displayName: "주연" }, account: { displayName:
     t = sheetEnv({ name: "은찬", date: plus(-10), kind: "pregnant" }); await t.sb.acctChildSheetSave(); assert.strictEqual(t.err.textContent, N.errDateDue, "예정일은 오늘 이후");
     t = sheetEnv({ name: "은찬", date: plus(-30), region: null }); await t.sb.acctChildSheetSave(); assert.strictEqual(t.err.textContent, N.errRegion);
   });
-  await test("저장 성공: 기존 handleSubmit 에 숨은 옛 폼 칸(이름·날짜·몇째·지역·날짜종류)을 채워 그대로 맡기고, 성별·사진은 profile 에 얹고, 시트를 닫는다 → 홈에 아이가 나온다", async () => {
-    const t = sheetEnv({ name: " 은찬 ", date: plus(-30), kind: "born", gender: "M", photo: "data:image/png;base64,xx", kids: 1 });
+  await test("저장 성공: 기존 handleSubmit 에 숨은 옛 폼 칸(이름·날짜·몇째·지역·날짜종류)을 채워 그대로 맡기고, 성별·사진은 받지 않으므로 profile 에 얹지 않고, 시트를 닫는다 → 홈에 아이가 나온다", async () => {
+    const t = sheetEnv({ name: " 은찬 ", date: plus(-30), kind: "born", kids: 1 });
     await t.sb.acctChildSheetSave();
     assert.strictEqual(t.log.submit, 1);
     assert.deepStrictEqual([t.log.stage, t.log.filled.childName, t.log.filled.birthDate, t.log.filled.birthOrder, t.log.filled.province, t.log.filled.district], ["born", "은찬", plus(-30), "second", "서울특별시", "구로구"]);
-    assert.ok(t.sb.profile && t.sb.profile.name === "은찬" && t.sb.profile.gender === "M" && t.sb.profile.photoDataUrl.startsWith("data:image"));
+    assert.ok(t.sb.profile && t.sb.profile.name === "은찬" && t.sb.profile.gender === undefined && t.sb.profile.photoDataUrl === undefined);
     assert.strictEqual(t.log.closed, 1);
     const p = sheetEnv({ name: "콩이", date: plus(100), kind: "pregnant" });
     await p.sb.acctChildSheetSave();
-    assert.deepStrictEqual([p.log.stage, p.log.filled.birthOrder, p.sb.profile.gender], ["pregnant", "first", undefined], "성별 '아직 몰라요'는 저장하지 않는다");
+    assert.deepStrictEqual([p.log.stage, p.log.filled.birthOrder, p.sb.profile.gender], ["pregnant", "first", undefined], "성별은 묻지 않으므로 저장하지 않는다");
   });
   await test("handleSubmit 이 저장하지 않으면(검증 실패 등) 시트를 닫지 않고 저장 버튼을 되살린다", async () => {
     const t = sheetEnv({ name: "은찬", date: plus(-30), reject: true });
@@ -102,10 +102,11 @@ const st = { user: { uid: "u1", displayName: "주연" }, account: { displayName:
     await t.sb.acctChildSheetSave();
     assert.ok(Date.now() - t0 < 3000 && t.log.closed === 0 && t.btn.disabled === false && t.err.shown === true);
   });
-  await test("시트 마크업(하네스용): 한 장 A — 이름·날짜 종류 토글·날짜·미리보기·성별·사진·저장·오류, 지역은 묻지 않는다(계정 지역 사용), 지역 정보가 없을 때만 선택칸", () => {
+  await test("시트 마크업(하네스용): 한 장 A — 이름·날짜 종류 토글·날짜·미리보기·저장·오류(성별·사진 없음), 지역은 묻지 않는다(계정 지역 사용), 지역 정보가 없을 때만 선택칸", () => {
     const h = AV.renderChildSheet({ kind: "pregnant", dateMarkup: '<i id="d"></i>' });
-    ["cr-name", "data-cr-kind=\"born\"", "data-cr-kind=\"pregnant\"", "cr-date-slot", "cr-preview", "data-cr-gender=\"\"", "data-cr-gender=\"M\"", "data-cr-gender=\"F\"", "cr-photo-btn", "cr-photo-input", "cr-save", "cr-error", "data-acct-child-sheet"].forEach((k) => assert.ok(h.includes(k), k));
-    assert.ok(h.indexOf("cr-name") < h.indexOf("data-cr-kind") && h.indexOf("data-cr-kind") < h.indexOf("cr-date-slot") && h.indexOf("cr-date-slot") < h.indexOf("cr-preview") && h.indexOf("cr-preview") < h.indexOf("data-cr-gender") && h.indexOf("data-cr-gender") < h.indexOf("cr-photo-btn") && h.indexOf("cr-photo-btn") < h.indexOf("cr-save"), "시안 A 순서");
+    ["cr-name", "data-cr-kind=\"born\"", "data-cr-kind=\"pregnant\"", "cr-date-slot", "cr-preview", "cr-save", "cr-error", "data-acct-child-sheet"].forEach((k) => assert.ok(h.includes(k), k));
+    assert.ok(h.indexOf("cr-name") < h.indexOf("data-cr-kind") && h.indexOf("data-cr-kind") < h.indexOf("cr-date-slot") && h.indexOf("cr-date-slot") < h.indexOf("cr-preview") && h.indexOf("cr-preview") < h.indexOf("cr-save"));
+    ["data-cr-gender", "cr-photo", "성별", "사진"].forEach((k) => assert.ok(!h.includes(k), "빠진 항목: " + k));
     assert.ok(!h.includes("cr-province"));
     assert.ok(AV.renderChildSheet({ needRegion: true, regions: [{ code: "서울특별시", name: "서울특별시" }] }).includes("cr-province"));
     assert.ok(h.includes('aria-checked="true"') && /data-cr-kind="pregnant" aria-checked="true"/.test(h));

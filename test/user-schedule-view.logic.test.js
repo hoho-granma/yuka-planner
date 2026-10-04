@@ -24,12 +24,12 @@ function test(name, fn) {
 const M = V.MSG;
 const deepFreeze = (o) => (Object.values(o).forEach((v) => v && typeof v === "object" && deepFreeze(v)), Object.freeze(o));
 const LINKS = [
-  { childKey: "c2", familyCode: "BBB222", displayName: "둘째", order: 2, addedAt: 2 },
-  { childKey: "c1", familyCode: "AAA111", displayName: "은찬이", order: 1, addedAt: 1 },
-  { childKey: "c3", familyCode: "CCC333", displayName: "셋째", order: 3, addedAt: 3 },
-  { childKey: "c4", familyCode: "DDD444", displayName: "넷째", order: 4, addedAt: 4 },
-  { childKey: "c5", familyCode: "EEE555", displayName: "다섯째", order: 5, addedAt: 5 },
-  { childKey: "cx", familyCode: "XXX999", displayName: "분리됨", order: 6, addedAt: 6, removedAt: 9 },
+  { childKey: "c2", familyCode: "BBB222", displayName: "둘째", order: 2, addedAt: 2, colorKey: "p2" },
+  { childKey: "c1", familyCode: "AAA111", displayName: "은찬이", order: 1, addedAt: 1, colorKey: "p1" },
+  { childKey: "c3", familyCode: "CCC333", displayName: "셋째", order: 3, addedAt: 3, colorKey: "p3" },
+  { childKey: "c4", familyCode: "DDD444", displayName: "넷째", order: 4, addedAt: 4, colorKey: "p4" },
+  { childKey: "c5", familyCode: "EEE555", displayName: "다섯째", order: 5, addedAt: 5, colorKey: "p5" },
+  { childKey: "cx", familyCode: "XXX999", displayName: "분리됨", order: 6, addedAt: 6, removedAt: 9, colorKey: "p6" },
 ];
 const NOW = 1790000000000;
 let n = 0;
@@ -96,18 +96,21 @@ test('"내 일정"·"개인" 표현이 문구·마크업 어디에도 없다', (
 });
 
 console.log("\n아이색(order 파생)");
-test("order 1~4 → 마카롱 파스텔 4색, 5 이상은 넷째 색", () => {
+test("아이 색: 링크의 colorKey(p1~p10) → 10색 팔레트, 아이마다 서로 다르다(order 로 정하지 않는다)", () => {
   const c = V.childColors(LINKS);
-  assert.deepStrictEqual([c.c1, c.c2, c.c3, c.c4, c.c5], ["#ffc46b", "#7fe0b3", "#ff9a9a", "#86b6ff", "#86b6ff"]);
+  assert.deepStrictEqual([c.c1, c.c2, c.c3, c.c4, c.c5], ["#ffc46b", "#7fe0b3", "#ff8a7a", "#86b6ff", "#ff9ec4"]);
+  assert.strictEqual(new Set(Object.values(c)).size, 6);
 });
 test("링크 배열 순서와 무관하고, 분리된 아이도 자기 색을 유지한다", () => {
   const rev = [...LINKS].reverse();
   assert.deepStrictEqual(V.childColors(rev), V.childColors(LINKS));
-  assert.strictEqual(V.childColors(LINKS).cx, "#86b6ff");
+  assert.strictEqual(V.childColors(LINKS).cx, "#b79cff");
 });
-test("order 가 없는 링크는 목록 순서로 색을 준다", () => {
+test("colorKey 가 없는 옛 링크는 childKey 해시로 항상 같은 색(목록 순서·인원이 바뀌어도 불변)", () => {
   const c = V.childColors([{ childKey: "a" }, { childKey: "b" }]);
-  assert.deepStrictEqual([c.a, c.b], ["#ffc46b", "#7fe0b3"]);
+  const c2 = V.childColors([{ childKey: "z" }, { childKey: "b" }, { childKey: "a" }]);
+  assert.deepStrictEqual([c2.a, c2.b], [c.a, c.b]);
+  assert.ok(V.PALETTE.includes(c.a) && V.PALETTE.includes(c.b));
 });
 test("일정 막대 색: 가족 일정=가족색, 아이 일정=그 아이색, 공동 일정=order 가 앞선 아이색", () => {
   assert.strictEqual(V.occurrenceColor({ scope: "FAMILY", childKeys: [] }, LINKS), V.FAMILY_COLOR);
@@ -122,14 +125,15 @@ test("자동 일정 색 6가지와 겹치지 않는다(파랑·보라·초록·�
 
 console.log("\n필터 로직");
 const MEMBERS = [{ memberId: "m1", role: "MOM", label: "엄마" }, { memberId: "m2", role: "DAD", label: "아빠" }, { memberId: "m3", role: "GRANDMA", label: "할머니" }];
-test("칩: 전체 · 엄마·아빠(있는 구성원만) · 아이들(order 순, 분리된 아이 제외) · 가족, 복수 선택 상태", () => {
+test("칩: (전체 버튼 없음) · 엄마·아빠(있는 구성원만) · 아이들(order 순, 분리된 아이 제외) · 가족, 복수 선택 상태", () => {
   const chips = V.filterChips(LINKS, ["CHILD:c2", "CHILD:c1"], MEMBERS);
-  assert.deepStrictEqual(chips.map((c) => c.id), ["ALL", "MOM", "DAD", "CHILD:c1", "CHILD:c2", "CHILD:c3", "CHILD:c4", "CHILD:c5", "FAMILY"]);
+  assert.deepStrictEqual(chips.map((c) => c.id), ["MOM", "DAD", "CHILD:c1", "CHILD:c2", "CHILD:c3", "CHILD:c4", "CHILD:c5", "FAMILY"]);
   assert.deepStrictEqual(chips.filter((c) => c.selected).map((c) => c.id), ["CHILD:c1", "CHILD:c2"]);
-  assert.deepStrictEqual([chips[1].color, chips[2].color, chips.at(-1).color], ["#ff9ec4", "#7fb8ff", "#c9b8ff"]);
-  assert.strictEqual(chips[0].label, "전체");
+  assert.deepStrictEqual([chips[0].color, chips[1].color, chips.at(-1).color], ["#ff9ec4", "#7fb8ff", "#c9b8ff"]);
+  assert.ok(!chips.some((c) => c.id === "ALL" || c.label === "전체"), "'전체' 버튼은 없다");
+  assert.ok(chips.every((c) => /^#[0-9a-f]{6}$/i.test(c.color)), "칩마다 대표색이 있다");
   assert.strictEqual(chips.at(-1).label, "가족");
-  assert.deepStrictEqual(V.filterChips(LINKS, [], [{ memberId: "m1", role: "MOM", label: "엄마" }]).map((c) => c.id).slice(0, 3), ["ALL", "MOM", "CHILD:c1"], "아빠 구성원이 없으면 아빠 칩도 없다");
+  assert.deepStrictEqual(V.filterChips(LINKS, [], [{ memberId: "m1", role: "MOM", label: "엄마" }]).map((c) => c.id).slice(0, 2), ["MOM", "CHILD:c1"], "아빠 구성원이 없으면 아빠 칩도 없다");
 });
 test("정규화: 분리된 아이·모르는 값은 빠지고, 전부 고르면 전체, 옛 단일 값도 1개짜리 배열로", () => {
   ["CHILD:cx", "CHILD:none", "", null, undefined, "weird", "ALL"].forEach((s) => assert.deepStrictEqual(V.normalizeSelection(s, LINKS, MEMBERS), [], String(s)));
@@ -189,9 +193,9 @@ test("AUTO 표시 규칙: 현재 아이가 선택에 포함될 때만(엄마·�
 });
 test("필터 칩 마크업: 복수 선택(aria-pressed)·아이 이름 이스케이프·토글 칩은 아이만 선택했을 때 한 줄에 2개", () => {
   const evilLinks = [{ childKey: "c1", displayName: '<img src=x onerror="alert(1)">', order: 1 }];
-  const html = V.renderFilterChips(V.filterChips(evilLinks, [], MEMBERS), { mode: "all" });
+  const html = V.renderFilterChips(V.filterChips(evilLinks, ["CHILD:c1"], MEMBERS), { mode: "member" });
   assert(!html.includes("<img") && html.includes("&lt;img"));
-  assert(html.includes('data-us-filter="ALL"') && html.includes("us-chip active") && html.includes('aria-pressed="true"') && html.includes('aria-pressed="false"'));
+  assert(!html.includes('data-us-filter="ALL"') && html.includes("--us-color") && html.includes("us-chip active") && html.includes('aria-pressed="true"') && html.includes('aria-pressed="false"'));
   assert(!html.includes("us-tchip"), "아이만 선택이 아니면 토글 칩 없음");
   const kids = V.renderFilterChips(V.filterChips(LINKS, ["CHILD:c1", "CHILD:c2"], MEMBERS), { mode: "kids", onlyUser: false, catColor: true });
   assert.strictEqual((kids.match(/class="us-tchip"/g) || []).length, 2);
@@ -199,13 +203,15 @@ test("필터 칩 마크업: 복수 선택(aria-pressed)·아이 이름 이스케
   assert(/data-us-action="toggle-only-user"/.test(kids) && /role="switch" aria-checked="false" data-us-action="toggle-only-user"/.test(kids) && /role="switch" aria-checked="true" data-us-action="toggle-cat-color"/.test(kids));
   assert(!/<p|fine-print|us-note/.test(kids.split("us-optrows")[1] || ""), "토글 칩 줄에는 보조 설명 문구가 없다");
 });
-test("색 모드: 홈·주·상세 기본=담당(엄마·아빠)→아이→가족, 아이만 선택=아이색, 카테고리=분류색(병원=검진·수업/기관=주황·가족/기타=회색)", () => {
+test("색 모드: 홈·주·상세 기본=담당 구성원(각자 자기 색)→아이→가족, 아이만 선택=아이색, 카테고리=분류색(병원=검진·수업/기관=주황·가족/기타=회색)", () => {
   const o = (x) => ({ scope: "CHILD", childKeys: ["c1"], category: "LESSON", ...x });
-  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "MOM" }), LINKS), "#ff9ec4");
-  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "DAD" }), LINKS), "#7fb8ff");
-  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "GRANDMA" }), LINKS), V.childColors(LINKS).c1, "엄마·아빠 외 담당자는 아이색으로");
-  assert.strictEqual(V.occurrenceColor({ scope: "FAMILY", assigneeRole: "GRANDMA" }, LINKS), "#c9b8ff");
-  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "MOM" }), LINKS, "child"), V.childColors(LINKS).c1);
+  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "MOM", assigneeMemberId: "m1", assigneeColorKey: "p5" }), LINKS), "#ff9ec4");
+  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "DAD", assigneeMemberId: "m2", assigneeColorKey: "p4" }), LINKS), "#86b6ff");
+  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "GRANDMA", assigneeMemberId: "m3", assigneeColorKey: "p6" }), LINKS), "#b79cff", "조부모 등 다른 역할도 자기 색");
+  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: null, assigneeMemberId: "gone" }), LINKS), V.childColors(LINKS).c1, "삭제된 담당자는 아이색");
+  assert.strictEqual(V.occurrenceColor({ scope: "FAMILY", assigneeRole: "GRANDMA", assigneeMemberId: "m3", assigneeColorKey: "p6" }, LINKS), "#b79cff");
+  assert.strictEqual(V.occurrenceColor({ scope: "FAMILY" }, LINKS), "#c9b8ff", "담당자 없는 가족 일정=가족색");
+  assert.strictEqual(V.occurrenceColor(o({ assigneeRole: "MOM", assigneeMemberId: "m1", assigneeColorKey: "p5" }), LINKS, "child"), V.childColors(LINKS).c1);
   assert.deepStrictEqual(["MEDICAL", "LESSON", "INSTITUTION", "FAMILY", "ETC"].map((c) => V.occurrenceColor(o({ category: c }), LINKS, "category")), ["#c9a2ff", "#ffb87a", "#ffb87a", "#d8cdc4", "#d8cdc4"]);
   assert.deepStrictEqual(["예방접종", "영유아검진", "발달관찰", "생활·수유", "안전·돌봄", "행정·지원금"].map((c) => V.CATEGORY_COLORS[V.autoCategoryGroup({ category: c })]), ["#86b6ff", "#c9a2ff", "#86e0a5", "#ffe27a", "#ff9a9a", "#a9b6c8"]);
 });
@@ -223,7 +229,7 @@ test("칩 칸 마크업: 직접=꽉 찬 칩·자동=옅은 칩, 최대 2개+N, �
   assert(cat.includes("background:#c9a2ff") && cat.includes("--chip-c:#86b6ff") && cat.includes(">접종<") && !cat.includes("접종 제목"));
   const noCat = V.cellChips([a("접종 제목")], { ...ctx, mode: "member", catColor: true });
   assert(noCat.includes("접종 제목"), "카테고리 색은 아이만 선택했을 때만");
-  const evil = V.cellChips([u('<img src=x onerror="a">', { assigneeRole: "MOM" })], ctx);
+  const evil = V.cellChips([u('<img src=x onerror="a">', { assigneeRole: "MOM", assigneeMemberId: "m1", assigneeColorKey: "p5" })], ctx);
   assert(!evil.includes("<img") && evil.includes("&lt;img") && evil.includes("#ff9ec4"));
   assert.strictEqual(V.cellChips([], ctx), "");
 });

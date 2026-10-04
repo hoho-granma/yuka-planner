@@ -1,0 +1,111 @@
+{
+  "_설명": "36개월 이상 아이에게 자동(AUTO) 일정으로 노출할 항목의 허용 목록. 기본은 숨김이고, 여기 있는 항목(todo_id, 선택적으로 회차 occurrenceKeys)만 36개월 이상 아이에게 나온다. 36개월 미만·임신 중 아이의 노출은 이 목록과 무관하다(앞으로 올 항목을 미리 보여준다). 새 3~5세·6~7세·초등 항목은 정의를 추가한 뒤 여기에 todo_id 를 더하면 된다. 형식·검증: js/auto-after36.js",
+  "items": [
+    {
+      "todo_id": "SC-01",
+      "reason": "예비초등 취학통지서 확인"
+    },
+    {
+      "todo_id": "SC-02",
+      "reason": "예비소집 확인"
+    },
+    {
+      "todo_id": "SC-03",
+      "reason": "입학연기 신청 확인"
+    },
+    {
+      "todo_id": "SC-04",
+      "reason": "학령기 검진·접종(school-age.json 전체)"
+    },
+    {
+      "todo_id": "SC-05",
+      "reason": "학령기 검진·접종(school-age.json 전체)"
+    },
+    {
+      "todo_id": "SC-06",
+      "reason": "학령기 검진·접종(school-age.json 전체)"
+    },
+    {
+      "todo_id": "SC-07",
+      "reason": "학령기 검진·접종(school-age.json 전체)"
+    },
+    {
+      "todo_id": "SC-08",
+      "reason": "학령기 검진·접종(school-age.json 전체)"
+    },
+    {
+      "todo_id": "SC-09",
+      "reason": "학령기 검진·접종(school-age.json 전체)"
+    },
+    {
+      "todo_id": "SC-10",
+      "reason": "학령기 검진·접종(school-age.json 전체)"
+    },
+    {
+      "todo_id": "SC-11",
+      "reason": "학령기 검진·접종(school-age.json 전체)"
+    },
+    {
+      "todo_id": "SC-12",
+      "reason": "학령기 검진·접종(school-age.json 전체)"
+    },
+    {
+      "todo_id": "VX-TDAP",
+      "reason": "학령기 검진·접종(school-age.json 전체)"
+    },
+    {
+      "todo_id": "VX-HPV",
+      "reason": "학령기 검진·접종(school-age.json 전체)"
+    },
+    {
+      "todo_id": "HC-07",
+      "reason": "영유아 건강검진 6차(42~48개월)"
+    },
+    {
+      "todo_id": "HC-08",
+      "reason": "영유아 건강검진 7차(54~60개월)"
+    },
+    {
+      "todo_id": "HC-09",
+      "reason": "영유아 건강검진 8차(66~71개월)"
+    },
+    {
+      "todo_id": "VX-DTAP",
+      "occurrenceKeys": [
+        "dose-5"
+      ],
+      "reason": "DTaP 5차(만 4~6세 추가접종)"
+    },
+    {
+      "todo_id": "VX-IPV",
+      "occurrenceKeys": [
+        "dose-4"
+      ],
+      "reason": "IPV 4차(만 4~6세 추가접종)"
+    },
+    {
+      "todo_id": "VX-MMR",
+      "occurrenceKeys": [
+        "dose-2"
+      ],
+      "reason": "MMR 2차(만 4~6세 추가접종)"
+    },
+    {
+      "todo_id": "SB-04",
+      "reason": "아동수당(연도별 ageCap 신청 가능 상한)"
+    },
+    {
+      "todo_id": "NAT-020",
+      "reason": "유아학비 지원(3~5세, 지역 지원금 경로)"
+    },
+    {
+      "todo_id": "GG-016",
+      "reason": "경기 초4 치과주치의"
+    },
+    {
+      "todo_id": "GG-028",
+      "reason": "경기도 어린이·청소년 교통비"
+    }
+  ],
+  "_중복정리": "SB-08(누리과정, 엔진)은 NAT-020(유아학비 3~5세)과 같은 제도라 36개월 이상에는 NAT-020 하나만 노출한다(SB-08 은 목록에 없음). 36개월 미만 미리 보기는 HEAD 그대로 둘 다 나온다."
+}

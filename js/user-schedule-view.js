@@ -159,6 +159,13 @@
     chipDelChildTitle: (name) => `${withObjectParticle(name)} 가족 캘린더에서 뺄까요?`,
     chipDelChildBody: "아이 기록과 체크리스트는 지워지지 않고, 가족 캘린더에서만 보이지 않아요.",
     chipDelChildBlocked: "지금 보고 있는 아이는 뺄 수 없어요. 다른 아이로 바꾼 뒤 빼 주세요.",
+    // 아이 삭제(구성원 관리 > 내가 만든 아이). '빼기'와 달리 그 아이의 일정·할 일까지 함께 지운다.
+    chipDelDeleteTitle: (name) => `${withObjectParticle(name)} 삭제할까요?`,
+    chipDelDeleteBody: (ev, todo) => `삭제하면 되돌릴 수 없어요. 이 아이의 일정 ${ev}건과 할 일 ${todo}건, 성장·접종 기록과 프로필까지 서버에서 모두 지워지고 가족 캘린더와 이 기기에서도 사라져요.`,
+    chipDelDeleteCurrent: "지금 보고 있는 아이예요. 삭제하면 남은 아이로 화면이 바뀌고, 마지막 아이라면 아이가 없는 상태가 돼요.",
+    chipDelDeniedNote: "아직 삭제할 수 없어요. 삭제 기능이 서버에 적용되는 중이라, 잠시 뒤에 다시 시도해 주세요. 지금까지 지운 일정·할 일은 다시 시도하면 이어서 지워져요.",
+    chipDelNetworkNote: "인터넷 연결이 불안정해 삭제를 마치지 못했어요. 연결을 확인하고 다시 눌러 주세요. 이미 지운 것은 건너뛰고 이어서 지워져요.",
+    chipDelDelete: "삭제",
     chipDelMember: "지우기",
     chipDelChild: "빼기",
     chipDelCancel: "취소",
@@ -231,28 +238,36 @@
 
   // ── 아이별 색(링크 order 기반 파생 — 저장하지 않는다) ─────────────────────────
   // 칩 달력 개편(B 마카롱 파스텔): 아이 첫째·둘째·셋째·넷째 이상 / 가족·기타 구성원 / 엄마·아빠(역할 고정, 저장하지 않는다)
-  const CHILD_PALETTE = Object.freeze(["#ffc46b", "#7fe0b3", "#ff9a9a", "#86b6ff"]);
+  // 대표색 팔레트 10색: 아이·구성원마다 키(colorKey p1~p10, 없으면 childKey/memberId 해시)로 정해 한 번 정해지면 사람이 늘거나 줄어도 바뀌지 않는다.
+  // 모두 본문 글자색(#3a2e2a) 대비 5.7:1 이상, 서로 색차(Lab ΔE) 20 이상(test/h4-chips-members-delete.test.js 가 확인).
+  const PALETTE = Object.freeze(["#ffc46b", "#7fe0b3", "#ff8a7a", "#86b6ff", "#ff9ec4", "#b79cff", "#6fd6e6", "#d3e060", "#d9a98a", "#a3b4c6"]);
+  const COLOR_KEYS = Object.freeze(PALETTE.map((_, i) => `p${i + 1}`));
+  const CHILD_PALETTE = PALETTE; // (옛 이름)
+  const hashIndex = (key) => { let h = 0; for (const ch of String(key == null ? "" : key)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h % PALETTE.length; };
+  /** key(childKey·memberId)와 문서의 colorKey 로 대표색을 고른다 — colorKey 가 있으면 그 색, 없으면 key 해시(항상 같은 색). */
+  const keyColor = (key, colorKey) => { const i = COLOR_KEYS.indexOf(colorKey); return PALETTE[i >= 0 ? i : hashIndex(key)]; };
   const FAMILY_COLOR = "#c9b8ff";
+  // 옛 고정색: colorKey 가 없는 엄마·아빠 구성원(예전에 만든 가구)은 계속 이 색을 쓴다(바뀌면 이미 익숙한 색이 달라진다). 새 구성원은 colorKey(팔레트)를 받는다.
+  // 엄마 #ff9ec4 = 팔레트 p5 와 같은 색, 아빠 #7fb8ff 는 p4(#86b6ff)와 구분되지 않을 만큼 가깝다(ΔE≈2.7) — 가장 덜 쓰인 색을 고를 때 이 두 칸을 쓰는 것으로 센다(household-sync pickColorKey).
   const MEMBER_COLORS = Object.freeze({ MOM: "#ff9ec4", DAD: "#7fb8ff" });
   // 카테고리별 색(칩 전용 맵 — 앱의 CATEGORY_META 색과 별개): 자동 6분류 + 등록 일정(병원=검진색·수업/기관=주황·가족/기타=회색)
   const CATEGORY_COLORS = Object.freeze({ "접종": "#86b6ff", "검진": "#c9a2ff", "발달": "#86e0a5", "생활": "#ffe27a", "안전": "#ff9a9a", "혜택": "#a9b6c8", "수업·기관": "#ffb87a", "가족·기타": "#d8cdc4" });
   const NEUTRAL_COLOR = FAMILY_COLOR;
-  const ALL_COLORS = new Set([...CHILD_PALETTE, FAMILY_COLOR, ...Object.values(MEMBER_COLORS), ...Object.values(CATEGORY_COLORS)]);
+  const ALL_COLORS = new Set([...PALETTE, FAMILY_COLOR, ...Object.values(MEMBER_COLORS), ...Object.values(CATEGORY_COLORS)]);
   const safeColor = (c) => (ALL_COLORS.has(c) ? c : NEUTRAL_COLOR);
 
   const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const linkKey = (l) => l.childKey || l.id;
   const activeLinks = (links) => (links || []).filter((l) => l && !l.removedAt).slice().sort((a, b) => (a.order || 0) - (b.order || 0) || (a.addedAt || 0) - (b.addedAt || 0) || (linkKey(a) < linkKey(b) ? -1 : 1));
 
-  /** 링크 order 로 아이 색을 고른다(order 1→코랄, 2→틸, 3→핑크, 4 이상→브라운). order 가 없으면 목록 순서. */
-  function childColor(link, indexFallback) {
-    const order = link && Number.isInteger(link.order) && link.order >= 1 ? link.order : (indexFallback || 0) + 1;
-    return CHILD_PALETTE[Math.min(order, CHILD_PALETTE.length) - 1];
+  /** 아이 색: 링크의 colorKey(없으면 childKey 해시). 순서·인원이 바뀌어도 같은 아이는 같은 색이다. */
+  function childColor(link) {
+    return keyColor(link && linkKey(link), link && link.colorKey);
   }
   /** { childKey: color } — 분리된 아이도 자기 order 색을 유지한다(과거 일정 표시용). */
   function childColors(links) {
     const out = {};
-    (links || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0)).forEach((l, i) => (out[linkKey(l)] = childColor(l, i)));
+    (links || []).forEach((l) => (out[linkKey(l)] = childColor(l)));
     return out;
   }
   /** 일정 한 건의 막대 색: 가족 일정=가족색, 아이 일정=childKeys 중 order 가 가장 앞선 아이의 색(공동 일정은 첫 아이 색 + 배지). */
@@ -272,9 +287,11 @@
    */
   function occurrenceColor(occ, links, mode) {
     if (mode === "category") return CATEGORY_COLORS[userCategoryGroup(occ)];
-    if (mode !== "child" && occ && MEMBER_COLORS[occ.assigneeRole]) return MEMBER_COLORS[occ.assigneeRole];
+    if (mode !== "child" && occ && occ.assigneeRole && occ.assigneeMemberId) return personColor(occ.assigneeRole, occ.assigneeMemberId, occ.assigneeColorKey); // 담당 구성원(삭제된 담당자는 assigneeRole 이 없다) 자기 색
     return childOnlyColor(occ, links);
   }
+  /** 담당·구성원의 대표색 — colorKey 가 있으면 팔레트, 없으면 엄마·아빠는 옛 고정색, 그 밖의 역할은 key 해시색. */
+  const personColor = (role, key, colorKey) => (COLOR_KEYS.indexOf(colorKey) < 0 && MEMBER_COLORS[role]) || keyColor(key, colorKey);
   const colorRank = (c) => (CHILD_PALETTE.indexOf(c) >= 0 ? CHILD_PALETTE.indexOf(c) : 99);
 
   // ── 필터 (칩 달력 개편: 복수 선택) ───────────────────────────────────────────
@@ -283,7 +300,7 @@
   const ROLE_LABELS = Object.freeze({ MOM: "엄마", DAD: "아빠", GRANDPARENT: "조부모", CAREGIVER: "이모님", CHILD: "자녀", OTHER: "기타" });
   const visibleMembersOf = (members) => (members || []).filter((m) => m && !m.deletedAt && (m.memberId || m.id)).slice().sort((a, b) => (a.order || 0) - (b.order || 0) || String(a.label || "").localeCompare(String(b.label || "")) || ((a.memberId || a.id) < (b.memberId || b.id) ? -1 : 1));
   const memberKey = (m) => m.memberId || m.id;
-  const memberColor = (m) => MEMBER_COLORS[m && m.role] || FAMILY_COLOR;
+  const memberColor = (m) => personColor(m && m.role, m && memberKey(m), m && m.colorKey); // 역할이 아니라 구성원마다 자기 색
   const roleSet = (members) => new Set((members || []).filter((m) => m && !m.deletedAt).map((m) => m.role));
   function normalizeSelection(selection, links, members, opts) {
     let raw = Array.isArray(selection) ? selection : selection == null || selection === "ALL" ? [] : [selection];
@@ -304,10 +321,10 @@
     if (!sel || !sel.length) return "all";
     return sel.every((id) => id.startsWith("CHILD:")) ? "kids" : "member";
   }
-  /** 칩: 전체 / 엄마·아빠(있는 구성원만) / 아이들(분리된 아이 제외) / 가족. selected 는 복수. */
+  /** 칩: 엄마·아빠(있는 구성원만) / 아이들(분리된 아이 제외) / 가족. selected 는 복수. */
   function filterChips(links, selection, members, opts) {
     const sel = normalizeSelection(selection, links, members, opts);
-    const chips = [{ id: "ALL", label: MSG.filterAll, selected: sel.length === 0 }];
+    const chips = []; // '전체' 버튼은 없다 — 칩을 모두 해제하면(또는 모두 고르면) 전체가 보인다
     const mem = (members || []).filter((m) => m && !m.deletedAt);
     if (opts && opts.memberMode) {
       // 계정 모드: 구성원마다 칩 하나(내 구성원은 '나(역할)'), 합류한 구성원은 목록에 들어오는 즉시 칩이 늘어난다.
@@ -319,7 +336,7 @@
     } else
     for (const role of ["MOM", "DAD"]) {
       const m = mem.find((x) => x.role === role);
-      if (m) chips.push({ id: role, label: m.label || (role === "MOM" ? "엄마" : "아빠"), selected: sel.includes(role), color: MEMBER_COLORS[role] });
+      if (m) chips.push({ id: role, label: m.label || (role === "MOM" ? "엄마" : "아빠"), selected: sel.includes(role), color: personColor(role, memberKey(m), m.colorKey) });
     }
     activeLinks(links).forEach((l) => chips.push({ id: `CHILD:${linkKey(l)}`, label: l.displayName || "", selected: sel.includes(`CHILD:${linkKey(l)}`), color: childColors(links)[linkKey(l)] }));
     if (!(opts && opts.noFamily === true)) chips.push({ id: "FAMILY", label: MSG.filterFamily, selected: sel.includes("FAMILY"), color: FAMILY_COLOR });
@@ -360,9 +377,13 @@
   function renderChipDeleteConfirm(d) {
     const x = d || {};
     const name = x.name || "";
-    const isChild = x.kind === "CHILD";
-    if (x.blocked) return `<div class="us-chipdel" data-us-chipdel><h3>${esc(MSG.chipDelChildTitle(name))}</h3><p class="fine-print">${esc(MSG.chipDelChildBlocked)}</p><button type="button" class="btn-close" data-us-chipdel-act="cancel">${esc(MSG.chipDelClose)}</button></div>`;
-    return `<div class="us-chipdel" data-us-chipdel><h3>${esc(isChild ? MSG.chipDelChildTitle(name) : MSG.chipDelMemberTitle(name))}</h3><p class="fine-print">${esc(isChild ? MSG.chipDelChildBody : MSG.chipDelMemberBody)}</p>${!isChild && x.uidWarn ? `<p class="us-note us-chipdel-warn">${esc(MSG.chipDelUidWarn)}</p>` : ""}${x.error ? `<p class="us-note">${esc(x.error)}</p>` : ""}<button type="button" class="btn-complete" data-us-chipdel-act="confirm"${x.busy ? " disabled" : ""}>${esc(isChild ? MSG.chipDelChild : MSG.chipDelMember)}</button><button type="button" class="btn-close" data-us-chipdel-act="cancel"${x.busy ? " disabled" : ""}>${esc(MSG.chipDelCancel)}</button></div>`;
+    const isDelete = x.kind === "CHILD_DELETE"; // 완전 삭제(내가 만든 아이) — 일정·할 일 함께 삭제
+    const isChild = x.kind === "CHILD" || isDelete;
+    if (x.blocked) return `<div class="us-chipdel" data-us-chipdel><h3>${esc(isDelete ? MSG.chipDelDeleteTitle(name) : MSG.chipDelChildTitle(name))}</h3><p class="fine-print">${esc(isDelete ? MSG.chipDelDeleteBlocked : MSG.chipDelChildBlocked)}</p><button type="button" class="btn-close" data-us-chipdel-act="cancel">${esc(MSG.chipDelClose)}</button></div>`;
+    const title = isDelete ? MSG.chipDelDeleteTitle(name) : isChild ? MSG.chipDelChildTitle(name) : MSG.chipDelMemberTitle(name);
+    const bodyText = isDelete ? MSG.chipDelDeleteBody(x.eventCount || 0, x.todoCount || 0) + (x.current ? " " + MSG.chipDelDeleteCurrent : "") : isChild ? MSG.chipDelChildBody : MSG.chipDelMemberBody;
+    const okLabel = isDelete ? MSG.chipDelDelete : isChild ? MSG.chipDelChild : MSG.chipDelMember;
+    return `<div class="us-chipdel" data-us-chipdel><h3>${esc(title)}</h3><p class="fine-print">${esc(bodyText)}</p>${!isChild && x.uidWarn ? `<p class="us-note us-chipdel-warn">${esc(MSG.chipDelUidWarn)}</p>` : ""}${x.error ? `<p class="us-note">${esc(x.error)}</p>` : ""}<button type="button" class="btn-complete${isDelete ? " us-chipdel-danger" : ""}" data-us-chipdel-act="confirm"${x.busy ? " disabled" : ""}>${esc(okLabel)}</button><button type="button" class="btn-close" data-us-chipdel-act="cancel"${x.busy ? " disabled" : ""}>${esc(MSG.chipDelCancel)}</button></div>`;
   }
   /**
    * 월 달력 날짜 칸의 제목 칩(최대 2개 + 나머지 +N). items: [{ t:"u", occ } | { t:"a", title, category, done }] 를 직접 등록 → 자동 순으로 받는다.
@@ -512,8 +533,10 @@
       emptyText: MSG.dayEmpty,
     };
   }
-  /** G13-1: 날짜 패널 카드의 출처 라벨. kind = "auto"(자동 항목 카드 html) | "user"(직접 입력 일정 카드 html). 카드 제목 바로 앞에 작은 라벨을 끼운다(없으면 html 그대로). */
+  /** G13-1: 날짜 패널 카드의 출처 라벨. kind = "auto"(자동 항목 카드 html) | "user"(직접 입력 일정 카드 html). 자동 카드만 제목 바로 앞에 작은 '자동' 라벨을 끼운다.
+   *  직접 입력 일정은 가족이 넣는 일정 전부라 따로 표시하지 않는다(모든 계정, html 그대로). */
   function sourceLabeled(html, kind) {
+    if (kind !== "auto") return html;
     const label = kind === "auto" ? MSG.srcAuto : MSG.srcUser;
     const mark = `<span class="us-src us-src-${kind === "auto" ? "auto" : "user"}">${esc(label)}</span>`;
     const anchor = kind === "auto" ? '<p class="title">' : '<strong class="us-title">';
@@ -561,7 +584,7 @@
   /** G15-3: 일정 상세의 대상·담당 앞 사람별 대표색 점(표시만). 아이=아이색(없으면 가족색), 담당=구성원 역할색(없으면 가족색). */
   function detailDots(occ, links) {
     if (!occ) return null;
-    return { target: occ.scope === "CHILD" ? childOnlyColor(occ, links) : FAMILY_COLOR, assignee: MEMBER_COLORS[occ.assigneeRole] || FAMILY_COLOR };
+    return { target: occ.scope === "CHILD" ? childOnlyColor(occ, links) : FAMILY_COLOR, assignee: occ.assigneeRole && occ.assigneeMemberId ? personColor(occ.assigneeRole, occ.assigneeMemberId, occ.assigneeColorKey) : FAMILY_COLOR };
   }
   function renderDetail(c, opts) {
     const dots = opts && opts.dots ? opts.dots : null; // 계정 모드 상세에서만 넘어온다(없으면 기존 마크업 그대로)
@@ -1213,7 +1236,7 @@
   }
 
   return {
-    MSG, CATEGORIES, CHILD_PALETTE, FAMILY_COLOR, PICKER_PREFIXES, HOURS, MINUTES,
+    MSG, CATEGORIES, CHILD_PALETTE, PALETTE, COLOR_KEYS, keyColor, FAMILY_COLOR, PICKER_PREFIXES, HOURS, MINUTES,
     categoryLabel, childColor, childColors, occurrenceColor, MEMBER_COLORS, ROLE_LABELS, CATEGORY_COLORS, autoCategoryGroup, selectionMode, toggleSelection, cellChips,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, sourceLabeled, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,

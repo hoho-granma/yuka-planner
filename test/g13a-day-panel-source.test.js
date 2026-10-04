@@ -7,11 +7,11 @@ const APP = fs.readFileSync(path.join(__dirname, "..", "js/app.js"), "utf8");
 const CSS = fs.readFileSync(path.join(__dirname, "..", "css/style.css"), "utf8");
 let passed = 0;
 function test(name, fn) { try { fn(); passed++; console.log("  ok  - " + name); } catch (e) { process.exitCode = 1; console.log("  FAIL- " + name + "\n      " + (e.stack || e).split("\n").slice(0, 4).join("\n      ")); } }
-test("직접 입력 카드: 제목 바로 앞에 '직접 입력' 라벨, 카드 나머지는 그대로", () => {
+test("직접 입력 카드: 라벨을 달지 않는다(모든 계정) — html 그대로", () => {
   const card = '<button class="us-card"><span class="us-bar"></span><span class="us-body"><strong class="us-title">하원 픽업</strong></span></button>';
   const out = USV.sourceLabeled(card, "user");
-  assert.ok(out.includes('<span class="us-src us-src-user">직접 입력</span><strong class="us-title">하원 픽업</strong>'));
-  assert.strictEqual(out.replace('<span class="us-src us-src-user">직접 입력</span>', ""), card);
+  assert.strictEqual(out, card);
+  assert.ok(!out.includes("직접 입력") && !out.includes("us-src"));
 });
 test("자동 항목 카드: 제목 앞에 '자동' 라벨", () => {
   const card = '<div class="event-item" data-id="a1"><div class="body"><p class="title">DTaP 4차</p></div></div>';
@@ -29,7 +29,7 @@ test("앱 연결: 날짜 패널 세 구역(추가한 일정=직접 입력, 혜�
   assert.strictEqual((fnSrc.match(/, "user"\)/g) || []).length, 1);
   assert.strictEqual((fnSrc.split('sourceLabeled(eventItemHtml(e), "auto")').length - 1), 2);
 });
-test("CSS: 자동=파랑, 직접 입력=분홍 작은 라벨, MSG 문구", () => {
+test("CSS: 자동=파랑 작은 라벨(직접 입력 라벨은 화면에 쓰지 않는다), MSG 문구", () => {
   assert.ok(/\.us-src-auto \{ background: #e8f0fe/.test(CSS) && /\.us-src-user \{ background: #ffe9f1/.test(CSS));
   assert.deepStrictEqual([USV.MSG.srcAuto, USV.MSG.srcUser], ["자동", "직접 입력"]);
 });

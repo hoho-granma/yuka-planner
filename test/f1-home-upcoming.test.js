@@ -13,6 +13,8 @@ const V = require("../js/user-schedule-view.js");
 const US = require("../js/user-schedule.js");
 const CM = require("../js/calendar-model.js");
 const HNLogic = require("../js/hn-logic.js");
+// 이전 커밋의 home.js 는 classifyHomeItems 결과의 period(기간형 AUTO)를 읽는다. 기간형 AUTO 를 없앤 뒤에도 이전 화면을 같은 입력으로 돌려 비교하려고 빈 period 를 얹어 준다.
+const HNLogicCompat = { ...HNLogic, classifyHomeItems: (...a) => ({ period: [], ...HNLogic.classifyHomeItems(...a) }) };
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
 let passed = 0, started = 0, finished = 0;
 function test(name, fn) {
@@ -140,7 +142,7 @@ const headHome = execSync("git show 0badff5:js/home.js", { cwd: ROOT, encoding: 
   const run = (src, extra) => {
     const out = { html: null };
     const wrap = { set innerHTML(v) { out.html = v; }, get innerHTML() { return out.html; }, querySelectorAll: () => [] };
-    const sandbox = { HNLogic, document: { getElementById: (id) => (id === "home-body" ? wrap : null) }, window: {} };
+    const sandbox = { HNLogic: HNLogicCompat, document: { getElementById: (id) => (id === "home-body" ? wrap : null) }, window: {} };
     sandbox.globalThis = sandbox;
     vm.createContext(sandbox);
     vm.runInContext(src, sandbox);
@@ -180,7 +182,7 @@ test("data-act us-cal/us-add, 줄 탭이 각각 goCalendar/usAddFromHome 으로 
   const wrap = {
     set innerHTML(v) {}, querySelectorAll: (sel) => (sel === "[data-act]" ? [mk("us-cal", { act: "us-cal" }), mk("us-add", { act: "us-add" })] : sel === "[data-home-date]" ? [mk("row", { homeDate: "2026-10-07" })] : []),
   };
-  const sandbox = { HNLogic, document: { getElementById: () => wrap }, window: {} };
+  const sandbox = { HNLogic: HNLogicCompat, document: { getElementById: () => wrap }, window: {} };
   vm.createContext(sandbox);
   vm.runInContext(homeNew, sandbox);
   sandbox.window.HNHome.render({

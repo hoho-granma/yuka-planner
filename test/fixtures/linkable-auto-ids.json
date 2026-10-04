@@ -1,5 +1,5 @@
 {
- "note": "C2: 연결 대상(MEDICAL 성격 AUTO) id 스냅샷 — 0~72개월 매월 엔진 결과의 합집합(완료 없음). id 가 사라지면 data/auto-id-aliases.json 별칭을 추가하거나 사용자 승인 후 이 파일을 갱신한다. VX-RSV 는 데이터 커밋 전이라 제외.",
+ "note": "C2: 연결 대상(MEDICAL 성격 AUTO) id 스냅샷 — 0~72개월 매월 엔진 결과의 합집합(완료 없음). 36개월 이상 전용 자동 항목(HC-07~09 6~8차 검진)은 AUTO 삭제로 스냅샷에서 뺐다. id 가 사라지면 data/auto-id-aliases.json 별칭을 추가하거나 사용자 승인 후 이 파일을 갱신한다. VX-RSV 는 데이터 커밋 전이라 제외.",
  "ids": [
   "HC-01__default",
   "HC-02__default",
@@ -7,9 +7,6 @@
   "HC-04__default",
   "HC-05__default",
   "HC-06__default",
-  "HC-07__default",
-  "HC-08__default",
-  "HC-09__default",
   "OR-03__default",
   "OR-04__occ-1",
   "VX-BCG__default",

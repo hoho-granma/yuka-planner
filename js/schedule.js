@@ -290,6 +290,15 @@ function buildSchedule({ birthDate, province, district, gender, birthOrder, stag
     ...buildTodoEngineEvents({ birthDate, province, district, gender, stage, schoolPolicy, enrollmentYearOverride }, dataset.todoDefinitions, completions),
     ...buildSubsidyEvents(birthDate, province, district, dataset.subsidy, birthOrder, stage),
   ];
+  // 36개월 이상 아이에게는 허용 목록(data/policy/auto-after36.json, js/auto-after36.js)에 있는 항목만 보인다 — 표식 autoAfter36 을 달아 두고 ChildTimeline.isEventVisible 이 판정한다.
+  // 목록이 없으면(dataset.autoAfter36 없음) 표식이 하나도 달리지 않는다. 36개월 미만 노출에는 영향이 없다.
+  const allow = dataset.autoAfter36;
+  if (allow && typeof allow.has === "function") {
+    for (const e of events) {
+      const inst = e.isEngineEvent && e.detail ? e.detail.instance : null;
+      if (inst ? allow.has(inst.todo_id, inst.occurrenceKey) : allow.has(e.id, "default")) e.autoAfter36 = true;
+    }
+  }
   events.sort((a, b) => a.date.getTime() - b.date.getTime());
   return events;
 }

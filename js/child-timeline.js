@@ -139,6 +139,46 @@
     return completedMonths(birthDate, event.date) <= effectiveMaxMonths(event);
   }
 
+  /**
+   * 화면에 실제로 노출할지 — isEventVisible(월령·학교 단계 판정, 36개월 미만·임신 중 노출은 이것만으로 정해진다) + 36개월 이상 항목별 허용.
+   * 36개월 이상(asOf 기준 완료 개월 ≥ 36) 아이에게는 허용 표식(autoAfter36 — schedule.js 가 data/policy/auto-after36.json 으로 단다)이 있는 항목만 보인다. 기본은 숨김.
+   */
+  function isEventShown(birthDate, event, asOf) {
+    if (!(birthDate instanceof Date)) return isEventVisible(birthDate, event, asOf);
+    const now = asOf || new Date();
+    if (completedMonths(birthDate, now) < LEGACY_TODO_CAP_MONTHS) return isEventVisible(birthDate, event, asOf);
+    if (!(event && event.autoAfter36 === true)) return false;
+    // 36개월 이상: 앞으로 챙길 것만 — 끝(기간·마감)이 이번 달 1일 이전이면 숨긴다.
+    const def = event.isEngineEvent && event.detail ? event.detail.definition : null;
+    if (def && def.ageCap) { // 나이 상한이 있는 지원금(아동수당 SB-04): 창이 지났어도 신청 가능 연도(예외 출생연도 포함) 안이면 보이고, 상한을 넘으면 숨긴다
+      if (ageCapExceeded(def.ageCap, birthDate, now)) return false;
+    } else if (endOf(birthDate, event) < new Date(now.getFullYear(), now.getMonth(), 1)) return false;
+    // 지역 지원금(엔진 밖) 이벤트는 날짜의 월령이 보존 상한(36)을 넘어도 허용 표식이 있으면 노출한다(경기 초4 치과주치의 등). 엔진 이벤트는 기존 판정.
+    if (!(event.isEngineEvent && event.detail)) return true;
+    return isEventVisible(birthDate, event, asOf);
+  }
+  /** 연도별 신청 가능 나이 상한 초과 여부(def.ageCap). hn-logic ageCapExceeded 와 같은 규칙(test/h6 가 같은 결과임을 고정). 판단할 수 없으면 false. */
+  function ageCapExceeded(cap, birthDate, today) {
+    if (!cap || !cap.maxMonthsByYear || !(birthDate instanceof Date) || !(today instanceof Date)) return false;
+    const months = completedMonths(birthDate, today);
+    const year = today.getFullYear();
+    if ((cap.exceptions || []).some((x) => x.birthYear === birthDate.getFullYear() && year >= x.fromYear && year <= x.toYear)) return false;
+    const years = Object.keys(cap.maxMonthsByYear).map(Number).sort((a, b) => a - b);
+    if (!years.length) return false;
+    const key = year <= years[0] ? years[0] : year >= years[years.length - 1] ? years[years.length - 1] : year;
+    return months > cap.maxMonthsByYear[String(key)];
+  }
+  /** 이벤트가 끝나는 시점: 기간(windowEnd) → 마감(deadlineDate) → 상한 월령이 있는 지원금은 그 월령이 끝나는 날 → 없으면 시작 날짜(상시 지원은 아주 먼 미래). */
+  function endOf(birthDate, event) {
+    if (event.windowEnd instanceof Date) return event.windowEnd;
+    if (event.deadlineDate instanceof Date) return event.deadlineDate;
+    if (!event.isEngineEvent && event.detail && event.detail.deadlineType === "ongoing") {
+      const mx = event.maxAgeMonths;
+      return typeof mx === "number" && isFinite(mx) ? new Date(birthDate.getFullYear(), birthDate.getMonth() + mx + 1, birthDate.getDate()) : new Date(8640000000000000);
+    }
+    return event.fixedDate instanceof Date ? event.fixedDate : event.date;
+  }
+
   /** 체크리스트 그룹 키 — app.js checklistBucket 과 동일. 돌 전은 월별, 13개월~는 구간 시작 월령. */
   function checklistBucket(m) {
     if (typeof m !== "number" || m <= 12) return m;
@@ -239,5 +279,5 @@
     };
   }
 
-  return { SERVICE_RANGE, EXTENDED_MAX_MONTHS, LEGACY_TODO_CAP_MONTHS, INFANT_TODDLER_MAX_MONTHS, CHECKLIST_BUCKETS, completedMonths, ageLabel, ageLabelAt, isWithinServiceRange, isLegacyCappedDefinition, isLegacyCapped, extendedRuleOf, effectiveMaxMonths, isEventVisible, isSchoolTermDefinition, enrollmentOptions, checklistBucket, checklistGroupLabel, computeSchool, compute };
+  return { SERVICE_RANGE, EXTENDED_MAX_MONTHS, LEGACY_TODO_CAP_MONTHS, INFANT_TODDLER_MAX_MONTHS, CHECKLIST_BUCKETS, completedMonths, ageLabel, ageLabelAt, isWithinServiceRange, isLegacyCappedDefinition, isLegacyCapped, extendedRuleOf, effectiveMaxMonths, isEventVisible, isEventShown, isSchoolTermDefinition, enrollmentOptions, checklistBucket, checklistGroupLabel, computeSchool, compute };
 });

@@ -189,10 +189,11 @@
   }
 
   async function loadAll() {
-    const [regions, reform, policy, ...categoryFiles] = await Promise.all([
+    const [regions, reform, policy, allow36, ...categoryFiles] = await Promise.all([
       loadJson("data/regions.json"),
       loadJsonOrNull("data/subsidies/reform-2027.json"),
       loadSchoolPolicy(),
+      typeof AutoAfter36 === "undefined" ? null : AutoAfter36.load(fetch),
       ...TODO_CATEGORY_FILES.map(loadJson),
     ]);
     regionsData = regions;
@@ -202,7 +203,7 @@
     // (data/todos/*.json, 총 75개 TodoDefinition) + js/todo-engine.js로 계산한다.
     // 지자체 지원금(dataset.subsidy)은 프로필의 지역이 정해진 뒤 ensureRegionSubsidyLoaded()가 채운다.
     const todoDefinitions = categoryFiles.flatMap((f) => f.todos).map(applyBirthRule);
-    dataset = { todoDefinitions, subsidy: { subsidies: [] } };
+    dataset = { todoDefinitions, subsidy: { subsidies: [] }, autoAfter36: allow36 || undefined };
     // C2: autoLink 플래그가 켜진 기기만 별칭 파일을 읽는다(꺼져 있으면 네트워크 요청도 없다). 실패·형식 오류는 빈 맵으로 진행한다.
     autoIdAliases = window.FEATURES && window.FEATURES.autoLink === true ? sanitizeAliases(await loadJsonOrNull("data/auto-id-aliases.json")) : {};
   }
@@ -691,7 +692,8 @@
   // 시작되는 항목만 걸러낸다. 단 마일스톤·끝 없는 정의·지원금은 기존 범위(LEGACY_TODO_CAP_MONTHS=36)로 보존한다
   // (ChildTimeline.isEventVisible — A6-3).
   function visibleSchedule(ignoreCategoryFilter) {
-    return schedule.filter((e) => (ignoreCategoryFilter || activeCats.has(e.category)) && ChildTimeline.isEventVisible(profile.birthDate, e) && !isNotApplicable(e.id));
+    if (!profile) return []; // 아이가 없는 상태(마지막 아이를 지운 직후 등): 이전 아이의 일정 목록이 남아 있어도 프로필 없이 월령을 읽지 않는다
+    return schedule.filter((e) => (ignoreCategoryFilter || activeCats.has(e.category)) && ChildTimeline.isEventShown(profile.birthDate, e) && !isNotApplicable(e.id));
   }
 
   // "미해당" 표시 — 나에게 해당하지 않는 혜택. completed 맵에 `${id}__na` 키로 저장한다(완료·가족 동기화 경로를
@@ -1028,7 +1030,7 @@
   };
 
   // ── G20 아이 등록 바텀시트(시안 A): 계정 모드에서는 옛 첫 화면 폼(view-landing)을 쓰지 않는다. 저장은 기존 handleSubmit 을 그대로 호출한다(숨은 옛 폼 칸에 값을 넣고 제출). ──
-  let crState = null; // { kind, gender, photo, name, date }
+  let crState = null; // { kind, name, date }
   const enterNewChildEntryBase = enterNewChildEntry;
   enterNewChildEntry = function (opts) {
     if (!acctEnabled()) return enterNewChildEntryBase(opts);
@@ -1038,7 +1040,7 @@
     rememberChild(); // 지금 아이를 이 기기 아이 목록에 남겨 둔다(저장 시 이전 아이를 비우는 handleSubmit 규칙 그대로)
     newChildMode = true;
     newChildSnapshot = { hid: hhEnabled() ? hh.hid : null, code: hhEnabled() ? hh.code : null };
-    crState = { kind: acctExpecting() ? "pregnant" : "born", gender: "", photo: null, name: "", date: "" };
+    crState = { kind: acctExpecting() ? "pregnant" : "born", name: "", date: "" };
     acctChildSheetRender();
   }
   /** 가입 때 받은 지역(없으면 지금 아이의 지역) — 등록 시트는 지역을 묻지 않는다. */
@@ -1085,23 +1087,6 @@
         acctChildPreview();
       })
     );
-    el("modal-content").querySelectorAll("[data-cr-gender]").forEach((b) =>
-      b.addEventListener("click", () => {
-        crState.gender = b.dataset.crGender;
-        el("modal-content").querySelectorAll("[data-cr-gender]").forEach((x) => { x.classList.toggle("on", x === b); x.setAttribute("aria-checked", String(x === b)); });
-      })
-    );
-    el("cr-photo-btn").addEventListener("click", (ev) => { ev.stopPropagation(); el("cr-photo-input").click(); });
-    el("cr-photo-input").addEventListener("change", async (ev) => {
-      const f = ev.target.files && ev.target.files[0];
-      if (!f) return;
-      try {
-        crState.name = el("cr-name").value; crState.date = el("cr-date").value;
-        crState.photo = await resizeImageFile(f, 240);
-        acctChildSheetRender();
-      } catch (e) { console.error("사진 등록 실패", e); }
-    });
-    if (el("cr-photo-remove")) el("cr-photo-remove").addEventListener("click", () => { crState.name = el("cr-name").value; crState.date = el("cr-date").value; crState.photo = null; acctChildSheetRender(); });
     if (el("cr-province")) {
       const fill = () => {
         const pv = regionsData.provinces.find((x) => x.code === el("cr-province").value);
@@ -1134,7 +1119,7 @@
     if (btn.disabled) return;
     btn.disabled = true;
     btn.textContent = N.saving;
-    const gender = crState.gender, photo = crState.photo, kind = crState.kind;
+    const kind = crState.kind;
     const orders = ["first", "second", "third", "fourthPlus"];
     setLandingStage(kind); // 옛 폼의 날짜 종류(landingStage) — handleSubmit 이 profile.stage 로 쓴다
     el("childName").value = name;
@@ -1152,13 +1137,7 @@
       acctChildSheetError(N.errDate);
       return;
     }
-    if (gender === "M" || gender === "F" || photo) {
-      if (gender === "M" || gender === "F") profile.gender = gender;
-      if (photo) profile.photoDataUrl = photo;
-      saveProfile(profile);
-      if (photo) { pushProfileToFamily(); done.then(() => pushProfileToFamily()); } // 가족코드가 아직 없으면 생긴 뒤 한 번 더
-      await buildAndRender();
-    }
+    done.then(() => { if (familyCode && profile && profile.name === name) addCreatedCode(familyCode); }).catch(() => {}); // 내가 만든 아이(삭제 가능)
     if (modalMode === "child-register") closeDetail();
   }
 
@@ -1169,9 +1148,13 @@
     return typeof acctEnabled === "function" && acctEnabled() && !!p && p.stage !== "pregnant" && ageInMonths(p.birthDate, new Date()) >= 36;
   }
   const acct36Active = () => acct36Child(profile);
-  // 36개월 이상은 자동(AUTO) 일정이 없다: 일정 계산을 빈 목록으로 대신한다(schedule.js 의 buildSchedule 은 그대로, 36개월 미만·OFF 는 그대로 호출).
-  function buildSchedule(p, d, c) {
-    return acct36Child(p) ? [] : window.buildSchedule(p, d, c);
+  // 36개월 이상의 자동(AUTO) 일정: 항목별 허용 목록(data/policy/auto-after36.json)에 있는 것만 보인다(ChildTimeline.isEventVisible 의 autoAfter36 판정). 다가오는 항목은 홈 카드·날짜 시트에 '자동' 표시로 나온다.
+  /** 36개월 이상 아이에게 보일 자동 일정(완료·미해당 제외) — 오늘 이후 가까운 순. limit 없으면 전부. */
+  function acct36AutoItems(limit) {
+    if (!acct36Active()) return [];
+    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    const list = visibleSchedule(true).filter((e) => !completed[e.id] && (e.deadlineDate || e.date) >= t0).sort((a, b) => a.date - b.date);
+    return limit ? list.slice(0, limit) : list;
   }
   const A36 = { hideDone: (() => { try { return localStorage.getItem("hannun_a36_hidedone") === "1"; } catch (e) { return false; } })(), adding: false, editId: null, menuId: null, press: null, swallow: false };
   const acct36LinkKey = () => (typeof usActiveChildKey === "function" && usActiveChildKey()) || "";
@@ -1270,7 +1253,7 @@
   };
 
   /** 홈·할 일 탭이 다시 그려야 하는지 비교하는 표식: 가족 카드 + 할 일 목록 + 준비 상태(가구·아이 연결 — 첫 등록 직후에는 가족코드·링크가 조금 늦게 생긴다). */
-  const acct36Sig = () => usHomeCardHtml({ family: true }) + usAutoLinkSig() + `|ready:${acct36CanTodo()}:${acct36Keys().join(",")}|` + JSON.stringify(acct36All().map((d) => [d.id, d.title, d.done, d.order]));
+  const acct36Sig = () => usHomeCardHtml({ family: true }) + usAutoLinkSig() + `|auto:${acct36AutoItems(3).map((e) => e.id).join(",")}|ready:${acct36CanTodo()}:${acct36Keys().join(",")}|` + JSON.stringify(acct36All().map((d) => [d.id, d.title, d.done, d.order]));
   // 첫 아이 등록 직후: 가족코드 생성(ensureFamilyCode) 뒤 가구에 아이 링크가 생기거나 가구가 시작되는 순간 할 일 화면을 다시 그린다.
   const hhLinkNewChildBase = hhLinkNewChild;
   hhLinkNewChild = function hhLinkNewChild() {
@@ -1291,7 +1274,8 @@
     const list = acct36All();
     const familyHtml = typeof usHomeCardHtml === "function" ? usHomeCardHtml({ family: true }) : "";
     us.homeSig36 = acct36Sig();
-    wrap.innerHTML = Over36View.renderHome({ kids, name: childDisplayName(), familyHtml, todos: ChildTodos.homeLines(list, 3), canTodo: acct36CanTodo() });
+    const autoItems = acct36AutoItems(3).map((e) => ({ id: e.id, title: e.title, dateLabel: e.dateLabel }));
+    wrap.innerHTML = Over36View.renderHome({ kids, name: childDisplayName(), familyHtml, autoItems, todos: ChildTodos.homeLines(list, 3), canTodo: acct36CanTodo() });
   }
   function acct36RenderTodoTab(focusSel) {
     const tab = el("tab-checklist");
@@ -1340,11 +1324,14 @@
     const day = usBuildModel(iso, iso).days.get(iso);
     // 시간이 있는 일정을 시간순으로 먼저, 종일은 그 아래
     const occs = ((day && day.user) || []).slice().sort((x, y) => (x.allDay ? 1 : 0) - (y.allDay ? 1 : 0) || String(x.startTime || "").localeCompare(String(y.startTime || "")));
-    return occs.map((o) => {
+    // 달력 칸에 올라간 항목(지원금 신청 시작 fixed + 그날로 추천된 항목)과 같은 기준으로 고른다 — 칸에는 있는데 시트는 비는 일이 없게(calendarDayItems 공용)
+    const dayItems = calendarDayItems(new Date(iso + "T00:00:00"));
+    const autoRows = [...dayItems.fixed, ...dayItems.planned.filter((e) => !dayItems.fixed.includes(e))].map((e) => ({ autoId: e.id, title: e.title, allDay: true, startTime: "", color: "", done: false, sub: e.dateLabel || "", auto: true }));
+    return autoRows.concat(occs.map((o) => {
       const doc = usDocById(o.scheduleId);
       const rep = doc && doc.recurrence ? UserScheduleView.repeatSummary(doc.recurrence) : "";
       return { scheduleId: o.scheduleId, key: o.key, title: o.title, allDay: !!o.allDay, startTime: o.startTime || "", color: UserScheduleView.occurrenceColor(o, usLinks()), done: o.status === "DONE", sub: [rep, o.location, o.assigneeLabel ? `담당 ${o.assigneeLabel}` : ""].filter(Boolean).join(" · ") };
-    });
+    }));
   }
   function acct36OpenDay(date) {
     if (!acct36Active() || !usActive()) return;
@@ -1372,6 +1359,12 @@
     if (!acct36Active()) return;
     const t = ev.target;
     if (A36.swallow) { A36.swallow = false; if (t.closest && t.closest("[data-a36-row]")) return; }
+    const autoEl = t.closest && t.closest("[data-a36-auto]");
+    if (autoEl) { // 자동(AUTO) 일정 — 내 일정·할 일 메모장과 섞이지 않게 기존 상세 시트로 연다
+      const e = schedule.find((x) => x.id === autoEl.dataset.a36Auto);
+      if (e) { ev.preventDefault && ev.preventDefault(); openDetail(e); }
+      return;
+    }
     const act = t.closest && t.closest("[data-a36]");
     const tog = t.closest && t.closest("[data-a36-toggle]");
     const chip = t.closest && t.closest("#home-body [data-home-child]");
@@ -1616,6 +1609,27 @@
     }
   }
 
+  /**
+   * 달력 아래 '혜택은 신청 시작일 · 그 외는 추천일' 안내: 자동 일정이 실제로 달력에 올라오는 경우에만 보인다.
+   * 계정 모드: 보려는 아이(칩으로 고른 아이, 없으면 전체) 중 36개월 미만(임신 중·나이 미상 포함)이 있고, '직접 등록한 일정만 보기'로 자동 일정을 끄지 않았을 때.
+   * 가구가 없을 때는 지금 아이가 36개월 미만일 때. 계정 모드가 아니면 예전처럼 항상 보인다.
+   */
+  function calAutoLegendOn() {
+    if (typeof acctEnabled !== "function" || !acctEnabled()) return true;
+    if (typeof usActive !== "function" || !usActive()) return !!profile && !acct36Active();
+    const keys = usLinks().filter((l) => !l.removedAt).map((l) => l.childKey);
+    const sel = UserScheduleView.normalizeSelection(usSel(), usLinks(), usMembers(), usSelOpts());
+    const picked = sel.filter((id) => id.startsWith("CHILD:")).map((id) => id.slice(6));
+    const target = picked.length ? picked : keys;
+    const under36 = target.some((k) => { const a = usChildAge(k); return !(typeof a === "number" && a >= 36); });
+    if (!under36 && !(profile && visibleSchedule(true).length)) return false; // 36개월 이상도 허용된 자동 일정이 있으면 범례가 필요하다
+    return UserScheduleView.toModelFilter(usSel(), us.onlyUser, usLinks(), usMembers(), usSelOpts()).showAuto !== false;
+  }
+  function calUpdateKindLegend() {
+    const box = el("cal-kind-legend");
+    if (box) box.classList.toggle("hidden", !calAutoLegendOn());
+  }
+
   function renderCalLegend() {
     el("cal-legend").innerHTML = Object.values(CATEGORY_META)
       .map((g) => `<span class="cal-legend-item"><span class="dot" style="background:${g.color}"></span>${g.label}</span>`)
@@ -1731,6 +1745,7 @@
     el("calendar-title").textContent = `${year}년 ${month + 1}월`;
     computeCalendarDays();
     renderCalLegend();
+    calUpdateKindLegend();
     renderCalendarProgress();
 
     const firstDay = new Date(year, month, 1);
@@ -3702,7 +3717,7 @@
       } else if (action === "confirm-create") {
         hh.view = "creating";
         hhRender();
-        const r = await HouseholdSync.createHousehold({ firstChild: familyCode ? { familyCode, displayName: childDisplayName() } : undefined });
+        const r = await HouseholdSync.createHousehold({ firstChild: familyCode ? { familyCode, displayName: childDisplayName(), ...usCreatorField() } : undefined, ...(acctEnabled() ? { members: [] } : {}) });
         if (!r.ok) throw new Error(r.reason || "create-failed");
         hhSetJoined(r.householdId, r.code);
         hh.notice = { kind: "created" };
@@ -3724,7 +3739,7 @@
         const m = HouseholdSync.getMirror(hh.hid);
         if (familyCode && !HouseholdView.isChildLinked(m, familyCode)) {
           const order = Object.keys((m && m.children) || {}).length + 1;
-          const w = await HouseholdSync.addChild(hh.hid, { familyCode, displayName: childDisplayName(), order });
+          const w = await HouseholdSync.addChild(hh.hid, { familyCode, displayName: childDisplayName(), order, ...usCreatorField() });
           if (!w.ok) throw new Error(w.reason || "link-failed");
         }
         hh.view = "active";
@@ -3779,7 +3794,7 @@
       console.warn("이 기기 사용자를 저장하지 못했어요(저장소 사용 불가).", e);
     }
   }
-  const memState = () => ({ acctMode: acctEnabled(), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt), enabled: hhEnabled(), hasHousehold: !!(hh.hid && hh.code), members: usMembers(), activeMemberId: memActiveId(), view: mem.view, form: mem.form, deleteId: mem.deleteId, saving: mem.saving });
+  const memState = () => ({ acctMode: acctEnabled(), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt), ownChildKeys: usLinks().filter((l) => !l.removedAt && usIsOwnChild(l)).map((l) => l.childKey), enabled: hhEnabled(), hasHousehold: !!(hh.hid && hh.code), members: usMembers(), activeMemberId: memActiveId(), view: mem.view, form: mem.form, deleteId: mem.deleteId, saving: mem.saving });
   function memRender() {
     const slot = el("members-slot");
     if (!slot || !hhEnabled()) return;
@@ -3828,6 +3843,8 @@
         mem.view = "delete";
       } else if (action === "ask-remove-child") {
         return usChipDelAsk(`CHILD:${id}`); // 아이 빼기: 확인 시트(G6 문구 재사용)
+      } else if (action === "ask-delete-child") {
+        return usChipDelAsk(`CHILD_DELETE:${id}`); // 아이 삭제(내가 만든 아이만): 일정·할 일까지 함께 지우는 확인 시트
       } else if (action === "cancel") {
         mem.view = "list"; mem.form = null; mem.deleteId = null;
       } else if (action === "save") {
@@ -3992,7 +4009,7 @@
       try {
         const probe = await hhProbeRules();
         if (probe !== "ok") throw Object.assign(new Error("probe"), { code: probe === "denied" ? "permission-denied" : "network" });
-        const r = await HouseholdSync.createHousehold({ firstChild: familyCode ? { familyCode, displayName: childDisplayName() } : undefined });
+        const r = await HouseholdSync.createHousehold({ firstChild: familyCode ? { familyCode, displayName: childDisplayName(), ...usCreatorField() } : undefined, ...(acctEnabled() ? { members: [] } : {}) });
         if (!r.ok) throw new Error(r.reason || "create-failed");
         hhSetJoined(r.householdId, r.code);
         onb.code = r.code;
@@ -4051,7 +4068,7 @@
     if (!hh.hid) return;
     const m = HouseholdSync.getMirror(hh.hid);
     const order = Object.keys((m && m.children) || {}).length + 1;
-    HouseholdSync.addChild(hh.hid, { familyCode, displayName: childDisplayName(), order }).catch((e) => console.error("아이 링크 생성 실패", e));
+    HouseholdSync.addChild(hh.hid, { familyCode, displayName: childDisplayName(), order, ...usCreatorField() }).catch((e) => console.error("아이 링크 생성 실패", e));
   }
   function hhSetEntryMessage(text) {
     const e = el("code-error");
@@ -4367,6 +4384,7 @@
   // ── F2 주 보기 끝 ───────────────────────────────────────────────────────────────
   /** 캘린더 위(개수 줄·필터·범례)와 그리드 아래(이번 달 기간 일정) 영역. 가구가 없으면 비워 둔다. */
   function usRenderCalendarSlots(model) {
+    calUpdateKindLegend(); // 칩 선택·토글이 바뀌면 안내 문구 조건도 다시 본다
     if (!hhEnabled()) return;
     usRenderViewToggle();
     const top = el("us-filter-slot");
@@ -4471,6 +4489,7 @@
   function usKidsAre36Plus() {
     if (typeof acctEnabled !== "function" || !acctEnabled()) return false;
     const keys = usLinks().filter((l) => !l.removedAt).map((l) => l.childKey);
+    if (profile && visibleSchedule(true).length) return false; // 허용된 자동 일정이 있으면 '직접 입력만 보기' 등이 의미가 있다
     return keys.length > 0 && keys.every((k) => { const a = usChildAge(k); return typeof a === "number" && a >= 36; });
   }
   // G21: 날짜 상세 패널의 '직접 입력' 뱃지는 36개월 이상 판정이면 뺀다(패널을 그린 뒤 DOM 에서 지운다 — 원래 함수 본문은 그대로).
@@ -4709,8 +4728,88 @@
       const l = usLinks().find((x) => x.childKey === key && !x.removedAt);
       if (!l) return;
       us.chipDel = { kind: "CHILD", id: key, name: l.displayName || "", blocked: usActiveChildKey() === key };
+    } else if (kind === "CHILD_DELETE") {
+      const l = usLinks().find((x) => x.childKey === key && !x.removedAt);
+      if (!l || !usIsOwnChild(l)) return; // 내가 만들지 않은 아이는 삭제 대상이 아니다
+      const w = usChildDeleteWork(key);
+      us.chipDel = { kind: "CHILD_DELETE", id: key, name: l.displayName || "", current: usActiveChildKey() === key, eventCount: w.events.length, todoCount: w.todos.length };
     } else return;
     usChipDelShow();
+  }
+  /**
+   * 아이 삭제 때 함께 지울 것(서버에서 진짜 삭제): 이 아이만 대상인 일정(이미 소프트 삭제한 것 포함)·이 아이 할 일(링크키 또는 familyCode, 소프트 삭제 포함)·
+   * 아이 문서(families/{코드}: 프로필·완료·직접 기록 — 같은 코드를 쓰는 다른 살아 있는 링크가 없을 때만)·링크(같은 코드의 분리된 옛 링크 포함).
+   * 여러 아이 공동 일정은 지우지 않고 이 아이만 대상에서 뺀다(shared). events/todos 개수는 사용자에게 보이는(살아 있는) 것만 센다.
+   */
+  function usChildDeleteWork(key) {
+    const link = usLinks().find((x) => x.childKey === key);
+    const code = link && link.familyCode;
+    const refs = usDocs().filter((d) => d.scope === "CHILD" && Array.isArray(d.childKeys) && d.childKeys.includes(key));
+    const eventDocs = refs.filter((d) => d.childKeys.length === 1);
+    const shared = refs.filter((d) => d.childKeys.length > 1 && d.deletedAt == null);
+    const todoDocs = HouseholdSync.getTodos(hh.hid).filter((t) => t.childKey === key || (code && t.childKey === code));
+    const sameCode = code ? usLinks().filter((x) => x.childKey !== key && x.familyCode === code) : [];
+    const keepFamily = sameCode.some((x) => !x.removedAt);
+    return {
+      events: eventDocs.filter((d) => d.deletedAt == null), eventDocs, shared,
+      todos: todoDocs.filter((t) => t.deletedAt == null), todoDocs,
+      familyCode: code && !keepFamily ? code : null,
+      linkKeys: [key, ...sameCode.filter((x) => x.removedAt).map((x) => x.childKey)],
+    };
+  }
+  /** 삭제 실패 원인을 사용자가 이해할 문구로: 규칙 미배포·권한 없음(permission-denied) / 네트워크. */
+  const usDeleteFailNote = (reason) => (reason === "permission-denied" ? UserScheduleView.MSG.chipDelDeniedNote : UserScheduleView.MSG.chipDelNetworkNote);
+  const usDeleteFail = (reason) => Object.assign(new Error("child-delete-" + reason), { reason });
+  /**
+   * 아이 삭제 실행(되돌릴 수 없다). 순서: 공동 일정에서 이 아이 빼기 → 일정·할 일 삭제 → 아이 문서 삭제 → 링크 삭제(마지막).
+   * 링크를 마지막에 지우므로 중간에 실패해도 아이가 목록에 남아 다시 시도할 수 있고, 이미 지운 문서는 건너뛴다(서버도 없는 문서의 삭제를 성공으로 본다).
+   * 실패하면 { reason } 이 달린 오류를 던진다. 성공하면 이 기기의 아이 목록·표식도 정리한다.
+   */
+  async function usChildDeleteRun(key) {
+    const l = usLinks().find((x) => x.childKey === key);
+    const w = usChildDeleteWork(key);
+    const now = Date.now();
+    for (const d of w.shared) {
+      const p = UserSchedule.buildPatch(UserScheduleView.stripId(d), { childKeys: d.childKeys.filter((k) => k !== key) }, now);
+      const r = p.ok ? await HouseholdSync.patchSchedule(hh.hid, d.id, p.patch) : null;
+      if (!r || !r.ok) throw usDeleteFail("network");
+    }
+    const hard = async (path) => { const r = await HouseholdSync.hardDelete(hh.hid, path); if (!r || !r.ok) throw usDeleteFail((r && r.reason) || "network"); };
+    for (const d of w.eventDocs) await hard(`households/${hh.hid}/schedules/${d.id}`);
+    for (const t of w.todoDocs) await hard(`households/${hh.hid}/todos/${t.id}`);
+    if (w.familyCode) {
+      try { await FamilySync.deleteFamily(w.familyCode); } catch (e) { throw usDeleteFail(e && e.code === "permission-denied" ? "permission-denied" : "network"); }
+    }
+    for (const k of w.linkKeys) await hard(`households/${hh.hid}/children/${k}`);
+    if (l && l.familyCode) {
+      removeCreatedCode(l.familyCode);
+      try {
+        localStorage.setItem(CHILDREN_KEY, JSON.stringify(loadChildren().filter((c) => c.code !== l.familyCode)));
+        const births = JSON.parse(localStorage.getItem(CHILD_BIRTHS_KEY) || "{}") || {};
+        delete births[l.familyCode];
+        localStorage.setItem(CHILD_BIRTHS_KEY, JSON.stringify(births));
+      } catch (e) {}
+    }
+  }
+  /**
+   * 지금 보고 있는 아이를 지울 때: 서버 삭제 전에 그 아이 문서 구독을 멈추고(지운 문서를 다시 쓰지 않게), 삭제가 끝나면 남은 아이 중 첫째(order 순)로 전환한다.
+   * 남은 아이가 없으면 아이 없는 계정 상태(배너 한 줄)로 간다. 삭제가 실패하면 구독을 되살려 그대로 둔다.
+   */
+  async function usChildDeleteCurrent(key) {
+    const wasCurrent = usActiveChildKey() === key;
+    if (wasCurrent && unsubscribeFamily) { unsubscribeFamily(); unsubscribeFamily = null; }
+    try {
+      await usChildDeleteRun(key);
+    } catch (e) {
+      if (wasCurrent && familyCode) startListeningFamily();
+      throw e;
+    }
+    if (!wasCurrent) return;
+    const next = usLinks().filter((x) => !x.removedAt && x.childKey !== key).sort((a, b) => (a.order || 0) - (b.order || 0) || (a.addedAt || 0) - (b.addedAt || 0))[0];
+    if (next && next.familyCode) { await switchToChild(next.familyCode); return; }
+    applyNewChildReset(); // 마지막 아이: 이 기기의 프로필·완료·기록·코드만 비우고(가구 미러·대기열·계정은 그대로) 빈 화면으로
+    el("view-landing").classList.add("hidden");
+    showEmptyHome();
   }
   async function usChipDelClick(ev) {
     const b = ev.target.closest("[data-us-chipdel-act]");
@@ -4721,9 +4820,12 @@
     d.busy = true; d.error = "";
     usChipDelShow();
     try {
-      const r = d.kind === "MEMBER" ? await HouseholdSync.removeMember(hh.hid, d.id) : await HouseholdSync.removeChild(hh.hid, d.id);
-      if (!r || !r.ok) throw new Error((r && r.reason) || "chip-delete-failed");
-      const cid = `${d.kind}:${d.id}`;
+      if (d.kind === "CHILD_DELETE") await usChildDeleteCurrent(d.id);
+      else {
+        const r = d.kind === "MEMBER" ? await HouseholdSync.removeMember(hh.hid, d.id) : await HouseholdSync.removeChild(hh.hid, d.id);
+        if (!r || !r.ok) throw new Error((r && r.reason) || "chip-delete-failed");
+      }
+      const cid = `${d.kind === "CHILD_DELETE" ? "CHILD" : d.kind}:${d.id}`;
       us.selection = us.selection.filter((x) => x !== cid); // 지운 칩이 선택돼 있었다면 선택에서도 뺀다
       if (d.kind === "MEMBER") {
         let saved = "";
@@ -4737,7 +4839,7 @@
     } catch (e) {
       console.error("칩 지우기 실패", e);
       d.busy = false;
-      d.error = UserScheduleView.MSG.actionFail;
+      d.error = d.kind === "CHILD_DELETE" ? usDeleteFailNote(e && e.reason) : UserScheduleView.MSG.actionFail;
       usChipDelShow();
     }
   }
@@ -5485,6 +5587,32 @@
     const r = await acct.sync.restore(uid);
     return !!(r.ok && r.account && r.account.householdCode);
   }
+  // 내가 만든 아이: 이 기기에서 아이 등록 시트로 만들었거나 기기 아이를 가족 캘린더에 연결한 코드(삭제 버튼은 이 아이에게만 있다).
+  // 서버 링크(households/{hid}/children)에는 만든 사람 필드가 없고 규칙이 새 필드를 막아, 같은 계정의 다른 기기에서는 이 표시가 없다.
+  const CREATED_KEY = "hannun_created_children";
+  function loadCreatedCodes() {
+    try { const l = JSON.parse(localStorage.getItem(CREATED_KEY)); return Array.isArray(l) ? l : []; } catch (e) { return []; }
+  }
+  function addCreatedCode(code) {
+    if (!code) return;
+    try { const l = loadCreatedCodes(); if (!l.includes(code)) { l.push(code); localStorage.setItem(CREATED_KEY, JSON.stringify(l.slice(-50))); } } catch (e) {}
+  }
+  /** 아이 링크를 만들 때 붙이는 만든 사람(로그인한 계정 모드에서만). 규칙은 createdByUid == request.auth.uid 일 때만 허용한다. */
+  function usCreatorField() {
+    const uid = typeof acctEnabled === "function" && acctEnabled() && acct.user && acct.user.uid;
+    return uid ? { createdByUid: uid } : {};
+  }
+  /** 내가 만든 아이인가: 링크의 createdByUid 가 내 uid 면 예, 다른 uid 면 아니오. 필드가 없는 옛 링크만 이 기기에서 만든 아이 표식(localStorage)으로 보조 판정한다. */
+  function usIsOwnChild(link) {
+    if (!link) return false;
+    const uid = typeof acctEnabled === "function" && acctEnabled() && acct.user ? acct.user.uid : null;
+    if (link.createdByUid) return !!uid && link.createdByUid === uid;
+    return loadCreatedCodes().includes(link.familyCode);
+  }
+  function removeCreatedCode(code) {
+    try { localStorage.setItem(CREATED_KEY, JSON.stringify(loadCreatedCodes().filter((c) => c !== code))); } catch (e) {}
+  }
+
   // ── D4 기존 기기 데이터 이전: 이 기기의 아이·가구를 지우지 않고 계정 가구에 연결한다(서버 쓰기는 addChild·계정 문서뿐). ──
   const ACCT_KEPT_KEY = "hannun_migrate_kept"; // '내 계정 가족 쓰기'를 고른 아이 코드(다시 묻지 않는다)
   const acctReadKept = () => {
@@ -5509,8 +5637,9 @@
     const m = HouseholdSync.getMirror(hid);
     let order = Object.keys((m && m.children) || {}).length;
     for (const c of kids) {
-      const w = await HouseholdSync.addChild(hid, { familyCode: c.code, displayName: c.name, order: ++order });
+      const w = await HouseholdSync.addChild(hid, { familyCode: c.code, displayName: c.name, order: ++order, ...usCreatorField() });
       if (!w || !w.ok) return { ok: false };
+      addCreatedCode(c.code);
     }
     return { ok: true };
   }

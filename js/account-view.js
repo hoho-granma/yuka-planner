@@ -532,24 +532,18 @@
     if (tab === "record") return `${head}<h2 class="acct-nc-ttl">${esc(N.recordTitle)}</h2><p class="acct-nc-hint">${esc(N.recordHint)}</p>${ghosts}`;
     return `${head}${ghosts}`;
   }
-  /** 아이 등록 바텀시트(시안 A, 한 장): 이름 → 날짜 종류 토글 → 날짜 → 미리보기 → 성별(선택) → 사진(선택) → 저장. 날짜 입력칸 마크업(dateMarkup)은 app 이 넣는다. */
+  /** 아이 등록 바텀시트(시안 A, 한 장): 이름 → 날짜 종류 토글 → 날짜 → 미리보기 → 저장(성별·사진은 묻지 않는다). 날짜 입력칸 마크업(dateMarkup)은 app 이 넣는다. */
   function renderChildSheet(state) {
     const s = state || {}, N = MSG.nc;
     const kind = s.kind === "pregnant" ? "pregnant" : "born";
-    const gender = s.gender || "";
     const region = s.needRegion
       ? `<div class="lb acct-cs-lb">${esc(N.regionProvince)}</div><select id="cr-province" class="acct-cs-sel">${(s.regions || []).map((p) => `<option value="${esc(p.code)}">${esc(p.name)}</option>`).join("")}</select><select id="cr-district" class="acct-cs-sel"></select>`
       : "";
-    const photo = s.photo
-      ? `<span class="avatar acct-cs-ph"><img src="${esc(s.photo)}" alt="" /></span><button type="button" class="btn-photo" id="cr-photo-btn">${esc(N.photoChange)}</button><button type="button" class="btn-photo-remove" id="cr-photo-remove">${esc(N.photoRemove)}</button>`
-      : `<span class="acct-cs-ph acct-cs-ph-empty" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><button type="button" class="btn-photo" id="cr-photo-btn">${esc(N.photoAdd)}</button>`;
     return `<div class="acct-cs" data-acct-child-sheet="1"><div class="acct-cs-grab"></div><div class="acct-cs-head"><b>${esc(N.sheetTitle)}</b></div>
       <div class="lb acct-cs-lb"><label for="cr-name">${esc(N.nameLabel)}</label> <small>${esc(N.nameHint)}</small></div><input type="text" id="cr-name" class="acct-cs-inp" maxlength="${CHILD_NAME_MAX}" placeholder="${esc(N.namePlaceholder)}" value="${esc(s.name || "")}" />
       <div class="lb acct-cs-lb">${esc(N.dateLabel)}</div><div class="acct-cs-tg" role="radiogroup" aria-label="${esc(N.dateLabel)}"><button type="button" role="radio" data-cr-kind="born" aria-checked="${kind === "born"}" class="${kind === "born" ? "on" : ""}">${esc(N.kindBorn)}</button><button type="button" role="radio" data-cr-kind="pregnant" aria-checked="${kind === "pregnant"}" class="${kind === "pregnant" ? "on" : ""}">${esc(N.kindDue)}</button></div>
       <div class="acct-cs-date" id="cr-date-slot">${s.dateMarkup || ""}</div><div class="acct-cs-pv hidden" id="cr-preview" aria-live="polite"><b></b><span></span></div>
-      <div class="lb acct-cs-lb">${esc(N.genderLabel)} <small>${esc(N.optional)}</small></div><div class="acct-cs-gch" role="radiogroup" aria-label="${esc(N.genderLabel)}">${N.genders.map(([v, l]) => `<button type="button" role="radio" data-cr-gender="${esc(v)}" aria-checked="${gender === v}" class="${gender === v ? "on" : ""}">${esc(l)}</button>`).join("")}</div>
       ${region}
-      <div class="lb acct-cs-lb">${esc(N.photoLabel)} <small>${esc(N.optional)}</small></div><div class="acct-cs-phr">${photo}<input type="file" accept="image/*" id="cr-photo-input" class="hidden" /><small>${esc(N.photoHint)}</small></div>
       <p class="acct-err hidden" id="cr-error" role="alert"></p>
       <div class="acct-cs-foot"><button type="button" class="acct-cs-save" id="cr-save">${esc(N.save)}</button></div></div>`;
   }

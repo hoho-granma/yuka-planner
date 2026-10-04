@@ -166,7 +166,7 @@ const mk = (flag, extra = {}) => {
     const cd = adapter.docs.get("householdCodes/" + r.code);
     assert.deepStrictEqual(cd, { householdId: r.householdId, active: true, createdAt: cd.createdAt, revokedAt: null });
     const kid = adapter.docs.get(`households/${r.householdId}/children/${r.childKey}`);
-    assert.deepStrictEqual(Object.keys(kid).sort(), ["addedAt", "displayName", "familyCode", "order", "v"]);
+    assert.deepStrictEqual(Object.keys(kid).sort(), ["addedAt", "colorKey", "displayName", "familyCode", "order", "v"]);
     const members = [...adapter.docs.keys()].filter((k) => k.includes("/members/"));
     assert.strictEqual(members.length, 2);
     assert.strictEqual(storage.dump().get("hannun_household_code"), r.code);

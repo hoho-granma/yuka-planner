@@ -13,10 +13,12 @@ const V = require("../js/user-schedule-view.js");
 const US = require("../js/user-schedule.js");
 const CM = require("../js/calendar-model.js");
 const HNLogic = require("../js/hn-logic.js");
+// 이전 커밋의 home.js 는 classifyHomeItems 결과의 period(기간형 AUTO)를 읽는다. 기간형 AUTO 를 없앤 뒤에도 이전 화면을 같은 입력으로 돌려 비교하려고 빈 period 를 얹어 준다.
+const HNLogicCompat = { ...HNLogic, classifyHomeItems: (...a) => ({ period: [], ...HNLogic.classifyHomeItems(...a) }) };
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
 const BASE = "84286f3"; // C2-a 커밋(이번 변경 직전)
 // 칩 달력 개편으로 팔레트가 파스텔로 바뀌었다 — 이전 커밋의 출력도 새 색으로 바꿔 비교한다(그 밖의 마크업은 글자까지 같아야 한다)
-const RECOLOR = (s) => String(s).replace(/#ff7a59/g, "#ffc46b").replace(/#14b8a6/g, "#7fe0b3").replace(/#ec4899/g, "#ff9a9a").replace(/#a16207/g, "#86b6ff").replace(/#6b5b53/g, "#c9b8ff");
+const RECOLOR = (s) => String(s).replace(/#ff7a59/g, "#ffc46b").replace(/#14b8a6/g, "#7fe0b3").replace(/#ec4899/g, "#ff8a7a").replace(/#a16207/g, "#86b6ff").replace(/#6b5b53/g, "#c9b8ff");
 const baseSrc = (f) => execSync(`git show ${BASE}:${f}`, { cwd: ROOT, encoding: "utf8" });
 let passed = 0, started = 0, finished = 0;
 function test(name, fn) {
@@ -49,7 +51,7 @@ test("버튼·예약됨·폼 안내·배지 문구가 확정본과 같다", () =
 });
 
 console.log("폼(autoRef 잠금)");
-const LINKS = [{ childKey: "c1", displayName: "은찬", order: 1, familyCode: "AAA111" }, { childKey: "c2", displayName: "둘째", order: 2, familyCode: "BBB222" }];
+const LINKS = [{ childKey: "c1", displayName: "은찬", order: 1, familyCode: "AAA111", colorKey: "p1" }, { childKey: "c2", displayName: "둘째", order: 2, familyCode: "BBB222", colorKey: "p2" }];
 const af = () => V.newForm({ date: "", activeChildKey: "c1", links: LINKS, defaultAssigneeId: "m1", autoRef: "VX-DTAP__dose-2", title: "DTaP 접종 (2차)" });
 const render = (f, o) => V.renderForm(f, LINKS, { members: [{ memberId: "m1", label: "엄마" }], messages: [], ...(o || {}) });
 test("newForm: autoRef 가 있으면 제목·분류(MEDICAL)·아이·담당이 채워지고 날짜·시각은 비어 있다(I9)", () => {
@@ -276,7 +278,7 @@ test("홈: ctx 에 autoLinkText 가 없거나 ''면 홈 HTML 이 이전 커밋�
   const run = (src, extra) => {
     const out = { html: null };
     const wrap = { set innerHTML(v) { out.html = v; }, get innerHTML() { return out.html; }, querySelectorAll: () => [] };
-    const sb = { HNLogic, document: { getElementById: (id) => (id === "home-body" ? wrap : null) }, window: {} };
+    const sb = { HNLogic: HNLogicCompat, document: { getElementById: (id) => (id === "home-body" ? wrap : null) }, window: {} };
     vm.createContext(sb);
     vm.runInContext(src, sb);
     const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

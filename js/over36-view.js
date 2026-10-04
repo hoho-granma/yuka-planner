@@ -25,6 +25,8 @@
     pressHint: "완료한 줄은 제자리에서 줄이 그어져요. 길게 누르면 메뉴가 떠요.",
     menuEdit: "고치기", menuTop: "맨 위로", menuDel: "삭제", menuClose: "닫기",
     doneLabel: "완료",
+    autoBadge: "자동",
+    homeAutoTitle: "곧 챙길 자동 일정",
     noHousehold: "가족 캘린더가 만들어지면 할 일을 적을 수 있어요.",
     preparing: "준비 중이에요… 잠시만 기다려 주세요.",
     tooLong: "100자 이내로 적어 주세요.",
@@ -67,8 +69,11 @@
       .map((d) => `<div class="a36-row${d.done ? " done" : ""}" data-a36-row="${esc(d.id)}">${check(d.id, d.done)}<span class="a36-t">${esc(d.title)}</span>${d.done ? `<small>${esc(MSG.doneLabel)}</small>` : ""}</div>`)
       .join("");
     const todo = `<section class="home-sec a36-card" id="a36-home-todo"><div class="home-sec-head"><h3>${esc(MSG.homeTodoTitle(st.name || ""))}</h3><button type="button" class="a36-more" data-a36="todos">${esc(MSG.homeTodoMore)}</button></div>${st.canTodo === false ? `<p class="home-empty-line" data-a36-preparing>${esc(MSG.preparing)}</p>` : `${rows || `<p class="home-empty-line">${esc(MSG.emptyHint)}</p>`}<button type="button" class="a36-add" data-a36="add-home">${esc(MSG.add)}</button>`}</section>`;
+    const autos = (st.autoItems || []).length
+      ? `<section class="home-sec a36-card" id="a36-home-auto"><div class="home-sec-head"><h3>${esc(MSG.homeAutoTitle)}</h3></div>${st.autoItems.map((a) => `<button type="button" class="a36-row a36-auto" data-a36-auto="${esc(a.id)}"><em class="a36-autob">${esc(MSG.autoBadge)}</em><span class="a36-t">${esc(a.title)}</span>${a.dateLabel ? `<small>${esc(a.dateLabel)}</small>` : ""}</button>`).join("")}</section>`
+      : "";
     const quick = `<div class="a36-quick"><small>${esc(MSG.quickTitle)}</small>${MSG.quick.map((q) => `<button type="button" data-a36="quick" data-a36-quick="${esc(q)}">${esc(q)}</button>`).join("")}</div>`;
-    return `${chips}${st.familyHtml || ""}${todo}${quick}`;
+    return `${chips}${st.familyHtml || ""}${autos}${todo}${quick}`;
   }
 
   /** 할 일 탭(메모장형). st: { name, list:[{id,title,done}], hideDone, canTodo, adding, editId } — 입력 줄은 app 이 열고 닫는다(adding=true 면 맨 아래에 입력 줄). */
@@ -98,7 +103,9 @@
   function renderDaySheet(st) {
     const head = `<div class="a36-dhead"><b>${esc(`${st.month}월 ${st.day}일 ${MSG.weekdays[st.weekday]}요일`)}</b><button type="button" class="a36-dadd" data-a36="day-add">${esc(MSG.dayAdd)}</button></div>`;
     const rows = (st.rows || [])
-      .map((r) => `<button type="button" class="a36-tlr${r.done ? " done" : ""}" data-a36-ev="${esc(r.scheduleId)}|${esc(r.key)}">${timeCell(r)}<i style="background:${esc(r.color || "#c9b8ff")}"></i><span class="a36-ti"><b>${esc(r.title)}</b>${r.sub ? `<small>${esc(r.sub)}</small>` : ""}</span></button>`)
+      .map((r) => r.auto
+        ? `<button type="button" class="a36-tlr a36-auto" data-a36-auto="${esc(r.autoId)}">${timeCell(r)}<i style="background:#9aa5b1"></i><span class="a36-ti"><b>${esc(r.title)}</b><small><em class="a36-autob">${esc(MSG.autoBadge)}</em>${r.sub ? ` ${esc(r.sub)}` : ""}</small></span></button>`
+        : `<button type="button" class="a36-tlr${r.done ? " done" : ""}" data-a36-ev="${esc(r.scheduleId)}|${esc(r.key)}">${timeCell(r)}<i style="background:${esc(r.color || "#c9b8ff")}"></i><span class="a36-ti"><b>${esc(r.title)}</b>${r.sub ? `<small>${esc(r.sub)}</small>` : ""}</span></button>`)
       .join("");
     const body = rows || `<div class="a36-dempty"><p>${esc(MSG.dayEmpty(st.month, st.day))}</p><button type="button" class="a36-dadd2" data-a36="day-add">${esc(MSG.dayEmptyAdd)}</button></div>`;
     const nav = `<div class="a36-dnav"><button type="button" data-a36="day-prev" aria-label="이전 날">${esc(MSG.dayPrev(st.prevDay))}</button><span>${esc(MSG.daySwipeHint)}</span><button type="button" data-a36="day-next" aria-label="다음 날">${esc(MSG.dayNext(st.nextDay))}</button></div>`;

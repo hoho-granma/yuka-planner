@@ -92,7 +92,7 @@
           code = intent.joiningCode;
           mirror = r.mirror;
         } else {
-          const r = await household.createHousehold({});
+          const r = await household.createHousehold({ members: [] }); // 기본 '엄마·아빠' 시드 없이 시작 — 구성원은 가입한 '나' 하나
           if (!r || !r.ok) return { ok: false, reason: "network", step: "household" };
           hid = r.householdId;
           code = r.code;

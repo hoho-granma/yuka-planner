@@ -114,7 +114,7 @@ test("H2: 캘린더 칩 줄에서 편집 토글·✕ 를 제거 — 삭제 확�
 console.log("서버 규칙(변경 없이 가능한가)");
 test("firestore.rules: children 은 removedAt 허용 키·members 는 deletedAt 허용 + uid 유지 조건 — 소프트 삭제 업데이트가 규칙을 통과한다", () => {
   const ch = RULES.slice(RULES.indexOf("match /children/{childKey}"), RULES.indexOf("match /members/{memberId}"));
-  assert.ok(ch.includes("'removedAt'") && /allow delete: if false;/.test(ch));
+  assert.ok(ch.includes("'removedAt'") && /allow delete: if resource == null/.test(ch), "H4: 링크 삭제는 만든 사람·구성원만 허용(이미 없는 문서는 재시도 허용)");
   const mem = RULES.slice(RULES.indexOf("match /members/{memberId}"), RULES.indexOf("// [B2]"));
   assert.ok(mem.includes("'deletedAt'") && /function uidOk\(\)/.test(mem));
 });

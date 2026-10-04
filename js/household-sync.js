@@ -28,6 +28,17 @@
   const CODE_CHARS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // 0/O, 1/I/L 제외 (sync.js 와 동일)
   const CODE_LEN = 8;
   const WRITE_ROOTS = ["householdCodes", "households"];
+  // 칩·일정 막대의 대표색 키(p1~p10). 색 값은 user-schedule-view.js 의 PALETTE 와 같은 순서다. 만들 때 한 번 정해 문서에 남기면 이후 바뀌지 않는다.
+  const COLOR_KEYS = Object.freeze(Array.from({ length: 10 }, (_, i) => "p" + (i + 1)));
+  const LEGACY_ROLE_KEY = Object.freeze({ MOM: "p5", DAD: "p4" });
+  /** 아직 가장 적게 쓰인 색 키(같으면 앞 번호). 삭제됐거나 분리된 아이·구성원은 세지 않는다. */
+  function pickColorKey(m) {
+    const live = [...Object.values((m && m.children) || {}).filter((d) => d && !d.removedAt), ...Object.values((m && m.members) || {}).filter((d) => d && !d.deletedAt)];
+    const count = Object.fromEntries(COLOR_KEYS.map((k) => [k, 0]));
+    // colorKey 가 없는 엄마·아빠(옛 가구)는 옛 고정색(엄마 #ff9ec4=p5, 아빠 #7fb8ff≈p4)을 그대로 쓰므로 그 칸을 이미 쓰는 것으로 센다 — 새 구성원 색이 겹치지 않게.
+    live.forEach((d) => { const k = d.colorKey || LEGACY_ROLE_KEY[d.role]; if (count[k] != null) count[k]++; });
+    return COLOR_KEYS.reduce((best, k) => (count[k] < count[best] ? k : best), COLOR_KEYS[0]);
+  }
   const DEFAULT_MEMBERS = [
     { role: "MOM", label: "엄마" },
     { role: "DAD", label: "아빠" },
@@ -49,6 +60,7 @@
         return { exists: d.exists, data: d.exists ? d.data() : null };
       },
       set: (path, data, opts) => refOf(path).set(data, opts),
+      delete: (path) => refOf(path).delete(),
       // update 패치의 값이 null 이면 그 필드를 지운다(UserSchedule.buildPatch 계약). 값이 null 로 저장되지 않는다.
       update: (path, data) => {
         const out = {};
@@ -237,7 +249,8 @@
     }
 
     // ── 가구 생성(지연) ────────────────────────────────────────────────
-    async function createHousehold({ name, firstChild } = {}) {
+    /** members: 처음 만들 구성원 시드(기본 엄마·아빠). 계정 모드는 [] 를 넘겨 구성원을 '나' 하나로 시작한다. */
+    async function createHousehold({ name, firstChild, members } = {}) {
       if (!enabled()) return DISABLED;
       const hid = newId("h");
       const t = now();
@@ -259,7 +272,8 @@
       if (storage) storage.setItem(CODE_KEY, code);
       let childKey = null;
       if (firstChild) childKey = (await addChild(hid, { ...firstChild, order: 1 })).childKey;
-      for (let i = 0; i < DEFAULT_MEMBERS.length; i++) await upsertMember(hid, { ...DEFAULT_MEMBERS[i], order: i + 1 });
+      const seeds = Array.isArray(members) ? members : DEFAULT_MEMBERS;
+      for (let i = 0; i < seeds.length; i++) await upsertMember(hid, { ...seeds[i], order: i + 1, ...(seeds === DEFAULT_MEMBERS ? { legacyColor: true } : {}) }); // 기본 엄마·아빠 시드는 colorKey 없이 — 옛 고정색(엄마 분홍·아빠 파랑) 그대로
       return { ok: true, householdId: hid, code, childKey };
     }
 
@@ -330,11 +344,13 @@
     }
 
     // ── 아이 링크 / 담당자 ────────────────────────────────────────────
-    async function addChild(hid, { familyCode, displayName, order, colorKey }) {
+    /** createdByUid: 이 아이를 만든 계정(로그인한 계정 모드에서만. 규칙이 request.auth.uid 와 같을 때만 허용한다). colorKey 를 주지 않으면 가장 덜 쓰인 색을 정해 남긴다. */
+    async function addChild(hid, { familyCode, displayName, order, colorKey, createdByUid }) {
       if (!enabled()) return DISABLED;
       const childKey = newId("c");
       const payload = { v: 1, familyCode, displayName: displayName || "", order: order || 1, addedAt: now() };
-      if (colorKey) payload.colorKey = colorKey;
+      payload.colorKey = colorKey || pickColorKey(loadMirror(hid));
+      if (createdByUid) payload.createdByUid = String(createdByUid);
       const r = await write(hid, { op: "set", path: `households/${hid}/children/${childKey}`, payload });
       return { ...r, childKey };
     }
@@ -347,16 +363,39 @@
       if (!enabled()) return DISABLED;
       return write(hid, { op: "set", merge: true, path: `households/${hid}/children/${childKey}`, payload: { removedAt: now() } });
     }
-    async function upsertMember(hid, { memberId, role, label, order, colorKey, uid }) {
+    async function upsertMember(hid, { memberId, role, label, order, colorKey, uid, legacyColor }) {
       if (!enabled()) return DISABLED;
       const id = memberId || newId("m");
       const t = now();
       const existing = loadMirror(hid).members[id];
       const payload = { v: 1, role, label, order: order || 1, createdAt: existing ? existing.createdAt : t, updatedAt: t };
       if (colorKey) payload.colorKey = colorKey;
+      else if (legacyColor && LEGACY_ROLE_KEY[role]) { /* 옛 고정색 유지: colorKey 를 남기지 않는다 */ } else if (!existing || (!existing.colorKey && !LEGACY_ROLE_KEY[existing.role])) payload.colorKey = pickColorKey(loadMirror(hid)); // 새 구성원(또는 색이 없는 엄마·아빠 외 기존 구성원)만 정한다 — 이미 있는 색, 옛 엄마·아빠의 고정색은 건드리지 않는다
       if (uid) payload.uid = uid; // D2: 이 구성원을 맡은 계정(없으면 필드를 건드리지 않는다)
       const r = await write(hid, { op: "set", merge: true, path: `households/${hid}/members/${id}`, payload });
       return { ...r, memberId: id };
+    }
+    /**
+     * 진짜 삭제(서버 문서 삭제). 일반 쓰기와 달리 대기열에 넣지 않는다 — 거부되면(규칙 미배포·권한 없음·네트워크) 바로 { ok:false, reason } 로 돌려주고
+     * 미러·대기열은 그대로 둔다(다시 시도할 수 있다). 성공하면 미러에서 빼고, 그 문서를 향한 대기열 쓰기도 버린다(나중에 되살리지 않게).
+     * 이미 없는 문서의 삭제는 서버도 성공으로 본다. reason: "permission-denied" | "network".
+     */
+    async function hardDelete(hid, path) {
+      if (!enabled()) return DISABLED;
+      assertWritablePath(path);
+      try {
+        await getAdapter().delete(path);
+      } catch (e) {
+        return { ok: false, reason: e && e.code === "permission-denied" ? "permission-denied" : "network" };
+      }
+      const seg = path.split("/");
+      const m = loadMirror(hid);
+      if (seg[0] === "households" && seg.length === 4 && m[seg[2]] && typeof m[seg[2]] === "object") delete m[seg[2]][seg[3]];
+      saveMirror(m);
+      const q = loadPending(hid);
+      const kept = q.filter((e) => e.path !== path);
+      if (kept.length !== q.length) savePending(hid, kept);
+      return { ok: true };
     }
     async function removeMember(hid, memberId) {
       if (!enabled()) return DISABLED;
@@ -515,6 +554,8 @@
       addChild,
       updateChild,
       removeChild,
+      hardDelete,
+      pickColorKey,
       upsertMember,
       removeMember,
       createSchedule,
@@ -533,5 +574,5 @@
     };
   }
 
-  return { create, firestoreAdapter, CODE_KEY, WRITE_ROOTS };
+  return { create, firestoreAdapter, CODE_KEY, WRITE_ROOTS, COLOR_KEYS };
 });

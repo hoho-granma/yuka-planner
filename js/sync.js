@@ -147,6 +147,14 @@
     }
   }
 
+  /**
+   * 아이 문서(families/{코드}: 프로필·완료·직접 기록 전부)를 서버에서 지운다. 거부되면 던진다(호출부가 재시도·안내). 이미 없는 문서는 성공으로 본다.
+   * 하위 컬렉션은 쓰지 않는다(v1 구조는 한 문서에 다 들어 있다).
+   */
+  async function deleteFamily(code) {
+    await db.collection("families").doc(String(code).toUpperCase()).delete();
+  }
+
   function listen(code, onChange) {
     return db
       .collection("families")
@@ -172,6 +180,7 @@
     setCompletedEntry,
     removeCompletedEntry,
     updateRecord,
+    deleteFamily,
     listen,
   };
 })();

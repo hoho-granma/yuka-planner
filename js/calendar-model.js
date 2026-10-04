@@ -131,12 +131,14 @@
       });
       let assigneeLabel = null;
       let assigneeRole = null;
+      let assigneeColorKey = null;
       if (o.assigneeMemberId) {
         const m = memberOf.get(o.assigneeMemberId);
         assigneeLabel = m && !m.deletedAt ? m.label : "(삭제된 담당자)";
         assigneeRole = m && !m.deletedAt ? m.role || null : null;
+        assigneeColorKey = m && !m.deletedAt ? m.colorKey || null : null;
       }
-      return { ...o, done: o.status === "DONE", badges, assigneeLabel, assigneeRole };
+      return { ...o, done: o.status === "DONE", badges, assigneeLabel, assigneeRole, assigneeColorKey };
     };
 
     const dayKeys = eachDay(US, range.start, range.end);

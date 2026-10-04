@@ -60,25 +60,25 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
   });
 
   console.log("AccountSync 흐름");
-  await test("신규 가족: accounts 문서 → 가구 생성(코드·시드 구성원) → 엄마 시드 확보(uid) → accounts 에 가구·코드·구성원 기록", async () => {
+  await test("신규 가족: accounts 문서 → 가구 생성(코드, 시드 구성원 없음) → 나 하나만 새 구성원(uid) → accounts 에 가구·코드·구성원 기록", async () => {
     const w = world();
     const r = await w.sync.completeSignup({ user: { uid: "u1" }, intent: intentNew });
-    assert.ok(r.ok && r.created && r.claimedSeed && r.householdCode.length === 8, JSON.stringify(r));
+    assert.ok(r.ok && r.created && !r.claimedSeed && r.householdCode.length === 8, JSON.stringify(r));
     const acc = w.db.docs.get("accounts/u1");
     assert.deepStrictEqual(Object.keys(acc).sort(), ["createdAt", "displayName", "district", "householdCode", "householdId", "memberId", "province", "role", "situation", "updatedAt", "v"]);
     assert.deepStrictEqual([acc.v, acc.displayName, acc.role, acc.situation, acc.householdId, acc.householdCode, acc.memberId], [1, "지은", "MOM", "HAS_CHILD", r.householdId, r.householdCode, r.memberId]);
     const members = [...w.db.docs.entries()].filter(([k]) => k.startsWith(`households/${r.householdId}/members/`)).map(([k, v]) => ({ id: k.split("/").pop(), ...v }));
-    assert.strictEqual(members.length, 2, "시드 2명 그대로(새 구성원 안 늘림)");
-    const mom = members.find((m) => m.role === "MOM"), dad = members.find((m) => m.role === "DAD");
-    assert.deepStrictEqual([mom.id, mom.uid, mom.label, dad.uid], [r.memberId, "u1", "엄마", undefined]);
+    assert.strictEqual(members.length, 1, "구성원은 가입한 '나' 하나뿐 — '아빠' 같은 기본 구성원은 만들지 않는다");
+    assert.deepStrictEqual([members[0].id, members[0].uid, members[0].role, members[0].label, members[0].order], [r.memberId, "u1", "MOM", "지은", 1]);
     assert.ok(w.db.docs.has("householdCodes/" + r.householdCode));
   });
-  await test("합류: 코드로 가구 합류, 아빠 시드 확보 / 같은 role 이 이미 확보됐으면 새 구성원 / 이모님은 새 구성원(라벨=표시 이름)", async () => {
+  await test("합류: 코드로 가구 합류, 아빠는 새 구성원(기본 시드 없음) / 같은 role 이 이미 확보됐으면 새 구성원 / 이모님은 새 구성원(라벨=표시 이름)", async () => {
     const w = world();
     const first = await w.sync.completeSignup({ user: { uid: "u1" }, intent: intentNew });
     const dad = await w.sync.completeSignup({ user: { uid: "u2" }, intent: { email: "d@x.co", displayName: "민수", role: "DAD", joiningCode: first.householdCode } });
-    assert.ok(dad.ok && !dad.created && dad.householdId === first.householdId && dad.claimedSeed);
-    assert.strictEqual(w.db.docs.get(`households/${first.householdId}/members/${dad.memberId}`).uid, "u2");
+    assert.ok(dad.ok && !dad.created && dad.householdId === first.householdId && !dad.claimedSeed);
+    const dadDoc = w.db.docs.get(`households/${first.householdId}/members/${dad.memberId}`);
+    assert.deepStrictEqual([dadDoc.uid, dadDoc.role, dadDoc.label, dadDoc.order], ["u2", "DAD", "민수", 2]);
     const mom2 = await w.sync.completeSignup({ user: { uid: "u3" }, intent: { email: "m2@x.co", displayName: "새엄마", role: "MOM", joiningCode: first.householdCode } });
     const m2 = w.db.docs.get(`households/${first.householdId}/members/${mom2.memberId}`);
     assert.deepStrictEqual([mom2.claimedSeed, m2.role, m2.label, m2.uid, m2.order], [false, "MOM", "새엄마", "u3", 3]);

@@ -135,7 +135,7 @@ const mkHS = (flag = true, extra = {}) => { const adapter = extra.adapter || fak
   await test("규칙 문구: 필수·허용 키가 ChildTodos 와 같고, delete 금지·소프트 삭제·schedules 와 같은 읽기 범위, 기존 블록은 그대로(추가만)", () => {
     assert.deepStrictEqual(REQ.slice().sort(), CT.REQUIRED_KEYS.slice().sort());
     assert.deepStrictEqual(ALLOW.slice().sort(), [...CT.REQUIRED_KEYS, ...CT.OPTIONAL_KEYS].sort());
-    assert.ok(/allow get, list: if true;/.test(block) && /allow delete: if false;/.test(block) && /allow create: if todoOk\(request\.resource\.data\);/.test(block));
+    assert.ok(/allow get, list: if true;/.test(block) && /allow delete: if resource == null \|\| isMemberOf\(householdId\);/.test(block) && /allow create: if todoOk\(request\.resource\.data\);/.test(block));
     assert.ok(/request\.resource\.data\.childKey == resource\.data\.childKey/.test(block) && /request\.resource\.data\.createdAt == resource\.data\.createdAt/.test(block));
     assert.ok(/d\.title\.size\(\) >= 1 && d\.title\.size\(\) <= 100/.test(block) && /d\.childKey\.size\(\) >= 1 && d\.childKey\.size\(\) <= 60/.test(block));
     assert.ok(RULES.includes("match /households/{householdId}/schedules/{scheduleId}") && RULES.includes("match /accounts/{uid}"), "기존 블록 유지");
@@ -151,7 +151,7 @@ const mkHS = (flag = true, extra = {}) => { const adapter = extra.adapter || fak
     const bad = [{ ...ok, extra: 1 }, (({ order, ...r }) => r)(ok), { ...ok, title: "" }, { ...ok, title: "가".repeat(101) }, { ...ok, done: "yes" }, { ...ok, v: 2 }, { ...ok, childKey: "" }, { ...ok, childKey: "k".repeat(61) }, { ...ok, order: "1" }, { ...ok, createdBy: 5 }, { ...ok, deletedAt: "x" }];
     bad.forEach((d, i) => assert.ok(!createOk(d), "거부되어야 함 #" + i));
     assert.ok(!updateOk(ok, { ...ok, childKey: "c2" }) && !updateOk(ok, { ...ok, createdAt: 99 }) && !updateOk(ok, { ...ok, v: 2 }));
-    assert.ok(/allow delete: if false;/.test(block));
+    assert.ok(/allow delete: if resource == null \|\| isMemberOf\(householdId\);/.test(block), "H4: 할 일 삭제는 가구 구성원만(소프트 삭제는 update 그대로)");
   });
 
   console.log("36개월 이상 메뉴(app.js)");
@@ -160,7 +160,7 @@ const mkHS = (flag = true, extra = {}) => { const adapter = extra.adapter || fak
     const sb = { acctEnabled: () => o.on !== false, ageInMonths: (b) => b.months, profile: o.profile, currentTab: o.tab || "home", switched: [], switchTab: (n) => sb.switched.push(n), Over36View: V,
       window: { buildSchedule: () => ["AUTO1", "AUTO2"] }, document: { body: { classList: { toggle: (c, on) => (on ? cls.add(c) : cls.delete(c)) } }, querySelector: (q) => (q.includes("subsidy") ? navSub : q.includes("trend") ? null : ck) }, cls, navSub, ck, Date };
     vm.createContext(sb);
-    vm.runInContext([fn("acct36Child"), "const acct36Active = () => acct36Child(profile);", fn("buildSchedule"), fn("acct36Sync")].join("\n"), sb);
+    vm.runInContext([fn("acct36Child"), "const acct36Active = () => acct36Child(profile);", fn("acct36Sync")].join("\n"), sb);
     return sb;
   };
   await test("판정: 만 36개월 정각부터 4탭(혜택 숨김·체크리스트→할 일), 35개월·임신 중·OFF·아이 없음은 기존 5탭", () => {
@@ -179,13 +179,24 @@ const mkHS = (flag = true, extra = {}) => { const adapter = extra.adapter || fak
     assert.ok(x.cls.has("acct-36") && x.switched.includes("home"));
     assert.ok(/renderAll = function renderAll\(\) \{\n\s*renderAllBase\.apply\(this, arguments\);\n\s*if \(acctEnabled\(\)\) acct36Sync\(\);/.test(APP), "renderAll(아이 전환·저장의 끝)에서 맞춘다");
   });
-  await test("36개월 이상에서는 AUTO 0건(buildSchedule 대체), 36개월 미만·OFF 는 원래 함수 그대로", () => {
-    assert.strictEqual(JSON.stringify(sbFor({ profile: null }).buildSchedule({ birthDate: { months: 40 }, stage: "born" }, {}, [])), "[]");
-    assert.strictEqual(JSON.stringify(sbFor({ profile: null }).buildSchedule({ birthDate: { months: 36 }, stage: "born" }, {}, [])), "[]");
-    assert.strictEqual(JSON.stringify(sbFor({ profile: null }).buildSchedule({ birthDate: { months: 35 }, stage: "born" }, {}, [])), "[\"AUTO1\",\"AUTO2\"]");
-    assert.strictEqual(JSON.stringify(sbFor({ profile: null }).buildSchedule({ birthDate: { months: 90 }, stage: "pregnant" }, {}, [])), "[\"AUTO1\",\"AUTO2\"]");
-    assert.strictEqual(JSON.stringify(sbFor({ on: false, profile: null }).buildSchedule({ birthDate: { months: 90 }, stage: "born" }, {}, [])), "[\"AUTO1\",\"AUTO2\"]", "OFF");
-    assert.ok(/schedule = buildSchedule\(\{ \.\.\.profile, schoolPolicy \}, dataset, completionsForEngine\(\)\)/.test(APP), "기존 호출부는 그대로");
+  await test("36개월 이상: 항목별 허용 표식(autoAfter36)이 있는 AUTO 만 보인다 — app.js 우회 래퍼 없음, 표식 없는 항목은 숨김(36개월 미만·임신 중은 HEAD 노출 그대로)", () => {
+    assert.ok(!/function buildSchedule\(/.test(APP), "app.js 에 buildSchedule 대체 함수가 없다");
+    assert.ok(/schedule = buildSchedule\(\{ \.\.\.profile, schoolPolicy \}, dataset, completionsForEngine\(\)\)/.test(APP), "호출부는 전역 buildSchedule 을 그대로 부른다");
+    assert.ok(/ChildTimeline\.isEventShown\(profile\.birthDate, e\)/.test(APP), "visibleSchedule 은 허용 판정(isEventShown)을 쓴다");
+    require("./tools/load-engine.js");
+    const AA = require("../js/auto-after36.js"); const CTm = require("../js/child-timeline.js");
+    const defs = JSON.parse(read("data/todos/health-checkup.json")).todos;
+    const now = new Date();
+    const at = (months) => new Date(now.getFullYear(), now.getMonth() - months, 1);
+    const run = (birthDate, stage, allow) => global.__buildSchedule({ birthDate, province: "서울특별시", district: "구로구", gender: "M", birthOrder: "first", stage: stage || "born" }, { todoDefinitions: defs, subsidy: { subsidies: [] }, autoAfter36: allow }, []);
+    const none = AA.normalize(null), hc = AA.normalize({ items: [{ todo_id: "HC-07" }, { todo_id: "HC-08" }, { todo_id: "HC-09" }] });
+    const shown = (b, ev) => ev.filter((e) => CTm.isEventShown(b, e, now));
+    for (const m of [36, 40, 50]) assert.deepStrictEqual(shown(at(m), run(at(m), "born", none)).length, 0, `${m}개월: 허용 목록 없음 → 0건`);
+    assert.strictEqual(shown(at(40), run(at(40), "born", undefined)).length, 0, "목록을 못 읽어도 0건");
+    const ids = (b, a) => [...new Set(shown(b, run(b, "born", a)).map((e) => e.detail.instance.todo_id))].sort();
+    assert.ok(ids(at(40), hc).every((i) => /^HC-0[789]$/.test(i)) && ids(at(40), hc).length > 0, "허용 항목만 보인다");
+    assert.ok(shown(at(35), run(at(35), "born", none)).length > 0, "35개월은 목록과 무관하게 HEAD 노출");
+    assert.ok(shown(new Date(now.getFullYear() + 1, 0, 15), run(new Date(now.getFullYear() + 1, 0, 15), "pregnant", none)).length > 0, "임신 중도 그대로");
   });
   await test("홈·체크리스트 탭: 36+ 일 때만 새 화면(래퍼), 아니면 원래 함수 — switchTab 은 36+ 에서 혜택 탭을 막는다", () => {
     assert.ok(/renderHome = function renderHome\(\) \{\n\s*if \(!acct36Active\(\)\) return renderHomeBase\.apply\(this, arguments\);\n\s*acct36RenderHome\(\);/.test(APP));

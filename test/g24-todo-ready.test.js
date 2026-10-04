@@ -23,7 +23,7 @@ const mkHS = (storage, adapter) => HS.create({ adapter: adapter || fakeAdapter()
 
 (async () => {
   await test("원인: 첫 등록 직후엔 가족코드·가구 링크가 조금 늦게 생겨 할 일 준비 상태(canTodo)가 false → true 로 바뀌는데, 표식(sig)에 그 상태가 없어 다시 그리지 않았다(실서버에서도 같은 순서 — 가짜 환경만의 현상 아님)", () => {
-    assert.ok(/const acct36Sig = \(\) => [\s\S]*`\|ready:\$\{acct36CanTodo\(\)\}:\$\{acct36Keys\(\)\.join\(","\)\}\|`/.test(APP));
+    assert.ok(/const acct36Sig = \(\) => [\s\S]*`\|auto:[^`]*\|ready:\$\{acct36CanTodo\(\)\}:\$\{acct36Keys\(\)\.join\(","\)\}\|`/.test(APP));
     assert.ok(/ensureFamilyCode[\s\S]{0,400}familyCode = await FamilySync\.createFamily/.test(APP) && /async function ensureFamilyCode\(\) \{[\s\S]*?hhLinkNewChild\(\);/.test(APP), "가족코드는 저장 뒤 네트워크로 만들어진다");
   });
   const wrapEnv = (o) => {

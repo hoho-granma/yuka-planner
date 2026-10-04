@@ -20,23 +20,23 @@ function test(name, fn) {
   try { fn(); passed++; console.log("  ok  - " + name); } catch (e) { process.exitCode = 1; console.log("  FAIL- " + name + "\n      " + (e.stack || e).split("\n").slice(0, 5).join("\n      ")); }
 }
 const LINKS = [{ childKey: "c1", displayName: "수아", order: 1 }, { childKey: "c2", displayName: "하준", order: 2 }];
-const MEMBERS = [{ memberId: "m1", role: "MOM", label: "엄마", order: 1 }, { memberId: "m2", role: "DAD", label: "아빠", order: 2 }];
+const MEMBERS = [{ memberId: "m1", role: "MOM", label: "엄마", order: 1, colorKey: "p5" }, { memberId: "m2", role: "DAD", label: "아빠", order: 2, colorKey: "p4" }];
 const ME = { memberMode: true, meId: "m1" };
 
 console.log("구성원 칩(MEMBER:<id>)");
 test("계정 모드 칩: 구성원마다 하나, 내 구성원은 '나(역할)', 선택·색, 아이·가족 칩은 그대로", () => {
   const chips = V.filterChips(LINKS, ["MEMBER:m1"], MEMBERS, ME);
-  assert.deepStrictEqual(chips.map((c) => [c.id, c.label]), [["ALL", "전체"], ["MEMBER:m1", "나(엄마)"], ["MEMBER:m2", "아빠"], ["CHILD:c1", "수아"], ["CHILD:c2", "하준"], ["FAMILY", "가족"]]);
+  assert.deepStrictEqual(chips.map((c) => [c.id, c.label]), [["MEMBER:m1", "나(엄마)"], ["MEMBER:m2", "아빠"], ["CHILD:c1", "수아"], ["CHILD:c2", "하준"], ["FAMILY", "가족"]]);
   assert.deepStrictEqual(chips.filter((c) => c.selected).map((c) => c.id), ["MEMBER:m1"]);
-  assert.deepStrictEqual([chips[1].color, chips[2].color], ["#ff9ec4", "#7fb8ff"]);
+  assert.deepStrictEqual([chips[0].color, chips[1].color], ["#ff9ec4", "#86b6ff"]);
   const dadMe = V.filterChips(LINKS, [], MEMBERS, { memberMode: true, meId: "m2" });
   assert.strictEqual(dadMe.find((c) => c.id === "MEMBER:m2").label, "나(아빠)");
 });
-test("이모님·자녀·같은 역할이 둘 이상이어도 구성원 단위로 칩이 생기고(라벨=구성원 라벨), 삭제된 구성원은 빠진다, 역할 색 없는 구성원은 가족색", () => {
-  const many = [...MEMBERS, { memberId: "m3", role: "CAREGIVER", label: "이모님", order: 3 }, { memberId: "m4", role: "MOM", label: "새엄마", order: 4 }, { memberId: "m5", role: "CHILD", label: "큰애", order: 5, deletedAt: 9 }];
+test("이모님·자녀·같은 역할이 둘 이상이어도 구성원 단위로 칩이 생기고(라벨=구성원 라벨), 삭제된 구성원은 빠진다, 구성원마다 자기 색(같은 역할도 다른 색)", () => {
+  const many = [...MEMBERS, { memberId: "m3", role: "CAREGIVER", label: "이모님", order: 3, colorKey: "p6" }, { memberId: "m4", role: "MOM", label: "새엄마", order: 4, colorKey: "p7" }, { memberId: "m5", role: "CHILD", label: "큰애", order: 5, deletedAt: 9 }];
   const chips = V.filterChips(LINKS, [], many, ME);
   assert.deepStrictEqual(chips.filter((c) => c.id.startsWith("MEMBER:")).map((c) => c.label), ["나(엄마)", "아빠", "이모님", "새엄마"]);
-  assert.strictEqual(chips.find((c) => c.id === "MEMBER:m3").color, "#c9b8ff");
+  assert.deepStrictEqual(["m1", "m3", "m4"].map((k) => chips.find((c) => c.id === "MEMBER:" + k).color), ["#ff9ec4", "#b79cff", "#6fd6e6"], "엄마가 둘이어도 색이 다르다(역할로 묶지 않음)");
 });
 test("합류 시 칩 자동 추가: 구성원 목록이 늘면(리스너가 미러를 갱신) 다음 렌더에서 칩이 늘어난다", () => {
   const before = V.filterChips(LINKS, [], [MEMBERS[0]], ME).map((c) => c.id);
@@ -48,7 +48,7 @@ test("선택 정규화·토글: MEMBER 칩만 유효(이전 역할 칩은 d4 테
   assert.deepStrictEqual(V.toggleSelection(["MEMBER:m1"], "MEMBER:m2", LINKS, MEMBERS, ME), ["MEMBER:m1", "MEMBER:m2"]);
   assert.deepStrictEqual(V.toggleSelection(["MEMBER:m1"], "ALL", LINKS, MEMBERS, ME), []);
   assert.deepStrictEqual(V.normalizeSelection(["MOM"], LINKS, MEMBERS), ["MOM"], "옵션이 없으면 기존 역할 칩 동작");
-  assert.deepStrictEqual(V.filterChips(LINKS, [], MEMBERS).map((c) => c.id), ["ALL", "MOM", "DAD", "CHILD:c1", "CHILD:c2", "FAMILY"], "기존(역할 칩) 출력 불변");
+  assert.deepStrictEqual(V.filterChips(LINKS, [], MEMBERS).map((c) => c.id), ["MOM", "DAD", "CHILD:c1", "CHILD:c2", "FAMILY"], "기존(역할 칩) 출력 불변(전체 버튼만 없어짐)");
   assert.strictEqual(V.selectionMode(["MEMBER:m1"]), "member");
   assert.strictEqual(V.selectionMode(["CHILD:c1"]), "kids");
 });

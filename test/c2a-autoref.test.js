@@ -206,9 +206,10 @@ test("VX·HC 정의와 OR-03·OR-04 만 연결 대상, 지원금·발달·생활
 console.log("연결 대상 id 안정성 스냅샷");
 // 스냅샷 fixture(test/fixtures/linkable-auto-ids.json)는 현재 45개다. VX-RSV__default 는 데이터(vaccination.json)가 아직 커밋 전(작업본 전용)이라 제외했고,
 // 커밋되면 fixture 에 추가한다(없어도 이 테스트는 '있던 id 가 사라졌는가'만 보므로 통과한다).
-test("스냅샷은 45개이고 VX-RSV__default 는 (데이터 미커밋이라) 아직 포함하지 않는다", () => {
+test("스냅샷은 42개이고 VX-RSV__default 는 (데이터 미커밋이라) 아직 포함하지 않는다", () => {
   const ids = JSON.parse(fs.readFileSync(path.join(ROOT, "test/fixtures/linkable-auto-ids.json"), "utf8")).ids;
-  assert.strictEqual(ids.length, 45);
+  assert.strictEqual(ids.length, 42);
+  assert.ok(!ids.some((i) => /^HC-0[789]__/.test(i)), "36개월 이상 전용 검진(6~8차)은 없다");
   assert.ok(!ids.includes("VX-RSV__default"));
 });
 test("스냅샷의 모든 id 가 지금도 엔진 결과(0~72개월 합집합)에 있다 — 사라지면 별칭(data/auto-id-aliases.json) 추가 또는 승인 후 갱신", () => {

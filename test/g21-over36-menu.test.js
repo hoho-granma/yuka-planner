@@ -15,6 +15,7 @@ const env = (o) => {
   const sb = {
     UserScheduleView: V, acctEnabled: () => o.on !== false, usSel: () => o.sel || [], usLinks: () => o.kids.map(([childKey]) => ({ childKey, order: 1, displayName: childKey, familyCode: childKey })), usMembers: () => [{ memberId: "m1", role: "MOM", label: "주연" }], usSelOpts: () => ({ memberMode: true, meId: "m1" }),
     usChildAge: (k) => (o.kids.find(([x]) => x === k) || [])[1],
+    profile: null, visibleSchedule: () => [],
   };
   vm.createContext(sb);
   vm.runInContext(fn("usKidsAre36Plus"), sb);
@@ -80,10 +81,10 @@ test("'가족' 칩 제거(계정 모드 전체): 칩이 없고, 저장된 'FAMIL
   const mem = [{ memberId: "m1", role: "MOM", label: "주연" }];
   const on = { memberMode: true, meId: "m1", noFamily: true };
   const ids = (o) => V.filterChips(links, ["FAMILY"], mem, o).map((c) => c.id);
-  assert.ok(!ids(on).includes("FAMILY") && ids(on).includes("ALL") && ids(on).includes("CHILD:a") && ids(on).includes("MEMBER:m1"));
+  assert.ok(!ids(on).includes("FAMILY") && !ids(on).includes("ALL") && ids(on).includes("CHILD:a") && ids(on).includes("MEMBER:m1"));
   assert.deepStrictEqual(V.normalizeSelection(["FAMILY"], links, mem, on), [], "저장값 FAMILY → 전체");
   assert.deepStrictEqual(V.normalizeSelection(["FAMILY", "CHILD:a"], links, mem, on), ["CHILD:a"]);
-  assert.strictEqual(V.filterChips(links, ["FAMILY"], mem, on)[0].selected, true, "'전체' 칩이 선택 상태");
+  assert.ok(V.filterChips(links, ["FAMILY"], mem, on).every((c) => !c.selected), "저장값 FAMILY → 전체 = 어떤 칩도 선택되지 않은 상태(전체 버튼 없음)");
   assert.deepStrictEqual(V.toggleSelection([], "MEMBER:m1", links, mem, on), ["MEMBER:m1"]);
   assert.ok(V.filterChips(links, [], mem, { memberMode: true, meId: "m1" }).some((c) => c.id === "FAMILY"), "OFF(noFamily 없음)는 그대로");
   assert.ok(APP.includes("...(acctEnabled() ? { noFamily: true } : {})"));
