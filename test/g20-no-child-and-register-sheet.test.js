@@ -64,6 +64,7 @@ const st = { user: { uid: "u1", displayName: "주연" }, account: { displayName:
     const els = { "cr-name": mkI("cr-name"), "cr-date": mkI("cr-date"), "cr-save": btn, "cr-error": err, childName: mkI("childName"), birthDate: mkI("birthDate"), birthOrder: mkI("birthOrder"), province: mkI("province"), district: mkI("district") };
     const sb = {
       console, setInterval, clearInterval, Date, AccountView: AV, HNDatePicker: DP, ChildTimeline: { SERVICE_RANGE: { pickerYearsBack: 8 } },
+      crPb: null, pbCollect: () => ({ ok: false, message: "x" }), pregRegBasis: undefined, // 임신 입력 방식 블록(임신 등록에서만 쓰인다)
       crState: { kind: o.kind || "born", gender: o.gender || "", photo: o.photo || null }, modalMode: "child-register", profile: o.profile || null, schedule: [],
       el: (id) => els[id], acctChildRegion: () => o.region === undefined ? { province: "서울특별시", district: "구로구" } : o.region, acctKidCount: () => o.kids || 0,
       setLandingStage: (k) => (log.stage = k), populateDistricts() {}, saveProfile() {}, pushProfileToFamily() {}, buildAndRender: async () => {}, closeDetail: () => log.closed++,

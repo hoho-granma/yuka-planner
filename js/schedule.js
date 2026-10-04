@@ -211,7 +211,7 @@ function birthRuleAllows(s, birthDate) {
   return true;
 }
 
-function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrder, stage, pregnancyTiming) {
+function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrder, stage, pregnancyTiming, pregnancyConfirmDate) {
   const events = [];
   for (const s of subsidyData.subsidies) {
     if (SUBSIDIES_SUPERSEDED_BY_ENGINE.includes(s.id)) continue;
@@ -266,7 +266,10 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrd
       const startAbs = iso(t.startDate), endAbs = iso(t.endDate);
       if (startAbs) { if (birthDate < startAbs) continue; entryOverride = anchorDate = startAbs; if (endAbs) deadlineDate = endAbs; } // 출산 예정일이 절기 시작 전이면 해당 없음
       else {
-        if (Number.isInteger(t.startDays)) entryOverride = anchorDate = addDays(birthDate, t.startDays);
+        // startFrom:"confirmDate"(PREG-001·007): 임신 확인일을 입력한 경우 그날부터 — 없으면 아래 startDays(출산 예정일 기준 가정값)를 그대로 쓴다.
+        const confirmAt = t.startFrom === "confirmDate" ? iso(pregnancyConfirmDate) : null;
+        if (confirmAt) entryOverride = anchorDate = confirmAt;
+        else if (Number.isInteger(t.startDays)) entryOverride = anchorDate = addDays(birthDate, t.startDays);
         if (Number.isInteger(t.endDays)) deadlineDate = addDays(birthDate, t.endDays);
       }
     }
@@ -301,10 +304,10 @@ function buildSubsidyEvents(birthDate, province, district, subsidyData, birthOrd
   return events;
 }
 
-function buildSchedule({ birthDate, province, district, gender, birthOrder, stage, schoolPolicy, enrollmentYearOverride }, dataset, completions) {
+function buildSchedule({ birthDate, province, district, gender, birthOrder, stage, schoolPolicy, enrollmentYearOverride, pregnancyConfirmDate }, dataset, completions) {
   const events = [
     ...buildTodoEngineEvents({ birthDate, province, district, gender, stage, schoolPolicy, enrollmentYearOverride }, dataset.todoDefinitions, completions),
-    ...buildSubsidyEvents(birthDate, province, district, dataset.subsidy, birthOrder, stage, dataset.pregnancyTiming),
+    ...buildSubsidyEvents(birthDate, province, district, dataset.subsidy, birthOrder, stage, dataset.pregnancyTiming, pregnancyConfirmDate),
   ];
   // 36개월 이상 아이에게는 허용 목록(data/policy/auto-after36.json, js/auto-after36.js)에 있는 항목만 보인다 — 표식 autoAfter36 을 달아 두고 ChildTimeline.isEventVisible 이 판정한다.
   // 목록이 없으면(dataset.autoAfter36 없음) 표식이 하나도 달리지 않는다. 36개월 미만 노출에는 영향이 없다.

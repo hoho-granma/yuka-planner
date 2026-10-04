@@ -46,6 +46,7 @@ function env(opts) {
   const sb = {
     console: { error() {}, log() {} }, Promise, Date, JSON,
     localStorage: { getItem: (k) => (ls.has(k) ? ls.get(k) : null), setItem: (k, v) => ls.set(k, String(v)), removeItem: (k) => ls.delete(k) },
+    savePregBasis: () => {}, pregRegBasis: undefined, // 임신 입력 방식(기기 로컬 저장)
     PROFILE_KEY: "hannun_profile", HH_ID_KEY: "hannun_household_id", HH_CODE_KEY: "hannun_household_code",
     el: mk, profile: o.profile, familyCode: o.familyCode, completed: o.completed, unsubscribeFamily: () => log.calls.push("unsub"), modalMode: null, landingStage: null,
     saveCompleted: () => { log.calls.push("saveCompleted"); ls.set("hannun_completed", JSON.stringify(sb.completed)); },
@@ -244,7 +245,8 @@ test("handleSubmit·handleLoadCode: 입력 모드 확인 한 줄씩만 추가됐
   const strip = (s, re) => s.replace(re, "");
   // 온보딩 가족 단계 훅(첫 아이 기록 3줄·await·onbMaybeOffer)도 함께 걷어 낸 뒤 비교한다
   const noOnb = strip(strip(strip(submitSrc, /    const wasNewChildMode = newChildMode;\n/), /    \/\/ 온보딩 가족 단계:[^\n]*\n    const onbFirstChild[^\n]*\n/), /\n    onbMaybeOffer\(!onbFirstChild\);/).replace("    await ensureFamilyCode();", "    ensureFamilyCode();");
-  assert.strictEqual(strip(noOnb, /    \/\/ N1:[^\n]*\n    if \(newChildMode\) finishNewChildEntry\(\);\n/), fnSrc(headApp, "handleSubmit", "  async function "));
+  const noPb = strip(noOnb, /\n    if \(familyCode && pregRegBasis !== undefined\)[^\n]*\n    pregRegBasis = undefined;/); // 임신 입력 방식 저장 두 줄(W 임신 주차·확인일)도 걷어 낸다
+  assert.strictEqual(strip(noPb, /    \/\/ N1:[^\n]*\n    if \(newChildMode\) finishNewChildEntry\(\);\n/).replace("pregnancyConfirmDate: pregConfirmIso()", "").replace("schoolPolicy, }", "schoolPolicy }"), fnSrc(headApp, "handleSubmit", "  async function "));
   // H1: 계정 모드에서는 입력칸이 없어 가족코드 분기를 건너뛴다(!acctEnabled()) — 비교 전에 되돌린다
   assert.strictEqual(strip(loadSrc, /      if \(newChildMode\) finishNewChildEntry\(\);[^\n]*\n/).replace("if (hhEnabled() && !acctEnabled()) {", "if (hhEnabled()) {").replace(/ \/\/ 계정 모드: 입력칸은[^\n]*\n/, "\n"), fnSrc(headApp, "handleLoadCode", "  async function "));
 });

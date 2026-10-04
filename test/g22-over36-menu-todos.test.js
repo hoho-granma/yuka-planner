@@ -181,7 +181,7 @@ const mkHS = (flag = true, extra = {}) => { const adapter = extra.adapter || fak
   });
   await test("36개월 이상: 항목별 허용 표식(autoAfter36)이 있는 AUTO 만 보인다 — app.js 우회 래퍼 없음, 표식 없는 항목은 숨김(36개월 미만·임신 중은 HEAD 노출 그대로)", () => {
     assert.ok(!/function buildSchedule\(/.test(APP), "app.js 에 buildSchedule 대체 함수가 없다");
-    assert.ok(/schedule = buildSchedule\(\{ \.\.\.profile, schoolPolicy \}, dataset, completionsForEngine\(\)\)/.test(APP), "호출부는 전역 buildSchedule 을 그대로 부른다");
+    assert.ok(/schedule = buildSchedule\(\{ \.\.\.profile, schoolPolicy, pregnancyConfirmDate: pregConfirmIso\(\) \}, dataset, completionsForEngine\(\)\)/.test(APP), "호출부는 전역 buildSchedule 을 그대로 부른다");
     assert.ok(/ChildTimeline\.isEventShown\(profile\.birthDate, e\)/.test(APP), "visibleSchedule 은 허용 판정(isEventShown)을 쓴다");
     require("./tools/load-engine.js");
     const AA = require("../js/auto-after36.js"); const CTm = require("../js/child-timeline.js");

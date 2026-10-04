@@ -1,5 +1,5 @@
 {
-  "_설명": "임신 중(stage=pregnant) 지원금 AUTO 일정의 알림 시점 보정. 출산 예정일 기준 일수(startDays/endDays, 음수=출산 전) 또는 절대 날짜(startDate/endDate, 절기 한정). hide=true 는 같은 일을 하는 새 임신 항목(supersededBy)이 있어 임신 중 달력에서만 뺀다(혜택 탭은 그대로). 임신 확인 시기 가정값(-252일≈6주)은 근사 — 추가검증 필요.",
+  "_설명": "임신 중(stage=pregnant) 지원금 AUTO 일정의 알림 시점 보정. 출산 예정일 기준 일수(startDays/endDays, 음수=출산 전) 또는 절대 날짜(startDate/endDate, 절기 한정). hide=true 는 같은 일을 하는 새 임신 항목(supersededBy)이 있어 임신 중 달력에서만 뺀다(혜택 탭은 그대로). 임신 확인 시기 가정값(-252일≈6주)은 근사 — 추가검증 필요. startFrom:confirmDate 가 있는 항목(PREG-001·007)은 사용자가 '임신 확인일'로 입력했으면 시작을 그 날짜로 하고(끝 endDays 는 그대로) 아니면 startDays 가정값을 쓴다 — 근거 검증은 docs/한눈육아-임신주차-확인일-근거.md.",
   "items": {
     "NAT-008": {
       "hide": true,
@@ -12,11 +12,13 @@
       "reason": "2026~27절기 임신부 독감 무료접종(질병관리청)"
     },
     "PREG-001": {
+      "startFrom": "confirmDate",
       "startDays": -252,
       "endDays": -196,
       "reason": "임신 확인 후 12주 이내 보건소 등록(지역별 상이 — 추가검증 필요)"
     },
     "PREG-007": {
+      "startFrom": "confirmDate",
       "startDays": -252,
       "reason": "임신 확인 후 신청(영양플러스). 시작 -252일(≈임신 6주)은 임신 확인 시기를 가정한 근사값 — 추가검증 필요. 출처: national.json 의 PREG-007 출처가 '정부24 + 원주시보건소' 1곳뿐이라 지역·기관별 기준을 전국 기준으로 확인하지 못함(추가검증 필요).",
       "verificationStatus": "추가검증 필요",

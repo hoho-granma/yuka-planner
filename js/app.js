@@ -330,6 +330,76 @@
     return { daysToDue, weeks: Math.max(0, Math.min(42, Math.floor(elapsed / 7))), days: Math.max(0, elapsed % 7) };
   }
 
+  // ═══ 임신 입력 방식(예정일 / 지금 몇 주 / 임신 확인일): 출산 예정일은 계속 파생 값, 입력 방식은 기기 로컬에만 저장한다(규칙·서버 변경 없음). 계산은 js/pregnancy-basis.js ═══
+  const PREG_BASIS_KEY = "hannun_preg_basis"; // { [familyCode]: basis } — 아이를 바꿔도 따로 남는다
+  let pregRegBasis; // undefined = 아이 등록 중이 아님, null|basis = 아이 등록 중(가족코드가 생기기 전에는 여기에 두었다가 저장 직후 가족코드로 옮긴다 — 이전 아이의 값이 새지 않게)
+  function loadPregBasisMap() { try { return JSON.parse(localStorage.getItem(PREG_BASIS_KEY) || "{}") || {}; } catch (e) { return {}; } }
+  const pregBasisOf = (code) => (code ? PregnancyBasis.normalizeBasis(loadPregBasisMap()[code]) : null);
+  function savePregBasis(code, basis) {
+    if (!code) return;
+    try {
+      const m = loadPregBasisMap();
+      if (basis) m[code] = basis; else delete m[code];
+      localStorage.setItem(PREG_BASIS_KEY, JSON.stringify(m));
+    } catch (e) {}
+  }
+  /** 일정 엔진에 넘길 임신 확인일(확인일 방식일 때만). */
+  const pregConfirmIso = () => PregnancyBasis.confirmDateOf(pregRegBasis !== undefined ? pregRegBasis : pregBasisOf(familyCode));
+  const pbToday = () => toISODate(new Date());
+  /** 입력 방식 선택 블록 마크업. st = { kind, weeks, days, confirmIso }. 기존 공통 클래스(rv-field·chip·ep-select)만 쓴다. */
+  function pbMarkup(pre, st) {
+    const M = PregnancyBasis.MSG, opts = (a, b, sel) => Array.from({ length: b - a + 1 }, (_, i) => a + i).map((n) => `<option value="${n}"${n === sel ? " selected" : ""}>${n}</option>`).join("");
+    const chips = PregnancyBasis.KINDS.map((k) => `<button type="button" class="chip rv-cat ${st.kind === k ? "active" : ""}" data-pb-kind="${k}" aria-pressed="${st.kind === k}">${esc(M.kindLabel[k])}</button>`).join("");
+    return `<div class="rv-field" id="${pre}-pb" style="margin-top:12px"><label>${esc(M.inputLabel)}</label><div class="rv-cats" id="${pre}-pb-kinds">${chips}</div>
+      <div id="${pre}-pb-confirm" class="${st.kind === "CONFIRM" ? "" : "hidden"}" style="margin-top:10px"><label>${esc(M.confirmDate)}</label>${HNDatePicker.markup(pre + "c")}</div>
+      <div id="${pre}-pb-weeks" class="${st.kind === "DUE" ? "hidden" : ""}" style="margin-top:10px"><label id="${pre}-pb-wl">${esc(st.kind === "CONFIRM" ? M.weeksAtConfirm : M.weeksNow)}</label><div class="rv-cats" style="align-items:center"><select id="${pre}-pb-w" class="ep-select" style="width:auto">${opts(PregnancyBasis.MIN_WEEKS, PregnancyBasis.MAX_WEEKS, st.weeks)}</select>${esc(M.weekUnit)} <select id="${pre}-pb-d" class="ep-select" style="width:auto">${opts(0, 6, st.days)}</select>${esc(M.dayUnit)}</div></div>
+      <p class="fine-print" id="${pre}-pb-note" aria-live="polite"></p></div>`;
+  }
+  /** 블록 동작 연결. onKind(kind) 는 호출부가 예정일 칸을 숨기고 보이는 데 쓴다. dueIso() 는 예정일로 입력 중일 때의 날짜. */
+  function pbWire(pre, st, onKind, dueIso) {
+    const M = PregnancyBasis.MSG;
+    const show = (id, on) => { const n = el(id); if (n) n.classList.toggle("hidden", !on); };
+    const read = () => {
+      st.weeks = Number(el(`${pre}-pb-w`).value); st.days = Number(el(`${pre}-pb-d`).value);
+      const c = el(`${pre}c-date`); st.confirmIso = c ? c.value : st.confirmIso;
+    };
+    const note = () => {
+      read();
+      const box = el(`${pre}-pb-note`); if (!box) return;
+      if (st.kind === "DUE") { box.textContent = ""; return; }
+      const r = PregnancyBasis.resolve({ kind: st.kind, weeks: st.weeks, days: st.days, confirmIso: st.confirmIso, todayIso: pbToday() });
+      box.textContent = r.ok ? M.preview(formatDateKR(new Date(r.dueIso + "T00:00:00"))) : st.kind === "CONFIRM" && !st.confirmIso ? "" : M[{ weeks: "errWeeks", confirm: "errConfirm", range: "errRange", due: "errDue" }[r.error]] || "";
+    };
+    el(`${pre}-pb-kinds`).querySelectorAll("[data-pb-kind]").forEach((b) => b.addEventListener("click", () => {
+      st.kind = b.dataset.pbKind;
+      el(`${pre}-pb-kinds`).querySelectorAll("[data-pb-kind]").forEach((x) => { x.classList.toggle("active", x === b); x.setAttribute("aria-pressed", String(x === b)); });
+      show(`${pre}-pb-confirm`, st.kind === "CONFIRM"); show(`${pre}-pb-weeks`, st.kind !== "DUE");
+      const wl = el(`${pre}-pb-wl`); if (wl) wl.textContent = st.kind === "CONFIRM" ? M.weeksAtConfirm : M.weeksNow;
+      if (onKind) onKind(st.kind);
+      note();
+    }));
+    el(`${pre}-pb-w`).addEventListener("change", note); el(`${pre}-pb-d`).addEventListener("change", note);
+    const cp = HNDatePicker.bindById(pre + "c", { ...datePickerOpts(() => "born"), onChange: note });
+    if (st.confirmIso) cp.set(new Date(st.confirmIso + "T00:00:00"));
+    if (onKind) onKind(st.kind);
+    note();
+  }
+  /** 저장 때: 입력 → { ok, dueIso, basis } | { ok:false, message }. due 는 예정일로 입력 중일 때의 YYYY-MM-DD. */
+  function pbCollect(pre, st, due) {
+    const c = el(`${pre}c-date`);
+    const r = PregnancyBasis.resolve({ kind: st.kind, dueIso: due, weeks: el(`${pre}-pb-w`).value, days: el(`${pre}-pb-d`).value, confirmIso: c ? c.value : "", todayIso: pbToday() });
+    if (r.ok) return r;
+    return { ok: false, message: PregnancyBasis.MSG[{ weeks: "errWeeks", confirm: "errConfirm", range: "errRange", due: "errDue" }[r.error]] };
+  }
+  /** 지금 저장된 방식 → 블록 초기 상태(없으면 예정일 방식, 주수는 지금 주수로 채운다). */
+  function pbInitialState(code, dueDate) {
+    const b = pregBasisOf(code), g = dueDate ? pregnancyInfo(dueDate, new Date()) : { weeks: 12, days: 0 };
+    const clampW = (w) => Math.max(PregnancyBasis.MIN_WEEKS, Math.min(PregnancyBasis.MAX_WEEKS, w));
+    if (b && b.kind === "CONFIRM") return { kind: "CONFIRM", weeks: b.weeks, days: b.days, confirmIso: b.confirmDate };
+    if (b && b.kind === "WEEKS") return { kind: "WEEKS", weeks: clampW(g.weeks), days: g.days, confirmIso: "" };
+    return { kind: "DUE", weeks: clampW(g.weeks), days: g.days, confirmIso: "" };
+  }
+
   function childDisplayName() {
     return (profile && profile.name) || "우리 아이";
   }
@@ -916,6 +986,7 @@
           ? `${formatDateKR(profile.birthDate)} · 임신 ${pregnancyInfo(profile.birthDate, today).weeks}주`
           : `${formatDateKR(profile.birthDate)} · ${ChildTimeline.ageLabelAt(profile.birthDate, today)}`
       }</div>
+      ${isPregnant() && pregConfirmIso() ? `<div class="detail-row"><div class="label">${esc(PregnancyBasis.MSG.confirmDate)}</div>${formatDateKR(new Date(pregConfirmIso() + "T00:00:00"))}</div>` : ""}
       <div class="detail-row"><div class="label">거주 지역</div>${profile.province} ${profile.district}</div>
       ${enrollmentRowHtml()}
       ${
@@ -1043,6 +1114,7 @@
 
   // ── G20 아이 등록 바텀시트(시안 A): 계정 모드에서는 옛 첫 화면 폼(view-landing)을 쓰지 않는다. 저장은 기존 handleSubmit 을 그대로 호출한다(숨은 옛 폼 칸에 값을 넣고 제출). ──
   let crState = null; // { kind, name, date }
+  let crPb = null; // 임신 입력 방식 블록 상태({ kind:"DUE"|"WEEKS"|"CONFIRM", weeks, days, confirmIso }) — 임신 등록일 때만
   const enterNewChildEntryBase = enterNewChildEntry;
   enterNewChildEntry = function (opts) {
     if (!acctEnabled()) return enterNewChildEntryBase(opts);
@@ -1053,6 +1125,7 @@
     newChildMode = true;
     newChildSnapshot = { hid: hhEnabled() ? hh.hid : null, code: hhEnabled() ? hh.code : null };
     crState = { kind: acctExpecting() ? "pregnant" : "born", name: "", date: "" };
+    crPb = { kind: "DUE", weeks: 12, days: 0, confirmIso: "" };
     acctChildSheetRender();
   }
   /** 가입 때 받은 지역(없으면 지금 아이의 지역) — 등록 시트는 지역을 묻지 않는다. */
@@ -1079,6 +1152,14 @@
     box.classList.remove("hidden");
   }
   let crPicker = null;
+  /** 임신 등록: 예정일 칸 아래에 '입력 방식' 블록(예정일/지금 몇 주/임신 확인일). 예정일이 아닌 방식이면 예정일 칸을 숨긴다. 태어난 아이면 없앤다. */
+  function crMountPregBasis() {
+    const old = el("cr-pb"); if (old) old.remove();
+    if (!crState || crState.kind !== "pregnant" || !crPb) return;
+    const pv = el("cr-preview"); if (!pv) return;
+    pv.insertAdjacentHTML("afterend", pbMarkup("cr", crPb));
+    pbWire("cr", crPb, (k) => { el("cr-date-slot").classList.toggle("hidden", k !== "DUE"); if (k !== "DUE") el("cr-preview").classList.add("hidden"); else acctChildPreview(); });
+  }
   function acctChildSheetRender() {
     modalMode = "child-register";
     const needRegion = !acctChildRegion();
@@ -1087,6 +1168,7 @@
     crPicker = HNDatePicker.bindById("cr", { ...datePickerOpts(() => crState.kind), onChange: acctChildPreview });
     if (crState.date) crPicker.set(new Date(crState.date + "T00:00:00"));
     acctChildPreview();
+    crMountPregBasis();
     const syncName = () => { crState.name = el("cr-name").value; };
     el("cr-name").addEventListener("input", syncName);
     el("modal-content").querySelectorAll("[data-cr-kind]").forEach((b) =>
@@ -1095,6 +1177,9 @@
         crState.kind = b.dataset.crKind;
         crState.date = "";
         crPicker.reset();
+        if (crPb) crPb = { kind: "DUE", weeks: 12, days: 0, confirmIso: "" };
+        el("cr-date-slot").classList.remove("hidden");
+        crMountPregBasis();
         el("modal-content").querySelectorAll("[data-cr-kind]").forEach((x) => { x.classList.toggle("on", x === b); x.setAttribute("aria-checked", String(x === b)); });
         acctChildPreview();
       })
@@ -1119,11 +1204,18 @@
   async function acctChildSheetSave() {
     const N = AccountView.MSG.nc;
     const name = el("cr-name").value.trim();
-    const dateStr = el("cr-date").value;
+    let dateStr = el("cr-date").value;
+    let regBasis = null; // 임신: 주수·확인일로 입력했으면 계산한 예정일과 입력 방식
+    const byWeeks = crState.kind === "pregnant" && crPb && crPb.kind !== "DUE";
     if (!name) { acctChildSheetError(N.errName); el("cr-name").focus(); return; }
+    if (byWeeks) {
+      const r = pbCollect("cr", crPb, "");
+      if (!r.ok) { acctChildSheetError(r.message); return; }
+      dateStr = r.dueIso; regBasis = r.basis;
+    }
     if (!dateStr) { acctChildSheetError(N.errDate); return; }
     const d = new Date(dateStr + "T00:00:00");
-    if (!HNDatePicker.isSelectable(d, crState.kind, new Date(), ChildTimeline.SERVICE_RANGE.pickerYearsBack, null)) { acctChildSheetError(crState.kind === "pregnant" ? N.errDateDue : N.errDateBorn); return; }
+    if (!byWeeks && !HNDatePicker.isSelectable(d, crState.kind, new Date(), ChildTimeline.SERVICE_RANGE.pickerYearsBack, null)) { acctChildSheetError(crState.kind === "pregnant" ? N.errDateDue : N.errDateBorn); return; }
     let region = acctChildRegion();
     if (!region && el("cr-province") && el("cr-district") && el("cr-district").value) region = { province: el("cr-province").value, district: el("cr-district").value };
     if (!region) { acctChildSheetError(N.errRegion); return; }
@@ -1140,10 +1232,12 @@
     el("province").value = region.province;
     populateDistricts(region.province, region.district);
     el("district").value = region.district;
+    pregRegBasis = kind === "pregnant" ? regBasis : null; // handleSubmit 이 가족코드가 생긴 뒤 저장하고 비운다
     const done = handleSubmit({ preventDefault() {} });
     // 로컬 저장·일정 계산이 끝나면(가족코드 생성은 네트워크라 뒤에서 이어진다) 바로 홈을 보여 준다. 최대 8초만 기다린다.
     await Promise.race([done, new Promise((r) => { const t0 = Date.now(); const iv = setInterval(() => { if ((profile && profile.name === name && schedule.length) || Date.now() - t0 > 8000) { clearInterval(iv); r(); } }, 40); })]);
     if (!profile || profile.name !== name) { // 검증 실패 등으로 저장되지 않음
+      pregRegBasis = undefined;
       btn.disabled = false;
       btn.textContent = N.save;
       acctChildSheetError(N.errDate);
@@ -1489,10 +1583,12 @@
     const preg = isPregnant();
     const orders = [["first", "첫째"], ["second", "둘째"], ["third", "셋째"], ["fourthPlus", "넷째 이상"]];
     let order = profile.birthOrder || "";
+    const epPb = pbInitialState(familyCode, profile.birthDate); // 임신: 입력 방식(예정일/지금 몇 주/임신 확인일)
     el("modal-content").innerHTML = `
       <h3>${preg ? "임신 정보 수정" : "아이 정보 수정"}</h3>
       <div class="rv-field"><label for="ep-name">${preg ? "태명 또는 별칭" : "이름 또는 별칭"}</label><input type="text" id="ep-name" maxlength="12" value="${esc(profile.name || "")}" /></div>
-      <div class="rv-field"><label for="ep-dp-btn">${preg ? "출산 예정일" : "생년월일"}</label>${HNDatePicker.markup("ep")}</div>
+      <div class="rv-field" id="ep-due-row"><label for="ep-dp-btn">${preg ? "출산 예정일" : "생년월일"}</label>${HNDatePicker.markup("ep")}</div>
+      ${preg ? pbMarkup("epb", epPb) : ""}
       <div class="rv-field"><label>몇째</label><div class="rv-cats" id="ep-orders">${orders
         .map(([v, l]) => `<button type="button" class="chip rv-cat ${order === v ? "active" : ""}" data-v="${v}">${l}</button>`)
         .join("")}</div></div>
@@ -1506,6 +1602,7 @@
     `;
     const epPicker = HNDatePicker.bindById("ep", datePickerOpts(() => (preg ? "pregnant" : "born")));
     epPicker.set(profile.birthDate);
+    if (preg) pbWire("epb", epPb, (k) => el("ep-due-row").classList.toggle("hidden", k !== "DUE"));
     const fillDistricts = (selected) => {
       const pv = regionsData.provinces.find((x) => x.code === el("ep-province").value);
       el("ep-district").innerHTML = (pv ? pv.districts : [])
@@ -1523,11 +1620,19 @@
     el("ep-cancel").addEventListener("click", showProfileSheet);
     el("ep-save").addEventListener("click", async () => {
       const name = el("ep-name").value.trim();
-      const dateStr = el("ep-date").value;
+      let dateStr = el("ep-date").value;
+      let newBasis = null; // 주수·확인일로 입력했으면 계산한 예정일과 입력 방식(예정일로 입력하면 null = 지움)
+      if (preg && epPb.kind !== "DUE") {
+        const r = pbCollect("epb", epPb, "");
+        if (!r.ok) { el("ep-error").textContent = r.message; el("ep-error").classList.remove("hidden"); return; }
+        dateStr = r.dueIso; newBasis = r.basis;
+      }
       if (!name || !dateStr || !el("ep-district").value) {
+        el("ep-error").textContent = "이름과 날짜를 입력해 주세요.";
         el("ep-error").classList.remove("hidden");
         return;
       }
+      if (preg) savePregBasis(familyCode, newBasis);
       profile = {
         ...profile,
         name,
@@ -3244,7 +3349,7 @@
   async function buildAndRender() {
     hideEmptyHome();
     await ensureRegionSubsidyLoaded();
-    schedule = buildSchedule({ ...profile, schoolPolicy }, dataset, completionsForEngine());
+    schedule = buildSchedule({ ...profile, schoolPolicy, pregnancyConfirmDate: pregConfirmIso() }, dataset, completionsForEngine());
     rememberChild();
     rememberChildBirth();
     viewMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -3256,7 +3361,7 @@
 
   /** buildAndRender()와 달리 보고있던 달(viewMonth)은 그대로 두고 일정만 다시 계산한다(완료 처리 후 호출). */
   function refreshSchedule() {
-    schedule = buildSchedule({ ...profile, schoolPolicy }, dataset, completionsForEngine());
+    schedule = buildSchedule({ ...profile, schoolPolicy, pregnancyConfirmDate: pregConfirmIso() }, dataset, completionsForEngine());
     renderAll();
   }
 
@@ -3364,6 +3469,8 @@
     await buildAndRender();
     showCalendarView();
     await ensureFamilyCode();
+    if (familyCode && pregRegBasis !== undefined) savePregBasis(familyCode, profile.stage === "pregnant" ? pregRegBasis : null); // 입력 방식(주수·확인일)은 기기 로컬에만 — 예정일로 입력했으면 지운다
+    pregRegBasis = undefined;
     onbMaybeOffer(!onbFirstChild);
   }
 

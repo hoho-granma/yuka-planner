@@ -44,7 +44,7 @@ test("순수: 문구 상수 고정(승인 전 제안안) · 기존 renderSection
 const app = require("fs").readFileSync(require("path").join(__dirname, "..", "js", "app.js"), "utf8");
 test("app.js 연결: 첫 아이 저장 직후만 제안·한 번만(seen)·서버 쓰기는 createHousehold/upsertMember 뿐", () => {
   assert.ok(/const onbFirstChild = !wasNewChildMode && loadChildren\(\)\.length === 0;/.test(app));
-  assert.ok(/await ensureFamilyCode\(\);\s*\n\s*onbMaybeOffer\(!onbFirstChild\);/.test(app));
+  assert.ok(/await ensureFamilyCode\(\);\s*\n\s*(?:if \(familyCode && pregRegBasis !== undefined\)[^\n]*\n\s*pregRegBasis = undefined;\s*\n\s*)?onbMaybeOffer\(!onbFirstChild\);/.test(app));
   const body = app.slice(app.indexOf("function onbMaybeOffer"), app.indexOf("async function hhInit()"));
   assert.ok(/shouldOfferOnboarding/.test(body) && /setItem\(ONB_SEEN_KEY/.test(body));
   const writes = [...body.matchAll(/HouseholdSync\.(\w+)\(/g)].map((m) => m[1]).filter((x, i, a) => a.indexOf(x) === i).sort();
