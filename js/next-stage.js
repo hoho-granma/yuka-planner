@@ -42,6 +42,7 @@
       if (!items.length) continue;
       out.stages.push({
         id: s.id, match: m, windowMonths: Number.isInteger(s.windowMonths) && s.windowMonths >= 0 ? s.windowMonths : out.windowMonthsDefault,
+        ...(Array.isArray(s.changes) ? { changes: s.changes.filter(isStr) } : {}), ...(isStr(s.changesSource) ? { changesSource: s.changesSource } : {}), ...(Number.isInteger(s.infoWindowMonths) && s.infoWindowMonths > 0 ? { infoWindowMonths: s.infoWindowMonths } : {}),
         stageLabel: s.stageLabel || "", headline: s.headline, sub: s.sub || "", subWhenPast: typeof s.subWhenPast === "string" ? s.subWhenPast : "", sheetTitle: s.sheetTitle || s.headline, intro: s.intro || "", items,
       });
     }
@@ -106,7 +107,8 @@
       } else if (m.kind === "age") {
         if (kid.pregnant || typeof kid.ageMonths !== "number" || !m.fromStage.includes(kid.stage)) continue;
         const left = m.boundaryMonths - kid.ageMonths;
-        if (left <= 0 || left > st.windowMonths) continue;
+        const infoWin = st.changes && st.changes.length && st.infoWindowMonths ? st.infoWindowMonths : 0; // 1-6: 정보 카드 창(배너 창보다 길 수 있다)
+        if (left <= 0 || left > Math.max(st.windowMonths, infoWin)) continue;
         when = left;
       } else {
         if (kid.pregnant || !m.fromStage.includes(kid.stage)) continue;
@@ -140,7 +142,7 @@
     const anyPast = best.items.some((x) => x.state === "past");
     const subSrc = anyPast ? st.subWhenPast : st.sub;
     const sub = subSrc.replace("{name}", kid.name || "").replace("{when}", whenText).replace(/^\s*·\s*|\s*·\s*$/g, "").replace(/\s+·\s+·\s+/g, " · ");
-    return { id: st.id, headline: st.headline, sub, sheetTitle: st.sheetTitle, intro: st.intro, stageLabel: st.stageLabel, kidName: kid.name || "", items: best.items, remaining: best.remaining };
+    return { bannerOn: st.match.kind !== "age" || months <= st.windowMonths, stage: st, ageMonths: typeof kid.ageMonths === "number" ? kid.ageMonths : null, id: st.id, headline: st.headline, sub, sheetTitle: st.sheetTitle, intro: st.intro, stageLabel: st.stageLabel, kidName: kid.name || "", items: best.items, remaining: best.remaining };
   }
 
   // ── 마크업 ──
@@ -163,7 +165,7 @@
       return `<div class="ns-cn${cur ? " cur" : ""}${it.state !== "open" ? " fin" : ""}" data-ns-item="${esc(it.id)}"><i class="ns-n">${it.state === "done" ? CHECK : i + 1}</i><div class="ns-cb"><small>${esc(cur && !it.when ? MSG.now : it.when)}</small><button type="button" class="ns-ttl" data-ns="detail" data-ns-id="${esc(it.id)}"><b>${esc(it.label)}</b>${badge}</button>${it.detail ? `<span class="ns-dl">${esc(it.detail)}${it.needsCheck ? ` <em class="ns-nc">${esc(MSG.checkNeeded)}</em>` : ""}</span>` : it.needsCheck ? `<span class="ns-dl"><em class="ns-nc">${esc(MSG.checkNeeded)}</em></span>` : ""}${apply && apply.url ? `<a class="ns-chip" href="${esc(apply.url)}" target="_blank" rel="noopener noreferrer">${esc(apply.label)}</a>` : ""}</div></div>`;
     }).join("");
     const foot = m.remaining ? (o.canPlan ? `<button type="button" class="ns-primary" data-ns="plan">${CAL}${esc(MSG.planAll)}</button>` : `<p class="ns-note">${esc(MSG.noLink)}</p>`) : "";
-    return `<div class="ns-sheet" data-ns-sheet="timeline"><div class="ns-sh"><small>${esc(MSG.sheetFrom(m.kidName, m.stageLabel))}</small><b>${esc(m.sheetTitle)}</b></div>${m.intro ? `<p class="ns-intro">${esc(m.intro)}</p>` : ""}<div class="ns-chain">${chain}</div>${foot}<button type="button" class="ns-close" data-ns="close">${esc(MSG.close)}</button></div>`;
+    return `<div class="ns-sheet" data-ns-sheet="timeline"><div class="ns-sh"><small>${esc(MSG.sheetFrom(m.kidName, m.stageLabel))}</small><b>${esc(m.sheetTitle)}</b></div>${m.intro ? `<p class="ns-intro">${esc(m.intro)}</p>` : ""}${o.cardHtml || ""}<div class="ns-chain">${chain}</div>${foot}<button type="button" class="ns-close" data-ns="close">${esc(MSG.close)}</button></div>`;
   }
 
   /**

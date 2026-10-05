@@ -63,7 +63,9 @@ test("임신 중: 출산 예정일 2개월 이내면 '곧 출산' 배너(출생�
 });
 
 test("0~35개월: 36개월 전 3개월 구간(33~35개월)에만 '곧 3~5세', 유아학비는 NAT-020·SB-08 중복 없이 한 줄, 영유아검진 6차 포함", () => {
-  for (const m of [32, 30, 12, 3]) assert.strictEqual(kidCtx(ago(m), "born"), null, m + "개월");
+  for (const m of [29, 12, 3]) assert.strictEqual(kidCtx(ago(m), "born"), null, m + "개월");
+  for (const m of [32, 30]) { const r = kidCtx(ago(m), "born"); assert.ok(r && r.id === "TO_3_5" && r.bannerOn === false, m + "개월은 배너 없이 정보 카드만(1-6)"); } // 30~32개월
+  for (const m of [33, 34, 35]) assert.strictEqual(kidCtx(ago(m), "born").bannerOn, true, m + "개월은 배너+카드");
   for (const m of [33, 34, 35]) {
     const r = kidCtx(ago(m), "born");
     assert.ok(r && r.id === "TO_3_5", m + "개월");

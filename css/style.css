@@ -1810,6 +1810,13 @@ body.acct-design .acct-cs-inp:focus, body.acct-design .acct-cs-sel:focus { borde
 .mg-know { margin: 8px 0 0; } .mg-know > summary { cursor: pointer; list-style: none; padding: 6px 0; }
 .mg-know > summary::-webkit-details-marker { display: none; }
 .mg-ack { margin: 0 0 6px auto; display: block; }
+/* 1-6 '무엇이 달라지나' 카드 — 기존 시트 카드 색·글자 그대로(새 색 없음) */
+body.acct-design .ns-change{margin:0 0 12px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface,#fff)}
+body.acct-design .ns-change h4{margin:0 0 6px;font-size:14px;font-weight:800;text-align:left}
+body.acct-design .ns-change ul{margin:0;padding-left:18px;text-align:left}
+body.acct-design .ns-change .fine-print{margin:6px 0 0;text-align:left}
+body.acct-design .ns-card-only{margin:8px 0}
+body.acct-design .a36t-nc { display: block; margin: 2px 0 0; font-size: 12px; font-weight: 400; color: var(--text-muted); } /* 확인형 '유치원·어린이집을 이용하면' — 기존 토큰만 */
 /* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
    인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
 :root {

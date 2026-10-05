@@ -1,0 +1,323 @@
+diff --git a/css/style.css b/css/style.css
+index fb04ec6..9a064f2 100644
+--- a/css/style.css
++++ b/css/style.css
+@@ -1817,6 +1817,13 @@ body.acct-design .ns-change ul{margin:0;padding-left:18px;text-align:left}
+ body.acct-design .ns-change .fine-print{margin:6px 0 0;text-align:left}
+ body.acct-design .ns-card-only{margin:8px 0}
+ body.acct-design .a36t-nc { display: block; margin: 2px 0 0; font-size: 12px; font-weight: 400; color: var(--text-muted); } /* 확인형 '유치원·어린이집을 이용하면' — 기존 토큰만 */
++/* 1-1b 새 홈 미리보기 스위치 — 기존 .detail-row·.us-tchip 재사용, 새 색 없음 */
++.hs-pref { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
++.hs-pref-t { text-align: left; } .hs-pref-t b { display: block; font-size: 13px; font-weight: 800; } .hs-pref-t small { display: block; font-size: 11px; color: var(--text-muted); }
++.hs-notice { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding: 8px 12px; background: #fff; border: 1px solid var(--border); border-radius: 10px; font-size: 12px; color: var(--text-muted); text-align: left; }
++.hs-notice span { flex: 1; } .hs-notice-link, .hs-link { background: none; border: 0; padding: 4px; font: inherit; font-size: 12px; color: var(--text-muted); text-decoration: underline; cursor: pointer; }
++.hs-notice-x { background: none; border: 0; padding: 4px 6px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
++.hs-switch-link { margin: 12px 0 4px; text-align: center; }
+ /* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
+    인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
+ :root {
+diff --git a/index.html b/index.html
+index f3af7ff..9b2ce8b 100644
+--- a/index.html
++++ b/index.html
+@@ -314,6 +314,7 @@
+   <script src="js/schedule-kinds.js?v=2"></script>
+   <script src="js/user-schedule-view.js?v=32"></script>
+   <script src="js/child-anniversaries.js?v=2"></script>
++  <script src="js/home-switch.js?v=1"></script>
+   <script src="js/curation.js?v=1"></script>
+   <script src="js/month-tiers.js?v=1"></script>
+   <script src="js/home-slots-view.js?v=1"></script>
+diff --git a/js/app.js b/js/app.js
+index 8c2f559..dd7cc88 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -195,6 +195,15 @@
+   }
+ 
+   const FEATURES_CURATION_ON = () => !!window.FEATURES && window.FEATURES.curation === true;
++  // ═══ 1-1b 새 홈 미리보기 스위치(기기 저장 hannun_home_v2, 서버·Firestore 쓰기 없음). 사용자 키 > 개발용 플래그 > 단계 기본값. 단계는 ① 로 고정(② 기본 ON 은 코드만 준비 — 전환은 사용자 확인 원문 뒤) ═══
++  const HOME_V2_STAGE = 1;
++  const HSW = { justEnabled: false, fallbackShown: false };
++  const homeStore = () => { try { return window.localStorage; } catch (e) { return null; } };
++  function homePrefApply() {
++    if (typeof HomeSwitch === "undefined" || !window.FEATURES) return;
++    window.FEATURES.curation = HomeSwitch.effective(HomeSwitch.read(homeStore()), window.FEATURES.curation === true, HOME_V2_STAGE);
++  }
++  homePrefApply();
+   async function loadAll() {
+     const [regions, reform, policy, allow36, pregTiming, nsRaw, reappearRaw, infoRaw, curationRaw, ...categoryFiles] = await Promise.all([
+       loadJson("data/regions.json"),
+@@ -1083,6 +1092,7 @@
+       <div id="acct-slot"></div>
+       ${region ? `<div class="detail-row"><div class="label">거주 지역</div>${esc(region)}</div>` : ""}
+       <details class="acct-members-det"><summary><strong>${esc(AccountView.MSG.membersManage)}</strong><small>${esc(AccountView.MSG.membersManageHint)}</small></summary><div id="members-slot"></div></details>
++      ${typeof HomeSwitch !== "undefined" ? HomeSwitch.rowHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE) : ""}
+       <div class="detail-row acct-kids"><div class="label">우리 아이</div>${
+         profile
+           ? `<button type="button" class="acct-kid-row" id="btn-acct-kid-row"><span>${esc(kid)}</span><span class="hr-chev">›</span></button>`
+@@ -1346,7 +1356,7 @@
+     const nat = byBase("NAT-020") || byBase("SB-08"); // 같은 제도 한 건만(06 §4-1 묶기)
+     if (nat) { const ap = usApplyLinkOf(nat); support.push({ id: nat.id, title: nat.title.replace(/^(?:⚠️ )?확인 필요 · /, ""), applyUrl: ap && ap.url ? ap.url : "", officialUrl: nat.officialUrl || (nat.detail && nat.detail.officialUrl) || "" }); }
+     const regional = ((dataset.subsidy && dataset.subsidy.subsidies) || []).some((x) => !/^NAT-/.test(x.id));
+-    return { region: profile.district || (pv && pv.name) || "", ageLabel: ChildTimeline.ageLabelAt(profile.birthDate, new Date()), decide, support, supportRegionPending: !regional, find: null, mine: EduTrend.myLessons(docs, keys), canAdd: usActive(), nextSchool: months >= 60, };
++    return { region: profile.district || (pv && pv.name) || "", ageLabel: ChildTimeline.ageLabelAt(profile.birthDate, new Date()), decide, support, supportRegionPending: !regional, find: null, mine: EduTrend.myLessons(docs, keys), canAdd: usActive(), nextSchool: months >= 60, nextSchoolOpen: (() => { try { return !!nsModel(); } catch (e) { return false; } })(), };
+   }
+   function acct36RenderTrend() {
+     const panel = el("tab-trend");
+@@ -1411,6 +1421,7 @@
+     const html = curatedHomeHtml();
+     if (!html) return false;
+     wrap.innerHTML = html;
++    homeSwitchDecorate(true); // 1-1b: 켠 직후 안내 띠·단계 ② 링크(스위치를 안 쓴 사용자에게는 아무것도 붙지 않음)
+     return true;
+   }
+   function curatedHomeClick(ev) {
+@@ -1452,7 +1463,37 @@
+     if (!acct36Active()) renderHomeBase.apply(this, arguments);
+     else acct36RenderHome();
+     nsSync(); // W5: 다음 단계 안내 한 줄 배너(홈 맨 아래, 계정 모드)
++    homeSwitchDecorate(false);
+   };
++  /** 1-1b: 안내 띠(켠 직후 1회 · 새 홈 실패 폴백 1회)·단계 ② 링크를 홈 위·아래에 붙인다. 스위치를 쓰지 않은 사용자(키 없음·단계 ①)에게는 아무것도 붙이지 않는다. */
++  function homeSwitchDecorate(isNew) {
++    if (typeof HomeSwitch === "undefined") return;
++    const body = el("home-body"), st = homeStore();
++    if (!body || !body.insertAdjacentHTML) return;
++    const pref = HomeSwitch.read(st);
++    if (isNew && HSW.justEnabled && HomeSwitch.noticeDue(st, true)) body.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("on"));
++    if (!isNew && pref === "on" && !HSW.fallbackShown) { HSW.fallbackShown = true; body.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("fallback")); } // 켜 놓았는데 새 홈이 안 그려졌다(설정 못 읽음 등) — 이전 홈을 그리고 한 번만 알린다
++    if (isNew) HSW.justEnabled = false;
++    body.insertAdjacentHTML("beforeend", HomeSwitch.linkHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE));
++  }
++  /** 스위치 누름: 키 저장 → 플래그 반영 → (필요하면 정책 읽기) → 홈 다시 그림(맨 위로). 한 번 더 묻지 않는다. 서버·가족에게 아무것도 보내지 않는다. */
++  async function homeSwitchSet(on) {
++    if (typeof HomeSwitch === "undefined") return;
++    HomeSwitch.write(homeStore(), on);
++    homePrefApply();
++    HSW.justEnabled = on; HSW.fallbackShown = false;
++    if (on && !curationPolicy && typeof Curation !== "undefined") { const raw = await loadJsonOrNull("data/policy/curation.json"); curationPolicy = raw ? Curation.normalizePolicy(raw) : null; }
++    renderHome();
++    const sw = el("modal-content") && el("modal-content").querySelector ? el("modal-content").querySelector("[data-home-switch-row]") : null;
++    if (sw) sw.outerHTML = HomeSwitch.rowHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE);
++    if (typeof window !== "undefined" && window.scrollTo) window.scrollTo(0, 0);
++  }
++  function homeSwitchClick(ev) {
++    const t = ev.target && ev.target.closest ? ev.target.closest("[data-home-switch], [data-home-notice-x]") : null;
++    if (!t) return;
++    if (t.hasAttribute("data-home-notice-x")) { HomeSwitch.dismissNotice(homeStore()); const n = t.closest("[data-home-notice]"); if (n) n.remove(); return; }
++    homeSwitchSet(t.getAttribute("data-home-switch") === "on");
++  }
+   const renderChecklistTabBase = renderChecklistTab;
+   renderChecklistTab = function renderChecklistTab() {
+     if (!acct36Active()) return renderChecklistTabBase.apply(this, arguments);
+@@ -1635,6 +1676,7 @@
+     if (!acctEnabled() || typeof document === "undefined") return;
+     document.addEventListener("click", acct36OnClick);
+     document.addEventListener("click", curatedHomeClick); // 1-0: 큐레이션 홈 클릭(없으면 즉시 반환)
++    document.addEventListener("click", homeSwitchClick); // 1-1b: 새 홈 미리보기 스위치·안내 띠(없으면 즉시 반환)
+     document.addEventListener("click", monthAckClick); // 1-3: 주의 '확인했어요'(없으면 즉시 반환)
+     document.addEventListener("keydown", acct36OnKey);
+     document.addEventListener("focusout", acct36OnFocusOut);
+@@ -5048,6 +5090,7 @@
+   const usShowFormBase = usShowForm;
+   usShowForm = function usShowForm() {
+     if (us.form && !us.form.g13 && !us.form.autoRef && (us.form.mode === "create" || us.form.mode === "edit") && usG13()) UserScheduleView.upgradeFormG13(us.form, usG13Ctx());
++    if (us.form && us.form.capKeep) { Object.assign(us.form, us.form.capKeep, { assigneeMemberId: "", whoPerson: false }); delete us.form.capKeep; } // 한 번만(이후 칩 선택은 사용자 것) // 2-1 후보에서 넘어온 폼: 대상·담당을 후보 그대로(담당 미정)로 되돌린다 — '나' 기본값을 쓰지 않는다
+     if (!(us.form && us.form.g13)) return usShowFormBase();
+     modalMode = "profile";
+     el("modal-content").innerHTML = UserScheduleView.renderFormG13(us.form, usLinks(), { messages: us.messages, saving: us.saving, members: HouseholdView.visibleMembers(usMembers()), ctx: usG13Ctx(), autoCandidates: usAutoCandidates() });
+@@ -5067,12 +5110,12 @@
+   const capChildName = (key) => { const l = usLinks().find((x) => String(x.childKey) === String(key)); return l ? l.displayName || "" : ""; };
+   const capShowPaste = () => capShow(CaptureDraftView.renderPaste({ text: CAP.text }, { mode: "keyboard", voice: false }));
+   const capShowCands = () => capShow(CaptureDraftView.renderCandidates(CAP.s, { childName: capChildName }));
+-  function capBaseForm() { return UserScheduleView.newForm({ date: "", activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: memActiveId() }); }
++  function capBaseForm() { return UserScheduleView.newForm({ date: "", activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: "" }); } // 담당은 비워 둔다(후보 화면의 '담당 미정' 그대로 — 일반 폼의 '나' 기본값을 쓰지 않는다)
+   function capEditCandidate(i) { // 날짜 고르기·수정·날짜 미정: 기존 일정 폼에 후보 값을 채워 열고, 저장하면 후보 화면으로 돌아온다
+     const c = CAP.s && CAP.s.cands[i]; if (!c) return;
+     c.removed = true; CAP.s.lastRemoved = null; CAP.s.undo = false;
+     us.autoLabel = null; us.form = CaptureModel.formFromCandidate(c, capBaseForm()); us.messages = []; us.saving = false; us.dayForm = null;
+-    CAP.backForm = us.form; usShowForm();
++    us.form.capKeep = { scope: us.form.scope, childKeys: (us.form.childKeys || []).slice() }; CAP.backForm = us.form; usShowForm();
+   }
+   async function capRegister() {
+     const list = CaptureModel.registrable(CAP.s); let ok = 0, fail = 0; const now = Date.now();
+diff --git a/js/edu-3to5-view.js b/js/edu-3to5-view.js
+index e2c11ef..4c98590 100644
+--- a/js/edu-3to5-view.js
++++ b/js/edu-3to5-view.js
+@@ -3,7 +3,7 @@
+  * 기존 교육 탭 클래스(.a36t-*)를 그대로 쓰고 새 색·카드 모양은 없다. 숫자·평균·비율은 하나도 그리지 않는다(D9). 또래 범위·지역 트렌드·'다음에 확인할 것'은 3~5세 분기에서 렌더하지 않는다(삭제 아님).
+  *   render(st) → html
+  * st = { region, ageLabel("N세", 세는 나이), decide:[{id,title,why}], support:[{id,title,why,applyUrl,officialUrl}], supportRegionPending:bool,
+- *        find:{ links:[{key,name,url}] } | null, mine:{count,lessons:[{title,weekly}]}, canAdd, nextSchool:bool(만 5세), privacy(문장) }
++ *        find:{ links:[{key,name,url}] } | null, mine:{count,lessons:[{title,weekly}]}, canAdd, nextSchool:bool(만 5세), nextSchoolOpen:bool(다음 단계 시트가 열릴 때만 누를 수 있다), privacy(문장) }
+  * B1 올해 정할 것(항목 없으면 숨김) → B2 받을 수 있는 지원(없으면 숨김) → B3 기관 찾기(공식 링크가 확인돼 넘어온 것만, 없으면 숨김) → B4 학원·체험(항상) → B5 현재 상태 → 개인정보 안내.
+  */
+ (function (root, factory) {
+@@ -36,7 +36,7 @@
+ 
+     const decide = (s.decide || []).filter((d) => d && d.title);
+     if (decide.length || s.nextSchool) { // B1
+-      parts.push(`<section class="a36t-card" data-a36t="decide"><h3>${esc(MSG.decideTitle)}</h3>${decide.map((d) => row(`<div><b>${esc(d.title)}</b>${d.confirm ? `<small class="a36t-nc">${esc(MSG.ifPlan)}</small>` : ""}${d.why ? `<p class="a36t-note">${esc(d.why)}</p>` : ""}</div>${btn(`data-a36="edu-plan" data-edu-id="${esc(d.id)}"`, MSG.plan)}`)).join("")}${s.nextSchool ? `<button type="button" class="a36t-note a36t-link" data-a36="edu-school">${esc(MSG.nextSchool)}</button>` : ""}</section>`);
++      parts.push(`<section class="a36t-card" data-a36t="decide"><h3>${esc(MSG.decideTitle)}</h3>${decide.map((d) => row(`<div><b>${esc(d.title)}</b>${d.confirm ? `<small class="a36t-nc">${esc(MSG.ifPlan)}</small>` : ""}${d.why ? `<p class="a36t-note">${esc(d.why)}</p>` : ""}</div>${btn(`data-a36="edu-plan" data-edu-id="${esc(d.id)}"`, MSG.plan)}`)).join("")}${s.nextSchool ? (s.nextSchoolOpen === true ? `<button type="button" class="a36t-note a36t-link" data-a36="edu-school">${esc(MSG.nextSchool)}</button>` : `<p class="a36t-note">${esc(MSG.nextSchool.replace(/ ›$/, ""))}</p>`) : ""}</section>`);
+     }
+     const support = (s.support || []).filter((d) => d && d.title);
+     if (support.length) { // B2
+diff --git a/js/home-switch.js b/js/home-switch.js
+new file mode 100644
+index 0000000..fdeea02
+--- /dev/null
++++ b/js/home-switch.js
+@@ -0,0 +1,51 @@
++/*
++ * home-switch — 1-1b 새 홈 미리보기 스위치(순수). 명세 docs/한눈육아-디자인명세-큐레이션홈-노출.md, 결정 D24(2026-10-05).
++ * 사용자 키(기기 저장 localStorage "hannun_home_v2": "1" 새 홈 / "0" 이전 홈) > 개발용 플래그(curation) > 단계 기본값(① OFF · ② ON).
++ * 이 파일은 저장소를 인자로만 받고 서버·Firestore 를 만지지 않는다. 단계 ②·③ 은 코드만 준비 — 단계 전환은 사용자 확인 원문으로만(STAGE 상수는 app.js 가 1 로 고정).
++ */
++(function (root, factory) {
++  if (typeof module !== "undefined" && module.exports) module.exports = factory();
++  else root.HomeSwitch = factory();
++})(typeof window !== "undefined" ? window : global, function () {
++  "use strict";
++  const KEY = "hannun_home_v2", NOTICE_KEY = "hannun_home_v2_notice", ONCE_KEY = "hannun_home_v2_welcomed";
++  const MSG = Object.freeze({
++    title: "새 홈 미리보기", desc: "지금 꼭 할 것부터 먼저 보여 드려요", on: "끄기", off: "켜기", aria: "새 홈 미리보기",
++    title2: "홈 화면", desc2: "새 홈을 쓰고 있어요", desc2Old: "이전 홈을 쓰고 있어요", on2: "새 홈 사용", off2: "이전 홈",
++    notice: "새 홈을 보고 계세요. 지금 꼭 할 것부터 보여 드려요.", toOld: "이전 홈으로", close: "닫기",
++    welcome2: "홈이 새로워졌어요. 지금 꼭 할 것부터 보여 드려요. 이전 홈이 편하면 맨 아래에서 바꿀 수 있어요.",
++    fallback: "새 홈을 불러오지 못해 이전 홈을 보여 드려요", linkOld: "이전 홈으로 보기", linkNew: "새 홈으로 보기",
++  });
++  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
++  const get = (st, k) => { try { return st ? st.getItem(k) : null; } catch (e) { return null; } };
++  const set = (st, k, v) => { try { if (st) st.setItem(k, v); return true; } catch (e) { return false; } };
++
++  /** 사용자 선택: "on" | "off" | null(키 없음·이상한 값). */
++  const read = (st) => { const v = get(st, KEY); return v === "1" ? "on" : v === "0" ? "off" : null; };
++  const write = (st, on) => set(st, KEY, on ? "1" : "0");
++  /** 지금 새 홈을 쓸까: 사용자 키 > 개발용 플래그 > 단계 기본값(① false · ② true). */
++  function effective(pref, devFlag, stage) { if (pref === "on") return true; if (pref === "off") return false; if (devFlag === true) return true; return Number(stage) >= 2; }
++
++  const btn = (on, label, stage) => `<button type="button" class="us-tchip" role="switch" aria-checked="${on ? "true" : "false"}" aria-label="${esc(MSG.aria)}" data-home-switch="${on ? "off" : "on"}">${esc(label)}</button>`;
++  /** 프로필 시트 줄('구성원 관리' 아래·'우리 아이' 위). 기존 .detail-row 카드 모양 + .hs-pref 안쪽 글자. */
++  function rowHtml(on, stage) {
++    const s2 = Number(stage) >= 2;
++    const title = s2 ? MSG.title2 : MSG.title, desc = s2 ? (on ? MSG.desc2 : MSG.desc2Old) : MSG.desc, label = s2 ? (on ? MSG.on2 : MSG.off2) : (on ? MSG.on : MSG.off);
++    return `<div class="detail-row hs-pref" data-home-switch-row><div class="hs-pref-t"><b>${esc(title)}</b><small>${esc(desc)}</small></div>${btn(on, label, stage)}</div>`;
++  }
++  /** 켠 직후 홈 맨 위 1회 안내 띠(단계 ①) / ② 로 바뀐 첫날 안내. kind: "on" | "welcome2" | "fallback". */
++  function noticeHtml(kind) {
++    const text = kind === "welcome2" ? MSG.welcome2 : kind === "fallback" ? MSG.fallback : MSG.notice;
++    const link = kind === "fallback" ? "" : `<button type="button" class="hs-notice-link" data-home-switch="off">${esc(MSG.toOld)}</button>`;
++    return `<div class="hs-notice" data-home-notice>${`<span>${esc(text)}</span>`}${link}<button type="button" class="hs-notice-x" data-home-notice-x aria-label="${esc(MSG.close)}">✕</button></div>`;
++  }
++  /** 홈 맨 아래 작은 링크(단계 ② 전용): 새 홈에서는 '이전 홈으로 보기', 이전 홈에서는 '새 홈으로 보기'. 단계 ① 에서는 비움. */
++  function linkHtml(on, stage) {
++    if (!(Number(stage) >= 2)) return "";
++    return `<div class="hs-switch-link"><button type="button" class="hs-link" data-home-switch="${on ? "off" : "on"}">${esc(on ? MSG.linkOld : MSG.linkNew)}</button></div>`;
++  }
++  /** 안내 띠를 지금 보일까: 켠 직후 한 번(once) + 이 기기에서 ✕ 하지 않았을 때. */
++  const noticeDue = (st, justEnabled) => justEnabled === true && get(st, NOTICE_KEY) !== "1";
++  const dismissNotice = (st) => set(st, NOTICE_KEY, "1");
++  return { KEY, NOTICE_KEY, ONCE_KEY, MSG, read, write, effective, rowHtml, noticeHtml, linkHtml, noticeDue, dismissNotice };
++});
+diff --git a/sw.js b/sw.js
+index d3e0067..080b2f1 100644
+--- a/sw.js
++++ b/sw.js
+@@ -64,6 +64,7 @@ const SHELL_ASSETS = [
+   "./js/time-wheel.js",
+   "./js/user-schedule-view.js",
+   "./js/child-anniversaries.js",
++  "./js/home-switch.js",
+   "./js/curation.js",
+   "./js/month-tiers.js",
+   "./js/home-slots-view.js",
+diff --git a/test/g1-onboarding.test.js b/test/g1-onboarding.test.js
+index cd8e5e4..0b30911 100644
+--- a/test/g1-onboarding.test.js
++++ b/test/g1-onboarding.test.js
+@@ -106,7 +106,7 @@ console.log("OFF 첫 화면: 베타 미리 써 보기");
+ test("OFF 기본 HTML 은 '베타 버튼 슬롯' 한 줄만 다르다(그 외 HEAD 와 동일 — 기간형 AUTO 삭제로 빠진 #auto-period-slot·달력 아래 안내 문구(W5 후속 4번 삭제)는 양쪽에서 뺀다)", () => {
+   let head;
+   try { head = cp.execFileSync("git", ["show", "5ec3e02:index.html"], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); } catch (e) { return; }
+-  const norm = (h) => h.replace(/\?v=\d+/g, "").replace(/\n\s*<script src="js\/child-anniversaries\.js"><\/script>/, "").replace(/(name="theme-color" content=")#ff8a5c/, "$1#ff6a1a").replace(/style="color:#e0524e;"/, 'style="color:var(--c-danger);"').replace(/\n\s*<div id="beta-preview-slot"><\/div>/, "").replace(/\n\s*<script src="js\/schedule-kinds\.js[^>]*><\/script>/, "").replace(/\n\s*<script src="js\/(?:curation|month-tiers|home-slots-view|curated-home|subsidy-tiers|edu-3to5-view)\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/home-slots\.css[^>]*>/, "").replace(/\n\s*<script src="js\/capture\/[a-z-]+\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/capture\.css[^>]*>/, "").replace(/ *<div id="auto-period-slot"><\/div>\n/, "").replace(/ *<div class="cal-kind-legend" id="cal-kind-legend">\n[^\n]*\n *<\/div>\n/, "").replace(/\n\s*<script src="js\/(?:auto-after36|auto-steps|next-stage-card|next-stage|time-range|time-wheel|pregnancy-basis)\.js[^>]*><\/script>/g, "").replace(/<script>\/\* G19:[\s\S]*?<\/script>\n/, "").replace(/\n\s*<script src="js\/(child-todos|over36-view|tab-swipe|edu-trend)\.js[^>]*><\/script>/g, ""); // G13/G19: 순수 모듈 스크립트 한 줄·계정 기본 ON 부팅 클래스 스크립트(OFF 에서는 아무 클래스도 붙지 않는다): 순수 모듈 스크립트 한 줄(전역 정의만, OFF 동작 없음)
++  const norm = (h) => h.replace(/\?v=\d+/g, "").replace(/\n\s*<script src="js\/child-anniversaries\.js"><\/script>/, "").replace(/(name="theme-color" content=")#ff8a5c/, "$1#ff6a1a").replace(/style="color:#e0524e;"/, 'style="color:var(--c-danger);"').replace(/\n\s*<div id="beta-preview-slot"><\/div>/, "").replace(/\n\s*<script src="js\/schedule-kinds\.js[^>]*><\/script>/, "").replace(/\n\s*<script src="js\/(?:curation|home-switch|month-tiers|home-slots-view|curated-home|subsidy-tiers|edu-3to5-view)\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/home-slots\.css[^>]*>/, "").replace(/\n\s*<script src="js\/capture\/[a-z-]+\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/capture\.css[^>]*>/, "").replace(/ *<div id="auto-period-slot"><\/div>\n/, "").replace(/ *<div class="cal-kind-legend" id="cal-kind-legend">\n[^\n]*\n *<\/div>\n/, "").replace(/\n\s*<script src="js\/(?:auto-after36|auto-steps|next-stage-card|next-stage|time-range|time-wheel|pregnancy-basis)\.js[^>]*><\/script>/g, "").replace(/<script>\/\* G19:[\s\S]*?<\/script>\n/, "").replace(/\n\s*<script src="js\/(child-todos|over36-view|tab-swipe|edu-trend)\.js[^>]*><\/script>/g, ""); // G13/G19: 순수 모듈 스크립트 한 줄·계정 기본 ON 부팅 클래스 스크립트(OFF 에서는 아무 클래스도 붙지 않는다): 순수 모듈 스크립트 한 줄(전역 정의만, OFF 동작 없음)
+   assert.strictEqual(norm(read("index.html")), norm(head));
+   assert.ok(read("index.html").includes('<div id="beta-preview-slot"></div>'));
+ });
+diff --git a/test/m13-capture-wiring.test.js b/test/m13-capture-wiring.test.js
+index 200367c..0d8c078 100644
+--- a/test/m13-capture-wiring.test.js
++++ b/test/m13-capture-wiring.test.js
+@@ -21,3 +21,13 @@ test("앱 연결: 진입점은 새 일정 시트(계정 모드)에만, 저장은
+   assert.ok(blk.includes("UserScheduleView.prepareSave") && blk.includes("UserSchedule.buildCreateDoc") && blk.includes("HouseholdSync.createSchedule"));
+   assert.ok(!/localStorage|sessionStorage|setDoc|updateDoc|console\.log\(CAP/.test(blk));
+ });
++
++test("담당은 빈칸으로 저장: 후보 기본 폼·후보→폼 인계 모두 담당 없음('나' 기본값 미적용), 대상은 후보 그대로", () => {
++  const i = app.indexOf("function capBaseForm()"), line = app.slice(i, app.indexOf("\n", i));
++  assert.ok(line.includes('defaultAssigneeId: ""') && !line.includes("memActiveId()"));
++  const j = app.indexOf("usShowForm = function usShowForm()"), blk = app.slice(j, app.indexOf("\n  };", j));
++  assert.ok(blk.includes("us.form.capKeep") && blk.includes('assigneeMemberId: ""') && blk.includes("whoPerson: false") && app.includes("us.form.capKeep = { scope: us.form.scope"));
++  const base = V.newForm({ date: "", activeChildKey: "c1", links: [{ childKey: "c1" }], defaultAssigneeId: "" });
++  const f = M.formFromCandidate({ title: "치과", eventDate: "2026-10-14" }, base);
++  const input = V.formToInput(f); assert.ok(!("assigneeMemberId" in input), "저장 입력에 담당 필드 없음");
++});
+diff --git a/test/m14-home-switch.test.js b/test/m14-home-switch.test.js
+new file mode 100644
+index 0000000..b5c39ae
+--- /dev/null
++++ b/test/m14-home-switch.test.js
+@@ -0,0 +1,35 @@
++// 1-1b 새 홈 미리보기 스위치: 순수 규칙(키>개발 플래그>단계 기본값)·마크업·안내 띠, 앱 연결(기기 저장만·단계 ① 고정·스위치 안 쓴 사용자 화면 불변). 실행: node --test test/m14-home-switch.test.js
++const test = require("node:test"), assert = require("node:assert"), fs = require("fs"), path = require("path"), vm = require("vm");
++const H = require("../js/home-switch.js");
++const app = fs.readFileSync(path.join(__dirname, "..", "js/app.js"), "utf8");
++const mem = (init) => { const m = { ...(init || {}) }; return { getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, m }; };
++test("우선순위: 사용자 키 > 개발용 플래그 > 단계 기본값(① OFF·② ON)", () => {
++  assert.strictEqual(H.effective(null, false, 1), false); assert.strictEqual(H.effective(null, true, 1), true);
++  assert.strictEqual(H.effective("on", false, 1), true); assert.strictEqual(H.effective("off", true, 1), false);
++  assert.strictEqual(H.effective(null, false, 2), true); assert.strictEqual(H.effective("off", false, 2), false);
++});
++test("키 읽기·쓰기: '1'/'0' 만 인정, 저장소가 막혀도 던지지 않는다", () => {
++  const st = mem(); assert.strictEqual(H.read(st), null); H.write(st, true); assert.strictEqual(st.m[H.KEY], "1"); assert.strictEqual(H.read(st), "on"); H.write(st, false); assert.strictEqual(H.read(st), "off");
++  assert.strictEqual(H.read(mem({ [H.KEY]: "x" })), null);
++  const bad = { getItem() { throw new Error("x"); }, setItem() { throw new Error("x"); } }; assert.strictEqual(H.read(bad), null); assert.strictEqual(H.write(bad, true), false);
++});
++test("마크업: 단계 ① 줄=새 홈 미리보기·켜기/끄기, ② 줄=홈 화면·새 홈 사용/이전 홈, 링크는 ② 에서만, 안내 띠는 한 번·✕ 뒤 다시 안 뜸", () => {
++  const r1 = H.rowHtml(false, 1); assert.ok(r1.includes("새 홈 미리보기") && r1.includes("지금 꼭 할 것부터 먼저 보여 드려요") && r1.includes('aria-checked="false"') && r1.includes(">켜기<") && r1.includes('data-home-switch="on"') && r1.includes('role="switch"'));
++  assert.ok(H.rowHtml(true, 1).includes(">끄기<") && H.rowHtml(true, 1).includes('aria-checked="true"'));
++  const r2 = H.rowHtml(true, 2); assert.ok(r2.includes("홈 화면") && r2.includes("새 홈을 쓰고 있어요") && r2.includes("새 홈 사용"));
++  assert.strictEqual(H.linkHtml(true, 1), ""); assert.ok(H.linkHtml(true, 2).includes("이전 홈으로 보기") && H.linkHtml(false, 2).includes("새 홈으로 보기"));
++  const st = mem(); assert.strictEqual(H.noticeDue(st, true), true); assert.strictEqual(H.noticeDue(st, false), false); H.dismissNotice(st); assert.strictEqual(H.noticeDue(st, true), false);
++  const n = H.noticeHtml("on"); assert.ok(n.includes("새 홈을 보고 계세요. 지금 꼭 할 것부터 보여 드려요.") && n.includes("이전 홈으로") && n.includes("data-home-notice-x"));
++  assert.ok(H.noticeHtml("fallback").includes("새 홈을 불러오지 못해 이전 홈을 보여 드려요") && !H.noticeHtml("fallback").includes("이전 홈으로<"));
++});
++test("앱 연결: 단계 ① 고정, 기기 저장만, 프로필 시트 줄은 계정 시트에만, 스위치를 안 쓴 사용자(키 없음·단계 ①)에겐 화면 불변", () => {
++  assert.ok(/const HOME_V2_STAGE = 1;/.test(app));
++  const i = app.indexOf("async function homeSwitchSet("), blk = app.slice(i, app.indexOf("\n  }\n", i) + 4);
++  assert.ok(blk.includes("HomeSwitch.write(homeStore(), on)") && !/setDoc|updateDoc|HouseholdSync|fetch\(/.test(blk) && blk.includes("renderHome();"));
++  assert.ok(/HomeSwitch\.rowHtml\(FEATURES_CURATION_ON\(\), HOME_V2_STAGE\)/.test(app.slice(app.indexOf("function acctProfileSheet()"), app.indexOf("showProfileSheet = function (pendingPhoto)"))));
++  const d = app.indexOf("function homeSwitchDecorate("), dec = app.slice(d, app.indexOf("\n  }\n", d) + 4);
++  const run = (pref, on, just) => { const st = mem(pref ? { [H.KEY]: pref } : {}); let html = ""; const sb = { HomeSwitch: H, HSW: { justEnabled: just, fallbackShown: false }, HOME_V2_STAGE: 1, FEATURES_CURATION_ON: () => on, el: () => ({ insertAdjacentHTML: (w, h) => { html += h; } }), homeStore: () => st }; vm.runInNewContext(`${dec}; homeSwitchDecorate(${on})`, sb); return html; };
++  assert.strictEqual(run(null, false, false), "", "키 없음·① 구 홈: 아무것도 안 붙음"); assert.strictEqual(run(null, true, false), "", "개발 플래그로 켠 새 홈: 안내·링크 없음");
++  assert.ok(run("1", true, true).includes("새 홈을 보고 계세요"), "켠 직후 안내 띠"); assert.strictEqual(run("1", true, false), "", "그 뒤엔 없음");
++  assert.ok(run("1", false, false).includes("불러오지 못해"), "켜 놨는데 새 홈이 안 그려지면 폴백 안내");
++});
+diff --git a/test/m7-edu-3to5.test.js b/test/m7-edu-3to5.test.js
+index 7fccfad..9e8ac44 100644
+--- a/test/m7-edu-3to5.test.js
++++ b/test/m7-edu-3to5.test.js
+@@ -71,6 +71,10 @@ test("④ .a36t-nc CSS(작은 회색, 기존 토큰), ⑤ 만 5세 초등 준비
+   const css = fs.readFileSync(path.join(__dirname, "..", "css/style.css"), "utf8");
+   const m = /\.a36t-nc \{([^}]*)\}/.exec(css.slice(0, css.indexOf("/* ═══ v1.12.97")));
+   assert.ok(m && /font-size: 12px/.test(m[1]) && /var\(--text-muted\)/.test(m[1]));
+-  assert.ok(V.render({ ...base, nextSchool: true }).includes("내년에는 초등 입학 준비가 시작돼요 ›") && !V.render({ ...base, nextSchool: false }).includes("초등 입학 준비"));
++  const open = V.render({ ...base, nextSchool: true, nextSchoolOpen: true }), plain = V.render({ ...base, nextSchool: true, nextSchoolOpen: false });
++  assert.ok(open.includes("내년에는 초등 입학 준비가 시작돼요 ›") && open.includes('data-a36="edu-school"'), "열 시트가 있으면 버튼+›");
++  assert.ok(plain.includes("내년에는 초등 입학 준비가 시작돼요") && !plain.includes("준비가 시작돼요 ›") && !plain.includes('data-a36="edu-school"'), "열 시트가 없으면 글자만(›·버튼 없음)");
++  assert.ok(!V.render({ ...base, nextSchool: false }).includes("초등 입학 준비"));
++  assert.ok(/nextSchoolOpen: \(\(\) => \{ try \{ return !!nsModel\(\)/.test(fnOf("acct36Edu3to5State")));
+   assert.ok(/nextSchool: months >= 60/.test(fnOf("acct36Edu3to5State")));
+ });

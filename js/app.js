@@ -1332,7 +1332,7 @@
     const m = ChildTimeline.completedMonths(profile.birthDate, new Date());
     if (m < ChildTimeline.OVER36_FROM_MONTHS) return false;
     const g = EduTrend.gradeOf(profile.birthDate, new Date(), { policy: schoolPolicy, enrollmentYearOverride: profile.enrollmentYearOverride });
-    return !(g >= 1);
+    return !(g >= 1) && m < 72; // 3~5세(36~71개월)만 — 6~7세(취학 전 1년 이후)는 지금 화면 그대로(명세)
   }
   /** 3~5세 블록 입력: 이 아이의 기존 이벤트·지원 레코드만 쓴다(새 사실·숫자 없음). 처음학교로·기관 링크는 데이터 확인 전이라 넘기지 않는다(B3 숨김). */
   function acct36Edu3to5State(pv, docs, keys) {
@@ -1340,7 +1340,7 @@
     const shown = visibleSchedule(true);
     const byBase = (id) => shown.find((e) => String(e.id).split("__")[0] === id);
     const decide = [];
-    const cr = byBase("CR-02");
+    const cr = byBase("CR-03"); // 만3세반(유아반) 전환 준비(명세 B1) — CR-02 는 만1세반 전환(12개월)이라 쓰지 않는다
     if (cr) decide.push({ id: cr.id, title: cr.title.replace(/^(?:⚠️ )?확인 필요 · /, ""), why: cr.dateLabel || "" });
     const support = [];
     const nat = byBase("NAT-020") || byBase("SB-08"); // 같은 제도 한 건만(06 §4-1 묶기)
@@ -3140,8 +3140,13 @@
     if (old) old.remove();
     let m = null;
     try { m = nsModel(); } catch (e) { console.error("다음 단계 안내 계산 실패", e); }
-    if (m) body.insertAdjacentHTML("beforeend", NextStage.renderBanner(m));
+    if (m && m.bannerOn === false) { // 1-6: 정보 카드 창(30~32개월)은 배너 없이 카드만 홈 맨 아래에 둔다
+      const card = nsCardHtml(m);
+      if (card) body.insertAdjacentHTML("beforeend", `<div id="ns-banner" class="ns-card-only">${card}</div>`);
+    } else if (m) body.insertAdjacentHTML("beforeend", NextStage.renderBanner(m));
   }
+  /** 1-6 '무엇이 달라지나' 카드(정책 changes 에서만 — 문장이 없으면 빈 문자열). */
+  const nsCardHtml = (m) => (typeof NextStageCard === "undefined" || !m || !m.stage ? "" : NextStageCard.render(m.stage, { ageMonths: m.ageMonths }, m.items));
   const nsCanPlan = () => autoLinkOn() && usActiveChildKey() != null;
   function nsShow(html) {
     modalMode = "profile";
@@ -3154,7 +3159,7 @@
     NSS.m = nsKeepModel(m);
     if (!NSS.m) return closeDetail();
     NSS.error = ""; NSS.message = ""; NSS.saving = false;
-    nsShow(NextStage.renderSheet(NSS.m, { applyOf: (id) => { const e = schedule.find((x) => x.id === id); return e ? usApplyLinkOf(e) : null; }, canPlan: nsCanPlan() }));
+    nsShow(NextStage.renderSheet(NSS.m, { applyOf: (id) => { const e = schedule.find((x) => x.id === id); return e ? usApplyLinkOf(e) : null; }, canPlan: nsCanPlan(), cardHtml: nsCardHtml(NSS.m) }));
   }
   /** 일정 넣기 시트의 줄: 아직 안 한 항목만. 날짜를 만들지 않는다(정해진 날이 없으면 시기만, 그것도 없으면 선택 불가). */
   function nsPlanRows() {
@@ -5048,7 +5053,72 @@
     el("modal-content").innerHTML = UserScheduleView.renderFormG13(us.form, usLinks(), { messages: us.messages, saving: us.saving, members: HouseholdView.visibleMembers(usMembers()), ctx: usG13Ctx(), autoCandidates: usAutoCandidates() });
     el("detail-modal").classList.remove("hidden");
     usBindPickers();
+    capInjectEntry();
   };
+  // ═══ 2-1 붙여넣기로 추가: 새 일정 시트 맨 위 '붙여넣기로 추가' → 글 붙여넣기 → 후보 확인 → 선택 등록. 해석은 기기 안(js/capture/parse-ko.js), 원문은 저장하지 않는다(등록은 기존 일정 저장 경로: prepareSave → buildCreateDoc → createSchedule) ═══
+  const CAP = { text: "", s: null, backForm: null };
+  const capReady = () => typeof ParseKo !== "undefined" && typeof CaptureDraftView !== "undefined" && typeof CaptureModel !== "undefined";
+  function capInjectEntry() {
+    if (!capReady() || !acctEnabled() || !us.form || us.form.mode !== "create" || us.form.autoRef) return;
+    const box = el("modal-content");
+    if (box && box.insertAdjacentHTML && !box.querySelector("[data-cap-open]")) box.insertAdjacentHTML("afterbegin", `<button type="button" class="us-chip us-cap-entry" data-cap-open>${CaptureDraftView.MSG.pasteTitle} ›</button>`);
+  }
+  function capShow(html) { modalMode = "profile"; el("modal-content").innerHTML = html; el("detail-modal").classList.remove("hidden"); }
+  const capChildName = (key) => { const l = usLinks().find((x) => String(x.childKey) === String(key)); return l ? l.displayName || "" : ""; };
+  const capShowPaste = () => capShow(CaptureDraftView.renderPaste({ text: CAP.text }, { mode: "keyboard", voice: false }));
+  const capShowCands = () => capShow(CaptureDraftView.renderCandidates(CAP.s, { childName: capChildName }));
+  function capBaseForm() { return UserScheduleView.newForm({ date: "", activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: memActiveId() }); }
+  function capEditCandidate(i) { // 날짜 고르기·수정·날짜 미정: 기존 일정 폼에 후보 값을 채워 열고, 저장하면 후보 화면으로 돌아온다
+    const c = CAP.s && CAP.s.cands[i]; if (!c) return;
+    c.removed = true; CAP.s.lastRemoved = null; CAP.s.undo = false;
+    us.autoLabel = null; us.form = CaptureModel.formFromCandidate(c, capBaseForm()); us.messages = []; us.saving = false; us.dayForm = null;
+    CAP.backForm = us.form; usShowForm();
+  }
+  async function capRegister() {
+    const list = CaptureModel.registrable(CAP.s); let ok = 0, fail = 0; const now = Date.now();
+    for (const c of list) {
+      try {
+        const prep = UserScheduleView.prepareSave(CaptureModel.formFromCandidate(c, capBaseForm()), now);
+        const r = prep.ok ? UserSchedule.buildCreateDoc(prep.input, now) : { ok: false };
+        const res = r.ok ? await HouseholdSync.createSchedule(hh.hid, r.doc) : { ok: false };
+        if (res.ok) { ok++; c.removed = true; } else fail++;
+      } catch (e) { console.error("붙여넣기 일정 등록 실패", e); fail++; }
+    }
+    if (!fail) { CAP.s = null; CAP.text = ""; closeDetail(); } else { capShowCands(); usModalNote(`${ok}개 등록, ${fail}개는 등록하지 못했어요. 수정해서 다시 시도해 주세요.`); }
+    usRefreshCalendar();
+  }
+  function capOnClick(ev) {
+    const t = ev.target && ev.target.closest ? ev.target.closest("[data-cap-open],[data-cap-find],[data-cap-cancel],[data-cap-check],[data-cap-remove],[data-cap-undo],[data-cap-edit],[data-cap-date],[data-cap-undecided],[data-cap-direct],[data-cap-register]") : null;
+    if (!t || !capReady() || !el("modal-content").contains(t)) return;
+    const num = (n) => Number(t.getAttribute(n));
+    if (t.hasAttribute("data-cap-open")) { CAP.text = ""; CAP.s = null; return capShowPaste(); }
+    if (t.hasAttribute("data-cap-cancel")) { CAP.s = null; CAP.text = ""; CAP.backForm = null; return closeDetail(); }
+    if (t.hasAttribute("data-cap-direct")) { CAP.s = null; return usOpenForm(null, toISODate(new Date())); }
+    if (t.hasAttribute("data-cap-find")) {
+      const ta = el("modal-content").querySelector("[data-cap-text]"); CAP.text = ta ? ta.value : CAP.text;
+      CAP.s = CaptureModel.fromParse(ParseKo.parse(CAP.text, { today: new Date(), children: usLinks().filter((l) => !l.removedAt).map((l) => ({ key: String(l.childKey), name: l.displayName || "" })) }));
+      CAP.text = ""; return capShowCands(); // 원문은 후보 화면부터 쥐지 않는다(후보 안의 source 조각만 접힘으로 보인다)
+    }
+    if (!CAP.s) return;
+    if (t.hasAttribute("data-cap-check")) { CaptureModel.toggle(CAP.s, num("data-cap-check")); return capShowCands(); }
+    if (t.hasAttribute("data-cap-remove")) { CaptureModel.remove(CAP.s, num("data-cap-remove")); return capShowCands(); }
+    if (t.hasAttribute("data-cap-undo")) { CaptureModel.undo(CAP.s); return capShowCands(); }
+    if (t.hasAttribute("data-cap-edit")) return capEditCandidate(num("data-cap-edit"));
+    if (t.hasAttribute("data-cap-date")) return capEditCandidate(num("data-cap-date"));
+    if (t.hasAttribute("data-cap-undecided")) return capEditCandidate(num("data-cap-undecided"));
+    if (t.hasAttribute("data-cap-register")) return capRegister();
+  }
+  if (typeof document !== "undefined") {
+    document.addEventListener("click", capOnClick);
+    document.addEventListener("input", (ev) => { const ta = ev.target && ev.target.matches && ev.target.matches("[data-cap-text]") ? ev.target : null; if (!ta) return; CAP.text = ta.value; const b = el("modal-content").querySelector("[data-cap-find]"); if (b) b.disabled = !ta.value.trim(); });
+  }
+  const usSaveBase = usSave;
+  usSave = async function usSave() { // 후보에서 폼으로 넘어온 저장이 성공하면 후보 화면으로 돌아온다
+    const f = us.form, back = CAP.backForm && f === CAP.backForm;
+    await usSaveBase();
+    if (back && us.form === null && CAP.s) { CAP.backForm = null; capShowCands(); }
+  };
+
   /** 폼에 들어 있는 날짜 칸에 공통 달력(HNDatePicker, 일정용 범위)을 연결한다. "이 날만 수정" 중이면 그 폼의 날짜 칸. */
   function usBindPickers() {
     usEnsureTimes();

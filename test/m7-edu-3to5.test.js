@@ -44,3 +44,33 @@ test("연결: 3~5세 분기는 acct36RenderTrend 안 한 곳, 초등(학년 있�
   const mk = (months, grade, preg) => vm.runInNewContext(`${fn}; acct36Is3to5()`, { profile: { birthDate: 1 }, isPregnant: () => !!preg, ChildTimeline: { completedMonths: () => months, OVER36_FROM_MONTHS: 36 }, EduTrend: { gradeOf: () => grade }, schoolPolicy: null, Date });
   assert.deepStrictEqual([mk(30, 0), mk(36, 0), mk(60, 0), mk(80, 1), mk(50, 0, true)], [false, true, true, false, false]);
 });
+
+// ── v1.12.104 교육 탭 QA 5건 ──
+const app = fs.readFileSync(path.join(__dirname, "..", "js/app.js"), "utf8");
+const fnOf = (name) => { const i = app.indexOf(`  function ${name}(`); return app.slice(i, app.indexOf("\n  }\n", i) + 4); };
+test("① B1 은 CR-03(만3세반 전환 준비)을 쓰고 CR-02(12개월)는 쓰지 않는다", () => {
+  const body = fnOf("acct36Edu3to5State");
+  assert.ok(body.includes('byBase("CR-03")') && !body.includes('byBase("CR-02")'));
+  const ev = (id, title) => ({ id, title, dateLabel: "3월 새 학기 전" });
+  const run = (shown) => vm.runInNewContext(`${body}; acct36Edu3to5State(null, [], [])`, { ChildTimeline: { completedMonths: () => 40, ageLabelAt: () => "3세" }, visibleSchedule: () => shown, profile: { birthDate: new Date(2023, 5, 1), district: "구로구" }, dataset: { subsidy: { subsidies: [] } }, usApplyLinkOf: () => null, EduTrend: { myLessons: () => ({ count: 0, lessons: [] }) }, usActive: () => true, Date });
+  const st = run([ev("CR-02__default", "만1세반 전환 확인"), ev("CR-03__default", "만3세반(유아반) 전환 준비")]);
+  assert.strictEqual(JSON.stringify(st.decide.map((d) => d.id)), '["CR-03__default"]');
+  assert.strictEqual(run([ev("CR-02__default", "만1세반 전환 확인")]).decide.length, 0);
+});
+test("② 지역 지원 데이터가 없으면 'OO 자체 지원은 아직 확인 중이에요' 한 줄(B2)", () => {
+  const h = V.render({ ...base, support: [{ id: "NAT-020", title: "유아학비 신청", applyUrl: "https://x.kr/a" }], supportRegionPending: true });
+  assert.ok(h.includes("구로구 자체 지원은 아직 확인 중이에요"));
+  assert.ok(!V.render({ ...base, support: [{ id: "NAT-020", title: "유아학비 신청" }], supportRegionPending: false }).includes("확인 중이에요"));
+});
+test("③ 3~5세 분기는 36~71개월만(6~7세는 지금 화면 그대로)", () => {
+  const body = fnOf("acct36Is3to5");
+  const run = (m, g) => vm.runInNewContext(`${body}; acct36Is3to5()`, { profile: { birthDate: new Date() }, isPregnant: () => false, ChildTimeline: { completedMonths: () => m, OVER36_FROM_MONTHS: 36 }, EduTrend: { gradeOf: () => g }, schoolPolicy: null, Date });
+  assert.strictEqual(run(36, 0), true); assert.strictEqual(run(71, 0), true); assert.strictEqual(run(72, 0), false); assert.strictEqual(run(80, 0), false); assert.strictEqual(run(40, 1), false); assert.strictEqual(run(35, 0), false);
+});
+test("④ .a36t-nc CSS(작은 회색, 기존 토큰), ⑤ 만 5세 초등 준비 한 줄은 nextSchool 일 때만", () => {
+  const css = fs.readFileSync(path.join(__dirname, "..", "css/style.css"), "utf8");
+  const m = /\.a36t-nc \{([^}]*)\}/.exec(css.slice(0, css.indexOf("/* ═══ v1.12.97")));
+  assert.ok(m && /font-size: 12px/.test(m[1]) && /var\(--text-muted\)/.test(m[1]));
+  assert.ok(V.render({ ...base, nextSchool: true }).includes("내년에는 초등 입학 준비가 시작돼요 ›") && !V.render({ ...base, nextSchool: false }).includes("초등 입학 준비"));
+  assert.ok(/nextSchool: months >= 60/.test(fnOf("acct36Edu3to5State")));
+});

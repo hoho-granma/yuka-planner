@@ -134,9 +134,10 @@
     if (!a || typeof a !== "object") return null;
     const min = typeof a.min === "number" ? a.min : null;
     const max = typeof a.max === "number" ? a.max : null;
-    if (min !== null && max !== null) return min === max ? `${min}개월` : `${min}~${max}개월`;
+    const yrs = max !== null && max >= 71 && (max + 1) % 12 === 0 ? `만 ${(max + 1) / 12}세 미만` : null; // 개월 끝(167·131·71)은 '만 N세 미만'으로 — '167개월까지'를 부모가 나이로 바꿔 읽지 않게(12 의 배수 − 1 만)
+    if (min !== null && max !== null) return min === max ? `${min}개월` : yrs ? `${min}개월~${yrs}` : `${min}~${max}개월`;
     if (min !== null) return `${min}개월 이상`;
-    if (max !== null) return `${max}개월까지`;
+    if (max !== null) return yrs || `${max}개월까지`;
     return null;
   }
   const lookup = (map, v) => (v !== null && v !== undefined && Object.prototype.hasOwnProperty.call(map, v) ? map[v] : null);
