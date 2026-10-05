@@ -1274,14 +1274,21 @@
   const acct36Active = () => acct36Child(profile);
   // 36개월 이상의 자동(AUTO) 일정: 항목별 허용 목록(data/policy/auto-after36.json)에 있는 것만 보인다(ChildTimeline.isEventVisible 의 autoAfter36 판정). 다가오는 항목은 홈 카드·날짜 시트에 '자동' 표시로 나온다.
   /** 36개월 이상 아이에게 보일 자동 일정(완료·미해당 제외) — 오늘 이후 가까운 순. limit 없으면 전부. */
+  /** 날짜 없는 정보형 자동 항목(KG-01 유치원 입학 신청 — 공지 전). data/policy/curation.json 의 KNOW·INFO 와 같은 값이지만 플래그 OFF 기기는 정책을 읽지 않아 여기에 고정한다. 정책을 읽었으면 그쪽 KNOW·INFO id 도 더한다. 1이면 정보형. */
+  const AUTO_INFO_IDS = ["KG-01"];
+  function isInfoOnlyAuto(e) {
+    const base = String((e && e.id) || "").split("__")[0], pid = curationPolicy && curationPolicy.ids && curationPolicy.ids[base];
+    return AUTO_INFO_IDS.includes(base) || (pid && pid.type === "KNOW" && pid.sub === "INFO") ? 1 : 0;
+  }
   function acct36AutoItems(limit) {
     if (!acct36Active()) return [];
     const t0 = new Date(); t0.setHours(0, 0, 0, 0);
     const reappear = new Date(t0.getTime() + homeReappearDays * 86400000); // 일정으로 넣은 항목은 그 날짜 N일 전부터 다시 나온다
     const links = autoLinks();
     const hiddenUntilNear = (e) => { const l = links ? AutoSteps.linkOf(links, e) : null; return !!(l && l.date && new Date(l.date + "T00:00:00") > reappear); };
+    const infoRank = (e) => (typeof isInfoOnlyAuto === "function" ? isInfoOnlyAuto(e) : 0);
     const key = (e) => (e.date < t0 ? t0 : e.date); // 열려 있는 상시 지원금(date 가 과거)은 오늘로 쳐서 가까운 순에 끼운다
-    const list = visibleSchedule(true).filter((e) => !completed[e.id] && ChildTimeline.isOpenAutoItem(e, profile.birthDate, t0) && !hiddenUntilNear(e)).sort((a, b) => key(a) - key(b));
+    const list = visibleSchedule(true).filter((e) => !completed[e.id] && ChildTimeline.isOpenAutoItem(e, profile.birthDate, t0) && !hiddenUntilNear(e)).sort((a, b) => (infoRank(a) - infoRank(b)) || (key(a) - key(b))); // 정보형(KNOW·INFO)은 행동·마감 항목 뒤로 — 홈 위쪽 칸을 밀어내지 않는다
     return limit ? list.slice(0, limit) : list;
   }
   const A36 = { hideDone: (() => { try { return localStorage.getItem("hannun_a36_hidedone") === "1"; } catch (e) { return false; } })(), adding: false, editId: null, menuId: null, press: null, swallow: false };

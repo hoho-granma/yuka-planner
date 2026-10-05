@@ -95,3 +95,11 @@ test("B1 처음학교로 안내 한 줄: KG-01 이 날짜 없음일 때만(앱 �
   assert.strictEqual(run(age({ windowStart: new Date(2026, 3, 1), windowEnd: new Date(2027, 3, 1) })), "공지 전이에요", "엔진이 만든 나이 창(windowStart)은 모집 날짜가 아니다");
   assert.strictEqual(run(age({ detail: { definition: { triggerType: "SCHOOL_TERM_WINDOW" } } })), "", "날짜 기준 정의로 바뀌면 안내를 숨긴다"); assert.strictEqual(run(null), "");
 });
+
+test("36+ 홈 자동 항목: 정보형(KG-01)은 행동·마감 항목 뒤로(DTaP 5차를 밀어내지 않음), 나머지는 날짜 순", () => {
+  const app2 = fs.readFileSync(path.join(__dirname, "..", "js/app.js"), "utf8");
+  const infoFn = app2.slice(app2.indexOf("  function isInfoOnlyAuto("), app2.indexOf("\n  }\n", app2.indexOf("  function isInfoOnlyAuto(")) + 4);
+  const run = (ids) => vm.runInNewContext(`const AUTO_INFO_IDS = ["KG-01"]; let curationPolicy = null; ${infoFn}; (${JSON.stringify(ids)}).map((id, i) => ({ id, i })).sort((a, b) => (isInfoOnlyAuto(a) - isInfoOnlyAuto(b)) || (a.i - b.i)).map((x) => x.id).join(",")`, {});
+  assert.strictEqual(run(["KG-01__default", "NAT-020", "VX-DTAP__dose-5", "VX-IPV__dose-4"]), "NAT-020,VX-DTAP__dose-5,VX-IPV__dose-4,KG-01__default");
+  assert.ok(app2.includes("(infoRank(a) - infoRank(b)) || (key(a) - key(b))") && app2.includes('typeof isInfoOnlyAuto === "function"'));
+});
