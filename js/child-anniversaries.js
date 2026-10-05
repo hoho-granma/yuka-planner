@@ -55,17 +55,10 @@
     }
     return out.sort((a, c) => (a.iso < c.iso ? -1 : a.iso > c.iso ? 1 : 0));
   }
-  /**
-   * 직접 입력 우선(결정 3): 같은 아이·같은 날짜에 '가족' 분류의 직접 일정(해당 아이 대상)이 있으면 그날의 자동 항목을 숨긴다. 제목 문자열은 비교하지 않는다.
-   * direct: [{ date, scope, childKeys, category }](그날 사용자 일정 occurrence).
-   */
-  function hiddenByDirect(item, direct) {
-    return (direct || []).some((o) => o && o.date === item.iso && o.category === "FAMILY" && o.scope === "CHILD" && (o.childKeys || []).includes(item.childKey));
-  }
   /** 전체 토글(기기 저장): 기본 켜짐. 저장소 접근이 막혀도 켜짐. */
   const KEY = "hannun_cal_anniv";
   function isOn(storage) { try { return !storage || storage.getItem(KEY) !== "0"; } catch (e) { return true; } }
   function setOn(storage, on) { try { if (storage) storage.setItem(KEY, on ? "1" : "0"); } catch (e) {} }
 
-  return { compute, hiddenByDirect, isOn, setOn, KEY, MSG, KIND_LABEL, sameDayIn, day100 };
+  return { compute, isOn, setOn, KEY, MSG, KIND_LABEL, sameDayIn, day100 };
 });

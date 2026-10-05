@@ -44,6 +44,7 @@
 
   let dataset = null;
   let nextStagePolicy = null;
+  let curationPolicy = null; // 1-0 큐레이션 정책(data/policy/curation.json) — 못 읽으면 null → 큐레이션 홈은 켜져 있어도 기존 홈
   let homeReappearDays = 7;
   let infoActions = {}; // 정보 항목의 '관련 행동 한 줄'(data/policy/info-actions.json)
   const asInfoSaved = new Map(); // 이번에 '관련 행동'을 일정으로 넣은 정보 항목 id → 날짜(독립 일정이라 정보 항목은 그대로 남으므로 시트에 '넣었어요'를 보인다)
@@ -193,8 +194,9 @@
     loadedSubsidyRegionKey = key;
   }
 
+  const FEATURES_CURATION_ON = () => !!window.FEATURES && window.FEATURES.curation === true;
   async function loadAll() {
-    const [regions, reform, policy, allow36, pregTiming, nsRaw, reappearRaw, infoRaw, ...categoryFiles] = await Promise.all([
+    const [regions, reform, policy, allow36, pregTiming, nsRaw, reappearRaw, infoRaw, curationRaw, ...categoryFiles] = await Promise.all([
       loadJson("data/regions.json"),
       loadJsonOrNull("data/subsidies/reform-2027.json"),
       loadSchoolPolicy(),
@@ -203,12 +205,15 @@
       loadJsonOrNull("data/policy/next-stage.json"),
       loadJsonOrNull("data/policy/home-reappear.json"),
       loadJsonOrNull("data/policy/info-actions.json"),
+      FEATURES_CURATION_ON() ? loadJsonOrNull("data/policy/curation.json") : null, // 플래그 OFF 면 읽지도 않는다(네트워크 요청 없음)
       ...TODO_CATEGORY_FILES.map(loadJson),
     ]);
     regionsData = regions;
     homeReappearDays = reappearRaw && Number.isInteger(reappearRaw.reappearDaysBefore) && reappearRaw.reappearDaysBefore >= 0 ? reappearRaw.reappearDaysBefore : 7; // 홈 카드 재등장 창(data/policy/home-reappear.json)
     infoActions = typeof AutoSteps === "undefined" ? {} : AutoSteps.normalizeInfoActions(infoRaw);
     nextStagePolicy = typeof NextStage === "undefined" ? null : NextStage.normalizePolicy(nsRaw); // 다음 단계 안내(W5) 정책 — 못 읽으면 빈 정책(배너 없음)
+    curationPolicy = curationRaw && typeof Curation !== "undefined" ? Curation.normalizePolicy(curationRaw) : null;
+    if (curationPolicy && curationPolicy.warnings && curationPolicy.warnings.length) console.warn("큐레이션 정책 경고", curationPolicy.warnings);
     schoolPolicy = policy;
     reformConfig = reform;
     // 건강검진·예방접종·성장발달(및 이유식/구강/수면/안전/생활/보육)은 카테고리별 파일
@@ -1335,8 +1340,92 @@
     renderAllBase.apply(this, arguments);
     if (acctEnabled()) acct36Sync();
   };
+  // ═══ 1-0/1-1 큐레이션 홈(플래그 curation, 기본 OFF) — curate() → 홈 슬롯. 못 읽거나 실패하면 null 을 돌려 기존 홈을 그린다 ═══
+  let curatedCur = null; // 마지막 curate 결과(클릭 분기가 단위 key 로 항목을 찾는다)
+  const CURATED_ANSWERS_KEY = "hannun_subsidy_answers"; // D14: '해당돼요/아니에요' 항목 단위 기기 저장(Firestore 불변)
+  function curatedAnswers() { try { const o = JSON.parse(localStorage.getItem(CURATED_ANSWERS_KEY) || "{}"); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } }
+  const curatedHomeOn = () => FEATURES_CURATION_ON() && !!curationPolicy && !!profile && typeof CuratedHome !== "undefined" && typeof HomeSlotsView !== "undefined";
+  function curatedFamilyItems(today) { // 이번 주 우리 가족 일정(7일 안 직접 일정) — 가구가 없으면 null(영역 숨김)
+    if (!hhEnabled() || !usActive()) return null;
+    try {
+      const a = toISODate(today), b = UserSchedule.addDays(a, 6);
+      const m = usBuildModel(a, b, { scope: "ALL", showAuto: false });
+      const out = [];
+      for (const [, d] of m.days) for (const o of d.user) out.push({ title: o.title, time: o.allDay ? "" : o.startTime || "", color: UserScheduleView.occurrenceColor(o, usLinks()) });
+      return out.slice(0, 5);
+    } catch (e) { return null; }
+  }
+  function curatedHomeHtml() {
+    if (!curatedHomeOn()) return null;
+    try {
+      const today = new Date(), pregnant = isPregnant();
+      const ageMonths = pregnant ? null : ChildTimeline.completedMonths(profile.birthDate, today);
+      const events = visibleSchedule(true);
+      const links = autoLinks();
+      const answers = curatedAnswers();
+      const present = new Set(events.map((e) => String(e.id).split("__")[0]));
+      const unknown = typeof buildEligibilityUnknown === "function" ? buildEligibilityUnknown(profile, dataset.todoDefinitions, { aliases: curationPolicy.aliases, present, ageMonths: ageMonths == null ? undefined : ageMonths, today }).map((u) => ({ id: u.id, title: u.title })) : [];
+      const state = {
+        completed, isNA: (id) => isNotApplicable(id) || answers[id] === "no", ageMonths, pregnant, birthDate: profile.birthDate, unknown,
+        subsidyStatusOf: (e) => HNLogic.subsidyStatus(e, completed, { today, ageNow: ageMonths == null ? undefined : ageMonths, pregnant, birthDate: profile.birthDate }),
+        linkDateOf: (e) => { const l = links ? AutoSteps.linkOf(links, e) : null; return l && l.date ? new Date(`${l.date}T00:00:00`) : null; },
+        applyOf: (e) => usApplyLinkOf(e), canSchedule: (e) => CalendarModel.isLinkableAuto(e) || AutoSteps.isFamilyLinkable(e, CalendarModel.isLinkableAuto, today),
+      };
+      let nextStage = null;
+      try { const m = nsModel(); if (m) nextStage = { head: m.stageLabel, title: m.headline, desc: m.sub }; } catch (e) {}
+      const explore = [];
+      if (!pregnant && !placesHiddenNow() && tabLayoutOn()) explore.push({ title: "어디갈까", desc: "집 근처 갈 만한 곳", go: "places" });
+      const todosHtml = acct36Active() && typeof Over36View.renderTodoCard === "function" ? Over36View.renderTodoCard({ name: childDisplayName(), todos: ChildTodos.homeLines(acct36All(), 3), canTodo: acct36CanTodo() }) : "";
+      const ageText = pregnant ? "" : ChildTimeline.ageLabelAt(profile.birthDate, new Date());
+      const html = CuratedHome.render({ policy: curationPolicy, events, state, today, head: { name: childDisplayName(), ageText, region: profile.district || profile.province || "" }, family: curatedFamilyItems(today), nextStage, explore, todosHtml });
+      if (html) curatedCur = html && typeof Curation !== "undefined" ? Curation.curate(events, state, curationPolicy, today) : null;
+      return html;
+    } catch (e) { console.error("큐레이션 홈 실패(기존 홈으로)", e); return null; }
+  }
+  function curatedRenderHome() {
+    const wrap = el("home-body");
+    if (!wrap) return false;
+    const html = curatedHomeHtml();
+    if (!html) return false;
+    wrap.innerHTML = html;
+    return true;
+  }
+  function curatedHomeClick(ev) {
+    const t = ev.target && ev.target.closest ? ev.target.closest("[data-hs-act], [data-hs-go]") : null;
+    if (!t || !curatedCur) return;
+    const unitE = (key) => { const u = CuratedHome.unitOf(curatedCur, key); return u && u.items && u.items[0] && !u.items[0].unknown ? u.items[0] : null; };
+    CuratedHome.dispatch(t, {
+      apply: (url, key) => { if (url) window.open(url, "_blank", "noopener"); else { const e = unitE(key); if (e) openDetail(e); } },
+      schedule: (key) => { const e = unitE(key); if (e) openDetail(e); }, // 일정 넣기는 상세 시트의 단계(기존 흐름)에서
+      done: (key) => { const e = unitE(key); if (e) toggleComplete(e.id); },
+      confirm: (key, yes) => { // D14: 항목 단위 답(기기 저장). '아니에요'는 홈에서 빠지고, '해당돼요'는 상세에서 신청·확인을 이어 간다
+        const u = CuratedHome.unitOf(curatedCur, key), id = u && u.ids && u.ids[0];
+        if (!id) return;
+        const a = curatedAnswers(); a[String(id).split("__")[0] === id ? id : id] = yes ? "yes" : "no";
+        try { localStorage.setItem(CURATED_ANSWERS_KEY, JSON.stringify(a)); } catch (e) {}
+        const e = unitE(key);
+        if (yes && e) openDetail(e); else renderHome();
+      },
+      review: () => switchTab("checklist"),
+      go: (name) => {
+        if (name === "next-stage") return nsOpenSheet();
+        if (name === "add-schedule") return usOpenForm(null, toISODate(new Date()));
+        switchTab(name === "benefits" ? "subsidy" : name === "month" ? "checklist" : name);
+      },
+    });
+  }
+  const renderSelectedDayPanelBase = renderSelectedDayPanel;
+  renderSelectedDayPanel = function renderSelectedDayPanel() { // 2-5: 가구가 없는 기기는 날짜 패널에 계산 일정 줄을 더한다(가구가 있으면 usRenderDayPanel 이 이미 더한다)
+    const r = renderSelectedDayPanelBase.apply(this, arguments);
+    if (!usActive() && usAnnivAvailable() && us.annivOn) {
+      const rows = usAnnivRowsHtml(selectedCalendarDate);
+      if (rows) { el("selected-day-list").insertAdjacentHTML("beforeend", rows); el("selected-day-empty").classList.add("hidden"); }
+    }
+    return r;
+  };
   const renderHomeBase = renderHome;
   renderHome = function renderHome() {
+    if (curatedHomeOn() && curatedRenderHome()) return; // 1-0: 큐레이션 홈(플래그 ON·정책 읽음·성공했을 때만). 아니면 아래 기존 홈 그대로
     if (!acct36Active()) renderHomeBase.apply(this, arguments);
     else acct36RenderHome();
     nsSync(); // W5: 다음 단계 안내 한 줄 배너(홈 맨 아래, 계정 모드)
@@ -1518,6 +1607,7 @@
   function acct36Init() {
     if (!acctEnabled() || typeof document === "undefined") return;
     document.addEventListener("click", acct36OnClick);
+    document.addEventListener("click", curatedHomeClick); // 1-0: 큐레이션 홈 클릭(없으면 즉시 반환)
     document.addEventListener("keydown", acct36OnKey);
     document.addEventListener("focusout", acct36OnFocusOut);
     document.addEventListener("pointerdown", acct36OnPointerDown);
@@ -1812,7 +1902,7 @@
     const byUrgency = (a, b) => (!!completed[a.id] - !!completed[b.id]) || (isImportantEvent(b) ? 1 : 0) - (isImportantEvent(a) ? 1 : 0);
     // 가족 캘린더(가구)가 있으면 추가한 일정까지 합친 월 모델을 쓴다. 없으면 null → 아래는 기존 계산 그대로.
     const usModel = usActive() ? usBuildModel(toISODate(firstDay), toISODate(new Date(year, month, daysInMonth))) : null;
-    const annivMap = usModel ? usAnnivByDay(toISODate(firstDay), toISODate(new Date(year, month, daysInMonth))) : new Map(); // 2-5
+    const annivMap = usAnnivByDay(toISODate(firstDay), toISODate(new Date(year, month, daysInMonth))); // 2-5(비계정 포함)
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       const dm = usModel ? usModel.days.get(toISODate(date)) : null;
@@ -1842,8 +1932,12 @@
       cell.setAttribute("aria-label", `${month + 1}월 ${day}일 · 항목 ${totalMarks}건`);
       // 가구가 있을 때(칩 달력): 직접 등록=꽉 찬 칩, 자동=옅은 칩+같은 색 테두리, 최대 2개+N. 가구가 없으면(dm 없음) 기존 점 표식 그대로.
       cell.innerHTML = dm
-        ? `<span class="num">${day}</span><span class="markers chips">${UserScheduleView.cellChips([...userBars.map((occ) => ({ t: "u", occ })), ...periodBars.map((occ) => ({ t: "u", occ, period: true })), ...marks.map((e) => ({ t: "a", title: usAutoTitleOfEvent(e), category: e.category, done: !!completed[e.id] })), ...annivItems.map((a) => ({ t: "a", title: a.title, category: "생활·수유", done: false }))], { links: usLinks(), mode: usSelectionMode(), catColor: us.catColor, autoColor: usAutoChipColor() })}</span>`
+        ? `<span class="num">${day}</span><span class="markers chips">${UserScheduleView.cellChips([...userBars.map((occ) => ({ t: "u", occ })), ...periodBars.map((occ) => ({ t: "u", occ, period: true })), ...marks.map((e) => ({ t: "a", title: usAutoTitleOfEvent(e), category: e.category, done: !!completed[e.id] })), ...annivItems.map((a) => ({ t: "a", title: a.title, category: "생활·수유", anniv: true, color: a.color, done: false }))], { links: usLinks(), mode: usSelectionMode(), catColor: us.catColor, autoColor: usAutoChipColor() })}</span>`
         : `<span class="num">${day}</span><span class="markers">${dotHtml}${moreHtml}</span>`;
+      if (!dm && annivItems.length) { // 2-5: 점 표식 달력(가구 없음)에 계산 일정 점을 더한다(기존 점 마크업은 그대로)
+        const mk = cell.querySelector(".markers");
+        if (mk) mk.insertAdjacentHTML("beforeend", annivItems.slice(0, Math.max(0, 3 - Math.min(3, userBars.length) - marks.length)).map((a) => `<span class="cal-marker todo" style="background:${a.color || "var(--accent)"}"></span>`).join(""));
+      }
       cell.addEventListener("click", () => {
         selectedCalendarDate = date;
         renderCalendar();
@@ -4447,20 +4541,21 @@
     });
   }
   // ── 2-5 아이 100일·돌·생일(출생일로 계산만 — 저장 안 함, Firestore 불변). 칸 칩·날짜 패널·상세 시트, 전체 토글 1개(기기 저장) ──
-  const usAnnivAvailable = () => typeof ChildAnniversaries !== "undefined" && usActive() && !!profile && !isPregnant();
-  /** 지금 칸에 보일 계산 일정(Map iso → 항목[]). 필터(직접 일정만 보기·다른 구성원만 선택)·직접 입력 우선(같은 아이·날짜·가족 분류)을 반영한다. */
+  const usAnnivAvailable = () => typeof ChildAnniversaries !== "undefined" && !!profile && !isPregnant(); // 비계정(가구 없음)에도 보인다 — 계산만, 저장·Firestore 없음
+  const usAnnivColor = () => { if (!usActive()) return ""; const ck = usActiveChildKey(), l = usLinks().find((x) => x.childKey === ck); return l ? UserScheduleView.keyColor(l.childKey, l.colorKey) : ""; };
+  /** 지금 칸에 보일 계산 일정(Map iso → 항목[]). 필터(직접 일정만 보기·다른 구성원만 선택)를 반영한다. */
   function usAnnivByDay(startIso, endIso) {
     const out = new Map();
     if (!us.annivOn || !usAnnivAvailable() || us.onlyUser) return out;
-    const f = UserScheduleView.toModelFilter(usSel(), us.onlyUser, usLinks(), usMembers(), usSelOpts());
-    const ck = usActiveChildKey();
-    if (f.showAuto === false || f.scope === "FAMILY" || (Array.isArray(f.owners) && f.owners.length && !f.owners.includes(`CHILD:${ck}`))) return out;
-    const items = ChildAnniversaries.compute({ key: ck, name: childDisplayName(), birthDate: profile.birthDate }, startIso, endIso);
+    const ck = usActive() ? usActiveChildKey() : null;
+    if (usActive()) {
+      const f = UserScheduleView.toModelFilter(usSel(), us.onlyUser, usLinks(), usMembers(), usSelOpts());
+      if (f.showAuto === false || f.scope === "FAMILY" || (Array.isArray(f.owners) && f.owners.length && !f.owners.includes(`CHILD:${ck}`))) return out;
+    }
+    const color = usAnnivColor();
+    const items = ChildAnniversaries.compute({ key: ck, name: childDisplayName(), birthDate: profile.birthDate }, startIso, endIso).map((x) => ({ ...x, color }));
     if (!items.length) return out;
-    const m = usBuildModel(startIso, endIso, { scope: "ALL", showAuto: false });
-    const direct = [...m.days.values()].flatMap((d) => d.user);
-    for (const it of items) {
-      if (ChildAnniversaries.hiddenByDirect(it, direct)) continue;
+    for (const it of items) { // 직접 입력과 합치지 않고 둘 다 보인다(생일 분류가 생기기 전에는 숨기지 않는다 — 놓침이 중복보다 나쁘다)
       if (!out.has(it.iso)) out.set(it.iso, []);
       out.get(it.iso).push(it);
     }
@@ -4473,7 +4568,7 @@
     if (!it) return;
     const M = ChildAnniversaries.MSG, b = profile.birthDate;
     modalMode = "profile";
-    el("modal-content").innerHTML = `<div class="us-anniv-sheet"><h3>${esc(it.title)}</h3><p class="us-note">${esc(formatDateKR(new Date(`${iso}T00:00:00`)))}</p><p>${esc(M.sheetBody(`${b.getFullYear()}년 ${b.getMonth() + 1}월 ${b.getDate()}일`))}</p>${it.feb29 ? `<p class="us-note">${esc(M.feb29Note)}</p>` : ""}<button type="button" class="us-btn us-primary" data-anniv-act="add" data-anniv-date="${esc(iso)}">${esc(M.addDay)}</button><button type="button" class="btn-close" data-anniv-act="off">${esc(M.turnOff)}</button><button type="button" class="btn-close" data-anniv-act="close">닫기</button></div>`;
+    el("modal-content").innerHTML = `<div class="us-anniv-sheet"><h3>${esc(it.title)}</h3><p class="us-note">${esc(formatDateKR(new Date(`${iso}T00:00:00`)))}</p><p>${esc(M.sheetBody(`${b.getFullYear()}년 ${b.getMonth() + 1}월 ${b.getDate()}일`))}</p>${it.feb29 ? `<p class="us-note">${esc(M.feb29Note)}</p>` : ""}${usActive() ? `<button type="button" class="us-btn us-primary" data-anniv-act="add" data-anniv-date="${esc(iso)}">${esc(M.addDay)}</button>` : ""}<button type="button" class="btn-close" data-anniv-act="off">${esc(M.turnOff)}</button><button type="button" class="btn-close" data-anniv-act="close">닫기</button></div>`;
     el("detail-modal").classList.remove("hidden");
   }
   function usAnnivRowsHtml(day) {
@@ -4755,7 +4850,7 @@
     const bottom = el("us-period-slot");
     if (!top || !bottom) return;
     if (!model) {
-      top.innerHTML = "";
+      top.innerHTML = usAnnivAvailable() ? UserScheduleView.renderAnnivSwitch(us.annivOn) : ""; // 2-5: 가구가 없어도 끌 수 있는 토글
       bottom.innerHTML = "";
       return;
     }
@@ -5342,7 +5437,12 @@
     }
   }
   function usOnCalendarClick(ev) {
-    if (!usActive()) return;
+    if (!usActive()) { // 2-5: 가구가 없는 기기도 계산 일정 토글·줄은 쓴다(저장 없음)
+      if (ev.target.closest('[data-us-action="toggle-anniv"]')) { us.annivOn = !us.annivOn; ChildAnniversaries.setOn((() => { try { return localStorage; } catch (e) { return null; } })(), us.annivOn); renderCalendar(); renderSelectedDayPanel(); return; }
+      const an0 = ev.target.closest("[data-anniv-id]");
+      if (an0) usAnnivSheet(an0.getAttribute("data-anniv-id"));
+      return;
+    }
     const f = ev.target.closest("[data-us-filter]");
     if (f) {
       us.selection = UserScheduleView.toggleSelection(usSel(), f.getAttribute("data-us-filter"), usLinks(), usMembers(), usSelOpts());
@@ -5378,14 +5478,14 @@
     if (c) usOpenDetail(c.getAttribute("data-us-id"), c.getAttribute("data-us-key"));
   }
   function usOnModalClick(ev) {
-    if (!usActive()) return;
     const an = ev.target.closest("[data-anniv-act]"); // 2-5 상세 시트: 이 날 일정 추가 / 끄기 / 닫기
     if (an) {
       const act = an.getAttribute("data-anniv-act");
-      if (act === "add") { const d = an.getAttribute("data-anniv-date"); closeDetail(); usOpenForm(null, d); return; }
+      if (act === "add" && usActive()) { const d = an.getAttribute("data-anniv-date"); closeDetail(); usOpenForm(null, d); return; }
       if (act === "off") { us.annivOn = false; ChildAnniversaries.setOn((() => { try { return localStorage; } catch (e) { return null; } })(), false); closeDetail(); renderCalendar(); renderSelectedDayPanel(); usRefreshCalendar(); return; }
       return closeDetail();
     }
+    if (!usActive()) return;
     const root = ev.target.closest(".us-form, .us-detail, .us-confirm, .us-scope-sheet");
     if (!root) return;
     const a = ev.target.closest("[data-us-action]");

@@ -96,8 +96,10 @@ test("호출부 전수: subsidyBuckets/subsidyStatus 를 부르는 곳(home.js·
     const src = fs.readFileSync(path.join(ROOT, "js", f), "utf8");
     if (f !== "hn-logic.js" && /subsidyBuckets\(|subsidyStatus\(/.test(src)) calls.push(f);
   }
-  assert.deepStrictEqual(calls.sort(), ["home.js", "subsidy-view.js"]);
-  for (const f of calls) {
+  assert.deepStrictEqual(calls.sort(), ["app.js", "home.js", "subsidy-view.js"]); // 1-0: app.js 의 큐레이션 홈 state(subsidyStatusOf)가 호출 — 아래에서 birthDate 전달을 따로 확인
+  const appSrc = fs.readFileSync(path.join(ROOT, "js/app.js"), "utf8");
+  assert.ok(/subsidyStatus\(e, completed, \{[^}]*birthDate: profile\.birthDate \}\)/.test(appSrc), "app.js 호출은 birthDate 를 넘긴다");
+  for (const f of calls.filter((x) => x !== "app.js")) {
     const src = fs.readFileSync(path.join(ROOT, "js", f), "utf8");
     const m = src.match(/const sctx = \{[^}]*\};/g) || [];
     assert.strictEqual(m.length, 1, f);

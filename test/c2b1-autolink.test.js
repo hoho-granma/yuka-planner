@@ -152,13 +152,13 @@ function flags(store) {
   return { F: sb.FEATURES, calls };
 }
 test("기본 OFF · E(1-2): household 가 켜지면 autolink 기본 ON, hannun_feature_autolink='0' 이면 OFF(override) · household 가 꺼져 있으면 autolink 키를 읽지도 않는다", () => {
-  assert.deepStrictEqual(J(flags({}).F), { household: false, autoLink: false, accounts: false });
-  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1" }).F), { household: true, autoLink: true, accounts: false });
-  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1", hannun_feature_autolink: "1" }).F), { household: true, autoLink: true, accounts: false });
-  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1", hannun_feature_autolink: "0" }).F), { household: true, autoLink: false, accounts: false });
+  assert.deepStrictEqual(J(flags({}).F), { household: false, autoLink: false, accounts: false, curation: false });
+  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1" }).F), { household: true, autoLink: true, accounts: false, curation: false });
+  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1", hannun_feature_autolink: "1" }).F), { household: true, autoLink: true, accounts: false, curation: false });
+  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1", hannun_feature_autolink: "0" }).F), { household: true, autoLink: false, accounts: false, curation: false });
   const off = flags({ hannun_feature_autolink: "1" });
-  assert.deepStrictEqual(J(off.F), { household: false, autoLink: false, accounts: false });
-  assert.deepStrictEqual(off.calls, ["hannun_feature_accounts", "hannun_feature_household"]); // G18: accounts → household 순(autolink 키는 household 가 꺼져 있으면 읽지 않는다)
+  assert.deepStrictEqual(J(off.F), { household: false, autoLink: false, accounts: false, curation: false });
+  assert.deepStrictEqual(off.calls, ["hannun_feature_accounts", "hannun_feature_household", "hannun_feature_curation"]); // G18: accounts → household 순(autolink 키는 household 가 꺼져 있으면 읽지 않는다)
 });
 
 console.log("app.js 연결(소스 추출 스텁)");

@@ -373,6 +373,10 @@
     if (!sel.length) return { scope: "ALL", showAuto: true };
     return { scope: "ALL", showAuto: !(selectionMode(sel) === "kids" && onlyUser === true), owners: sel };
   }
+  /** 2-5: 비계정(가구 없음) 캘린더 위의 단독 토글 줄 — 계정 모드는 renderFilterChips 안의 같은 스위치를 쓴다. */
+  function renderAnnivSwitch(on) {
+    return `<div class="us-optrows"><button type="button" class="us-tchip" role="switch" aria-checked="${on ? "true" : "false"}" data-us-action="toggle-anniv">${esc(MSG.annivSwitch)}</button></div>`;
+  }
   /** opts: { mode, onlyUser, catColor } — 토글 칩 2개는 아이만 선택했을 때(mode "kids")만 필터 칩 아래 한 줄에 나란히(role=switch, 라벨만) 보인다. */
   function renderFilterChips(chips, opts) {
     const o = opts || {};
@@ -416,8 +420,8 @@
         const done = it.occ.status === "DONE" || it.occ.done === true;
         return `<span class="cal-chip u${done ? " done" : ""}${it.period ? " p" : ""}" style="background:${safeColor(col)}">${it.period ? esc(MSG.cellPeriod) : ""}${esc(it.occ.title)}</span>`;
       }
-      const col = catMode ? CATEGORY_COLORS[autoCategoryGroup(it)] : c.autoColor || FAMILY_COLOR;
-      return `<span class="cal-chip a${it.done ? " done" : ""}" style="--chip-c:${safeColor(col)}">${esc(catMode ? autoCategoryGroup(it) : it.title)}</span>`;
+      const col = it.anniv && it.color ? it.color : catMode && !it.anniv ? CATEGORY_COLORS[autoCategoryGroup(it)] : c.autoColor || FAMILY_COLOR; // 기념일 칩은 그 아이의 구성원 색
+      return `<span class="cal-chip a${it.done ? " done" : ""}" style="--chip-c:${safeColor(col)}">${esc(catMode && !it.anniv ? autoCategoryGroup(it) : it.title)}</span>`; // 2-5: 100일·돌·생일 칩은 분류 모드에서도 '생활' 대신 제목을 보인다
     });
     const more = list.length - 2;
     return show.join("") + (more > 0 ? `<span class="cal-chip-more">+${more}</span>` : "");
@@ -1258,7 +1262,7 @@
     categoryLabel, childColor, childColors, occurrenceColor, MEMBER_COLORS, ROLE_LABELS, CATEGORY_COLORS, autoCategoryGroup, selectionMode, toggleSelection, cellChips,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, sourceLabeled, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
-    linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, renderChipDeleteConfirm, withObjectParticle, renderTodoLine, todoDeadlineText, TODO_LIMIT, TODO_MSG, assigneeEmphasis, applyTemplate, renderQuickChips, renderAutoCand,
+    linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, renderChipDeleteConfirm, withObjectParticle, renderTodoLine, todoDeadlineText, TODO_LIMIT, TODO_MSG, assigneeEmphasis, applyTemplate, renderQuickChips, renderAutoCand, renderAnnivSwitch,
     renderCard, detailView, renderDetail, detailDots, renderDeleteConfirm, renderAddButton, renderPeriodSection,
     newForm, formFromSchedule, stripId, formToInput, validateForm, messagesFromErrors, prepareSave, changesFromForm, minuteOptions, splitTime,
     renderForm, renderFormG13, upgradeFormG13, g13ApplyWho, g13PickKind, g13Kinds, pickerInitials, esc,

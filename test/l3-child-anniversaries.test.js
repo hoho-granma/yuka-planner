@@ -12,13 +12,13 @@ test("2월 29일생: 평년 2/28 표시(feb29 안내), 윤년 2/29", () => {
   const r = A.compute({ key: "c", name: "a", birthDate: new Date(2024, 1, 29) }, "2025-01-01", "2029-01-01");
   assert.deepStrictEqual(r.map((x) => [x.kind, x.iso, x.feb29]), [["first", "2025-02-28", true], ["birthday", "2026-02-28", true], ["birthday", "2027-02-28", true], ["birthday", "2028-02-29", false]]);
 });
-test("직접 입력 우선: 같은 아이·같은 날짜·가족 분류 직접 일정이 있으면 숨김(제목 비교 없음)", () => {
-  const it = { iso: "2027-06-20", childKey: "c1" };
-  const d = (o) => ({ date: "2027-06-20", scope: "CHILD", childKeys: ["c1"], category: "FAMILY", title: "무엇이든", ...o });
-  assert.strictEqual(A.hiddenByDirect(it, [d()]), true);
-  assert.strictEqual(A.hiddenByDirect(it, [d({ category: "MEDICAL" })]), false);
-  assert.strictEqual(A.hiddenByDirect(it, [d({ childKeys: ["c2"] })]), false);
-  assert.strictEqual(A.hiddenByDirect(it, [d({ date: "2027-06-21" })]), false);
+test("직접 입력과 합치지 않고 둘 다 보인다(생일 분류가 생기기 전에는 숨기지 않음), 분류 모드에서도 칩 글자는 제목", () => {
+  assert.strictEqual(A.hiddenByDirect, undefined);
+  const app = fs.readFileSync(__dirname + "/../js/app.js", "utf8");
+  assert.ok(!/hiddenByDirect/.test(app) && /anniv: true/.test(app));
+  const V = require("../js/user-schedule-view.js");
+  const h = V.cellChips([{ t: "a", title: "하린 생일", category: "생활·수유", anniv: true }, { t: "a", title: "BCG", category: "예방접종" }], { mode: "kids", catColor: true, links: [] });
+  assert.ok(h.includes(">하린 생일<") && !h.includes(">생활<") && h.includes(">접종<"));
 });
 test("토글: 기본 켜짐·기기 저장 값 0이면 꺼짐·저장소 오류도 켜짐", () => {
   const mem = (v) => ({ getItem: () => v, setItem(k, x) { this.v = x; } });
@@ -34,4 +34,13 @@ test("앱 연결: 계산만(저장·Firestore 호출 없음), 토글 스위치·
   assert.ok(fs.readFileSync(__dirname + "/../index.html", "utf8").includes("js/child-anniversaries.js") && fs.readFileSync(__dirname + "/../sw.js", "utf8").includes("child-anniversaries.js"));
   const V = require("../js/user-schedule-view.js");
   assert.ok(V.renderFilterChips([], { mode: "kids", annivOn: true }).includes("toggle-anniv") && !V.renderFilterChips([], { mode: "kids" }).includes("toggle-anniv"));
+});
+test("비계정(가구 없음)에도 보인다: 사용 가능 판정은 usActive 와 무관, 점 달력·날짜 패널·토글 줄·시트(일정 추가는 가구가 있을 때만), 칩은 아이 색", () => {
+  const app = fs.readFileSync(__dirname + "/../js/app.js", "utf8");
+  assert.ok(/const usAnnivAvailable = \(\) => typeof ChildAnniversaries !== "undefined" && !!profile && !isPregnant\(\);/.test(app));
+  assert.ok(/if \(!usActive\(\)\) \{ \/\/ 2-5/.test(app) && /renderSelectedDayPanel = function renderSelectedDayPanel\(\)/.test(app) && /UserScheduleView\.renderAnnivSwitch\(us\.annivOn\)/.test(app));
+  assert.ok(/\$\{usActive\(\) \? `<button[^`]*data-anniv-act="add"/.test(app));
+  const V = require("../js/user-schedule-view.js");
+  assert.ok(V.renderAnnivSwitch(true).includes('aria-checked="true"') && V.renderAnnivSwitch(false).includes("toggle-anniv"));
+  assert.ok(V.cellChips([{ t: "a", title: "하린 생일", anniv: true, color: "#ff66b3", category: "생활·수유" }], { mode: "kids", catColor: false, links: [], autoColor: "#000" }).includes("#ff66b3"), "기념일 칩은 아이 구성원 색");
 });

@@ -855,7 +855,10 @@
       "category": "LIBRARY",
       "province": "서울특별시",
       "district": "강남구",
-      "ageMonths": null,
+      "ageMonths": {
+        "min": null,
+        "max": 167
+      },
       "indoor": "INDOOR",
       "cost": null,
       "reservation": null,

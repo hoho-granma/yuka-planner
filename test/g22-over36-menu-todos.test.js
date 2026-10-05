@@ -199,7 +199,7 @@ const mkHS = (flag = true, extra = {}) => { const adapter = extra.adapter || fak
     assert.ok(shown(new Date(now.getFullYear() + 1, 0, 15), run(new Date(now.getFullYear() + 1, 0, 15), "pregnant", none)).length > 0, "임신 중도 그대로");
   });
   await test("홈·체크리스트 탭: 36+ 일 때만 새 화면(래퍼), 아니면 원래 함수 — switchTab 은 36+ 에서 혜택 탭을 막는다", () => {
-    assert.ok(/renderHome = function renderHome\(\) \{\n\s*if \(!acct36Active\(\)\) renderHomeBase\.apply\(this, arguments\);\n\s*else acct36RenderHome\(\);\n\s*nsSync\(\);/.test(APP));
+    assert.ok(/renderHome = function renderHome\(\) \{\n\s*if \(curatedHomeOn\(\) && curatedRenderHome\(\)\) return;[^\n]*\n\s*if \(!acct36Active\(\)\) renderHomeBase\.apply\(this, arguments\);\n\s*else acct36RenderHome\(\);\n\s*nsSync\(\);/.test(APP));
     assert.ok(/renderChecklistTab = function renderChecklistTab\(\) \{\n\s*if \(!acct36Active\(\)\) return renderChecklistTabBase\.apply\(this, arguments\);/.test(APP));
     assert.ok(APP.includes('acct36Active() && name === "subsidy" ? "home" : name'));
     const h = V.renderHome({ kids: [{ code: "A", name: "수아", ageText: "10세", current: true }, { code: "B", name: "은찬", ageText: "3개월" }], name: "수아", familyHtml: "<section>가족</section>", todos: CT.homeLines([{ id: "1", title: "숙제", done: false }, { id: "2", title: "빨래", done: true }], 3), canTodo: true });

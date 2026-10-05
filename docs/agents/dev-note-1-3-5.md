@@ -53,3 +53,17 @@
 2. 진행률 분모에서 KNOW를 뺄지.
 3. `actionType` 미분류 id 폴백값(ACT로 두면 칸이 현재 그대로, KNOW로 두면 빠짐 → **ACT 폴백 권장**: 안전한 쪽=현재 동작).
 4. D3와 W0 지시('직접 입력만 보기'·범례 삭제 금지) 정합: 안내 문구만 조정.
+
+## 7. 커밋 뒤 패치(1-3+1-5 연결, v1.12.103 이후 — 앱 파일은 지금 무변경)
+새 파일(앱 미로드): `js/month-tiers.js`(순수: classify·inCalendarOf·whyOf·group·groupFold·calendarCard) + `js/curation.js`에 `classify`·`describe` 내보내기 추가(판정 동작 불변, curate 6명 기대값 7/7 통과 유지). 테스트 7개 pending(month-tiers.test.js).
+| # | 파일 | 패치 |
+|---|---|---|
+| 1 | `js/hn-logic.js` | `assignDisplayDays(opts.inCalendar)`는 이미 들어 있음(v1.12.99). 변경 없음 |
+| 2 | `js/app.js` computeCalendarDays(1692) | `HNLogic.assignDisplayDays(events, { …, inCalendar: curationOn ? MonthTiers.inCalendarOf(tierCtx) : undefined })` — **플래그(curation) OFF면 술어 없음 = 지금과 동일**. tierCtx = { policy: curationPolicy, today, state, startOf }. 정책이 null이면 술어 없음(폴백) |
+| 3 | `js/app.js` 월령 탭 렌더(2318~2345 부근, `eventItemHtml`) | 그룹 카드 안을 `MonthTiers.group(items, ctx)`로 분기: 머리 배지 "남은 N개"(0이면 숨김, `MSG.remaining`), 1층 `.mg-sec-h` '이번 달 챙길 것'(할 것·곧 준비 'M월 D일부터') + 항목 아래 `.ev-why`, 2층 `<details class="mg-know">` '이 시기 알아두기 N개 ›'(기본 접힘, 관찰·해볼 것·주의 구분 머리), 주의 [확인했어요]→`mg-acked` 접힘('확인한 것 N개', 기기 저장 `hannun_month_acked`). KNOW 목록 출처는 기존 `monthlyInMonth` 그대로 |
+| 4 | `js/app.js` calendarMonthProgress·진행 현황 | 분모에서 KNOW 제외(`MonthTiers.classify(e).layer===1`만 센다) — **테스트 기대값 갱신 필요**(k5·a6-6·hn-logic 진행률) |
+| 5 | `js/app.js` 달력 위 카드(1733 `calendarMonthItems`) | `MonthTiers.calendarCard(items, ctx)`의 head·list·knowLabel 사용. '직접 등록한 일정만 보기'·범례 문구는 그대로 |
+| 6 | 마감형 지원 칩 "마감 " 글자 | `UserScheduleView.cellChips`의 자동 칩 title 앞에 "마감 "(마감일 칸 이동은 `schedule.js:299` fixedDate를 마감일로 — 별도 항목, 엔진 판단 로직 변경이라 hn_pm 확인 후) |
+| 7 | 그룹 접기 | `MonthTiers.groupFold(keys, nowKey, ['check','school'])`로 지금 다음 1개만 접힘 표시, 나머지는 목록 맨 아래 "나중 시기 N개 그룹 보기 ›" |
+| 8 | CSS | `.mg-sec-h`·`.ev-why`·`.mg-know`·`.mg-ack` 기존 클래스 모양 재사용(새 색 없음) — scoped 추가는 연결 때 |
+- 위험: ②는 플래그가 ON일 때만 달력 칸이 줄어든다(0~36개월 회귀는 hn_test T2 범위: 칸 수가 줄어든 항목이 전부 KNOW인지 qa-month-compare로 확인).

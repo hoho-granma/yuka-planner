@@ -169,7 +169,7 @@ test("마크업: 배너는 홈 안 한 줄(알림·푸시 표현 없음), 타임
 
 test("앱 연결: 홈 맨 아래 배너(계정 모드)·시트·저장 경로가 W4 와 같다 / 36개월 미만 홈은 기존 함수 그대로 부른 뒤 배너만 더한다", () => {
   const APP = read("js/app.js");
-  assert.ok(/renderHome = function renderHome\(\) \{\n\s*if \(!acct36Active\(\)\) renderHomeBase\.apply\(this, arguments\);\n\s*else acct36RenderHome\(\);\n\s*nsSync\(\);/.test(APP));
+  assert.ok(/renderHome = function renderHome\(\) \{\n\s*if \(curatedHomeOn\(\) && curatedRenderHome\(\)\) return;[^\n]*\n\s*if \(!acct36Active\(\)\) renderHomeBase\.apply\(this, arguments\);\n\s*else acct36RenderHome\(\);\n\s*nsSync\(\);/.test(APP));
   assert.ok(/if \(!acctEnabled\(\) \|\| !profile \|\| typeof NextStage === "undefined"/.test(APP), "계정 모드·아이가 있을 때만");
   assert.ok(/HouseholdSync\.createSchedule\(hh\.hid, doc\.doc\)/.test(APP) && /autoRef: AutoSteps\.autoRefOf\(e\)/.test(APP) && /ChildTimeline\.stageOf\(/.test(APP));
   assert.ok(/data\/policy\/next-stage\.json/.test(APP) && /js\/next-stage\.js/.test(read("index.html")) && /next-stage\.js/.test(read("sw.js")));

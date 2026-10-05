@@ -1,0 +1,196 @@
+diff --git a/css/style.css b/css/style.css
+index e5809a6..ed2bf1b 100644
+--- a/css/style.css
++++ b/css/style.css
+@@ -1800,6 +1800,10 @@ body.acct-design .acct-cs-inp:focus, body.acct-design .acct-cs-sel:focus { borde
+ .us-anniv-row { display: flex; flex-direction: column; gap: 2px; width: 100%; margin: 6px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card-bg); text-align: left; font: inherit; color: var(--text); cursor: pointer; }
+ .us-anniv-row strong { font-size: 14px; } .us-anniv-row small { font-size: 12px; color: var(--text-muted); }
+ .us-anniv-sheet h3 { margin: 0 0 4px; } .us-anniv-sheet .us-btn, .us-anniv-sheet .btn-close { width: 100%; margin-top: 8px; }
++/* 1-4 지원 목록 3단 — 기존 카드 그대로, 마감 임박 날짜 줄(와인 #8a1c3d·굵게)·'해당 확인' 꼬리표·답 버튼 줄만 추가 */
++.sub-when.urgent { margin: 4px 2px 0; font-size: 13px; font-weight: 800; color: #8a1c3d; }
++.sub-confirmed { margin: 4px 2px 0; font-size: 12px; font-weight: 800; color: var(--text); }
++.sub-answer { display: flex; gap: 6px; margin: 6px 2px 0; }
+ /* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
+    인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
+ :root {
+diff --git a/index.html b/index.html
+index 7e5a202..0678c65 100644
+--- a/index.html
++++ b/index.html
+@@ -293,6 +293,7 @@
+   <script src="js/hn-logic.js?v=12"></script>
+   <script src="js/records.js?v=2"></script>
+   <script src="js/home.js?v=27"></script>
++  <script src="js/subsidy-tiers.js?v=1"></script>
+   <script src="js/subsidy-view.js?v=4"></script>
+   <script src="js/date-picker.js?v=3"></script>
+   <script src="js/user-schedule.js?v=2"></script>
+diff --git a/js/app.js b/js/app.js
+index 4d553da..b4814a7 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -5776,6 +5776,10 @@
+       today,
+       pregnant: isPregnant(),
+       ageNow: ChildTimeline.completedMonths(profile.birthDate, today),
++      // 1-4: 지원 목록 3단 — 답(기기 저장)·기존 미해당(읽기)·'N개 더' 상한(정책 값, 없으면 제한 없음)
++      answers: typeof SubsidyTiers !== "undefined" ? SubsidyTiers.loadAnswers((() => { try { return localStorage; } catch (e) { return null; } })()) : {},
++      isNA: (id) => isNotApplicable(id),
++      expandMax: curationPolicy && curationPolicy.slots ? curationPolicy.slots.expandMax : null,
+       // G13-3: 계정 모드 홈(가족 일정 먼저 → 아이별 챙길 것 → 혜택). 꺼져 있으면 아래 4개는 없다(기존 홈 그대로).
+       ...(acctEnabled() ? { accountDesign: true } : {}), // G14: 계정 모드 화면 디자인(기록 타임라인 등)
+       ...(acctEnabled() && acct.user ? { accountHome: true, homeChildText: acctHomeChildText(), homeChildren: acctHomeChildren(), switchChild: (code) => { if (code && code !== familyCode) switchToChild(code); } } : {}),
+diff --git a/js/subsidy-view.js b/js/subsidy-view.js
+index 005541e..e9728ff 100644
+--- a/js/subsidy-view.js
++++ b/js/subsidy-view.js
+@@ -11,6 +11,8 @@
+   let scope = "all"; // all | national | regional
+   let expiredOpen = false;
+   let conditionalOpen = false;
++  let sureMoreOpen = false;
++  let noOpen = false;
+ 
+   const isNational = (ctx, e) => {
+     const p = ctx.subsidyProvider(e);
+@@ -62,15 +64,34 @@
+     let html = `<p class="sub-region-note">📍 ${ctx.esc(ctx.profile.province)} ${ctx.esc(ctx.profile.district)} 기준이에요.${ctx.pregnant ? " 출산 예정일 기준으로 계산했어요." : ""}</p>`;
+ 
+     if (statusTab === "available") {
+-      // 마감 임박 구분·뱃지는 두지 않는다 — 신청 가능 항목을 마감일이 가까운 순으로 나열한다.
+-      if (b.available.length) {
+-        html += `<h3 class="sub-group-title">지금 신청할 수 있어요</h3>`;
+-        html += b.available.map((e) => cardHtml(ctx, e)).join("");
+-      }
+-      if (!b.available.length) html += `<p class="empty">지금 신청할 수 있는 혜택이 없어요.</p>`;
+-      if (b.conditional.length) {
+-        html += `<button type="button" class="sub-expired-toggle sub-cond-toggle" data-act="conditional">조건에 해당하면 신청할 수 있는 혜택 ${b.conditional.length}개 ${conditionalOpen ? "접기" : "보기"}</button>`;
+-        if (conditionalOpen) html += `<div class="sub-conditional">${b.conditional.map((e) => cardHtml(ctx, e)).join("")}</div>`;
++      // 1-4: 3단 — 마감 임박 / 확실히 받는 것 / 조건 확인(+ 해당 없음 접힘). 개수 요약 줄은 없다(D16). 순수 모델은 js/subsidy-tiers.js.
++      const T = window.SubsidyTiers;
++      const answers = ctx.answers || {};
++      const tiers = T ? T.tiers({ available: b.available, urgent: b.urgent, conditional: b.conditional }, { answers, isNA: ctx.isNA, deadlineOf: L.subsidyDeadline, expandMax: ctx.expandMax }) : null;
++      if (!tiers) {
++        if (b.available.length) html += `<h3 class="sub-group-title">지금 신청할 수 있어요</h3>` + b.available.map((e) => cardHtml(ctx, e)).join("");
++        else html += `<p class="empty">지금 신청할 수 있는 혜택이 없어요.</p>`;
++      } else {
++        const urgentWhen = (it) => { const r = T.rowModel(it.e, { today: ctx.today, deadlineOf: L.subsidyDeadline, urgent: true }); return r.when.kind === "urgent" ? `<div class="sub-when urgent">${ctx.esc(r.when.text)}</div>` : ""; };
++        const tag = (it) => (it.confirmed ? `<div class="sub-confirmed">${ctx.esc(T.MSG.confirmedTag)}</div>` : "");
++        if (tiers.urgent.length) html += `<h3 class="sub-group-title">${T.MSG.urgent}</h3>` + tiers.urgent.map((it) => cardHtml(ctx, it.e, { urgent: true, badge: urgentWhen(it) + tag(it) })).join("");
++        if (tiers.sure.length) {
++          html += `<h3 class="sub-group-title">${T.MSG.sure}</h3>` + tiers.sure.map((it) => cardHtml(ctx, it.e, { badge: tag(it) })).join("");
++          if (tiers.sureMore.length) {
++            html += `<button type="button" class="sub-expired-toggle" data-act="sure-more">${tiers.sureMore.length}개 더 보기 ${sureMoreOpen ? "접기" : "›"}</button>`;
++            if (sureMoreOpen) html += `<div class="sub-sure-more">${tiers.sureMore.map((it) => cardHtml(ctx, it.e, { badge: tag(it) })).join("")}</div>`;
++          }
++        }
++        if (tiers.empty) html += `<p class="empty">${T.MSG.empty}</p>`;
++        const answerFoot = (e) => `<div class="sub-answer"><button type="button" class="chip" data-sub-answer="yes" data-id="${ctx.esc(e.id)}">${T.MSG.yes}</button><button type="button" class="chip" data-sub-answer="no" data-id="${ctx.esc(e.id)}">${T.MSG.no}</button></div>`;
++        if (tiers.conditional.length) {
++          html += `<button type="button" class="sub-expired-toggle sub-cond-toggle" data-act="conditional">${T.MSG.condToggle(tiers.conditional.length, conditionalOpen)}</button>`;
++          if (conditionalOpen) html += `<div class="sub-conditional">${tiers.conditional.map((it) => cardHtml(ctx, it.e, { foot: answerFoot(it.e) })).join("")}</div>`;
++        }
++        if (tiers.no.length) {
++          html += `<button type="button" class="sub-expired-toggle" data-act="no">${T.MSG.noToggle(tiers.no.length, noOpen)}</button>`;
++          if (noOpen) html += `<div class="sub-no">${tiers.no.map((it) => cardHtml(ctx, it.e, { foot: `<div class="sub-answer"><button type="button" class="chip" data-sub-answer="undo" data-id="${ctx.esc(it.e.id)}">${T.MSG.undo}</button></div>` })).join("")}</div>`;
++        }
+       }
+       if (b.expired.length) {
+         html += `<button type="button" class="sub-expired-toggle" data-act="expired">기한이 지난 혜택 ${b.expired.length}개 ${expiredOpen ? "접기" : "보기"}</button>`;
+@@ -95,6 +116,19 @@
+     ctx.bindOpen(body);
+     const togCond = body.querySelector("[data-act='conditional']");
+     if (togCond) togCond.addEventListener("click", () => { conditionalOpen = !conditionalOpen; render(ctx); });
++    const togNo = body.querySelector("[data-act='no']");
++    if (togNo) togNo.addEventListener("click", () => { noOpen = !noOpen; render(ctx); });
++    const togSure = body.querySelector("[data-act='sure-more']");
++    if (togSure) togSure.addEventListener("click", () => { sureMoreOpen = !sureMoreOpen; render(ctx); });
++    body.querySelectorAll("[data-sub-answer]").forEach((btn) => btn.addEventListener("click", (ev) => { // D14: 항목 단위 기기 저장(키 hannun_subsidy_answers, Firestore 불변)
++      ev.stopPropagation();
++      const T2 = window.SubsidyTiers, id = btn.dataset.id, v = btn.dataset.subAnswer;
++      if (!T2 || !id) return;
++      let st = null; try { st = window.localStorage; } catch (e) {}
++      T2.saveAnswers(st, T2.withAnswer(T2.loadAnswers(st), id, v === "yes" ? "yes" : v === "no" ? "no" : null));
++      ctx.answers = T2.loadAnswers(st);
++      render(ctx);
++    }));
+     const tog = body.querySelector("[data-act='expired']");
+     if (tog) tog.addEventListener("click", () => { expiredOpen = !expiredOpen; render(ctx); });
+     seg.querySelectorAll("[data-st]").forEach((btn) => btn.addEventListener("click", () => { statusTab = btn.dataset.st; render(ctx); window.scrollTo(0, 0); }));
+diff --git a/sw.js b/sw.js
+index 8e4a412..1597ccb 100644
+--- a/sw.js
++++ b/sw.js
+@@ -38,6 +38,7 @@ const SHELL_ASSETS = [
+   "./js/hn-logic.js",
+   "./js/records.js",
+   "./js/home.js",
++  "./js/subsidy-tiers.js",
+   "./js/subsidy-view.js",
+   "./js/date-picker.js",
+   "./js/user-schedule.js",
+diff --git a/test/g1-onboarding.test.js b/test/g1-onboarding.test.js
+index 41fd3da..870a556 100644
+--- a/test/g1-onboarding.test.js
++++ b/test/g1-onboarding.test.js
+@@ -106,7 +106,7 @@ console.log("OFF 첫 화면: 베타 미리 써 보기");
+ test("OFF 기본 HTML 은 '베타 버튼 슬롯' 한 줄만 다르다(그 외 HEAD 와 동일 — 기간형 AUTO 삭제로 빠진 #auto-period-slot·달력 아래 안내 문구(W5 후속 4번 삭제)는 양쪽에서 뺀다)", () => {
+   let head;
+   try { head = cp.execFileSync("git", ["show", "5ec3e02:index.html"], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); } catch (e) { return; }
+-  const norm = (h) => h.replace(/\?v=\d+/g, "").replace(/\n\s*<script src="js\/child-anniversaries\.js"><\/script>/, "").replace(/(name="theme-color" content=")#ff8a5c/, "$1#ff6a1a").replace(/style="color:#e0524e;"/, 'style="color:var(--c-danger);"').replace(/\n\s*<div id="beta-preview-slot"><\/div>/, "").replace(/\n\s*<script src="js\/schedule-kinds\.js[^>]*><\/script>/, "").replace(/\n\s*<script src="js\/(?:curation|home-slots-view|curated-home)\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/home-slots\.css[^>]*>/, "").replace(/ *<div id="auto-period-slot"><\/div>\n/, "").replace(/ *<div class="cal-kind-legend" id="cal-kind-legend">\n[^\n]*\n *<\/div>\n/, "").replace(/\n\s*<script src="js\/(?:auto-after36|auto-steps|next-stage|time-range|time-wheel|pregnancy-basis)\.js[^>]*><\/script>/g, "").replace(/<script>\/\* G19:[\s\S]*?<\/script>\n/, "").replace(/\n\s*<script src="js\/(child-todos|over36-view|tab-swipe|edu-trend)\.js[^>]*><\/script>/g, ""); // G13/G19: 순수 모듈 스크립트 한 줄·계정 기본 ON 부팅 클래스 스크립트(OFF 에서는 아무 클래스도 붙지 않는다): 순수 모듈 스크립트 한 줄(전역 정의만, OFF 동작 없음)
++  const norm = (h) => h.replace(/\?v=\d+/g, "").replace(/\n\s*<script src="js\/child-anniversaries\.js"><\/script>/, "").replace(/(name="theme-color" content=")#ff8a5c/, "$1#ff6a1a").replace(/style="color:#e0524e;"/, 'style="color:var(--c-danger);"').replace(/\n\s*<div id="beta-preview-slot"><\/div>/, "").replace(/\n\s*<script src="js\/schedule-kinds\.js[^>]*><\/script>/, "").replace(/\n\s*<script src="js\/(?:curation|home-slots-view|curated-home|subsidy-tiers)\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/home-slots\.css[^>]*>/, "").replace(/ *<div id="auto-period-slot"><\/div>\n/, "").replace(/ *<div class="cal-kind-legend" id="cal-kind-legend">\n[^\n]*\n *<\/div>\n/, "").replace(/\n\s*<script src="js\/(?:auto-after36|auto-steps|next-stage|time-range|time-wheel|pregnancy-basis)\.js[^>]*><\/script>/g, "").replace(/<script>\/\* G19:[\s\S]*?<\/script>\n/, "").replace(/\n\s*<script src="js\/(child-todos|over36-view|tab-swipe|edu-trend)\.js[^>]*><\/script>/g, ""); // G13/G19: 순수 모듈 스크립트 한 줄·계정 기본 ON 부팅 클래스 스크립트(OFF 에서는 아무 클래스도 붙지 않는다): 순수 모듈 스크립트 한 줄(전역 정의만, OFF 동작 없음)
+   assert.strictEqual(norm(read("index.html")), norm(head));
+   assert.ok(read("index.html").includes('<div id="beta-preview-slot"></div>'));
+ });
+diff --git a/test/m6-subsidy-tiers-view.test.js b/test/m6-subsidy-tiers-view.test.js
+new file mode 100644
+index 0000000..b93272e
+--- /dev/null
++++ b/test/m6-subsidy-tiers-view.test.js
+@@ -0,0 +1,46 @@
++// 1-4 지원 목록 3단 연결: subsidy-view.js 가 SubsidyTiers 모델로 ①마감 임박 ②확실히 받는 것 ③조건 확인 + 해당 없음 접힘을 그린다. 실행: node --test test/m6-subsidy-tiers-view.test.js
++const test = require("node:test"), assert = require("node:assert"), fs = require("fs"), path = require("path"), vm = require("vm");
++const ROOT = path.join(__dirname, "..");
++const HN = require("../js/hn-logic.js"), ST = require("../js/subsidy-tiers.js");
++const today = new Date(2026, 9, 5);
++const sub = (id, o) => ({ id, title: id, category: "행정·지원금", isLegacySubsidy: true, minAgeMonths: 0, maxAgeMonths: 200, entryDate: new Date(2026, 0, 1), detail: { id, deadlineType: "ongoing", ...(o && o.detail) }, ...o });
++function run(events, extra) {
++  const els = { "subsidy-seg": {}, "subsidy-scope": {}, "subsidy-body": {} };
++  for (const k of Object.keys(els)) els[k] = { innerHTML: "", querySelector: () => null, querySelectorAll: () => [], dataset: {} };
++  const sb = { window: { SubsidyTiers: ST, scrollTo() {}, localStorage: null }, document: { getElementById: (id) => els[id] }, HNLogic: HN, console };
++  sb.window.window = sb.window;
++  vm.createContext(sb);
++  vm.runInContext(fs.readFileSync(path.join(ROOT, "js/subsidy-view.js"), "utf8").replace("const L = HNLogic;", "const L = HNLogic;"), sb);
++  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
++  sb.window.HNSubsidyView.render({ events, completed: {}, today, ageNow: 6, pregnant: false, profile: { province: "서울특별시", district: "구로구", birthDate: new Date(2026, 3, 1) }, subsidyProvider: () => ({ short: "지역" }), eventItemHtml: (e) => `<div class="event-item" data-id="${e.id}">${e.id}</div>`, bindOpen() {}, esc, formatDateKR: () => "", ...extra });
++  return els["subsidy-body"].innerHTML;
++}
++const dl = (id, days) => sub(id, { deadlineDate: new Date(2026, 9, 5 + days), detail: { id, deadlineType: "birth_relative_days", deadlineValue: 200 } });
++test("3단: 마감 임박(D-N 와인 줄) · 확실히 받는 것(마감 먼저 상시 뒤) · 조건 확인 접이식, 개수 요약 줄 없음", () => {
++  const html = run([dl("URG", 10), dl("LATER", 100), sub("ONGOING"), sub("COND", { detail: { conditionLabel: "맞벌이", deadlineType: "ongoing" } })]);
++  assert.ok(html.includes("마감 임박") && html.includes("D-10 · 10월 15일까지") && html.includes("확실히 받는 것"));
++  assert.ok(html.indexOf("LATER") < html.indexOf("ONGOING"), "마감 있는 것 먼저");
++  assert.ok(html.includes("조건 확인 1개 보기") && !html.includes("data-sub-answer"), "접힌 상태에서는 답 버튼 없음");
++  assert.ok(!/지금 신청 가능 \d+개|이번 달 마감 \d+개/.test(html));
++});
++test("답: 해당돼요 → 확실히 받는 것으로 + '해당 확인', 아니에요 → '해당 없음 N개' 접힘, 모두 비면 빈 문구", () => {
++  const cond = sub("COND", { detail: { conditionLabel: "맞벌이", deadlineType: "ongoing" } }), cond2 = sub("COND2", { detail: { conditionLabel: "x", deadlineType: "ongoing" } });
++  const yes = run([cond, cond2], { answers: { COND: "yes", COND2: "no" } });
++  assert.ok(yes.includes("확실히 받는 것") && yes.includes("해당 확인") && yes.includes("해당 없음 1개 보기") && !yes.includes("조건 확인"));
++  assert.ok(run([], {}).includes("지금 신청할 수 있는 혜택이 없어요."));
++  assert.ok(run([cond], { answers: { COND: "no" }, isNA: () => false }).includes("지금 신청할 수 있는 혜택이 없어요."));
++  assert.ok(run([sub("NA1")], { isNA: (id) => id === "NA1" }).includes("해당 없음 1개 보기"), "기존 미해당도 읽는다");
++});
++test("5개 초과는 'N개 더 보기'(정책 expandMax), 없으면 모두 보임; 신청 예정·완료 탭 코드는 그대로", () => {
++  const many = [1, 2, 3, 4, 5, 6, 7].map((i) => dl("S" + i, 40 + i));
++  assert.ok(run(many, { expandMax: 5 }).includes("2개 더 보기"));
++  assert.ok(!run(many, { expandMax: null }).includes("개 더 보기"));
++  const src = fs.readFileSync(path.join(ROOT, "js/subsidy-view.js"), "utf8");
++  assert.ok(src.includes('data-act="expired"') && src.includes("앞으로 신청할 수 있어요") && src.includes("신청 완료한 혜택"));
++});
++test("연결: hnCtx 에 답·isNA·expandMax, index/sw 에 subsidy-tiers(subsidy-view 앞), 저장은 기기 저장뿐", () => {
++  const app = fs.readFileSync(path.join(ROOT, "js/app.js"), "utf8"), idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8"), sw = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
++  assert.ok(/answers: typeof SubsidyTiers !== "undefined" \? SubsidyTiers\.loadAnswers/.test(app) && /expandMax: curationPolicy && curationPolicy\.slots/.test(app));
++  assert.ok(idx.indexOf("js/subsidy-tiers.js") < idx.indexOf("js/subsidy-view.js") && sw.includes("subsidy-tiers.js"));
++  assert.ok(!/setDoc|addDoc|updateDoc|firestore/i.test(fs.readFileSync(path.join(ROOT, "js/subsidy-tiers.js"), "utf8").replace(/Firestore[^\n]*/g, "")));
++});

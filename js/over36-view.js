@@ -38,6 +38,16 @@
 
   const check = (id, done) => `<button type="button" class="a36-cb${done ? " on" : ""}" data-a36-toggle="${esc(id)}" role="checkbox" aria-checked="${done ? "true" : "false"}" aria-label="${esc(MSG.doneLabel)}"></button>`;
 
+  /** 36+ 메모장 할 일 카드(홈 위치와 큐레이션 홈 맨 아래가 같은 마크업을 쓴다). */
+  function renderTodoCard(st) {
+    const t = st.todos || { open: [], done: [] };
+    const rows = [...t.open, ...t.done]
+      .map((d) => `<div class="a36-row${d.done ? " done" : ""}" data-a36-row="${esc(d.id)}">${check(d.id, d.done)}<span class="a36-t">${esc(d.title)}</span>${d.done ? `<small>${esc(MSG.doneLabel)}</small>` : ""}</div>`)
+      .join("");
+    const todo = `<section class="home-sec a36-card" id="a36-home-todo"><div class="home-sec-head"><h3>${esc(MSG.homeTodoTitle(st.name || ""))}</h3><button type="button" class="a36-more" data-a36="todos">${esc(MSG.homeTodoMore)}</button></div>${st.canTodo === false ? `<p class="home-empty-line" data-a36-preparing>${esc(MSG.preparing)}</p>` : `${rows || `<p class="home-empty-line">${esc(MSG.emptyHint)}</p>`}<button type="button" class="a36-add" data-a36="add-home">${esc(MSG.add)}</button>`}</section>`;
+    return todo;
+  }
+
   /** 홈(36개월 이상): 아이 칩 → 오늘·이번 주 우리 가족 카드(familyHtml) → [아이] 할 일 카드 → 자주 쓰는 일정 칩.
    *  st: { kids:[{code,name,ageText,current}], name, familyHtml, todos:{open,done,openTotal}, canTodo } */
   function renderHome(st) {
@@ -45,11 +55,7 @@
     const chips = kids.length >= 2
       ? `<div class="home-child-chips a36-chips" role="tablist">${kids.map((c) => `<button type="button" role="tab" aria-selected="${c.current ? "true" : "false"}" class="home-child-chip${c.current ? " active" : ""}" data-home-child="${esc(c.code)}">${esc(c.name)}</button>`).join("")}</div>`
       : "";
-    const t = st.todos || { open: [], done: [] };
-    const rows = [...t.open, ...t.done]
-      .map((d) => `<div class="a36-row${d.done ? " done" : ""}" data-a36-row="${esc(d.id)}">${check(d.id, d.done)}<span class="a36-t">${esc(d.title)}</span>${d.done ? `<small>${esc(MSG.doneLabel)}</small>` : ""}</div>`)
-      .join("");
-    const todo = `<section class="home-sec a36-card" id="a36-home-todo"><div class="home-sec-head"><h3>${esc(MSG.homeTodoTitle(st.name || ""))}</h3><button type="button" class="a36-more" data-a36="todos">${esc(MSG.homeTodoMore)}</button></div>${st.canTodo === false ? `<p class="home-empty-line" data-a36-preparing>${esc(MSG.preparing)}</p>` : `${rows || `<p class="home-empty-line">${esc(MSG.emptyHint)}</p>`}<button type="button" class="a36-add" data-a36="add-home">${esc(MSG.add)}</button>`}</section>`;
+    const todo = renderTodoCard(st);
     const autos = (st.autoItems || []).length
       ? `<section class="home-sec a36-card" id="a36-home-auto"><div class="home-sec-head"><h3>${esc(MSG.homeAutoTitle)}</h3></div>${st.autoItems.map((a) => `<button type="button" class="a36-row a36-auto" data-a36-auto="${esc(a.id)}"><em class="a36-autob">${esc(MSG.autoBadge)}</em><span class="a36-t">${esc(a.title)}</span>${a.dateLabel ? `<small>${esc(a.dateLabel)}</small>` : ""}</button>`).join("")}</section>`
       : "";
@@ -127,5 +133,5 @@
       <p class="a36t-privacy">${esc(TREND.privacy)}</p></div>`;
   }
 
-  return { MSG, renderHome, renderTodoTab, renderTodoMenu, TREND, renderTrend, esc };
+  return { MSG, renderHome, renderTodoCard, renderTodoTab, renderTodoMenu, TREND, renderTrend, esc };
 });

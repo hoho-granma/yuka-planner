@@ -1,0 +1,100 @@
+{
+ "① 임신": {
+  "now": [],
+  "soon": [
+   "PG-02:L5:apply",
+   "PREG-005:L5:schedule"
+  ],
+  "know": [
+   "PREG-007:L5:done"
+  ],
+  "more": [
+   0,
+   0,
+   0,
+   21
+  ]
+ },
+ "② 0~12개월": {
+  "now": [
+   "VX-DTAP+VX-IPV+VX-HIB+VX-PCV:L3:apply"
+  ],
+  "soon": [
+   "VX-HEPB+VX-BCG+HC-01+VX-HEPB:L5:review",
+   "VX-DTAP+VX-IPV+VX-HIB+VX-PCV:L6:apply"
+  ],
+  "know": [
+   "FD-08:L5:done"
+  ],
+  "more": [
+   0,
+   31,
+   12,
+   19
+  ]
+ },
+ "③ 12~36개월": {
+  "now": [
+   "VX-HEPA:L2:apply"
+  ],
+  "soon": [
+   "VX-HEPB+VX-BCG+HC-01+VX-HEPB+VX-DTAP+VX-IPV+VX-HIB+VX-PCV+HC-02+VX-DTAP+VX-IPV+VX-HIB+VX-PCV+VX-HEPB+VX-DTAP+VX-IPV+VX-HIB+VX-PCV+HC-03+VX-HIB+VX-PCV+VX-MMR+VX-VAR+VX-DTAP:L5:review",
+   "OR-03:L5:schedule"
+  ],
+  "know": [
+   "FD-08:L5:done"
+  ],
+  "more": [
+   0,
+   15,
+   34,
+   17
+  ]
+ },
+ "④ 3~5세": {
+  "now": [
+   "HC-08:L4:apply"
+  ],
+  "soon": [
+   "VX-DTAP+VX-IPV+VX-MMR:L5:apply",
+   "SB-04:L5:apply"
+  ],
+  "know": [],
+  "more": [
+   0,
+   2,
+   0,
+   3
+  ]
+ },
+ "⑤ 6~7세": {
+  "now": [],
+  "soon": [
+   "SC-03:L5:confirm",
+   "SB-04:L5:apply"
+  ],
+  "know": [],
+  "more": [
+   0,
+   1,
+   0,
+   2
+  ]
+ },
+ "⑥ 초등(초3)": {
+  "now": [],
+  "soon": [
+   "SB-04:L5:apply",
+   "SB-09:L5:confirm"
+  ],
+  "know": [
+   "SC-16:L5:done"
+  ],
+  "more": [
+   0,
+   0,
+   0,
+   1
+  ]
+ }
+}

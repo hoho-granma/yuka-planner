@@ -295,5 +295,13 @@
     return `${fresh}${mile}${pri}`;
   }
 
-  return { curate, normalizePolicy, typeOf, REASONS };
+  /** 월령 탭·달력 두 층이 쓰는 항목 설명: 분류(type·sub)와 '왜 지금' 한 줄(같은 판정·같은 문장표). 게이트·슬롯은 거치지 않는다. */
+  function describe(e, state, policy, today) {
+    const cls = classify(e, policy), lvl = levelOf(e, today, policy, state || {});
+    const key = cls.type === "KNOW" ? "know_now" : lvl.key;
+    const f = REASONS[key];
+    return { type: cls.type, sub: cls.sub || "", level: lvl.level, reasonKey: key, text: f ? f(lvl.params || {}) : "" };
+  }
+
+  return { curate, normalizePolicy, typeOf, classify, describe, REASONS };
 });
