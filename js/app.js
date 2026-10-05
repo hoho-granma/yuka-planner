@@ -832,7 +832,20 @@
   }
   /** 달력 칸(점·추천일·진행현황·월령 체크)에 올리는 항목 — 기간형 AUTO 는 칸에 찍지 않으므로 뺀다. */
   function calendarDotSchedule() {
-    return calendarSchedule().filter((e) => !periodRangeOf(e));
+    const list = calendarSchedule().filter((e) => !periodRangeOf(e));
+    return calendarDeadlineViews(list);
+  }
+  const eventItemHtmlBase = eventItemHtml;
+  eventItemHtml = function eventItemHtml(e, opts) { // 1-5b: 마감 임박(표시용 복사본 calUrgent)은 날짜 줄 아래에 와인색 'D-N · M월 D일까지'(글자 포함 — 색만으로 구분하지 않는다)
+    const h = eventItemHtmlBase.apply(this, arguments);
+    if (!e || !e.calUrgent || completed[e.id]) return h;
+    return h.replace('<p class="summary">', `<p class="sub-when urgent">D-${e.calDays} · ${formatDateKR(e.fixedDate)}까지</p><p class="summary">`);
+  };
+  /** 1-5b(플래그 curation ON·정책 읽음일 때만): 마감이 있는 신청형을 마감일 칸에 '마감 ' 글자와 함께 보인다(표시용 복사본 — 엔진 fixedDate 불변, 임박은 날짜 줄 와인색). OFF 면 목록 그대로. */
+  function calendarDeadlineViews(list) {
+    if (!FEATURES_CURATION_ON() || !curationPolicy || typeof MonthTiers === "undefined") return list;
+    const ctx = { HN: HNLogic, today: new Date(), soonDays: curationPolicy.thresholds ? curationPolicy.thresholds.deadlineSoonDays : 30 };
+    return list.map((e) => MonthTiers.deadlineView(e, ctx));
   }
   // ── E(1-3) 홈 순서용: 이 기기 아이들의 생년월일(가장 어린 아이 판단). 가구 플래그가 켜진 기기에서만 기록한다. ──
   const CHILD_BIRTHS_KEY = "hannun_child_births";
@@ -1484,7 +1497,7 @@
     if (isNew && HSW.justEnabled && HomeSwitch.noticeDue(st, true)) body.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("on"));
     if (!isNew && pref === "on" && !HSW.fallbackShown) { HSW.fallbackShown = true; body.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("fallback")); } // 켜 놓았는데 새 홈이 안 그려졌다(설정 못 읽음 등) — 이전 홈을 그리고 한 번만 알린다
     if (isNew) HSW.justEnabled = false;
-    body.insertAdjacentHTML("beforeend", HomeSwitch.linkHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE));
+    if (isNew || HOME_V2_STAGE >= 2) body.insertAdjacentHTML("beforeend", HomeSwitch.linkHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE, pref)); // 새 홈이 실제로 그려졌을 때만(폴백으로 이전 홈이 그려졌으면 단계 ① 링크 없음)
   }
   /** 스위치 누름: 키 저장 → 플래그 반영 → (필요하면 정책 읽기) → 홈 다시 그림(맨 위로). 한 번 더 묻지 않는다. 서버·가족에게 아무것도 보내지 않는다. */
   async function homeSwitchSet(on) {
@@ -3336,7 +3349,10 @@
   let placesSort = "near"; // "near" | "popular"
   async function loadPlaces() {
     if (placesData) return placesData;
-    if (!placesLoading) placesLoading = loadJsonOrNull("data/places.json").then((d) => { placesData = d && Array.isArray(d.places) ? d : { places: [] }; return placesData; });
+    if (!placesLoading) placesLoading = Promise.all([loadJsonOrNull("data/places.json"), loadJsonOrNull("data/policy/places-age-basis.json")]).then(([d, basis]) => { // 3-1: 시설 유형 기준 나이(못 읽으면 기존 '방문 전 확인')
+      if (typeof PlacesView !== "undefined" && PlacesView.setAgeBasis) PlacesView.setAgeBasis(basis);
+      placesData = d && Array.isArray(d.places) ? d : { places: [] }; return placesData;
+    });
     return placesLoading;
   }
   async function loadPlacesOffices() {

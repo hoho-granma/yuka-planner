@@ -82,6 +82,12 @@
     return `<div class="hs-row" data-hs-key="${esc(u.key)}"><div class="hs-main"><div class="hs-it">${esc(u.title)}${tagsOf(u)}</div>` +
       `<div class="hs-why">${cat ? `<b>${cat}</b> · ` : ""}${date ? date + (why ? " · " : "") : ""}${date && lv(u) <= 3 ? "" : why}</div></div>${actionHtml(u)}</div>`;
   }
+  /** 빈 상태 '다음' 줄의 월(명세 §4 ①: "다음: 12월 취학통지서 확인"): 시작일이 있으면 시작 월, 없으면 끝나는 달, 둘 다 없으면 빈 문자열. */
+  function monthOf(u, today) {
+    const it = u.items && u.items[0], start = it && (it.entryDate || it.windowStart);
+    const d = start instanceof Date ? start : endDate(u, today);
+    return d instanceof Date && !isNaN(d.getTime()) && (!today || sod(d) >= sod(today)) ? `${d.getMonth() + 1}월 ` : ""; // 지난 날짜의 월은 '다음'이 아니라 붙이지 않는다
+  }
   function soonRow(u, today) {
     const e = endDate(u, today), start = u.items && u.items[0] && (u.items[0].entryDate || u.items[0].windowStart);
     const when = u.reason && u.reason.key === "starting_soon" && start instanceof Date ? `${dmd(start, today)}부터` : e ? (isPast(u) ? (endKind(u) === "age" ? "" : PAST_OK) : endText(u, e, today, " 마감")) : "";
@@ -122,7 +128,7 @@
       parts.push(node("hs-s-now", "지금 꼭 할 것",
         `<div class="hs-card hs-now">${cur.now.map((u) => nowRow(u, today)).join("")}${moreHtml("now", mc.now, "지금 꼭 할 것", (u, t) => nowRow(u, t), hid, today, cur.expandMax)}</div>`, on()));
     } else {
-      const next = o.nextHint || (cur.soon[0] ? `다음: ${cur.soon[0].title}` : o.nextStage ? `다음: ${o.nextStage.title}` : "");
+      const next = o.nextHint || (cur.soon[0] ? `다음: ${monthOf(cur.soon[0], today)}${cur.soon[0].title}` : o.nextStage ? `다음: ${o.nextStage.title}` : "");
       parts.push(node("hs-s-now", "지금 꼭 할 것", `<div class="hs-empty"><b>이번 달 꼭 할 것은 없어요</b>${next ? `<span>${esc(next)}</span>` : ""}</div>`, { on: famHidden }));
       // 빈 ①은 점을 채우지 않고, 다음 마디(가족 일정)가 채운 점을 가진다
     }

@@ -232,6 +232,23 @@
       `</div></div>`
     );
   }
+  // 3-1 '시설 유형 기준' 권장 나이(data/policy/places-age-basis.json): 공식 ageMonths 가 없는 곳에만, 데이터의 문구 그대로 + 라벨. 공식 값이 있으면 공식 값 우선. 표시 전용 — 나이 필터(Places.ageFits)에는 쓰지 않는다.
+  let ageBasis = null;
+  function setAgeBasis(d) { ageBasis = d && typeof d === "object" && d.byCategory && typeof d.byCategory === "object" ? d : null; }
+  function basisOf(p) {
+    if (!ageBasis || !p || typeof p !== "object") return null;
+    const rule = ageBasis.byCategory[p.category], list = ageBasis.applyTo && ageBasis.applyTo[p.category];
+    if (!rule || typeof rule.text !== "string" || !rule.text || !Array.isArray(list) || !list.includes(p.id)) return null;
+    if (ageBasis.excludeIds && Object.prototype.hasOwnProperty.call(ageBasis.excludeIds, p.id)) return null;
+    return { text: rule.text, label: typeof ageBasis.basisLabel === "string" && ageBasis.basisLabel ? ageBasis.basisLabel : "" };
+  }
+  /** '권장 나이' 한 줄: 공식 값 → 시설 유형 기준(라벨 포함) → 방문 전 확인. */
+  function ageMeta(p) {
+    const official = ageText(p && p.ageMonths);
+    const b = official === null ? basisOf(p) : null;
+    if (!b) return metaItem("권장 나이", official);
+    return `<li class="places-meta-item places-basis"><span class="places-meta-label">권장 나이</span><span class="places-meta-value">${esc(b.text)}${b.label ? `<small class="places-basis-tag">${esc(b.label)}</small>` : ""}</span></li>`;
+  }
   function metaItem(label, value) {
     const known = value !== null && value !== undefined && value !== "";
     return `<li class="places-meta-item${known ? "" : " unknown"}"><span class="places-meta-label">${esc(label)}</span><span class="places-meta-value">${esc(known ? value : TEXT.unknown)}</span></li>`;
@@ -271,7 +288,7 @@
       (typeof p.notice === "string" && p.notice ? `<p class="places-card-notice">${esc(p.notice)}</p>` : "") +
       (p.address || where ? `<p class="places-address">${esc(p.address || where)}</p>` : "") +
       `<ul class="places-meta">` +
-      metaItem("권장 나이", ageText(p.ageMonths)) +
+      ageMeta(p) +
       metaItem("실내·실외", lookup(Places.INDOOR, p.indoor)) +
       metaItem("비용", lookup(Places.COST, p.cost)) +
       metaItem("예약", lookup(Places.RESERVATION, p.reservation)) +
@@ -408,7 +425,7 @@
       `<h3 class="places-name">${esc(p.name || "")}</h3>` +
       addrRow + driveRow +
       (p.summary ? `<p class="places-summary">${esc(p.summary)}</p>` : "") +
-      `<ul class="places-meta">${metaItem("권장 나이", ageText(p.ageMonths))}${metaItem("실내·실외", lookup(Places.INDOOR, p.indoor))}${metaItem("비용", lookup(Places.COST, p.cost))}${metaItem("예약", lookup(Places.RESERVATION, p.reservation))}</ul>` +
+      `<ul class="places-meta">${ageMeta(p)}${metaItem("실내·실외", lookup(Places.INDOOR, p.indoor))}${metaItem("비용", lookup(Places.COST, p.cost))}${metaItem("예약", lookup(Places.RESERVATION, p.reservation))}</ul>` +
       (typeof p.notice === "string" && p.notice ? `<p class="places-reserve-note places-detail-notice">${esc(p.notice)}</p>` : "") +
       resv +
       (hasHome ? `<div class="places-actions"><a class="places-link" href="${esc(p.officialUrl)}" target="_blank" rel="noopener noreferrer">${esc(TEXT.homepage)}</a></div>` : "") +
@@ -432,5 +449,5 @@
     };
   }
 
-  return { TEXT, SCHEDULE_LIMITS, esc, ageText, render, filterRow, activeConds, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, routeUrl, memoFor, scheduleDraftFor };
+  return { TEXT, SCHEDULE_LIMITS, esc, ageText, setAgeBasis, basisOf, render, filterRow, activeConds, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, routeUrl, memoFor, scheduleDraftFor };
 });

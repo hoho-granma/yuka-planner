@@ -40,8 +40,8 @@
     return `<div class="hs-notice" data-home-notice>${`<span>${esc(text)}</span>`}${link}<button type="button" class="hs-notice-x" data-home-notice-x aria-label="${esc(MSG.close)}">✕</button></div>`;
   }
   /** 홈 맨 아래 작은 링크(단계 ② 전용): 새 홈에서는 '이전 홈으로 보기', 이전 홈에서는 '새 홈으로 보기'. 단계 ① 에서는 비움. */
-  function linkHtml(on, stage) {
-    if (!(Number(stage) >= 2)) return "";
+  function linkHtml(on, stage, pref) {
+    if (!(Number(stage) >= 2) && !(on && pref === "on")) return ""; // 단계 ①: 스위치로 새 홈을 켠 사용자(키 "1")에게만 — 큐레이션 홈 맨 아래 '이전 홈으로 보기'(D24, 누르면 스위치가 꺼진다)
     return `<div class="hs-switch-link"><button type="button" class="hs-link" data-home-switch="${on ? "off" : "on"}">${esc(on ? MSG.linkOld : MSG.linkNew)}</button></div>`;
   }
   /** 안내 띠를 지금 보일까: 켠 직후 한 번(once) + 이 기기에서 ✕ 하지 않았을 때. */

@@ -1,0 +1,72 @@
+{
+  "_설명": "어디갈까 '시설 유형 기준' 권장 나이 기준표(로드맵 3-1, 사용자 직접 승인 2026-10-05 hn_data 세션). 공식 연령(places.json ageMonths)과 다르다: 공식 값이 없는 곳에만 '시설 유형 기준' 라벨로 안내하고, 나이 필터의 제외 기준으로 쓰지 않는다(정렬 감점·안내 문구만). 개별 공식 연령은 조사 재개 후 ageMonths 에 덮어쓴다. places.json 은 수정하지 않았다(places.js validatePlace 가 정의되지 않은 필드를 거절하고, 공식 값 칸에 추측을 넣지 않기 위해).",
+  "_근거": "docs/ux-review/05-어디갈까-교육트렌드-다음단계.md §나이 표기 3단계 ② — 호출자 조사 결과(유형별 권장 월령). 출처 URL은 추가확인 필요. 도서관 하한 없음은 국립어린이청소년도서관 공식 '만 14세 미만'과 일치하나 영유아 하한 월령은 어느 도서관에서도 확인 못 함(docs/조사-UX공백5건-20261005.md §5).",
+  "basisLabel": "시설 유형 기준",
+  "byCategory": {
+    "LIBRARY": {
+      "minMonths": null,
+      "maxMonths": null,
+      "text": "도서관은 영유아부터 이용할 수 있는 곳이 많아요(시설별로 확인)",
+      "verified": false,
+      "_메모": "하한 없음. 공식 확인 없이 숫자를 넣지 않는다"
+    },
+    "MUSEUM": {
+      "minMonths": 36,
+      "maxMonths": null,
+      "text": "박물관·전시는 만 3세(36개월) 이상 권장인 곳이 많아요",
+      "verified": false,
+      "_메모": "유형 기준. 출처 URL 추가확인 필요. 아래 excludeIds 는 공식 notice 가 다른 연령을 말해 적용하지 않는다"
+    },
+    "PARK": null,
+    "EXPERIENCE": null,
+    "EDU": null,
+    "KIDSCAFE": null,
+    "INDOOR": null,
+    "_메모": "null = 유형 기준 없음 → 화면은 '방문 전 확인'. 놀이시설(36개월 미만 성인 동반) 기준은 해당 분류(KIDSCAFE·INDOOR) 데이터가 0건이라 이번엔 만들지 않았다"
+  },
+  "applyTo": {
+    "LIBRARY": [
+      "seoul-guro-lib-001",
+      "gyeonggi-yongin-lib-001",
+      "gyeonggi-yongin-lib-002",
+      "gyeonggi-yongin-lib-003",
+      "gyeonggi-seongnam-lib-001",
+      "gyeonggi-seongnam-lib-002",
+      "gyeonggi-seongnam-lib-003",
+      "gyeonggi-seongnam-lib-004",
+      "seoul-lib-002",
+      "seoul-lib-004",
+      "seoul-geumcheon-lib-001",
+      "seoul-yangcheon-lib-001",
+      "seoul-yeongdeungpo-lib-001",
+      "gyeonggi-gwangmyeong-lib-001",
+      "gyeonggi-bucheon-lib-001",
+      "seoul-gangseo-lib-001",
+      "seoul-gwanak-lib-001",
+      "seoul-dongjak-lib-001",
+      "gyeonggi-siheung-lib-001",
+      "gyeonggi-anyang-lib-001"
+    ],
+    "MUSEUM": [
+      "gyeonggi-yongin-mus-001",
+      "gyeonggi-yongin-mus-002",
+      "gyeonggi-seongnam-mus-001",
+      "gyeonggi-seongnam-mus-002",
+      "seoul-mus-003",
+      "seoul-mus-004",
+      "seoul-yangcheon-mus-001"
+    ]
+  },
+  "excludeIds": {
+    "seoul-mus-002": "공식 notice: 전시실 5~9세·36개월 이하 놀이 공간 별도 → 시설 안에 연령대가 여럿",
+    "gyeonggi-bucheon-mus-001": "공식 notice: '6세 이하 영·유아' 무료 안내 → 36개월 이상 권장과 충돌 소지",
+    "seoul-gangseo-mus-001": "공식 notice: 미취학(6세 이하) 무료 안내",
+    "gyeonggi-siheung-mus-001": "공식 notice: 어린이체험실 권장 36개월~9세(시설 공식 값 — 유형 기준보다 우선, 이번 범위 밖)"
+  },
+  "_추가확인": [
+    "MUSEUM 36개월 이상 권장: 출처 URL 미확인",
+    "LIBRARY 영유아 하한 월령: 확인 못 함",
+    "excludeIds 박물관 4곳은 공식 notice 와 충돌 — 개별 조사 때 ageMonths 로 반영",
+    "PARK·EXPERIENCE·EDU(null 69곳 중 해당) 유형 기준 없음 — 별도 기준 없이는 '방문 전 확인' 유지"
+  ]
+}

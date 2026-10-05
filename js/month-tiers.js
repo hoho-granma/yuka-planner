@@ -12,7 +12,7 @@
 
   const MSG = Object.freeze({
     layer1: "이번 달 챙길 것", doIt: "할 것", soon: "곧 준비", know: (n) => `이 시기 알아두기 ${n}개 ›`, observe: "관찰", tryIt: "해볼 것", caution: "주의",
-    remaining: (n) => `남은 ${n}개`, calendarHead: (n) => (n > 0 ? `이번 달 챙길 것 · 남은 ${n}개` : "이번 달 챙길 것"), ack: "확인했어요", acked: (n) => `확인한 것 ${n}개`,
+    deadlinePrefix: "마감 ",     remaining: (n) => `남은 ${n}개`, calendarHead: (n) => (n > 0 ? `이번 달 챙길 것 · 남은 ${n}개` : "이번 달 챙길 것"), ack: "확인했어요", acked: (n) => `확인한 것 ${n}개`,
     laterGroups: (n) => `나중 시기 ${n}개 그룹 보기 ›`, from: (md) => `${md}부터`, emptyMonth: "이 달에 새로 챙길 항목은 없어요", milestoneNew: "이번 달 새로 시작하는 관찰 항목이에요",
   });
   const SUBSIDY = "행정·지원금";
@@ -82,5 +82,28 @@
     return { head: MSG.calendarHead(g.remaining), list: g.doList.concat(g.soonList), knowCount: g.knowCount, knowLabel: g.knowCount ? MSG.know(g.knowCount) : "", know: g.know, remaining: g.remaining };
   }
 
-  return { classify, inCalendarOf, whyOf, group, groupFold, calendarCard, MSG };
+  /**
+   * 1-5b 마감형 신청의 달력 칸 날짜(표시 층 전용): 신청 기한(마감)이 있는 지원금·제도만 그 마감일 칸으로 옮겨 보인다.
+   * 엔진 fixedDate(신청 시작일)는 바꾸지 않는다 — 이 함수는 날짜만 돌려주고, 호출부가 표시용 복사본을 만든다.
+   * 제외: 마감 미확인(unconfirmed)·상시(ongoing)·나이 상한(age_window / 엔진 AGE_WINDOW — '받을 수 있는 나이의 끝'이지 신청 기한이 아님)·fixed 가 아닌 항목.
+   */
+  function deadlineDayOf(e, HN) {
+    if (!e || e.scheduleKind !== "fixed" || e.category !== "행정·지원금") return null;
+    const d = e.detail || {}, def = d.definition || {};
+    if (d.deadlineType === "unconfirmed" || d.deadlineType === "ongoing" || d.deadlineType === "age_window" || def.triggerType === "AGE_WINDOW") return null;
+    const end = HN && typeof HN.subsidyDeadline === "function" ? HN.subsidyDeadline(e) : e.deadlineDate;
+    return end instanceof Date && !isNaN(end.getTime()) ? end : null;
+  }
+  const sodD = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  /** 표시용 복사본 { ...e, fixedDate: 마감일, title: "마감 …", calDeadline: true, calUrgent: 임박(오늘~deadlineSoonDays일 안이면 true), calDays }. 대상이 아니면 e 그대로. */
+  function deadlineView(e, ctx) {
+    const c = ctx || {}, end = deadlineDayOf(e, c.HN);
+    if (!end) return e;
+    const today = c.today instanceof Date ? sodD(c.today) : null;
+    const days = today ? Math.round((sodD(end) - today) / 86400000) : null;
+    const soon = c.soonDays != null ? c.soonDays : 30;
+    return { ...e, fixedDate: end, title: `${MSG.deadlinePrefix}${e.title}`, calDeadline: true, calDays: days, calUrgent: days != null && days >= 0 && days <= soon };
+  }
+
+  return { classify, inCalendarOf, whyOf, group, groupFold, calendarCard, deadlineDayOf, deadlineView, MSG };
 });

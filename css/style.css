@@ -1824,6 +1824,7 @@ body.acct-design .a36t-nc { display: block; margin: 2px 0 0; font-size: 12px; fo
 .hs-notice span { flex: 1; } .hs-notice-link, .hs-link { background: none; border: 0; padding: 4px; font: inherit; font-size: 12px; color: var(--text-muted); text-decoration: underline; cursor: pointer; }
 .hs-notice-x { background: none; border: 0; padding: 4px 6px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
 .hs-switch-link { margin: 12px 0 4px; text-align: center; }
+.places-basis-tag { display: block; margin-top: 2px; font-size: 11px; font-weight: 400; color: var(--text-muted); } /* 3-1 '시설 유형 기준' 라벨 */
 /* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
    인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
 :root {
@@ -1932,3 +1933,41 @@ body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-foot { backg
 :is(#tab-home, #empty-panel) .acct-nc-ban { background: var(--nd-soft); }
 body.acct-design :is(#tab-home, #empty-panel) .acct-nc-me .acct-nc-av { background: var(--c-badge-auto); color: var(--text); }
 body.acct-design :is(#tab-home, #empty-panel) .acct-nc-me-t small svg { color: #e0443a; fill: currentColor; }
+
+/* ═══ v1.12.107 4-2 시트 통일 — 일정 시트·상세 시트·프로필 시트를 확정 디자인(--nd-*)에 맞춘다. 명세 docs/한눈육아-디자인명세-통일-시트3종.md, 결정 D21(상세 시트 흰 면 유지)·D22(단계 완료 인디고).
+   정보 수정 시트(v1.12.98~100)와 같은 방식: 시트 범위 셀렉터 안에서만 덮어쓴다. 새 변수·새 색 없음, 앱 전역 --c-primary·.us-chip 기본값은 바꾸지 않는다. 구성원 색 칩·삭제 버튼·분류 뱃지·구성원 원은 그대로. ═══ */
+/* 1. 일정 추가·수정 시트 */
+.modal-panel:has(.us-form) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); background: var(--nd-soft); }
+.modal-panel:has(.us-form) h3 { color: var(--nd-ink); }
+.modal-panel:has(.us-form) #us-title { background: #fff; border: 1.5px solid var(--nd-yellow-line); border-radius: 12px; padding-left: 14px; padding-right: 14px; }
+.modal-panel:has(.us-form) :is(input:not(#us-title), textarea, select), .modal-panel:has(.us-form) .date-picker-trigger { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; }
+.modal-panel:has(.us-form) .us-chip:not(.active):not([style*="--us-color"]) { background: #fff; border: 1.5px solid var(--line); color: var(--text); }
+/* 비선택 구성원 색 칩은 앱 기본(구성원 색 면) 그대로 — 사람 구분 색을 선택 전에도 보이게 한다(QA 사전 차이 1) */
+.modal-panel:has(.us-form) .us-chip.active:not([style*="--us-color"]) { background: var(--nd-yellow); border: 1.5px solid var(--nd-yellow-line); color: var(--nd-ink); font-weight: 800; }
+.modal-panel:has(.us-form) .us-recommend .us-chip { background: #fff; border: 1.5px solid var(--nd-indigo); color: var(--nd-indigo); }
+.modal-panel:has(.us-form) .us-btn.us-primary { background: var(--nd-indigo); border: 0; color: #fff; border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
+.modal-panel:has(.us-form) .us-btn:not(.us-primary):not(.us-danger) { background: #fff; border: 1.5px solid var(--line); color: var(--nd-ink); border-radius: 13px; }
+.modal-panel:has(.us-form) :is(input, textarea, select):focus-visible, .modal-panel:has(.us-form) .date-picker-trigger:focus-visible { border: 2px solid var(--nd-indigo); outline: none; }
+/* 2. 항목 상세 시트 — 시트 면은 흰색 유지(D21 A) */
+.modal-panel:has(.as-steps) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); }
+.modal-panel:has(.as-steps) .acct-sub-head { background: #fff; color: var(--nd-ink); border-bottom: 1px solid var(--line); border-radius: 0; }
+.modal-panel:has(.as-steps) .acct-sub-head h3 { color: var(--nd-ink); }
+body.acct-design .modal-panel:has(.as-steps) .acct-sub-head .cat-badge { background: #fff !important; border: 1px solid var(--line); color: var(--nd-ink); } /* 흰 머리 위에서도 알약 모양이 보이게 1px 선(QA 사전 차이 4) */
+.modal-panel:has(.as-steps) .acct-sub-head :is(.detail-tag, .prov-tag) { color: var(--text-muted) !important; }
+body.acct-design .modal-panel:has(.as-steps) .as-n { background: #fff; border: 1.5px solid var(--line); color: var(--text-muted); }
+body.acct-design .modal-panel:has(.as-steps) .as-current .as-n { background: var(--nd-indigo); border-color: var(--nd-indigo); color: #fff; }
+body.acct-design .modal-panel:has(.as-steps) .as-done .as-n { background: var(--nd-indigo); border-color: var(--nd-indigo); color: #fff; } /* D22 A: 완료도 인디고(진행 점 규칙과 같음) */
+.modal-panel:has(.as-steps) .as-b > b { color: var(--nd-ink); }
+body.acct-design .modal-panel:has(.as-steps) .as-btn { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; color: var(--nd-ink); }
+body.acct-design .modal-panel:has(.as-steps) .as-btn[data-as="apply"] { background: #fff; border: 1.5px solid var(--nd-indigo); color: var(--nd-indigo); } /* 안내 보기(링크) — 노랑은 '선택 상태'에만 */
+body.acct-design .modal-panel:has(.as-steps) .as-btn[data-as="link"] { background: var(--nd-indigo); border: 1.5px solid var(--nd-indigo); color: #fff; } /* 가족 캘린더에 넣기 — 이 시트의 주요 행동 */
+body.acct-design .modal-panel:has(.as-steps) .as-save { background: var(--nd-indigo); color: #fff; }
+.modal-panel:has(.as-steps) details > summary { background: #fff; border: 1px solid var(--line); color: var(--nd-ink); font-weight: 800; }
+/* 3. 프로필 시트 */
+.modal-panel:has(.acct-prof-head) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); background: var(--nd-soft); }
+.modal-panel:has(.acct-prof-head) .acct-prof-head .avatar { background: var(--nd-soft2); color: var(--nd-ink); }
+.modal-panel:has(.acct-prof-head) .acct-prof-head h3 { color: var(--nd-ink); }
+.modal-panel:has(.acct-prof-head) .acct-fam-hero { background: #fff; border: 1px solid var(--line); border-radius: 16px; }
+.modal-panel:has(.acct-prof-head) .acct-fam-pill { border-color: var(--nd-indigo); }
+.modal-panel:has(.acct-prof-head) .acct-fam-pill b { color: var(--nd-ink); }
+.modal-panel:has(.acct-prof-head) #btn-view-records { background: #fff; border: 1.5px solid var(--line); border-radius: 13px; color: var(--nd-ink); }
