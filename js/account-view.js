@@ -20,19 +20,8 @@
       loginBtn: "로그인",
       codeHint: "가족코드를 받았다면 회원가입에서 입력해요",
       joinTitle: "가족에게 받은 가족코드로 함께하기",
-      ob1Title: "우리 가족 일정,\n한눈에",
-      ob1Sub: "아빠, 엄마, 아이 일정을 한 달력에.\n가족 일정은 모으고, 육아 일정은 알아서 챙겨줘요.",
-      // 1장 예시: 사람별 대표색(아빠·엄마·세현·수아). 일정 = [점 색(들), 앞글, 라벨 종류(vx 접종·hc 검진·sb 지원금, 없으면 ""), 라벨, 뒷글]
-      ob1People: Object.freeze([["아빠", "#4d9bff"], ["엄마", "#ff66b3"], ["세현", "#ffc233"], ["수아", "#2fe0a0"]]),
-      ob1Days: Object.freeze([[5], [6, "수아"], [7, "", true], [8, "아빠"], [9], [10, "세현"], [11], [12, "엄마"], [13, "아빠"], [14], [15, "수아"], [16, "세현"], [17, "아빠 엄마"], [18, "아빠 엄마 세현 수아"]]),
-      ob1Weekdays: Object.freeze(["월", "화", "수", "목", "금", "토", "일"]),
-      ob1Events: Object.freeze([
-        Object.freeze(["수아", "10/6 수아 ", "vx", "접종", "DTaP 4차"]),
-        Object.freeze(["아빠", "10/8 아빠 하원 픽업", "", "", ""]),
-        Object.freeze(["세현", "10/10 세현 어린이집 발표회", "", "", ""]),
-        Object.freeze(["수아", "10/15 수아 ", "hc", "검진", "영유아 검진"]),
-        Object.freeze(["세현 수아", "10/25 세현·수아 ", "sb", "지원금", "아동수당 지급"]),
-      ]),
+      ob1Title: "육아하며 시기마다 필요한 것,\n한눈에",
+      ob1Sub: "접종·검진·지원금부터 학교 준비까지.\n지금 우리 아이에게 필요한 것을 먼저 챙겨드려요.",
       ob2Brand: "한눈육아",
       ob2Lead: "이것저것 흩어져 챙기기 어려웠다면,\n한눈육아에서 한방에 꼼꼼히 챙겨줘요",
       ob2Aria: "한눈육아 소개(옆으로 넘겨 보세요)",
@@ -84,6 +73,8 @@
     emailLabel: "이메일",
     passwordLabel: "비밀번호 (8자 이상)",
     forgot: "비밀번호를 잊으셨나요?",
+    switchToSignup: "처음이세요? 회원가입",
+    switchToLogin: "이미 계정이 있어요 · 로그인",
     resetTitle: "비밀번호 재설정",
     resetBody: "가입한 이메일로 재설정 메일을 보내 드려요.",
     resetSend: "재설정 메일 보내기",
@@ -335,23 +326,17 @@
     const s = state || {};
     const O = MSG.onboard;
     if (s.user) return `<div class="card acct-landing" id="acct-landing"><div class="acct-logo">${esc(MSG.logo)}</div><p class="fine-print">${esc(MSG.loggedInAs(s.user.displayName || s.user.email))}</p><div class="acct-actions"><button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div></div>`;
-    // G11 확정안: 1장(달력 미리보기: 칩 아빠·엄마·세현·수아 + 사람별 대표색 점 + 일정 5개) / 2장(메인 기능 5개) + 아래 고정 버튼 [로그인]·[회원가입]·가족코드 안내 한 줄.
-    const color = Object.fromEntries(O.ob1People);
-    const bars = (who) => (who ? `<b>${who.split(" ").map((w) => `<i style="background:${color[w]}"></i>`).join("")}</b>` : "");
-    const days = O.ob1Days.map(([n, who, today]) => `<div${today ? ' class="t"' : ""}>${n}${bars(who)}</div>`).join("");
-    const chips = O.ob1People.map(([t, c]) => `<span style="background:${c}">${esc(t)}</span>`).join("");
-    const evs = O.ob1Events.map(([who, pre, k, tag, post]) => `<div>${who.split(" ").map((w, n) => `<i style="background:${color[w]}${n ? ";margin-left:-4px" : ""}"></i>`).join("")}${esc(pre)}${tag ? `<em class="${k}">${esc(tag)}</em>${esc(post)}` : ""}</div>`).join("");
+    // 온보딩 첫 화면(D41 시안1): 1장 = 로고(왼쪽 위)·제목·보조(가운데) + 원 2개 / 2장(메인 기능 5개) + 아래 고정 버튼 [로그인]·[회원가입]·가족코드 안내 한 줄.
     const feats = O.ob2Feats.map(([k, t, d]) => `<div class="acct-feat"><span class="acct-feat-ic acct-feat-${k}">${FEAT_ICO[k]}</span><span><b>${esc(t)}</b><span>${esc(d)}</span></span></div>`).join("");
     return `<div class="card acct-landing acct-ob" id="acct-landing"><div class="acct-main">
       <div class="acct-slides" data-acct-slides tabindex="0" aria-label="${esc(O.ob2Aria)}">
-        <section class="acct-slide" data-acct-slide="0" aria-label="1/2"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title).replace("한눈에", '<mark class="acct-hl">한눈에</mark>')}</h1><p class="acct-sub">${lines(O.ob1Sub)}</p></div>
-          <div class="acct-ob1-cal" aria-hidden="true"><div class="acct-ob1-chips">${chips}</div><div class="acct-ob1-wk">${O.ob1Weekdays.map((d) => `<span>${d}</span>`).join("")}</div><div class="acct-ob1-days">${days}</div><div class="acct-ob1-ev">${evs}</div></div></section>
+        <section class="acct-slide" data-acct-slide="0" aria-label="1/2"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title).replace("한눈에", '<mark class="acct-hl">한눈에</mark>')}</h1><p class="acct-sub">${lines(O.ob1Sub)}</p></div></section>
         <section class="acct-slide acct-slide2" data-acct-slide="1" aria-label="2/2"><p class="acct-brand">${esc(O.ob2Brand)}</p><p class="acct-lead">${lines(O.ob2Lead)}</p><div class="acct-feats">${feats}</div></section>
       </div>
       <div class="acct-dots" role="tablist" aria-label="${esc(O.ob2Aria)}"><button type="button" class="acct-dot on" role="tab" aria-selected="true" data-acct-action="slide-go" data-slide-to="0" aria-label="1/2"></button><button type="button" class="acct-dot" role="tab" aria-selected="false" data-acct-action="slide-go" data-slide-to="1" aria-label="2/2"></button></div>
       <div class="acct-cta">
-        <button type="button" class="acct-btn-text" data-acct-action="open-signup">${esc(O.primary)}</button>
         <button type="button" class="acct-btn-primary" data-acct-action="open-login">${esc(O.loginBtn)}</button>
+        <button type="button" class="acct-btn-text" data-acct-action="open-signup">${esc(O.primary)}</button>
         <p class="acct-code-hint">${esc(O.codeHint)}</p>
         ${s.version ? `<p class="acct-ver">v${esc(s.version)}</p>` : ""}
       </div></div></div>`;
@@ -404,14 +389,15 @@
   const FACE_COLORS = Object.freeze({ MOM: "#ff66b3", DAD: "#4d9bff" });
   const FACE_FAMILY = "#c9b8ff";
   const FACE_CHILD = Object.freeze(["#ffc233", "#2fe0a0", "#ff5f6d", "#17d3ee"]);
+  const okColor = (c) => (/^#[0-9a-fA-F]{6}$/.test(String(c || "")) ? c : ""); // 앱이 팔레트에서 골라 넘긴 색만(없으면 옛 고정색 폴백)
   const face = (color, label, me) => `<div class="acct-face"><span class="acct-face-dot" style="background:${color}">${esc(String(label || "").slice(0, 1))}</span><span class="acct-face-name">${esc(label)}${me ? ` (${esc(MSG.meShort)})` : ""}</span></div>`;
   /** s.family = { members:[{memberId,role,label}], meId, meName, children:[{childKey,displayName}] } */
   function renderFamilySlot(s) {
     const f = s.family || {};
     const name = (s.account && s.account.displayName) || s.user.displayName || "";
     const role = s.account && s.account.role ? ` · ${esc(MSG.myRole(roleLabel(s.account.role).replace(/\(.*\)/, "")))}` : "";
-    const faces = (f.members || []).map((m) => face(FACE_COLORS[m.role] || FACE_FAMILY, f.meId && m.memberId === f.meId && f.meName ? f.meName : m.label, !!f.meId && m.memberId === f.meId)).join("")
-      + (f.children || []).map((c, i) => face(FACE_CHILD[i % FACE_CHILD.length], c.displayName || MSG.childFallback, false)).join("");
+    const faces = (f.members || []).map((m) => face(okColor(m.color) || FACE_COLORS[m.role] || FACE_FAMILY, f.meId && m.memberId === f.meId && f.meName ? f.meName : m.label, !!f.meId && m.memberId === f.meId)).join("")
+      + (f.children || []).map((c, i) => face(okColor(c.color) || FACE_CHILD[i % FACE_CHILD.length], c.displayName || MSG.childFallback, false)).join("");
     const add = s.code ? `<button type="button" class="acct-face acct-face-add" data-acct-action="open-invite"><span class="acct-face-dot">+</span><span class="acct-face-name">${esc(MSG.inviteMenu)}</span></button>` : "";
     const pill = s.code
       ? `<div class="acct-fam-code"><span class="acct-fam-pill"><span class="acct-fam-pill-l">${esc(MSG.codeLabelShort)}</span><b>${esc(s.code)}</b><button type="button" class="acct-copy-ico" data-acct-action="copy-me" aria-label="${esc(MSG.copyIcon)}" title="${esc(MSG.copyIcon)}">${ICO_COPY}</button></span>${s.notice === MSG.inviteCopied ? `<span class="acct-copied" role="status">${esc(MSG.copiedShort)}</span>` : ""}</div>`
@@ -497,6 +483,7 @@
       ${body}
       ${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}
       ${join && last ? `<button type="button" class="acct-link" data-acct-action="join-off"${dis}>${esc(MSG.onboard.joinOff)}</button>` : ""}
+      ${step === 1 ? `<button type="button" class="acct-link ob-switch" data-acct-action="open-login"${dis}>${esc(MSG.switchToLogin)}</button>` : ""}
       <div class="acct-step-foot">${back}${go}</div></div>`;
   }
   /** 내 정보 시트(아이가 없는 홈에서 열린다): 계정 슬롯 + 가족 캘린더 코드(있으면) + 닫기. */
@@ -566,6 +553,7 @@
       ${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}
       <button type="button" class="btn-complete" data-acct-action="submit-login"${s.busy ? " disabled" : ""}>${esc(s.busy ? MSG.loggingIn : MSG.submitLogin)}</button>
       <button type="button" class="btn-text" data-acct-action="reset-password"${s.busy ? " disabled" : ""}>${esc(MSG.forgot)}</button>
+      <button type="button" class="acct-link ob-switch" data-acct-action="open-signup"${s.busy ? " disabled" : ""}>${esc(MSG.switchToSignup)}</button>
       <button type="button" class="btn-close" data-acct-action="close"${s.busy ? " disabled" : ""}>${esc(MSG.cancel)}</button></div>`;
   }
   // ── Q3 초대: 역할 3종·링크·문구(순수) ───────────────────────────────────────────────────────

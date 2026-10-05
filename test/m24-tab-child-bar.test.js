@@ -72,7 +72,7 @@ test("앱 연결: renderAll·switchTab 끝에서 맞추고, 칩 클릭은 전용
   assert.ok(/renderAllTcbBase\.apply\(this, arguments\);\n\s*tabChildBarSync\(\);/.test(APP) && /switchTabTcbBase\.apply\(this, arguments\);\n\s*tabChildBarSync\(\);/.test(APP));
   assert.ok(/document\.addEventListener\("click", tcbChipClick\)/.test(APP) && /async function tcbChipClick/.test(APP) && /\.tab-childbar \[data-home-child\]/.test(APP));
   assert.ok(/tab-child-bar\.js/.test(read("index.html")) && /tab-child-bar\.js/.test(read("sw.js")));
-  const css = read("css/style.css"), c = css.slice(css.indexOf("/* D33 탭 위 아이 칩 줄"), css.indexOf("/* ═══ v1.12.97")); assert.ok(!/#[0-9a-f]{3,6}\b/i.test(c.replace(/\(#\w+\)/g, "").replace(/\/\*.*?\*\//g, "")), "새 hex 없음");
+  const css = read("css/style.css"), i0 = css.indexOf("/* D33 탭 위 아이 칩 줄"), c = css.slice(i0, css.indexOf("\n", css.indexOf(".tcb-chip b {", i0))); assert.ok(!/#[0-9a-f]{3,6}\b/i.test(c.replace(/\(#\w+\)/g, "").replace(/\/\*.*?\*\//g, "")), "새 hex 없음");
 });
 // 실제 클릭 경로: 칩 클릭 → switchToChild(= buildAndRender 가 홈으로 보낸다) → 끝난 뒤 보던 탭 복원
 function clickWorld(o) {

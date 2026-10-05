@@ -14,12 +14,13 @@ test("블록이 있고 마지막에 붙어 있다", () => { assert.ok(i > 0); as
 
 test("앱 전역 슬롯(:root 의 --c-primary·--accent·--c-active 등)은 인디고로 바뀌지 않았다", () => {
   const root = CSS.slice(0, CSS.indexOf("\n}\n"));
-  assert.ok(/--c-primary:\s*#ff6a1a/.test(root) && /--accent:\s*#ff6a1a/.test(root) && /--c-active:\s*#24252a/.test(root));
-  assert.ok(!/#4a45c8/i.test(CSS.slice(0, i)), "인디고는 이 블록 밖(기존 CSS)에 없다");
+  assert.ok(/--c-primary:\s*#a85a1a/.test(root) && /--accent:\s*#a85a1a/.test(root) && /--c-active:\s*#7a3f10/.test(root), "D41: 기본(:root) = 웜 브라운");
+  assert.ok(/body\.theme-forest \{[^}]*--c-primary:\s*#1f6f4a/.test(CSS), "D41: 딥 포레스트는 body.theme-forest 가 덮는다");
+  assert.ok(!/#4a45c8/i.test(CSS.slice(0, i)), "옛 인디고는 이 블록 밖(기존 CSS)에 없다");
 });
 
 test("새 규칙의 선택자는 모두 온보딩·홈 범위다(다른 화면 규칙 없음)", () => {
-  const OK = /^(:root$|\.modal-panel:has\(\.(us-form|as-steps|acct-prof-head)\)|body\.acct-design \.modal-panel:has\(\.as-steps\)|body:has\(#view-landing\.acct-on|#view-landing\.acct-on|\.modal-panel:has\(\[data-acct-form="(login|signup)"\]\)|\.modal-panel:has\(\[data-acct-child-sheet\]\)|body\.acct-design \.modal-panel:has\(\[data-acct-child-sheet\]\)|\.modal-panel:has\(#ep-save\)|body:has\(#view-calendar:not\(\.hidden\) :is\(#tab-home, #empty-panel\)|#view-calendar:has\(:is\(#tab-home, #empty-panel\)|:is\(#tab-home, #empty-panel\)|body\.acct-design :is\(#tab-home, #empty-panel\))/;
+  const OK = /^(:root$|\.modal-panel:has\(\.(us-form|as-steps|acct-prof-head|us-detail|ns-chain|cs-list)\)|body\.acct-design \.modal-panel:has\(\.(as-steps|ns-chain|cs-list)\)|body:has\(#view-landing\.acct-on|#view-landing\.acct-on|\.modal-panel:has\(\[data-acct-form="(login|signup)"\]\)|\.modal-panel:has\(\[data-acct-child-sheet\]\)|body\.acct-design \.modal-panel:has\(\[data-acct-child-sheet\]\)|\.modal-panel:has\(#ep-save\)|body:has\(#view-calendar:not\(\.hidden\) :is\(#tab-home, #empty-panel\)|#view-calendar:has\(:is\(#tab-home, #empty-panel\)|:is\(#tab-home, #empty-panel\)|body\.acct-design :is\(#tab-home, #empty-panel\))/;
   for (const [sel] of rules(BLOCK.slice(BLOCK.indexOf("}") + 1))) {
     sel.split(/,(?![^()]*\))/).forEach((s) => assert.ok(OK.test(s.trim()), "범위 밖 선택자: " + s.trim()));
   }
@@ -27,9 +28,9 @@ test("새 규칙의 선택자는 모두 온보딩·홈 범위다(다른 화면 �
 
 test("인디고·와인 등 새 색 hex 는 :root 의 --nd-* 정의에만 있다(규칙에서는 변수로 쓴다)", () => {
   const body = BLOCK.slice(BLOCK.indexOf("}") + 1);
-  for (const hex of ["#4a45c8", "#8a1c3d", "#f0f1ff", "#d8d6ff", "#fff0bd", "#f9cb34", "#e4dcee", "#f7f3fa", "#fff8e0", "#7a55c9", "#061665"]) assert.ok(!body.toLowerCase().includes(hex), hex + " 는 변수로");
+  for (const hex of ["#a85a1a", "#8a1c3d", "#f8f2ed", "#eeded1", "#fff0bd", "#f9cb34", "#e4dcee", "#faf6f0", "#3a2412"]) assert.ok(!body.toLowerCase().includes(hex), hex + " 는 변수로");
   const root = BLOCK.slice(0, BLOCK.indexOf("}"));
-  for (const hex of ["#4a45c8", "#8a1c3d", "#f0f1ff", "#d8d6ff", "#fff0bd", "#f9cb34", "#e4dcee", "#f7f3fa", "#fff8e0", "#7a55c9", "#061665"]) assert.ok(root.toLowerCase().includes(hex), hex);
+  for (const hex of ["#a85a1a", "#8a1c3d", "#f8f2ed", "#eeded1", "#fff0bd", "#f9cb34", "#e4dcee", "#faf6f0", "#3a2412"]) assert.ok(root.toLowerCase().includes(hex), hex);
 });
 
 test("대비: 인디고·보라·남색 위 흰 글자 4.5:1 이상, 차콜·검정 글자는 노랑·라벤더 위에서 읽힌다", () => {

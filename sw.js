@@ -12,6 +12,8 @@
 // 버전은 js/version.js 한 곳에서만 올린다 — 캐시 이름도 거기서 만든다(버전이 바뀌면 이전 캐시를 전부 지운다).
 importScripts("js/version.js");
 const CACHE_NAME = `hannun-shell-v${self.APP_VERSION}`;
+const OCR_CACHE_PREFIX = "hannun-ocr-"; // js/capture/ocr-tesseract.js 의 CACHE_NAME 과 같은 접두
+const OCR_CACHE = "hannun-ocr-v1";
 
 const SHELL_ASSETS = [
   "./",
@@ -29,6 +31,11 @@ const SHELL_ASSETS = [
   "./js/capture/parse-ko.js",
   "./js/capture/draft-view.js",
   "./js/capture/capture-model.js",
+  "./js/capture/text-recognition.js",
+  "./js/capture/photo-compress.js",
+  "./js/capture/ocr-tesseract.js",
+  "./js/capture/photo-view.js",
+  "./js/capture/ai-parser.js",
   "./css/capture.css",
   "./js/next-stage.js",
   "./js/sync.js",
@@ -49,6 +56,7 @@ const SHELL_ASSETS = [
   "./js/user-schedule.js",
   "./js/calendar-model.js",
   "./js/calendar-week.js",
+  "./js/apply-channel-view.js",
   "./js/apply-links.js",
   "./js/home-order.js",
   "./js/places.js",
@@ -89,7 +97,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((names) => Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))))
+      .then((names) => Promise.all(names.filter((n) => n !== CACHE_NAME && !n.startsWith(OCR_CACHE_PREFIX)).map((n) => caches.delete(n)))) // D37: 글자 인식 데이터 캐시는 버전이 바뀌어도 지우지 않는다(다시 받지 않게)
       .then(() => self.clients.claim())
   );
 });
@@ -107,6 +115,12 @@ self.addEventListener("fetch", (event) => {
   // 데이터 파일은 절대 캐시하지 않는다 — 항상 네트워크에서만 받는다.
   if (isDataRequest(url)) {
     event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // D37 글자 인식 파일(vendor/ocr/, 수 MB): 캐시 우선 — 처음 한 번만 받고 이후 네트워크를 쓰지 않는다(파일은 바뀌면 vendor/ocr/ 경로째로 새로 둔다).
+  if (url.pathname.includes("/vendor/ocr/")) {
+    event.respondWith(caches.open(OCR_CACHE).then((c) => c.match(event.request).then((hit) => hit || fetch(event.request).then((res) => { if (res && res.ok) c.put(event.request, res.clone()); return res; }))));
     return;
   }
 

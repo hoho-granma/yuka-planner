@@ -28,7 +28,7 @@ test("계정 모드 칩: 구성원마다 하나, 내 구성원은 '나(역할)',
   const chips = V.filterChips(LINKS, ["MEMBER:m1"], MEMBERS, ME);
   assert.deepStrictEqual(chips.map((c) => [c.id, c.label]), [["MEMBER:m1", "나(엄마)"], ["MEMBER:m2", "아빠"], ["CHILD:c1", "수아"], ["CHILD:c2", "하준"], ["FAMILY", "가족"]]);
   assert.deepStrictEqual(chips.filter((c) => c.selected).map((c) => c.id), ["MEMBER:m1"]);
-  assert.deepStrictEqual([chips[0].color, chips[1].color], ["#ff9a4d", "#9a7bff"]);
+  assert.deepStrictEqual([chips[0].color, chips[1].color], ["#d2f7a1", "#7c90f4"]);
   const dadMe = V.filterChips(LINKS, [], MEMBERS, { memberMode: true, meId: "m2" });
   assert.strictEqual(dadMe.find((c) => c.id === "MEMBER:m2").label, "나(아빠)");
 });
@@ -36,7 +36,7 @@ test("이모님·자녀·같은 역할이 둘 이상이어도 구성원 단위�
   const many = [...MEMBERS, { memberId: "m3", role: "CAREGIVER", label: "이모님", order: 3, colorKey: "p6" }, { memberId: "m4", role: "MOM", label: "새엄마", order: 4, colorKey: "p7" }, { memberId: "m5", role: "CHILD", label: "큰애", order: 5, deletedAt: 9 }];
   const chips = V.filterChips(LINKS, [], many, ME);
   assert.deepStrictEqual(chips.filter((c) => c.id.startsWith("MEMBER:")).map((c) => c.label), ["나(엄마)", "아빠", "이모님", "새엄마"]);
-  assert.deepStrictEqual(["m1", "m3", "m4"].map((k) => chips.find((c) => c.id === "MEMBER:" + k).color), ["#ff9a4d", "#ff66b3", "#ff5f6d"], "엄마가 둘이어도 색이 다르다(역할로 묶지 않음)");
+  assert.deepStrictEqual(["m1", "m3", "m4"].map((k) => chips.find((c) => c.id === "MEMBER:" + k).color), ["#d2f7a1", "#f7b5a1", "#a1f7a4"], "엄마가 둘이어도 색이 다르다(역할로 묶지 않음)");
 });
 test("합류 시 칩 자동 추가: 구성원 목록이 늘면(리스너가 미러를 갱신) 다음 렌더에서 칩이 늘어난다", () => {
   const before = V.filterChips(LINKS, [], [MEMBERS[0]], ME).map((c) => c.id);

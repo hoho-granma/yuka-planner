@@ -35,10 +35,10 @@ test("SC-03(입학연기 신청, 지원금 분류 아님)은 신청 기한이라
   assert.ok(sc3.includes("10월 25일 마감"), sc3); assert.ok(sc1.includes("10월 25일까지") && !sc1.includes("마감"), sc1);
 });
 
-test("빈 상태 '다음' 줄에 월이 붙는다(명세 §4 ①: 다음: 12월 …), 날짜가 없으면 월 없이", () => {
+test("빈 상태 '다음' 줄에 월이 붙는다(명세 §4 ①: 다음: 12월 …), 날짜가 없으면 후보에서 뺀다", () => {
   const empty = (soonU) => V.render({ now: [], soon: soonU ? [soonU] : [], know: [], moreCounts: {} }, { today, family: null });
   const dated = { key: "k", title: "취학통지서 확인", type: "ACT", rule: "L5", daysToEnd: 60, actionKind: "apply", reason: { key: "starting_soon", text: "" }, items: [{ id: "SC-01", category: "생활·수유", entryDate: new Date(2026, 11, 1), detail: {} }] };
   assert.ok(empty(dated).includes("다음: 12월 취학통지서 확인"), empty(dated));
   const undated = { ...dated, daysToEnd: Infinity, items: [{ id: "SC-01", category: "생활·수유", detail: {} }] };
-  assert.ok(empty(undated).includes("다음: 취학통지서 확인"));
+  assert.ok(!empty(undated).includes("다음:"), "날짜 없는 항목은 '다음' 후보에서 뺀다(줄 숨김)");
 });

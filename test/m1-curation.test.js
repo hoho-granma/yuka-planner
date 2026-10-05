@@ -118,7 +118,7 @@ test("B3(D20): 펼침은 정책 expandMax 개까지 + 전체 보기, expandMax �
   const h2 = V.render({ ...base, expandMax: null }, { today: T });
   assert.strictEqual((h2.match(/숨은 /g) || []).length, 8); assert.ok(!h2.includes("전체 보기"));
   assert.strictEqual(C.normalizePolicy({ ...rd("data/policy/curation.json"), slots: { now: 3, soon: 2, know: 1, expandMax: 5 } }).slots.expandMax, 5);
-  assert.ok(/--hn-deadline:\s*#8a1c3d/.test(fs.readFileSync(path.join(ROOT, "css/home-slots.css"), "utf8")));
+  assert.ok(/--hn-deadline:\s*(#8a1c3d|var\(--nd-wine\))/.test(fs.readFileSync(path.join(ROOT, "css/home-slots.css"), "utf8")));
 });
 test("정책 검증: slots.expandMax 가 없으면 경고(기본값을 코드에 박지 않는다), 있으면 경고 없음", () => {
   const raw = rd("data/policy/curation.json");

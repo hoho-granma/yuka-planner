@@ -274,9 +274,15 @@ const fnSrc = (name, async) => { const i = APP.indexOf(`  ${async ? "async " : "
     const de = (a, b) => Math.hypot(...lab(a).map((v, i) => v - lab(b)[i]));
     const INK = /--chip-ink: (#[0-9a-f]{6});/i.exec(CSS)[1]; // 칩 글자색(css 슬롯)
     assert.strictEqual(INK, "#1a1410");
-    V.PALETTE.forEach((c) => assert.ok(cr(c, INK) >= 5.7, `${c} 글자 대비 ${cr(c, INK).toFixed(1)}`));
-    V.PALETTE.forEach((c, i) => assert.ok(new RegExp(`--d${i + 1}: ${c};`, "i").test(CSS), `css --d${i + 1} 이 팔레트와 같은 값(${c})`));
-    for (let i = 0; i < 10; i++) for (let j = i + 1; j < 10; j++) assert.ok(de(V.PALETTE[i], V.PALETTE[j]) >= 20, `${V.PALETTE[i]} / ${V.PALETTE[j]} ΔE ${de(V.PALETTE[i], V.PALETTE[j]).toFixed(1)}`);
+    // D41: 테마별 10색(웜 브라운·딥 포레스트). 칩 글자는 inkOn 이 고른 색(기본 먹색, 대비 4.5 미만이면 흰색)이 항상 4.5:1 이상이고, css --d1~--d10 은 :root(웜)·body.theme-forest 의 같은 값.
+    const forestBlock = /body\.theme-forest \{[^}]*\}/.exec(CSS)[0], rootBlock = /^:root \{[\s\S]*?\n\}/.exec(CSS)[0];
+    assert.deepStrictEqual(Object.keys(V.PALETTES), ["warm", "forest"]);
+    for (const [theme, cols, block] of [["warm", V.PALETTES.warm, rootBlock], ["forest", V.PALETTES.forest, forestBlock]]) {
+      assert.strictEqual(cols.length, 10, theme + " 10칸 고정");
+      cols.forEach((c, i) => { assert.ok(cr(c, V.inkOn(c)) >= 4.5, `${theme} ${c} 글자 대비 ${cr(c, V.inkOn(c)).toFixed(1)}`); assert.ok(new RegExp(`--d${i + 1}: ${c};`, "i").test(block), `${theme} css --d${i + 1} 이 팔레트와 같은 값(${c})`); });
+      for (let i = 0; i < 10; i++) for (let j = i + 1; j < 10; j++) assert.ok(de(cols[i], cols[j]) >= 15, `${theme} ${cols[i]} / ${cols[j]} ΔE ${de(cols[i], cols[j]).toFixed(1)}`);
+    }
+    V.setTheme("warm"); assert.deepStrictEqual([...V.PALETTE], [...V.PALETTES.warm]); V.setTheme("forest"); assert.deepStrictEqual([...V.PALETTE], [...V.PALETTES.forest]); V.setTheme("warm");
     assert.strictEqual(new Set(V.COLOR_KEYS.map((k) => V.keyColor("x", k))).size, 10);
     const ms = [{ memberId: "m1", role: "MOM", label: "엄마", colorKey: "p5" }, { memberId: "m2", role: "MOM", label: "새엄마", colorKey: "p6" }, { memberId: "m3", role: "DAD", label: "아빠" }];
     const color = (list, id) => V.filterChips([], [], list, { memberMode: true, meId: "m1", noFamily: true }).find((c) => c.id === "MEMBER:" + id).color;

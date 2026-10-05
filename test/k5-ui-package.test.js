@@ -65,7 +65,7 @@ test("칩 라벨: 표시 이름이 있으면 이름만('나(엄마)' 아님), �
 test("칩 CSS: 칩 전체를 대표색으로 채우고 글자는 어두운 --text(대비 5.7:1 이상 팔레트), 선택은 진한 테두리·✓", () => {
   const css = read("css/style.css");
   assert.ok(/\.us-chip\[style\*="--us-color"\] \{[^}]*background: var\(--us-color\)/.test(css) && /\.us-chip\.active\[style\*="--us-color"\]::before \{ content: "✓"/.test(css));
-  assert.ok(/\.us-chip\[style\*="--us-color"\], \.us-chip\.active\[style\*="--us-color"\] \{ color: var\(--chip-ink\); \}/.test(css), "칩 글자는 --chip-ink");
+  assert.ok(/\.us-chip\[style\*="--us-color"\], \.us-chip\.active\[style\*="--us-color"\] \{ color: var\(--us-ink, var\(--chip-ink\)\); \}/.test(css), "칩 글자는 --us-ink(진한 바탕이면 흰색), 기본 --chip-ink");
   const lum = (hex) => { const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4))); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
   const text = /--chip-ink: (#[0-9a-f]{6});/i.exec(css)[1];
   for (const col of [...V.PALETTE]) { const [a, b] = [lum(col), lum(text)].sort((x, y) => y - x); assert.ok((a + 0.05) / (b + 0.05) >= 5.7, `${col} 위 ${text} 대비 ${(a + 0.05) / (b + 0.05)}`); }

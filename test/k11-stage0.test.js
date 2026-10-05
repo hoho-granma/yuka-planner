@@ -61,12 +61,10 @@ const links = [{ childKey: "c1", displayName: "수아", colorKey: "p2" }];
 const ctx = { links, meId: "m1", ageOf: () => 8 };
 const form = () => { const f = V.newForm({ date: "2026-10-06", activeChildKey: "c1", links, defaultAssigneeId: "m1" }); return V.upgradeFormG13(f, ctx); };
 
-test("0-C1: 아이 일정에도 '누가 데려가나요?' 담당 칩, 선택한 구성원만 표시, 카드·상세에 담당 이름", () => {
+test("0-C1→D40: '담당' 입력 칩은 없앴다(누구 일정 칩 하나로 정함). 옛 일정 카드·상세의 담당 이름 표시는 그대로 읽힌다", () => {
   const f = form(); V.g13ApplyWho(f, "CHILD:c1", ctx);
   const h = V.renderFormG13(f, links, { members: kids, ctx });
-  assert.ok(h.includes("누가 데려가나요?") && h.includes('data-us-assignee="m1"') && h.includes('data-us-assignee="m2"'));
-  f.assigneeMemberId = "m2";
-  assert.ok(/us-chip active"[^>]*data-us-assignee="m2"/.test(V.renderFormG13(f, links, { members: kids, ctx })));
+  assert.ok(!h.includes("누가 데려가나요?") && !h.includes("data-us-assignee"));
   assert.ok(V.renderCard({ key: "k", scheduleId: "s", title: "치과", categoryLabel: "병원", timeText: "", dateText: "", tag: "수아", assigneeText: "아빠", color: "#aaa" }).includes("담당 아빠"));
 });
 

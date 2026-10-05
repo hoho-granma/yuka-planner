@@ -1,7 +1,7 @@
 // 4-2 시트 통일(일정·상세·프로필): 시트 범위 셀렉터 안에서만, 새 변수·새 색 없음, 상세 시트 면은 흰색(D21 A)·완료 단계 인디고(D22 A). 실행: node --test test/m16-sheet-unify.test.js
 const test = require("node:test"), assert = require("node:assert"), fs = require("fs"), path = require("path");
 const css = fs.readFileSync(path.join(__dirname, "..", "css/style.css"), "utf8");
-const blk = css.slice(css.indexOf("/* ═══ v1.12.107 4-2 시트 통일"));
+const blk = css.slice(css.indexOf("/* ═══ v1.12.107 4-2 시트 통일"), css.indexOf("/* ═══ v1.12.108 4-2 마무리")); // 마무리 블록은 아래 별도 테스트(pending)
 const noComment = blk.replace(/\/\*[\s\S]*?\*\//g, "");
 const rules = [...noComment.matchAll(/([^{}]+)\{([^}]*)\}/g)].map((m) => ({ sel: m[1].trim(), body: m[2] })).filter((r) => r.sel);
 test("모든 규칙은 세 시트 범위 안(일정 .us-form·상세 .as-steps·프로필 .acct-prof-head)에서만", () => {
@@ -33,6 +33,9 @@ test("프로필 시트: 면 --nd-soft, 아바타 --nd-soft2, 가족 상자 흰 �
   assert.ok(/\.acct-fam-pill \{[^}]*border-color: var\(--nd-indigo\)/.test(blk));
 });
 
-test("상세 시트 머리의 분류 뱃지는 흰 머리 위에서 1px 선으로 보인다", () => {
-  assert.ok(/\.acct-sub-head \.cat-badge \{[^}]*border: 1px solid var\(--line\)/.test(blk));
+test("상세 시트 분류 뱃지(D34 C): 흰 면 + 1.5px 분류색 테두리 + 앞 점 — 흰 머리 위에서도 알약이 보인다", () => {
+  const css = fs.readFileSync(path.join(__dirname, "..", "css", "style.css"), "utf8");
+  assert.ok(/\.modal-panel \.cat-badge \{[^}]*border: 1\.5px solid transparent[^}]*linear-gradient\(#fff, #fff\) !important[^}]*padding-box, border-box !important/.test(css), "인라인 분류색이 테두리가 되고 안쪽은 흰색");
+  assert.ok(/\.modal-panel \.cat-badge::before \{[^}]*background-color: inherit/.test(css), "앞 점은 분류색을 물려받는다");
+  assert.ok(!/\.acct-sub-head \.cat-badge \{[^}]*background: #fff !important/.test(css), "머리 안에서도 분류색 테두리가 덮이지 않는다");
 });

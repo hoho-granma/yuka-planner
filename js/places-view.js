@@ -72,7 +72,7 @@
     endLabel: "끝 (선택)",
     assigneeLabel: "담당",
     targetLabel: "대상",
-    targetFamily: "가족 전체",
+    targetFamily: "가족",
     save: "캘린더에 등록",
     saving: "등록하는 중이에요…",
     back: "뒤로",

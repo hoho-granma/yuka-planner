@@ -82,11 +82,21 @@
     return `<div class="hs-row" data-hs-key="${esc(u.key)}"><div class="hs-main"><div class="hs-it">${esc(u.title)}${tagsOf(u)}</div>` +
       `<div class="hs-why">${cat ? `<b>${cat}</b> · ` : ""}${date ? date + (why ? " · " : "") : ""}${date && lv(u) <= 3 ? "" : why}</div></div>${actionHtml(u)}</div>`;
   }
-  /** 빈 상태 '다음' 줄의 월(명세 §4 ①: "다음: 12월 취학통지서 확인"): 시작일이 있으면 시작 월, 없으면 끝나는 달, 둘 다 없으면 빈 문자열. */
-  function monthOf(u, today) {
-    const it = u.items && u.items[0], start = it && (it.entryDate || it.windowStart);
-    const d = start instanceof Date ? start : endDate(u, today);
-    return d instanceof Date && !isNaN(d.getTime()) && (!today || sod(d) >= sod(today)) ? `${d.getMonth() + 1}월 ` : ""; // 지난 날짜의 월은 '다음'이 아니라 붙이지 않는다
+  /** 빈 상태 '다음' 후보의 앞으로 올 날짜: 시작일(entryDate·windowStart·fixedDate)과 마감일(daysToEnd) 중 오늘 이후인 것 가운데 가장 이른 날. 앞으로 올 날짜가 없으면(날짜 없음·이미 지남) null → 후보에서 뺀다. */
+  function upcomingDate(u, today) {
+    if (!today) return null;
+    const t0 = sod(today).getTime(), ds = [];
+    for (const it of u.items || []) for (const k of ["entryDate", "windowStart", "fixedDate"]) if (it && it[k] instanceof Date && !isNaN(it[k].getTime())) ds.push(it[k]);
+    const e = endDate(u, today);
+    if (e && !isPast(u)) ds.push(e);
+    const up = ds.filter((d) => sod(d).getTime() >= t0).sort((a, b) => a - b);
+    return up[0] || null;
+  }
+  /** 빈 상태 '다음: N월 제목' — '곧' 단위 중 앞으로 올 날짜가 가장 이른 것(명세 §4 ①). 후보가 없으면 빈 문자열(→ 다음 단계 문구 또는 줄 숨김). */
+  function nextHintOf(cur, today) {
+    let best = null;
+    for (const u of cur.soon || []) { const d = upcomingDate(u, today); if (d && (!best || d < best.d)) best = { u, d }; }
+    return best ? `다음: ${best.d.getMonth() + 1}월 ${best.u.title}` : "";
   }
   function soonRow(u, today) {
     const e = endDate(u, today), start = u.items && u.items[0] && (u.items[0].entryDate || u.items[0].windowStart);
@@ -128,7 +138,7 @@
       parts.push(node("hs-s-now", "지금 꼭 할 것",
         `<div class="hs-card hs-now">${cur.now.map((u) => nowRow(u, today)).join("")}${moreHtml("now", mc.now, "지금 꼭 할 것", (u, t) => nowRow(u, t), hid, today, cur.expandMax)}</div>`, on()));
     } else {
-      const next = o.nextHint || (cur.soon[0] ? `다음: ${monthOf(cur.soon[0], today)}${cur.soon[0].title}` : o.nextStage ? `다음: ${o.nextStage.title}` : "");
+      const next = o.nextHint || nextHintOf(cur, today) || (o.nextStage ? `다음: ${o.nextStage.title}` : ""); // 날짜 있는 앞으로 올 항목만, 없으면 다음 단계 문구, 그것도 없으면 줄 숨김
       parts.push(node("hs-s-now", "지금 꼭 할 것", `<div class="hs-empty"><b>이번 달 꼭 할 것은 없어요</b>${next ? `<span>${esc(next)}</span>` : ""}</div>`, { on: famHidden }));
       // 빈 ①은 점을 채우지 않고, 다음 마디(가족 일정)가 채운 점을 가진다
     }

@@ -1,5 +1,5 @@
 /* 홈 슬롯(허브형 B 타임라인) — js/home-slots-view.js 전용 새 파일. 앱 미연결(index.html 에 아직 링크 없음). 명세: docs/한눈육아-디자인명세-홈슬롯-B타임라인.md */
-.hs-home { --hs-line: #ece6d2; --hs-ink: #161618; --hs-mute: #62656b; --hs-main: #4a45c8; --hn-deadline: #8a1c3d; /* D17: 와인(L1·L2 날짜, 'D-N' 글자와 함께) */ background: #fff; color: var(--hs-ink); position: relative; padding: 0 0 8px 22px; }
+.hs-home { --hs-line: #ece6d2; --hs-ink: var(--nd-ink); --hs-mute: var(--text-muted); --hs-main: var(--nd-indigo); --hn-deadline: var(--nd-wine); /* D17: 와인(L1·L2 날짜, 'D-N' 글자와 함께) */ background: #fff; color: var(--hs-ink); position: relative; padding: 0 0 8px 22px; }
 .hs-home::before { content: ""; position: absolute; left: 6px; top: 40px; bottom: 120px; width: 2px; border-radius: 2px; background: var(--hs-line); }
 .hs-head { display: flex; align-items: center; justify-content: space-between; min-height: 28px; margin: 0 0 8px -22px; padding: 0 11px; border: 1px solid var(--hs-line); border-radius: 9px; background: #fff; }
 .hs-head b { font-size: 12px; font-weight: 800; } .hs-head span { font-size: 11px; color: var(--hs-mute); }
@@ -25,7 +25,7 @@
 .hs-bar { flex: none; width: 3px; height: 14px; border-radius: 2px; } .hs-evm { color: var(--hs-mute); font-weight: 400; }
 .hs-none { margin: 4px 0; font-size: 11px; color: var(--hs-mute); } .hs-add { border: 0; background: none; padding: 0; font-size: 10.5px; font-weight: 800; color: var(--hs-main); }
 .hs-soon { border: 1.5px solid #5536c4; border-radius: 12px; background: #ece8f8; color: #24252a; padding: 6px 11px; }
-.hs-sr { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-left: 0; font-size: 11.5px; font-weight: 800; color: var(--hs-ink); } .hs-sr + .hs-sr { border-top: 1px solid #5536c4; }
+.hs-sr { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-left: 0; font-size: 11.5px; font-weight: 800; color: var(--hs-ink); } .hs-sr + .hs-sr { border-top: 1px solid var(--nd-indigo); }
 .hs-wh { font-size: 10.5px; font-weight: 400; color: rgba(36, 37, 42, .8); white-space: nowrap; }
 .hs-soon .hs-tg-if { border-color: #5536c4; color: #24252a; }
 .hs-know .hs-kn { padding: 3px 0; }

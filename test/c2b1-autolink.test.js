@@ -18,7 +18,7 @@ const HNLogicCompat = { ...HNLogic, classifyHomeItems: (...a) => ({ period: [], 
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
 const BASE = "84286f3"; // C2-a 커밋(이번 변경 직전)
 // 칩 달력 개편으로 팔레트가 파스텔로 바뀌었다 — 이전 커밋의 출력도 새 색으로 바꿔 비교한다(그 밖의 마크업은 글자까지 같아야 한다)
-const RECOLOR = (s) => String(s).replace(/#ff7a59/g, "#ffc233").replace(/#14b8a6/g, "#a8e12a").replace(/#ec4899/g, "#17d3ee").replace(/#a16207/g, "#9a7bff").replace(/#6b5b53/g, "#c9b8ff");
+const RECOLOR = (s) => String(s).replace(/#ff7a59/g, "#a1e3f7").replace(/#14b8a6/g, "#f4e07c").replace(/#ec4899/g, "#f47ca8").replace(/#a16207/g, "#d2f7a1").replace(/#6b5b53/g, "#c9b8ff").replace(/#ffc233/gi, "#a1e3f7").replace(/#a8e12a/gi, "#f4e07c").replace(/#17d3ee/gi, "#f47ca8").replace(/#9a7bff/gi, "#7c90f4").replace(/#ff9a4d/gi, "#d2f7a1").replace(/#ff66b3/gi, "#f7b5a1").replace(/#ff5f6d/gi, "#a1f7a4").replace(/#2fe0a0/gi, "#b07cf4").replace(/#4d9bff/gi, "#7cf4c8").replace(/#7f9fc0/gi, "#f7a1f4");
 const baseSrc = (f) => execSync(`git show ${BASE}:${f}`, { cwd: ROOT, encoding: "utf8" });
 let passed = 0, started = 0, finished = 0;
 function test(name, fn) {
@@ -92,7 +92,8 @@ test("autoRef 없는 폼 렌더(추가·수정·기간·반복·다자녀)는 �
   // E(1-4) 로 늘어난 빠른 추가 칩 줄·담당 영역 강조 마크업은 비교에서 뺀다(그 밖의 글자는 같아야 한다).
   // 시간 입력 휠(시안 B)·담당 선택 제거는 의도된 변경: 시각 블록과 담당 영역은 양쪽에서 뺀다.
   const NORM = (h) => h.replace(/<div class="us-field[^"]*"[^>]*><label>담당<\/label><div class="us-chips">.*?<\/div>(?:<p[^>]*>[^<]*<\/p>)*<\/div>\n?\s*/s, "").replace(/<div class="us-times us-tw">.*?<p class="tw-hint">[^<]*<\/p><\/div><\/div>/s, "<TIMES/>").replace(/<div class="us-times">.*?<\/span><\/div>/s, "<TIMES/>").replace(/<div class="us-field us-quick">.*?<\/div><\/div>/s, "").replace(/\n\s*\n/g, "\n").replace(" us-assignee-field", "").replace(" data-us-assignee-field", "").replace(/<p class="us-emph-note"[^>]*>[^<]*<\/p>/, "");
-  forms.forEach((f, i) => assert.strictEqual(NORM(V.renderForm(f, LINKS, opts)), NORM(RECOLOR(OLD.renderForm(f, LINKS, opts))), "form " + i));
+  const NOINK = (h) => h.replace(/;--us-ink:#[0-9a-f]{6}/g, "").replace(/(data-us-target="FAMILY">)가족<\/button>/g, "$1가족 전체</button>"); // D41: 진한 바탕 글자 자동 흰색(--us-ink)·칩 라벨 '가족 전체'→'가족'은 옛 렌더에 없다 // D41 진한 바탕 글자 자동 흰색(--us-ink)은 옛 렌더에 없다
+  forms.forEach((f, i) => assert.strictEqual(NORM(NOINK(V.renderForm(f, LINKS, opts))), NORM(RECOLOR(OLD.renderForm(f, LINKS, opts))), "form " + i));
 });
 test("저장: 날짜를 넣으면 prepareSave 통과·autoRef 포함 입력, 날짜 없으면 거부, scope/childKeys 가 어긋나면 거부(I13)", () => {
   const f = af();

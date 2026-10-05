@@ -20,7 +20,7 @@ test("새 일정 기본: 본인('나'), 어른 카테고리 6개, 제목 비어 
   const f = fresh();
   assert.deepStrictEqual([f.g13, f.scope, f.assigneeMemberId, f.whoPerson, f.title, f.eventDate], [true, "FAMILY", "m-mom", true, "", "2026-10-14"]);
   const h = render(f);
-  assert.deepStrictEqual(chipsOf(h, "who"), ["나", "아빠", "은찬", "서윤", "가족 전체"]);
+  assert.deepStrictEqual(chipsOf(h, "who"), ["나", "아빠", "은찬", "서윤", "가족"]);
   assert.deepStrictEqual(chipsOf(h, "sk"), ["회사", "모임·약속", "병원", "운동", "개인 일정", "집안일"]);
   assert.ok(!/data-us-quick/.test(h) && !h.includes("data-us-cat="), "빠른 입력 칩·옛 분류 칩 없음");
   assert.ok(/data-us-who="MEMBER:m-mom"[^>]*>나/.test(h) && /us-chip active" data-us-who="MEMBER:m-mom"/.test(h));
@@ -28,7 +28,7 @@ test("새 일정 기본: 본인('나'), 어른 카테고리 6개, 제목 비어 
 test("아이를 고르면 그 아이 나이에 맞는 카테고리(0~12개월 / 4~7세), 나이를 모르는 아이는 공통 목록, 가족 전체는 가족 목록", () => {
   const f = fresh();
   V.g13ApplyWho(f, "CHILD:c1", ctx);
-  assert.deepStrictEqual([f.scope, f.childKeys, f.assigneeMemberId], ["CHILD", ["c1"], "m-mom"]);
+  assert.deepStrictEqual([f.scope, f.childKeys, f.assigneeMemberId], ["CHILD", ["c1"], ""], "D40: 아이 일정에는 담당 기본값을 두지 않는다");
   assert.deepStrictEqual(chipsOf(render(f), "sk"), ["병원·검진", "예방접종", "문화센터", "육아 모임"]);
   V.g13ApplyWho(f, "CHILD:c2", ctx);
   assert.deepStrictEqual(chipsOf(render(f), "sk"), ["어린이집·유치원", "수업·학원", "병원·검진", "놀이·체험", "친구 약속"]);
@@ -38,7 +38,7 @@ test("아이를 고르면 그 아이 나이에 맞는 카테고리(0~12개월 / 
   V.g13ApplyWho(f, "CHILD:c1", { ...ctx, ageOf: () => "PREGNANT" });
   assert.deepStrictEqual(V.g13Kinds(f, { ageOf: () => "PREGNANT" }).map((x) => x.label), ["병원·검진", "출산 준비", "산후조리 예약"]);
   V.g13ApplyWho(f, "FAMILY", ctx);
-  assert.deepStrictEqual([f.scope, f.childKeys, f.assigneeMemberId, f.whoPerson], ["FAMILY", [], "m-mom", false], "아이·가족 전체 사이에서는 담당(본인)이 그대로 유지된다");
+  assert.deepStrictEqual([f.scope, f.childKeys, f.assigneeMemberId, f.whoPerson], ["FAMILY", [], "", false], "D40: 아이·가족 전체에는 담당 값이 없다");
   assert.deepStrictEqual(chipsOf(render(f), "sk"), ["가족 행사", "나들이", "여행", "기념일"]);
 });
 test("카테고리를 고르면 enum 이 정해지고 이름이 제목에 자동으로 들어간다. 다른 카테고리로 바꾸면 제목도 바뀐다", () => {
@@ -103,13 +103,14 @@ test("공개 범위: G21 — 화면에서 숨김(공개/비공개 항목·안내
   const f = fresh(); V.g13PickKind(f, "회사", ctx);
   assert.ok(!Object.keys(V.prepareSave(f, 1).input).some((k) => /vis|private|public/i.test(k)));
 });
-test("담당 칩 복원(0-C1): 구성원을 대상으로 고르면 그 사람이 담당이라 칩이 없고, 아이·가족 전체 일정에는 '누가 데려가나요?' 담당 칩이 있다", () => {
+test("담당 칩 제거(D40): 어떤 대상이든 '누가 데려가나요?' 담당 칩이 없고, 아이·가족 일정에는 담당 값이 저장되지 않으며 구성원 일정만 그 구성원을 저장한다", () => {
   assert.ok(!render(fresh()).includes("data-us-assignee-field"));
   const f = fresh(); V.g13ApplyWho(f, "CHILD:c1", ctx);
-  const h = render(f);
-  assert.ok(h.includes("data-us-assignee-field") && h.includes("누가 데려가나요?") && /data-us-assignee="[^"]+"/.test(h));
-  const fam = fresh(); V.g13ApplyWho(fam, "FAMILY", ctx);
-  assert.ok(render(fam).includes("data-us-assignee-field"));
+  assert.ok(!render(f).includes("data-us-assignee-field") && !render(f).includes("누가 데려가나요?"));
+  const fam = fresh(); V.g13ApplyWho(fam, "FAMILY", ctx); assert.ok(!render(fam).includes("data-us-assignee-field"));
+  const save = (x) => V.formToInput({ ...x, title: "t", category: "ETC", eventDate: "2026-10-20", allDay: true });
+  const kid = fresh(); V.g13ApplyWho(kid, "CHILD:c1", ctx); kid.assigneeMemberId = "m-mom"; assert.ok(!("assigneeMemberId" in save(kid)), "아이 일정에 옛 담당 값이 남아 있어도 저장하지 않는다");
+  const mem = fresh(); V.g13ApplyWho(mem, "MEMBER:m-dad", ctx); assert.strictEqual(save(mem).assigneeMemberId, "m-dad");
 });
 test("수정: 저장된 제목은 덮어쓰지 않고(titleTouched), 어른 일정은 본인 칩, 제목이 카테고리 이름이면 그 칩이 선택돼 있다", () => {
   const doc = { id: "s1", title: "병원", category: "MEDICAL", scope: "FAMILY", dateKind: "FIXED", eventDate: "2026-10-20", allDay: true, assigneeMemberId: "m-dad" };

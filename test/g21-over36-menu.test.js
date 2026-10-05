@@ -54,7 +54,7 @@ test("토글 2개: hideSwitches 면 아이만 선택해도 '직접 등록한 일
 });
 test("'꽉 찬 칩은…' 안내·'직접 입력' 뱃지: 36개월 이상 판정이면 안 그린다(캘린더 상단 안내는 조건부, 날짜 상세 뱃지는 패널을 그린 뒤 제거)", () => {
   assert.ok(APP.includes('(usKidsAre36Plus() ? "" : `<p class="us-note">${esc(UserScheduleView.MSG.legend)}</p>`)'));
-  assert.ok(APP.includes("hideSwitches: usKidsAre36Plus()"));
+  assert.ok(!APP.includes("hideSwitches: usKidsAre36Plus()"), "D40: 36개월 이상에서도 아이만 선택하면 두 스위치를 보인다(자동 일정이 있어 G21 전제가 맞지 않음)");
   const removed = [];
   const box = { querySelectorAll: () => [{ remove: () => removed.push(1) }, { remove: () => removed.push(1) }] };
   for (const on of [true, false]) {

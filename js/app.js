@@ -195,6 +195,8 @@
     loadedSubsidyRegionKey = key;
   }
 
+  // D37 사진으로 추가(기기 안 글자 인식) 4메뉴 — 기본 ON(사용자 지시 2026-10-05). 이 기기 저장값 hannun_feature_photoinput="0"(또는 FEATURES.photoInput===false)일 때만 끈다(accounts 플래그와 같은 방식).
+  const capPhotoOn = () => { try { return localStorage.getItem("hannun_feature_photoinput") !== "0" && !(!!window.FEATURES && window.FEATURES.photoInput === false); } catch (e) { return true; } };
   const FEATURES_CURATION_ON = () => !!window.FEATURES && window.FEATURES.curation === true;
   // ═══ 1-1b 새 홈 미리보기 스위치(기기 저장 hannun_home_v2, 서버·Firestore 쓰기 없음). 사용자 키 > 개발용 플래그 > 단계 기본값. 단계는 ① 로 고정(② 기본 ON 은 코드만 준비 — 전환은 사용자 확인 원문 뒤) ═══
   const HOME_V2_STAGE = 1;
@@ -765,10 +767,7 @@
       Object.entries(CATEGORY_META)
         .map(([key, meta]) => {
           const active = activeCats.has(key);
-          const style = active
-            ? `background:${meta.color};border-color:transparent;`
-            : `color:${meta.color};border-color:${meta.color};`;
-          return `<button class="chip ${active ? "active" : ""}" data-cat="${key}" style="${style}">${meta.label}</button>`;
+          return `<button class="chip cat-chip ${active ? "active" : ""}" data-cat="${key}" style="--cat:${meta.color}"><i class="cat-chip-dot"></i>${meta.label}</button>`; // D34 C: 흰 면 + 색 테두리·점(꺼진 칩은 흐리게)
         })
         .join("") +
       // 맨 끝 "전체" — 전부 켜져 있으면 눌러서 전부 끄고, 하나라도 꺼져 있으면 눌러서 전부 켠다.
@@ -839,7 +838,10 @@
   eventItemHtml = function eventItemHtml(e, opts) { // 1-5b: 마감 임박(표시용 복사본 calUrgent)은 날짜 줄 아래에 와인색 'D-N · M월 D일까지'(글자 포함 — 색만으로 구분하지 않는다)
     const h = eventItemHtmlBase.apply(this, arguments);
     if (!e || !e.calUrgent || completed[e.id]) return h;
-    return h.replace('<p class="summary">', `<p class="sub-when urgent">D-${e.calDays} · ${formatDateKR(e.fixedDate)}까지</p><p class="summary">`);
+    const line = `<p class="sub-when urgent">D-${e.calDays} · ${formatDateKR(e.fixedDate)}까지</p>`;
+    if (h.includes('<p class="summary">')) return h.replace('<p class="summary">', line + '<p class="summary">');
+    const chk = h.indexOf('<span class="check'), at = chk > 0 ? h.lastIndexOf("</div>", chk) : -1; // 설명(.summary)이 없는 카드 형태: 본문(.body) 끝에 붙인다
+    return at > 0 ? h.slice(0, at) + line + h.slice(at) : h + line;
   };
   /** 1-5b(플래그 curation ON·정책 읽음일 때만): 마감이 있는 신청형을 마감일 칸에 '마감 ' 글자와 함께 보인다(표시용 복사본 — 엔진 fixedDate 불변, 임박은 날짜 줄 와인색). OFF 면 목록 그대로. */
   function calendarDeadlineViews(list) {
@@ -1624,6 +1626,27 @@
       bar.classList.toggle("hidden", currentTab !== t);
     });
   }
+  // ═══ D41 테마 자동 전환: 지금 보는 아이가 36개월 이상이면 딥 포레스트(body.theme-forest), 그 밖(36개월 미만·임신 중·아이 없음·온보딩)은 웜 브라운(body.theme-warm). 칩·프로필로 아이를 바꾸면(renderAll) 바로 바뀐다. ═══
+  const THEME_KEY = "hannun_theme_last"; // 첫 그림 전에 index.html 이 읽는 '마지막 테마' 캐시 — 기준은 아이 월령이고 이 값은 깜빡임 방지용일 뿐
+  const THEME_BAR = Object.freeze({ warm: "#faf6f0", forest: "#f6f8f5" }); // 브라우저 막대 색 = 테마 --bg
+  function themeFor() {
+    try { if (profile && !isPregnant() && ChildTimeline.completedMonths(profile.birthDate, new Date()) >= ChildTimeline.OVER36_FROM_MONTHS) return "forest"; } catch (e) {}
+    return "warm";
+  }
+  function themeSync() {
+    const t = themeFor();
+    try { const m = hh.hid ? HouseholdSync.getMirror(hh.hid) : null; UserScheduleView.setColorOrder(m && m.household && m.household.colorOrder); } catch (e) { UserScheduleView.setColorOrder(null); } // D44: 가구 문서 colorOrder(선택, 읽기만)
+    UserScheduleView.setTheme(t); // 칩·막대·얼굴 색(팔레트)이 먼저 바뀐 뒤 그린다
+    if (typeof document === "undefined" || !document.body) return t;
+    document.body.classList.remove("theme-warm", "theme-forest");
+    document.body.classList.add("theme-" + t);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", THEME_BAR[t]);
+    try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+    return t;
+  }
+  const renderAllThemeBase = renderAll;
+  renderAll = function renderAll() { themeSync(); return renderAllThemeBase.apply(this, arguments); };
   const renderAllTcbBase = renderAll;
   renderAll = function renderAll() {
     const r = renderAllTcbBase.apply(this, arguments);
@@ -1683,15 +1706,18 @@
     const f = box.querySelector(focusSel || (A36.adding ? '[data-a36-input="add"]' : A36.editId ? '[data-a36-input="edit"]' : "x-none"));
     if (f && f.focus) { f.focus(); if (A36.editId && f.select) f.select(); }
   }
-  function acct36Err(show) {
+  function acct36Err(show, text) {
     const e = el("a36-err");
-    if (e) e.classList.toggle("hidden", !show);
+    if (!e) return;
+    if (text) e.textContent = text; // 기본 문구는 '100자 이내'
+    e.classList.toggle("hidden", !show);
   }
   async function acct36AddTodo(title) {
     const r = ChildTodos.buildCreate({ childKey: acct36ChildKey(), title, list: acct36All(), createdBy: (typeof usMeId === "function" && usMeId()) || undefined }, Date.now());
-    if (!r.ok) { acct36Err(r.error === "TOO_LONG"); return false; }
+    if (!r.ok) { acct36Err(true, r.error === "TOO_LONG" ? Over36View.MSG.tooLong : Over36View.MSG.saveFail); return false; } // 아이 연결이 없을 때(NO_CHILD)도 조용히 사라지지 않게 알린다
+    const res = await HouseholdSync.createTodo(hh.hid, r.doc);
+    if (!res || res.ok === false) { acct36Err(true, Over36View.MSG.saveFail); return false; }
     acct36Err(false);
-    await HouseholdSync.createTodo(hh.hid, r.doc);
     return true;
   }
   const acct36Todo = (id) => HouseholdSync.getTodos(hh.hid).find((d) => d.id === id);
@@ -1744,40 +1770,59 @@
     if (a === "edu-visit") { usOpenForm(null, ""); if (us.form) { us.form.title = act.dataset.eduTitle || ""; usShowForm(); } return; } // 제목만 미리 채우고 날짜는 비운다
     if (a === "edu-school") return nsOpenSheet();
     if (a === "trend-region") return showEditProfileSheet(); // 지역이 없는 아이: 아이 정보 수정 시트에서 지역을 넣는다
+    if (a === "row-menu") { A36.menuId = act.dataset.a36Id; A36.adding = false; A36.editId = null; return acct36RenderTodoTab(); } // 길게 누르기 대신 눌러서 여는 메뉴
     if (a === "menu-close") { A36.menuId = null; return acct36RenderTodoTab(); }
     if (a === "menu-edit") { A36.editId = A36.menuId; A36.menuId = null; A36.adding = false; return acct36RenderTodoTab(); }
     if (a === "menu-top") { const id = A36.menuId; A36.menuId = null; return acct36Patch(id, ChildTodos.patchMoveTop(acct36All(), Date.now())); }
     if (a === "menu-del") { const id = A36.menuId; A36.menuId = null; return acct36Patch(id, ChildTodos.patchDelete(Date.now())); }
   }
+  /** 입력 줄(추가·고치기) 저장 한 곳: 엔터·폼 제출('추가' 버튼·모바일 완료 키)·포커스 이동이 모두 여기로 온다. 진행 중이면 다시 들어오지 않는다(중복 추가 방지). */
+  async function acct36CommitInput(inp, keepAdding) {
+    if (A36.saving) return;
+    A36.saving = true;
+    try {
+      const v = inp.value;
+      if (inp.dataset.a36Input === "edit") {
+        const r = ChildTodos.patchRename(v, Date.now());
+        if (!r.ok) { if (r.error === "TOO_LONG") return acct36Err(true); A36.editId = null; return acct36RenderTodoTab(); }
+        const id = A36.editId;
+        A36.editId = null;
+        return await acct36Patch(id, r.patch);
+      }
+      if (!String(v).trim()) { A36.adding = false; return acct36RenderTodoTab(); }
+      if (await acct36AddTodo(v)) { if (!keepAdding) A36.adding = false; renderHome(); acct36RenderTodoTab(); } // 엔터 → 추가되고 다음 줄 입력이 이어진다(adding 유지)
+    } finally { A36.saving = false; }
+  }
   async function acct36OnKey(ev) {
     const inp = ev.target.closest && ev.target.closest("[data-a36-input]");
     if (!inp || !acct36Active()) return;
     if (ev.key === "Escape") { A36.adding = false; A36.editId = null; return acct36RenderTodoTab(); }
-    if (ev.key !== "Enter" || ev.isComposing) return;
+    if ((ev.key !== "Enter" && ev.keyCode !== 13) || ev.isComposing) return;
     ev.preventDefault();
-    const v = inp.value;
-    if (inp.dataset.a36Input === "edit") {
-      const r = ChildTodos.patchRename(v, Date.now());
-      if (!r.ok) { if (r.error === "TOO_LONG") return acct36Err(true); A36.editId = null; return acct36RenderTodoTab(); }
-      const id = A36.editId;
-      A36.editId = null;
-      return acct36Patch(id, r.patch);
-    }
-    if (!String(v).trim()) { A36.adding = false; return acct36RenderTodoTab(); }
-    if (await acct36AddTodo(v)) { renderHome(); acct36RenderTodoTab(); } // 엔터 → 추가되고 다음 줄 입력이 이어진다(adding 유지)
+    return acct36CommitInput(inp, true);
+  }
+  function acct36OnSubmit(ev) {
+    const f = ev.target && ev.target.closest && ev.target.closest("[data-a36-form]");
+    const inp = f && f.querySelector("[data-a36-input]");
+    if (!inp || !acct36Active()) return;
+    ev.preventDefault();
+    acct36CommitInput(inp, true);
   }
   function acct36OnFocusOut(ev) {
     const inp = ev.target.closest && ev.target.closest("[data-a36-input]");
     if (!inp || !acct36Active()) return;
-    setTimeout(() => {
-      if (inp.dataset.a36Input === "add" && !String(inp.value).trim() && A36.adding && document.activeElement !== inp) { A36.adding = false; acct36RenderTodoTab(); }
+    setTimeout(() => { // 키보드를 접거나 다른 곳을 눌러도 적던 글이 사라지지 않게: 글이 있으면 저장, 비었으면 입력 줄만 닫는다
+      if (inp.isConnected === false || document.activeElement === inp) return;
+      const isAdd = inp.dataset.a36Input === "add";
+      if (!String(inp.value).trim()) { if (isAdd && A36.adding) { A36.adding = false; acct36RenderTodoTab(); } return; }
+      if (isAdd ? A36.adding : A36.editId === inp.dataset.a36Id) acct36CommitInput(inp, false);
     }, 120);
   }
   // 길게 누르면 메뉴(할 일 줄)
   function acct36OnPointerDown(ev) {
     if (!acct36Active()) return;
     const row = ev.target.closest && ev.target.closest("#a36-todo-box [data-a36-row]");
-    if (row && !ev.target.closest("[data-a36-toggle], input")) {
+    if (row && !ev.target.closest("[data-a36-toggle], [data-a36], input")) {
       A36.press = { id: row.dataset.a36Row, x: ev.clientX, y: ev.clientY, timer: setTimeout(() => { A36.press = null; A36.swallow = true; A36.menuId = row.dataset.a36Row; acct36RenderTodoTab(); }, 500) };
     }
   }
@@ -1794,6 +1839,7 @@
     document.addEventListener("click", homeSwitchClick); // 1-1b: 새 홈 미리보기 스위치·안내 띠(없으면 즉시 반환)
     document.addEventListener("click", monthAckClick); // 1-3: 주의 '확인했어요'(없으면 즉시 반환)
     document.addEventListener("keydown", acct36OnKey);
+    document.addEventListener("submit", acct36OnSubmit);
     document.addEventListener("focusout", acct36OnFocusOut);
     document.addEventListener("pointerdown", acct36OnPointerDown);
     ["pointerup", "pointercancel", "pointermove", "scroll"].forEach((t) => document.addEventListener(t, acct36PressCancel, true));
@@ -2995,6 +3041,7 @@
           ? subsidyPeriodHtml(subsidyPeriodRows(e.id, s, profile.birthDate), statusLine)
           : statusLine
       }</div>
+      ${typeof ApplyChannelView !== "undefined" ? ApplyChannelView.rowHtml(s, usApplyLinkOf(e)) : ""}
       ${hasDetailValue(s.paymentMethod) ? `<div class="detail-row"><div class="label">지급 방식</div>${detailValueHtml(s.paymentMethod)}</div>` : ""}
       ${hasDetailValue(s.residencyRequirement) ? `<div class="detail-row"><div class="label">거주 조건</div>${detailValueHtml(s.residencyRequirement)}</div>` : ""}
       ${hasDetailValue(s.additionalConditions) ? `<div class="detail-row"><div class="label">추가 자격 조건</div>${detailValueHtml(s.additionalConditions)}</div>` : ""}
@@ -4733,8 +4780,9 @@
   const usReady = () => typeof UserScheduleView !== "undefined" && typeof UserSchedule !== "undefined" && typeof CalendarModel !== "undefined";
   const usActive = () => hhEnabled() && usReady() && !!hh.hid && !!hh.code;
   const usMirror = () => (hh.hid ? HouseholdSync.getMirror(hh.hid) : null);
-  const usLinks = () => Object.entries((usMirror() || {}).children || {}).map(([childKey, l]) => ({ childKey, ...l }));
-  const usMembers = () => Object.entries((usMirror() || {}).members || {}).map(([memberId, m]) => ({ memberId, ...m }));
+  const usRawMembers = () => Object.entries((usMirror() || {}).members || {}).map(([memberId, m]) => ({ memberId, ...m }));
+  const usLinks = () => UserScheduleView.resolveChildColors(Object.entries((usMirror() || {}).children || {}).map(([childKey, l]) => ({ childKey, ...l })), usRawMembers()); // D46: 아이 색도 역할 슬롯(p3~p5…)으로, 화면용(저장 안 함)
+  const usMembers = () => UserScheduleView.resolveMemberColors(usRawMembers(), usLinks()); // 색은 화면용으로만 정리(없거나 겹치면 구성원 순서대로 다른 슬롯, 저장 안 함)
   const usDocs = () => (hh.hid ? HouseholdSync.getSchedules(hh.hid) : []);
   const usDocById = (id) => usDocs().find((d) => d.id === id) || null;
   /** 지금 보는 아이의 가구 내 childKey(링크돼 있지 않으면 null). */
@@ -4746,7 +4794,7 @@
   const usAutoChipColor = () => {
     const k = usActiveChildKey();
     const c = k ? UserScheduleView.childColors(usLinks())[k] : null;
-    return c || UserScheduleView.FAMILY_COLOR;
+    return c || UserScheduleView.familyColor();
   };
   // 계정 모드(D3): 구성원 칩(MEMBER:<id>)과 '나' 기본 선택. 계정이 없거나 내 구성원을 모르면 기존(역할 칩·전체) 동작 그대로다.
   const usMeId = () => {
@@ -4993,7 +5041,9 @@
   // 월 보기(renderCalendar)는 그대로 두고, 가구가 있고 플래그가 켜졌을 때만 "월 | 주" 전환이 생긴다. 선택 날짜(selectedCalendarDate)가 주·월 공용 상태다.
   // 주 = 선택 날짜가 속한 일요일~토요일. 주 이동은 같은 요일을 유지(선택일 ±7일). 날짜 클릭·주 이동·보기 전환은 모두 usCalRefreshAll() 한 곳으로 다시 그린다.
   // G23: 계정 모드는 월 보기만(월|주 전환 없음) — 주 보기는 계정 모드가 꺼진(OFF) 기기에서만 그대로 남는다.
-  const calWeekAvailable = () => typeof CalendarWeek !== "undefined" && usActive() && !(typeof acctEnabled === "function" && acctEnabled());
+  // D45: 주 보기는 앱에서 일단 숨긴다(월 화면만). 코드는 그대로 두고 이 값만 true 로 돌리면 되살아난다(되돌리기 한 줄).
+  const WEEK_VIEW_ENABLED = false;
+  const calWeekAvailable = () => WEEK_VIEW_ENABLED && typeof CalendarWeek !== "undefined" && usActive() && !(typeof acctEnabled === "function" && acctEnabled());
   const calWeekOn = () => calView === "week" && calWeekAvailable();
   /** 캘린더 · 선택일 패널 · 항목 클릭 연결 — 셋은 항상 함께(하나라도 빠지면 새로 그린 카드가 반응하지 않는다). */
   function usCalRefreshAll() {
@@ -5087,7 +5137,7 @@
     const counts = { userItems: model.counts.userItems + model.counts.periodItems, userDone: model.counts.userDone + periodDone };
     top.innerHTML =
       `<div class="card us-top"><p class="us-summary">${esc(UserScheduleView.monthSummary(counts))}</p>` +
-      UserScheduleView.renderFilterChips(UserScheduleView.filterChips(links, usSel(), usMembers(), usSelOpts()), { mode: usSelectionMode(), onlyUser: us.onlyUser, catColor: us.catColor, hideSwitches: usKidsAre36Plus(), annivOn: usAnnivAvailable() ? us.annivOn : undefined }) +
+      UserScheduleView.renderFilterChips(UserScheduleView.filterChips(links, usSel(), usMembers(), usSelOpts()), { mode: usSelectionMode(), onlyUser: us.onlyUser, catColor: us.catColor, annivOn: usAnnivAvailable() ? us.annivOn : undefined }) +
       (usKidsAre36Plus() ? "" : `<p class="us-note">${esc(UserScheduleView.MSG.legend)}</p>`) + `</div>`;
     const skipped = UserScheduleView.skippedNote(model.skipped);
     const period = UserScheduleView.renderPeriodSection(UserScheduleView.periodSection(model.periodList, links));
@@ -5208,7 +5258,7 @@
   const usShowFormBase = usShowForm;
   usShowForm = function usShowForm() {
     if (us.form && !us.form.g13 && !us.form.autoRef && (us.form.mode === "create" || us.form.mode === "edit") && usG13()) UserScheduleView.upgradeFormG13(us.form, usG13Ctx());
-    if (us.form && us.form.capKeep) { Object.assign(us.form, us.form.capKeep, { assigneeMemberId: "", whoPerson: false }); delete us.form.capKeep; } // 한 번만(이후 칩 선택은 사용자 것) // 2-1 후보에서 넘어온 폼: 대상·담당을 후보 그대로(담당 미정)로 되돌린다 — '나' 기본값을 쓰지 않는다
+    if (us.form && us.form.capKeep) { Object.assign(us.form, us.form.capKeep); delete us.form.capKeep; } // 한 번만(이후 칩 선택은 사용자 것) // 2-1 후보에서 넘어온 폼: 대상·담당을 후보 그대로(담당 미정)로 되돌린다 — '나' 기본값을 쓰지 않는다
     if (!(us.form && us.form.g13)) return usShowFormBase();
     modalMode = "profile";
     el("modal-content").innerHTML = UserScheduleView.renderFormG13(us.form, usLinks(), { messages: us.messages, saving: us.saving, members: HouseholdView.visibleMembers(usMembers()), ctx: usG13Ctx(), autoCandidates: usAutoCandidates() });
@@ -5217,23 +5267,35 @@
     capInjectEntry();
   };
   // ═══ 2-1 붙여넣기로 추가: 새 일정 시트 맨 위 '붙여넣기로 추가' → 글 붙여넣기 → 후보 확인 → 선택 등록. 해석은 기기 안(js/capture/parse-ko.js), 원문은 저장하지 않는다(등록은 기존 일정 저장 경로: prepareSave → buildCreateDoc → createSchedule) ═══
-  const CAP = { text: "", s: null, backForm: null };
+  const CAP = { text: "", s: null, backForm: null, photo: false, photoText: "" };
   const capReady = () => typeof ParseKo !== "undefined" && typeof CaptureDraftView !== "undefined" && typeof CaptureModel !== "undefined";
   function capInjectEntry() {
     if (!capReady() || !acctEnabled() || !us.form || us.form.mode !== "create" || us.form.autoRef) return;
     const box = el("modal-content");
+    if (capPhotoOn()) { // D37: 4메뉴 줄(사진 찍기·사진 불러오기·메시지 붙여넣기·직접 입력=기본 선택) — 아래 폼은 그대로
+      if (box && box.insertAdjacentHTML && !box.querySelector("[data-cap-menu]")) box.insertAdjacentHTML("afterbegin", CapturePhotoView.renderMenu("direct"));
+      return;
+    }
     if (box && box.insertAdjacentHTML && !box.querySelector("[data-cap-open]")) box.insertAdjacentHTML("afterbegin", `<button type="button" class="us-chip us-cap-entry" data-cap-open>${CaptureDraftView.MSG.pasteTitle} ›</button>`);
   }
   function capShow(html) { modalMode = "profile"; el("modal-content").innerHTML = html; el("detail-modal").classList.remove("hidden"); }
   const capChildName = (key) => { const l = usLinks().find((x) => String(x.childKey) === String(key)); return l ? l.displayName || "" : ""; };
   const capShowPaste = () => capShow(CaptureDraftView.renderPaste({ text: CAP.text }, { mode: "keyboard", voice: false }));
-  const capShowCands = () => capShow(CaptureDraftView.renderCandidates(CAP.s, { childName: capChildName }));
+  /** D40 후보 카드 '누구 일정' 칩: 지금 보는 아이 → 다른 아이 → 구성원(내가 앞, '나') → 가족 전체. 기본 = 글에서 찾은 아이, 없으면 지금 보는 아이(아이가 없으면 가족 전체). */
+  function capWhoOptions() {
+    const links = usLinks().filter((l) => !l.removedAt), ck = usActiveChildKey(), me = usMeId();
+    const kids = links.slice().sort((a, b) => (String(a.childKey) === String(ck) ? -1 : 0) - (String(b.childKey) === String(ck) ? -1 : 0)).map((l) => ({ key: `CHILD:${l.childKey}`, label: l.displayName || "" }));
+    const mem = HouseholdView.visibleMembers(usMembers()).slice().sort((a, b) => (a.memberId === me ? -1 : 0) - (b.memberId === me ? -1 : 0)).map((m) => ({ key: `MEMBER:${m.memberId}`, label: m.memberId === me ? CaptureDraftView.MSG.whoMe : m.label || "" }));
+    return [...kids, ...mem, { key: "FAMILY", label: CaptureDraftView.MSG.familyAll }];
+  }
+  const capDefaultWho = () => { const ck = usActiveChildKey(); return ck ? `CHILD:${ck}` : "FAMILY"; };
+  const capShowCands = () => { CaptureModel.withDefaultWho(CAP.s, capDefaultWho()); capShow(CaptureDraftView.renderCandidates(CAP.s, { childName: capChildName, whoOptions: capWhoOptions(), ...(CAP.photo ? { photo: true, photoText: CAP.photoText } : {}) })); };
   function capBaseForm() { return UserScheduleView.newForm({ date: "", activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: "" }); } // 담당은 비워 둔다(후보 화면의 '담당 미정' 그대로 — 일반 폼의 '나' 기본값을 쓰지 않는다)
   function capEditCandidate(i) { // 날짜 고르기·수정·날짜 미정: 기존 일정 폼에 후보 값을 채워 열고, 저장하면 후보 화면으로 돌아온다
     const c = CAP.s && CAP.s.cands[i]; if (!c) return;
     c.removed = true; CAP.s.lastRemoved = null; CAP.s.undo = false;
     us.autoLabel = null; us.form = CaptureModel.formFromCandidate(c, capBaseForm()); us.messages = []; us.saving = false; us.dayForm = null;
-    us.form.capKeep = { scope: us.form.scope, childKeys: (us.form.childKeys || []).slice() }; CAP.backForm = us.form; usShowForm();
+    us.form.capKeep = { scope: us.form.scope, childKeys: (us.form.childKeys || []).slice(), assigneeMemberId: us.form.assigneeMemberId || "", whoPerson: us.form.whoPerson === true }; CAP.backForm = us.form; usShowForm();
   }
   async function capRegister() {
     const list = CaptureModel.registrable(CAP.s); let ok = 0, fail = 0; const now = Date.now();
@@ -5245,15 +5307,100 @@
         if (res.ok) { ok++; c.removed = true; } else fail++;
       } catch (e) { console.error("붙여넣기 일정 등록 실패", e); fail++; }
     }
-    if (!fail) { CAP.s = null; CAP.text = ""; closeDetail(); } else { capShowCands(); usModalNote(`${ok}개 등록, ${fail}개는 등록하지 못했어요. 수정해서 다시 시도해 주세요.`); }
+    if (!fail) { CAP.s = null; CAP.text = ""; CAP.photo = false; CAP.photoText = ""; closeDetail(); } else { capShowCands(); usModalNote(`${ok}개 등록, ${fail}개는 등록하지 못했어요. 수정해서 다시 시도해 주세요.`); }
     usRefreshCalendar();
   }
+  // ═══ D37 사진으로 추가(기기 안 글자 인식): 사진 찍기·불러오기 → 줄이기 → (처음 한 번 데이터 받기) → 글자 읽기 → 규칙 파서 → 기존 후보 확인 화면. 사진은 저장하지도 보내지도 않는다(메모리에서만, 끝나면 바로 버림). 개발값 hannun_feature_photoinput="1"(또는 FEATURES.photoInput)일 때만 4메뉴가 보인다 ═══
+  const CAPP = { token: 0, from: "camera", blob: null, previewUrl: "", rawText: "", svc: null, longTimer: null };
+  function capSvc() {
+    if (!CAPP.svc && typeof TextRecognition !== "undefined" && typeof OcrTesseract !== "undefined") CAPP.svc = TextRecognition.createService({ adapter: OcrTesseract.create({ win: window }) });
+    return CAPP.svc;
+  }
+  function capPhotoReset() { // 닫으면 읽던 사진·글은 즉시 버린다(진행 중이던 결과는 token 으로 무시)
+    CAPP.token++; clearTimeout(CAPP.longTimer); CAPP.longTimer = null;
+    if (CAPP.previewUrl) { try { URL.revokeObjectURL(CAPP.previewUrl); } catch (e) {} }
+    CAPP.blob = null; CAPP.previewUrl = ""; CAPP.rawText = ""; CAP.photo = false; CAP.photoText = "";
+  }
+  /** 흐름 화면 = 4메뉴 줄(지금 고른 메뉴 표시) + 상태 화면. 직접 입력 타일을 누르면 입력해 둔 폼으로 돌아간다. */
+  function capShowFlow(html, selected) { capShow(CapturePhotoView.renderMenu(selected || CAPP.from || "camera") + html); }
+  function capMenuClick(id) {
+    if (id === "camera" || id === "gallery") return capPickPhoto(id);
+    if (id === "paste") { CAP.text = ""; CAP.s = null; capPhotoReset(); return capShowPaste(); }
+    capPhotoReset(); CAP.s = null; // direct: 입력해 둔 값 유지
+    return us.form ? usShowForm() : usOpenForm(null, toISODate(new Date()));
+  }
+  function capPickPhoto(from) {
+    CAPP.from = from;
+    if (typeof document === "undefined" || typeof FileReader === "undefined" || typeof CapturePhotoView === "undefined") return capShowFlow(CapturePhotoView.renderState("unavailable"), from);
+    let inp = document.getElementById("cap-file-" + from);
+    if (!inp) {
+      inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.id = "cap-file-" + from; inp.setAttribute("aria-hidden", "true"); inp.tabIndex = -1;
+      if (from === "camera") inp.setAttribute("capture", "environment");
+      inp.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0";
+      inp.addEventListener("change", () => { const f = inp.files && inp.files[0]; inp.value = ""; if (f) capPhotoStart(f, from); });
+      document.body.appendChild(inp);
+    }
+    inp.value = ""; inp.click();
+  }
+  async function capPhotoStart(file, from) {
+    capPhotoReset(); const token = CAPP.token; CAPP.from = from;
+    const stale = () => token !== CAPP.token;
+    const PV = CapturePhotoView, svc = capSvc();
+    if (!svc || !svc.available() || typeof PhotoCompress === "undefined") return capShowFlow(PV.renderState("unavailable"), from);
+    capShowFlow(PV.renderState("reading", {}), from);
+    let img;
+    try { img = await PhotoCompress.compress(file); } catch (e) { return stale() ? null : capShowFlow(PV.renderState("readFail", { from }), from); }
+    if (stale()) { try { URL.revokeObjectURL(img.previewUrl); } catch (e) {} return; }
+    CAPP.blob = img.blob; CAPP.previewUrl = img.previewUrl;
+    return capPhotoRun(token);
+  }
+  function capPhotoRetry() { if (!CAPP.blob) return capPickPhoto(CAPP.from || "camera"); CAPP.token++; return capPhotoRun(CAPP.token); }
+  async function capPhotoRun(token) {
+    const stale = () => token !== CAPP.token, PV = CapturePhotoView, svc = capSvc(), from = CAPP.from;
+    if (await svc.needsDownload()) {
+      capShowFlow(PV.renderState("download", { percent: 0, bytes: svc.totalBytes() }), from);
+      const bar = () => { const b = el("modal-content") && el("modal-content").querySelector(".cap-bar"); return b; };
+      const p = await svc.prepare({ onProgress: (f) => { if (stale()) return; const b = bar(); if (b) { const pct = Math.round(f * 100); b.setAttribute("aria-valuenow", String(pct)); const i = b.querySelector("i"); if (i) i.style.width = pct + "%"; } } });
+      if (stale()) return;
+      if (!p.ok) return capShowFlow(PV.renderState(p.reason === "unsupported" ? "unavailable" : "downloadFail", { from }), from);
+    }
+    capShowFlow(PV.renderState("reading", { previewUrl: CAPP.previewUrl }), from);
+    CAPP.longTimer = setTimeout(() => { if (!stale()) capShowFlow(PV.renderState("reading", { previewUrl: CAPP.previewUrl, long: true }), from); }, 10000); // 약 10초 넘으면 문구만 바꾼다
+    const r = await svc.recognize(CAPP.blob, {});
+    clearTimeout(CAPP.longTimer); CAPP.longTimer = null;
+    if (stale()) return;
+    if (CAPP.previewUrl) { try { URL.revokeObjectURL(CAPP.previewUrl); } catch (e) {} CAPP.previewUrl = ""; }
+    CAPP.blob = null; // 사진은 글자를 읽자마자 버린다
+    if (!r.ok) return capShowFlow(PV.renderState(r.reason === "load-failed" ? "downloadFail" : r.reason === "unsupported" ? "unavailable" : "readFail", { from }), from);
+    const cands = capParseRead(r.text);
+    if (AiParser.ruleFailed(r.text, cands)) { CAPP.rawText = r.text; return capShowFlow(PV.renderState("unparsed", { rawText: r.text }), from); } // ⑤ 규칙으로 분석하지 못했어요(AI 보강 자리는 있으나 호출하지 않는다)
+    CAP.s = CaptureModel.fromParse(cands); CAP.photo = true; CAP.photoText = r.text; CAP.text = "";
+    return capShowCands();
+  }
+  /** 읽은 글 → 후보. 대화 캡처의 날짜 구분선은 그 아래 글의 '기준일'(상대 날짜 '내일' 등을 그 날 기준으로)로 쓴다. */
+  function capParseRead(text) {
+    const today = new Date(), children = usLinks().filter((l) => !l.removedAt).map((l) => ({ key: String(l.childKey), name: l.displayName || "" }));
+    const out = [];
+    for (const ch of TextRecognition.splitByDateDividers(text, today)) {
+      const list = ParseKo.parse(ch.text, { today: ch.baseDate || today, children });
+      for (const c of list) {
+        if (ch.baseDate) c.notes = [...(c.notes || []), `대화 날짜(${ch.baseDate.getMonth() + 1}월 ${ch.baseDate.getDate()}일) 기준으로 계산했어요`];
+        out.push({ ...c, index: out.length });
+      }
+    }
+    return out;
+  }
   function capOnClick(ev) {
-    const t = ev.target && ev.target.closest ? ev.target.closest("[data-cap-open],[data-cap-find],[data-cap-cancel],[data-cap-check],[data-cap-remove],[data-cap-undo],[data-cap-edit],[data-cap-date],[data-cap-undecided],[data-cap-direct],[data-cap-register]") : null;
+    const t = ev.target && ev.target.closest ? ev.target.closest("[data-cap-open],[data-cap-find],[data-cap-cancel],[data-cap-check],[data-cap-remove],[data-cap-undo],[data-cap-edit],[data-cap-date],[data-cap-undecided],[data-cap-direct],[data-cap-register],[data-cap-who],[data-cap-menu],[data-cap-photo-stop],[data-cap-photo-retry],[data-cap-photo-again],[data-cap-paste-prefill]") : null;
     if (!t || !capReady() || !el("modal-content").contains(t)) return;
     const num = (n) => Number(t.getAttribute(n));
     if (t.hasAttribute("data-cap-open")) { CAP.text = ""; CAP.s = null; return capShowPaste(); }
-    if (t.hasAttribute("data-cap-cancel")) { CAP.s = null; CAP.text = ""; CAP.backForm = null; return closeDetail(); }
+    if (t.hasAttribute("data-cap-cancel")) { CAP.s = null; CAP.text = ""; CAP.backForm = null; capPhotoReset(); return closeDetail(); }
+    if (t.hasAttribute("data-cap-menu")) return capMenuClick(t.getAttribute("data-cap-menu"));
+    if (t.hasAttribute("data-cap-photo-stop")) { capPhotoReset(); CAP.s = null; CAP.text = ""; return closeDetail(); }
+    if (t.hasAttribute("data-cap-photo-retry")) return capPhotoRetry();
+    if (t.hasAttribute("data-cap-photo-again")) return capPickPhoto(CAPP.from || "camera");
+    if (t.hasAttribute("data-cap-paste-prefill")) { CAP.text = CAPP.rawText || ""; capPhotoReset(); CAP.s = null; return capShowPaste(); } // ⑤ 읽은 글을 붙여넣기 칸에 미리 넣어 연다
     if (t.hasAttribute("data-cap-direct")) { CAP.s = null; return usOpenForm(null, toISODate(new Date())); }
     if (t.hasAttribute("data-cap-find")) {
       const ta = el("modal-content").querySelector("[data-cap-text]"); CAP.text = ta ? ta.value : CAP.text;
@@ -5261,6 +5408,7 @@
       CAP.text = ""; return capShowCands(); // 원문은 후보 화면부터 쥐지 않는다(후보 안의 source 조각만 접힘으로 보인다)
     }
     if (!CAP.s) return;
+    if (t.hasAttribute("data-cap-who")) { const c = CAP.s.cands[num("data-cap-who")]; if (c) c.who = t.getAttribute("data-cap-who-key"); return capShowCands(); }
     if (t.hasAttribute("data-cap-check")) { CaptureModel.toggle(CAP.s, num("data-cap-check")); return capShowCands(); }
     if (t.hasAttribute("data-cap-remove")) { CaptureModel.remove(CAP.s, num("data-cap-remove")); return capShowCands(); }
     if (t.hasAttribute("data-cap-undo")) { CaptureModel.undo(CAP.s); return capShowCands(); }
@@ -6435,7 +6583,7 @@
   function acctRenderSlot() {
     const s = el("acct-slot");
     if (s) {
-      const family = hh.hid || hh.code ? { members: HouseholdView.visibleMembers(usMembers()).map((m) => ({ memberId: m.memberId, role: m.role, label: m.label })), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt) } : { members: [], meId: null, meName: "", children: [] };
+      const family = hh.hid || hh.code ? { members: HouseholdView.visibleMembers(usMembers()).map((m) => ({ memberId: m.memberId, role: m.role, label: m.label, color: UserScheduleView.memberColor(m) })), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt).map((l) => ({ ...l, color: UserScheduleView.childColor(l) })) } : { members: [], meId: null, meName: "", children: [] };
       s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, account: acct.account, notice: acct.notice, withCode: true, code: hh.code, family });
     }
   }

@@ -107,7 +107,7 @@ function env(opts) {
       return mm; },
   };
   vm.createContext(sandbox);
-  vm.runInContext(blockSrc + "\n;globalThis.__x = Object.assign(globalThis, { calWeekOn, calWeekAvailable, usSetCalView, usWeekShift, renderWeek, usRenderViewToggle, usCalRefreshAll });", sandbox);
+  vm.runInContext(blockSrc.replace("WEEK_VIEW_ENABLED = false", "WEEK_VIEW_ENABLED = true") /* D45: 앱은 주 보기를 숨기지만(기본 false) 모듈 동작은 켠 상태에서 그대로 검증 */ + "\n;globalThis.__x = Object.assign(globalThis, { calWeekOn, calWeekAvailable, usSetCalView, usWeekShift, renderWeek, usRenderViewToggle, usCalRefreshAll });", sandbox);
   return { sb: sandbox, dom, calls, api: sandbox.__x, o };
 }
 const doc = (title, date, over) => { const r = US.buildCreateDoc({ sourceType: "MANUAL", title, category: "FAMILY", scope: "FAMILY", dateKind: "FIXED", eventDate: date, allDay: true, ...over }, 1790000000000); assert(r.ok, JSON.stringify(r.errors)); return { ...r.doc, id: "d" + title }; };

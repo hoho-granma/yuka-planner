@@ -103,12 +103,19 @@ test("캘린더 격자: 월 이동 스와이프는 원래 없었다(touch 핸들
   const touchUses = APP.split("\n").filter((l) => /touchstart|touchend/.test(l) && !/acct23|acct36|a36Touch/.test(l));
   assert.deepStrictEqual(touchUses.filter((l) => /addEventListener/.test(l)), [], "기존 touch 리스너 없음");
 });
+test("D45 주 보기 숨김: 앱 기본 WEEK_VIEW_ENABLED=false 라 계정 모드가 꺼져 있어도 월|주 전환·주 보기가 없고 주 보기 상태가 남아도 월, true 로 돌리면 되살아난다(되돌리기 한 줄)", () => {
+  assert.ok(/const WEEK_VIEW_ENABLED = false;/.test(APP));
+  const src = APP.slice(APP.indexOf("const WEEK_VIEW_ENABLED"), APP.indexOf("/** 캘린더 · 선택일 패널"));
+  const run = (flag) => { const sb = { CalendarWeek: {}, usActive: () => true, acctEnabled: () => false, calView: "week" }; vm.createContext(sb); vm.runInContext(src.replace("WEEK_VIEW_ENABLED = false", "WEEK_VIEW_ENABLED = " + flag) + "\nglobalThis.r = [calWeekAvailable(), calWeekOn()];", sb); return [...sb.r]; };
+  assert.deepStrictEqual(run(false), [false, false], "숨김: 보기 상태가 week 여도 월");
+  assert.deepStrictEqual(run(true), [true, true], "켜면 OFF 기기에서 주 보기 그대로");
+});
 test("월 보기만(계정 모드): 월|주 전환 칩 없음(calWeekAvailable=false), 주 보기 상태가 남아도 월로 그린다, OFF 는 주 보기 그대로", () => {
-  assert.ok(/const calWeekAvailable = \(\) => typeof CalendarWeek !== "undefined" && usActive\(\) && !\(typeof acctEnabled === "function" && acctEnabled\(\)\);/.test(APP));
+  assert.ok(/const calWeekAvailable = \(\) => WEEK_VIEW_ENABLED && typeof CalendarWeek !== "undefined" && usActive\(\) && !\(typeof acctEnabled === "function" && acctEnabled\(\)\);/.test(APP));
   const mk = (on) => {
-    const sb = { CalendarWeek: {}, usActive: () => true, acctEnabled: () => on, calView: "week", el: () => ({}) };
+    const sb = { WEEK_VIEW_ENABLED: true, CalendarWeek: {}, usActive: () => true, acctEnabled: () => on, calView: "week", el: () => ({}) };
     vm.createContext(sb);
-    vm.runInContext(["const calWeekAvailable = () => typeof CalendarWeek !== \"undefined\" && usActive() && !(typeof acctEnabled === \"function\" && acctEnabled());", "const calWeekOn = () => calView === \"week\" && calWeekAvailable();", "globalThis.calWeekAvailable = calWeekAvailable; globalThis.calWeekOn = calWeekOn;"].join("\n"), sb);
+    vm.runInContext(["const calWeekAvailable = () => WEEK_VIEW_ENABLED && typeof CalendarWeek !== \"undefined\" && usActive() && !(typeof acctEnabled === \"function\" && acctEnabled());", "const calWeekOn = () => calView === \"week\" && calWeekAvailable();", "globalThis.calWeekAvailable = calWeekAvailable; globalThis.calWeekOn = calWeekOn;"].join("\n"), sb);
     return sb;
   };
   const acct = mk(true);

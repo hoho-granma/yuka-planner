@@ -20,9 +20,11 @@
     familyMore: "캘린더 ›",
     hideDone: "완료 숨기기",
     add: "체크리스트 추가 +",
-    inputPlaceholder: "할 일을 적고 엔터",
+    inputPlaceholder: "할 일을 적어 주세요",
+    addSave: "추가",
+    rowMore: "더 보기",
     emptyHint: "할 일을 한 줄씩 적어 보세요. 완료하면 줄이 그어져요.",
-    pressHint: "완료한 줄은 제자리에서 줄이 그어져요. 길게 누르면 메뉴가 떠요.",
+    pressHint: "완료한 줄은 제자리에서 줄이 그어져요. ⋯ 를 누르거나 길게 누르면 고치기·삭제 메뉴가 떠요.",
     menuEdit: "고치기", menuTop: "맨 위로", menuDel: "삭제", menuClose: "닫기",
     doneLabel: "완료",
     autoBadge: "자동",
@@ -30,6 +32,7 @@
     noHousehold: "가족 캘린더가 만들어지면 할 일을 적을 수 있어요.",
     preparing: "준비 중이에요… 잠시만 기다려 주세요.",
     tooLong: "100자 이내로 적어 주세요.",
+    saveFail: "저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.",
     quickTitle: "자주 쓰는 일정",
     quick: Object.freeze(["학원", "숙제", "준비물"]),
     allDay: "종일",
@@ -73,10 +76,11 @@
         const body = st.editId === d.id
           ? `<input type="text" class="a36-in" maxlength="100" data-a36-input="edit" data-a36-id="${esc(d.id)}" value="${esc(d.title)}" enterkeyhint="done" />`
           : `<span class="a36-t${d.done ? " done" : ""}">${esc(d.title)}</span>`;
-        return `<div class="a36-row${d.done ? " done" : ""}" data-a36-row="${esc(d.id)}">${check(d.id, d.done)}${body}</div>`;
+        const more = st.editId === d.id ? "" : `<button type="button" class="a36-more-btn" data-a36="row-menu" data-a36-id="${esc(d.id)}" aria-label="${esc(MSG.rowMore)}">⋯</button>`; // 길게 누르기가 어려운 기기를 위한 눈에 보이는 메뉴 버튼
+        return `<div class="a36-row${d.done ? " done" : ""}" data-a36-row="${esc(d.id)}">${check(d.id, d.done)}${body}${more}</div>`;
       })
       .join("");
-    const input = st.adding ? `<div class="a36-row a36-inrow"><i class="a36-cb"></i><input type="text" class="a36-in" maxlength="100" data-a36-input="add" placeholder="${esc(MSG.inputPlaceholder)}" enterkeyhint="next" /></div>` : "";
+    const input = st.adding ? `<form class="a36-row a36-inrow" data-a36-form="add" novalidate><i class="a36-cb"></i><input type="text" class="a36-in" maxlength="100" data-a36-input="add" placeholder="${esc(MSG.inputPlaceholder)}" enterkeyhint="done" autocomplete="off" /><button type="submit" class="a36-add-btn">${esc(MSG.addSave)}</button></form>` : ""; // 폼: 모바일 키보드의 완료/이동 키와 '추가' 버튼이 어떤 기기에서도 저장된다
     const add = st.adding ? "" : `<button type="button" class="a36-row a36-addrow" data-a36="add">${esc(MSG.add)}</button>`;
     const empty = !(st.list || []).length && !st.adding ? `<p class="a36-hint">${esc(MSG.emptyHint)}</p>` : "";
     return `${head}<div class="a36-list" id="a36-list">${rows}${input}${add}</div>${empty}<p class="a36-hint">${esc(MSG.pressHint)}</p><p class="a36-err hidden" id="a36-err" role="alert">${esc(MSG.tooLong)}</p>`;

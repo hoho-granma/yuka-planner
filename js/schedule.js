@@ -16,12 +16,12 @@
 // 아예 색상환을 벗어난 무채색 계열(슬레이트 네이비)로 바꿨다 — 나머지 5개와 톤 자체가
 // 달라서(채도 있는 색 vs 무채색) 절대 헷갈리지 않는다.
 const CATEGORY_META = {
-  "발달관찰": { label: "발달", color: "#22c55e" }, // 초록
-  "예방접종": { label: "접종", color: "#3b82f6" }, // 파랑
-  "영유아검진": { label: "검진", color: "#a855f7" }, // 보라
-  "생활·수유": { label: "생활", color: "#eab308" }, // 노랑
-  "안전·돌봄": { label: "안전", color: "#ef4444" }, // 빨강
-  "행정·지원금": { label: "혜택", color: "#475569" }, // 슬레이트 네이비(무채색)
+  "발달관찰": { label: "발달", color: "var(--k-dv)" }, // 초록(D49: 색 값은 css --k-* 종류 라벨 세트, 테마 따라 바뀜)
+  "예방접종": { label: "접종", color: "var(--k-vx)" }, // 파랑
+  "영유아검진": { label: "검진", color: "var(--k-hc)" }, // 보라
+  "생활·수유": { label: "생활", color: "var(--k-lf)" }, // 노랑
+  "안전·돌봄": { label: "안전", color: "var(--k-sf)" }, // 빨강
+  "행정·지원금": { label: "혜택", color: "var(--k-bn)" }, // 인디고(D34 C)
 };
 
 // TodoDefinition의 10개 세부 카테고리 코드 → 위 6개 그룹 중 하나. td.categoryGroup이 있으면

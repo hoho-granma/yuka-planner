@@ -42,5 +42,5 @@ test("비계정(가구 없음)에도 보인다: 사용 가능 판정은 usActive
   assert.ok(/\$\{usActive\(\) \? `<button[^`]*data-anniv-act="add"/.test(app));
   const V = require("../js/user-schedule-view.js");
   assert.ok(V.renderAnnivSwitch(true).includes('aria-checked="true"') && V.renderAnnivSwitch(false).includes("toggle-anniv"));
-  assert.ok(V.cellChips([{ t: "a", title: "하린 생일", anniv: true, color: "#ff66b3", category: "생활·수유" }], { mode: "kids", catColor: false, links: [], autoColor: "#000" }).includes("#ff66b3"), "기념일 칩은 아이 구성원 색");
+  assert.ok(V.cellChips([{ t: "a", title: "하린 생일", anniv: true, color: "#f47ca8", category: "생활·수유" }], { mode: "kids", catColor: false, links: [], autoColor: "#000" }).includes("#f47ca8"), "기념일 칩은 아이 구성원 색");
 });

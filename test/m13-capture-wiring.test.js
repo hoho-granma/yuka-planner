@@ -26,7 +26,7 @@ test("담당은 빈칸으로 저장: 후보 기본 폼·후보→폼 인계 모�
   const i = app.indexOf("function capBaseForm()"), line = app.slice(i, app.indexOf("\n", i));
   assert.ok(line.includes('defaultAssigneeId: ""') && !line.includes("memActiveId()"));
   const j = app.indexOf("usShowForm = function usShowForm()"), blk = app.slice(j, app.indexOf("\n  };", j));
-  assert.ok(blk.includes("us.form.capKeep") && blk.includes('assigneeMemberId: ""') && blk.includes("whoPerson: false") && app.includes("us.form.capKeep = { scope: us.form.scope"));
+  assert.ok(blk.includes("us.form.capKeep") && blk.includes("Object.assign(us.form, us.form.capKeep)") && app.includes("us.form.capKeep = { scope: us.form.scope") && app.includes("whoPerson: us.form.whoPerson === true"), "D40: 후보의 '누구'(아이·구성원·가족 전체)를 폼으로 그대로 넘긴다");
   const base = V.newForm({ date: "", activeChildKey: "c1", links: [{ childKey: "c1" }], defaultAssigneeId: "" });
   const f = M.formFromCandidate({ title: "치과", eventDate: "2026-10-14" }, base);
   const input = V.formToInput(f); assert.ok(!("assigneeMemberId" in input), "저장 입력에 담당 필드 없음");
