@@ -1825,6 +1825,7 @@ body.acct-design .a36t-nc { display: block; margin: 2px 0 0; font-size: 12px; fo
 .hs-notice-x { background: none; border: 0; padding: 4px 6px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
 .hs-switch-link { margin: 12px 0 4px; text-align: center; }
 .places-basis-tag { display: block; margin-top: 2px; font-size: 11px; font-weight: 400; color: var(--text-muted); } /* 3-1 '시설 유형 기준' 라벨 */
+.hs-notice-diag { display: block; margin-top: 2px; font-size: 10px; color: var(--text-muted); word-break: break-all; } /* 새 홈 실패 진단(앞 60자) */
 /* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
    인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
 :root {

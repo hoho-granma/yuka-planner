@@ -34,10 +34,11 @@
     return `<div class="detail-row hs-pref" data-home-switch-row><div class="hs-pref-t"><b>${esc(title)}</b><small>${esc(desc)}</small></div>${btn(on, label, stage)}</div>`;
   }
   /** 켠 직후 홈 맨 위 1회 안내 띠(단계 ①) / ② 로 바뀐 첫날 안내. kind: "on" | "welcome2" | "fallback". */
-  function noticeHtml(kind) {
+  function noticeHtml(kind, diag) {
     const text = kind === "welcome2" ? MSG.welcome2 : kind === "fallback" ? MSG.fallback : MSG.notice;
+    const why = kind === "fallback" && diag ? `<small class="hs-notice-diag">진단: ${esc(String(diag).slice(0, 60))}</small>` : ""; // 오류 요지(앞 60자) — 사용자가 콘솔 없이 읽어 줄 수 있게
     const link = kind === "fallback" ? "" : `<button type="button" class="hs-notice-link" data-home-switch="off">${esc(MSG.toOld)}</button>`;
-    return `<div class="hs-notice" data-home-notice>${`<span>${esc(text)}</span>`}${link}<button type="button" class="hs-notice-x" data-home-notice-x aria-label="${esc(MSG.close)}">✕</button></div>`;
+    return `<div class="hs-notice" data-home-notice><span>${esc(text)}${why}</span>${link}<button type="button" class="hs-notice-x" data-home-notice-x aria-label="${esc(MSG.close)}">✕</button></div>`;
   }
   /** 홈 맨 아래 작은 링크(단계 ② 전용): 새 홈에서는 '이전 홈으로 보기', 이전 홈에서는 '새 홈으로 보기'. 단계 ① 에서는 비움. */
   function linkHtml(on, stage, pref) {

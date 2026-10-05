@@ -36,7 +36,7 @@ test("앱 연결(1-1, 플래그 OFF 기본): 플래그 기본 false·정책은 �
   assert.ok(/FEATURES_CURATION_ON\(\) \? loadJsonOrNull\("data\/policy\/curation\.json"\) : null/.test(app));
   assert.ok(/if \(curatedHomeOn\(\) && curatedRenderHome\(\)\) return;/.test(app));
   assert.ok(/document\.addEventListener\("click", curatedHomeClick\)/.test(app));
-  assert.ok(/curatedHomeOn = \(\) => FEATURES_CURATION_ON\(\) && !!curationPolicy && !!profile/.test(app) && /catch \(e\) \{ console\.error\("큐레이션 홈 실패\(기존 홈으로\)", e\); return null; \}/.test(app));
+  assert.ok(/curatedHomeOn = \(\) => FEATURES_CURATION_ON\(\) && !!curationPolicy && !!profile/.test(app) && /catch \(e\) \{ console\.error\("큐레이션 홈 실패\(기존 홈으로\)", e\); HSW\.diag = [^\n]*; return null; \}/.test(app));
   assert.ok(!/localStorage\.setItem\([^)]*\)[^\n]*firestore/i.test(app.slice(app.indexOf("// ═══ 1-0/1-1 큐레이션 홈"), app.indexOf("const renderHomeBase = renderHome;"))), "저장은 기기 저장 한 곳뿐");
   const idx = fs.readFileSync(R + "/index.html", "utf8");
   assert.ok(idx.indexOf("js/curation.js") > idx.indexOf("js/hn-logic.js") && idx.indexOf("js/curated-home.js") > idx.indexOf("js/home-slots-view.js") && idx.includes("css/home-slots.css"));

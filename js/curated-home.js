@@ -15,16 +15,19 @@
    *          head, family(배열|null), benefits, nextStage, explore, todosHtml, nextHint }
    * 폴백(null): 모듈·정책·날짜·이벤트가 없거나 curate/렌더가 던질 때 — 앱은 기존 홈(HNHome.render / Over36View.renderHome)을 그린다.
    */
+  let lastError = null; // 마지막 폴백(null)의 원인 — 홈 폴백 안내의 진단 문구용(오류가 없으면 null)
   function render(deps) {
     const d = deps || {};
+    lastError = null;
     if (!Curation || !View || !d.policy || !(d.today instanceof Date) || !Array.isArray(d.events)) return null;
     try {
       const cur = Curation.curate(d.events, d.state || {}, d.policy, d.today);
       const benefits = d.benefits === undefined ? (cur.moreCounts.benefits > 0 ? { count: cur.moreCounts.benefits, check: cur.stats.byType.CHECK || 0 } : null) : d.benefits;
       const html = View.render(cur, { today: d.today, head: d.head, family: d.family, benefits, nextStage: d.nextStage, explore: d.explore, nextHint: d.nextHint, todosHtml: d.todosHtml });
       return typeof html === "string" && html ? html : null;
-    } catch (e) { return null; }
+    } catch (e) { lastError = e; return null; }
   }
+  const getLastError = () => lastError;
 
   /** 단위 key → 단위(지금 꼭·곧·알아두기와 넘친 목록 전체에서). */
   function unitOf(cur, key) {
@@ -55,5 +58,5 @@
     return false;
   }
 
-  return { render, unitOf, dispatch };
+  return { render, unitOf, dispatch, getLastError };
 });

@@ -27,11 +27,13 @@ test("앱 연결: 단계 ① 고정, 기기 저장만, 프로필 시트 줄은 �
   assert.ok(/const HOME_V2_STAGE = 1;/.test(app));
   const i = app.indexOf("async function homeSwitchSet("), blk = app.slice(i, app.indexOf("\n  }\n", i) + 4);
   assert.ok(blk.includes("HomeSwitch.write(homeStore(), on)") && !/setDoc|updateDoc|HouseholdSync|fetch\(/.test(blk) && blk.includes("renderHome();"));
+  assert.ok(blk.indexOf("closeDetail();") > 0 && blk.indexOf("closeDetail();") < blk.indexOf("renderHome()"), "켜자마자 시트를 닫고 홈을 다시 그린다(시트 뒤에서만 바뀌지 않게)");
+  assert.ok(/try \{\s*if \(on && !curationPolicy[\s\S]*await loadJsonOrNull[\s\S]*catch \(e\)[\s\S]*finally \{[\s\S]*closeDetail\(\)[\s\S]*try \{ renderHome\(\); \} catch/.test(blk), "정책 읽기·홈 그리기 예외가 나도 finally 에서 시트를 닫고 홈을 다시 그린다");
   assert.ok(/HomeSwitch\.rowHtml\(FEATURES_CURATION_ON\(\), HOME_V2_STAGE\)/.test(app.slice(app.indexOf("function acctProfileSheet()"), app.indexOf("showProfileSheet = function (pendingPhoto)"))));
   const d = app.indexOf("function homeSwitchDecorate("), dec = app.slice(d, app.indexOf("\n  }\n", d) + 4);
-  const run = (pref, on, just) => { const st = mem(pref ? { [H.KEY]: pref } : {}); let html = ""; const sb = { HomeSwitch: H, HSW: { justEnabled: just, fallbackShown: false }, HOME_V2_STAGE: 1, FEATURES_CURATION_ON: () => on, el: () => ({ insertAdjacentHTML: (w, h) => { html += h; } }), homeStore: () => st }; vm.runInNewContext(`${dec}; homeSwitchDecorate(${on})`, sb); return html; };
+  const run = (pref, on, just) => { const st = mem(pref ? { [H.KEY]: pref } : {}); let html = ""; const sb = { HomeSwitch: H, HSW: { justEnabled: just, fallbackShown: false, diag: "홈 그리기 실패: boom" }, curationPolicy: {}, HOME_V2_STAGE: 1, FEATURES_CURATION_ON: () => on, el: () => ({ insertAdjacentHTML: (w, h) => { html += h; } }), homeStore: () => st }; vm.runInNewContext(`${dec}; homeSwitchDecorate(${on})`, sb); return html; };
   assert.strictEqual(run(null, false, false), "", "키 없음·① 구 홈: 아무것도 안 붙음"); assert.strictEqual(run(null, true, false), "", "개발 플래그로 켠 새 홈: 안내·링크 없음");
   assert.ok(run("1", true, true).includes("새 홈을 보고 계세요"), "켠 직후 안내 띠"); assert.ok(!run("1", true, false).includes("새 홈을 보고 계세요"), "안내 띠는 그 뒤엔 없음(맨 아래 링크만)");
-  assert.ok(run("1", false, false).includes("불러오지 못해"), "켜 놨는데 새 홈이 안 그려지면 폴백 안내");
+  assert.ok(run("1", false, false).includes("불러오지 못해") && run("1", false, false).includes("진단: 홈 그리기 실패: boom"), "켜 놨는데 새 홈이 안 그려지면 폴백 안내 + 오류 요지(진단)");
   assert.ok(run("1", true, false).includes("이전 홈으로 보기"), "스위치로 켠 새 홈 맨 아래 링크"); assert.ok(!run("1", false, false).includes("이전 홈으로 보기"), "폴백(이전 홈이 그려짐)에는 링크 없음");
 });

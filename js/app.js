@@ -198,7 +198,7 @@
   const FEATURES_CURATION_ON = () => !!window.FEATURES && window.FEATURES.curation === true;
   // ═══ 1-1b 새 홈 미리보기 스위치(기기 저장 hannun_home_v2, 서버·Firestore 쓰기 없음). 사용자 키 > 개발용 플래그 > 단계 기본값. 단계는 ① 로 고정(② 기본 ON 은 코드만 준비 — 전환은 사용자 확인 원문 뒤) ═══
   const HOME_V2_STAGE = 1;
-  const HSW = { justEnabled: false, fallbackShown: false };
+  const HSW = { justEnabled: false, fallbackShown: false, diag: "" }; // diag: 새 홈 실패 원인 요지(진단용, 폴백 안내에만 표시)
   const homeStore = () => { try { return window.localStorage; } catch (e) { return null; } };
   function homePrefApply() {
     if (typeof HomeSwitch === "undefined" || !window.FEATURES) return;
@@ -1434,9 +1434,10 @@
       const todosHtml = acct36Active() && typeof Over36View.renderTodoCard === "function" ? Over36View.renderTodoCard({ name: childDisplayName(), todos: ChildTodos.homeLines(acct36All(), 3), canTodo: acct36CanTodo() }) : "";
       const ageText = pregnant ? "" : ChildTimeline.ageLabelAt(profile.birthDate, new Date());
       const html = CuratedHome.render({ policy: curationPolicy, events, state, today, head: { name: childDisplayName(), ageText, region: profile.district || profile.province || "" }, family: curatedFamilyItems(today), nextStage, explore, todosHtml });
+      if (!html) { const le = typeof CuratedHome.getLastError === "function" ? CuratedHome.getLastError() : null; HSW.diag = `홈 그리기 실패: ${le && le.message ? le.message : "내용 없음"}`; } else HSW.diag = "";
       if (html) curatedCur = html && typeof Curation !== "undefined" ? Curation.curate(events, state, curationPolicy, today) : null;
       return html;
-    } catch (e) { console.error("큐레이션 홈 실패(기존 홈으로)", e); return null; }
+    } catch (e) { console.error("큐레이션 홈 실패(기존 홈으로)", e); HSW.diag = `홈 준비 실패: ${e && e.message ? e.message : e}`; return null; }
   }
   function curatedRenderHome() {
     const wrap = el("home-body");
@@ -1495,7 +1496,7 @@
     if (!body || !body.insertAdjacentHTML) return;
     const pref = HomeSwitch.read(st);
     if (isNew && HSW.justEnabled && HomeSwitch.noticeDue(st, true)) body.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("on"));
-    if (!isNew && pref === "on" && !HSW.fallbackShown) { HSW.fallbackShown = true; body.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("fallback")); } // 켜 놓았는데 새 홈이 안 그려졌다(설정 못 읽음 등) — 이전 홈을 그리고 한 번만 알린다
+    if (!isNew && pref === "on" && !HSW.fallbackShown) { HSW.fallbackShown = true; body.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("fallback", HSW.diag || (curationPolicy ? "" : "정책 파일을 못 읽음"))); } // 켜 놓았는데 새 홈이 안 그려졌다(설정 못 읽음 등) — 이전 홈을 그리고 한 번만 알린다
     if (isNew) HSW.justEnabled = false;
     if (isNew || HOME_V2_STAGE >= 2) body.insertAdjacentHTML("beforeend", HomeSwitch.linkHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE, pref)); // 새 홈이 실제로 그려졌을 때만(폴백으로 이전 홈이 그려졌으면 단계 ① 링크 없음)
   }
@@ -1504,12 +1505,20 @@
     if (typeof HomeSwitch === "undefined") return;
     HomeSwitch.write(homeStore(), on);
     homePrefApply();
-    HSW.justEnabled = on; HSW.fallbackShown = false;
-    if (on && !curationPolicy && typeof Curation !== "undefined") { const raw = await loadJsonOrNull("data/policy/curation.json"); curationPolicy = raw ? Curation.normalizePolicy(raw) : null; }
-    renderHome();
-    const sw = el("modal-content") && el("modal-content").querySelector ? el("modal-content").querySelector("[data-home-switch-row]") : null;
-    if (sw) sw.outerHTML = HomeSwitch.rowHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE);
-    if (typeof window !== "undefined" && window.scrollTo) window.scrollTo(0, 0);
+    HSW.justEnabled = on; HSW.fallbackShown = false; HSW.diag = "";
+    try {
+      if (on && !curationPolicy && typeof Curation !== "undefined") { // 정책을 아직 안 읽었으면 읽는다 — 실패·지연이어도 아래 화면 전환은 반드시 진행(이전 홈+폴백 안내+진단)
+        const raw = await loadJsonOrNull("data/policy/curation.json");
+        curationPolicy = raw ? Curation.normalizePolicy(raw) : null;
+        if (!curationPolicy) HSW.diag = raw ? "정책 해석 실패" : "정책 파일 읽기 실패";
+      }
+    } catch (e) { console.error("큐레이션 정책 읽기 실패(이전 홈으로)", e); curationPolicy = null; HSW.diag = `정책 읽기 실패: ${e && e.message ? e.message : e}`; }
+    finally { // 어떤 예외가 나도 시트를 닫고 홈을 다시 그린다(모바일에서 시트가 화면을 덮어 '켰는데 변화 없음'으로 보였다)
+      try { closeDetail(); } catch (e) {}
+      try { if (typeof currentTab !== "undefined" && currentTab !== "home") switchTab("home"); } catch (e) {}
+      try { renderHome(); } catch (e) { console.error("홈 다시 그리기 실패", e); HSW.diag = `홈 다시 그리기 실패: ${e && e.message ? e.message : e}`; try { const hb = el("home-body"); if (hb && hb.insertAdjacentHTML && !hb.querySelector("[data-home-notice]")) hb.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("fallback", HSW.diag)); } catch (e2) {} }
+      try { if (typeof window !== "undefined" && window.scrollTo) window.scrollTo(0, 0); } catch (e) {}
+    }
   }
   function homeSwitchClick(ev) {
     const t = ev.target && ev.target.closest ? ev.target.closest("[data-home-switch], [data-home-notice-x]") : null;
