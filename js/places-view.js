@@ -392,9 +392,7 @@
       const r = opts.reg || {};
       const members = Array.isArray(opts.members) ? opts.members : [];
       const kids = Array.isArray(opts.kids) ? opts.kids : [];
-      const assignee = members.length
-        ? `<div class="places-reg-field"><label>${esc(TEXT.assigneeLabel)}</label><div class="places-chips-wrap">${members.map((m) => chipBtn(`data-places-assignee="${esc(m.memberId)}"`, m.label || "", r.assignee === m.memberId)).join("")}</div></div>`
-        : "";
+      const assignee = ""; // D66: 담당 선택은 없앴다(대상 칩 하나로 정한다). 기존 저장값은 그대로 읽힌다.
       const targets = `<div class="places-reg-field"><label>${esc(TEXT.targetLabel)}</label><div class="places-chips-wrap">${chipBtn('data-places-target="FAMILY"', TEXT.targetFamily, r.scope !== "CHILD")}${kids.map((k) => chipBtn(`data-places-target="${esc(k.childKey)}"`, k.name || "", r.scope === "CHILD" && (r.childKeys || [])[0] === k.childKey)).join("")}</div></div>`;
       const times = r.allDay === false ? `<div class="places-times">${timeSel("plr-start", r.startTime, TEXT.startLabel)}${timeSel("plr-end", r.endTime, TEXT.endLabel)}</div>` : "";
       return (

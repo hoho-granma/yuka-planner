@@ -2,7 +2,7 @@
   /* ── 색 슬롯(v1.12.92, 시안 g39 확정). 앱의 모든 색은 여기서 정한다 — 하드코딩 hex 를 쓰지 않는다 ── */
   /* D41 최종 디자인: 이 :root 값 = 웜 브라운(36개월 미만·임신 중·아이 없음), body.theme-forest 가 딥 포레스트(36개월 이상)로 덮는다. 종류 6색·완료 청록·위험·마감 와인·선택 칩 노랑은 두 테마 같은 값. */
   /* S8 면·선·글자 */
-  --bg: #faf6f0;            /* 바탕 */
+  --bg: #fff8f0;            /* 바탕 (D62: 초기색) */
   --card-bg: #ffffff;       /* 카드·시트 면 */
   --surface: #ffffff;
   --border: #e1e0df;        /* 선 */
@@ -11,17 +11,18 @@
   --c-ink: #2a2118;
   --text-muted: #7b7570;    /* 보조 글자 */
   /* S1 주요 버튼·활성 요소(곧 배지·오늘 칸·선택 면) — 오렌지 위 흰 글자는 대비 2.9:1 이라 굵기 700 이상으로만 쓴다 */
-  --c-primary: #a85a1a;
+  --c-primary: #ff8a5c;     /* D62: 초기색 메인(웜) */
   --c-primary-ink: #ffffff;
-  --accent: #a85a1a;        /* (옛 이름 = S1) */
-  --c-select: #a85a1a;
+  --on-accent: #2a2118;     /* D62: 오렌지 면 위 글자(웜 6.8:1·4.9:1). 포레스트는 body.theme-forest 가 #fff 로 되돌린다 */
+  --accent: #ff8a5c;        /* (옛 이름 = S1) */
+  --c-select: #ff8a5c;
   --c-select-soft: color-mix(in srgb, var(--c-select) 18%, var(--surface));
   /* S2 활성 탭·링크·진행 표시 = 차콜 */
-  --c-active: #7a3f10;
+  --c-active: #e8683a;      /* D62: 초기색 진한 강조(웜) */
   --c-active-ink: #ffffff;
-  --c-link: #7a3f10;
-  --accent-dark: #7a3f10;   /* (옛 이름 = 링크·강조 글자 = 차콜, D2) */
-  --c-progress: #7a3f10;
+  --c-link: #e8683a;
+  --accent-dark: #e8683a;   /* (옛 이름 = 링크·강조) */
+  --c-progress: #e8683a;
   /* S3 자동·정보 뱃지 */
   --c-badge-auto: #ffe2d0;
   --c-badge-auto-ink: #1c1c1e;
@@ -46,7 +47,7 @@
   --chip-ink: #1a1410;
   --chip-off: #e1dfdb; --chip-off-ink: #62656b;   /* 선택 안 된 사람 뱃지(회색) */
   /* S9 선택한 사람 테두리 */
-  --c-select-border: #7a3f10;
+  --c-select-border: #e8683a;
   /* D3 오류·삭제 */
   --c-danger: #c23a37;
   --c-danger-soft: color-mix(in srgb, var(--c-danger) 10%, var(--surface));
@@ -68,6 +69,7 @@ body.theme-forest {
   --c-primary: #1f6f4a; --accent: #1f6f4a; --c-select: #1f6f4a;
   --c-active: #1f6f4a; --c-link: #1f6f4a; --accent-dark: #1f6f4a; --c-progress: #1f6f4a; --c-select-border: #1f6f4a;
   --c-soon: #14382a;
+  --on-accent: #ffffff; /* D62: 오렌지 면 글자색 토큰 — 포레스트는 지금처럼 흰색 유지 */
   --k-vx: #1b7bd9; --k-hc: #572bdc; --k-dv: #1e9f3f; --k-lf: #be8025; --k-sf: #f20d5d; --k-bn: #2646c9; /* D49 종류 라벨 6색(포레스트) */
   --d1: #bdf4ff; --d2: #f9d86c; --d3: #fb93c0; --d4: #d5fb93; --d5: #93abfb; --d6: #93fbce; --d7: #b993fb; --d8: #f9846c; --d9: #71f96c; --d10: #f46cf9;
   --cal-sel: #f9cb34;
@@ -99,7 +101,7 @@ body {
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .btn-refresh { height: 32px; border-radius: 16px; border: 1.5px solid var(--border); background: #fff; color: var(--text-muted); font-size: 12px; font-weight: 700; font-family: inherit; display: inline-flex; align-items: center; gap: 4px; padding: 0 10px; cursor: pointer; }
 .btn-refresh .refresh-icon { font-size: 15px; line-height: 1; display: inline-block; }
-.btn-refresh.has-update { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-refresh.has-update { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .btn-refresh.busy { opacity: .7; pointer-events: none; }
 .btn-refresh.busy .refresh-icon { animation: refresh-spin 1s linear infinite; }
 @keyframes refresh-spin { to { transform: rotate(360deg); } }
@@ -321,14 +323,14 @@ select:disabled { background: var(--bg); color: var(--text-muted); }
 }
 .dp-cell.dp-empty { cursor: default; }
 .dp-day:hover:not(.dp-disabled) { background: var(--bg); }
-.dp-day.dp-selected { background: var(--accent); color: #fff; font-weight: 700; }
+.dp-day.dp-selected { background: var(--accent); color: var(--on-accent); font-weight: 700; }
 .dp-day.dp-disabled { color: color-mix(in srgb, var(--text-muted) 45%, var(--bg)); cursor: not-allowed; }
 
 .btn-primary {
   width: 100%;
   padding: 14px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border: none;
   border-radius: 12px;
   font-size: 16px;
@@ -360,7 +362,7 @@ select:disabled { background: var(--bg); color: var(--text-muted); }
 .btn-code-pill {
   flex-shrink: 0;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border: none;
   border-radius: 999px;
   padding: 6px 12px;
@@ -503,7 +505,7 @@ select:disabled { background: var(--bg); color: var(--text-muted); }
 }
 .modal-panel .btn-official {
   display: block; width: 100%; margin-top: 8px; text-align: center; text-decoration: none;
-  padding: 12px; background: var(--accent); color: #fff; border-radius: 10px; font-weight: 700;
+  padding: 12px; background: var(--accent); color: var(--on-accent); border-radius: 10px; font-weight: 700;
 }
 .modal-panel .btn-complete {
   display: block; width: 100%; margin-top: 8px;
@@ -550,8 +552,8 @@ select:disabled { background: var(--bg); color: var(--text-muted); }
   transition: all .15s;
 }
 .order-chip:active { transform: scale(.96); }
-.order-chip.active { border-color: var(--accent); background: var(--bg); color: var(--accent-dark); box-shadow: 0 2px 8px rgba(255,106,26,.25); }
-.order-chip.active .order-num { background: var(--accent); color: #fff; }
+.order-chip.active { border-color: var(--accent); background: var(--bg); color: var(--accent-dark); box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 25%, transparent); }
+.order-chip.active .order-num { background: var(--accent); color: var(--on-accent); }
 
 .region-step-label { font-size: 12px; font-weight: 700; color: var(--text-muted); margin: 2px 0 8px; }
 .region-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
@@ -561,7 +563,7 @@ select:disabled { background: var(--bg); color: var(--text-muted); }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: all .15s;
 }
 .region-chip:active { transform: scale(.96); }
-.region-chip.active { border-color: var(--accent); background: var(--accent); color: #fff; font-weight: 700; box-shadow: 0 2px 8px rgba(255,106,26,.3); }
+.region-chip.active { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 700; box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 30%, transparent); }
 .district-wrap { margin-top: 16px; padding: 14px; background: var(--bg); border-radius: 14px; animation: chip-fade .2s; }
 .district-chips { grid-template-columns: repeat(3, 1fr); max-height: 232px; overflow-y: auto; padding: 2px; -webkit-overflow-scrolling: touch; }
 .district-chips .region-chip { border-radius: 12px; }
@@ -583,7 +585,7 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .date-picker-trigger { font-size: 16px; min-height: 48px; }
 .date-popup-header select { font-size: 14px; min-height: 36px; }
 
-.btn-primary { min-height: 52px; font-size: 17px; box-shadow: 0 6px 16px rgba(255,106,26,.32); }
+.btn-primary { min-height: 52px; font-size: 17px; box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 32%, transparent); }
 .btn-primary:active { transform: scale(.98); background: var(--accent-dark); }
 .stage-btn { min-height: 64px; }
 .stage-btn:active { transform: scale(.98); }
@@ -725,7 +727,7 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .status-filter { display: flex; background: var(--bg); border-radius: 999px; padding: 4px; margin-bottom: 12px; gap: 2px; }
 .sf-btn { flex: 1; border: none; background: none; padding: 9px 6px; border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; font-family: inherit; min-height: 40px; }
 .sf-btn.active { background: #fff; color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-.now-badge { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; vertical-align: 2px; }
+.now-badge { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 800; vertical-align: 2px; }
 .now-badge.next { background: var(--bg); color: var(--accent-dark); }
 
 /* 캘린더: 권장 기간 띠 · 마감 점 · 유형 태그 */
@@ -753,8 +755,8 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 #subsidy-seg { margin-bottom: 12px; }
 #subsidy-seg .seg-tab { font-size: 13px; min-height: 40px; }
 .seg-n { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 2px; border-radius: 999px; background: var(--bg); color: var(--text-muted); font-size: 11px; }
-.seg-tab.active .seg-n { background: var(--accent); color: #fff; }
-.scope-chip.active, .rec-chip.active, .rv-cat.active { background: var(--accent); color: #fff; border-color: transparent; }
+.seg-tab.active .seg-n { background: var(--accent); color: var(--on-accent); }
+.scope-chip.active, .rec-chip.active, .rv-cat.active { background: var(--accent); color: var(--on-accent); border-color: transparent; }
 .sub-region-note { margin: 0 0 12px; font-size: 12px; color: var(--text-muted); }
 .sub-group-title { margin: 16px 0 8px; font-size: 15px; }
 .sub-group-title small { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-left: 4px; }
@@ -1157,7 +1159,7 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .cal-todo-main small { display: block; margin-top: 2px; color: var(--text-muted); font-size: 12px; }
 .cal-todo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .cal-todo-actions .btn-close, .cal-todo-actions .btn-apply { width: auto; margin: 0; padding: 7px 12px; font-size: 13px; }
-.cal-todo-actions .btn-apply { display: inline-block; border-radius: 10px; background: var(--accent-dark, var(--text)); color: #fff; font-weight: 800; text-decoration: none; }
+.cal-todo-actions .btn-apply { display: inline-block; border-radius: 10px; background: var(--accent-dark, var(--text)); color: var(--on-accent); font-weight: 800; text-decoration: none; }
 .cal-todo-note { flex-basis: 100%; font-size: 11px; color: var(--text-muted); }
 .cal-todo-done { padding: 0 14px 8px; }
 .cal-todo-done summary { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--text-muted); padding: 6px 0; }
@@ -1165,7 +1167,7 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .acct-landing .acct-main { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
 .acct-title { margin: 0; font-size: 24px; line-height: 1.3; color: var(--text); text-wrap: balance; }
 .acct-landing .acct-sub { margin: 0 0 6px; font-size: 14px; font-weight: 500; line-height: 1.5; color: var(--text-muted); }
-.acct-btn-primary { box-sizing: border-box; width: 100%; min-height: 54px; padding: 0 18px; border: 0; border-radius: 16px; background: var(--accent); color: #fff; font-family: inherit; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: none; transition: transform .12s, opacity .12s; }
+.acct-btn-primary { box-sizing: border-box; width: 100%; min-height: 54px; padding: 0 18px; border: 0; border-radius: 16px; background: var(--accent); color: var(--on-accent); font-family: inherit; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: none; transition: transform .12s, opacity .12s; }
 .acct-btn-primary:active { transform: scale(.98); opacity: .92; }
 .acct-btn-primary:disabled { opacity: .6; cursor: default; box-shadow: none; }
 .acct-btn-join, .acct-beta-card { box-sizing: border-box; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 16px; background: #fff; color: var(--text); font-family: inherit; text-align: left; cursor: pointer; transition: transform .12s, border-color .12s; }
@@ -1222,10 +1224,10 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .acct-slide .acct-title { font-size: 24px; line-height: 1.3; letter-spacing: -.03em; }
 .acct-slide .acct-sub { margin: 0; font-size: 13px; font-weight: 500; color: var(--text-muted); }
 .acct-slide .acct-logo { margin-bottom: 4px; }
-.acct-ob1-top { background: var(--accent); color: #fff; margin: -22px -18px 0; padding: 22px 18px 56px; border-radius: 0 0 28px 28px; }
-.acct-ob1-top .acct-title { color: #fff; margin-top: 12px; }
-.acct-ob1-top .acct-sub { color: rgba(255,255,255,.85); margin-top: 6px; }
-.acct-logo-w { color: #fff; margin: 0; }
+.acct-ob1-top { background: var(--accent); color: var(--on-accent); margin: -22px -18px 0; padding: 22px 18px 56px; border-radius: 0 0 28px 28px; }
+.acct-ob1-top .acct-title { color: var(--on-accent); margin-top: 12px; }
+.acct-ob1-top .acct-sub { color: color-mix(in srgb, var(--on-accent) 85%, transparent); margin-top: 6px; }
+.acct-logo-w { color: var(--on-accent); margin: 0; }
 .acct-ob1-cal { margin-top: -44px; position: relative; background: #fff; border-radius: 18px; padding: 12px; box-shadow: 0 8px 22px rgba(36,37,42,.12); }
 .acct-ob1-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
 .acct-ob1-chips span { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; color: var(--text); }
@@ -1316,7 +1318,7 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .acct-child-title { margin: 0 0 12px; font-size: 20px; line-height: 1.3; font-weight: 800; color: var(--text); }
 .acct-seg { display: flex; gap: 6px; padding: 4px; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; }
 .acct-seg button { flex: 1 1 0; min-height: 44px; border: 0; border-radius: 10px; background: transparent; font-size: 15px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
-.acct-seg button.on { background: var(--accent); color: #fff; }
+.acct-seg button.on { background: var(--accent); color: var(--on-accent); }
 
 /* G10: 인증 확인 전 중립 화면(가운데 로고) — 계정 모드에서만 만들어진다 */
 .acct-splash { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: flex; align-items: center; justify-content: center; }
@@ -1430,7 +1432,7 @@ body.acct-design .us-detail .detail-row { display: flex; justify-content: space-
 body.acct-design .us-detail .detail-row .label { flex: none; margin: 0; font-size: 13px; font-weight: 700; color: var(--text-muted); text-align: left; }
 body.acct-design .us-detail .us-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
 body.acct-design .us-detail .us-actions .us-btn { min-height: 48px; border-radius: 14px; }
-body.acct-design .us-detail .us-actions .us-btn[data-us-action="toggle-done"] { grid-column: 1 / -1; min-height: 52px; background: var(--accent); border-color: var(--accent); color: #fff; font-size: 15px; }
+body.acct-design .us-detail .us-actions .us-btn[data-us-action="toggle-done"] { grid-column: 1 / -1; min-height: 52px; background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-size: 15px; }
 body.acct-design .us-detail .us-actions .us-btn[data-us-action="delete"] { background: var(--c-danger-soft); color: var(--c-danger); border-color: var(--c-danger-line); }
 body.acct-design .us-detail .us-actions .us-btn[data-us-action="close"], body.acct-design .us-detail .us-actions .us-btn[data-us-action="restore"] { grid-column: 1 / -1; background: var(--bg); border-color: transparent; color: var(--text-muted); }
 
@@ -1510,7 +1512,7 @@ body.acct-design .acct-nc-ghost i:nth-child(2) { width: 75%; }
 body.acct-design .acct-nc-ghost i:nth-child(3) { width: 55%; }
 body.acct-design .acct-nc-seg { display: flex; margin: 0 0 12px; padding: 3px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; }
 body.acct-design .acct-nc-seg span { flex: 1; padding: 8px 0; border-radius: 9px; text-align: center; font-size: 13px; font-weight: 700; color: var(--text-muted); }
-body.acct-design .acct-nc-seg span.on { background: var(--accent); color: #fff; }
+body.acct-design .acct-nc-seg span.on { background: var(--accent); color: var(--on-accent); }
 body.acct-design #empty-panel .home-sec { margin-bottom: 12px; }
 /* 아이 등록 시트 */
 body.acct-design .acct-cs { display: flex; flex-direction: column; gap: 8px; }
@@ -1522,7 +1524,7 @@ body.acct-design .acct-cs-lb small, body.acct-design .acct-cs-phr small { font-w
 body.acct-design .acct-cs-inp, body.acct-design .acct-cs-sel { width: 100%; min-height: 48px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: #fff; font-size: 16px; color: var(--text); }
 body.acct-design .acct-cs-tg { display: flex; padding: 3px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; }
 body.acct-design .acct-cs-tg button { flex: 1; min-height: 40px; border: 0; border-radius: 9px; background: transparent; font-size: 14px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
-body.acct-design .acct-cs-tg button.on { background: var(--accent); color: #fff; }
+body.acct-design .acct-cs-tg button.on { background: var(--accent); color: var(--on-accent); }
 body.acct-design .acct-cs-date .date-picker-trigger { min-height: 48px; }
 body.acct-design .acct-cs-pv { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 9px 12px; border-radius: 12px; background: var(--c-badge-auto); }
 body.acct-design .acct-cs-pv.hidden { display: none; }
@@ -1538,7 +1540,7 @@ body.acct-design .acct-cs-ph { width: 44px; height: 44px; border-radius: 50%; ov
 body.acct-design .acct-cs-ph img { width: 100%; height: 100%; object-fit: cover; }
 body.acct-design .acct-cs-ph-empty { border: 1.5px dashed var(--line); color: var(--text-muted); }
 body.acct-design .acct-cs-ph-empty svg { width: 20px; height: 20px; }
-body.acct-design .acct-cs-save { min-height: 52px; margin-top: 6px; border: 0; border-radius: 14px; background: var(--accent); color: #fff; font-size: 16px; font-weight: 800; cursor: pointer; }
+body.acct-design .acct-cs-save { min-height: 52px; margin-top: 6px; border: 0; border-radius: 14px; background: var(--accent); color: var(--on-accent); font-size: 16px; font-weight: 800; cursor: pointer; }
 body.acct-design .acct-cs-save:disabled { opacity: .6; }
 /* G20 수정: 작은 화면에서도 [저장]이 항상 보이게 — 시트 본문만 스크롤, 저장은 아래 고정(safe-area 여백), 낮은 화면에서는 간격 축소 */
 body.acct-design .acct-cs-foot { position: sticky; bottom: -32px; z-index: 2; margin: 6px -20px -32px; padding: 10px 20px calc(14px + env(safe-area-inset-bottom)); background: linear-gradient(rgba(255,255,255,0), #fff 14px); }
@@ -1611,7 +1613,7 @@ body.acct-design .a36t-sec h4 { margin: 0 0 6px; font-size: 13px; font-weight: 8
 body.acct-design .a36t-ghost { display: flex; flex-direction: column; gap: 6px; }
 body.acct-design .a36t-ghost i { display: block; height: 9px; border-radius: 5px; background: var(--line); }
 body.acct-design .a36t-ghost i:nth-child(2) { width: 62%; }
-body.acct-design .a36t-btn { margin-top: 10px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; }
+body.acct-design .a36t-btn { margin-top: 10px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--accent); color: var(--on-accent); font-size: 14px; font-weight: 800; cursor: pointer; }
 body.acct-design .a36t-privacy { margin: 4px 2px 16px; font-size: 12px; line-height: 1.5; color: var(--text-muted); }
 
 body.acct-design .a36-autob{font-style:normal;font-size:11px;padding:1px 6px;border-radius:8px;background:var(--bg);color:var(--text);margin-right:4px}
@@ -1695,7 +1697,7 @@ body.acct-design .ns-pr small{color:var(--text-muted);font-size:12.5px}
 .btn-primary, .acct-btn-primary, .us-btn.us-primary, .modal-panel .btn-official, .btn-code-pill, .cs-add, .cal-todo-actions .btn-apply,
 body.acct-design .acct-cs-save, body.acct-design .a36t-btn, body.acct-design .as-save, body.acct-design .ns-primary,
 .modal-panel .apply-choice .btn-complete, .modal-panel #btn-na-restore, .modal-panel .completion-save, .modal-panel .btn-photo-save {
-  background: var(--c-primary); color: var(--c-primary-ink); border: 1px solid var(--c-primary); font-weight: 700;
+  background: var(--c-primary); color: var(--on-accent); border: 1px solid var(--c-primary); font-weight: 700;
 }
 .btn-primary:hover, .btn-primary:active { background: var(--c-primary); filter: brightness(.94); }
 .us-btn, .modal-panel .btn-na, .modal-panel .btn-close, body.acct-design .as-btn,
@@ -1712,8 +1714,8 @@ body.acct-design .as-cancel, body.acct-design .ns-close { color: var(--text-mute
 
 /* S2 탭·링크·진행: 차콜 */
 .nav-item.active { color: var(--c-active); box-shadow: inset 0 3px 0 var(--c-active); }
-.seg-tab.active { background: var(--c-active); color: var(--c-active-ink); box-shadow: none; }
-.seg-tab.active .seg-n { background: var(--c-primary); color: var(--c-primary-ink); }
+.seg-tab.active { background: var(--c-active); color: var(--on-accent); box-shadow: none; }
+.seg-tab.active .seg-n { background: var(--c-primary); color: var(--on-accent); }
 .sub-link, .acct-link, .auto-link-note { text-decoration: underline; text-underline-offset: 2px; }
 .progress-bar-fill, .cal-progress-bar .progress-bar-fill { background: var(--c-progress); }
 .us-form input:focus-visible, .us-form textarea:focus-visible, .us-form select:focus-visible, .rv-field input:focus-visible, .rv-field select:focus-visible,
@@ -1739,11 +1741,11 @@ body.acct-design .as-nc, body.acct-design .ns-nc { background: none; padding: 0;
 
 /* S6 '곧' 배너(차콜 면 + 흰 글자, 곧 배지는 S1) */
 body.acct-design .ns-banner { background: var(--c-soon); border-color: var(--c-soon); color: var(--c-soon-ink); }
-body.acct-design .ns-tag { background: var(--c-primary); color: var(--c-primary-ink); font-weight: 800; }
+body.acct-design .ns-tag { background: var(--c-primary); color: var(--on-accent); font-weight: 800; }
 body.acct-design .ns-bt small { color: var(--c-soon-ink); opacity: .78; }
 body.acct-design .ns-go { color: var(--c-soon-ink); font-weight: 700; }
 /* 타임라인·스텝 현재 단계: 오렌지 배경 없이 차콜 */
-body.acct-design .ns-cn.cur .ns-n, body.acct-design .as-current .as-n { background: var(--c-active); color: var(--c-active-ink); }
+body.acct-design .ns-cn.cur .ns-n, body.acct-design .as-current .as-n { background: var(--c-active); color: var(--on-accent); }
 body.acct-design .ns-cb > small { color: var(--text-muted); }
 
 /* S7 칩: 대표색 채움 + 칩 글자색, 선택한 사람은 S9 테두리 */
@@ -1767,7 +1769,7 @@ body.acct-design .as-info-chip { background: var(--c-badge-auto); color: var(--c
 /* 캘린더: 오늘 칸 = S1 테두리, 선택한 날 = 오렌지 30% 면 + 2px 테두리 + 아래 4px 막대 */
 .day-cell.today { background: transparent; box-shadow: none; font-weight: 800; } /* D41: 오늘 = 숫자 굵게 + 숫자 옆 작은 점(링 없음) */
 .calendar-grid-v2 .day-cell.selected { outline: none; background: transparent; box-shadow: inset 0 0 0 1.5px var(--cal-sel); } /* D41: 선택한 날 = 4면 같은 1.5px 선 + 투명 배경(옛 아래 4px 막대·30% 면 제거) */
-.us-tchip[aria-checked="true"] { background: var(--c-active); border-color: var(--c-active); color: var(--c-active-ink); }
+.us-tchip[aria-checked="true"] { background: var(--c-active); border-color: var(--c-active); color: var(--on-accent); }
 
 /* 온보딩 '한눈에' 강조: 연한 노랑 형광펜 + 굵은 글자 */
 .acct-hl { background: linear-gradient(transparent 55%, var(--c-hl) 55%); color: inherit; font-weight: 800; padding: 0 2px; }
@@ -1795,10 +1797,10 @@ input, select, textarea, button { color: var(--text); } /* 브라우저 기본 �
 .acct-ob1-top .acct-hl { color: var(--text); }
 .acct-btn-primary, .acct-step-foot .acct-btn-primary { border-radius: 999px; }
 .acct-step-back { border-radius: 999px; }
-.acct-form[data-acct-form="login"] .btn-complete { background: var(--c-primary); color: var(--c-primary-ink); border: 1px solid var(--c-primary); border-radius: 999px; font-weight: 800; min-height: 54px; }
+.acct-form[data-acct-form="login"] .btn-complete { background: var(--c-primary); color: var(--on-accent); border: 1px solid var(--c-primary); border-radius: 999px; font-weight: 800; min-height: 54px; }
 .acct-form[data-acct-form="login"] .btn-close { background: transparent; border-color: transparent; color: var(--text-muted); }
 .acct-radio { border-radius: 999px; background: var(--bg); border: 1.5px solid var(--line); }
-.acct-radio[aria-checked="true"] { background: var(--c-select); border-color: var(--c-select); color: var(--c-primary-ink); font-weight: 800; }
+.acct-radio[aria-checked="true"] { background: var(--c-select); border-color: var(--c-select); color: var(--on-accent); font-weight: 800; }
 .acct-input, .acct-select, #view-landing.acct-on #query-form input[type="text"], #view-landing.acct-on #query-form select, #view-landing.acct-on #query-form .date-picker-trigger { border: 0; border-bottom: 1.5px solid var(--line); border-radius: 0; background: transparent; padding-left: 2px; padding-right: 2px; }
 .acct-input:focus, .acct-select:focus, #view-landing.acct-on #query-form input[type="text"]:focus, #view-landing.acct-on #query-form select:focus { border-bottom: 2px solid var(--c-active); outline: none; }
 .acct-prog { gap: 4px; }
@@ -1807,16 +1809,16 @@ input, select, textarea, button { color: var(--text); } /* 브라우저 기본 �
 .acct-err { color: var(--c-danger); }
 .acct-seg { gap: 0; padding: 0; background: var(--surface); border: 1px solid var(--c-active); border-radius: 10px; overflow: hidden; }
 .acct-seg button { border-radius: 0; min-height: 40px; }
-.acct-seg button.on { background: var(--c-active); color: var(--c-active-ink); }
+.acct-seg button.on { background: var(--c-active); color: var(--on-accent); }
 .month-group-card.open::before { display: none; }
 .order-chip { border-radius: 999px; }
-.order-chip.active { background: var(--c-select); border-color: var(--c-select); color: var(--c-primary-ink); box-shadow: none; font-weight: 800; }
+.order-chip.active { background: var(--c-select); border-color: var(--c-select); color: var(--on-accent); box-shadow: none; font-weight: 800; }
 .order-chip.active .order-num { background: var(--c-primary-ink); color: var(--c-select); }
 
 /* v1.12.95 보정: 아이 등록 시트·아이 정보 전환 탭은 차콜 분할 탭, 입력칸은 밑줄형, 히어로 원은 글자 뒤로 */
 body.acct-design .acct-cs-tg, body.acct-design .acct-nc-seg { gap: 0; padding: 0; background: var(--surface); border: 1px solid var(--c-active); border-radius: 10px; overflow: hidden; }
 body.acct-design .acct-cs-tg button, body.acct-design .acct-nc-seg span { border-radius: 0; }
-body.acct-design .acct-cs-tg button.on, body.acct-design .acct-nc-seg span.on { background: var(--c-active); color: var(--c-active-ink); }
+body.acct-design .acct-cs-tg button.on, body.acct-design .acct-nc-seg span.on { background: var(--c-active); color: var(--on-accent); }
 body.acct-design .acct-cs-inp, body.acct-design .acct-cs-sel, body.acct-design .acct-cs-date .date-picker-trigger { border: 0; border-bottom: 1.5px solid var(--line); border-radius: 0; background: transparent; padding-left: 2px; padding-right: 2px; }
 body.acct-design .acct-cs-inp:focus, body.acct-design .acct-cs-sel:focus { border-bottom: 2px solid var(--c-active); outline: none; }
 .acct-ob1-top::after { left: auto; right: 24px; bottom: 8px; width: 56px; height: 56px; }
@@ -1864,22 +1866,31 @@ body.acct-design .a36t-nc { display: block; margin: 2px 0 0; font-size: 12px; fo
 .tcb-chip small { font-size: 12px; font-weight: 400; color: var(--text-muted); }
 .tcb-chip b { font-weight: 800; color: var(--nd-ink); }
 .apply-ch-btn { display: inline-block; margin: 6px 0 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--text); font-size: 13.5px; font-weight: 600; text-decoration: none; } /* 3-3 신청하는 곳 버튼 — 기존 .as-btn 모양 */
+/* ═══ D64 온보딩 첫 화면: 한 장짜리 + 화면 꽉 채우기(로그인 전 #view-landing.acct-simple 만) — 둥근 모서리·바깥 여백 없이 가장자리까지, 안전영역은 안쪽 요소가 직접 처리 ═══ */
+#view-landing.acct-simple .acct-landing.acct-ob { border-radius: 0; box-shadow: none; }
+#app:has(> #view-landing.acct-simple:not(.hidden)) { padding: 0; }
+#view-landing.acct-simple .acct-slide { flex: 1 1 auto; min-height: 0; padding: 0; overflow: hidden; }
+#view-landing.acct-simple.acct-on .acct-ob1-top { margin: 0; flex: 1 1 auto; min-height: 0; padding: calc(env(safe-area-inset-top) + 56px) max(24px, env(safe-area-inset-right)) 0 max(24px, env(safe-area-inset-left)); border-radius: 0; }
+#view-landing.acct-simple.acct-on .acct-ob1-top .acct-logo-w { top: calc(20px + env(safe-area-inset-top)); left: max(18px, calc(env(safe-area-inset-left) + 6px)); }
+#view-landing.acct-simple.acct-on .acct-cta { padding: 18px max(18px, env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); }
+@media (max-height: 620px) { #view-landing.acct-simple.acct-on .acct-cta { padding-bottom: calc(6px + env(safe-area-inset-bottom)); } }
+
 /* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
    인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
 :root {
-  --nd-indigo: #a85a1a;      /* 주요 버튼·장식 원 1·현재 점 */
+  --nd-indigo: #ff8a5c;      /* 주요 버튼·장식 원 1·현재 점 */
   --nd-wine: #8a1c3d;        /* 장식 원 2 · 시트 선 */
-  --nd-soft: #f8f2ed;        /* 시트·보조 면 */
-  --nd-soft2: #eeded1;       /* 보조 버튼 면 */
+  --nd-soft: #fff1e6;        /* 시트·보조 면 */
+  --nd-soft2: #ffe2d0;       /* 보조 버튼 면 */
   --nd-yellow: #fff0bd;      /* 선택 칩·탭·형광펜 */
   --nd-yellow-line: #f9cb34; /* 선택 칩 테두리 */
-  --nd-dot-off: #e4dcee;     /* 꺼진 진행 점 */
+  --nd-dot-off: #f0e2d6;     /* 꺼진 진행 점 */
   --nd-ob-bg: #ffffff;       /* 온보딩 바탕 */
   --nd-ob-circle1: #1f6f4a;  /* 온보딩 첫 화면 큰 원(초록) */
-  --nd-ob-circle2: #a85a1a;  /* 온보딩 첫 화면 작은 원(갈색) */
-  --nd-home-bg: #faf6f0;     /* 홈 바탕 */
+  --nd-ob-circle2: #ff8a5c;  /* 온보딩 첫 화면 작은 원(갈색) */
+  --nd-home-bg: #fff8f0;     /* 홈 바탕 */
   --nd-ink: #2a2118;
-  --nd-violet: #a85a1a;      /* 홈 추가 버튼 */
+  --nd-violet: #ff8a5c;      /* 홈 추가 버튼 */
   --nd-navy: #3a2412;        /* 홈 곧 배너 */
 }
 
@@ -1897,7 +1908,7 @@ body:has(#view-landing.acct-on:not(.hidden)) { background: var(--nd-ob-bg); }
 #view-landing.acct-on .acct-dot::before { width: 8px; margin-left: -4px; border-radius: 50%; background: var(--nd-dot-off); } /* 막대 없이 모두 점 */
 #view-landing.acct-on .acct-dot.on::before { width: 8px; margin-left: -4px; border-radius: 50%; background: var(--nd-indigo); }
 #view-landing.acct-on .acct-cta { background: transparent; border: 0; border-radius: 0; padding: 18px 18px 14px; gap: 8px; }
-#view-landing.acct-on .acct-cta [data-acct-action="open-login"] { min-height: 52px; border-radius: 13px; background: var(--nd-indigo); color: #fff; font-size: 16px; font-weight: 800; }
+#view-landing.acct-on .acct-cta [data-acct-action="open-login"] { min-height: 52px; border-radius: 13px; background: var(--nd-indigo); color: var(--on-accent); font-size: 16px; font-weight: 800; }
 #view-landing.acct-on .acct-cta [data-acct-action="open-signup"] { min-height: 48px; border: 0; background: transparent; color: var(--nd-ink); font-size: 14px; font-weight: 700; }
 #view-landing.acct-on .acct-cta [data-acct-action="open-login"]:active { background: var(--nd-indigo); opacity: .92; }
 /* D47: 로그인·가입 폼은 화면 가운데 카드(어둠막 위, 불투명 면, 내부 스크롤). 시트 CSS만 — 렌더 위치·AccountView 로직은 그대로 */
@@ -1918,8 +1929,8 @@ body:has(#view-landing.acct-on:not(.hidden)) { background: var(--nd-ob-bg); }
 #view-landing.acct-on #query-form #childName { border-color: var(--nd-yellow-line); }
 #view-landing.acct-on #query-form .order-chip, #view-landing.acct-on #query-form .region-chip { background: #fff; border: 1.5px solid var(--line); border-radius: 999px; color: var(--text); }
 #view-landing.acct-on #query-form .order-chip.active, #view-landing.acct-on #query-form .region-chip.active { background: var(--nd-yellow); border-color: var(--nd-yellow-line); color: var(--text); font-weight: 800; box-shadow: none; }
-#view-landing.acct-on #query-form .order-chip.active .order-num { background: var(--nd-indigo); color: #fff; }
-#view-landing.acct-on #query-form #btn-submit { background: var(--nd-indigo); border-color: var(--nd-indigo); color: #fff; border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
+#view-landing.acct-on #query-form .order-chip.active .order-num { background: var(--nd-indigo); color: var(--on-accent); }
+#view-landing.acct-on #query-form #btn-submit { background: var(--nd-indigo); border-color: var(--nd-indigo); color: var(--on-accent); border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
 
 /* ── 온보딩 ② 로그인·가입 시트 ── */
 .modal-panel:has([data-acct-form="login"]), .modal-panel:has([data-acct-form="signup"]) {
@@ -1929,7 +1940,7 @@ body:has(#view-landing.acct-on:not(.hidden)) { background: var(--nd-ob-bg); }
 .modal-panel:has([data-acct-form="login"]) .acct-input, .modal-panel:has([data-acct-form="signup"]) .acct-input { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding: 11px 14px; }
 .modal-panel:has([data-acct-form="login"]) .acct-input:focus, .modal-panel:has([data-acct-form="signup"]) .acct-input:focus { border-color: var(--nd-indigo); outline: none; }
 .modal-panel:has([data-acct-form="login"]) .acct-btn-primary, .modal-panel:has([data-acct-form="signup"]) .acct-btn-primary,
-.modal-panel:has([data-acct-form="login"]) .btn-complete { background: var(--nd-indigo); border: 0; color: #fff; border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
+.modal-panel:has([data-acct-form="login"]) .btn-complete { background: var(--nd-indigo); border: 0; color: var(--on-accent); border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
 .modal-panel:has([data-acct-form="signup"]) .acct-step-back { background: #fff; border-radius: 13px; }
 .modal-panel:has([data-acct-form="signup"]) .acct-steps { position: relative; }
 .modal-panel:has([data-acct-form="signup"]) .acct-steps::before { content: ""; position: absolute; right: 44px; top: -4px; width: 40px; height: 40px; border-radius: 50%; background: var(--nd-indigo); border: 3px solid #fff; }
@@ -1945,7 +1956,7 @@ body:has(#view-landing.acct-on:not(.hidden)) { background: var(--nd-ob-bg); }
 body:has(#view-calendar:not(.hidden) :is(#tab-home, #empty-panel):not(.hidden)) { background: var(--nd-home-bg); }
 #view-calendar:has(:is(#tab-home, #empty-panel):not(.hidden)) .app-title { color: var(--nd-ink); }
 #view-calendar:has(:is(#tab-home, #empty-panel):not(.hidden)) .btn-refresh:not(.has-update) { background: transparent; border-color: transparent; color: color-mix(in srgb, var(--text-muted) 55%, #fff); }
-#view-calendar:has(:is(#tab-home, #empty-panel):not(.hidden)) .btn-add-child { background: var(--nd-violet); border-color: var(--nd-indigo); color: #fff; }
+#view-calendar:has(:is(#tab-home, #empty-panel):not(.hidden)) .btn-add-child { background: var(--nd-violet); border-color: var(--nd-indigo); color: var(--on-accent); }
 :is(#tab-home, #empty-panel) .home-sec-head h3 { color: var(--nd-ink); }
 :is(#tab-home, #empty-panel) .home-viewall { background: #fff; }
 :is(#tab-home, #empty-panel) .sec-us-upcoming .home-more { background: var(--nd-soft); color: var(--nd-ink); border-color: var(--nd-soft); }
@@ -1959,7 +1970,7 @@ body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-tg { gap: 6p
 body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-tg button { border: 1.5px solid #fff; border-radius: 10px; background: #fff; color: color-mix(in srgb, var(--text-muted) 55%, #fff); }
 body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-tg button.on { background: var(--nd-yellow); border-color: var(--nd-indigo); color: var(--nd-ink); }
 body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-gch button.on { background: var(--nd-yellow); border-color: var(--nd-yellow-line); color: var(--text); }
-body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-save { background: var(--nd-indigo); color: #fff; border-radius: 13px; box-shadow: none; }
+body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-save { background: var(--nd-indigo); color: var(--on-accent); border-radius: 13px; box-shadow: none; }
 body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-foot { background: linear-gradient(rgba(240, 241, 255, 0), var(--nd-soft) 14px); }
 
 /* v1.12.97 보정: 임신 정보 수정·아이 정보 수정 시트(#ep-save) — docs/한눈육아-디자인명세-임신정보수정시트.md. --nd-* 변수만 쓴다 */
@@ -1973,7 +1984,7 @@ body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-foot { backg
 /* v1.12.100: ID 선택자(#ep-name)·버튼형 날짜 칸이 포커스 규칙을 덮던 것을 같은 강도로 맞춘다 — 포커스 = 인디고 2px */
 .modal-panel:has(#ep-save) #ep-name:focus-visible, .modal-panel:has(#ep-save) .date-picker-trigger:focus-visible, .modal-panel:has(#ep-save) .date-picker-trigger:focus { border: 2px solid var(--nd-indigo); outline: none; }
 .modal-panel:has(#ep-save) #ep-save:focus-visible, .modal-panel:has(#ep-save) #ep-cancel:focus-visible { outline: 2px solid var(--nd-indigo); outline-offset: 2px; }
-.modal-panel:has(#ep-save) #ep-save { background: var(--nd-indigo); color: #fff; border: 0; border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
+.modal-panel:has(#ep-save) #ep-save { background: var(--nd-indigo); color: var(--on-accent); border: 0; border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
 .modal-panel:has(#ep-save) #ep-cancel { background: #fff; border: 1.5px solid var(--line); border-radius: 13px; color: var(--nd-ink); }
 /* v1.12.100 (hn_design QA): 아이 없는 홈을 등록 후 홈과 맞춘다 — 배너 면은 홈 계열 소프트색, 내 카드 아바타·핀 색은 등록 후 홈(--c-badge-auto 살구·빨간 핀) */
 :is(#tab-home, #empty-panel) .acct-nc-ban { background: var(--nd-soft); }
@@ -1991,7 +2002,7 @@ body.acct-design :is(#tab-home, #empty-panel) .acct-nc-me-t small svg { color: v
 /* 비선택 구성원 색 칩은 앱 기본(구성원 색 면) 그대로 — 사람 구분 색을 선택 전에도 보이게 한다(QA 사전 차이 1) */
 .modal-panel:has(.us-form) .us-chip.active:not([style*="--us-color"]) { background: var(--nd-yellow); border: 1.5px solid var(--nd-yellow-line); color: var(--nd-ink); font-weight: 800; }
 .modal-panel:has(.us-form) .us-recommend .us-chip { background: #fff; border: 1.5px solid var(--nd-indigo); color: var(--nd-indigo); }
-.modal-panel:has(.us-form) .us-btn.us-primary { background: var(--nd-indigo); border: 0; color: #fff; border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
+.modal-panel:has(.us-form) .us-btn.us-primary { background: var(--nd-indigo); border: 0; color: var(--on-accent); border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
 .modal-panel:has(.us-form) .us-btn:not(.us-primary):not(.us-danger) { background: #fff; border: 1.5px solid var(--line); color: var(--nd-ink); border-radius: 13px; }
 .modal-panel:has(.us-form) :is(input, textarea, select):focus-visible, .modal-panel:has(.us-form) .date-picker-trigger:focus-visible { border: 2px solid var(--nd-indigo); outline: none; }
 /* 2. 항목 상세 시트 — 시트 면은 흰색 유지(D21 A) */
@@ -2000,13 +2011,13 @@ body.acct-design :is(#tab-home, #empty-panel) .acct-nc-me-t small svg { color: v
 .modal-panel:has(.as-steps) .acct-sub-head h3 { color: var(--nd-ink); }
 .modal-panel:has(.as-steps) .acct-sub-head .detail-tag:not(.prov-tag) { color: var(--text-muted) !important; }
 body.acct-design .modal-panel:has(.as-steps) .as-n { background: #fff; border: 1.5px solid var(--line); color: var(--text-muted); }
-body.acct-design .modal-panel:has(.as-steps) .as-current .as-n { background: var(--nd-indigo); border-color: var(--nd-indigo); color: #fff; }
-body.acct-design .modal-panel:has(.as-steps) .as-done .as-n { background: var(--nd-indigo); border-color: var(--nd-indigo); color: #fff; } /* D22 A: 완료도 인디고(진행 점 규칙과 같음) */
+body.acct-design .modal-panel:has(.as-steps) .as-current .as-n { background: var(--nd-indigo); border-color: var(--nd-indigo); color: var(--on-accent); }
+body.acct-design .modal-panel:has(.as-steps) .as-done .as-n { background: var(--nd-indigo); border-color: var(--nd-indigo); color: var(--on-accent); } /* D22 A: 완료도 인디고(진행 점 규칙과 같음) */
 .modal-panel:has(.as-steps) .as-b > b { color: var(--nd-ink); }
 body.acct-design .modal-panel:has(.as-steps) .as-btn { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; color: var(--nd-ink); }
 body.acct-design .modal-panel:has(.as-steps) .as-btn[data-as="apply"] { background: #fff; border: 1.5px solid var(--nd-indigo); color: var(--nd-indigo); } /* 안내 보기(링크) — 노랑은 '선택 상태'에만 */
-body.acct-design .modal-panel:has(.as-steps) .as-btn[data-as="link"] { background: var(--nd-indigo); border: 1.5px solid var(--nd-indigo); color: #fff; } /* 가족 캘린더에 넣기 — 이 시트의 주요 행동 */
-body.acct-design .modal-panel:has(.as-steps) .as-save { background: var(--nd-indigo); color: #fff; }
+body.acct-design .modal-panel:has(.as-steps) .as-btn[data-as="link"] { background: var(--nd-indigo); border: 1.5px solid var(--nd-indigo); color: var(--on-accent); } /* 가족 캘린더에 넣기 — 이 시트의 주요 행동 */
+body.acct-design .modal-panel:has(.as-steps) .as-save { background: var(--nd-indigo); color: var(--on-accent); }
 .modal-panel:has(.as-steps) details > summary { background: #fff; border: 1px solid var(--line); color: var(--nd-ink); font-weight: 800; }
 /* 3. 프로필 시트 */
 .modal-panel:has(.acct-prof-head) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); background: var(--nd-soft); }
@@ -2027,10 +2038,10 @@ body.acct-design .modal-panel:has(.as-steps) .auto-link-btn.btn-complete { backg
 /* ③-2 다음 단계 '미리 알아보기' 시트 — 시트 면 흰색 유지, 단계 번호는 상세 시트와 같은 모양(D22 A: 현재·완료 인디고), 주 버튼 인디고·보조 흰+선 */
 .modal-panel:has(.ns-chain) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); }
 body.acct-design .modal-panel:has(.ns-chain) .ns-n { background: #fff; border: 1.5px solid var(--line); color: var(--text-muted); }
-body.acct-design .modal-panel:has(.ns-chain) .ns-cn.cur .ns-n, body.acct-design .modal-panel:has(.ns-chain) .ns-cn.fin .ns-n { background: var(--nd-indigo); border-color: var(--nd-indigo); color: #fff; }
-body.acct-design .modal-panel:has(.ns-chain) .ns-primary { background: var(--nd-indigo); color: #fff; border-radius: 13px; font-weight: 800; }
+body.acct-design .modal-panel:has(.ns-chain) .ns-cn.cur .ns-n, body.acct-design .modal-panel:has(.ns-chain) .ns-cn.fin .ns-n { background: var(--nd-indigo); border-color: var(--nd-indigo); color: var(--on-accent); }
+body.acct-design .modal-panel:has(.ns-chain) .ns-primary { background: var(--nd-indigo); color: var(--on-accent); border-radius: 13px; font-weight: 800; }
 body.acct-design .modal-panel:has(.ns-chain) .ns-chip { background: #fff; border: 1.5px solid var(--line); color: var(--nd-ink); }
 /* ③-3 아이 전환·추가 시트 — 면 연보라, '새 아이 추가' 인디고 면, 현재 아이 표시('보는 중')는 선택 상태 노랑 */
 .modal-panel:has(.cs-list) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); background: var(--nd-soft); }
-body.acct-design .modal-panel:has(.cs-list) .cs-add { background: var(--nd-indigo); border: 0; color: #fff; border-radius: 13px; min-height: 52px; font-weight: 800; }
+body.acct-design .modal-panel:has(.cs-list) .cs-add { background: var(--nd-indigo); border: 0; color: var(--on-accent); border-radius: 13px; min-height: 52px; font-weight: 800; }
 .modal-panel:has(.cs-list) .cs-now { background: var(--nd-yellow); border: 1.5px solid var(--nd-yellow-line); color: var(--nd-ink); }

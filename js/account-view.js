@@ -326,14 +326,9 @@
     const s = state || {};
     const O = MSG.onboard;
     if (s.user) return `<div class="card acct-landing" id="acct-landing"><div class="acct-logo">${esc(MSG.logo)}</div><p class="fine-print">${esc(MSG.loggedInAs(s.user.displayName || s.user.email))}</p><div class="acct-actions"><button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div></div>`;
-    // 온보딩 첫 화면(D41 시안1): 1장 = 로고(왼쪽 위)·제목·보조(가운데) + 원 2개 / 2장(메인 기능 5개) + 아래 고정 버튼 [로그인]·[회원가입]·가족코드 안내 한 줄.
-    const feats = O.ob2Feats.map(([k, t, d]) => `<div class="acct-feat"><span class="acct-feat-ic acct-feat-${k}">${FEAT_ICO[k]}</span><span><b>${esc(t)}</b><span>${esc(d)}</span></span></div>`).join("");
+    // 온보딩 첫 화면(D64): 한 장짜리 — 로고(왼쪽 위)·제목·보조(가운데) + 원 2개, 아래 고정 버튼 [로그인]·[회원가입]·가족코드 안내 한 줄. 2번째 화면(메인 기능 5개)·점은 없앴다(문구 상수 ob2*·FEAT_ICO 는 D51 보류로 보존, 미노출).
     return `<div class="card acct-landing acct-ob" id="acct-landing"><div class="acct-main">
-      <div class="acct-slides" data-acct-slides tabindex="0" aria-label="${esc(O.ob2Aria)}">
-        <section class="acct-slide" data-acct-slide="0" aria-label="1/2"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title).replace("한눈에", '<mark class="acct-hl">한눈에</mark>')}</h1><p class="acct-sub">${lines(O.ob1Sub)}</p></div></section>
-        <section class="acct-slide acct-slide2" data-acct-slide="1" aria-label="2/2"><p class="acct-brand">${esc(O.ob2Brand)}</p><p class="acct-lead">${lines(O.ob2Lead)}</p><div class="acct-feats">${feats}</div></section>
-      </div>
-      <div class="acct-dots" role="tablist" aria-label="${esc(O.ob2Aria)}"><button type="button" class="acct-dot on" role="tab" aria-selected="true" data-acct-action="slide-go" data-slide-to="0" aria-label="1/2"></button><button type="button" class="acct-dot" role="tab" aria-selected="false" data-acct-action="slide-go" data-slide-to="1" aria-label="2/2"></button></div>
+        <section class="acct-slide" data-acct-slide="0"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title).replace("한눈에", '<mark class="acct-hl">한눈에</mark>')}</h1><p class="acct-sub">${lines(O.ob1Sub)}</p></div></section>
       <div class="acct-cta">
         <button type="button" class="acct-btn-primary" data-acct-action="open-login">${esc(O.loginBtn)}</button>
         <button type="button" class="acct-btn-text" data-acct-action="open-signup">${esc(O.primary)}</button>

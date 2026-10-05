@@ -26,7 +26,7 @@
   border: 1px solid var(--border); background: var(--card-bg); color: var(--text-muted);
   font-size: 13px; font-weight: 600; cursor: pointer;
 }
-.places-chip.active { background: var(--accent); border-color: transparent; color: #fff; }
+.places-chip.active { background: var(--accent); border-color: transparent; color: var(--on-accent); }
 
 /* 편집 추천 표기 */
 .places-head { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; }
@@ -60,7 +60,7 @@
 }
 .places-add {
   flex: 1 1 0; min-width: 0; min-height: 40px; border: none; border-radius: 12px;
-  background: var(--accent); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
+  background: var(--accent); color: var(--on-accent); font-size: 14px; font-weight: 700; cursor: pointer;
 }
 .places-add:active { background: var(--accent-dark, var(--accent)); }
 
@@ -134,7 +134,7 @@
   border-radius: 12px; border: 1.5px solid var(--text); background: var(--card-bg); color: var(--text);
   font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap;
 }
-.places-filter-btn em { font-style: normal; min-width: 18px; padding: 1px 5px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 11px; line-height: 16px; text-align: center; box-sizing: border-box; }
+.places-filter-btn em { font-style: normal; min-width: 18px; padding: 1px 5px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 11px; line-height: 16px; text-align: center; box-sizing: border-box; }
 .places-active { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 2px; }
 .places-active-chip {
   display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 4px 10px; border-radius: 999px;
@@ -177,7 +177,7 @@
   color: var(--text); font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
 }
 .places-sheet-go {
-  flex: 1 1 auto; min-height: 48px; border: none; border-radius: 12px; background: var(--accent); color: #fff;
+  flex: 1 1 auto; min-height: 48px; border: none; border-radius: 12px; background: var(--accent); color: var(--on-accent);
   font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer;
 }
 .places-sheet-go:active { background: var(--accent-dark); }
@@ -208,7 +208,7 @@
   min-height: 40px; border: none; border-radius: 12px; background: #fff; color: var(--text);
   font-size: 14px; font-weight: 800; box-shadow: 0 2px 8px rgba(36, 37, 42, .14);
 }
-.places-dmap-btns .places-route { background: var(--accent); color: #fff; }
+.places-dmap-btns .places-route { background: var(--accent); color: var(--on-accent); }
 .places-detail-bd { display: flex; flex-direction: column; gap: 9px; padding-top: 14px; min-width: 0; }
 .places-detail-bd > * { margin: 0; }
 .places-detail-bd .places-badges { margin: 0; }

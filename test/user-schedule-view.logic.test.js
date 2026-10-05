@@ -361,11 +361,12 @@ test("상세: 미완료는 '완료했어요', 완료는 '완료 취소', 수정�
   const c = { key: "k", scheduleId: "s", title: EVIL, categoryLabel: "병원·검진", timeText: "종일", dateText: "", tag: "은찬이", color: "#f4e07c", done: false, location: EVIL, memo: EVIL };
   const html = V.renderDetail(c);
   assert(!html.includes("<img") && html.includes("&lt;img"));
-  assert(html.includes(">완료했어요<") && !html.includes("완료 취소"));
-  ["toggle-done", "edit", "delete", "close"].forEach((a) => assert(html.includes(`data-us-action="${a}"`), a));
+  assert(!html.includes(">완료했어요<") && !html.includes("완료 취소") && !html.includes('data-us-action="toggle-done"')); // D63: 직접 추가한 일정 상세에는 완료 버튼 없음
+  ["edit", "delete", "close"].forEach((a) => assert(html.includes(`data-us-action="${a}"`), a));
   const done = V.renderDetail({ ...c, done: true });
   assert(done.includes(">완료 취소<") && !done.includes(">완료했어요<") && done.includes('<span class="us-done">완료</span>'));
-  assert.deepStrictEqual(V.detailView({ ...c, done: false }).actions.map((a) => a.id), ["toggle-done", "edit", "delete", "close"]);
+  assert.deepStrictEqual(V.detailView({ ...c, done: false }).actions.map((a) => a.id), ["edit", "delete", "close"]);
+  assert.deepStrictEqual(V.detailView({ ...c, done: true }).actions.map((a) => a.id), ["toggle-done", "edit", "delete", "close"]); // 이미 완료된 일정: 되돌리기(완료 취소)는 유지
 });
 test("삭제 확인: 승인 문구(#54~#56)와 버튼", () => {
   const h = V.renderDeleteConfirm();
@@ -536,7 +537,7 @@ test("정적 확인: DOM·저장소·네트워크·Firestore·자동 일정 완�
   ["document.", "window.", "localStorage", "sessionStorage", "firebase", "fetch(", "FamilySync", "HouseholdSync", "navigator", "innerHTML", "addEventListener", "completed", "toISOString", "new Date"].forEach((w) => assert(!src.includes(w), w + " 참조"));
 });
 test("data-us-action 은 정해진 값만 쓴다", () => {
-  const all = [V.renderForm(F({}), LINKS), V.renderDetail({ key: "k", scheduleId: "s", title: "t", categoryLabel: "", timeText: "", dateText: "", tag: "", color: "#f4e07c", done: false }), V.renderDeleteConfirm(), V.renderAddButton({ enabled: true, hasHousehold: true }), V.renderFilterChips(V.filterChips(LINKS, []), { mode: "kids" })].join("");
+  const all = [V.renderForm(F({}), LINKS), V.renderDetail({ key: "k", scheduleId: "s", title: "t", categoryLabel: "", timeText: "", dateText: "", tag: "", color: "#f4e07c", done: false }), V.renderDetail({ key: "k", scheduleId: "s", title: "t", categoryLabel: "", timeText: "", dateText: "", tag: "", color: "#f4e07c", done: true }), V.renderDeleteConfirm(), V.renderAddButton({ enabled: true, hasHousehold: true }), V.renderFilterChips(V.filterChips(LINKS, []), { mode: "kids" })].join("");
   const acts = new Set([...all.matchAll(/data-us-action="([^"]+)"/g)].map((m) => m[1]));
   assert.deepStrictEqual([...acts].sort(), ["add", "cancel", "cancel-delete", "close", "confirm-delete", "delete", "edit", "save", "toggle-cat-color", "toggle-done", "toggle-only-user"]);
 });
@@ -666,11 +667,12 @@ test("회차 상세 버튼: 이 날 완료/취소, 수정, 삭제, 닫기 / 취�
   const d = recDoc({ exceptions: { "2026-10-08": { status: "CANCELLED" }, "2026-10-15": { status: "DONE" } } });
   const m = occsOf([d]);
   const view = (k, list = "user") => V.detailView(V.cardData(m.days.get(k)[list][0], LINKS, { recurrence: d.recurrence }));
-  assert.deepStrictEqual(view("2026-10-06").actions.map((a) => [a.id, a.label]), [["toggle-done", "이 날 완료했어요"], ["edit", "수정"], ["delete", "삭제"], ["close", "닫기"]]);
+  assert.deepStrictEqual(view("2026-10-06").actions.map((a) => [a.id, a.label]), [["edit", "수정"], ["delete", "삭제"], ["close", "닫기"]]); // D63: 완료 버튼 없음
+  assert.deepStrictEqual(view("2026-10-15").actions.map((a) => a.id), ["toggle-done", "edit", "delete", "close"]);
   assert.strictEqual(view("2026-10-15").actions[0].label, "이 날 완료 취소");
   assert.deepStrictEqual(view("2026-10-08", "cancelled").actions.map((a) => [a.id, a.label]), [["restore", "취소 되돌리기"], ["close", "닫기"]]);
   const single = V.detailView(V.cardData(model([sched({})]).days.get("2026-10-06").user[0], LINKS));
-  assert.deepStrictEqual(single.actions.map((a) => a.label), ["완료했어요", "수정", "삭제", "닫기"]);
+  assert.deepStrictEqual(single.actions.map((a) => a.label), ["수정", "삭제", "닫기"]);
 });
 test("회차 상세 HTML: 반복 배지·요약 행·날짜 행(원래 날짜)·취소됨 / 날짜별 변경 많음 안내(180/200)", () => {
   const d = recDoc({ exceptions: { "2026-10-08": { status: "CANCELLED" } } });

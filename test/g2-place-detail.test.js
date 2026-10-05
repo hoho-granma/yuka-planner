@@ -61,11 +61,11 @@ test("날짜 기본값: 다가오는 토요일(오늘이 토요일이면 오늘)
   assert.strictEqual(PV.dateLabel("x"), "");
   assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(PV.defaultVisitDate()));
 });
-test("등록 단계 마크업: 날짜(주입한 date-picker)·종일 칩(기본)·담당 칩·대상 칩(가족 전체 기본 + 아이)·시간 선택은 종일 해제 때만·오류 표시·저장 중 비활성", () => {
+test("등록 단계 마크업: 날짜(주입한 date-picker)·종일 칩(기본)·(D66: 담당 칩 없음)·대상 칩(가족 전체 기본 + 아이)·시간 선택은 종일 해제 때만·오류 표시·저장 중 비활성", () => {
   const reg = { date: "2026-10-03", allDay: true, assignee: "m1", scope: "FAMILY", childKeys: [] };
   const h = PV.renderDetail(PL, { mode: "register", reg, pickerHtml: "<div id=\"plr-dp-btn\"></div>", members: [{ memberId: "m1", label: "엄마" }, { memberId: "m2", label: "아빠" }], kids: [{ childKey: "c1", name: "수아" }] });
-  assert.ok(h.includes('id="plr-dp-btn"') && h.includes("data-places-allday") && h.includes('data-places-assignee="m1"') && h.includes('data-places-target="FAMILY"') && h.includes('data-places-target="c1"') && h.includes("data-places-save") && !h.includes("plr-start-h"));
-  assert.ok(/aria-pressed="true" data-places-assignee="m1"/.test(h) && /aria-pressed="true" data-places-target="FAMILY"/.test(h));
+  assert.ok(h.includes('id="plr-dp-btn"') && h.includes("data-places-allday") && !h.includes("data-places-assignee") && h.includes('data-places-target="FAMILY"') && h.includes('data-places-target="c1"') && h.includes("data-places-save") && !h.includes("plr-start-h"));
+  assert.ok(/aria-pressed="true" data-places-target="FAMILY"/.test(h));
   const timed = PV.renderDetail(PL, { mode: "register", reg: { ...reg, allDay: false, startTime: "10:30", error: "시작 시각을 골라 주세요" }, members: [], kids: [] });
   assert.ok(timed.includes('id="plr-start-h"') && timed.includes('<option value="10" selected>') && timed.includes('<option value="30" selected>') && timed.includes("시작 시각을 골라 주세요") && !timed.includes("data-places-assignee"));
   assert.ok(PV.renderDetail(PL, { mode: "register", reg: { ...reg, saving: true } }).includes("disabled"));

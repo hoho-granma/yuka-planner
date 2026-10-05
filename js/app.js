@@ -1628,7 +1628,7 @@
   }
   // ═══ D41 테마 자동 전환: 지금 보는 아이가 36개월 이상이면 딥 포레스트(body.theme-forest), 그 밖(36개월 미만·임신 중·아이 없음·온보딩)은 웜 브라운(body.theme-warm). 칩·프로필로 아이를 바꾸면(renderAll) 바로 바뀐다. ═══
   const THEME_KEY = "hannun_theme_last"; // 첫 그림 전에 index.html 이 읽는 '마지막 테마' 캐시 — 기준은 아이 월령이고 이 값은 깜빡임 방지용일 뿐
-  const THEME_BAR = Object.freeze({ warm: "#faf6f0", forest: "#f6f8f5" }); // 브라우저 막대 색 = 테마 --bg
+  const THEME_BAR = Object.freeze({ warm: "#fff8f0", forest: "#f6f8f5" }); // 브라우저 막대 색 = 테마 --bg
   function themeFor() {
     try { if (profile && !isPregnant() && ChildTimeline.completedMonths(profile.birthDate, new Date()) >= ChildTimeline.OVER36_FROM_MONTHS) return "forest"; } catch (e) {}
     return "warm";
@@ -6465,7 +6465,6 @@
       slot.addEventListener("click", acctOnClick);
     }
     slot.innerHTML = AccountView.renderLanding({ user: acct.user, version: typeof self !== "undefined" ? self.APP_VERSION || "" : "" });
-    acctBindSlides(slot);
     // G1: 계정 기능이 켜졌을 때만 옛 첫 화면의 문구를 새 톤으로 바꾸고(OFF 는 기존 그대로), 첫 화면 모드(간단/둘러보기)를 적용한다.
     const O = AccountView.MSG.onboard;
     const title = el("hero-title");
@@ -6503,38 +6502,6 @@
       const on = b.getAttribute("data-acct-stage") === stage;
       b.classList.toggle("on", on);
       b.setAttribute("aria-checked", on ? "true" : "false");
-    });
-  }
-  /** G7 첫 화면 슬라이드: 스크롤(스와이프)·점·화살표 키로 장을 바꾸고 점 표시를 맞춘다. */
-  function acctSlidesOf(slot) {
-    return slot && slot.querySelector ? slot.querySelector("[data-acct-slides]") : null;
-  }
-  function acctSyncDots(slot) {
-    const sl = acctSlidesOf(slot);
-    if (!sl) return;
-    const idx = AccountView.slideIndex(sl.scrollLeft, sl.clientWidth, 2);
-    slot.querySelectorAll("[data-slide-to]").forEach((d) => {
-      const on = Number(d.getAttribute("data-slide-to")) === idx;
-      d.classList.toggle("on", on);
-      d.setAttribute("aria-selected", on ? "true" : "false");
-    });
-  }
-  function acctGoSlide(slot, n) {
-    const sl = acctSlidesOf(slot);
-    if (!sl) return;
-    const left = Math.max(0, Math.min(1, n)) * sl.clientWidth;
-    if (typeof sl.scrollTo === "function") sl.scrollTo({ left, behavior: "smooth" });
-    else sl.scrollLeft = left;
-    acctSyncDots(slot);
-  }
-  function acctBindSlides(slot) {
-    const sl = acctSlidesOf(slot);
-    if (!sl || !sl.addEventListener) return;
-    sl.addEventListener("scroll", () => acctSyncDots(slot), { passive: true });
-    sl.addEventListener("keydown", (ev) => {
-      if (ev.key !== "ArrowRight" && ev.key !== "ArrowLeft") return;
-      ev.preventDefault();
-      acctGoSlide(slot, AccountView.slideIndex(sl.scrollLeft, sl.clientWidth, 2) + (ev.key === "ArrowRight" ? 1 : -1));
     });
   }
   let acctBrowse = false; // (G7 이후 둘러보기 버튼은 없다 — 항상 false)
@@ -7134,7 +7101,6 @@
     const b = ev.target.closest("[data-acct-action]");
     if (!b || acct.busy) return;
     const action = b.getAttribute("data-acct-action");
-    if (action === "slide-go") return acctGoSlide(el("acct-landing-slot"), Number(b.getAttribute("data-slide-to")) || 0);
     if (action === "open-signup" || action === "open-login" || action === "open-join") {
       acct.mode = action === "open-login" ? "login" : "signup";
       acct.form = action === "open-join" ? { join: true, step: 2 } : {}; // 합류는 가족코드(2단계)부터 // G1: 가족 코드로 함께하기 = 가입 시트의 합류 모드(코드 칸 포커스)

@@ -150,7 +150,7 @@ test("CSS: 주 버튼 54px·둥근 16px·accent 채움·그림자·눌림·포�
   const g1 = CSS.slice(CSS.indexOf("/* G1: 첫 화면(계정 ON)"), CSS.indexOf("/* G6:")); // G7 슬라이드 CSS 는 아래 별도 블록
   const rule = (sel) => (g1.match(new RegExp("(^|\\n)" + sel.replace(/[.*+?^${}()|[\]\\:]/g, "\\$&") + "\\s*\\{([^}]*)\\}")) || [])[2] || "";
   const pri = rule(".acct-btn-primary");
-  assert.ok(/min-height:\s*54px/.test(pri) && /border-radius:\s*16px/.test(pri) && /background:\s*var\(--accent\)/.test(pri) && /color:\s*#fff/.test(pri) && /box-shadow:/.test(pri) && /width:\s*100%/.test(pri));
+  assert.ok(/min-height:\s*54px/.test(pri) && /border-radius:\s*16px/.test(pri) && /background:\s*var\(--accent\)/.test(pri) && /color:\s*var\(--on-accent\)/.test(pri) && /box-shadow:/.test(pri) && /width:\s*100%/.test(pri));
   assert.ok(/transform:\s*scale\(\.98\)/.test(rule(".acct-btn-primary:active")));
   assert.ok(/outline:\s*3px solid var\(--accent-dark\)/.test(g1.match(/\.acct-btn-primary:focus-visible[^{]*\{([^}]*)\}/)[0]));
   const join = rule(".acct-btn-join, .acct-beta-card");

@@ -108,6 +108,7 @@
     assigneeHint: "담당을 고르면 카드에 이름이 함께 보여요.",
     assigneeEmph: "누가 맡을지 골라 주세요. 담당을 정해 두면 가족 모두가 알 수 있어요.",
     deletedAssignee: "(삭제된 담당자)", // calendar-model.js 와 같은 문구
+    deletedMember: "(삭제된 구성원)", // D66: 담당 표시를 없애고 대상으로만 보이므로 문구도 구성원
     dateLabel: "날짜", // #23
     kindFixed: "날짜 정함", // #24
     kindPeriod: "날짜 미정 (기간)", // #24
@@ -550,14 +551,20 @@
     return o.endDate && o.endDate !== o.date ? MSG.dateRange(md(o.date), md(o.endDate)) : "";
   }
   /** 칸·카드의 대상 표시: 가족 일정이면 "가족 일정", 아이 일정이면 아이 이름들("A · B"). 분리된 아이는 "(분리된 아이)". */
+  /** D66: 구성원 일정(scope FAMILY + 그 구성원 id)의 대상 이름 — 대상 칩에서 '나'·엄마 등 구성원을 골라 저장한 일정. 없으면 "" (진짜 가족 일정). 삭제된 구성원은 '(삭제된 구성원)'. */
+  function memberTarget(o) {
+    const l = o && o.assigneeLabel;
+    if (!l) return "";
+    return l === MSG.deletedAssignee ? MSG.deletedMember : l;
+  }
   /** 카드 태그: 가족 일정이면 '가족 일정', 아이 일정이면 아이 이름들. 담당은 화면에 표시하지 않는다(데이터는 그대로 — 완료한 사람이 자동 기록되는 방식과 별개). */
   function tagText(o) {
-    if (o.scope === "FAMILY") return MSG.cardFamily;
+    if (o.scope === "FAMILY") return memberTarget(o) || MSG.cardFamily;
     return (o.badges || []).map((b) => (b.removed ? MSG.removedChild : b.displayName)).join(" · ");
   }
   /** 상세의 '대상' 줄: 담당과 별도로 대상만(가족 / 아이 이름들). */
   function targetText(o) {
-    if (o.scope === "FAMILY") return MSG.cardFamily;
+    if (o.scope === "FAMILY") return memberTarget(o) || MSG.cardFamily;
     return (o.badges || []).map((b) => (b.removed ? MSG.removedChild : b.displayName)).join(" · ");
   }
   /** CalendarModel 의 Occurrence(decorate 포함) → 카드/상세용 평범한 객체. */
@@ -663,7 +670,7 @@
 
   // ── 카드·상세·삭제 확인·추가 버튼 마크업 ────────────────────────────────────
   function renderCard(c) {
-    const meta = [c.categoryLabel, c.timeText, c.dateText, c.assigneeText ? MSG.assigneeCard(c.assigneeText) : ""].filter(Boolean).map(esc).join(" · ");
+    const meta = [c.categoryLabel, c.timeText, c.dateText].filter(Boolean).map(esc).join(" · ");
     const rec = c.recurring === true; // 반복 회차만 아래 군더더기가 붙는다 — 단일·기간 일정의 마크업은 B4 와 같다
     return `<button type="button" class="us-card${c.done ? " done" : ""}${c.cancelled ? " cancelled" : ""}" data-us-key="${esc(c.key)}" data-us-id="${esc(c.scheduleId)}"${rec ? ` data-us-date="${esc(c.originalDate)}"` : ""} style="--us-color:${safeColor(c.color)}">
       <span class="us-bar"></span>
@@ -674,16 +681,16 @@
       ${c.done ? `<span class="us-done">${esc(c.doneLabel)}</span>` : ""}${c.cancelled ? `<span class="us-cancelled">${esc(c.cancelledLabel)}</span>` : ""}
     </button>`;
   }
-  /** 일정 한 건 상세 모달. 완료 버튼은 상태에 따라 "완료했어요" ↔ "완료 취소". */
+  /** 일정 한 건 상세 모달(직접 추가한 일정). D63: '완료했어요' 버튼은 두지 않는다 — 이미 완료 처리된 일정에만 되돌리는 '완료 취소'가 남는다. */
   function detailView(c) {
     if (c.recurring === true) {
       // 반복 회차: 완료는 "이 날" 기준(R18). 취소된 회차는 되돌리기와 닫기만(R34). 수정·삭제는 범위 시트(R20·R24)로 이어진다.
       const actions = c.cancelled
         ? [{ id: "restore", label: MSG.btnRestore }, { id: "close", label: MSG.btnClose }]
-        : [{ id: "toggle-done", label: c.done ? MSG.btnUndoneDay : MSG.btnDoneDay }, { id: "edit", label: MSG.btnEdit }, { id: "delete", label: MSG.btnDelete }, { id: "close", label: MSG.btnClose }];
+        : [...(c.done ? [{ id: "toggle-done", label: MSG.btnUndoneDay }] : []), { id: "edit", label: MSG.btnEdit }, { id: "delete", label: MSG.btnDelete }, { id: "close", label: MSG.btnClose }];
       return { ...c, actions };
     }
-    return { ...c, actions: [{ id: "toggle-done", label: c.done ? MSG.btnUndone : MSG.btnDone }, { id: "edit", label: MSG.btnEdit }, { id: "delete", label: MSG.btnDelete }, { id: "close", label: MSG.btnClose }] };
+    return { ...c, actions: [...(c.done ? [{ id: "toggle-done", label: MSG.btnUndone }] : []), { id: "edit", label: MSG.btnEdit }, { id: "delete", label: MSG.btnDelete }, { id: "close", label: MSG.btnClose }] };
   }
   /** G15-3: 일정 상세의 대상·담당 앞 사람별 대표색 점(표시만). 아이=아이색(없으면 가족색), 담당=구성원 역할색(없으면 가족색). */
   function detailDots(occ, links) {
@@ -698,7 +705,6 @@
       [MSG.dateLabel, v.recurring ? [v.dayLabel, v.timeText].filter(Boolean).join(" · ") : [v.dateText, v.timeText].filter(Boolean).join(" · ")],
       ...(v.recurring ? [[MSG.repeatLabel, v.repeatSummary], ["", v.movedText]] : []),
       [MSG.targetLabel, v.targetText !== undefined ? v.targetText : v.tag, "target"],
-      [MSG.assigneeLabel, v.assigneeText, "assignee"],
       [MSG.locationLabel.replace(/ \(선택\)$/, ""), v.location],
       [MSG.memoLabel.replace(/ \(선택\)$/, ""), v.memo],
     ]

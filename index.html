@@ -12,12 +12,12 @@
 <meta name="theme-color" content="#ff6a1a" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
 <script>/* G19: 계정 모드(기본 ON)에서는 옛 상황 선택 화면이 첫 그림부터 한 번도 보이지 않게 한다(js/feature-flags.js 와 같은 규칙: accounts="0" 일 때만 OFF) */try{if(localStorage.getItem("hannun_feature_accounts")!=="0")document.documentElement.classList.add("hnacc-default");}catch(e){document.documentElement.classList.add("hnacc-default");}</script>
-<link rel="stylesheet" href="css/style.css?v=123" />
-  <link rel="stylesheet" href="css/places.css?v=10" />
+<link rel="stylesheet" href="css/style.css?v=124" />
+  <link rel="stylesheet" href="css/places.css?v=11" />
   <link rel="stylesheet" href="css/home-slots.css?v=1" />
 </head>
 <body>
-<script>/* D41 theme: 마지막 테마를 첫 그림 전에 붙인다(깜빡임 방지 — 기준은 앱이 아이 월령으로 다시 정한다) */try{var t=localStorage.getItem("hannun_theme_last");t=t==="forest"?"forest":"warm";document.body.classList.add("theme-"+t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="forest"?"#f6f8f5":"#faf6f0")}catch(e){document.body.classList.add("theme-warm")}</script>
+<script>/* D41 theme: 마지막 테마를 첫 그림 전에 붙인다(깜빡임 방지 — 기준은 앱이 아이 월령으로 다시 정한다) */try{var t=localStorage.getItem("hannun_theme_last");t=t==="forest"?"forest":"warm";document.body.classList.add("theme-"+t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="forest"?"#f6f8f5":"#fff8f0")}catch(e){document.body.classList.add("theme-warm")}</script>
   <main id="app">
     <!-- 1. 랜딩 -->
     <section id="view-landing" class="view">
@@ -280,7 +280,7 @@
   <script src="js/household-sync.js?v=8"></script>
   <script src="js/household-view.js?v=15"></script>
   <script src="js/auth-service.js?v=4"></script>
-  <script src="js/account-view.js?v=31"></script>
+  <script src="js/account-view.js?v=32"></script>
   <script src="js/account-sync.js?v=5"></script>
   <script src="js/version.js?v=1"></script>
   <script src="js/date-calc.js?v=1"></script>
@@ -297,7 +297,7 @@
   <script src="js/capture/ocr-tesseract.js?v=1"></script>
   <script src="js/capture/photo-view.js?v=2"></script>
   <script src="js/capture/ai-parser.js?v=1"></script>
-  <link rel="stylesheet" href="css/capture.css?v=1">
+  <link rel="stylesheet" href="css/capture.css?v=2">
   <script src="js/next-stage.js?v=5"></script>
   <script src="js/todo-engine.js?v=4"></script>
   <script src="js/schedule.js?v=18"></script>
@@ -313,13 +313,13 @@
   <script src="js/apply-channel-view.js?v=1"></script>
   <script src="js/apply-links.js?v=2"></script>
   <script src="js/places.js?v=3"></script>
-  <script src="js/places-view.js?v=13"></script>
+  <script src="js/places-view.js?v=14"></script>
   <script src="js/home-order.js?v=2"></script>
   <script src="js/pregnancy-basis.js?v=2"></script>
   <script src="js/time-range.js?v=2"></script>
   <script src="js/time-wheel.js?v=1"></script>
   <script src="js/schedule-kinds.js?v=2"></script>
-  <script src="js/user-schedule-view.js?v=32"></script>
+  <script src="js/user-schedule-view.js?v=33"></script>
   <script src="js/child-anniversaries.js?v=2"></script>
   <script src="js/tab-child-bar.js?v=1"></script>
   <script src="js/home-must.js?v=1"></script>
@@ -334,7 +334,7 @@
   <script src="js/tab-swipe.js?v=1"></script>
   <script src="js/edu-trend.js?v=3"></script>
   <script src="js/records-view.js?v=10"></script>
-  <script src="js/app.js?v=166"></script>
+  <script src="js/app.js?v=167"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

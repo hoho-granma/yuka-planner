@@ -2,7 +2,7 @@
 .us-capture .us-paste-wrap { position: relative; }
 .us-capture .us-paste { width: 100%; min-height: 110px; box-sizing: border-box; }
 .us-capture .us-mic { position: absolute; top: 6px; right: 6px; width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center; }
-.us-capture .us-mic[aria-pressed="true"] { background: var(--nd-indigo); color: #fff; border-color: var(--nd-indigo); }
+.us-capture .us-mic[aria-pressed="true"] { background: var(--nd-indigo); color: var(--on-accent); border-color: var(--nd-indigo); }
 .us-cand { display: flex; align-items: flex-start; gap: 8px; margin: 8px 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
 .us-cand-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .us-cand-title { font-size: 14px; }
@@ -25,7 +25,7 @@
 .cap-state h3 { margin: 0 0 8px; font-size: 17px; font-weight: 800; color: var(--nd-ink); }
 .cap-state p { margin: 0 0 10px; font-size: 14px; }
 .cap-state .cap-btn { display: block; width: 100%; min-height: 48px; margin-top: 8px; border-radius: 13px; font-weight: 800; }
-.cap-state .btn-complete.cap-btn { min-height: 52px; background: var(--nd-indigo); color: #fff; border-color: var(--nd-indigo); }
+.cap-state .btn-complete.cap-btn { min-height: 52px; background: var(--nd-indigo); color: var(--on-accent); border-color: var(--nd-indigo); }
 .cap-state .btn-close.cap-btn { background: #fff; border: 1.5px solid var(--line); color: var(--nd-ink); }
 .cap-bar { height: 8px; border-radius: 999px; background: var(--nd-soft2); overflow: hidden; margin: 6px 0 10px; }
 .cap-bar i { display: block; height: 100%; background: var(--nd-indigo); transition: width .2s; }

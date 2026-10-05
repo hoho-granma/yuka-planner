@@ -16,11 +16,11 @@ const at = (months) => { const d = new Date(); return new Date(d.getFullYear(), 
 
 console.log("색 토큰");
 test("기본(:root) = 웜 브라운, body.theme-forest 가 딥 포레스트 값으로 덮는다(확정 시안 값)", () => {
-  const W = { bg: "#faf6f0", line: "#e1e0df", text: "#2a2118", "text-muted": "#7b7570", "c-primary": "#a85a1a", accent: "#a85a1a", "c-select": "#a85a1a", "c-active": "#7a3f10", "accent-dark": "#7a3f10", "c-select-border": "#7a3f10", "c-soon": "#3a2412", "cal-sel": "#f9cb34" };
-  const F = { bg: "#f6f8f5", line: "#dfe1e0", text: "#1b2a22", "text-muted": "#727b76", "c-primary": "#1f6f4a", accent: "#1f6f4a", "c-select": "#1f6f4a", "c-active": "#1f6f4a", "accent-dark": "#1f6f4a", "c-select-border": "#1f6f4a", "c-soon": "#14382a", "cal-sel": "#f9cb34" };
+  const W = { bg: "#fff8f0", line: "#e1e0df", text: "#2a2118", "text-muted": "#7b7570", "c-primary": "#ff8a5c", accent: "#ff8a5c", "c-select": "#ff8a5c", "c-active": "#e8683a", "accent-dark": "#e8683a", "c-select-border": "#e8683a", "c-soon": "#3a2412", "on-accent": "#2a2118", "cal-sel": "#f9cb34" };
+  const F = { bg: "#f6f8f5", line: "#dfe1e0", text: "#1b2a22", "text-muted": "#727b76", "c-primary": "#1f6f4a", accent: "#1f6f4a", "c-select": "#1f6f4a", "c-active": "#1f6f4a", "accent-dark": "#1f6f4a", "c-select-border": "#1f6f4a", "c-soon": "#14382a", "cal-sel": "#f9cb34", "on-accent": "#ffffff" };
   for (const [k, c] of Object.entries(W)) assert.strictEqual(v(rootB, k), c, "warm " + k);
   for (const [k, c] of Object.entries(F)) assert.strictEqual(v(forestB, k), c, "forest " + k);
-  const N = { w: { "nd-indigo": "#a85a1a", "nd-soft": "#f8f2ed", "nd-soft2": "#eeded1", "nd-home-bg": "#faf6f0", "nd-ink": "#2a2118", "nd-violet": "#a85a1a", "nd-navy": "#3a2412" }, f: { "nd-indigo": "#1f6f4a", "nd-soft": "#edf3f1", "nd-soft2": "#d2e2db", "nd-home-bg": "#f6f8f5", "nd-ink": "#1b2a22", "nd-violet": "#1f6f4a", "nd-navy": "#14382a" } };
+  const N = { w: { "nd-indigo": "#ff8a5c", "nd-soft": "#fff1e6", "nd-soft2": "#ffe2d0", "nd-home-bg": "#fff8f0", "nd-ink": "#2a2118", "nd-violet": "#ff8a5c", "nd-navy": "#3a2412" }, f: { "nd-indigo": "#1f6f4a", "nd-soft": "#edf3f1", "nd-soft2": "#d2e2db", "nd-home-bg": "#f6f8f5", "nd-ink": "#1b2a22", "nd-violet": "#1f6f4a", "nd-navy": "#14382a" } };
   for (const [k, c] of Object.entries(N.w)) assert.strictEqual(v(ndB, k), c, "warm " + k);
   for (const [k, c] of Object.entries(N.f)) assert.strictEqual(v(forestB, k), c, "forest " + k);
 });
@@ -51,7 +51,7 @@ test("선택한 날 = 4면 같은 1.5px 선(--cal-sel) + 투명 배경(아래 4p
 console.log("테마 자동 전환");
 function themeWorld(profile, pregnant) {
   const cls = new Set(), meta = { content: "", setAttribute(k, val) { meta.content = val; } }, ls = {}, calls = [];
-  const sb = { profile, isPregnant: () => !!pregnant, ChildTimeline: CT, Date, UserScheduleView: { setTheme: (t) => calls.push(t), setColorOrder: () => null }, hh: {}, HouseholdSync: { getMirror: () => null }, THEME_KEY: "hannun_theme_last", THEME_BAR: { warm: "#faf6f0", forest: "#f6f8f5" },
+  const sb = { profile, isPregnant: () => !!pregnant, ChildTimeline: CT, Date, UserScheduleView: { setTheme: (t) => calls.push(t), setColorOrder: () => null }, hh: {}, HouseholdSync: { getMirror: () => null }, THEME_KEY: "hannun_theme_last", THEME_BAR: { warm: "#fff8f0", forest: "#f6f8f5" },
     document: { body: { classList: { remove: (...a) => a.forEach((c) => cls.delete(c)), add: (c) => cls.add(c) } }, querySelector: () => meta }, localStorage: { setItem: (k, val) => (ls[k] = val) }, cls, meta, ls, calls };
   vm.createContext(sb);
   const i = APP.indexOf("  function themeFor() {"), j = APP.indexOf("  const renderAllThemeBase = renderAll;");
@@ -60,7 +60,7 @@ function themeWorld(profile, pregnant) {
 test("판정: 생후 36개월 정각부터 딥 포레스트, 35개월·임신 중·아이 없음·미등록은 웜 브라운(보는 아이 기준)", () => {
   const f = (p, pr) => { const w = themeWorld(p, pr); return [w.themeSync(), [...w.cls].join(), w.calls.join(), w.meta.content, w.ls.hannun_theme_last]; };
   assert.deepStrictEqual(f({ birthDate: at(36) }), ["forest", "theme-forest", "forest", "#f6f8f5", "forest"]);
-  assert.deepStrictEqual(f({ birthDate: at(35) }), ["warm", "theme-warm", "warm", "#faf6f0", "warm"]);
+  assert.deepStrictEqual(f({ birthDate: at(35) }), ["warm", "theme-warm", "warm", "#fff8f0", "warm"]);
   assert.strictEqual(f({ birthDate: at(120) }, true)[0], "warm", "임신 중"); assert.strictEqual(f(null)[0], "warm", "아이 없음");
 });
 test("아이를 바꾸면(profile 교체 후 다시 맞춤) 클래스가 하나만 붙은 채 즉시 전환되고 가족 팔레트도 같이 바뀐다", () => {
@@ -72,7 +72,7 @@ test("첫 그림 전 깜빡임 방지: index.html 인라인 스크립트가 마�
   const m = /<body>\n<script>\/\* D41 theme:[\s\S]*?<\/script>/.exec(HTML); assert.ok(m, "body 바로 뒤");
   const run = (stored) => { const cls = new Set(), meta = { content: "", setAttribute(k, val) { meta.content = val; } };
     vm.runInNewContext(m[0].replace(/^<body>\n<script>/, "").replace(/<\/script>$/, ""), { localStorage: { getItem: () => stored }, document: { body: { classList: { add: (c) => cls.add(c) } }, querySelector: () => meta } }); return [[...cls].join(), meta.content]; };
-  assert.deepStrictEqual(run("forest"), ["theme-forest", "#f6f8f5"]); assert.deepStrictEqual(run(null), ["theme-warm", "#faf6f0"]); assert.deepStrictEqual(run("x"), ["theme-warm", "#faf6f0"]);
+  assert.deepStrictEqual(run("forest"), ["theme-forest", "#f6f8f5"]); assert.deepStrictEqual(run(null), ["theme-warm", "#fff8f0"]); assert.deepStrictEqual(run("x"), ["theme-warm", "#fff8f0"]);
 });
 
 console.log("가족 색 팔레트(테마별 10칸)");

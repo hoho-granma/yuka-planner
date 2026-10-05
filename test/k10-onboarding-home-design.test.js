@@ -14,7 +14,7 @@ test("블록이 있고 마지막에 붙어 있다", () => { assert.ok(i > 0); as
 
 test("앱 전역 슬롯(:root 의 --c-primary·--accent·--c-active 등)은 인디고로 바뀌지 않았다", () => {
   const root = CSS.slice(0, CSS.indexOf("\n}\n"));
-  assert.ok(/--c-primary:\s*#a85a1a/.test(root) && /--accent:\s*#a85a1a/.test(root) && /--c-active:\s*#7a3f10/.test(root), "D41: 기본(:root) = 웜 브라운");
+  assert.ok(/--c-primary:\s*#ff8a5c/.test(root) && /--accent:\s*#ff8a5c/.test(root) && /--c-active:\s*#e8683a/.test(root), "D41: 기본(:root) = 웜 브라운");
   assert.ok(/body\.theme-forest \{[^}]*--c-primary:\s*#1f6f4a/.test(CSS), "D41: 딥 포레스트는 body.theme-forest 가 덮는다");
   assert.ok(!/#4a45c8/i.test(CSS.slice(0, i)), "옛 인디고는 이 블록 밖(기존 CSS)에 없다");
 });
@@ -28,9 +28,9 @@ test("새 규칙의 선택자는 모두 온보딩·홈 범위다(다른 화면 �
 
 test("인디고·와인 등 새 색 hex 는 :root 의 --nd-* 정의에만 있다(규칙에서는 변수로 쓴다)", () => {
   const body = BLOCK.slice(BLOCK.indexOf("}") + 1);
-  for (const hex of ["#a85a1a", "#8a1c3d", "#f8f2ed", "#eeded1", "#fff0bd", "#f9cb34", "#e4dcee", "#faf6f0", "#3a2412"]) assert.ok(!body.toLowerCase().includes(hex), hex + " 는 변수로");
+  for (const hex of ["#ff8a5c", "#8a1c3d", "#fff1e6", "#ffe2d0", "#fff0bd", "#f9cb34", "#f0e2d6", "#fff8f0", "#3a2412"]) assert.ok(!body.toLowerCase().includes(hex), hex + " 는 변수로");
   const root = BLOCK.slice(0, BLOCK.indexOf("}"));
-  for (const hex of ["#a85a1a", "#8a1c3d", "#f8f2ed", "#eeded1", "#fff0bd", "#f9cb34", "#e4dcee", "#faf6f0", "#3a2412"]) assert.ok(root.toLowerCase().includes(hex), hex);
+  for (const hex of ["#ff8a5c", "#8a1c3d", "#fff1e6", "#ffe2d0", "#fff0bd", "#f9cb34", "#f0e2d6", "#fff8f0", "#3a2412"]) assert.ok(root.toLowerCase().includes(hex), hex);
 });
 
 test("대비: 인디고·보라·남색 위 흰 글자 4.5:1 이상, 차콜·검정 글자는 노랑·라벤더 위에서 읽힌다", () => {

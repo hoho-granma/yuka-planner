@@ -61,11 +61,11 @@ const links = [{ childKey: "c1", displayName: "수아", colorKey: "p2" }];
 const ctx = { links, meId: "m1", ageOf: () => 8 };
 const form = () => { const f = V.newForm({ date: "2026-10-06", activeChildKey: "c1", links, defaultAssigneeId: "m1" }); return V.upgradeFormG13(f, ctx); };
 
-test("0-C1→D40: '담당' 입력 칩은 없앴다(누구 일정 칩 하나로 정함). 옛 일정 카드·상세의 담당 이름 표시는 그대로 읽힌다", () => {
+test("0-C1→D40: '담당' 입력 칩은 없앴다(누구 일정 칩 하나로 정함). D66: 카드·상세의 '담당' 표시도 없다(저장값만 남음)", () => {
   const f = form(); V.g13ApplyWho(f, "CHILD:c1", ctx);
   const h = V.renderFormG13(f, links, { members: kids, ctx });
   assert.ok(!h.includes("누가 데려가나요?") && !h.includes("data-us-assignee"));
-  assert.ok(V.renderCard({ key: "k", scheduleId: "s", title: "치과", categoryLabel: "병원", timeText: "", dateText: "", tag: "수아", assigneeText: "아빠", color: "#aaa" }).includes("담당 아빠"));
+  assert.ok(V.renderCard({ key: "k", scheduleId: "s", title: "치과", categoryLabel: "병원", timeText: "", dateText: "", tag: "수아", assigneeText: "아빠", color: "#aaa" }).includes("담당") === false);
 });
 
 test("0-C2: '예방접종' 종류를 고르면 미완료 접종·검진 후보 칩(자동 선택 없음), 고르지 않고 직접 입력도 가능", () => {

@@ -9,32 +9,29 @@ const APP = read("js/app.js"), CSS = read("css/style.css");
 let passed = 0;
 function test(name, fn) { try { fn(); passed++; console.log("  ok  - " + name); } catch (e) { process.exitCode = 1; console.log("  FAIL- " + name + "\n      " + (e.stack || e).split("\n").slice(0, 4).join("\n      ")); } }
 
-test("G11 1장: 타이틀 2줄, 칩 아빠·엄마·세현·수아(가족 없음)·사람별 색, 요일줄·날짜 14칸(오늘 표시), 일정 5개(라벨 접종·검진·지원금 3색), 예시 표기. 2장: 브랜드+회색 서브문구+기능 5개", () => {
+test("G11 1장: 타이틀 2줄, 칩 아빠·엄마·세현·수아(가족 없음)·사람별 색, 요일줄·날짜 14칸(오늘 표시), 일정 5개(라벨 접종·검진·지원금 3색), 예시 표기. D64: 2번째 화면(브랜드·기능 5개)·점은 없다", () => {
   const h = AV.renderLanding({});
-  const s0 = h.slice(h.indexOf('data-acct-slide="0"'), h.indexOf('data-acct-slide="1"'));
-  const s1 = h.slice(h.indexOf('data-acct-slide="1"'), h.indexOf('class="acct-dots"'));
+  const s0 = h.slice(h.indexOf('data-acct-slide="0"'), h.indexOf('class="acct-cta"'));
   assert.ok(s0.includes('육아하며 시기마다 필요한 것,<br><mark class="acct-hl">한눈에</mark>') && s0.includes("접종·검진·지원금부터 학교 준비까지.<br>지금 우리 아이에게 필요한 것을 먼저 챙겨드려요.") && !s0.includes("예시 화면이에요"));
   assert.ok(!s0.includes("acct-ob1-cal") && !s0.includes("사는 지역에 맞춰") && !/ob1(People|Days|Events|Weekdays)/.test(read("js/account-view.js")), "달력 미리보기·지역 문장·옛 상수 없음");
-  assert.ok(s1.includes('class="acct-brand">한눈육아') && s1.includes("이것저것 흩어져 챙기기 어려웠다면,<br>한눈육아에서 한방에 꼼꼼히 챙겨줘요") && !s1.includes("우리 가족 일정, 한눈에"));
-  assert.deepStrictEqual([...s1.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]), ["육아 일정 자동 챙김", "지원금·혜택 챙김", "육아 일정 관리", "가족 일정 공유", "집 근처 갈 만한 곳 추천"]);
-  assert.ok(s1.includes("우리 지역 지원금 신청 기한까지 챙겨요") && /\.acct-lead \{ margin: 8px 0 34px/.test(CSS));
+  assert.ok(!h.includes('data-acct-slide="1"') && !h.includes("acct-slide2") && !h.includes("acct-dots") && !h.includes("data-slide-to") && !h.includes("acct-feat") && !h.includes("acct-brand") && !h.includes("data-acct-slides"), "D64: 2장·점·슬라이더 없음");
+  assert.ok(h.includes('<section class="acct-slide" data-acct-slide="0">') && !h.includes('aria-label="1/2"'));
+  assert.ok(AV.MSG.onboard.ob2Feats.length === 5 && AV.MSG.onboard.ob2Brand, "D51 보류: 2장 문구 상수는 보존");
 });
-test("점 2개(첫 장 선택)·버튼은 두 장 공통으로 슬라이드 밖 아래(고정): 주 버튼 [로그인], 아래 [회원가입], 회색 안내 한 줄. [가족코드로 함께하기]·'이미 계정이 있어요' 줄·둘러보기 없음", () => {
+test("버튼은 한 장 화면 아래(고정): 주 버튼 [로그인], 아래 [회원가입], 회색 안내 한 줄. [가족코드로 함께하기]·'이미 계정이 있어요' 줄·둘러보기 없음", () => {
   const h = AV.renderLanding({});
-  assert.deepStrictEqual([...h.matchAll(/data-slide-to="(\d)"/g)].map((m) => m[1]), ["0", "1"]);
-  assert.ok(/class="acct-dot on" role="tab" aria-selected="true" data-acct-action="slide-go" data-slide-to="0"/.test(h));
   const cta = h.slice(h.indexOf('class="acct-cta"'));
-  assert.ok(h.indexOf('class="acct-cta"') > h.indexOf('data-acct-slide="1"') && !h.slice(0, h.indexOf('class="acct-cta"')).includes("open-signup"));
+  assert.ok(h.indexOf('class="acct-cta"') > h.indexOf('data-acct-slide="0"') && !h.slice(0, h.indexOf('class="acct-cta"')).includes("open-signup"));
   assert.ok(cta.indexOf("open-login") < cta.indexOf("open-signup"), "[로그인][회원가입] 순서");
   assert.deepStrictEqual([...cta.matchAll(/data-acct-action="([^"]+)">([^<]+)</g)].map((m) => [m[1], m[2]]), [["open-login", "로그인"], ["open-signup", "회원가입"]]);
   assert.ok(cta.includes('class="acct-btn-text" data-acct-action="open-signup"') && /\.acct-btn-text \{[^}]*min-height: 48px[^}]*border: 0[^}]*background: transparent[^}]*font-weight: 400/.test(CSS));
   assert.ok(cta.includes('class="acct-code-hint">가족코드를 받았다면 회원가입에서 입력해요'));
   assert.ok(!/open-join|가족코드로 함께하기|이미 계정이 있어요|가입 없이 둘러보기|이전 화면으로 돌아가기|data-acct-action="browse|beta-off-ask|browse-close/.test(h));
-  assert.ok(/\.acct-cta \{[^}]*position: sticky; bottom: 0/.test(CSS) && /\.acct-slides \{[^}]*overflow-x: auto; scroll-snap-type: x mandatory/.test(CSS) && /\.acct-slide \{[^}]*scroll-snap-align: start/.test(CSS));
+  assert.ok(/\.acct-cta \{[^}]*position: sticky; bottom: 0/.test(CSS));
 });
 test("D41 온보딩 첫 화면: 로고 왼쪽 위 32px·원 2개 변수색(196/116px)·글자 블록 가운데·CTA 테두리 없음·로그인↔회원가입 전환 링크", () => {
   const root = CSS.slice(CSS.indexOf(":root"), CSS.indexOf("}", CSS.indexOf("--nd-ob-bg")));
-  assert.ok(/--nd-ob-bg: #ffffff/.test(root) && /--nd-ob-circle1: #1f6f4a/.test(root) && /--nd-ob-circle2: #a85a1a/.test(root));
+  assert.ok(/--nd-ob-bg: #ffffff/.test(root) && /--nd-ob-circle1: #1f6f4a/.test(root) && /--nd-ob-circle2: #ff8a5c/.test(root));
   const blk = CSS.slice(CSS.indexOf('#view-landing.acct-on .acct-slide[data-acct-slide="0"]'), CSS.indexOf("/* ── 온보딩 ③"));
   assert.ok(/::before \{[^}]*width: 196px[^}]*var\(--nd-ob-circle1\)/.test(blk) && /::after \{[^}]*left: -46px[^}]*bottom: 6px[^}]*width: 116px[^}]*var\(--nd-ob-circle2\)/.test(blk));
   assert.ok(!/#[0-9a-fA-F]{6}\b/.test(blk.replace(/background: #fff;/g, "")), "블록 안 직접 hex 없음");
@@ -59,25 +56,9 @@ test("D41 폼 시트 회귀 방지: 시트(.modal)가 첫 화면 카피 층보�
 test("slideIndex: 스크롤 위치 → 장 번호(반올림·범위 고정), 폭 0이면 0", () => {
   assert.deepStrictEqual([AV.slideIndex(0, 390, 2), AV.slideIndex(194, 390, 2), AV.slideIndex(196, 390, 2), AV.slideIndex(390, 390, 2), AV.slideIndex(9999, 390, 2), AV.slideIndex(-5, 390, 2), AV.slideIndex(10, 0, 2)], [0, 0, 1, 1, 1, 0, 0]);
 });
-test("스와이프·점·키보드: 스크롤하면 점 표시가 바뀌고, 점을 누르면 그 장으로 이동, 좌우 화살표 키 지원", () => {
-  const dots = [0, 1].map((n) => { const cls = new Set(n === 0 ? ["on"] : []); const attrs = { "data-slide-to": String(n), "aria-selected": n === 0 ? "true" : "false" }; return { getAttribute: (k) => attrs[k], setAttribute: (k, v) => (attrs[k] = v), classList: { toggle: (c, on) => (on ? cls.add(c) : cls.delete(c)), has: (c) => cls.has(c) }, attrs }; });
-  const lst = {}; const sl = { scrollLeft: 0, clientWidth: 390, addEventListener: (t, f) => (lst[t] = f), scrollTo: ({ left }) => { sl.scrollLeft = left; lst.scroll(); } };
-  const slot = { querySelector: () => sl, querySelectorAll: () => dots };
-  const sb = { AccountView: AV, el: () => slot };
-  vm.createContext(sb);
-  const grab = (n) => { const i = APP.indexOf("  function " + n + "("); return APP.slice(i, APP.indexOf("\n  }\n", i) + 5); };
-  vm.runInContext(["acctSlidesOf", "acctSyncDots", "acctGoSlide", "acctBindSlides"].map(grab).join("\n") + ";globalThis.__t = { acctBindSlides, acctGoSlide };", sb);
-  sb.__t.acctBindSlides(slot);
-  sl.scrollLeft = 390; lst.scroll();
-  assert.deepStrictEqual([dots[0].classList.has("on"), dots[1].classList.has("on"), dots[1].attrs["aria-selected"]], [false, true, "true"]);
-  sb.__t.acctGoSlide(slot, 0);
-  assert.deepStrictEqual([sl.scrollLeft, dots[0].classList.has("on")], [0, true]);
-  let prevented = 0; lst.keydown({ key: "ArrowRight", preventDefault: () => prevented++ });
-  assert.deepStrictEqual([sl.scrollLeft, prevented], [390, 1]);
-  lst.keydown({ key: "ArrowLeft", preventDefault() {} });
-  assert.strictEqual(sl.scrollLeft, 0);
-  lst.keydown({ key: "Enter", preventDefault: () => { throw new Error("무관한 키"); } });
-  assert.ok(APP.includes('if (action === "slide-go") return acctGoSlide(el("acct-landing-slot")'));
+test("D64: 슬라이드 JS(점 동기·이동·키 처리·slide-go 액션) 삭제 — 남은 호출 없음, slideIndex 순수 함수는 보존", () => {
+  assert.ok(!/acctSlidesOf|acctSyncDots|acctGoSlide|acctBindSlides|slide-go/.test(APP));
+  assert.ok(typeof AV.slideIndex === "function");
 });
 test("OFF 첫 화면 불변: 새 마크업은 계정 모드(acctRenderLanding)에서만 만들어지고, index.html 의 옛 첫 화면·베타 카드 슬롯은 그대로", () => {
   assert.ok(/function acctRenderLanding\(\) \{\n    if \(!acctEnabled\(\)\) return;/.test(APP));
@@ -89,5 +70,13 @@ test("G12 높이 대응: 온보딩 화면은 화면 높이에 맞추고(버튼 �
   assert.ok(/#view-landing\.acct-simple \.acct-cta \{ flex: none; position: static; \}/.test(CSS));
   for (const h of [760, 700, 620, 600]) assert.ok(CSS.includes(`@media (max-height: ${h}px)`), String(h));
   assert.ok(/max-height: 700px\)[\s\S]*nth-child\(n\+5\)[\s\S]*max-height: 620px\)[\s\S]*nth-child\(n\+4\)/.test(CSS.slice(CSS.indexOf("/* G12:"))));
+});
+test("D64 꽉 찬 첫 화면(CSS): 래퍼 모서리 0, #app 여백 0, 슬라이드 패딩 0·히어로 음수 마진 없음, 안전영역은 안쪽 요소가 처리", () => {
+  assert.ok(/#view-landing\.acct-simple \.acct-landing\.acct-ob \{ border-radius: 0; box-shadow: none; \}/.test(CSS));
+  assert.ok(/#app:has\(> #view-landing\.acct-simple:not\(\.hidden\)\) \{ padding: 0; \}/.test(CSS));
+  assert.ok(/#view-landing\.acct-simple \.acct-slide \{[^}]*padding: 0/.test(CSS));
+  assert.ok(/#view-landing\.acct-simple\.acct-on \.acct-ob1-top \{ margin: 0;[^}]*safe-area-inset-top[^}]*border-radius: 0/.test(CSS));
+  assert.ok(/acct-simple\.acct-on \.acct-cta \{[^}]*calc\(14px \+ env\(safe-area-inset-bottom\)\)/.test(CSS));
+  assert.ok(/acct-simple\.acct-on \.acct-ob1-top \.acct-logo-w \{ top: calc\(20px \+ env\(safe-area-inset-top\)\)/.test(CSS));
 });
 console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);
