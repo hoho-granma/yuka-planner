@@ -184,10 +184,10 @@ const ST = { enabled: true, hasHousehold: true, members: MEMBERS, activeMemberId
     const c = mk({ scope: "CHILD", childKeys: ["c1"], assigneeMemberId: "m2" });
     assert.strictEqual(c.assigneeText, "아빠"); assert.strictEqual(c.targetText, "은찬");
   });
-  await test("상세: '대상' 줄은 대상만, 담당 줄은 화면에 없다(담당 데이터가 있어도)", () => {
+  await test("상세: '대상' 줄은 대상만, 담당 줄은 따로 '담당' 행으로 나온다(0-C1 복원)", () => {
     const base = { title: "t", categoryLabel: "건강", scope: "CHILD", dateText: "10/6", timeText: "", color: "#aaa", location: "", memo: "", done: false };
     const withA = V.renderDetail({ ...base, tag: "은찬 · 아빠", targetText: "은찬", assigneeText: "아빠" });
-    assert.ok(/<div class="label">대상<\/div>은찬<\/div>/.test(withA) && !withA.includes(">담당<") && !withA.includes("아빠"));
+    assert.ok(/<div class="label">대상<\/div>은찬<\/div>/.test(withA) && withA.includes(">담당<") && withA.includes("아빠"));
     const without = V.renderDetail({ ...base, tag: "은찬", targetText: "은찬", assigneeText: "" });
     assert.ok(!without.includes(">담당<"));
     const legacy = V.renderDetail({ ...base, tag: "가족" }); // targetText 가 없는 옛 객체도 tag 로 대상 줄을 그린다

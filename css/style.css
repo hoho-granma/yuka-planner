@@ -1866,15 +1866,15 @@ body:has(#view-landing.acct-on:not(.hidden)) { background: var(--nd-ob-bg); }
 .modal-panel:has([data-acct-form="login"]) .acct-radio, .modal-panel:has([data-acct-form="signup"]) .acct-radio { background: #fff; border: 1.5px solid var(--line); color: var(--text); }
 .modal-panel:has([data-acct-form="login"]) .acct-radio[aria-checked="true"], .modal-panel:has([data-acct-form="signup"]) .acct-radio[aria-checked="true"] { background: var(--nd-yellow); border-color: var(--nd-yellow-line); color: var(--text); font-weight: 800; }
 
-/* ── 홈(홈 탭이 보일 때만) ── */
-body:has(#view-calendar:not(.hidden) #tab-home:not(.hidden)) { background: var(--nd-home-bg); }
-#view-calendar:has(#tab-home:not(.hidden)) .app-title { color: var(--nd-ink); }
-#view-calendar:has(#tab-home:not(.hidden)) .btn-refresh:not(.has-update) { background: transparent; border-color: transparent; color: #ababab; }
-#view-calendar:has(#tab-home:not(.hidden)) .btn-add-child { background: var(--nd-violet); border-color: var(--nd-indigo); color: #fff; }
-#tab-home .home-sec-head h3 { color: var(--nd-ink); }
-#tab-home .home-viewall { background: #fff; }
-#tab-home .sec-us-upcoming .home-more { background: var(--nd-soft); color: var(--nd-ink); border-color: var(--nd-soft); }
-body.acct-design #tab-home .ns-banner { background: var(--nd-navy); border-color: var(--nd-navy); color: #fff; }
+/* ── 홈(홈 탭이 보일 때 + 아이를 아직 등록하지 않은 홈(#empty-panel)) ── */
+body:has(#view-calendar:not(.hidden) :is(#tab-home, #empty-panel):not(.hidden)) { background: var(--nd-home-bg); }
+#view-calendar:has(:is(#tab-home, #empty-panel):not(.hidden)) .app-title { color: var(--nd-ink); }
+#view-calendar:has(:is(#tab-home, #empty-panel):not(.hidden)) .btn-refresh:not(.has-update) { background: transparent; border-color: transparent; color: #ababab; }
+#view-calendar:has(:is(#tab-home, #empty-panel):not(.hidden)) .btn-add-child { background: var(--nd-violet); border-color: var(--nd-indigo); color: #fff; }
+:is(#tab-home, #empty-panel) .home-sec-head h3 { color: var(--nd-ink); }
+:is(#tab-home, #empty-panel) .home-viewall { background: #fff; }
+:is(#tab-home, #empty-panel) .sec-us-upcoming .home-more { background: var(--nd-soft); color: var(--nd-ink); border-color: var(--nd-soft); }
+body.acct-design :is(#tab-home, #empty-panel) .ns-banner { background: var(--nd-navy); border-color: var(--nd-navy); color: #fff; }
 
 /* v1.12.97 보정: 아이 등록 시트(.acct-cs-*, 임신 정보 수정 포함)도 가입 3단계 아이 정보와 같은 인디고 계열 */
 .modal-panel:has([data-acct-child-sheet]) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); background: var(--nd-soft); }
@@ -1886,3 +1886,14 @@ body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-tg button.on
 body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-gch button.on { background: var(--nd-yellow); border-color: var(--nd-yellow-line); color: var(--text); }
 body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-save { background: var(--nd-indigo); color: #fff; border-radius: 13px; box-shadow: none; }
 body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-foot { background: linear-gradient(rgba(240, 241, 255, 0), var(--nd-soft) 14px); }
+
+/* v1.12.97 보정: 임신 정보 수정·아이 정보 수정 시트(#ep-save) — docs/한눈육아-디자인명세-임신정보수정시트.md. --nd-* 변수만 쓴다 */
+.modal-panel:has(#ep-save) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); background: var(--nd-soft); }
+.modal-panel:has(#ep-save) h3 { color: var(--nd-ink); }
+.modal-panel:has(#ep-save) #ep-name { background: #fff; border: 1.5px solid var(--nd-yellow-line); border-radius: 12px; padding-left: 14px; padding-right: 14px; }
+.modal-panel:has(#ep-save) .date-picker-trigger { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding-left: 14px; padding-right: 14px; }
+.modal-panel:has(#ep-save) .rv-cat { background: #fff; border: 1.5px solid var(--line); border-radius: 999px; color: var(--text); }
+.modal-panel:has(#ep-save) .rv-cat.active { background: var(--nd-yellow); border-color: var(--nd-yellow-line); color: var(--text); font-weight: 800; }
+.modal-panel:has(#ep-save) input:focus-visible, .modal-panel:has(#ep-save) select:focus-visible, .modal-panel:has(#ep-save) .ep-select:focus { border-color: var(--nd-indigo); outline: none; }
+.modal-panel:has(#ep-save) #ep-save { background: var(--nd-indigo); color: #fff; border: 0; border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
+.modal-panel:has(#ep-save) #ep-cancel { background: #fff; border: 1.5px solid var(--line); border-radius: 13px; color: var(--nd-ink); }

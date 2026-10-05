@@ -14,7 +14,7 @@
 
   const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const MSG = Object.freeze({
-    soon: "곧", checkNeeded: "확인 필요", preview: "미리 알아보기", done: "완료", planned: "일정 있음", now: "지금",
+    soon: "곧", checkNeeded: "확인 필요", preview: "미리 알아보기", done: "완료", planned: "일정 있음", past: "기간이 지났어요", now: "지금",
     sheetFrom: (name, stage) => `${stage}${name ? ` · ${name}` : ""}`,
     planAll: "이 시기 일정으로 넣기", planTitle: "일정으로 넣기", planHint: "넣을 일정을 골라요. 날짜는 나중에 고칠 수 있어요.",
     planBtn: (n) => `선택한 ${n}개 일정으로 넣기`, planBtnNone: "넣을 일정을 골라 주세요", planSaving: "넣는 중…",
@@ -122,7 +122,10 @@
         const ev = [it.ref, ...it.also].map((r) => events.get(r)).find(Boolean);
         if (!ev) continue; // 이 아이에게 없는 항목은 만들지 않는다
         if (input.isNA && input.isNA(ev.id)) continue;
-        const state = input.isDone && input.isDone(ev.id) ? "done" : input.isLinked && input.isLinked(ev) ? "planned" : "open";
+        let state = input.isDone && input.isDone(ev.id) ? "done" : input.isLinked && input.isLinked(ev) ? "planned" : "open";
+        // 0-C3: 기간(끝 날짜)이 이미 지난 항목은 'open'으로 남기지 않는다(완료로 치지도, 날짜를 만들지도 않는다 — 끝난 사실만 표시).
+        const endD = ev.windowEnd instanceof Date ? ev.windowEnd : ev.deadlineDate instanceof Date ? ev.deadlineDate : null;
+        if (state === "open" && endD && sod(endD) < sod(today)) state = "past";
         items.push({ id: ev.id, event: ev, label: it.label, when: it.when, detail: it.detail, needsCheck: it.needsCheck, dateMode: it.dateMode, state });
       }
       const remaining = items.filter((x) => x.state === "open").length;
@@ -153,7 +156,7 @@
     const chain = m.items.map((it, i) => {
       const apply = o.applyOf ? o.applyOf(it.id) : null;
       const cur = it.state === "open" && m.items.filter((x) => x.state === "open")[0] === it;
-      const badge = it.state === "done" ? `<em class="ns-st">${esc(MSG.done)}</em>` : it.state === "planned" ? `<em class="ns-st">${esc(MSG.planned)}</em>` : "";
+      const badge = it.state === "done" ? `<em class="ns-st">${esc(MSG.done)}</em>` : it.state === "planned" ? `<em class="ns-st">${esc(MSG.planned)}</em>` : it.state === "past" ? `<em class="ns-st">${esc(MSG.past)}</em>` : "";
       return `<div class="ns-cn${cur ? " cur" : ""}${it.state !== "open" ? " fin" : ""}" data-ns-item="${esc(it.id)}"><i class="ns-n">${it.state === "done" ? CHECK : i + 1}</i><div class="ns-cb"><small>${esc(cur && !it.when ? MSG.now : it.when)}</small><button type="button" class="ns-ttl" data-ns="detail" data-ns-id="${esc(it.id)}"><b>${esc(it.label)}</b>${badge}</button>${it.detail ? `<span class="ns-dl">${esc(it.detail)}${it.needsCheck ? ` <em class="ns-nc">${esc(MSG.checkNeeded)}</em>` : ""}</span>` : it.needsCheck ? `<span class="ns-dl"><em class="ns-nc">${esc(MSG.checkNeeded)}</em></span>` : ""}${apply && apply.url ? `<a class="ns-chip" href="${esc(apply.url)}" target="_blank" rel="noopener noreferrer">${esc(apply.label)}</a>` : ""}</div></div>`;
     }).join("");
     const foot = m.remaining ? (o.canPlan ? `<button type="button" class="ns-primary" data-ns="plan">${CAL}${esc(MSG.planAll)}</button>` : `<p class="ns-note">${esc(MSG.noLink)}</p>`) : "";

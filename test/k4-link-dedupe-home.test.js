@@ -72,7 +72,7 @@ const a36Env = (o) => {
   const src = APP.slice(a, APP.indexOf("\n  }\n", a) + 4);
   const sb = {
     acct36Active: () => true, homeReappearDays: policy.reappearDaysBefore, completed: o.completed || {}, AutoSteps: AS,
-    autoLinks: () => (o.links === undefined ? new Map() : o.links), visibleSchedule: () => o.events, Date,
+    autoLinks: () => (o.links === undefined ? new Map() : o.links), visibleSchedule: () => o.events, Date, ChildTimeline: require("../js/child-timeline.js"), profile: { birthDate: new Date(2016, 5, 10) },
   };
   vm.createContext(sb);
   vm.runInContext(src + ";globalThis.run=acct36AutoItems", sb);

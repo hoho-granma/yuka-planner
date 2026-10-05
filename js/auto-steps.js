@@ -37,6 +37,7 @@
     const def = event.detail && event.detail.definition;
     if (def && def.familyLinkable === false) return false; // 정의가 일정 넣기를 막은 항목(정보만 있는 항목)
     if (def && typeof def.todo_id === "string" && FAMILY_LINK_CODES.includes(def.category)) return true;
+    if (event.isLegacySubsidy === true && event.deadlineDate instanceof Date) return true; // 0-A3: 마감일이 있는 지역 지원금(일정 날짜 = 마감일)
     return event.autoAfter36 === true; // 36개월 이상 허용 목록(지역 지원금 NAT-020·GG-* 포함)
   }
   /** autoRef 값(규칙: "<id>__<키>" 형식). 엔진 항목은 이벤트 id 그대로, 지역 지원금 등 id 에 "__" 가 없는 항목은 "__default" 를 붙인다. */

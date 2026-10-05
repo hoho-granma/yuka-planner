@@ -71,7 +71,7 @@ test("기록 보기: 시트를 닫고 기록 탭으로 이동, 돌아가기용 �
 test("어디갈까 렌더: places.json 을 읽어 내 지역·월령으로 거르고(카드 렌더), 분류 칩을 누르면 다시 그리며, 탭이 바뀌었으면 그리지 않는다", async () => {
   const e = env({ on: true, tab: "places" });
   await e.t.renderPlacesTab();
-  assert.ok(e.nodes.body.innerHTML.includes("places-view") && !e.nodes.body.innerHTML.includes("수아") && !e.nodes.body.innerHTML.includes("places-ctx") && e.nodes.body.innerHTML.includes("data-places-id=") && e.nodes.body.innerHTML.includes("data-places-drive="));
+  assert.ok(e.nodes.body.innerHTML.includes("places-view") && !e.nodes.body.innerHTML.replace(/<p class="places-basis">[\s\S]*?<\/p>/, "").includes("수아") && !e.nodes.body.innerHTML.includes("places-ctx") && e.nodes.body.innerHTML.includes("data-places-id=") && e.nodes.body.innerHTML.includes("data-places-drive="));
   const total = (e.nodes.body.innerHTML.match(/data-places-id=/g) || []).length;
   assert.ok(total >= 1 && total <= PLACES.places.length);
   const cat = PLACES.places[0].category;

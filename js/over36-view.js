@@ -54,7 +54,8 @@
       ? `<section class="home-sec a36-card" id="a36-home-auto"><div class="home-sec-head"><h3>${esc(MSG.homeAutoTitle)}</h3></div>${st.autoItems.map((a) => `<button type="button" class="a36-row a36-auto" data-a36-auto="${esc(a.id)}"><em class="a36-autob">${esc(MSG.autoBadge)}</em><span class="a36-t">${esc(a.title)}</span>${a.dateLabel ? `<small>${esc(a.dateLabel)}</small>` : ""}</button>`).join("")}</section>`
       : "";
     const quick = `<div class="a36-quick"><small>${esc(MSG.quickTitle)}</small>${MSG.quick.map((q) => `<button type="button" data-a36="quick" data-a36-quick="${esc(q)}">${esc(q)}</button>`).join("")}</div>`;
-    return `${chips}${st.familyHtml || ""}${autos}${todo}${quick}`;
+    const head = st.headText ? `<p class="home-child-line">${esc(st.headText)}</p>` : "";
+    return `${chips}${head}${st.familyHtml || ""}${autos}${todo}${quick}`;
   }
 
   /** 할 일 탭(메모장형). st: { name, list:[{id,title,done}], hideDone, canTodo, adding, editId } — 입력 줄은 app 이 열고 닫는다(adding=true 면 맨 아래에 입력 줄). */
@@ -100,6 +101,7 @@
     trendTitle: "지역·학년 트렌드",
     sections: Object.freeze(["학원", "많이 선택하는 과목", "영어", "수학"]),
     sectionLocked: "데이터가 모이면 여기에 나와요.",
+    sectionsLocked: (names) => `${names.join("·")} 트렌드는 데이터가 모이면 여기에 나와요.`,
     nextTitle: "다음에 확인할 것",
     nextAdd: "학원 일정 추가",
     nextNote: "학원 일정을 등록하면 우리 아이 현황에 반영돼요.",
@@ -113,7 +115,8 @@
       ? `<ul class="a36t-lessons">${mine.lessons.map((l) => `<li><b>${esc(l.title)}</b><small>${esc(l.weekly ? TREND.weekly(l.weekly) : TREND.noRepeat)}</small></li>`).join("")}</ul>`
       : `<p class="a36t-note">${esc(TREND.mineNone)}</p>`;
     const insufficient = !st.status || st.status.key === "INSUFFICIENT";
-    const locked = TREND.sections.map((t) => `<div class="a36t-sec"><h4>${esc(t)}</h4><div class="a36t-ghost" aria-hidden="true"><i></i><i></i></div><p class="a36t-note">${esc(TREND.sectionLocked)}</p></div>`).join("");
+    // 0-B4: 빈 틀(항목마다 회색 막대+같은 문구 4번) 대신 한 문장으로 — 숫자·통계는 만들지 않는다.
+    const locked = `<p class="a36t-note">${esc(TREND.sectionsLocked(TREND.sections))}</p>`;
     return `<div class="a36t" id="a36-trend">
       <div class="a36t-head"><h2>${esc(TREND.title(st.region || "", st.gradeLabel || ""))}</h2><p>${esc(TREND.lead)}</p></div>
       ${st.region ? "" : `<section class="a36t-card a36t-region" data-a36t="region"><p class="a36t-note">${esc(TREND.noRegionNote)}</p><button type="button" class="a36t-btn" data-a36="trend-region">${esc(TREND.noRegionBtn)}</button></section>`}

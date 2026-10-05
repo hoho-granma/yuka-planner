@@ -56,6 +56,16 @@
   function completedMonths(birthDate, asOf) {
     return Math.max(0, signedMonths(birthDate, asOf));
   }
+  /**
+   * 36개월 이상 홈 '놓치기 쉬운 것' 카드에 남길 항목인가(0-A1). 시작 날짜가 아니라 끝(endOf: 기간→마감→상한 월령→날짜)이 오늘 이후이면 남긴다 —
+   * 검진·접종·학교·지원금 모두 기간이 열린 날 카드에서 사라지지 않게 한다. 나이 상한(ageCap, SB-04)이 있는 항목은 isEventShown 이 이미 판정한다.
+   */
+  function isOpenAutoItem(event, birthDate, today) {
+    const t0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const def = event && event.isEngineEvent && event.detail ? event.detail.definition : null;
+    if (def && def.ageCap) return true;
+    return endOf(birthDate, event) >= t0;
+  }
   /** 하한 없는 완료 개월 수(출산 전이면 음수). 월령 계산의 유일한 구현 — completedMonths 는 이것의 하한 0 판이다. */
   function signedMonths(birthDate, asOf) {
     let m = (asOf.getFullYear() - birthDate.getFullYear()) * 12 + (asOf.getMonth() - birthDate.getMonth());
@@ -326,5 +336,5 @@
     };
   }
 
-  return { SERVICE_RANGE, EXTENDED_MAX_MONTHS, OVER36_FROM_MONTHS, STAGES, STAGE_EDGES, gradeNumber, stageOf, LEGACY_TODO_CAP_MONTHS, INFANT_TODDLER_MAX_MONTHS, CHECKLIST_BUCKETS, completedMonths, signedMonths, ageLabel, ageLabelAt, isWithinServiceRange, isLegacyCappedDefinition, isLegacyCapped, extendedRuleOf, effectiveMaxMonths, isEventVisible, isEventShown, isSchoolTermDefinition, enrollmentOptions, checklistBucket, checklistGroupLabel, computeSchool, compute };
+  return { SERVICE_RANGE, EXTENDED_MAX_MONTHS, OVER36_FROM_MONTHS, STAGES, STAGE_EDGES, gradeNumber, stageOf, LEGACY_TODO_CAP_MONTHS, INFANT_TODDLER_MAX_MONTHS, CHECKLIST_BUCKETS, completedMonths, isOpenAutoItem, endOf, signedMonths, ageLabel, ageLabelAt, isWithinServiceRange, isLegacyCappedDefinition, isLegacyCapped, extendedRuleOf, effectiveMaxMonths, isEventVisible, isEventShown, isSchoolTermDefinition, enrollmentOptions, checklistBucket, checklistGroupLabel, computeSchool, compute };
 });

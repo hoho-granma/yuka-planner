@@ -61,7 +61,7 @@ test("데이터 부족: 평균·순위·비교 수치를 만들지 않는다(숫
   const h = V.renderTrend({ region: "구로구", gradeLabel: "초4", inRange: true, mine: { count: 0, lessons: [] }, status: ET.statusFor(7), canAdd: true });
   assert.ok(h.includes('data-a36t-status="INSUFFICIENT"') && h.includes("데이터 부족") && h.includes("평균이나 순위를 보여 드리지 않아요"));
   assert.ok(!/평균 학원 수 \d|상위 \d+%|\d+위|또래 범위 안|또래보다/.test(h), "임의 수치·순위·비교 문구 금지");
-  assert.ok(["학원", "많이 선택하는 과목", "영어", "수학"].every((t) => h.includes(`<h4>${t}</h4>`)) && (h.match(/데이터가 모이면 여기에 나와요/g) || []).length === 4);
+  assert.ok(h.includes("학원·많이 선택하는 과목·영어·수학 트렌드는 데이터가 모이면 여기에 나와요.") && !h.includes("<h4>") && !h.includes("a36t-ghost")) // 0-B4: 빈 틀 4개 → 한 문장;
   assert.ok(h.includes("동의가 필요해요") && h.includes("통계용으로 수집하지 않아요") && h.includes("개인을 알아볼 수 있는 정보가 나오지 않아요"));
   assert.ok(h.includes("아직 등록한 학원 일정이 없어요"));
   assert.ok(V.renderTrend({ region: "x", gradeLabel: "초등 이후", inRange: false, mine: { count: 0, lessons: [] }, status: ET.statusFor(null) }).includes("초등 학년 범위를 벗어났어요"));

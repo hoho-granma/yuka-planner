@@ -141,9 +141,10 @@
   }
   const lookup = (map, v) => (v !== null && v !== undefined && Object.prototype.hasOwnProperty.call(map, v) ? map[v] : null);
 
-  function chipRow(category) {
+  /** counts: { 분류키: 개수 }(주면 개수 0인 분류 칩은 숨긴다 — 지금 고른 분류와 '전체'는 항상 둔다). */
+  function chipRow(category, counts) {
     const cur = category && Object.prototype.hasOwnProperty.call(Places.CATEGORIES, category) ? category : "ALL";
-    const chips = [["ALL", "전체"]].concat(Places.CATEGORY_KEYS.map((k) => [k, Places.CATEGORIES[k]]));
+    const chips = [["ALL", "전체"]].concat(Places.CATEGORY_KEYS.filter((k) => !counts || k === cur || (counts[k] || 0) > 0).map((k) => [k, Places.CATEGORIES[k]]));
     return (
       `<div class="places-chips" role="group" aria-label="장소 분류">` +
       chips
@@ -202,7 +203,7 @@
   function filterBar(o, conds) {
     const n = conds.length;
     const btn = `<button type="button" class="places-filter-btn${n ? " on" : ""}" data-places-sheet="open" aria-haspopup="dialog" aria-expanded="${o.sheetOpen ? "true" : "false"}" aria-controls="places-sheet">${FILTER_ICON}${esc(TEXT.filterBtn)}${n ? `<em>${n}</em>` : ""}</button>`;
-    return `<div class="places-topline">${chipRow(o.category)}${btn}</div>`;
+    return `<div class="places-topline">${chipRow(o.category, o.catCounts)}${btn}</div>`;
   }
   function activeRow(conds) {
     if (!conds.length) return "";
@@ -298,9 +299,11 @@
       ? `<div class="places-list">${list.map((p) => renderCard(p, today, origin)).join("")}</div><p class="places-notice">${esc(TEXT.notice)}</p><p class="places-source">${esc(TEXT.source)}</p>`
       : `<div class="places-empty"><p>${esc(filterOn ? TEXT.emptyFilter : catOn ? TEXT.emptyCategory : TEXT.empty)}</p></div>`;
     const sheetOpen = typeof opts.sheetOpen === "boolean" ? opts.sheetOpen : ui.sheetOpen;
-    const so = { category: opts.category, origin, driveMax: opts.driveMax, sort: opts.sort, filters: f, showNoReserve: opts.showNoReserve === true, sheetOpen };
+    const bs = opts.basis && opts.basis.name ? opts.basis : null; // 0-B3: 상단 기준 줄 "이름(나이) · 지역 기준 · 정렬"
+    const basisLine = bs ? `<p class="places-basis">${esc([bs.age ? `${bs.name}(${bs.age})` : bs.name, bs.region ? `${bs.region} 기준` : ""].filter(Boolean).join(" · "))}${opts.sort === "popular" || (opts.sort === "near" && origin) ? ` · ${esc(sortLabelOf({ sort: opts.sort, origin }))}` : ""}</p>` : "";
+    const so = { catCounts: opts.catCounts || null, category: opts.category, origin, driveMax: opts.driveMax, sort: opts.sort, filters: f, showNoReserve: opts.showNoReserve === true, sheetOpen };
     const conds = activeConds(so);
-    return `<section class="places-view${sheetOpen ? " is-sheet-open" : ""}">${filterBar(so, conds)}${filterSheet(so, conds, list.length)}${activeRow(conds)}${countRow(so, list.length)}${body}</section>`;
+    return `<section class="places-view${sheetOpen ? " is-sheet-open" : ""}">${basisLine}${filterBar(so, conds)}${filterSheet(so, conds, list.length)}${activeRow(conds)}${countRow(so, list.length)}${body}</section>`;
   }
 
   // ── G14 필터 시트 열고 닫기·조건 지우기(브라우저에서만 문서에 클릭 위임 하나를 단다. app.js 의 #places-body 위임은 그대로) ──

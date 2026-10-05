@@ -70,10 +70,11 @@ test("칩 CSS: 칩 전체를 대표색으로 채우고 글자는 어두운 --tex
   const text = /--chip-ink: (#[0-9a-f]{6});/i.exec(css)[1];
   for (const col of [...V.PALETTE]) { const [a, b] = [lum(col), lum(text)].sort((x, y) => y - x); assert.ok((a + 0.05) / (b + 0.05) >= 5.7, `${col} 위 ${text} 대비 ${(a + 0.05) / (b + 0.05)}`); }
 });
-test("담당은 화면에 나오지 않는다: 카드 태그·상세 줄에서 제외(데이터는 그대로)", () => {
+test("담당 표시 복원(0-C1): 대상 태그에는 섞이지 않고, 카드 메타·상세 '담당' 행에 이름이 나온다", () => {
   assert.strictEqual(V.tagText({ scope: "FAMILY", assigneeLabel: "엄마" }), V.MSG.cardFamily);
   assert.strictEqual(V.tagText({ scope: "CHILD", assigneeLabel: "아빠", badges: [{ displayName: "수아" }] }), "수아");
-  assert.ok(!V.renderDetail({ title: "t", categoryLabel: "건강", scope: "CHILD", dateText: "10/6", timeText: "", color: "#aaa", location: "", memo: "", done: false, tag: "수아", targetText: "수아", assigneeText: "아빠" }).includes("담당"));
+  assert.ok(V.renderDetail({ title: "t", categoryLabel: "건강", scope: "CHILD", dateText: "10/6", timeText: "", color: "#aaa", location: "", memo: "", done: false, tag: "수아", targetText: "수아", assigneeText: "아빠" }).includes(">담당<"));
+  assert.ok(V.renderCard({ key: "k", scheduleId: "s", title: "t", categoryLabel: "건강", timeText: "", dateText: "", tag: "수아", assigneeText: "아빠", color: "#aaa" }).includes("담당 아빠"));
 });
 
 console.log("그날 시작하는 자동 항목");

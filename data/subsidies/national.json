@@ -938,7 +938,7 @@
       "sourceName": "복지로 서비스 상세 + 교육부 보도자료(2026-03-03)",
       "status": "확인완료",
       "verified": true,
-      "notes": "교육부 「2026학년도 유아학비 지원계획(안) (3~5세 5만원 추가지원 포함)」(2026.1, https://www.moe.go.kr/boardCnts/viewRenew.do?boardID=312&boardSeq=105235&lev=0&searchType=null&statusYN=W&page=1&s=moe&m=0301&opType=N) 원문과 대조: 월 5만원 추가지원·기본 단가·3~5세 동일 단가 문구 일치. 4~5세 무상교육·보육 월 금액은 교육부 보도자료(2026-03-03 배포, 영유아재정과, boardSeq=105471)로 확인함. 이 금액과 기본 단가·월 5만원 추가지원의 합산 여부는 공식 확인불가 — 합산 금액은 계산·표시하지 않음.",
+      "notes": "교육부 「2026학년도 유아학비 지원계획(안) (3~5세 5만원 추가지원 포함)」(2026.1, https://www.moe.go.kr/boardCnts/viewRenew.do?boardID=312&boardSeq=105235&lev=0&searchType=null&statusYN=W&page=1&s=moe&m=0301&opType=N) 원문과 대조: 월 5만원 추가지원·기본 단가·3~5세 동일 단가 문구 일치. 4~5세 무상교육·보육 월 금액은 교육부 보도자료(2026-03-03 배포, 영유아재정과, boardSeq=105471)로 확인함. 이 금액과 기본 단가·월 5만원 추가지원의 합산 여부는 공식 확인불가 — 합산 금액은 계산·표시하지 않음. [2026-10-05 어린이집→유치원 전환] 어린이집 보육료·가정양육수당을 받던 유아는 유아학비 대상에서 제외되므로 유치원 입학 시 유아학비로 변경 신청이 필요. 신청일 기준 지급·소급 불가, 유아학비 신청 시 보육료는 즉시 중단, 온라인 신청은 부모만 가능(복지로 유아학비 페이지 WLF00000969, 2026-10-05 hn_research 열람). 권장 신청 시기·어린이집 퇴소 처리 시점은 추가검증 필요.",
       "lastVerified": "2026-10-02",
       "statusOriginal": "확정시행",
       "auditNotes": {
@@ -965,6 +965,8 @@
       "residencyRequirement": "없음",
       "additionalConditions": "차상위까지만 지원(차상위 초과 구간 없음). 동주민센터·복지로 신청",
       "officialUrl": "https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00003198",
+      "applyUrl": "https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF00003198",
+      "applyLabel": "신청하러 가기",
       "sourceName": "복지로 장애아동수당 상세 + 보건복지부 정책 페이지",
       "status": "확인완료",
       "verified": true,

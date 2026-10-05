@@ -36,14 +36,14 @@ function kidCtx(birth, stage, o = {}, todayOverride) {
   }));
   const events = new Map(ev.map((e) => [e.id, e]));
   const done = o.done || new Set(), linked = o.linked || new Set(), na = o.na || new Set();
-  return NS.pick({ policy, kid: { name: "하준", pregnant: stage === "pregnant", stage: st.stage, ageMonths: st.ageMonths, dueDate: stage === "pregnant" ? birth : null }, today: T, events, isDone: (id) => done.has(id), isLinked: (e) => linked.has(e.id), isNA: (id) => na.has(id) });
+  return NS.pick({ policy: o.policy || policy, kid: { name: "하준", pregnant: stage === "pregnant", stage: st.stage, ageMonths: st.ageMonths, dueDate: stage === "pregnant" ? birth : null }, today: T, events, isDone: (id) => done.has(id), isLinked: (e) => linked.has(e.id), isNA: (id) => na.has(id) });
 }
 const ago = (m) => new Date(2026, 9 - m, 1);
 
 test("정책 파일: 4개 단계(출산·3~5세·6~7세·학교 준비), 기본 창 3개월(단계별 2·3·3·날짜 기준), 항목은 기존 id 참조, 금액·로그인·알림 표현 없음", () => {
-  assert.deepStrictEqual(policy.stages.map((s) => s.id), ["TO_BORN", "TO_3_5", "TO_6_7", "TO_SCHOOL"]);
+  assert.deepStrictEqual(policy.stages.map((s) => s.id).slice(0, 4), ["TO_BORN", "TO_3_5", "TO_6_7", "TO_SCHOOL"]); // 단계 0 이후 초등 단계가 뒤에 더해질 수 있다(앞 4개는 고정)
   assert.strictEqual(policy.windowMonthsDefault, 3);
-  assert.deepStrictEqual(policy.stages.map((s) => s.windowMonths), [2, 3, 3, 0], "출산 2개월·3~5세 3개월·6~7세 3개월·취학 임박은 날짜 기준");
+  assert.deepStrictEqual(policy.stages.slice(0, 4).map((s) => s.windowMonths), [2, 3, 3, 0], "출산 2개월·3~5세 3개월·6~7세 3개월·취학 임박은 날짜 기준");
   assert.ok(policyRaw.stages.every((s) => /제안값|날짜 기준/.test(s.windowBasis)), "단계별 창의 근거(제안값/날짜 기준)를 적었다");
   const text = JSON.stringify(policyRaw);
   assert.ok(!/\d+\s*(만\s*원|원)\b/.test(text), "금액 수치 없음");
@@ -90,9 +90,20 @@ test("취학 임박: 입학 전해(6~7세)에 SC-03·SC-01·SC-02 — 학교 단
   assert.strictEqual(kidCtx(new Date(2018, 5, 1), "born"), null, "초등은 이번에 만들지 않는다");
   // 날짜 기준 창: 입학 연기 신청이 시작되는 10월 1일부터 12월 31일까지만 보인다(9월·1월에는 없음)
   const b = new Date(2020, 5, 1);
-  for (const [d, want] of [[new Date(2026, 8, 30), false], [new Date(2026, 9, 1), true], [new Date(2026, 11, 31), true], [new Date(2027, 0, 1), false]]) {
-    assert.strictEqual(!!kidCtx(b, "born", {}, d), want, d.toDateString());
+  // 사양 변경에 따른 테스트 수정(0-C3, 2026-10-05 승인): 취학 배너는 12월 31일에서 끝나지 않고 예비소집(SC-02, 12~1월) 창 끝까지 이어진다 — 9월에 안 보이는 조건은 그대로.
+  const jan = JSON.parse(JSON.stringify(policyRaw));
+  jan.stages.find((s) => s.id === "TO_SCHOOL").match.untilRef = "SC-02__default";
+  const policyJan = NS.normalizePolicy(jan);
+  for (const [d, want] of [[new Date(2026, 8, 30), false], [new Date(2026, 9, 1), true], [new Date(2026, 11, 31), true], [new Date(2027, 0, 1), true], [new Date(2027, 0, 31), true], [new Date(2027, 1, 1), false]]) {
+    assert.strictEqual(!!kidCtx(b, "born", { policy: policyJan }, d), want, d.toDateString());
   }
+  // 1월에는 기간이 끝난 항목(입학 연기 12/31까지·12월 취학통지서)이 'open'으로 남지 않는다(완료로 치지 않고 날짜도 만들지 않는다).
+  const j = kidCtx(b, "born", { policy: policyJan }, new Date(2027, 0, 10));
+  const st = Object.fromEntries(j.items.map((i) => [i.id, i.state]));
+  assert.strictEqual(st["SC-03__default"], "past");
+  assert.strictEqual(st["SC-02__default"], "open");
+  assert.strictEqual(j.remaining, j.items.filter((i) => i.state === "open").length);
+  assert.ok(NS.renderSheet(j, { applyOf: () => null, canPlan: true }).includes("기간이 지났어요"));
 });
 
 test("숨김: 남은 항목이 모두 완료·일정 넣음·미해당이면 배너 없음, 일부만 하면 남은 것만 센다, 항목이 없으면 만들지 않는다", () => {

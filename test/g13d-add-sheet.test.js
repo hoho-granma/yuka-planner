@@ -103,10 +103,13 @@ test("공개 범위: G21 — 화면에서 숨김(공개/비공개 항목·안내
   const f = fresh(); V.g13PickKind(f, "회사", ctx);
   assert.ok(!Object.keys(V.prepareSave(f, 1).input).some((k) => /vis|private|public/i.test(k)));
 });
-test("담당 선택은 화면에서 뺐다: 어른 일정이든 아이·가족 전체든 폼에 담당 영역이 없다", () => {
+test("담당 칩 복원(0-C1): 구성원을 대상으로 고르면 그 사람이 담당이라 칩이 없고, 아이·가족 전체 일정에는 '누가 데려가나요?' 담당 칩이 있다", () => {
   assert.ok(!render(fresh()).includes("data-us-assignee-field"));
   const f = fresh(); V.g13ApplyWho(f, "CHILD:c1", ctx);
-  assert.ok(!render(f).includes("data-us-assignee-field") && !/data-us-assignee=/.test(render(f)));
+  const h = render(f);
+  assert.ok(h.includes("data-us-assignee-field") && h.includes("누가 데려가나요?") && /data-us-assignee="[^"]+"/.test(h));
+  const fam = fresh(); V.g13ApplyWho(fam, "FAMILY", ctx);
+  assert.ok(render(fam).includes("data-us-assignee-field"));
 });
 test("수정: 저장된 제목은 덮어쓰지 않고(titleTouched), 어른 일정은 본인 칩, 제목이 카테고리 이름이면 그 칩이 선택돼 있다", () => {
   const doc = { id: "s1", title: "병원", category: "MEDICAL", scope: "FAMILY", dateKind: "FIXED", eventDate: "2026-10-20", allDay: true, assigneeMemberId: "m-dad" };

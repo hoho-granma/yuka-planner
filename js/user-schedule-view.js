@@ -101,6 +101,8 @@
     g13RepeatMonthly: "매월",
     g13RepeatNth: "매월 같은 요일",
     assigneeNone: "정하지 않음",
+    autoCandAsk: "연결할 접종·검진이 있나요?", autoCandHint: "고르면 그 항목과 이어져요(날짜는 직접 정해요). 고르지 않고 직접 입력해도 돼요.", // 0-C2
+    assigneeAsk: "누가 데려가나요?", assigneeCard: (n) => `담당 ${n}`, assigneeNeed: "이 일정은 담당을 정해 두면 좋아요.", // 0-C1 담당 복원
     assigneeHint: "담당을 고르면 카드에 이름이 함께 보여요.",
     assigneeEmph: "누가 맡을지 골라 주세요. 담당을 정해 두면 가족 모두가 알 수 있어요.",
     deletedAssignee: "(삭제된 담당자)", // calendar-model.js 와 같은 문구
@@ -568,7 +570,7 @@
 
   // ── 카드·상세·삭제 확인·추가 버튼 마크업 ────────────────────────────────────
   function renderCard(c) {
-    const meta = [c.categoryLabel, c.timeText, c.dateText].filter(Boolean).map(esc).join(" · ");
+    const meta = [c.categoryLabel, c.timeText, c.dateText, c.assigneeText ? MSG.assigneeCard(c.assigneeText) : ""].filter(Boolean).map(esc).join(" · ");
     const rec = c.recurring === true; // 반복 회차만 아래 군더더기가 붙는다 — 단일·기간 일정의 마크업은 B4 와 같다
     return `<button type="button" class="us-card${c.done ? " done" : ""}${c.cancelled ? " cancelled" : ""}" data-us-key="${esc(c.key)}" data-us-id="${esc(c.scheduleId)}"${rec ? ` data-us-date="${esc(c.originalDate)}"` : ""} style="--us-color:${safeColor(c.color)}">
       <span class="us-bar"></span>
@@ -603,6 +605,7 @@
       [MSG.dateLabel, v.recurring ? [v.dayLabel, v.timeText].filter(Boolean).join(" · ") : [v.dateText, v.timeText].filter(Boolean).join(" · ")],
       ...(v.recurring ? [[MSG.repeatLabel, v.repeatSummary], ["", v.movedText]] : []),
       [MSG.targetLabel, v.targetText !== undefined ? v.targetText : v.tag, "target"],
+      [MSG.assigneeLabel, v.assigneeText, "assignee"],
       [MSG.locationLabel.replace(/ \(선택\)$/, ""), v.location],
       [MSG.memoLabel.replace(/ \(선택\)$/, ""), v.memo],
     ]
@@ -928,16 +931,25 @@
       : `<div class="us-field"><label>${esc(MSG.periodStart)}</label>${picker(PICKER_PREFIXES.periodStart, f.periodStart)}</div>
          <div class="us-field"><label>${esc(MSG.periodEnd)}</label>${picker(PICKER_PREFIXES.periodEnd, f.periodEnd)}</div>
          <p class="us-note">${esc(MSG.periodHint)}</p>`;
-    // 담당 선택은 화면에서 뺐다(데이터·색·완료 자동 기록은 그대로, 기존 담당 값은 폼이 보존)
+    // 0-C1: 담당 칩 복원("누가 데려가나요?" — 아이·가족 일정 모두). 대상을 구성원으로 고른 경우(whoPerson)는 그 사람이 담당이라 칩을 두지 않는다. 필드는 기존 assigneeMemberId.
+    const asgMembers = members.filter((m) => m && m.memberId);
+    const assignee = f.whoPerson || !asgMembers.length ? "" : `<div class="us-field" data-us-assignee-field><label>${esc(MSG.assigneeAsk)}</label><div class="us-chips">${asgMembers.map((m) => chip("", `data-us-assignee="${esc(m.memberId)}"`, m.memberId === meId ? MSG.g13WhoMe : m.label || "", f.assigneeMemberId === m.memberId, memberColor(m))).join("")}</div><p class="us-note" data-us-assignee-note${assigneeEmphasis(f) ? "" : " hidden"}>${esc(MSG.assigneeNeed)}</p></div>`;
+    // 0-C2: '예방접종' 종류를 고르면 그 아이의 미완료 접종·검진 후보를 보여 준다. 고르면(앱이 그 항목으로 예약 폼을 연다) 연결되고, 고르지 않으면 직접 입력 그대로 — 자동 선택 없음.
+    const cands = Array.isArray(o.autoCandidates) ? o.autoCandidates : [];
+    const autoCand = f.mode === "create" && !f.autoRef && f.kindPick === "예방접종" && cands.length
+      ? `<div class="us-field us-autocand" data-us-autocand><label>${esc(MSG.autoCandAsk)}</label><div class="us-chips">${cands.map((c) => chip("", `data-us-autoref="${esc(c.id)}"`, c.title, false)).join("")}</div><p class="us-note">${esc(MSG.autoCandHint)}</p></div>`
+      : "";
     const errors = (o.messages || []).map((m) => `<p class="us-error">${esc(m)}</p>`).join("");
     const edit = f.mode === "edit";
     return `<div class="us-form us-form-g13" data-us-mode="${esc(f.mode)}">
       <h3>${esc(f.wasRecurring && edit ? MSG.editAllTitle : edit ? MSG.sheetEdit : MSG.sheetAdd)}</h3>${f.wasRecurring && edit ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
       <div class="us-field"><label>${esc(MSG.g13Who)}</label><div class="us-chips">${whoChips}</div></div>
       <div class="us-field"><label>${esc(MSG.g13Kind)}</label><div class="us-chips" data-us-kinds>${kindChips}</div></div>
+      ${autoCand}
       <div class="us-field"><label for="us-title">${esc(MSG.titleLabel)}</label><input type="text" id="us-title" maxlength="100" placeholder="${esc(MSG.titleHint)}" value="${esc(f.title)}" /></div>
       <div class="us-field"><label>${esc(MSG.dateLabel)}</label><div class="us-chips">${chip("", 'data-us-kind="FIXED"', MSG.kindFixed, fixed)}${repeating ? `<button type="button" class="us-chip" disabled>${esc(MSG.kindPeriod)}</button>` : chip("", 'data-us-kind="PERIOD"', MSG.kindPeriod, !fixed)}</div></div>
       ${dates}
+      ${assignee}
       <div class="us-field"><label for="us-location">${esc(MSG.locationLabel)}</label><input type="text" id="us-location" maxlength="100" placeholder="${esc(MSG.locationHint)}" value="${esc(f.location)}" /></div>
       <div class="us-field"><label for="us-memo">${esc(MSG.memoLabel)}</label><textarea id="us-memo" maxlength="500" placeholder="${esc(MSG.memoHint)}">${esc(f.memo)}</textarea></div>
       ${/* G21: 공개 범위(공개/비공개) 항목은 화면에서 숨긴다(저장 필드는 그대로) */""}

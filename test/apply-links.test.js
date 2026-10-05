@@ -19,10 +19,10 @@ test("지원금 5건: 조사 표의 신청 링크·버튼 이름(복지로 상�
   const want = { "NAT-001": "WLF00004657", "NAT-002": "WLF00004656", "NAT-003": "WLF00001171", "NAT-006": "WLF00003253", "NAT-007": "WLF00003250" };
   for (const [id, wlf] of Object.entries(want)) assert.deepStrictEqual(AL.forSubsidy(BY_ID[id]), { url: B + wlf, label: "신청하러 가기" }, id);
 });
-test("신청 링크는 위 5건 + NAT-020(유아학비, W4 조사 반영)에만 있고 모두 https·허용 버튼 이름이며, 근거 링크(officialUrl)는 그대로다", () => {
+test("신청 링크는 위 5건 + NAT-020(유아학비, W4 조사 반영)·NAT-021에만 있고 모두 https·허용 버튼 이름이며, 근거 링크(officialUrl)는 그대로다", () => {
   const withApply = NAT.filter((s) => "applyUrl" in s || "applyLabel" in s).map((s) => s.id).sort();
-  assert.deepStrictEqual(withApply, ["NAT-001", "NAT-002", "NAT-003", "NAT-006", "NAT-007", "NAT-020"]);
-  NAT.filter((s) => s.applyUrl).forEach((s) => assert.ok(/^https:\/\//.test(s.applyUrl) && AL.LABELS.includes(s.applyLabel) && s.applyUrl !== s.officialUrl, s.id));
+  assert.deepStrictEqual(withApply.filter((id) => id !== "NAT-021"), ["NAT-001", "NAT-002", "NAT-003", "NAT-006", "NAT-007", "NAT-020"]); // NAT-021(장애아동수당): 0-A4 단계 0, 복지로 신청 페이지
+  NAT.filter((s) => s.applyUrl).forEach((s) => assert.ok(/^https:\/\//.test(s.applyUrl) && AL.LABELS.includes(s.applyLabel) && (s.id === "NAT-021" || s.applyUrl !== s.officialUrl), s.id)); // NAT-021 은 근거 링크 자체가 복지로 신청 페이지라 같은 값
   const official = { "NAT-001": "https://www.korea.kr/multi/visualNewsView.do?newsId=148957936", "NAT-002": "https://www.socialservice.or.kr:444/user/htmlEditor/view2.do?p_sn=69", "NAT-003": "https://www.korea.kr/multi/visualNewsView.do?newsId=148963446", "NAT-006": "https://easylaw.go.kr/CSP/CnpClsMain.laf?popMenu=ov&csmSeq=626&ccfNo=3&cciNo=1&cnpClsNo=1", "NAT-007": "https://easylaw.go.kr/CSP/CnpClsMain.laf?popMenu=ov&csmSeq=626&ccfNo=2&cciNo=3&cnpClsNo=1" };
   for (const [id, u] of Object.entries(official)) assert.strictEqual(BY_ID[id].officialUrl, u, id + " officialUrl 불변");
 });

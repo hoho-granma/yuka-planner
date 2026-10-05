@@ -19,9 +19,9 @@ test("앱 전역 슬롯(:root 의 --c-primary·--accent·--c-active 등)은 인�
 });
 
 test("새 규칙의 선택자는 모두 온보딩·홈 범위다(다른 화면 규칙 없음)", () => {
-  const OK = /^(:root$|body:has\(#view-landing\.acct-on|#view-landing\.acct-on|\.modal-panel:has\(\[data-acct-form="(login|signup)"\]\)|\.modal-panel:has\(\[data-acct-child-sheet\]\)|body\.acct-design \.modal-panel:has\(\[data-acct-child-sheet\]\)|body:has\(#view-calendar:not\(\.hidden\) #tab-home|#view-calendar:has\(#tab-home|#tab-home|body\.acct-design #tab-home)/;
+  const OK = /^(:root$|body:has\(#view-landing\.acct-on|#view-landing\.acct-on|\.modal-panel:has\(\[data-acct-form="(login|signup)"\]\)|\.modal-panel:has\(\[data-acct-child-sheet\]\)|body\.acct-design \.modal-panel:has\(\[data-acct-child-sheet\]\)|\.modal-panel:has\(#ep-save\)|body:has\(#view-calendar:not\(\.hidden\) :is\(#tab-home, #empty-panel\)|#view-calendar:has\(:is\(#tab-home, #empty-panel\)|:is\(#tab-home, #empty-panel\)|body\.acct-design :is\(#tab-home, #empty-panel\))/;
   for (const [sel] of rules(BLOCK.slice(BLOCK.indexOf("}") + 1))) {
-    sel.split(",").forEach((s) => assert.ok(OK.test(s.trim()), "범위 밖 선택자: " + s.trim()));
+    sel.split(/,(?![^()]*\))/).forEach((s) => assert.ok(OK.test(s.trim()), "범위 밖 선택자: " + s.trim()));
   }
 });
 

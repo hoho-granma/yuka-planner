@@ -1262,7 +1262,8 @@
     const reappear = new Date(t0.getTime() + homeReappearDays * 86400000); // 일정으로 넣은 항목은 그 날짜 N일 전부터 다시 나온다
     const links = autoLinks();
     const hiddenUntilNear = (e) => { const l = links ? AutoSteps.linkOf(links, e) : null; return !!(l && l.date && new Date(l.date + "T00:00:00") > reappear); };
-    const list = visibleSchedule(true).filter((e) => !completed[e.id] && (e.deadlineDate || e.date) >= t0 && !hiddenUntilNear(e)).sort((a, b) => a.date - b.date);
+    const key = (e) => (e.date < t0 ? t0 : e.date); // 열려 있는 상시 지원금(date 가 과거)은 오늘로 쳐서 가까운 순에 끼운다
+    const list = visibleSchedule(true).filter((e) => !completed[e.id] && ChildTimeline.isOpenAutoItem(e, profile.birthDate, t0) && !hiddenUntilNear(e)).sort((a, b) => key(a) - key(b));
     return limit ? list.slice(0, limit) : list;
   }
   const A36 = { hideDone: (() => { try { return localStorage.getItem("hannun_a36_hidedone") === "1"; } catch (e) { return false; } })(), adding: false, editId: null, menuId: null, press: null, swallow: false };
@@ -1377,6 +1378,13 @@
     if (acctEnabled() && typeof usRefreshHome === "function") usRefreshHome();
     return r;
   };
+  /** 0-B1: 36개월 이상 홈 머리 줄 "이름 · N세(초N) · 지역" — 나이는 앱 표기 규칙(세는 나이, ChildTimeline.ageLabelAt), 초등이면 학년을 괄호로. */
+  function acct36HeadText() {
+    if (!profile) return "";
+    const g = ChildTimeline.gradeNumber(profile.birthDate, new Date(), schoolPolicy, { enrollmentYearOverride: profile.enrollmentYearOverride });
+    const age = ChildTimeline.ageLabelAt(profile.birthDate, new Date()) + (g >= 1 && g <= 6 ? `(초${g})` : "");
+    return [childDisplayName(), age, profile.district || profile.province || ""].filter(Boolean).join(" · ");
+  }
   function acct36RenderHome() {
     const wrap = el("home-body");
     if (!wrap) return;
@@ -1385,7 +1393,7 @@
     const familyHtml = typeof usHomeCardHtml === "function" ? usHomeCardHtml({ family: true }) : "";
     us.homeSig36 = acct36Sig();
     const autoItems = acct36AutoItems(3).map((e) => ({ id: e.id, title: e.title, dateLabel: e.dateLabel }));
-    wrap.innerHTML = Over36View.renderHome({ kids, name: childDisplayName(), familyHtml, autoItems, todos: ChildTodos.homeLines(list, 3), canTodo: acct36CanTodo() });
+    wrap.innerHTML = Over36View.renderHome({ kids, name: childDisplayName(), headText: acct36HeadText(), familyHtml, autoItems, todos: ChildTodos.homeLines(list, 3), canTodo: acct36CanTodo() });
   }
   function acct36RenderTodoTab(focusSel) {
     const tab = el("tab-checklist");
@@ -2598,7 +2606,7 @@
       // 발달·생활·안전은 "정해진 일정을 완료"하는 항목이 아니라 "계속 관찰/관리"하는 항목이 많아서
       // 상태 라벨("지금 챙기세요")과 "완료 기준" 대신, 무엇을 관찰하면 되는지와 정상/비정상
       // 기준(+ 소아과·응급실 방문 시점)을 보여준다.
-      const isObservationType = e.category === "발달관찰" || e.category === "생활·수유" || e.category === "안전·돌봄";
+      const isObservationType = isObservationDetail(e, td); // 0-B2
       const period = isVaccineOrCheckup ? periodAutoText(e) || periodTextFromWindow(inst.windowStart, inst.windowEnd) : null;
       if (isObservationType) {
         return `
@@ -3164,7 +3172,12 @@
     let list = Places.filterPlaces(valid, { ageMonths: age, category: placesCat, ...placesFilters });
     list = Places.filterByDrive(list, origin, placesDriveMax);
     list = Places.sortPlaces(list, sort, origin, placesStats);
-    return PlacesView.render({ places: list, category: placesCat, filters: placesFilters, showNoReserve: Places.hasNoReserve(valid), origin, driveMax: origin ? placesDriveMax : null, sort });
+    // 0-B3: 분류 칩은 지금 나이·지역 조건으로 장소가 하나라도 있는 분류만 보인다. 상단 기준 줄은 아이 이름(나이)·지역.
+    const base = Places.filterByDrive(Places.filterPlaces(valid, { ageMonths: age, category: "ALL", ...placesFilters }), origin, placesDriveMax);
+    const catCounts = {};
+    base.forEach((p) => { catCounts[p.category] = (catCounts[p.category] || 0) + 1; });
+    const basis = profile ? { name: childDisplayName(), age: isPregnant() ? "" : age < ChildTimeline.OVER36_FROM_MONTHS ? `${age}개월` : ChildTimeline.ageLabelAt(profile.birthDate, new Date()), region: profile.district || profile.province || "" } : null;
+    return PlacesView.render({ basis, catCounts, places: list, category: placesCat, filters: placesFilters, showNoReserve: Places.hasNoReserve(valid), origin, driveMax: origin ? placesDriveMax : null, sort });
   }
   async function renderPlacesTab() {
     const body = el("places-body");
@@ -4477,6 +4490,22 @@
     if (!m || isDone || usActiveChildKey() == null || !CalendarModel.isLinkableAuto(e)) return "";
     return UserScheduleView.renderAutoLinkButton(m.get(e.id));
   }
+  /** 0-B2: 상세 시트가 '관찰 포인트' 형식(발달·생활·안전)인가 — 학교(SC)·어린이집(CR)은 categoryGroup 이 "생활·수유"라도 아니다. 분류 코드(정의 category)로 가른다(1-0 actionType 매핑이 이 함수를 대체할 예정). */
+  function isObservationDetail(e, td) {
+    const code = td && td.category;
+    if (code === "SC" || code === "CR") return false;
+    return e.category === "발달관찰" || e.category === "생활·수유" || e.category === "안전·돌봄";
+  }
+  /** 0-C2: 일정 추가 폼에서 '예방접종'을 골랐을 때 보여 줄 이 아이의 미완료·미연결 접종·검진 후보(가까운 순 최대 6). 자동으로 고르지 않는다. */
+  function usAutoCandidates() {
+    if (!autoLinkOn() || usActiveChildKey() == null || !us.form || us.form.mode !== "create" || us.form.autoRef || us.form.kindPick !== "예방접종") return [];
+    const links = autoLinks();
+    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    return visibleSchedule(true)
+      .filter((e) => (e.category === "예방접종" || e.category === "영유아검진") && CalendarModel.isLinkableAuto(e) && !completed[e.id] && ChildTimeline.endOf(profile.birthDate, e) >= t0 && !(links && (AutoSteps.linkOf(links, e) || {}).date))
+      .sort((a, b) => a.date - b.date).slice(0, 6)
+      .map((e) => ({ id: e.id, title: usAutoTitleOfEvent(e) }));
+  }
   /** AUTO 상세 → 예약 일정 만들기: 제목·분류(병원)·아이·autoRef 를 채워 일정 폼을 연다. 날짜·시각은 사용자가 입력한다(I9). */
   function usOpenFormFromAuto(e) {
     const ck = usActiveChildKey();
@@ -4814,7 +4843,7 @@
     if (us.form && !us.form.g13 && !us.form.autoRef && (us.form.mode === "create" || us.form.mode === "edit") && usG13()) UserScheduleView.upgradeFormG13(us.form, usG13Ctx());
     if (!(us.form && us.form.g13)) return usShowFormBase();
     modalMode = "profile";
-    el("modal-content").innerHTML = UserScheduleView.renderFormG13(us.form, usLinks(), { messages: us.messages, saving: us.saving, members: HouseholdView.visibleMembers(usMembers()), ctx: usG13Ctx() });
+    el("modal-content").innerHTML = UserScheduleView.renderFormG13(us.form, usLinks(), { messages: us.messages, saving: us.saving, members: HouseholdView.visibleMembers(usMembers()), ctx: usG13Ctx(), autoCandidates: usAutoCandidates() });
     el("detail-modal").classList.remove("hidden");
     usBindPickers();
   };
@@ -5366,6 +5395,12 @@
     if (sk && us.form.g13) {
       UserScheduleView.g13PickKind(us.form, sk.getAttribute("data-us-sk"), usG13Ctx());
       usShowForm();
+      return;
+    }
+    const cand = ev.target.closest("[data-us-autoref]");
+    if (cand) { // 0-C2: 후보를 고르면 그 AUTO 항목의 예약 폼으로(제목·분류·아이·autoRef, 날짜는 비움 — I9)
+      const e = schedule.find((x) => x.id === cand.getAttribute("data-us-autoref"));
+      if (e) usOpenFormFromAuto(e);
       return;
     }
     const quick = ev.target.closest("[data-us-quick]");

@@ -247,3 +247,4 @@
 }
 .places-detail-foot .btn-complete { margin-top: 0; }
 .places-detail-foot .fine-print { margin: 0; }
+.places-basis { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--text-muted); overflow-wrap: anywhere; }
