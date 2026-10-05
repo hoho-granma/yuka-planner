@@ -16,12 +16,12 @@ const fresh = () => V.upgradeFormG13(V.newForm({ date: "2026-10-14", activeChild
 const chipsOf = (h, attr) => [...h.matchAll(new RegExp(`data-us-${attr}="([^"]*)"[^>]*>([^<]*)`, "g"))].map((m) => m[2]);
 const render = (f) => V.renderFormG13(f, links, { members, ctx });
 
-test("새 일정 기본: 본인('나'), 어른 카테고리 6개, 제목 비어 있음, 날짜는 고른 날짜", () => {
+test("새 일정 기본: 본인('나'), 어른 카테고리 5개(D82), 제목 비어 있음, 날짜는 고른 날짜", () => {
   const f = fresh();
   assert.deepStrictEqual([f.g13, f.scope, f.assigneeMemberId, f.whoPerson, f.title, f.eventDate], [true, "FAMILY", "m-mom", true, "", "2026-10-14"]);
   const h = render(f);
   assert.deepStrictEqual(chipsOf(h, "who"), ["나", "아빠", "은찬", "서윤", "가족"]);
-  assert.deepStrictEqual(chipsOf(h, "sk"), ["회사", "모임·약속", "병원", "운동", "개인 일정", "집안일"]);
+  assert.deepStrictEqual(chipsOf(h, "sk"), ["회사", "모임·약속", "병원", "운동", "개인 일정"]); // D82: 집안일 칩 없음
   assert.ok(!/data-us-quick/.test(h) && !h.includes("data-us-cat="), "빠른 입력 칩·옛 분류 칩 없음");
   assert.ok(/data-us-who="MEMBER:m-mom"[^>]*>나/.test(h) && /us-chip active" data-us-who="MEMBER:m-mom"/.test(h));
 });
@@ -47,8 +47,9 @@ test("카테고리를 고르면 enum 이 정해지고 이름이 제목에 자동
   assert.deepStrictEqual([f.category, f.title, f.kindPick], ["MEDICAL", "병원", "병원"]);
   V.g13PickKind(f, "운동", ctx);
   assert.deepStrictEqual([f.category, f.title], ["ETC", "운동"]);
-  V.g13PickKind(f, "집안일", ctx);
-  assert.strictEqual(f.category, "FAMILY");
+  V.g13PickKind(f, "집안일", ctx); // D82: 목록에 없는 이름은 무시(기존 선택 유지·오류 없음)
+  assert.ok(["ETC", "FAMILY"].includes(f.category));
+  V.g13PickKind(f, "병원", ctx); assert.strictEqual(f.category, "MEDICAL");
 });
 test("직접 고친 제목(titleTouched)은 카테고리를 바꿔도 덮어쓰지 않는다", () => {
   const f = fresh();

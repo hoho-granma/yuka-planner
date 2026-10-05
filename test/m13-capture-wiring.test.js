@@ -19,7 +19,10 @@ test("앱 연결: 진입점은 새 일정 시트(계정 모드)에만, 저장은
   const i = app.indexOf("// ═══ 2-1 붙여넣기로 추가"), blk = app.slice(i, app.indexOf("usSave = async function usSave()", i));
   assert.ok(/capInjectEntry\(\);\n  \};/.test(app) && blk.includes("acctEnabled()") && blk.includes("us.form.mode !== \"create\""));
   assert.ok(blk.includes("UserScheduleView.prepareSave") && blk.includes("UserSchedule.buildCreateDoc") && blk.includes("HouseholdSync.createSchedule"));
-  assert.ok(!/localStorage|sessionStorage|setDoc|updateDoc|console\.log\(CAP/.test(blk));
+  // D81: 음성 인식 실패 기억(hannun_voice_fail)용 기기 저장소만 voice.js 에 넘긴다 — 원문·글자는 저장하지 않는다(그 블록 밖에서만 검사).
+  const noVoice = blk.replace(/  \/\/ ═══ D81[\s\S]*?function capVoiceStop\(\)[^\n]*\n/, "");
+  assert.ok(noVoice.length < blk.length && !/localStorage|sessionStorage|setDoc|updateDoc|console\.log\(CAP/.test(noVoice));
+  assert.ok(!/CAP\.text[^;\n]*(localStorage|setItem)/.test(blk) && !/setItem\([^)]*CAP/.test(blk));
 });
 
 test("담당은 빈칸으로 저장: 후보 기본 폼·후보→폼 인계 모두 담당 없음('나' 기본값 미적용), 대상은 후보 그대로", () => {

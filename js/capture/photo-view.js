@@ -16,6 +16,7 @@
     camera: "사진 찍기", cameraSub: "안내문·메모를 찍어요",
     gallery: "사진 불러오기", gallerySub: "저장된 사진·캡처",
     paste: "메시지 붙여넣기", pasteSub: "문자·가정통신문 글",
+    voice: "음성 입력", voiceSub: "말로 일정을 알려줘요",
     direct: "직접 입력", directSub: "날짜·제목을 직접",
     readingTitle: "사진에서 글자를 읽는 중", readingSub: "잠시만 기다려 주세요", reading: "읽는 중…", readingLong: "아직 읽고 있어요. 사진이 크면 오래 걸려요",
     privacy: "고른 사진은 저장하지도, 서버로 보내지도 않아요. 이 기기 안에서 글자만 읽고 바로 잊어요.",
@@ -37,15 +38,17 @@
     camera: svg('<path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/>'),
     gallery: svg('<rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M5 17l4.5-4.5 3 3L15 13l4 4"/>'),
     paste: svg('<path d="M5 6h14v9H10l-4 3v-3H5z"/>'),
+    voice: svg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>'), // draft-view 의 마이크(us-mic)와 같은 모양
     direct: svg('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/>'),
   });
   const mbText = (bytes) => Math.max(1, Math.round((Number(bytes) || 0) / 1000000));
 
-  /** 4메뉴 2×2 타일. selected: "direct"(기본 ★) | "camera" | "gallery" | "paste". */
+  /** 4메뉴 2×2 타일. selected: "direct"(기본 ★) | "camera" | "gallery" | "paste" | "voice". */
   function renderMenu(selected) {
     const sel = selected || "direct";
-    const tile = (id, label, sub) => `<button type="button" class="cap-tile${sel === id ? " active" : ""}" data-cap-menu="${id}" aria-pressed="${sel === id ? "true" : "false"}">${ICON[id]}<span class="cap-tile-t"><b>${esc(label)}</b><small>${esc(sub)}</small></span></button>`;
-    return `<div class="cap-menu" role="group" aria-label="${esc(MSG.menuAria)}">${tile("camera", MSG.camera, MSG.cameraSub)}${tile("gallery", MSG.gallery, MSG.gallerySub)}${tile("paste", MSG.paste, MSG.pasteSub)}${tile("direct", MSG.direct, MSG.directSub)}</div>`;
+    const tile = (id, label, sub) => `<button type="button" class="cap-tile${sel === id ? " active" : ""}" data-cap-menu="${id}" aria-pressed="${sel === id ? "true" : "false"}" aria-label="${esc(label)}">${ICON[id]}<span class="cap-tile-t"><b>${esc(label)}</b><small>${esc(sub)}</small></span></button>`;
+    // D82: 5개 — 윗줄 3(사진 찍기·사진 불러오기·메시지 붙여넣기) + 아랫줄 2(음성 입력·직접 입력), 6칸 그리드(CSS)
+    return `<div class="cap-menu" role="group" aria-label="${esc(MSG.menuAria)}">${tile("camera", MSG.camera, MSG.cameraSub)}${tile("gallery", MSG.gallery, MSG.gallerySub)}${tile("paste", MSG.paste, MSG.pasteSub)}${tile("voice", MSG.voice, MSG.voiceSub)}${tile("direct", MSG.direct, MSG.directSub)}</div>`;
   }
 
   const continueBtns = (primary, pasteAttr) => {

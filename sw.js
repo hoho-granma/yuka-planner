@@ -36,6 +36,7 @@ const SHELL_ASSETS = [
   "./js/capture/ocr-tesseract.js",
   "./js/capture/photo-view.js",
   "./js/capture/ai-parser.js",
+  "./js/capture/voice.js",
   "./css/capture.css",
   "./js/next-stage.js",
   "./js/sync.js",

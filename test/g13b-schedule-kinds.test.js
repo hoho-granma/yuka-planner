@@ -23,13 +23,13 @@ test("임신 중(PREGNANT)·나이를 모를 때(null)는 각각 전용·공통 
   assert.deepStrictEqual([K.categoryOf("산후조리 예약", "CHILD", "PREGNANT"), K.categoryOf("출산 준비", "CHILD", "PREGNANT"), K.categoryOf("수업·학원", "CHILD", null)], ["INSTITUTION", "ETC", "LESSON"]);
 });
 test("어른·가족 전체 카테고리 목록 고정", () => {
-  assert.deepStrictEqual(labels("ADULT"), ["회사", "모임·약속", "병원", "운동", "개인 일정", "집안일"]);
+  assert.deepStrictEqual(labels("ADULT"), ["회사", "모임·약속", "병원", "운동", "개인 일정"]); // D82: '집안일' 칩 삭제(5칩은 390px 폭에 한 줄)
   assert.deepStrictEqual(labels("FAMILY"), ["가족 행사", "나들이", "여행", "기념일"]);
 });
 test("모든 카테고리는 기존 category enum 으로 매핑되고 이름은 제목 한도(100자) 이하", () => {
   const all = [...Object.values(K.CHILD_KINDS).flat(), ...K.PREGNANT_KINDS, ...K.COMMON_CHILD_KINDS, ...K.ADULT_KINDS, ...K.FAMILY_KINDS];
   assert.ok(all.every((x) => US.CATEGORIES.includes(x.category) && x.label.length >= 1 && x.label.length <= US.LIMITS.titleMax));
-  assert.deepStrictEqual([K.categoryOf("예방접종", "CHILD", 5), K.categoryOf("어린이집", "CHILD", 20), K.categoryOf("수업·학원", "CHILD", 60), K.categoryOf("집안일", "ADULT"), K.categoryOf("여행", "FAMILY"), K.categoryOf("없는 이름", "ADULT")], ["MEDICAL", "INSTITUTION", "LESSON", "FAMILY", "FAMILY", "ETC"]);
+  assert.deepStrictEqual([K.categoryOf("예방접종", "CHILD", 5), K.categoryOf("어린이집", "CHILD", 20), K.categoryOf("수업·학원", "CHILD", 60), K.categoryOf("여행", "FAMILY"), K.categoryOf("없는 이름", "ADULT")], ["MEDICAL", "INSTITUTION", "LESSON", "FAMILY", "ETC"]);
 });
 test("제목 자동 채우기: 안 고쳤으면 카테고리 이름, 직접 고쳤으면 덮어쓰지 않는다", () => {
   assert.strictEqual(K.nextTitle("", false, "예방접종"), "예방접종");

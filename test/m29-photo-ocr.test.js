@@ -108,8 +108,11 @@ function pipeline(raw, children) { // 앱(capParseRead)과 같은 순서: 정리
   });
 
   console.log("화면 상태(명세 §1~§3)");
-  await test("4메뉴: 2×2 타일 4개, 기본 선택 '직접 입력', 보조 문구는 명세 그대로", () => {
-    const h = PV.renderMenu(); assert.strictEqual((h.match(/class="cap-tile(?: active)?"/g) || []).length, 4);
+  await test("입력 방식(D82): 5개 타일(3+2), 순서 사진 찍기·사진 불러오기·메시지 붙여넣기·음성 입력·직접 입력, 기본 선택 '직접 입력', 보조 문구는 명세 그대로", () => {
+    const h = PV.renderMenu(); assert.strictEqual((h.match(/class="cap-tile(?: active)?"/g) || []).length, 5);
+    assert.deepStrictEqual((h.match(/data-cap-menu="([a-z]+)"/g) || []).map((x) => x.slice(15, -1)), ["camera", "gallery", "paste", "voice", "direct"]);
+    assert.ok(h.includes('aria-label="음성 입력"') && h.includes('<rect x="9" y="3" width="6" height="11" rx="3"/>') && !/[\u{1F300}-\u{1FAFF}]/u.test(h), "마이크 아이콘 SVG, 이모지 없음");
+    assert.ok(/cap-tile active" data-cap-menu="voice"/.test(PV.renderMenu("voice")));
     assert.ok(/cap-tile active" data-cap-menu="direct" aria-pressed="true"/.test(h) && !/cap-tile active" data-cap-menu="camera"/.test(h));
     for (const t of ["사진 찍기", "안내문·메모를 찍어요", "사진 불러오기", "저장된 사진·캡처", "메시지 붙여넣기", "문자·가정통신문 글", "직접 입력", "날짜·제목을 직접"]) assert.ok(h.includes(t), t);
     assert.ok(/cap-tile active" data-cap-menu="camera"/.test(PV.renderMenu("camera")));

@@ -30,7 +30,7 @@
   const PREGNANT_KINDS = Object.freeze([k("병원·검진", "MEDICAL"), k("출산 준비", "ETC"), k("산후조리 예약", "INSTITUTION")]);
   /** 아이 나이를 모를 때(생일 정보가 없는 아이): 나이와 상관없이 쓸 수 있는 공통 목록 */
   const COMMON_CHILD_KINDS = Object.freeze([k("병원·검진", "MEDICAL"), k("어린이집·유치원", "INSTITUTION"), k("수업·학원", "LESSON"), k("놀이·체험", "LESSON"), k("친구 약속", "ETC")]);
-  const ADULT_KINDS = Object.freeze([k("회사", "ETC"), k("모임·약속", "ETC"), k("병원", "MEDICAL"), k("운동", "ETC"), k("개인 일정", "ETC"), k("집안일", "FAMILY")]);
+  const ADULT_KINDS = Object.freeze([k("회사", "ETC"), k("모임·약속", "ETC"), k("병원", "MEDICAL"), k("운동", "ETC"), k("개인 일정", "ETC")]); // D82: '집안일' 칩 삭제(엄마·아빠 선택 시 칩 줄이 2줄이 돼서). 이미 저장된 일정은 category enum(FAMILY)만 저장돼 영향 없음
   const FAMILY_KINDS = Object.freeze([k("가족 행사", "FAMILY"), k("나들이", "FAMILY"), k("여행", "FAMILY"), k("기념일", "FAMILY")]);
   const TARGETS = Object.freeze(["CHILD", "ADULT", "FAMILY"]);
 

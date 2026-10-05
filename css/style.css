@@ -2053,6 +2053,8 @@ body.acct-design :is(#tab-home, #empty-panel) .acct-nc-me-t small svg { color: v
 .modal-panel:has(.us-form) .us-fx-head h3 { margin: 0; font-size: 17px; color: var(--us-fx-ink, var(--nd-ink)); }
 .modal-panel:has(.us-form) .us-fx-who { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: rgba(255, 255, 255, .6); color: var(--us-fx-ink, var(--nd-ink)); }
 .modal-panel:has(.us-form) .us-fx-who i { width: 8px; height: 8px; border-radius: 50%; background: var(--us-fx-deep); }
+.modal-panel:has(.us-form) .us-chips[data-us-kinds] { gap: 5px; } /* D82: 카테고리(종류) 칩 한 줄 — 이 줄에만 좌우 패딩 12→10px·간격 6→5px */
+.modal-panel:has(.us-form) .us-chips[data-us-kinds] .us-chip { padding-left: 10px; padding-right: 10px; }
 .modal-panel:has(.us-form) .tw-tm.on { border-color: var(--us-fx-deep); box-shadow: 0 0 0 2px var(--us-fx, var(--nd-yellow)); }
 .modal-panel:has(.us-form) .us-check input { accent-color: var(--us-fx-deep); }
 .modal-panel:has(.us-form) h3 { color: var(--nd-ink); }

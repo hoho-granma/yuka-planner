@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#ff6a1a" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
 <script>/* G19: 계정 모드(기본 ON)에서는 옛 상황 선택 화면이 첫 그림부터 한 번도 보이지 않게 한다(js/feature-flags.js 와 같은 규칙: accounts="0" 일 때만 OFF) */try{if(localStorage.getItem("hannun_feature_accounts")!=="0")document.documentElement.classList.add("hnacc-default");}catch(e){document.documentElement.classList.add("hnacc-default");}</script>
-<link rel="stylesheet" href="css/style.css?v=127" />
+<link rel="stylesheet" href="css/style.css?v=128" />
   <link rel="stylesheet" href="css/places.css?v=11" />
 </head>
 <body>
@@ -277,15 +277,16 @@
   <script src="js/auto-steps.js?v=8"></script>
   <script src="js/next-stage-card.js?v=1"></script>
   <script src="js/capture/parse-ko.js?v=2"></script>
-  <script src="js/capture/draft-view.js?v=3"></script>
+  <script src="js/capture/draft-view.js?v=5"></script>
   <script src="js/capture/capture-model.js?v=2"></script>
   <script src="js/capture/text-recognition.js?v=1"></script>
   <script src="js/capture/photo-compress.js?v=3"></script>
   <script src="js/capture/photo-crop.js?v=1"></script>
   <script src="js/capture/ocr-tesseract.js?v=1"></script>
-  <script src="js/capture/photo-view.js?v=4"></script>
+  <script src="js/capture/photo-view.js?v=6"></script>
   <script src="js/capture/ai-parser.js?v=1"></script>
-  <link rel="stylesheet" href="css/capture.css?v=4">
+  <script src="js/capture/voice.js?v=1"></script>
+  <link rel="stylesheet" href="css/capture.css?v=5">
   <script src="js/next-stage.js?v=5"></script>
   <script src="js/todo-engine.js?v=4"></script>
   <script src="js/schedule.js?v=18"></script>
@@ -305,7 +306,7 @@
   <script src="js/pregnancy-basis.js?v=2"></script>
   <script src="js/time-range.js?v=2"></script>
   <script src="js/time-wheel.js?v=1"></script>
-  <script src="js/schedule-kinds.js?v=2"></script>
+  <script src="js/schedule-kinds.js?v=3"></script>
   <script src="js/user-schedule-view.js?v=36"></script>
   <script src="js/child-anniversaries.js?v=2"></script>
   <script src="js/tab-child-bar.js?v=1"></script>
@@ -317,7 +318,7 @@
   <script src="js/edu-3to5-view.js?v=1"></script>
   <script src="js/tab-swipe.js?v=1"></script>
   <script src="js/edu-trend.js?v=3"></script>
-  <script src="js/app.js?v=170"></script>
+  <script src="js/app.js?v=171"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

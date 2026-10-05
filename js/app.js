@@ -5297,7 +5297,7 @@
     capInjectEntry();
   };
   // ═══ 2-1 붙여넣기로 추가: 새 일정 시트 맨 위 '붙여넣기로 추가' → 글 붙여넣기 → 후보 확인 → 선택 등록. 해석은 기기 안(js/capture/parse-ko.js), 원문은 저장하지 않는다(등록은 기존 일정 저장 경로: prepareSave → buildCreateDoc → createSchedule) ═══
-  const CAP = { text: "", s: null, backForm: null, photo: false, photoText: "" };
+  const CAP = { text: "", s: null, backForm: null, photo: false, photoText: "", spoken: false };
   const capReady = () => typeof ParseKo !== "undefined" && typeof CaptureDraftView !== "undefined" && typeof CaptureModel !== "undefined";
   function capInjectEntry() {
     if (!capReady() || !acctEnabled() || !us.form || us.form.mode !== "create" || us.form.autoRef) return;
@@ -5310,7 +5310,35 @@
   }
   function capShow(html) { modalMode = "profile"; el("modal-content").innerHTML = html; el("detail-modal").classList.remove("hidden"); }
   const capChildName = (key) => { const l = usLinks().find((x) => String(x.childKey) === String(key)); return l ? l.displayName || "" : ""; };
-  const capShowPaste = () => capShow(CaptureDraftView.renderPaste({ text: CAP.text }, { mode: "keyboard", voice: false }));
+  const capShowPaste = () => { CAP.spoken = false; return capShow(CaptureDraftView.renderPaste({ text: CAP.text }, { mode: "keyboard", voice: false })); };
+  // ═══ D81 음성 입력(기기 안 받아쓰기 — js/capture/voice.js): 마이크 → 인식된 글자를 붙여넣기 칸에 채움 → 사용자가 [해석하기]를 눌러야 후보 확인(parse-ko spoken). 녹음은 저장하지 않는다. D80 은 capStartVoice 안쪽만 바꾼다 ═══
+  const CAPV = { ctl: null, listening: false, empty: false };
+  function capVoiceCtl() {
+    if (!CAPV.ctl && typeof CaptureVoice !== "undefined") {
+      let st = null; try { st = window.localStorage; } catch (e) {}
+      CAPV.ctl = CaptureVoice.create({
+        win: window, storage: st,
+        onText: (t) => { CAP.text = (CAP.text ? CAP.text + " " : "") + t; CAPV.empty = false; },
+        onState: (s) => { CAPV.listening = !!(s && s.listening); CAPV.empty = !!(s && s.empty); capShowVoice(); },
+      });
+    }
+    return CAPV.ctl;
+  }
+  /** 말로 추가 화면(붙여넣기 칸 + 마이크). 마이크를 쓸 수 없으면(미지원·거부 기억) 키보드 받아쓰기 안내. */
+  function capShowVoice() {
+    const ctl = capVoiceCtl();
+    return capShow(CaptureDraftView.renderPaste({ text: CAP.text }, { mode: ctl ? ctl.mode() : "keyboard", voice: true, listening: CAPV.listening, voiceNote: true, emptyHeard: CAPV.empty }));
+  }
+  function capOpenVoice() { CAP.text = ""; CAP.s = null; CAP.spoken = true; CAPV.empty = false; CAPV.listening = false; return capShowVoice(); }
+  /** 마이크 시작/정지(사용자 탭 안에서만 호출). 시작 실패·거부는 voice.js 가 keyboard 모드로 바꿔 onState 로 알린다. */
+  function capStartVoice() {
+    const ctl = capVoiceCtl();
+    if (!ctl) return false;
+    CAP.spoken = true;
+    if (ctl.isListening()) { ctl.stop(); CAPV.listening = false; capShowVoice(); return false; }
+    return ctl.start();
+  }
+  function capVoiceStop() { if (CAPV.ctl && CAPV.ctl.isListening()) CAPV.ctl.stop(); CAPV.listening = false; }
   /** D40 후보 카드 '누구 일정' 칩: 지금 보는 아이 → 다른 아이 → 구성원(내가 앞, '나') → 가족 전체. 기본 = 글에서 찾은 아이, 없으면 지금 보는 아이(아이가 없으면 가족 전체). */
   function capWhoOptions() {
     const links = usLinks().filter((l) => !l.removedAt), ck = usActiveChildKey(), me = usMeId();
@@ -5362,6 +5390,7 @@
   function capShowFlow(html, selected) { capShow(CapturePhotoView.renderMenu(selected || CAPP.from || "camera") + html); }
   function capMenuClick(id) {
     if (id === "camera" || id === "gallery") return capPickPhoto(id);
+    if (id === "voice") { capPhotoReset(); return capOpenVoice(); } // D81: 음성 입력 칩(마크업은 시안 확정 뒤)
     if (id === "paste") { CAP.text = ""; CAP.s = null; capPhotoReset(); return capShowPaste(); }
     capPhotoReset(); CAP.s = null; // direct: 입력해 둔 값 유지
     return us.form ? usShowForm() : usOpenForm(null, toISODate(new Date()));
@@ -5450,11 +5479,12 @@
     return out;
   }
   function capOnClick(ev) {
-    const t = ev.target && ev.target.closest ? ev.target.closest("[data-cap-open],[data-cap-find],[data-cap-cancel],[data-cap-check],[data-cap-remove],[data-cap-undo],[data-cap-edit],[data-cap-date],[data-cap-undecided],[data-cap-direct],[data-cap-register],[data-cap-who],[data-cap-menu],[data-cap-photo-stop],[data-cap-photo-retry],[data-cap-photo-again],[data-cap-paste-prefill]") : null;
+    const t = ev.target && ev.target.closest ? ev.target.closest("[data-cap-open],[data-cap-find],[data-cap-cancel],[data-cap-check],[data-cap-remove],[data-cap-undo],[data-cap-edit],[data-cap-date],[data-cap-undecided],[data-cap-direct],[data-cap-register],[data-cap-who],[data-cap-menu],[data-cap-photo-stop],[data-cap-photo-retry],[data-cap-photo-again],[data-cap-paste-prefill],[data-cap-mic]") : null;
     if (!t || !capReady() || !el("modal-content").contains(t)) return;
     const num = (n) => Number(t.getAttribute(n));
     if (t.hasAttribute("data-cap-open")) { CAP.text = ""; CAP.s = null; return capShowPaste(); }
-    if (t.hasAttribute("data-cap-cancel")) { CAP.s = null; CAP.text = ""; CAP.backForm = null; capPhotoReset(); return closeDetail(); }
+    if (t.hasAttribute("data-cap-mic")) return capStartVoice();
+    if (t.hasAttribute("data-cap-cancel")) { capVoiceStop(); CAP.s = null; CAP.text = ""; CAP.backForm = null; capPhotoReset(); return closeDetail(); }
     if (t.hasAttribute("data-cap-menu")) return capMenuClick(t.getAttribute("data-cap-menu"));
     if (t.hasAttribute("data-cap-photo-stop")) { capPhotoReset(); CAP.s = null; CAP.text = ""; return closeDetail(); }
     if (t.hasAttribute("data-cap-photo-retry")) return capPhotoRetry();
@@ -5463,7 +5493,8 @@
     if (t.hasAttribute("data-cap-direct")) { CAP.s = null; return usOpenForm(null, toISODate(new Date())); }
     if (t.hasAttribute("data-cap-find")) {
       const ta = el("modal-content").querySelector("[data-cap-text]"); CAP.text = ta ? ta.value : CAP.text;
-      CAP.s = CaptureModel.fromParse(ParseKo.parse(CAP.text, { today: new Date(), children: usLinks().filter((l) => !l.removedAt).map((l) => ({ key: String(l.childKey), name: l.displayName || "" })) }));
+      capVoiceStop();
+      CAP.s = CaptureModel.fromParse(ParseKo.parse(CAP.text, { spoken: CAP.spoken === true, today: new Date(), children: usLinks().filter((l) => !l.removedAt).map((l) => ({ key: String(l.childKey), name: l.displayName || "" })) }));
       CAP.text = ""; return capShowCands(); // 원문은 후보 화면부터 쥐지 않는다(후보 안의 source 조각만 접힘으로 보인다)
     }
     if (!CAP.s) return;
