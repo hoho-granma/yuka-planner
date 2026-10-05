@@ -15,7 +15,7 @@
   const MSG = Object.freeze({
     pasteTitle: "붙여넣기로 추가", voiceTitle: "말로 추가", photoTitle: "사진으로 추가", rawPhoto: "읽은 글 보기 ›", photoNote: "사진에서 읽은 글자는 틀릴 수 있어요. 날짜와 시각을 꼭 확인해 주세요.", pastePlaceholder: "예) 10월 14일(화) 오후 3시 30분 하린 치과 예약입니다",
     pasteNote: "날짜가 분명하지 않으면 비워 두고 확인을 부탁드려요. 붙여 넣은 글은 저장하지 않아요.",
-    find: "일정 찾기", interpret: "해석하기", example: "예) 다음 주 화요일 세 시에 하린 치과 예약",
+    find: "일정 등록", interpret: "해석하기", example: "예) 다음 주 화요일 세 시에 하린 치과 예약",
     keyboardNote: "키보드의 마이크(받아쓰기)를 눌러 말한 뒤, 여기에 입력돼요.", listening: "듣고 있어요… 말을 마치면 버튼을 다시 눌러 주세요",
     voiceNote: "음성은 기기의 받아쓰기 기능으로 글자로 바뀌어요. 한눈육아는 녹음을 저장하지 않아요.", micAria: "말로 입력", emptyHeard: "잘 듣지 못했어요. 다시 말하거나 직접 입력해 주세요.",
     found: (n) => `일정 후보 ${n}개를 찾았어요. 맞는지 확인해 주세요.`, none: "일정을 찾지 못했어요.", direct: "직접 입력하기",

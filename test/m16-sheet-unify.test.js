@@ -33,9 +33,12 @@ test("프로필 시트: 면 --nd-soft, 아바타 --nd-soft2, 가족 상자 흰 �
   assert.ok(/\.acct-fam-pill \{[^}]*border-color: var\(--nd-indigo\)/.test(blk));
 });
 
-test("상세 시트 분류 뱃지(D34 C): 흰 면 + 1.5px 분류색 테두리 + 앞 점 — 흰 머리 위에서도 알약이 보인다", () => {
+test("상세 팝업 제목 영역 칩(D61): 분류 라벨은 분류색 채움, 지원 주체 칩(전국 공통·지역)은 계정 모드 머리 띠에서도 색 채움 — 필터 칩 D34 C는 유지", () => {
   const css = fs.readFileSync(path.join(__dirname, "..", "css", "style.css"), "utf8");
-  assert.ok(/\.modal-panel \.cat-badge \{[^}]*border: 1\.5px solid transparent[^}]*linear-gradient\(#fff, #fff\) !important[^}]*padding-box, border-box !important/.test(css), "인라인 분류색이 테두리가 되고 안쪽은 흰색");
-  assert.ok(/\.modal-panel \.cat-badge::before \{[^}]*background-color: inherit/.test(css), "앞 점은 분류색을 물려받는다");
-  assert.ok(!/\.acct-sub-head \.cat-badge \{[^}]*background: #fff !important/.test(css), "머리 안에서도 분류색 테두리가 덮이지 않는다");
+  assert.ok(/\.modal-panel \.cat-badge \{[^}]*padding: 3px 8px[^}]*color: #fff[^}]*\}/.test(css) && !/\.modal-panel \.cat-badge \{[^}]*linear-gradient/.test(css) && !/\.modal-panel \.cat-badge::before/.test(css), "인라인 분류색이 면 전체를 채운다(테두리·점 방식 아님)");
+  assert.ok(!/\.acct-sub-head \.cat-badge \{[^}]*background: #fff/.test(css) && !/\.as-steps\) \.acct-sub-head \.cat-badge \{[^}]*background: #fff/.test(css), "계정 모드 머리 띠에서도 흰색으로 덮지 않는다");
+  assert.ok(/\.cat-badge:is\(\[style\*="--k-dv"\], \[style\*="--k-lf"\], \[style\*="--k-sf"\]\) \{ color: #161618; \}/.test(css), "밝은 분류색 위 글자는 진하게(대비)");
+  assert.ok(/acct-sub-head \.prov-tag\.prov-nation \{ background: var\(--c-badge-nation\); color: var\(--c-badge-nation-ink\)/.test(css) && /acct-sub-head \.prov-tag\.prov-region \{ background: var\(--c-badge-region\); color: var\(--c-badge-region-ink\)/.test(css), "전국 공통·지역 칩 색 채움");
+  assert.ok(!/acct-sub-head \.prov-tag \{ background: transparent/.test(css) && !/as-steps\) \.acct-sub-head :is\(\.detail-tag, \.prov-tag\)/.test(css), "지원 주체 칩을 투명·회색으로 덮는 규칙 없음");
+  assert.ok(/\.chip\.cat-chip/.test(css), "필터 칩 D34 C 규칙은 그대로");
 });

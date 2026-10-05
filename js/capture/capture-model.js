@@ -15,6 +15,7 @@
     f.title = String(c.title || "").slice(0, 100);
     f.category = CATS.includes(c.categoryHint) ? c.categoryHint : base.category || "ETC";
     if (Array.isArray(c.childKeys) && c.childKeys.length) { f.scope = "CHILD"; f.childKeys = c.childKeys.slice(); }
+    if (c.memo) f.memo = String(c.memo).slice(0, 500); // D59: '키: 값' 안내문의 박수·자리·금액 등
     f.eventDate = c.eventDate || "";
     f.multiDay = !!c.endDate; f.endDate = c.endDate || "";
     f.allDay = c.allDay !== false || !c.startTime;

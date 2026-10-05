@@ -200,6 +200,7 @@
     for (const [k, re] of CATEGORY_HINTS) if (re.test(frag)) { cand.categoryHint = k; break; }
     let title = rest.replace(/[\[\]【】]/g, " ").replace(/\s*님(?=\s|$)/g, " ").replace(ENDINGS, " ").replace(/[,，、:：]+\s*$/g, " ").replace(/[()（）]\s*[)）]/g, "").replace(/\s+/g, " ").trim();
     title = title.replace(/^[,，、\s·~\-–]+|[,，、\s·~\-–]+$/g, "").trim().replace(/^(?:에는|에서|에|부터|까지)\s+/, "");
+    if (/^[(（][^)）]*[)）]$/.test(title)) title = ""; // '이용기간: 2026-10-23 (1박)' 한 줄처럼 괄호 메모만 남으면 제목이 아니다
     cand.title = title.slice(0, 100);
     if (!cand.title) check.push({ field: "title", reason: "제목을 확인해 주세요" });
     return cand;
@@ -224,11 +225,49 @@
     return t;
   }
 
+  // ── D59: 붙여넣기 글 정리(첨부 표시 제거·숫자 날짜) + '키: 값' 안내문(예약 확인 문자 등) ──
+  const RE_ATTACH = /[\[【](?:사진|이미지|동영상|파일|첨부|photo|image)[^\]】\n]*[\]】]/gi; // 메신저가 붙이는 "[사진 …IMG_9231.jpg]" 같은 첨부 표시
+  const RE_ISO = /(?<![\d.\/-])(20\d{2})\s*[-./]\s*(\d{1,2})\s*[-./]\s*(\d{1,2})(?!\d)/g; // 2026-10-23 · 2026.10.23 · 2026/10/23 (연도 4자리가 있을 때만 — '10.23' 같은 짧은 형태는 소수·번호와 구분할 수 없어 인식하지 않는다)
+  function cleanText(text) {
+    let t = String(text || "").replace(RE_ATTACH, " ");
+    t = t.replace(RE_ISO, (m, y, mo, d) => (validMD(Number(y), Number(mo), Number(d)) ? `${y}년 ${Number(mo)}월 ${Number(d)}일` : m));
+    t = t.replace(/([~∼～–-]\s*)20\d{2}\s*년\s*(?=\d{1,2}\s*월)/g, "$1"); // 기간 끝의 연도는 떼어 기존 '~N월 N일' 규칙을 쓴다
+    return t.split(/\r?\n/).map((l) => l.replace(/[ \t]+/g, " ").trim()).join("\n");
+  }
+  const RE_KV = /^([가-힣A-Za-z][가-힣A-Za-z ]{0,11}?)\s*[:：]\s*(.+)$/;
+  const DATE_KEYS = /^(이용\s*기간|이용\s*일(?:자|시)?|일시|날짜|일자|기간|예약\s*일(?:자|시)?|방문\s*일|입실\s*일?|체크인|행사\s*일|사용\s*기간|투숙\s*기간)$/;
+  const TITLE_KEYS = /^(제목|시설|시설명|장소|예약명|숙소|상품명|프로그램|행사명|캠핑장)$/;
+  /** 줄바꿈 또는 ' / ' 로 나뉜 '제목 + 키: 값' 묶음 → 후보 1개(제목=첫 줄, 날짜=이용기간 등, 나머지 줄·박수는 memo). 해당 모양이 아니면 null(기존 문장 규칙으로). */
+  function parseStructured(text, ctx) {
+    let segs = String(text || "").split(/\n/).map((x) => x.trim()).filter(Boolean);
+    if (segs.length < 2) segs = String(text || "").split(/\s+\/\s+/).map((x) => x.trim()).filter(Boolean);
+    if (segs.length < 2) return null;
+    const kv = segs.map((x) => { const m = RE_KV.exec(x); return m ? { key: m[1].trim(), val: m[2].trim() } : null; });
+    const di = kv.findIndex((x) => x && DATE_KEYS.test(x.key) && RE_MD.test(x.val));
+    if (di < 0) return null;
+    let ti = segs.findIndex((x, i) => !kv[i] && !RE_MD.test(x));
+    let title = ti >= 0 ? segs[ti] : "";
+    if (ti < 0) { ti = kv.findIndex((x) => x && TITLE_KEYS.test(x.key)); if (ti < 0) return null; title = kv[ti].val; }
+    const c = parseFragment(kv[di].val, ctx, 0);
+    if (!c.eventDate && !c.needsCheck.some((n) => n.field === "date")) return null;
+    const nights = /(\d+)\s*박(?:\s*(\d+)\s*일)?/.exec(kv[di].val);
+    const memo = [nights ? nights[0].replace(/\s+/g, "") : ""].concat(segs.map((x, i) => (i === ti || i === di ? "" : x))).filter(Boolean).join("\n");
+    c.title = title.slice(0, 100);
+    c.needsCheck = c.needsCheck.filter((n) => n.field !== "title");
+    c.memo = memo.slice(0, 500);
+    c.source = segs.join("\n");
+    for (const [k, re] of CATEGORY_HINTS) if (re.test(title)) { c.categoryHint = k; break; }
+    return c;
+  }
+
   function parse(text, opts) {
     const o = opts || {};
     if (!(o.today instanceof Date) || isNaN(o.today.getTime())) return [];
     if (o.spoken === true) text = normalizeSpoken(text); // 음성 받아쓰기 글자(한글 숫자 보정)
     const ctx = { today: o.today, children: Array.isArray(o.children) ? o.children : [] };
+    text = cleanText(text);
+    const st = parseStructured(text, ctx);
+    if (st) return [st];
     const out = [];
     for (const piece of splitPieces(text)) {
       const hasInfo = RE_MD.test(piece) || RE_VAGUE.test(piece) || RE_REL.test(piece) || RE_TIME.test(piece) || RE_REPEAT_DAYS.test(piece) || RE_WEEKLY1.test(piece) || RE_BIWEEK.test(piece) || RE_MONTHLY.test(piece);

@@ -486,8 +486,8 @@ select:disabled { background: var(--bg); color: var(--text-muted); }
   }
 }
 .modal-panel h3 { margin: 0 0 4px; font-size: 18px; }
-.modal-panel .cat-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; color: var(--nd-ink); border: 1.5px solid transparent; background-image: linear-gradient(#fff, #fff) !important; background-clip: padding-box, border-box !important; margin-bottom: 10px; } /* D34 C: 인라인 background(=분류색)가 테두리·점으로 남고 안쪽은 흰색 */
-.modal-panel .cat-badge::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background-color: inherit; }
+.modal-panel .cat-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; color: #fff; margin-bottom: 10px; }
+.modal-panel .cat-badge:is([style*="--k-dv"], [style*="--k-lf"], [style*="--k-sf"]) { color: #161618; } /* D61: 밝은 분류색(발달·생활·안전)은 흰 글자 대비가 3.4~4.3이라 진한 글자(5.2~5.4) */
 .modal-panel .detail-row { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; line-height: 1.6; }
 .modal-panel .detail-row .label { font-weight: 600; color: var(--text-muted); font-size: 12px; margin-bottom: 4px; }
 .modal-panel .detail-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
@@ -1462,8 +1462,9 @@ body.acct-design #subsidy-body .sub-expired-toggle { border-radius: 14px; backgr
 /* G14-5 혜택 상세(신청 완료 상태, 톤 변경): 짙은 머리 + 겹친 상태 카드 */
 body.acct-design .modal-panel .acct-sub-head { margin: -24px -20px 0; padding: 26px 20px 34px; background: var(--c-ink); color: #fff; border-radius: 20px 20px 24px 24px; }
 body.acct-design .modal-panel .acct-sub-head h3 { margin: 6px 0 0; font-size: 20px; color: #fff; }
-body.acct-design .modal-panel .acct-sub-head .cat-badge { color: var(--nd-ink); margin-bottom: 0; }
-body.acct-design .modal-panel .acct-sub-head .detail-tag, body.acct-design .modal-panel .acct-sub-head .prov-tag { margin: 0 0 0 6px; color: rgba(255,255,255,.78) !important; background: transparent !important; }
+body.acct-design .modal-panel .acct-sub-head .cat-badge { margin-bottom: 0; } /* D61: 계정 모드 머리 띠에서도 분류색 채움(원래는 흰색이었으나 사용자 요청으로 두 모드 모두) */
+body.acct-design .modal-panel .acct-sub-head .detail-tag:not(.prov-tag) { margin: 0 0 0 6px; color: rgba(255,255,255,.78) !important; background: transparent !important; }
+body.acct-design .modal-panel .acct-sub-head .prov-tag { margin: 0 0 0 6px; } /* D61: 지원 주체 칩(전국 공통·지역)은 머리 띠 위에서도 색 채움(아래 .prov-nation/.prov-region) */
 body.acct-design .modal-panel .acct-sub-status { position: relative; margin: -20px 0 8px; padding: 14px 16px; border-radius: 16px; background: #fff; border: 1px solid var(--line); box-shadow: 0 6px 16px rgba(36, 37, 42, 0.15); }
 body.acct-design .modal-panel .acct-sub-status > strong { display: block; margin-bottom: 4px; font-size: 15px; color: var(--c-ok); }
 body.acct-design .modal-panel .acct-sub-status .completion-row { margin: 0; padding: 4px 0 0; border: 0; }
@@ -1729,8 +1730,9 @@ body.acct-design .ns-st { background: var(--c-ok-soft); color: var(--c-ok); }
 /* 혜택 주체 뱃지: 전국 공통 = 밝은 파랑, 지역 = 밝은 초록(글자 진하게) */
 .prov-tag.prov-nation, .modal-panel .prov-tag.prov-nation.detail-tag, .home-row .prov-tag.prov-nation { background: var(--c-badge-nation); color: var(--c-badge-nation-ink); padding: 2px 8px; border-radius: 8px; }
 .prov-tag.prov-region, .modal-panel .prov-tag.prov-region.detail-tag, .home-row .prov-tag.prov-region { background: var(--c-badge-region); color: var(--c-badge-region-ink); padding: 2px 8px; border-radius: 8px; }
-body.acct-design .modal-panel .acct-sub-head .prov-tag { background: transparent !important; color: var(--c-primary-ink) !important; }
-body.acct-design .modal-panel .acct-sub-head .detail-tag { color: var(--c-primary-ink) !important; }
+body.acct-design .modal-panel .acct-sub-head .prov-tag.prov-nation { background: var(--c-badge-nation); color: var(--c-badge-nation-ink); padding: 2px 8px; border-radius: 8px; }
+body.acct-design .modal-panel .acct-sub-head .prov-tag.prov-region { background: var(--c-badge-region); color: var(--c-badge-region-ink); padding: 2px 8px; border-radius: 8px; } /* D61: 원래(1e22d6b)는 계정 모드 머리 띠에서 투명이었으나 사용자 요청으로 두 모드 모두 색 채움 */
+body.acct-design .modal-panel .acct-sub-head .detail-tag:not(.prov-tag) { color: var(--c-primary-ink) !important; }
 
 /* S5 확인 필요: 배경·뱃지·밑줄 없이 본문과 같은 차콜 글자만(굵기 800) */
 body.acct-design .as-nc, body.acct-design .ns-nc { background: none; padding: 0; border-radius: 0; color: var(--text); font-weight: 800; font-style: normal; text-decoration: none; }
@@ -1996,8 +1998,7 @@ body.acct-design :is(#tab-home, #empty-panel) .acct-nc-me-t small svg { color: v
 .modal-panel:has(.as-steps) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); }
 .modal-panel:has(.as-steps) .acct-sub-head { background: #fff; color: var(--nd-ink); border-bottom: 1px solid var(--line); border-radius: 0; }
 .modal-panel:has(.as-steps) .acct-sub-head h3 { color: var(--nd-ink); }
-body.acct-design .modal-panel:has(.as-steps) .acct-sub-head .cat-badge { color: var(--nd-ink); } /* 흰 머리 위에서도 알약 모양이 보이게 색 테두리(D34 C가 대신함) */
-.modal-panel:has(.as-steps) .acct-sub-head :is(.detail-tag, .prov-tag) { color: var(--text-muted) !important; }
+.modal-panel:has(.as-steps) .acct-sub-head .detail-tag:not(.prov-tag) { color: var(--text-muted) !important; }
 body.acct-design .modal-panel:has(.as-steps) .as-n { background: #fff; border: 1.5px solid var(--line); color: var(--text-muted); }
 body.acct-design .modal-panel:has(.as-steps) .as-current .as-n { background: var(--nd-indigo); border-color: var(--nd-indigo); color: #fff; }
 body.acct-design .modal-panel:has(.as-steps) .as-done .as-n { background: var(--nd-indigo); border-color: var(--nd-indigo); color: #fff; } /* D22 A: 완료도 인디고(진행 점 규칙과 같음) */
