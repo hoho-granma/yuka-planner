@@ -59,6 +59,7 @@
     autoReserve: "예약 일정 만들기",
     autoReserved: (md) => `예약됨 ${md} · 일정 보기`,
     autoReservedNote: (md) => `예약됨 ${md}`,
+    recommendChip: (md) => `추천일 ${md}로 하기`, // 1-7: 예약 폼 날짜 후보(누르면 날짜만 채우고 저장은 사용자가 한다 — I9)
     autoFormNote: (item) => `‘${item}’ 예약 일정이에요. 날짜와 시간을 입력해 주세요.`,
     autoLinkBadge: (item) => `${item} 연결`,
     // C2-b2 완료 제안(승인 문구 #6~#10) — 사용자가 직접 답하는 방식만. 자동으로 완료하지 않고, 공식 기록과 연동된다는 표현은 쓰지 않는다.
@@ -79,6 +80,7 @@
     filterFamily: "가족", // #13
     toggleAuto: "자동 일정 함께 보기", // #14 (구)
     onlyUserSwitch: "직접 등록한 일정만 보기", // 칩 달력 개편: 아이만 선택했을 때 보이는 토글 칩(기본 꺼짐, 켜면 자동 일정 칩 숨김)
+    annivSwitch: "아이 생일·100일·돌 보기", // 2-5: 기본 켜짐(기기 저장)
     catColorSwitch: "카테고리별 색깔 다르게 하기", // 칩 달력 개편: 기본 꺼짐
     // #15 "반복 일정은 아직 표시되지 않아요." 는 B5 R38 로 폐기 — 반복 일정이 표시되므로 쓰지 않는다.
     sheetAdd: "일정 추가", // #16
@@ -385,7 +387,7 @@
       .join("");
     const editBtn = o.canEdit === true && (del.size > 0 || edit) ? `<button type="button" class="us-chip-edit" data-us-action="chip-edit" aria-pressed="${edit ? "true" : "false"}">${esc(edit ? MSG.chipEditDone : MSG.chipEdit)}</button>` : "";
     const sw = (action, label, on) => `<button type="button" class="us-tchip" role="switch" aria-checked="${on ? "true" : "false"}" data-us-action="${action}">${esc(label)}</button>`;
-    const switches = o.mode === "kids" && o.hideSwitches !== true ? `<div class="us-optrows">${sw("toggle-only-user", MSG.onlyUserSwitch, o.onlyUser === true)}${sw("toggle-cat-color", MSG.catColorSwitch, o.catColor === true)}</div>` : "";
+    const switches = (o.mode === "kids" && o.hideSwitches !== true ? `<div class="us-optrows">${sw("toggle-only-user", MSG.onlyUserSwitch, o.onlyUser === true)}${sw("toggle-cat-color", MSG.catColorSwitch, o.catColor === true)}</div>` : "") + (typeof o.annivOn === "boolean" ? `<div class="us-optrows">${sw("toggle-anniv", MSG.annivSwitch, o.annivOn)}</div>` : "");
     return `<div class="us-filter">${items}${editBtn}</div>${switches}`;
   }
   /** 칩 지우기 확인 시트. d: { kind:"MEMBER"|"CHILD", id, name, uidWarn?, blocked?, busy?, error? } — 버튼 data-us-chipdel-act(confirm|cancel). */
@@ -913,7 +915,7 @@
     const repeating = fixed && isRepeating(f);
     const repeatBlock = !fixed
       ? ""
-      : `<div class="us-field"><label>${esc(MSG.repeatLabel)}</label><div class="us-chips">${chip("", 'data-us-repeat="NONE"', MSG.repeatNone, !repeating)}${chip("", 'data-us-repeat="WEEKLY"', MSG.repeatWeekly, f.repeat === "WEEKLY")}${f.repeat === "BIWEEKLY" ? chip("", 'data-us-repeat="BIWEEKLY"', MSG.repeatBiweekly, true) : ""}${soonChip(MSG.g13RepeatMonthly)}${soonChip(MSG.g13RepeatNth)}</div></div>`;
+      : `<div class="us-field"><label>${esc(MSG.repeatLabel)}</label><div class="us-chips">${chip("", 'data-us-repeat="NONE"', MSG.repeatNone, !repeating)}${chip("", 'data-us-repeat="WEEKLY"', MSG.repeatWeekly, f.repeat === "WEEKLY")}${chip("", 'data-us-repeat="BIWEEKLY"', MSG.repeatBiweekly, f.repeat === "BIWEEKLY")}${soonChip(MSG.g13RepeatMonthly)}${soonChip(MSG.g13RepeatNth)}</div></div>`;
     const repeatDetail = !repeating
       ? ""
       : `<div class="us-field"><label>${esc(MSG.repeatDaysLabel)}</label><div class="us-chips">${WEEKDAY_KEYS.map((k) => chip("", `data-us-day="${k}"`, WEEKDAY_LABELS[k], (f.byDay || []).includes(k))).join("")}</div></div>
@@ -1028,8 +1030,10 @@
          <div class="us-field"><label>${esc(MSG.untilLabel)}</label><div class="us-chips">${chip("", 'data-us-until="NONE"', MSG.untilNone, f.untilMode !== "DATE")}${chip("", 'data-us-until="DATE"', MSG.untilDate, f.untilMode === "DATE")}</div></div>
          ${f.untilMode === "DATE" ? `<div class="us-field"><label>${esc(MSG.lastRepeatLabel)}</label>${picker(PICKER_PREFIXES.until, f.until)}</div>` : ""}
          <p class="us-note">${esc(MSG.repeatHint)}</p>`;
+    const recM = /^\d{4}-(\d{2})-(\d{2})$/.exec(f.recommendIso || "");
+    const recChip = recM && !f.eventDate && !repeating && f.mode === "create" ? `<div class="us-field us-recommend"><div class="us-chips">${chip("", `data-us-recommend="${esc(f.recommendIso)}"`, MSG.recommendChip(`${+recM[1]}/${+recM[2]}`), false)}</div></div>` : "";
     const dates = fixed
-      ? `${repeatBlock}<div class="us-field"><label>${esc(repeating ? MSG.firstDayLabel : MSG.dateField)}</label>${picker(PICKER_PREFIXES.date, f.eventDate)}</div>
+      ? `${repeatBlock}${recChip}<div class="us-field"><label>${esc(repeating ? MSG.firstDayLabel : MSG.dateField)}</label>${picker(PICKER_PREFIXES.date, f.eventDate)}</div>
          ${repeating ? repeatDetail : `<label class="us-check"><input type="checkbox" id="us-multi"${f.multiDay ? " checked" : ""} /> ${esc(MSG.multiDay)}</label>
          ${f.multiDay ? `<div class="us-field"><label>${esc(MSG.endField)}</label>${picker(PICKER_PREFIXES.end, f.endDate)}</div>` : ""}`}
          <label class="us-check"><input type="checkbox" id="us-allday"${f.allDay ? " checked" : ""} /> ${esc(MSG.allDay)}</label>

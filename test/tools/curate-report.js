@@ -66,10 +66,16 @@ function run(kid, today) {
   };
   return { out: C.curate(events, state, policy, today), events };
 }
-const unitText = (u) => `${u.ids.map(pre).join("+")} ${u.title}`.replace(/\|/g, "/");
-const shortList = (arr) => (arr.length ? arr.map((u) => u.ids.map(pre).join("+")).join(", ") : "—");
+const unitText = (u) => (u.key === "REVIEW_PAST" ? u.title : `${u.ids.map(pre).join("+")} ${u.title}`).replace(/\|/g, "/");
+const shortList = (arr) => (arr.length ? arr.map((u) => (u.key === "REVIEW_PAST" ? `지난기록${u.ids.length}` : u.ids.length > 3 ? `${u.ids.map(pre)[0]}외${u.ids.length - 1}` : u.ids.map(pre).join("+"))).join(", ") : "—");
 const cell = (s) => String(s).replace(/\|/g, "/");
 
+if (process.argv.includes("--json")) { // 6명 결과를 기대값 테스트로 고정할 때 쓰는 요약(오늘 고정, 슬롯별 단위 id·규칙·행동 종류)
+  const sum = (arr) => arr.map((u) => `${u.ids.map(pre).join("+")}:${u.rule}:${u.actionKind}`);
+  const o = {};
+  for (const kid of KIDS) { const r = run(kid, new RealDate(2026, 9, 5, 12)).out; o[kid.key] = { now: sum(r.now), soon: sum(r.soon), know: sum(r.know), more: [r.moreCounts.now, r.moreCounts.soon, r.moreCounts.know, r.moreCounts.benefits] }; }
+  process.stdout.write(JSON.stringify(o, null, 1) + "\n"); process.exit(0);
+}
 const lines = [];
 const P = (s = "") => lines.push(s);
 P("# 07 큐레이션 6명 결과 (1-0 ③)");
@@ -94,7 +100,7 @@ for (const kid of KIDS) {
       return n === 0 ? "비어 있음 — 후보 0(데이터 없음)" : `비어 있음 — 후보 있으나 조건 미달(${s === "now" ? "ACT" : s === "soon" ? "ACT·CHECK" : "KNOW"} ${n}건, 이 슬롯 규칙에 안 걸림)`;
     })();
     if (!list.length) P(`| ${slotName[s]} | ${reasonEmpty} | | | |`);
-    for (const u of list) P(`| ${slotName[s]} | ${cell(unitText(u))}${u.type === "CHECK" ? " (확인형)" : ""} | ${u.rule} | ${cell(u.reason.text)}${kid.key.startsWith("⑥") && u.ids.some((i) => pre(i) === "SB-04") && s === "now" ? " **(D19 대기: ageCap 특례로 신청 가능, 긴 창 상향 규칙 승인 시 '곧'으로 내려감)**" : ""} | ${u.actionKind} |`);
+    for (const u of list) P(`| ${slotName[s]} | ${cell(unitText(u))}${u.type === "CHECK" ? " (확인형)" : ""} | ${u.rule} | ${cell(u.reason.text)}${kid.key.startsWith("⑥") && u.ids.some((i) => pre(i) === "SB-04") && s === "now" ? "" : ""} | ${u.actionKind} |`);
     if (out.moreCounts[s] > 0) P(`| ${slotName[s]} — N개 더 | ${out.moreCounts[s]}개: ${cell(out.overflow[s].map(unitText).join(" / "))} | ${out.overflow[s].map((u) => u.rule).join(",")} | | |`);
   }
   P(`| 혜택 한 줄 | 받을 수 있는 혜택 ${out.moreCounts.benefits}개(상시·마감 없음, 슬롯 제외) | | | |`);
@@ -115,16 +121,16 @@ for (const kid of KIDS) {
 NOW = DATES[0];
 P("## hn_dev가 보기에 어색한 것 (판정하지 않음)");
 P();
-// 아래 5개는 2026-10-05 실행 결과를 보고 hn_dev 가 적은 의견(판정 아님). 결과가 바뀌면 이 문구도 다시 봐야 한다.
+// 아래 5개는 2026-10-05 실행 결과(v3: C1 정책 id 우선·C3 '곧' 날짜순 반영)를 보고 hn_dev 가 적은 의견(판정 아님). 결과가 바뀌면 이 문구도 다시 봐야 한다.
 const notes = [
-  "슬롯 넘침이 크다: ② 지금 꼭 8건(+5), ③ 17건(+14). '완료 기록 없음' 가정이라 이미 지났을 접종·검진(VX-HEPB·BCG 등 OVERDUE_CATCHUP)이 전부 L3로 올라와 슬롯 3을 채운다. 21개월 아이에게 HEPB 1차·BCG가 '지금 꼭'의 맨 위인 것이 부모가 먼저 볼 일인지 검토 필요(실사용에서는 완료 기록·나이 지난 항목 처리가 결과를 좌우한다).",
-  "'N개 더'가 사실상 전체 목록이다: ② 곧 +25·알아두기 +16, ③ 알아두기 +36. 접힘을 펼치면 홈이 목록 화면이 되므로 펼침 상한 또는 분류가 필요한지 검토.",
-  "curation.json에 bundles 가 없어 TO_BORN(PG-01·SB-02·SB-04)·SC-01·02 묶음이 만들어지지 않았다(접종 같은 창 묶음만 동작). ① 임신 '곧'에 출산 후 묶음이 안 나오고, ⑤ SC-01·02는 시작이 45일 뒤라 L7로 빠진다(기대는 곧).",
-  "임신(①)에서 출산 후 항목(NAT-004·GURO-P02·NAT-011·SEOUL-001 등)이 '곧' 후보로 많이 섞이고(+21), PREG-005 독감 접종은 기대(지금 꼭)와 달리 알아두기(KNOW, L5)로 갔다 — 임신 항목의 분류(ids 표에 PREG-005 없음)와 임신 전용 필터 확인 필요.",
-  "연령과 맞지 않아 보이는 항목이 상위에 뜬다: ⑥ 초3에 SB-04 아동수당이 '지금 꼭'(L3), ④~⑥에 SB-06~09(미숙아·어린이집 보육료·아이돌봄)가 '곧'의 확인형으로 반복. 나이 상한(ageCap) 반영·확인형의 노출 조건(조건 답이 없을 때 모든 나이에 노출)을 검토. 또 확인형 일부의 actionKind가 done(링크·일정 연결 없음)이라 행동 버튼이 '완료'로 나온다.",
+  "임신 전용으로 보이는 지원이 출생 후 아이의 '곧'에 남는다(C2): ② 은찬·③ 21개월의 '곧' N개 더에 SEOUL-P01·SEOUL-P04·PREG-004·SEOUL-002(임산부 교통비)·NAT-008·PREG-006·NAT-016 등. curate는 schedule.js의 prenatalOnly 분기를 그대로 거친 이벤트를 받고(코드 문제 아님), 이 레코드들은 prenatalOnly 표식이 없고 출생 후 개월 범위(maxAge 6~24)가 있어 앱 혜택 탭에도 같은 이유로 보인다 — 출생 후에도 신청 가능한 제도인지는 데이터 판단(hn_data)이다.",
+  "'N개 더'가 아직 크다: ② 곧 +31·알아두기 +12, ③ 곧 +15·알아두기 +34. 알아두기(KNOW)는 이 시기 발달·안전 전체가 후보라 '대표 1 + 나머지'가 사실상 월령 탭 목록 전체다. expandMax 5로 펼침은 5개까지 보이지만 후보 수 자체는 그대로다.",
+  "임신(①)의 '곧'에는 PG-02·PREG-005가 오고 TO_BORN 묶음(PG-01·SB-02·SB-04)은 없다: 창이 출산 예정일부터라 시작까지 102일이라 L7. PREG-005는 정책 id 로 ACT(BOOK)가 됐지만 무료접종 기간이 7개월이라 긴 창(L5)이라 '지금 꼭(L4)'이 아니라 '곧'이다 — 06 기대(L4)와 다름. 판정 필요.",
+  "'곧' 날짜순(C3) 후에도 마감 없는 상시 지원(SB-04 아동수당)이 날짜 있는 항목이 적은 단계에서는 '곧' 2칸에 남는다: ④ 3~5세는 접종 묶음과 SB-04, ⑤ 6~7세는 10-05에 SC-03·SB-04(11-20에는 SC-01+02 묶음이 위로 옴). 날짜 있는 항목이 없으면 상시가 채우는 구조다.",
+  "'지난 접종·검진 기록 확인 N개'(D18)가 한 단위로 '곧' 1칸을 차지하지만 눌러서 갈 곳(체크리스트 필터)이 아직 없다(review 버튼 연결은 1-0 연결 때). 오래된 지원은 묶지 않고 L5로 내린다(초3 아동수당: ageCap 특례로 신청 가능 → '곧').",
 ];
 for (const n of notes) P(`- ${n}`);
 P();
 const text = lines.join("\n") + "\n";
 if (process.argv.includes("--stdout")) process.stdout.write(text);
-else { fs.writeFileSync(path.join(ROOT, "docs/ux-review/07-큐레이션-6명-결과.md"), text); console.log("written", text.length); }
+else { const oi = process.argv.indexOf("--out"); const out = oi > 0 ? process.argv[oi + 1] : "docs/ux-review/07-큐레이션-6명-결과.md"; fs.writeFileSync(path.join(ROOT, out), text); console.log("written", out, text.length); }

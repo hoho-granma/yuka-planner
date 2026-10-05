@@ -139,7 +139,7 @@ test("usOpenForm: 새 일정에만 defaultScope 를 넘기고(옵션 없으면 �
   const now = fnSrc(app, "usOpenForm");
   assert.ok(now.includes("...(opts && opts.scope ? { defaultScope: opts.scope } : {})"));
   assert.strictEqual(now.replace("usOpenForm(id, dateIso, opts)", "usOpenForm(id, dateIso)").replace(", ...(opts && opts.scope ? { defaultScope: opts.scope } : {})", ""), fnSrc(headApp, "usOpenForm").replace("    us.autoLabel = null;\n", "    us.autoLabel = null;\n"));
-  assert.strictEqual(fnSrc(app, "usOpenFormFromAuto"), fnSrc(headApp, "usOpenFormFromAuto"));
+  assert.strictEqual(fnSrc(app, "usOpenFormFromAuto").replace(/    us\.form\.recommendIso = usRecommendIsoOf\(e\);[^\n]*\n/, ""), fnSrc(headApp, "usOpenFormFromAuto")); // 1-7 후보 칩 한 줄만 다르다
   assert.ok(/usOpenForm\(null\)/.test(app) && !/usOpenForm\(null, toISODate\(new Date\(\)\), \{ scope/.test(app.replace(menuSrc, "")), "다른 호출처는 옵션을 쓰지 않는다");
 });
 test("스키마·규칙·AUTO 계산·가구 동기화·완료 동기화 파일은 바뀌지 않았다", () => {

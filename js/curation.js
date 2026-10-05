@@ -12,7 +12,7 @@
  * events: visibleSchedule(true) 결과(이벤트 배열). state: {
  *   completed:{id→기록}, isNA(id), subsidyStatusOf(e)→"available"|"upcoming"|…(HNLogic.subsidyStatus 를 birthDate 와 함께 감싼 것), linkDateOf(e)→Date|null(일정으로 넣은 날짜), applyOf(e)→{url}|null, canSchedule(e)→bool,
  *   unknown:[{id,title}](조건 답이 없어 이벤트가 되지 못한 항목 — CHECK 후보로만 쓴다), ageMonths, pregnant, birthDate }
- * 반환 단위(unit): { key, ids, title, items(이벤트), type, level("L1".."L7"), rule, daysToEnd, actionKind("apply"|"schedule"|"done"|"confirm"(확인형: 해당돼요/아니에요)), applyUrl, reason }
+ * 반환 단위(unit): { key, ids, title, items(이벤트), type, level("L1".."L7"), rule, daysToEnd, actionKind("apply"|"schedule"|"done"|"confirm"(확인형: 해당돼요/아니에요)|"review"(지난 기록 확인 → 체크리스트)), applyUrl, reason }
  */
 (function (root, factory) {
   if (typeof module !== "undefined" && module.exports) module.exports = factory(require("./hn-logic.js"));
@@ -29,6 +29,7 @@
   const isInt = (v, min) => Number.isInteger(v) && v >= min;
   const isDate = (v) => v instanceof Date && !isNaN(v.getTime());
   const SUBSIDY = "행정·지원금";
+  const REVIEW_CATEGORIES = ["예방접종", "영유아검진"]; // D18 '지난 접종·검진 기록 확인' 묶음 대상(이유식·발달 같은 관찰·정보 항목은 묶지 않는다)
 
   // 이유 문장(키 → 문장). 화면은 키로 문장을 고르고, 숫자는 params 로 채운다. 새 사실(금액·날짜)을 만들지 않는다.
   const REASONS = Object.freeze({
@@ -42,6 +43,7 @@
     starting_soon: (p) => (Number.isFinite(p.days) ? `${p.days}일 뒤에 시작돼요` : "곧 시작돼요"),
     check_condition: () => "해당되는지 확인해 보세요",
     know_now: () => "이 시기에 알아두면 좋아요",
+    review_past: () => "지난 기록을 확인해 두세요",
   });
 
   // ── 정책 읽기(data/policy/curation.json 모양. 형식이 틀리면 null — 호출하는 쪽이 값을 못 읽은 것으로 안다) ──
@@ -59,9 +61,12 @@
     const al = {};
     for (const x of raw.aliases && Array.isArray(raw.aliases.pairs) ? raw.aliases.pairs : []) if (x && typeof x.alias === "string" && typeof x.primary === "string") al[x.alias] = x.primary;
     const b = raw.bundles && typeof raw.bundles === "object" ? raw.bundles : {};
+    const warnings = [];
+    if (!isInt(s.expandMax, 1)) warnings.push("slots.expandMax 가 없어 'N개 더' 펼침이 제한 없이 동작해요(D20: 정책에 최대 개수를 넣어야 해요)");
     return {
+      warnings,
       thresholds: { deadlineSoonDays: t.deadlineSoonDays, upcomingDays: t.upcomingDays, shortWindowDays: t.shortWindowDays, reappearDays: t.reappearDays },
-      slots: { now: s.now, soon: s.soon, know: s.know },
+      slots: { now: s.now, soon: s.soon, know: s.know, expandMax: isInt(s.expandMax, 1) ? s.expandMax : null }, // expandMax: 'N개 더' 펼침 상한(D20, 없으면 제한 없음)
       ids: cleanMap(raw.ids), triggerTypes: cleanMap(raw.triggerTypes), prefixByExposure: pbe, prefix: cleanMap(raw.prefix), subsidyDefault: sd,
       urgentLongWindowIds: Array.isArray(raw.urgentLongWindowIds && raw.urgentLongWindowIds.ids) ? raw.urgentLongWindowIds.ids.filter((x) => typeof x === "string") : [],
       aliases: al,
@@ -80,7 +85,7 @@
   function classify(e, policy) {
     const fallback = { type: "ACT", sub: "" };
     const def = defOf(e), tid = todoIdOf(e);
-    if (policy.ids[tid]) return policy.ids[tid];
+    if (policy.ids[tid]) return { ...policy.ids[tid], explicit: true }; // 정책이 id 로 정한 분류는 G4 자동 강등보다 우선
     if (def) {
       if (def.triggerType && policy.triggerTypes[def.triggerType]) return policy.triggerTypes[def.triggerType];
       const pre = tid.split("-")[0];
@@ -153,10 +158,12 @@
     const windowDays = isDate(e.windowStart) && isDate(e.windowEnd) ? diffDays(e.windowEnd, e.windowStart) + 1 : Infinity;
     if (st === "DUE" && def.catchUp === "NOT_ALLOWED" && inSoon) return { level: "L1", key: "last_chance", params: { days: toEnd } };
     if (st === "DUE" && inSoon) return { level: "L2", key: "deadline_soon", params: { days: toEnd } };
-    if (st === "OVERDUE_CATCHUP" && def.exposureLevel === "MUST") return { level: "L3", key: "late_possible", params: {} };
+    if (st === "OVERDUE_CATCHUP" && REVIEW_CATEGORIES.includes(e.category) && isDate(e.windowEnd) && diffDays(today, e.windowEnd) > th.shortWindowDays) return { level: "L5", key: "past_old", params: {}, stale: true }; // D18: 끝난 지 오래된 따라잡기는 한 덩어리 '지난 기록 확인'으로
+    const longOver = st === "OVERDUE_CATCHUP" && isDate(e.windowEnd) && diffDays(today, e.windowEnd) > th.shortWindowDays;
+    if (st === "OVERDUE_CATCHUP" && def.exposureLevel === "MUST" && !longOver) return { level: "L3", key: "late_possible", params: {} }; // 끝난 지 오래된 지원 등은 L3(늦었지만 가능)로 올리지 않고 아래 L5
     if (st === "DUE") {
       if (windowDays <= th.shortWindowDays) return { level: "L4", key: "in_short_window", params: {} };
-      if (policy.urgentLongWindowIds.includes(todoIdOf(e))) return { level: "L4", key: "urgent_long", params: {} };
+      if (policy.urgentLongWindowIds.includes(todoIdOf(e)) && isDate(e.windowStart) && diffDays(today, e.windowStart) <= th.shortWindowDays) return { level: "L4", key: "urgent_long", params: {} }; // D19: 긴 창 상향은 창 시작 후 shortWindowDays 안만(이후는 L5)
       if (inst.retroactiveEligible === true) return { level: "L4", key: "retro_open", params: {} };
       return { level: "L5", key: "in_window", params: {} };
     }
@@ -186,7 +193,7 @@
   
   /** 큐레이션. 반환 { now, soon, know, moreCounts{now,soon,know,benefits,later}, reasons{unitKey→{rule,key,params,text}}, excluded[{id,gate}], stats{...} } */
   function curate(events, state, policy, today) {
-    const out = { now: [], soon: [], know: [], moreCounts: { now: 0, soon: 0, know: 0, benefits: 0, later: 0 }, overflow: { now: [], soon: [], know: [] }, reasons: {}, excluded: [], stats: { byLevel: {}, byType: { ACT: 0, CHECK: 0, KNOW: 0 }, candidates: 0, gated: 0 } };
+    const out = { warnings: policy && policy.warnings ? policy.warnings.slice() : [], now: [], know: [], moreCounts: { now: 0, soon: 0, know: 0, benefits: 0, later: 0 }, overflow: { now: [], soon: [], know: [] }, reasons: {}, excluded: [], stats: { byLevel: {}, byType: { ACT: 0, CHECK: 0, KNOW: 0 }, candidates: 0, gated: 0 } };
     if (!policy || !isDate(today) || !Array.isArray(events)) return out;
     const st = state || {};
     const present = new Set(events.map((e) => baseId(e.id)));
@@ -198,9 +205,9 @@
       if (gate) { out.excluded.push({ id: e.id, gate }); out.stats.gated++; continue; }
       const cls = classify(e, policy);
       let type = cls.type;
-      if (e.isLegacySubsidy && e.detail && e.detail.deadlineType === "unconfirmed" && !(st.applyOf && st.applyOf(e))) type = "KNOW"; // G4: 마감 미확인+행동 링크 없음 → 알아둘 것으로만
+      if (!cls.explicit && e.isLegacySubsidy && e.detail && e.detail.deadlineType === "unconfirmed" && !(st.applyOf && st.applyOf(e))) type = "KNOW"; // G4: 마감 미확인+행동 링크 없음 → 알아둘 것으로만
       const lvl = levelOf(e, today, policy, st);
-      cands.push({ e, type, sub: cls.sub, level: lvl.level, reasonKey: lvl.key, params: lvl.params, daysToEnd: (() => { const d = endOf(e); return d ? diffDays(d, today) : Infinity; })(), id: e.id });
+      cands.push({ e, type, sub: cls.sub, stale: lvl.stale === true, level: lvl.level, reasonKey: lvl.key, params: lvl.params, daysToEnd: (() => { const d = endOf(e); return d ? diffDays(d, today) : Infinity; })(), id: e.id });
     }
     for (const u of st.unknown || []) { // 조건 답이 없어 이벤트가 되지 못한 항목: CHECK 후보로만(숨기지 않는다)
       const a = policy.aliases[baseId(u.id)];
@@ -211,9 +218,10 @@
     out.stats.candidates = cands.length;
     for (const c of cands) { out.stats.byLevel[c.level] = (out.stats.byLevel[c.level] || 0) + 1; out.stats.byType[c.type]++; }
 
+    const stale = cands.filter((c) => c.stale); // D18
     // 마감 없는 상시 지원금은 슬롯에서 뺀다(혜택 한 줄용 개수)
     const slotCands = [];
-    for (const c of cands) { if (c.sub === "INFO_BENEFIT") out.moreCounts.benefits++; else slotCands.push(c); }
+    for (const c of cands) { if (c.stale) continue; if (c.sub === "INFO_BENEFIT") out.moreCounts.benefits++; else slotCands.push(c); }
 
     // 묶기: 정책 그룹(최소 2개 있을 때) → 같은 창 묶음(정책 분류) → 나머지는 1건 1단위
     const used = new Set();
@@ -239,14 +247,19 @@
     }
     for (const [k, list] of win) if (list.length >= 2) mk(k, list, "");
     for (const c of slotCands) if (!used.has(c.id)) mk(c.id, [c], "");
+    if (stale.length) { // D18: 끝난 지 shortWindowDays 보다 오래된 따라잡기 항목 → 한 단위(CHECK, '곧' 칸), 개수와 목록은 items 로 보존
+      const rep = stale.slice().sort(cmp)[0];
+      units.push({ key: "REVIEW_PAST", ids: stale.map((c) => c.id), items: stale.map((c) => c.e), title: `지난 접종·검진 기록 확인 ${stale.length}개`, type: "CHECK", level: "L5", reasonKey: "review_past", params: {}, daysToEnd: Infinity, rep, rule: "L5", review: true });
+      out.stats.pastReview = stale.length;
+    }
 
     // 행 단위 행동 종류(신청 링크 > 일정 넣기 > 완료)와 이유 문장
     for (const u of units) {
       const e = u.rep.e;
       const apply = !e.unknown && st.applyOf ? st.applyOf(e) : null;
       u.applyUrl = apply && apply.url ? apply.url : "";
-      u.actionKind = u.type === "CHECK" ? "confirm" : u.applyUrl ? "apply" : !e.unknown && st.canSchedule && st.canSchedule(e) ? "schedule" : "done";
-      const key = u.type === "KNOW" ? "know_now" : u.type === "CHECK" && lv(u.level) > 4 ? "check_condition" : u.reasonKey;
+      u.actionKind = u.review ? "review" : u.type === "CHECK" ? "confirm" : u.applyUrl ? "apply" : !e.unknown && st.canSchedule && st.canSchedule(e) ? "schedule" : "done";
+      const key = u.review ? "review_past" : u.type === "KNOW" ? "know_now" : u.type === "CHECK" && lv(u.level) > 4 ? "check_condition" : u.reasonKey;
       u.reason = { rule: u.level, key, params: u.params || {}, text: (REASONS[key] || (() => ""))(u.params || {}) };
       out.reasons[u.key] = u.reason;
       u.rule = u.level;
@@ -254,7 +267,10 @@
 
     // 슬롯: 지금 꼭 = ACT L1~L4 / 곧 = ACT L5~L6 + CHECK L1~L6 / 알아두기 = KNOW 대표 1(+개수). 넘침은 아래로 내리지 않는다.
     const nowAll = units.filter((u) => u.type === "ACT" && lv(u.level) <= 4).sort(unitCmp);
-    const soonAll = units.filter((u) => (u.type === "ACT" && (u.level === "L5" || u.level === "L6")) || (u.type === "CHECK" && lv(u.level) <= 6)).sort(unitCmp);
+    // '곧' 칸 정렬(C3): L5·L6 을 섞어 남은 날 오름차순 — L6 은 시작까지, 그 밖은 마감까지. 날짜가 없으면 맨 뒤. 같은 날은 기존 동점 규칙.
+    const soonDays = (u) => (u.level === "L6" ? (Number.isFinite(u.params && u.params.days) ? u.params.days : 0) : u.daysToEnd);
+    const soonCmp = (a, b) => { if (!!a.review !== !!b.review) return a.review ? -1 : 1; /* C4: '지난 접종·검진 기록 확인'은 날짜가 없어도 '곧' 맨 앞에 고정 */ const x = soonDays(a), y = soonDays(b); return x !== y ? (x < y ? -1 : 1) : cmp(a.rep, b.rep); };
+    const soonAll = units.filter((u) => (u.type === "ACT" && (u.level === "L5" || u.level === "L6")) || (u.type === "CHECK" && lv(u.level) <= 6)).sort(soonCmp);
     const knowAll = units.filter((u) => u.type === "KNOW" && lv(u.level) <= 5).sort((a, b) => {
       const ra = knowRank(a, st), rb = knowRank(b, st);
       return ra < rb ? -1 : ra > rb ? 1 : unitCmp(a, b);
@@ -263,6 +279,7 @@
     out.soon = soonAll.slice(0, policy.slots.soon); out.moreCounts.soon = Math.max(0, soonAll.length - policy.slots.soon);
     out.know = knowAll.slice(0, policy.slots.know); out.moreCounts.know = Math.max(0, knowAll.length - policy.slots.know);
     out.overflow = { now: nowAll.slice(policy.slots.now), soon: soonAll.slice(policy.slots.soon), know: knowAll.slice(policy.slots.know) }; // 넘친 단위(아래로 내리지 않고 'N개 더'로 펼침) — moreCounts 와 개수 일치
+    out.expandMax = policy.slots.expandMax; // 'N개 더' 펼침 상한(D20)
     out.moreCounts.later = units.filter((u) => lv(u.level) === 7 && u.type !== "KNOW").length;
     out.stats.units = units.length;
     out.stats.slotCandidates = { now: nowAll.length, soon: soonAll.length, know: knowAll.length, actAny: units.filter((u) => u.type === "ACT").length };

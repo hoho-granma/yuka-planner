@@ -90,3 +90,54 @@ test("buildEligibilityUnknown: ageMonths 를 주면 나이 범위 밖 항목은 
   assert.ok(all.length >= 1);
   assert.ok(!ids(54).includes("SB-06") && ids(54).includes("SB-09") && !ids(110).includes("SB-08") && !ids(200).includes("SB-09"), all.join());
 });
+test("B1(D18): 끝난 지 60일 안 따라잡기는 L3, 더 오래된 것은 '지난 기록 확인 N개' 한 단위(CHECK·review, 목록 보존)", () => {
+  const od = (id, endAgo, cat) => ev(id, { category: cat || "예방접종", engineStatus: "OVERDUE_CATCHUP", windowStart: D(-endAgo - 30), windowEnd: D(-endAgo) });
+  const r = C.curate([od("HC-03", 10), od("VX-A", 61), od("VX-B", 200), od("VX-C", 90)], st(), P, T);
+  const l3 = [...r.now].filter((u) => u.rule === "L3").flatMap((u) => u.ids);
+  assert.deepStrictEqual(l3, ["HC-03"]);
+  const rv = [...r.soon, ...r.overflow.soon].find((u) => u.key === "REVIEW_PAST");
+  assert.ok(rv && rv.type === "CHECK" && rv.actionKind === "review" && rv.ids.length === 3 && rv.title.includes("3개") && r.stats.pastReview === 3);
+  assert.deepStrictEqual(C.curate([od("VX-A", 60)], st(), P, T).now.map((u) => u.rule), ["L3"], "경계: 60일은 아직 L3");
+  const sb = C.curate([od("SB-04", 3000, "행정·지원금")], st({ subsidyStatusOf: () => "available" }), P, T); // 지원은 묶지 않고 L3 대신 L5(곧)
+  assert.deepStrictEqual([sb.now.length, sb.soon.map((u) => u.rule)], [0, ["L5"]]);
+  const fd = C.curate([od("FD-01", 300, "생활·수유")], st(), P, T); // 접종·검진이 아닌 항목은 묶지 않는다
+  assert.ok(!fd.stats.pastReview && ![...fd.soon, ...fd.overflow.soon].some((u) => u.key === "REVIEW_PAST"));
+});
+test("B2(D19): 긴 창 상향(L4)은 창 시작 후 60일 안만, 이후는 L5", () => {
+  const mk = (n) => ev("SB-04", { windowStart: D(-n), windowEnd: D(1000), detail: { definition: { todo_id: "SB-04", catchUp: "ALLOWED", exposureLevel: "MUST", priority: 1 }, instance: {} } });
+  const lvl = (n) => { const r = C.curate([mk(n)], st({ subsidyStatusOf: () => "available" }), P, T); return [...r.now, ...r.soon][0].rule; };
+  assert.deepStrictEqual([lvl(10), lvl(60), lvl(61), lvl(3000)], ["L4", "L4", "L5", "L5"]);
+});
+test("B3(D20): 펼침은 정책 expandMax 개까지 + 전체 보기, expandMax 없으면 제한 없음 · D17 와인색", () => {
+  const V = require("../js/home-slots-view.js");
+  const u = (i) => ({ key: "k" + i, ids: ["k" + i], title: "숨은 " + i, type: "ACT", level: "L4", rule: "L4", daysToEnd: Infinity, actionKind: "done", items: [], reason: { text: "" } });
+  const over = [1, 2, 3, 4, 5, 6, 7].map(u);
+  const base = { now: [u(0)], soon: [], know: [], moreCounts: { now: 7 }, overflow: { now: over, soon: [], know: [] } };
+  const h = V.render({ ...base, expandMax: 5 }, { today: T });
+  assert.strictEqual((h.match(/숨은 /g) || []).length, 6, "보이는 1 + 펼침 5"); assert.ok(h.includes("전체 보기 →") && h.includes('data-hs-go="checklist"'));
+  const h2 = V.render({ ...base, expandMax: null }, { today: T });
+  assert.strictEqual((h2.match(/숨은 /g) || []).length, 8); assert.ok(!h2.includes("전체 보기"));
+  assert.strictEqual(C.normalizePolicy({ ...rd("data/policy/curation.json"), slots: { now: 3, soon: 2, know: 1, expandMax: 5 } }).slots.expandMax, 5);
+  assert.ok(/--hn-deadline:\s*#8a1c3d/.test(fs.readFileSync(path.join(ROOT, "css/home-slots.css"), "utf8")));
+});
+test("정책 검증: slots.expandMax 가 없으면 경고(기본값을 코드에 박지 않는다), 있으면 경고 없음", () => {
+  const raw = rd("data/policy/curation.json");
+  const without = C.normalizePolicy({ ...raw, slots: { now: 3, soon: 2, know: 1 } });
+  assert.ok(without.warnings.some((w) => w.includes("expandMax")) && without.slots.expandMax === null);
+  assert.ok(C.curate([], st(), without, T).warnings.length === 1);
+  assert.deepStrictEqual(C.normalizePolicy({ ...raw, slots: { now: 3, soon: 2, know: 1, expandMax: 5 } }).warnings, []);
+});
+test("C1: 정책이 id 로 ACT 라고 정한 지원은 마감 미확인·링크 없음이어도 KNOW 로 강등되지 않는다(기본 분류만 강등)", () => {
+  const rec = (id) => ({ id, category: "행정·지원금", isLegacySubsidy: true, entryDate: D(-1), detail: { deadlineType: "unconfirmed" } });
+  const r = C.curate([rec("PREG-005"), rec("ZZ-UNK")], st({ subsidyStatusOf: () => "available" }), P, T);
+  const types = Object.fromEntries([...r.now, ...r.soon, ...r.know, ...r.overflow.now, ...r.overflow.soon, ...r.overflow.know].map((u) => [u.ids[0], u.type]));
+  assert.deepStrictEqual([types["PREG-005"], types["ZZ-UNK"]], ["ACT", "KNOW"]);
+});
+test("C3: '곧'은 L5·L6 을 섞어 남은 날 오름차순(마감·시작일 없음은 맨 뒤)", () => {
+  const e1 = ev("A-1", { windowStart: D(-100), windowEnd: D(40) }); // L5(긴 창), 마감 40일
+  const e2 = ev("B-1", { engineStatus: "UPCOMING", windowStart: D(10), windowEnd: D(70) }); // L6, 시작 10일
+  const e3 = ev("C-1", { windowStart: null, windowEnd: null }); // L5, 날짜 없음
+  const e4 = ev("D-1", { engineStatus: "UPCOMING", windowStart: D(30), windowEnd: D(90) }); // L6, 30일
+  const r = C.curate([e1, e2, e3, e4], st(), P, T);
+  assert.deepStrictEqual([...r.soon, ...r.overflow.soon].map((u) => u.ids[0]), ["B-1", "D-1", "A-1", "C-1"]);
+});

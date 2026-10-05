@@ -151,6 +151,11 @@
       "type": "KNOW",
       "sub": "INFO",
       "_근거": "hn_pm 2026-10-05: 정부안. SB-11과 같음"
+    },
+    "PREG-005": {
+      "type": "ACT",
+      "sub": "BOOK",
+      "_근거": "hn_pm A3 2026-10-05: 임신부 독감 무료접종은 접종 예약(ACT)"
     }
   },
   "triggerTypes": {
@@ -312,6 +317,28 @@
       }
     ]
   },
+  "bundles": {
+    "_설명": "행동 단위 묶음(06 §4-1). 원스톱 지역 장려금은 범위 미확인이라 넣지 않음",
+    "groups": [
+      {
+        "key": "TO_BORN",
+        "title": "출산 후 신고·신청",
+        "ids": [
+          "PG-01",
+          "SB-02",
+          "SB-04"
+        ]
+      },
+      {
+        "key": "SC",
+        "title": "취학통지서 → 예비소집",
+        "ids": [
+          "SC-01",
+          "SC-02"
+        ]
+      }
+    ]
+  },
   "thresholds": {
     "deadlineSoonDays": 30,
     "upcomingDays": 45,
@@ -328,10 +355,15 @@
     "now": 3,
     "soon": 2,
     "know": 1,
-    "_근거": "제안값(06 §4: 01 문서 H2와 같은 3, 곧 2, 알아두기 대표 1)"
+    "expandMax": 5,
+    "_근거": "now·soon·know: 제안값(06 §4: 01 문서 H2와 같은 3, 곧 2, 알아두기 대표 1). expandMax: D20 사용자 결정('N개 더' 펼침 최대 5개)"
   },
-  "_추가확인": [],
+  "_추가확인": [
+    "PREG-003(보건소 산전검사 비용 지원, 확인필요): 비용 지원 신청형(ACT·APPLY)인지 검사 안내(KNOW)인지 불명확. 현재 subsidyDefault(unconfirmed)로 ACT·APPLY. 숨김 상태라 노출 영향 없음"
+  ],
   "_결정": [
-    "2026-10-05 hn_pm: CR-02→KNOW(TRY), OR-01→KNOW(MILESTONE, trigger 규칙), VX CONDITIONAL→CHECK 규칙, SB-11·12→KNOW(INFO)+G4 미확정 제외, ongoing 지원금→KNOW(INFO_BENEFIT) 슬롯 제외"
+    "2026-10-05 hn_pm: CR-02→KNOW(TRY), OR-01→KNOW(MILESTONE, trigger 규칙), VX CONDITIONAL→CHECK 규칙, SB-11·12→KNOW(INFO)+G4 미확정 제외, ongoing 지원금→KNOW(INFO_BENEFIT) 슬롯 제외",
+    "2026-10-05 hn_pm A3: PREG-005→ACT(BOOK). PREG 기본 점검: PREG-001·002(보건소 등록·철분제, 신청형)=ACT·APPLY(deadlineType unconfirmed → G4 적용), PREG-004·006·007(conditionLabel)=CHECK, PREG-008=CHECK(D12) — 변경 없음",
+    "2026-10-05 hn_pm A4: bundles TO_BORN(PG-01·SB-02·SB-04)·SC(SC-01·SC-02), 형식은 js/curation.js normalizePolicy 기준. D20: slots.expandMax 5"
   ]
 }

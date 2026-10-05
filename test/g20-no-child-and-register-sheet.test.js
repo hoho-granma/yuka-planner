@@ -28,7 +28,7 @@ const st = { user: { uid: "u1", displayName: "주연" }, account: { displayName:
   });
 
   await test("아이 없는 계정의 캘린더·어디갈까는 빈 안내 패널이 아니라 평소 탭이다(switchTab 분기 + acctNoChildTab: 안내 패널 숨김, 탭 그리기)", () => {
-    assert.ok(/function switchTab\(name\) \{\n\s*if \(emptyHome && !profile\) return name === "calendar" \|\| name === "places" \? acctNoChildTab\(name\) : emptyRender\(name\);/.test(APP));
+    assert.ok(/function switchTab\(name\) \{\n(?:[^\n]*\n){0,4}?\s*if \(emptyHome && !profile\) return name === "calendar" \|\| name === "places" \? acctNoChildTab\(name\) : emptyRender\(name\);/.test(APP));
     const cls = (init) => { const s = new Set(init); return { classList: { add: (c) => s.add(c), remove: (c) => s.delete(c), toggle: (c, on) => (on ? s.add(c) : s.delete(c)), contains: (c) => s.has(c) } }; };
     const els = { "empty-panel": cls([]), "tab-home": cls(["hidden"]), "tab-calendar": cls(["hidden"]), "tab-record": cls(["hidden"]), "tab-subsidy": cls(["hidden"]), "tab-checklist": cls(["hidden"]), "tab-places": cls(["hidden"]) };
     const calls = [];

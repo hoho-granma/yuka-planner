@@ -176,7 +176,7 @@ function env(opts) {
     usActive: () => o.active, usDocs: () => o.docs, usActiveChildKey: () => o.childKey, usLinks: () => LINKS, memActiveId: () => "m1",
     autoIdAliases: o.aliases, schedule: o.events, esc: (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"),
     us: { form: null, messages: [], saving: false, dayForm: null, plan: null, autoLabel: null },
-    usShowForm: () => calls.shown++,
+    usShowForm: () => calls.shown++, usRecommendIsoOf: () => "",
   };
   vm.createContext(sb);
   vm.runInContext(blockSrc + "\n;Object.assign(globalThis, { autoLinkOn, autoLinks, usAutoLinkSig, usAutoTitleOf, autoLinkNoteHtml, autoLinkInlineHtml, autoLinkButtonHtml, usOpenFormFromAuto });", sb);

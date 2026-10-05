@@ -161,7 +161,7 @@ function env({ flag = true, profile = null, account = null, user = null, emptySt
     assert.ok(!e.t.emptyHome && e.log.landing === 1 && e.els["empty-panel"].classList.hidden === true && e.acct.user === null);
   });
   await test("연결: 탭 전환은 빈 홈이면 안내만(switchTab 가드), 아이를 등록하면(buildAndRender) 빈 패널을 숨기고, 취소하고 돌아오면 빈 홈", () => {
-    assert.ok(/function switchTab\(name\) \{\n\s*if \(emptyHome && !profile\) return name === "calendar" \|\| name === "places" \? acctNoChildTab\(name\) : emptyRender\(name\);/.test(APP));
+    assert.ok(/function switchTab\(name\) \{\n(?:[^\n]*\n){0,4}?\s*if \(emptyHome && !profile\) return name === "calendar" \|\| name === "places" \? acctNoChildTab\(name\) : emptyRender\(name\);/.test(APP));
     assert.ok(/async function buildAndRender\(\) \{\n\s*hideEmptyHome\(\);/.test(APP));
     assert.ok(/if \(!profile && acctEnabled\(\)\) return showEmptyHome\(\);[^\n]*\n\s*showCalendarView\(\);/.test(APP));
     assert.ok(/if \(typeof acctPrefillRegion === "function"\) acctPrefillRegion\(\);\n\s*showLandingView\(\);/.test(APP));

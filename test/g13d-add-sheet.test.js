@@ -90,7 +90,7 @@ test("날짜·시간: 고른 날짜가 기본, 종일을 끄면 시간 입력(�
 });
 test("반복: 반복 안 함·매주 활성, 매월·매월 같은 요일은 '곧 추가돼요' 비활성(저장 불가 — 규칙이 WEEKLY 만 허용), 매주는 시작 날짜 요일 기본", () => {
   const h = render(fresh());
-  assert.ok(/data-us-repeat="NONE"/.test(h) && /data-us-repeat="WEEKLY"/.test(h) && !/data-us-repeat="BIWEEKLY"/.test(h) && !/data-us-repeat="MONTHLY/.test(h));
+  assert.ok(/data-us-repeat="NONE"/.test(h) && /data-us-repeat="WEEKLY"/.test(h) && /data-us-repeat="BIWEEKLY"/.test(h) && !/data-us-repeat="MONTHLY/.test(h)); // 2-4: 새 일정에도 '2주마다' 노출(매월은 D5로 제외)
   assert.strictEqual((h.match(/us-chip us-chip-soon" disabled aria-disabled="true">(매월|매월 같은 요일)<small>곧 추가돼요<\/small>/g) || []).length, 2);
   const w = { ...fresh(), repeat: "WEEKLY", byDay: ["TU"] };
   assert.strictEqual(V.formToInput(w).recurrence.freq, "WEEKLY");

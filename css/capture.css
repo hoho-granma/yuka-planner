@@ -1,0 +1,16 @@
+/* 2-1/2-2 붙여넣기·말로 추가 — js/capture/draft-view.js 전용 새 파일(앱 미연결). 새 색 없음: S5 확인 필요 = 차콜 글자 + 칸 테두리만 선택선 #f9cb34 */
+.us-capture .us-paste-wrap { position: relative; }
+.us-capture .us-paste { width: 100%; min-height: 110px; box-sizing: border-box; }
+.us-capture .us-mic { position: absolute; top: 6px; right: 6px; width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center; }
+.us-capture .us-mic[aria-pressed="true"] { background: #4a45c8; color: #fff; border-color: #4a45c8; }
+.us-cand { display: flex; align-items: flex-start; gap: 8px; margin: 8px 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.us-cand-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.us-cand-title { font-size: 14px; }
+.us-cand-act { display: flex; flex-direction: column; gap: 4px; }
+.us-chip-sm { min-height: 24px; padding: 0 8px; font-size: 12px; }
+.us-nc, .us-nc-line { color: var(--text); font-style: normal; background: none; }
+.us-nc { font-weight: 800; }
+.us-nc-line { font-size: 12px; }
+.us-nc-field { display: inline-block; border: 1.5px solid #f9cb34; border-radius: 8px; padding: 1px 6px; }
+.us-cand-check[disabled] { opacity: .4; }
+.us-cand-raw summary { font-size: 12px; color: var(--text-muted); cursor: pointer; }

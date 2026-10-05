@@ -1796,6 +1796,10 @@ body.acct-design .acct-cs-inp:focus, body.acct-design .acct-cs-sel:focus { borde
 .acct-ob1-top::after { left: auto; right: 24px; bottom: 8px; width: 56px; height: 56px; }
 .acct-ob1-top > * { z-index: 2; }
 
+/* v1.12.101 (2-5): 아이 100일·돌·생일 계산 일정 — 날짜 패널 줄(기존 자동 항목 줄 모양 재사용, 새 색 없음) */
+.us-anniv-row { display: flex; flex-direction: column; gap: 2px; width: 100%; margin: 6px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card-bg); text-align: left; font: inherit; color: var(--text); cursor: pointer; }
+.us-anniv-row strong { font-size: 14px; } .us-anniv-row small { font-size: 12px; color: var(--text-muted); }
+.us-anniv-sheet h3 { margin: 0 0 4px; } .us-anniv-sheet .us-btn, .us-anniv-sheet .btn-close { width: 100%; margin-top: 8px; }
 /* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
    인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
 :root {

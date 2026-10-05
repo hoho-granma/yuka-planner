@@ -26,7 +26,7 @@
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const sod = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const md = (d) => `${d.getMonth() + 1}월 ${d.getDate()}일`;
-  const ACT_LABEL = { apply: "신청하기", schedule: "일정 넣기", done: "완료", confirm: "해당돼요" };
+  const ACT_LABEL = { apply: "신청하기", schedule: "일정 넣기", done: "완료", confirm: "해당돼요", review: "기록 확인" };
   const CONFIRM_NO = "아니에요";
   const lv = (u) => Number(String(u.rule || u.level || "L7").slice(1));
   const CAT = { "예방접종": "접종", "건강검진": "검진", "행정·지원금": "지원" };
@@ -64,17 +64,21 @@
   function soonRow(u, today) {
     const e = endDate(u, today), start = u.items && u.items[0] && (u.items[0].entryDate || u.items[0].windowStart);
     const when = u.reason && u.reason.key === "starting_soon" && start instanceof Date ? `${md(start)}부터` : e ? `${md(e)} 마감` : "";
-    return `<div class="hs-sr" data-hs-key="${esc(u.key)}"><span class="hs-sit">${esc(u.title)}${u.type === "CHECK" ? `<span class="hs-tg-if">해당되면</span>` : ""}</span>${when ? `<span class="hs-wh">${when}</span>` : ""}${u.actionKind === "confirm" ? actionHtml(u) : ""}</div>`;
+    return `<div class="hs-sr" data-hs-key="${esc(u.key)}"><span class="hs-sit">${esc(u.title)}${u.type === "CHECK" ? `<span class="hs-tg-if">해당되면</span>` : ""}</span>${when ? `<span class="hs-wh">${when}</span>` : ""}${u.actionKind === "confirm" || u.actionKind === "review" ? actionHtml(u) : ""}</div>`;
   }
   function knowRow(u) {
     const why = u.reason && u.reason.text ? esc(u.reason.text) : "";
     return `<div class="hs-kn" data-hs-key="${esc(u.key)}"><div class="hs-it">${esc(u.title)}</div>${why ? `<div class="hs-why">${why}</div>` : ""}</div>`;
   }
 
-  const moreHtml = (slot, n, label, rowFn, hidden, today) => {
+  const moreHtml = (slot, n, label, rowFn, hidden, today, expandMax) => {
     if (!(n > 0)) return "";
-    const list = hidden && hidden[slot] && hidden[slot].length ? hidden[slot].map((u) => rowFn(u, today)).join("") : "";
-    return `<details class="hs-fold" data-hs-more="${slot}"><summary class="hs-more">${label} ${n}개 더 ›</summary>${list}</details>`;
+    const all = hidden && hidden[slot] ? hidden[slot] : [];
+    const max = Number.isInteger(expandMax) && expandMax > 0 ? expandMax : all.length; // D20: 펼침 최대 개수는 정책 값(slots.expandMax), 없으면 제한 없음
+    const list = all.slice(0, max).map((u) => rowFn(u, today)).join("");
+    const go = slot === "know" ? "month" : "checklist"; // 전체 보기: 지금 꼭·곧 → 체크리스트, 알아두기 → 월령 탭
+    const more = all.length > max ? `<button type="button" class="hs-all" data-hs-go="${go}">전체 보기 →</button>` : "";
+    return `<details class="hs-fold" data-hs-more="${slot}"><summary class="hs-more">${label} ${n}개 더 ›</summary>${list}${more}</details>`;
   };
   const node = (cls, name, body, extra) => `<section class="hs-node ${cls}"><i class="hs-dot${extra && extra.on ? " on" : ""}"></i><div class="hs-nl">${esc(name)}${extra && extra.link ? extra.link : ""}</div>${body}</section>`;
 
@@ -82,6 +86,7 @@
     o = o || {};
     cur = cur || { now: [], soon: [], know: [], moreCounts: {} };
     const today = o.today instanceof Date ? o.today : null, mc = cur.moreCounts || {}, hid = cur.overflow || null;
+    const famHidden = o.family === null; // 가구 기능이 꺼진 기기에 직접 일정도 없으면 '우리 가족 일정' 영역 자체를 숨긴다(06 §4-3 빈 섹션 숨김). 배열(빈 배열 포함)이면 보인다.
     const fam = Array.isArray(o.family) ? o.family : [];
     const hasNow = cur.now.length > 0, hasSoon = cur.soon.length > 0 || mc.soon > 0, hasKnow = cur.know.length > 0 || mc.know > 0, benN = o.benefits && o.benefits.count > 0 ? o.benefits : null;
     const parts = [];
@@ -94,26 +99,26 @@
     const on = () => { const v = first; first = false; return { on: v }; };
     if (hasNow) {
       parts.push(node("hs-s-now", "지금 꼭 할 것",
-        `<div class="hs-card hs-now">${cur.now.map((u) => nowRow(u, today)).join("")}${moreHtml("now", mc.now, "지금 꼭 할 것", (u, t) => nowRow(u, t), hid, today)}</div>`, on()));
+        `<div class="hs-card hs-now">${cur.now.map((u) => nowRow(u, today)).join("")}${moreHtml("now", mc.now, "지금 꼭 할 것", (u, t) => nowRow(u, t), hid, today, cur.expandMax)}</div>`, on()));
     } else {
       const next = o.nextHint || (cur.soon[0] ? `다음: ${cur.soon[0].title}` : o.nextStage ? `다음: ${o.nextStage.title}` : "");
-      parts.push(node("hs-s-now", "지금 꼭 할 것", `<div class="hs-empty"><b>이번 달 꼭 할 것은 없어요</b>${next ? `<span>${esc(next)}</span>` : ""}</div>`, { on: false }));
+      parts.push(node("hs-s-now", "지금 꼭 할 것", `<div class="hs-empty"><b>이번 달 꼭 할 것은 없어요</b>${next ? `<span>${esc(next)}</span>` : ""}</div>`, { on: famHidden }));
       // 빈 ①은 점을 채우지 않고, 다음 마디(가족 일정)가 채운 점을 가진다
     }
     // ② 이번 주 · 우리 가족 일정 — 항상
     const famBody = fam.length
       ? `<div class="hs-card hs-fam">${fam.map((e) => `<div class="hs-ev"><i class="hs-bar" style="background:${esc(e.color || "")}"></i><span class="hs-evt">${esc(e.title)}</span>${e.time ? `<span class="hs-evm">${esc(e.time)}</span>` : ""}</div>`).join("")}</div>`
       : `<div class="hs-card hs-fam"><p class="hs-none">앞으로 7일 안에 등록된 가족 일정이 없어요.</p><button type="button" class="hs-add" data-hs-go="add-schedule">일정 추가하기</button></div>`;
-    parts.push(node("hs-s-fam", "이번 주 · 우리 가족 일정", famBody, { on: !hasNow, link: `<button type="button" class="hs-lk" data-hs-go="calendar">캘린더 ›</button>` }));
+    if (!famHidden) parts.push(node("hs-s-fam", "이번 주 · 우리 가족 일정", famBody, { on: !hasNow, link: `<button type="button" class="hs-lk" data-hs-go="calendar">캘린더 ›</button>` }));
     // ③ 곧 다가오는 것 — 항목 있을 때만
     if (hasSoon) {
       parts.push(node("hs-s-soon", "곧 다가오는 것",
-        `<div class="hs-soon">${cur.soon.map((u) => soonRow(u, today)).join("")}${moreHtml("soon", mc.soon, "곧 다가오는 것", soonRow, hid, today)}</div>`, {}));
+        `<div class="hs-soon">${cur.soon.map((u) => soonRow(u, today)).join("")}${moreHtml("soon", mc.soon, "곧 다가오는 것", soonRow, hid, today, cur.expandMax)}</div>`, {}));
     }
     // ④ 이 시기 알아두기(+④-1 혜택 한 줄) — 알아두기 있거나 혜택 줄만 있어도 마디 유지
     if (hasKnow || benN || (o.benefits && o.benefits.regionPending)) {
       let body = "";
-      if (hasKnow) body += `<div class="hs-know">${cur.know.map(knowRow).join("")}${moreHtml("know", mc.know, "이 시기 알아두기", knowRow, hid, today)}</div>`;
+      if (hasKnow) body += `<div class="hs-know">${cur.know.map(knowRow).join("")}${moreHtml("know", mc.know, "이 시기 알아두기", knowRow, hid, today, cur.expandMax)}</div>`;
       if (benN) body += `<button type="button" class="hs-ben" data-hs-go="benefits">받을 수 있는 혜택 ${benN.count}개${benN.check > 0 ? ` · 확인할 것 ${benN.check}개` : ""} ›</button>`;
       else if (o.benefits && o.benefits.regionPending) body += `<p class="hs-ben hs-ben-pending">${esc(o.benefits.regionPending)}</p>`;
       parts.push(node("hs-s-know", "이 시기 알아두기", body, {}));
@@ -123,6 +128,7 @@
     // ⑥ 탐색 한 줄
     if (Array.isArray(o.explore) && o.explore.length) parts.push(`<div class="hs-exp">${o.explore.map((x) => `<button type="button" class="hs-xp" data-hs-go="${esc(x.go || "")}"><b>${esc(x.title)}</b>${x.desc ? `<span>${esc(x.desc)}</span>` : ""}</button>`).join("")}</div>`);
 
+    if (typeof o.todosHtml === "string" && o.todosHtml) parts.push(`<div class="hs-todos">${o.todosHtml}</div>`); // 36+ 메모장 할 일: 맨 아래로 이동(삭제 아님) — 마크업은 기존 것을 그대로 받는다
     return `<div class="hs-home">${parts.join("")}</div>`;
   }
 
