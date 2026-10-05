@@ -70,7 +70,7 @@ test("연결 폼: 안내 문구 · 대상/날짜 종류/반복/빠른 추가 칩
   const h = render(af(), { autoLabel: "DTaP 접종 (2차)" });
   assert.ok(h.includes("‘DTaP 접종 (2차)’ 예약 일정이에요. 날짜와 시간을 입력해 주세요."));
   assert.ok(!h.includes("data-us-target") && !h.includes("data-us-kind") && !h.includes("data-us-repeat") && !h.includes("data-us-quick"));
-  assert.ok(h.includes('id="us-title"') && h.includes("data-us-cat") && !h.includes("data-us-assignee") && h.includes('id="us-allday"') && h.includes("us-location"));
+  assert.ok(h.includes('id="us-title"') && h.includes("data-us-cat") && !h.includes("data-us-assignee") && h.includes('id="us-allday"') && !h.includes("us-location"), "D75: 장소 입력칸 없음");
 });
 test("라벨이 없으면(수정 폼 등) 안내 문구 없이 잠금만, 수정 모드도 잠금", () => {
   const f = af();
@@ -91,8 +91,11 @@ test("autoRef 없는 폼 렌더(추가·수정·기간·반복·다자녀)는 �
   const opts = { members: [{ memberId: "m1", label: "엄마" }], messages: ["x"], saving: false };
   // E(1-4) 로 늘어난 빠른 추가 칩 줄·담당 영역 강조 마크업은 비교에서 뺀다(그 밖의 글자는 같아야 한다).
   // 시간 입력 휠(시안 B)·담당 선택 제거는 의도된 변경: 시각 블록과 담당 영역은 양쪽에서 뺀다.
-  const NORM = (h) => h.replace(/<div class="us-field[^"]*"[^>]*><label>담당<\/label><div class="us-chips">.*?<\/div>(?:<p[^>]*>[^<]*<\/p>)*<\/div>\n?\s*/s, "").replace(/<div class="us-times us-tw">.*?<p class="tw-hint">[^<]*<\/p><\/div><\/div>/s, "<TIMES/>").replace(/<div class="us-times">.*?<\/span><\/div>/s, "<TIMES/>").replace(/<div class="us-field us-quick">.*?<\/div><\/div>/s, "").replace(/\n\s*\n/g, "\n").replace(" us-assignee-field", "").replace(" data-us-assignee-field", "").replace(/<p class="us-emph-note"[^>]*>[^<]*<\/p>/, "");
-  const NOINK = (h) => h.replace(/ style="--us-fx:#[0-9a-f]{6};--us-fx-ink:#[0-9a-f]{6}"/g, "").replace(/;--us-ink:#[0-9a-f]{6}/g, "").replace(/(data-us-target="FAMILY">)가족<\/button>/g, "$1가족 전체</button>"); // D41: 진한 바탕 글자 자동 흰색(--us-ink)·칩 라벨 '가족 전체'→'가족'은 옛 렌더에 없다 // D41 진한 바탕 글자 자동 흰색(--us-ink)은 옛 렌더에 없다
+  // D75: 날짜 정함/미정 칩 줄·'여러 날' 체크박스·장소 입력칸은 폼에서 삭제됐다 — 양쪽에서 같은 방식으로 뺀다.
+  const D75 = (h) => h.replace(/<div class="us-field"><label>날짜<\/label><div class="us-chips"><button.*?<\/div><\/div>\s*/s, "").replace(/<label class="us-check"><input type="checkbox" id="us-multi"[^>]*\/> [^<]*<\/label>\s*/g, "").replace(/<div class="us-field"><label for="us-location">.*?<\/div>\s*/s, "");
+  const HEAD = (h) => h.replace(/<div class="us-fx-head"><h3>(.*?)<\/h3>(?:<span class="us-fx-who">.*?<\/span>)?<\/div>/s, "<h3>$1</h3>"); // D75 B: 시트 머리 래퍼
+  const NORM = (h) => D75(HEAD(h)).replace(/<p class="us-note">반복 일정은 &quot;여러 날에 걸쳐요&quot;와 &quot;날짜 미정&quot;을 함께 쓸 수 없어요\.<\/p>\n?\s*/g, "").replace(/<button[^>]*data-us-repeat="MONTHLY"[^>]*>매월<\/button>/g, "").replace(/<div class="us-field[^"]*"[^>]*><label>담당<\/label><div class="us-chips">.*?<\/div>(?:<p[^>]*>[^<]*<\/p>)*<\/div>\n?\s*/s, "").replace(/<div class="us-times us-tw">.*?<p class="tw-hint">[^<]*<\/p><\/div><\/div>/s, "<TIMES/>").replace(/<div class="us-times">.*?<\/span><\/div>/s, "<TIMES/>").replace(/<div class="us-field us-quick">.*?<\/div><\/div>/s, "").replace(/\n\s*\n/g, "\n").replace(" us-assignee-field", "").replace(" data-us-assignee-field", "").replace(/<p class="us-emph-note"[^>]*>[^<]*<\/p>/, "");
+  const NOINK = (h) => h.replace(/ style="--us-fx:[^"]*"/g, "").replace(/;--us-ink:#[0-9a-f]{6}/g, "").replace(/(data-us-target="FAMILY">)가족<\/button>/g, "$1가족 전체</button>"); // D41: 진한 바탕 글자 자동 흰색(--us-ink)·칩 라벨 '가족 전체'→'가족'은 옛 렌더에 없다 // D41 진한 바탕 글자 자동 흰색(--us-ink)은 옛 렌더에 없다
   forms.forEach((f, i) => assert.strictEqual(NORM(NOINK(V.renderForm(f, LINKS, opts))), NORM(RECOLOR(OLD.renderForm(f, LINKS, opts))), "form " + i));
 });
 test("저장: 날짜를 넣으면 prepareSave 통과·autoRef 포함 입력, 날짜 없으면 거부, scope/childKeys 가 어긋나면 거부(I13)", () => {

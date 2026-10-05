@@ -186,14 +186,14 @@ test("링크는 https 만 출력", () => {
 });
 
 console.log("scheduleDraftFor");
-test("제목=장소명, 장소=주소, 가족·가족 전체", () => {
-  assert.deepStrictEqual(V.scheduleDraftFor(base), { title: "구로구립도서관", location: "서울특별시 구로구 예시로 1", category: "FAMILY", scope: "FAMILY" });
+test("제목=장소명, 가족·가족 전체(주소는 메모 첫 줄 — D75)", () => {
+  assert.deepStrictEqual(V.scheduleDraftFor(base), { title: "구로구립도서관", category: "FAMILY", scope: "FAMILY" });
 });
 test("기존 일정 enum·길이 제한과 맞는다(user-schedule.js)", () => {
   const d = V.scheduleDraftFor(mk({ name: "가".repeat(150), address: "나".repeat(150) }));
   assert(US.CATEGORIES.includes(d.category) && US.SCOPES.includes(d.scope));
   assert.strictEqual(d.title.length, US.LIMITS.titleMax);
-  assert.strictEqual(d.location.length, US.LIMITS.locationMax);
+  assert.ok(!("location" in d), "D75: 주소는 메모로");
   assert.strictEqual(V.SCHEDULE_LIMITS.titleMax, US.LIMITS.titleMax);
   assert.strictEqual(V.SCHEDULE_LIMITS.locationMax, US.LIMITS.locationMax);
 });

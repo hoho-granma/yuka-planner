@@ -247,7 +247,7 @@ function schedBasicsOk(d) {
 }
 const schedScopeOk = (d) => (d.scope === "CHILD" && has(d, "childKeys") && Array.isArray(d.childKeys) && d.childKeys.length >= 1 && d.childKeys.length <= 10) || (d.scope === "FAMILY" && (!has(d, "childKeys") || (Array.isArray(d.childKeys) && d.childKeys.length === 0)));
 function schedDatesOk(d) {
-  if (has(d, "recurrence")) return d.dateKind === "FIXED" && typeof d.recurrence === "object" && d.recurrence.freq === "WEEKLY" && !has(d, "eventDate") && !has(d, "periodStart") && !has(d, "periodEnd") && !has(d, "endDate") && !has(d, "status");
+  if (has(d, "recurrence")) return d.dateKind === "FIXED" && typeof d.recurrence === "object" && ["WEEKLY", "MONTHLY"].includes(d.recurrence.freq) && !has(d, "eventDate") && !has(d, "periodStart") && !has(d, "periodEnd") && !has(d, "endDate") && !has(d, "status");
   if (d.dateKind === "FIXED") return has(d, "eventDate") && dOk(d.eventDate) && !has(d, "periodStart") && !has(d, "periodEnd") && (!has(d, "endDate") || (dOk(d.endDate) && d.endDate >= d.eventDate));
   return has(d, "periodStart") && has(d, "periodEnd") && dOk(d.periodStart) && dOk(d.periodEnd) && d.periodStart <= d.periodEnd && !has(d, "eventDate") && !has(d, "endDate");
 }
@@ -266,6 +266,7 @@ const samples = {
   "PERIOD": { ...base, dateKind: "PERIOD", eventDate: undefined, periodStart: "2026-10-01", periodEnd: "2026-10-31", allDay: true, startTime: undefined, endTime: undefined, title: "부모 상담" },
   "FAMILY": { ...base, scope: "FAMILY", childKeys: undefined, category: "FAMILY" },
   "반복": { ...base, eventDate: undefined, recurrence: { freq: "WEEKLY", interval: 1, byDay: ["TU", "TH"], startDate: "2026-10-06", until: null }, exceptions: { "2026-10-08": { status: "CANCELLED", note: "휴강" } } },
+  "매월 반복(D75)": { ...base, eventDate: undefined, recurrence: { freq: "MONTHLY", interval: 1, startDate: "2026-10-31", until: null } },
   "OCR 확인됨": { ...base, sourceType: "OCR", provenance: { confirmedByUser: true } },
 };
 
@@ -311,7 +312,9 @@ test("PERIOD 에 eventDate(I2)·반복에 eventDate/status(I3) 거부", () => {
   assert.strictEqual(schedOk({ ...mk("PERIOD"), periodStart: "2026-11-01" }), false);
   assert.strictEqual(schedOk({ ...mk("반복"), eventDate: "2026-10-06" }), false);
   assert.strictEqual(schedOk({ ...mk("반복"), status: "DONE" }), false);
-  assert.strictEqual(schedOk({ ...mk("반복"), recurrence: { freq: "MONTHLY" } }), false);
+  assert.strictEqual(schedOk({ ...mk("반복"), recurrence: { freq: "YEARLY" } }), false); // D75: MONTHLY 는 이제 허용(freq 만 검사 — 내부 필드는 클라이언트 검증)
+  assert.strictEqual(schedOk(mk("매월 반복(D75)")), true);
+  assert.strictEqual(schedOk({ ...mk("매월 반복(D75)"), eventDate: "2026-10-06" }), false);
 });
 test("exceptions 201개 거부", () => {
   const ex = {};

@@ -289,7 +289,7 @@ service cloud.firestore {
       // I1~I4: 날짜 종류별 필드 일관성
       function datesOk(d) {
         return has(d, 'recurrence')
-          ? (d.dateKind == 'FIXED' && d.recurrence is map && d.recurrence.get('freq', null) == 'WEEKLY'
+          ? (d.dateKind == 'FIXED' && d.recurrence is map && d.recurrence.get('freq', null) in ['WEEKLY', 'MONTHLY']
              && !has(d, 'eventDate') && !has(d, 'periodStart') && !has(d, 'periodEnd') && !has(d, 'endDate') && !has(d, 'status'))
           : (d.dateKind == 'FIXED'
              ? (has(d, 'eventDate') && dateOk(d.eventDate) && !has(d, 'periodStart') && !has(d, 'periodEnd')

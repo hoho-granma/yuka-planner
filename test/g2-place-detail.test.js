@@ -44,8 +44,12 @@ test("미확인 값은 '방문 전 확인', 공식 링크가 https 가 아니면
 });
 test("카드: 누르면 상세(data-places-open), [일정 추가]는 그대로 / 메모는 공식 링크(https 만, 500자 이내)", () => {
   assert.ok(PV.renderCard(PL, new Date(2026, 9, 3)).includes('data-places-open="guro-lib-001"') && PV.renderCard(PL, new Date(2026, 9, 3)).includes('data-places-add="guro-lib-001"'));
-  assert.strictEqual(PV.memoFor(PL), "공식 홈페이지: https://www.guro.go.kr/lib?a=1&b=2");
+  assert.strictEqual(PV.memoFor(PL), "장소: 구로 <b>어린이</b> 도서관 서울특별시 구로구 가마산로 245 & 별관\n공식 홈페이지: https://www.guro.go.kr/lib?a=1&b=2"); // D75: 주소는 메모 첫 줄
   assert.strictEqual(PV.memoFor(UNKNOWN), "");
+  assert.strictEqual(PV.memoFor({ name: "시설", address: "서울 구로구" }), "장소: 시설 서울 구로구", "공식 링크 없으면 장소 줄만");
+  assert.strictEqual(PV.memoFor({ name: "시설", officialUrl: "https://x.kr" }), "공식 홈페이지: https://x.kr", "주소 없으면 장소 줄 없음");
+  assert.strictEqual(PV.memoFor({ name: "시설", address: "서울", officialUrl: "https://x.kr/" + "a".repeat(600) }).length, 500);
+  assert.ok(PV.memoFor({ name: "시설", address: "서울", officialUrl: "https://x.kr/" + "a".repeat(600) }).startsWith("장소: 시설 서울\n"), "500자 초과 시 뒤쪽(링크)을 자른다");
   assert.strictEqual(PV.memoFor({ officialUrl: "http://x.kr" }), "");
   assert.ok(PV.memoFor({ officialUrl: "https://x.kr/" + "a".repeat(600) }).length <= 500);
 });
@@ -122,7 +126,7 @@ test("[캘린더에 등록]: 기존 buildCreateDoc 경로로 저장 — 제목=�
   await e.click("data-places-save");
   assert.strictEqual(e.log.created.length, 1);
   const [hid, d] = e.log.created[0];
-  assert.deepStrictEqual([hid, d.title, d.location, d.category, d.scope, d.eventDate, d.allDay, d.assigneeMemberId, d.memo, d.dateKind, d.status], ["h1", PL.name.slice(0, 100), PL.address.slice(0, 100), "FAMILY", "FAMILY", "2026-10-10", true, "m1", "공식 홈페이지: https://www.guro.go.kr/lib?a=1&b=2", "FIXED", "TODO"]);
+  assert.deepStrictEqual([hid, d.title, d.location, d.category, d.scope, d.eventDate, d.allDay, d.assigneeMemberId, d.memo, d.dateKind, d.status], ["h1", PL.name.slice(0, 100), undefined, "FAMILY", "FAMILY", "2026-10-10", true, "m1", "장소: " + PL.name + " " + PL.address + "\n공식 홈페이지: https://www.guro.go.kr/lib?a=1&b=2", "FIXED", "TODO"]);
   assert.deepStrictEqual([e.reg.mode, e.reg.doneLabel, e.log.refreshed, e.log.counted.length], ["done", "10/10(토)", 1, 1]); // P4: 등록 성공 → 인기 신호 +1 호출
   assert.ok(e.content.innerHTML.includes("10/10(토) 캘린더에 등록했어요") && e.content.innerHTML.includes("data-places-view-cal"));
   await e.click("data-places-view-cal");

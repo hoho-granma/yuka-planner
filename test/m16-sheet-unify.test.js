@@ -13,8 +13,8 @@ test("새 색·새 변수 없음: 색은 --nd-*·--line·--text 계열과 #fff �
   const hexes = new Set((blk.replace(/\/\*[\s\S]*?\*\//g, "").match(/#[0-9a-fA-F]{3,6}\b/g) || []).map((h) => h.toLowerCase()));
   assert.deepStrictEqual([...hexes], ["#fff"], "직접 쓴 색은 흰색뿐");
 });
-test("일정 시트: 면 --nd-soft, 저장 버튼 인디고 52px, 선택 칩 노랑 면+선, 구성원 색 칩·삭제 버튼은 건드리지 않음", () => {
-  assert.ok(/\.modal-panel:has\(\.us-form\) \{[^}]*background: var\(--nd-soft\)/.test(blk));
+test("일정 시트: 면 흰색(D75 B — 색은 헤더·선택 칩·저장 버튼에만), 저장 버튼 인디고 52px, 선택 칩 노랑 면+선, 구성원 색 칩·삭제 버튼은 건드리지 않음", () => {
+  assert.ok(/\.modal-panel:has\(\.us-form\) \{[^}]*background: var\(--surface\)/.test(blk));
   assert.ok(/\.us-btn\.us-primary \{[^}]*var\(--nd-indigo\)[^}]*min-height: 52px/.test(blk));
   assert.ok(/\.us-chip\.active:not\(\[style\*="--us-color"\]\) \{[^}]*var\(--nd-yellow\)[^}]*var\(--nd-yellow-line\)/.test(blk));
   assert.ok(!/us-danger\) *\{|\.us-danger \{/.test(blk.replace(/:not\(\.us-danger\)/g, "")), "삭제 버튼 규칙 없음");

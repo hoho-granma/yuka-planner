@@ -67,7 +67,7 @@ test("I3 반복: FIXED 만, eventDate·period 금지, 구조 검증", () => {
   assert(mk(r).ok);
   assert(codes(mk({ ...r, eventDate: "2026-10-06" })).includes("I3"));
   assert(codes(mk({ ...r, dateKind: "PERIOD", periodStart: "2026-10-01", periodEnd: "2026-10-31" })).includes("I3"));
-  assert(codes(mk({ ...r, recurrence: { ...recur, freq: "MONTHLY" } })).includes("I3"));
+  assert(codes(mk({ ...r, recurrence: { ...recur, freq: "YEARLY" } })).includes("I3"));
   assert(codes(mk({ ...r, recurrence: { ...recur, byDay: [] } })).includes("I3"));
   assert(codes(mk({ ...r, recurrence: { ...recur, byDay: ["XX"] } })).includes("I3"));
   assert(codes(mk({ ...r, recurrence: { ...recur, until: "2026-09-01" } })).includes("I3"));
@@ -230,7 +230,7 @@ test("규칙 날짜 판정: 요일·interval·startDate·until", () => {
   assert(!US.isRuleDate(recur, "2026-10-01"), "startDate 이전");
   assert(!US.isRuleDate({ ...recur, until: "2026-10-13" }, "2026-10-15"), "until 이후");
   assert(US.isRuleDate({ ...recur, until: "2026-10-15" }, "2026-10-15"), "until 당일 포함");
-  assert(!US.isRuleDate({ ...recur, freq: "MONTHLY" }, "2026-10-06"), "지원하지 않는 규칙");
+  assert(!US.isRuleDate({ ...recur, freq: "YEARLY" }, "2026-10-06"), "지원하지 않는 규칙");
 });
 test("매주 화·목: 10월 8회, key=u:<id>@<원래 날짜>, 시각·제목·반복 표시", () => {
   const occ = ex(rid(), ...OCT);
@@ -306,8 +306,8 @@ test("규칙에 맞지 않는 날짜의 예외는 무시된다", () => {
   assert.strictEqual(occ.length, 8);
   assert(occ.every((o) => o.status === "TODO" && !o.rescheduled));
 });
-test("사용할 수 없는 규칙(MONTHLY 등)·삭제된 문서는 []. 입력 문서는 변경되지 않는다. 범위 상한 유지", () => {
-  assert.deepStrictEqual(ex({ ...rid(), recurrence: { ...recur, freq: "MONTHLY" } }, ...OCT), []);
+test("사용할 수 없는 규칙(YEARLY 등)·삭제된 문서는 []. 입력 문서는 변경되지 않는다. 범위 상한 유지", () => {
+  assert.deepStrictEqual(ex({ ...rid(), recurrence: { ...recur, freq: "YEARLY" } }, ...OCT), []);
   assert.deepStrictEqual(ex({ ...rid(), recurrence: { ...recur, byDay: [] } }, ...OCT), []);
   const frozen = deepFreeze(rid({ exceptions: { "2026-10-08": { status: "CANCELLED" } } }));
   assert.doesNotThrow(() => ex(frozen, ...OCT));

@@ -490,7 +490,7 @@ test("폼 마크업: 분류·대상·날짜 종류 칩의 선택 상태, 분리�
   assert(!/us-chip active" data-us-target="c3"/.test(h) && !/us-chip active" data-us-target="FAMILY"/.test(h));
   assert(!h.includes('data-us-target="cx"') && !h.includes("분리됨"), "분리된 아이는 선택지에 없다");
   assert(h.includes('data-us-target="FAMILY"') && h.includes(">가족<"));
-  assert(/us-chip active" data-us-kind="FIXED"/.test(h));
+  assert(!h.includes("data-us-kind"), "D75: 날짜 정함/미정 칩 없음");
   ["수업·학원", "어린이집·학교", "병원·검진", "가족", "기타"].forEach((l) => assert(h.includes(`>${l}<`), l));
 });
 test("폼 마크업: 모드별 제목, 종일/시각 선택, 여러 날/기간 미정 전환, 달력 요소 ID", () => {
@@ -499,7 +499,7 @@ test("폼 마크업: 모드별 제목, 종일/시각 선택, 여러 날/기간 �
   assert(!add.includes('data-tw="us"'), "종일이면 시간 입력 없음");
   assert(!add.includes('id="use-date"'), "여러 날이 아니면 마지막 날 없음");
   const timed = V.renderForm(F({ allDay: false, startTime: "16:05", endTime: "17:00", multiDay: true, endDate: "2026-10-08" }), LINKS);
-  assert(timed.includes('data-tw="us"') && timed.includes('data-tw-field="end"') && timed.includes('id="use-date"'), "시간 입력은 한 줄 범위 + 휠(시안 B)");
+  assert(timed.includes('data-tw="us"') && timed.includes('data-tw-field="end"') && !timed.includes('id="use-date"') && !timed.includes('id="us-multi"'), "시간 입력은 한 줄 범위 + 휠(시안 B), D75: 여러 날 입력칸은 폼에 없다(endDate 는 저장 때 유지)");
   assert(timed.includes(">오후 4:05<") && timed.includes(">5:00<"), "시작·끝이 한 줄에 보인다(기존 5분 단위 값도 그대로)");
   assert.strictEqual((timed.match(/data-tw-col="/g) || []).length, 3, "오전/오후·시·분 휠 3열");
   const edit = V.renderForm({ ...F({}), mode: "edit" }, LINKS);
@@ -556,7 +556,7 @@ test("승인 문구 R1~R35 가 승인본과 글자까지 같다", () => {
   assert.strictEqual(M.firstDayLabel, "첫 날"); // R5
   assert.strictEqual(M.firstDayHint, "첫 날이 고른 요일이 아니면, 그다음 해당 요일부터 시작돼요."); // R6
   assert.deepStrictEqual([M.untilLabel, M.untilNone, M.untilDate, M.lastRepeatLabel], ["끝나는 날", "계속 반복", "날짜까지", "마지막 반복일"]); // R7~R9
-  assert.strictEqual(M.repeatHint, '반복 일정은 "여러 날에 걸쳐요"와 "날짜 미정"을 함께 쓸 수 없어요.'); // R10
+  assert.strictEqual(M.repeatHint, undefined); // R10: D75 — 폼에서 '여러 날'·'날짜 미정' 안내가 사라져 삭제
   assert.strictEqual(M.repeatBadge, "반복"); // R12
   assert.deepStrictEqual([M.errNoWeekday, M.errUntilBeforeStart, M.errUntilMissing], ["반복할 요일을 하나 이상 골라 주세요.", "끝나는 날은 첫 날과 같거나 이후여야 해요.", "마지막 반복일을 골라 주세요."]); // R13~R15
   assert.strictEqual(M.exceptionsMany(183), "이 일정은 날짜별 변경이 많아요. (183/200)"); // R16
@@ -804,15 +804,16 @@ console.log("\n반복 입력 화면·이 날만 수정 폼 (B5)");
 test("renderForm: 반복 선택(R2)·요일 칩 7개(R4)·끝나는 날(R8) — 반복 안 함에서는 요일·끝 숨김, 날짜 미정에서는 반복 선택 숨김", () => {
   const off = V.renderForm(RF({}), LINKS);
   assert(off.includes('data-us-repeat="NONE"') && off.includes("반복 안 함") && off.includes("매주") && off.includes("2주마다") && !off.includes('data-us-day='));
-  assert(off.includes("여러 날에 걸쳐요") && off.includes(">날짜<"));
+  assert(!off.includes("여러 날에 걸쳐요") && off.includes(">날짜<"), "D75: 여러 날 입력 삭제");
   const on = V.renderForm(RF({ repeat: "BIWEEKLY", byDay: ["MO", "WE"], untilMode: "DATE", until: "2027-02-26" }), LINKS);
   assert.strictEqual((on.match(/data-us-day="/g) || []).length, 7);
   assert((on.match(/data-us-day="(MO|WE)"[^>]*>/g) || []).length === 2 && /us-chip active" data-us-day="MO"/.test(on) && /us-chip active" data-us-day="WE"/.test(on) && !/active" data-us-day="TU"/.test(on));
-  for (const t of ["반복 요일", "첫 날", "끝나는 날", "계속 반복", "날짜까지", "마지막 반복일", "첫 날이 고른 요일이 아니면, 그다음 해당 요일부터 시작돼요.", V.esc('반복 일정은 "여러 날에 걸쳐요"와 "날짜 미정"을 함께 쓸 수 없어요.')]) assert(on.includes(t), t);
+  for (const t of ["반복 요일", "첫 날", "끝나는 날", "계속 반복", "날짜까지", "마지막 반복일", "첫 날이 고른 요일이 아니면, 그다음 해당 요일부터 시작돼요."]) assert(on.includes(t), t);
+  assert(!on.includes("함께 쓸 수 없어요"), "D75: repeatHint 삭제");
   assert(!on.includes('id="us-multi"'), "반복 중에는 여러 날 체크박스를 숨긴다");
   assert(on.includes('id="usu-date"') && on.includes('value="2027-02-26"'), "마지막 반복일 달력");
   assert(!V.renderForm(RF({ repeat: "WEEKLY", byDay: ["TU"] }), LINKS).includes('id="usu-date"'), "끝나는 날을 '계속 반복'이면 달력 없음");
-  assert(/<button type="button" class="us-chip" disabled>날짜 미정 \(기간\)<\/button>/.test(on) && !on.includes('data-us-kind="PERIOD"'), "반복 중에는 날짜 미정(기간) 선택 불가");
+  assert(!on.includes("날짜 미정") && !on.includes("data-us-kind="), "D75: 날짜 정함/미정 칩 자체가 없다");
   const period = V.renderForm(RF({ dateKind: "PERIOD", periodStart: "2026-10-01", periodEnd: "2026-10-31", allDay: true }), LINKS);
   assert(!period.includes("data-us-repeat") && !period.includes("반복 요일"));
 });

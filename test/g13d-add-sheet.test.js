@@ -80,18 +80,18 @@ test("저장 필드는 기존 그대로: 어른=FAMILY+담당 본인, 아이=CHI
   const noKind = V.prepareSave(fresh(), 1);
   assert.strictEqual(noKind.ok, false, "카테고리를 안 고르면 저장되지 않는다");
 });
-test("날짜·시간: 고른 날짜가 기본, 종일을 끄면 시간 입력(시작 필수), 여러 날·기간·장소·메모 유지", () => {
+test("날짜·시간(D75): 고른 날짜가 기본, 종일을 끄면 시간 입력(시작 필수), 날짜 정함/미정 칩·여러 날·장소 입력칸은 없고 메모는 유지(저장 입력은 location 도 그대로 받는다)", () => {
   const f = fresh(); V.g13PickKind(f, "회사", ctx);
   assert.strictEqual(V.prepareSave({ ...f, allDay: false, startTime: "" }, 1).ok, false);
   const t = V.prepareSave({ ...f, allDay: false, startTime: "09:00", endTime: "18:00", location: "사무실", memo: "회의" }, 1);
   assert.ok(t.ok && t.input.eventDate === "2026-10-14" && t.input.startTime === "09:00" && t.input.location === "사무실" && t.input.memo === "회의");
   const h = render(f);
-  assert.ok(h.includes('id="us-allday"') && h.includes('id="us-multi"') && h.includes('data-us-kind="PERIOD"') && h.includes('id="us-location"') && h.includes('id="us-memo"'));
+  assert.ok(h.includes('id="us-allday"') && !h.includes('id="us-multi"') && !h.includes("data-us-kind=") && !h.includes('id="us-location"') && h.includes('id="us-memo"'));
 });
-test("반복: 반복 안 함·매주 활성, 매월·매월 같은 요일은 '곧 추가돼요' 비활성(저장 불가 — 규칙이 WEEKLY 만 허용), 매주는 시작 날짜 요일 기본", () => {
+test("반복(D75): [반복 안 함][매주][2주마다][매월] 4칩 모두 활성('곧 추가돼요'·'매월 같은 요일' 없음), 매주는 시작 날짜 요일 기본", () => {
   const h = render(fresh());
-  assert.ok(/data-us-repeat="NONE"/.test(h) && /data-us-repeat="WEEKLY"/.test(h) && /data-us-repeat="BIWEEKLY"/.test(h) && !/data-us-repeat="MONTHLY/.test(h)); // 2-4: 새 일정에도 '2주마다' 노출(매월은 D5로 제외)
-  assert.strictEqual((h.match(/us-chip us-chip-soon" disabled aria-disabled="true">(매월|매월 같은 요일)<small>곧 추가돼요<\/small>/g) || []).length, 2);
+  assert.ok(/data-us-repeat="NONE"/.test(h) && /data-us-repeat="WEEKLY"/.test(h) && /data-us-repeat="BIWEEKLY"/.test(h) && /data-us-repeat="MONTHLY"/.test(h));
+  assert.ok(!h.includes("곧 추가돼요") && !h.includes("매월 같은 요일") && !h.includes("us-chip-soon"));
   const w = { ...fresh(), repeat: "WEEKLY", byDay: ["TU"] };
   assert.strictEqual(V.formToInput(w).recurrence.freq, "WEEKLY");
   assert.ok(V.prepareSave((V.g13PickKind(w, "회사", ctx), w), 1).ok);

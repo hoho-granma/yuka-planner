@@ -66,9 +66,9 @@ test("범위와 겹치지 않는 일정·soft-deleted 는 제외", () => {
   const m = model([sched({ eventDate: "2026-12-01" }), { ...del, deletedAt: NOW + 1 }]);
   assert.strictEqual(m.counts.userItems, 0);
 });
-test("전개할 수 없는 반복 규칙(예: MONTHLY)은 전개하지 않고 skipped 로 남긴다", () => {
+test("전개할 수 없는 반복 규칙(예: YEARLY)은 전개하지 않고 skipped 로 남긴다", () => {
   const rec = sched({ eventDate: undefined, recurrence: { freq: "WEEKLY", interval: 1, byDay: ["TU"], startDate: "2026-10-06", until: null } });
-  const m = model([{ ...rec, recurrence: { ...rec.recurrence, freq: "MONTHLY" } }]);
+  const m = model([{ ...rec, recurrence: { ...rec.recurrence, freq: "YEARLY" } }]);
   assert.strictEqual(m.skipped.length, 1);
   assert.strictEqual(m.skipped[0].reason, "recurrence-not-expanded");
   assert.strictEqual(m.counts.userItems, 0);

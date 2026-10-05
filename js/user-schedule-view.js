@@ -100,8 +100,10 @@
     g13VisPrivate: "비공개 (나만 보기)",
     g13VisNote: "지금은 모든 일정이 가족 캘린더에 공개로 저장돼요.",
     g13Soon: "곧 추가돼요",
-    g13RepeatMonthly: "매월",
-    g13RepeatNth: "매월 같은 요일",
+    repeatMonthly: "매월", // D75
+    monthlyNote: (d) => `매월 ${d}일에 반복돼요`, // D75
+    monthlyEndNote: (d) => `${d}일이 없는 달은 말일에 표시돼요`, // D75 (29~31일)
+    monthEndAdjusted: (d) => `이 달은 ${d}일이 없어 말일에 표시돼요`, // D75 상세
     assigneeNone: "정하지 않음",
     autoCandAsk: "연결할 접종·검진이 있나요?", autoCandHint: "고르면 그 항목과 이어져요(날짜는 직접 정해요). 고르지 않고 직접 입력해도 돼요.", // 0-C2
     assigneeAsk: "누가 데려가나요?", assigneeCard: (n) => `담당 ${n}`, assigneeNeed: "이 일정은 담당을 정해 두면 좋아요.", // 0-C1 담당 복원
@@ -193,7 +195,6 @@
     untilNone: "계속 반복", // R8
     untilDate: "날짜까지", // R8
     lastRepeatLabel: "마지막 반복일", // R9
-    repeatHint: '반복 일정은 "여러 날에 걸쳐요"와 "날짜 미정"을 함께 쓸 수 없어요.', // R10
     repeatBadge: "반복", // R12
     errNoWeekday: "반복할 요일을 하나 이상 골라 주세요.", // R13
     errUntilBeforeStart: "끝나는 날은 첫 날과 같거나 이후여야 해요.", // R14
@@ -532,8 +533,9 @@
   /** R11: "매주 화·목 · 10/6부터" / "2주마다 월 · 10/6~2027/2/26"(끝나는 해가 첫 날과 다르면 연도 표시) */
   function repeatSummary(rec) {
     if (!rec || typeof rec !== "object") return "";
-    const days = WEEKDAY_KEYS.filter((k) => (rec.byDay || []).includes(k)).map((k) => WEEKDAY_LABELS[k]).join("·");
-    const every = rec.interval === 2 ? MSG.repeatBiweekly : MSG.repeatWeekly;
+    const monthly = rec.freq === "MONTHLY";
+    const days = monthly ? "" : WEEKDAY_KEYS.filter((k) => (rec.byDay || []).includes(k)).map((k) => WEEKDAY_LABELS[k]).join("·");
+    const every = monthly ? `${MSG.repeatMonthly} ${typeof rec.startDate === "string" ? Number(rec.startDate.slice(8, 10)) : ""}일` : rec.interval === 2 ? MSG.repeatBiweekly : MSG.repeatWeekly;
     const start = typeof rec.startDate === "string" && rec.startDate.length >= 10 ? md(rec.startDate) : "";
     let range = "";
     if (start && rec.until) {
@@ -606,6 +608,7 @@
       cancelled,
       cancelledLabel: cancelled ? MSG.cancelledBadge : "",
       movedText: occ.movedFrom ? MSG.movedFrom(dayLabel(occ.movedFrom)) : "",
+      adjustedText: getUS() && getUS().isMonthEndAdjusted && getUS().isMonthEndAdjusted(x.recurrence, occ.originalDate || occ.date) ? MSG.monthEndAdjusted(Number(String(x.recurrence.startDate).slice(8, 10))) : "",
       exceptionsNotice: n === null ? "" : exceptionsNotice(n),
     };
   }
@@ -703,7 +706,7 @@
     const rows = [
       [MSG.categoryLabel, v.categoryLabel],
       [MSG.dateLabel, v.recurring ? [v.dayLabel, v.timeText].filter(Boolean).join(" · ") : [v.dateText, v.timeText].filter(Boolean).join(" · ")],
-      ...(v.recurring ? [[MSG.repeatLabel, v.repeatSummary], ["", v.movedText]] : []),
+      ...(v.recurring ? [[MSG.repeatLabel, v.repeatSummary], ["", v.movedText], ["", v.adjustedText || ""]] : []),
       [MSG.targetLabel, v.targetText !== undefined ? v.targetText : v.tag, "target"],
       [MSG.locationLabel.replace(/ \(선택\)$/, ""), v.location],
       [MSG.memoLabel.replace(/ \(선택\)$/, ""), v.memo],
@@ -791,7 +794,7 @@
   function formFromSchedule(doc) {
     const rec = doc.recurrence && typeof doc.recurrence === "object" ? doc.recurrence : null;
     const repeatFields = rec
-      ? { repeat: rec.interval === 2 ? "BIWEEKLY" : "WEEKLY", byDay: WEEKDAY_KEYS.filter((k) => (rec.byDay || []).includes(k)), untilMode: rec.until ? "DATE" : "NONE", until: rec.until || "", wasRecurring: true }
+      ? { repeat: rec.freq === "MONTHLY" ? "MONTHLY" : rec.interval === 2 ? "BIWEEKLY" : "WEEKLY", byDay: WEEKDAY_KEYS.filter((k) => (rec.byDay || []).includes(k)), untilMode: rec.until ? "DATE" : "NONE", until: rec.until || "", wasRecurring: true }
       : { repeat: "NONE", byDay: [], untilMode: "NONE", until: "", wasRecurring: false };
     return {
       ...repeatFields,
@@ -801,7 +804,7 @@
       ...(doc.autoRef ? { autoRef: doc.autoRef } : {}),
     };
   }
-  const isRepeating = (f) => f.repeat === "WEEKLY" || f.repeat === "BIWEEKLY";
+  const isRepeating = (f) => f.repeat === "WEEKLY" || f.repeat === "BIWEEKLY" || f.repeat === "MONTHLY";
   /** 폼 → UserSchedule.buildCreateDoc 입력(MANUAL). 쓰지 않는 필드는 아예 넣지 않는다. */
   function formToInput(f) {
     const input = { sourceType: "MANUAL", title: String(f.title || "").trim(), category: f.category, scope: f.scope, dateKind: f.dateKind, allDay: !!f.allDay };
@@ -811,7 +814,9 @@
     if (isRepeating(f)) {
       // 반복: 첫 날은 recurrence.startDate 에 둔다(eventDate·endDate 없음 — I3·I4). 키 순서는 설계서 §6-1 과 같다.
       input.dateKind = "FIXED";
-      input.recurrence = { freq: "WEEKLY", interval: f.repeat === "BIWEEKLY" ? 2 : 1, byDay: WEEKDAY_KEYS.filter((k) => (f.byDay || []).includes(k)), startDate: f.eventDate, until: f.untilMode === "DATE" && f.until ? f.until : null };
+      input.recurrence = f.repeat === "MONTHLY"
+        ? { freq: "MONTHLY", interval: 1, startDate: f.eventDate, until: f.untilMode === "DATE" && f.until ? f.until : null }
+        : { freq: "WEEKLY", interval: f.repeat === "BIWEEKLY" ? 2 : 1, byDay: WEEKDAY_KEYS.filter((k) => (f.byDay || []).includes(k)), startDate: f.eventDate, until: f.untilMode === "DATE" && f.until ? f.until : null };
     } else if (f.dateKind === "PERIOD") {
       input.periodStart = f.periodStart;
       input.periodEnd = f.periodEnd;
@@ -841,7 +846,7 @@
     if (f.autoRef && (f.scope !== "CHILD" || (f.childKeys || []).length !== 1)) add("target", MSG.errTarget); // I13: 연결 일정은 아이 1명
     if (isRepeating(f)) {
       if (!f.eventDate) add("date", MSG.errDate);
-      if (!(f.byDay || []).length) add("byDay", MSG.errNoWeekday); // R13
+      if (f.repeat !== "MONTHLY" && !(f.byDay || []).length) add("byDay", MSG.errNoWeekday); // R13 (매월은 요일 없음)
       if (f.untilMode === "DATE") {
         if (!f.until) add("until", MSG.errUntilMissing); // R15
         else if (f.eventDate && f.until < f.eventDate) add("until", MSG.errUntilBeforeStart); // R14
@@ -993,17 +998,52 @@
     f.whoPerson = false;
     return g13ApplyWho(f, f.scope === "CHILD" && (f.childKeys || [])[0] ? `CHILD:${f.childKeys[0]}` : c.meId ? `MEMBER:${c.meId}` : "FAMILY", c); // D40: 새 일정의 '누구' 기본 = 지금 보는 아이(아이가 없는 가구는 본인, 모르면 가족 전체)
   }
-  const soonChip = (label) => `<button type="button" class="us-chip us-chip-soon" disabled aria-disabled="true">${esc(label)}<small>${esc(MSG.g13Soon)}</small></button>`;
-  /** D77: 저장 버튼 색 = 선택한 '누구'(구성원·아이·가족 전체)의 칩 색. 폼 루트 style 로 넘기고 CSS 가 쓴다. */
+  /** D75: 두 폼 공용 반복 칩 줄 — [반복 안 함][매주][2주마다][매월]. */
+  function repeatChipsHtml(f, repeating) {
+    return `<div class="us-field"><label>${esc(MSG.repeatLabel)}</label><div class="us-chips">${chip("", 'data-us-repeat="NONE"', MSG.repeatNone, !repeating)}${chip("", 'data-us-repeat="WEEKLY"', MSG.repeatWeekly, f.repeat === "WEEKLY")}${chip("", 'data-us-repeat="BIWEEKLY"', MSG.repeatBiweekly, f.repeat === "BIWEEKLY")}${chip("", 'data-us-repeat="MONTHLY"', MSG.repeatMonthly, f.repeat === "MONTHLY")}</div></div>`;
+  }
+  /** D75: 매월 설명(첫 날의 일 기준) 안쪽 HTML. 첫 날이 바뀌면 앱이 이 값으로 제자리 갱신한다. */
+  function monthlyNoteInner(iso) {
+    const m = /^\d{4}-\d{2}-(\d{2})$/.exec(iso || "");
+    const d = m ? Number(m[1]) : 0;
+    if (!d) return "";
+    return esc(MSG.monthlyNote(d)) + (d >= 29 ? `<br>${esc(MSG.monthlyEndNote(d))}` : "");
+  }
+  /** D75: 두 폼 공용 반복 상세 — 매주·2주마다는 요일 칩+첫 날 안내, 매월은 요일 없이 설명(+29~31일 안내). 끝나는 날은 공통. */
+  function repeatDetailHtml(f, repeating) {
+    if (!repeating) return "";
+    const monthly = f.repeat === "MONTHLY";
+    const head = monthly
+      ? `<p class="us-note us-monthly-note">${monthlyNoteInner(f.eventDate)}</p>`
+      : `<div class="us-field"><label>${esc(MSG.repeatDaysLabel)}</label><div class="us-chips">${WEEKDAY_KEYS.map((k) => chip("", `data-us-day="${k}"`, WEEKDAY_LABELS[k], (f.byDay || []).includes(k))).join("")}</div></div>
+         <p class="us-note">${esc(MSG.firstDayHint)}</p>`;
+    return `${head}
+         <div class="us-field"><label>${esc(MSG.untilLabel)}</label><div class="us-chips">${chip("", 'data-us-until="NONE"', MSG.untilNone, f.untilMode !== "DATE")}${chip("", 'data-us-until="DATE"', MSG.untilDate, f.untilMode === "DATE")}</div></div>
+         ${f.untilMode === "DATE" ? `<div class="us-field"><label>${esc(MSG.lastRepeatLabel)}</label>${picker(PICKER_PREFIXES.until, f.until)}</div>` : ""}`;
+  }
+  /** D77: 저장 버튼 색 = 선택한 '누구' 칩이 실제로 쓰는 값. 색 있는 칩(구성원·아이)은 그 색(--us-color)·자동 글자색(--us-ink), 색 없는 활성 칩(가족 전체)과 미선택은 칩 CSS 의 노랑 토큰. 폼 루트 style 로 항상 세 변수를 넘긴다. */
   function fxStyle(f, links, members) {
     let col = "";
     const m = f.whoPerson && f.assigneeMemberId ? (members || []).find((x) => x && x.memberId === f.assigneeMemberId) : null;
     if (m) col = memberColor(m);
     else if (f.scope === "CHILD" && (f.childKeys || []).length) col = childColors(links)[f.childKeys[0]] || "";
-    else if (f.scope === "FAMILY") col = familyColor();
     const c = col ? safeColor(col) : "";
-    return c ? ` style="--us-fx:${c};--us-fx-ink:${inkOn(c)}"` : "";
+    return c
+      ? ` style="--us-fx:${c};--us-fx-ink:${inkOn(c)};--us-fx-line:${c}"`
+      : ' style="--us-fx:var(--nd-yellow);--us-fx-ink:var(--nd-ink);--us-fx-line:var(--nd-yellow-line)"';
   }
+  /** D75 폼 변형 B: 시트 머리 = 선택한 '누구' 색 면 + 제목 + 선택 칩 라벨 알약(새 문구 없음). 색은 폼 루트 변수(--us-fx*)가 준다. */
+  function fxLabel(f, links, members, meId) {
+    const m = f.whoPerson && f.assigneeMemberId ? (members || []).find((x) => x && x.memberId === f.assigneeMemberId) : null;
+    if (m) return m.memberId === meId ? MSG.g13WhoMe : m.label || "";
+    if (f.scope === "CHILD" && (f.childKeys || []).length) {
+      const by = {};
+      activeLinks(links).forEach((l) => (by[linkKey(l)] = l.displayName || ""));
+      return f.childKeys.map((k) => by[k]).filter(Boolean).join(" · ");
+    }
+    return MSG.targetFamily;
+  }
+  const fxHead = (titleHtml, label) => `<div class="us-fx-head"><h3>${titleHtml}</h3>${label ? `<span class="us-fx-who"><i></i>${esc(label)}</span>` : ""}</div>`;
   /** 계정 모드 일정 추가·수정 시트. opts: renderForm 과 같음 + { ctx } */
   function renderFormG13(f, links, opts) {
     const o = opts || {};
@@ -1020,22 +1060,12 @@
     const kindChips = g13Kinds(f, ctx).map((x) => chip("", `data-us-sk="${esc(x.label)}"`, x.label, f.kindPick === x.label)).join("");
     const fixed = f.dateKind !== "PERIOD";
     const repeating = fixed && isRepeating(f);
-    const repeatBlock = !fixed
-      ? ""
-      : `<div class="us-field"><label>${esc(MSG.repeatLabel)}</label><div class="us-chips">${chip("", 'data-us-repeat="NONE"', MSG.repeatNone, !repeating)}${chip("", 'data-us-repeat="WEEKLY"', MSG.repeatWeekly, f.repeat === "WEEKLY")}${chip("", 'data-us-repeat="BIWEEKLY"', MSG.repeatBiweekly, f.repeat === "BIWEEKLY")}${soonChip(MSG.g13RepeatMonthly)}${soonChip(MSG.g13RepeatNth)}</div></div>`;
-    const repeatDetail = !repeating
-      ? ""
-      : `<div class="us-field"><label>${esc(MSG.repeatDaysLabel)}</label><div class="us-chips">${WEEKDAY_KEYS.map((k) => chip("", `data-us-day="${k}"`, WEEKDAY_LABELS[k], (f.byDay || []).includes(k))).join("")}</div></div>
-         <p class="us-note">${esc(MSG.firstDayHint)}</p>
-         <div class="us-field"><label>${esc(MSG.untilLabel)}</label><div class="us-chips">${chip("", 'data-us-until="NONE"', MSG.untilNone, f.untilMode !== "DATE")}${chip("", 'data-us-until="DATE"', MSG.untilDate, f.untilMode === "DATE")}</div></div>
-         ${f.untilMode === "DATE" ? `<div class="us-field"><label>${esc(MSG.lastRepeatLabel)}</label>${picker(PICKER_PREFIXES.until, f.until)}</div>` : ""}
-         <p class="us-note">${esc(MSG.repeatHint)}</p>`;
+    const repeatBlock = !fixed ? "" : repeatChipsHtml(f, repeating);
+    const repeatDetail = repeatDetailHtml(f, repeating);
     const dates = fixed
       ? `<div class="us-field"><label>${esc(repeating ? MSG.firstDayLabel : MSG.dateField)}</label>${picker(PICKER_PREFIXES.date, f.eventDate)}</div>
          <label class="us-check"><input type="checkbox" id="us-allday"${f.allDay ? " checked" : ""} /> ${esc(MSG.allDay)}</label>
          ${f.allDay ? "" : timesBlock(f)}
-         ${repeating ? "" : `<label class="us-check"><input type="checkbox" id="us-multi"${f.multiDay ? " checked" : ""} /> ${esc(MSG.multiDay)}</label>
-         ${f.multiDay ? `<div class="us-field"><label>${esc(MSG.endField)}</label>${picker(PICKER_PREFIXES.end, f.endDate)}</div>` : ""}`}
          ${repeatBlock}${repeatDetail}`
       : `<div class="us-field"><label>${esc(MSG.periodStart)}</label>${picker(PICKER_PREFIXES.periodStart, f.periodStart)}</div>
          <div class="us-field"><label>${esc(MSG.periodEnd)}</label>${picker(PICKER_PREFIXES.periodEnd, f.periodEnd)}</div>
@@ -1049,15 +1079,13 @@
     const errors = (o.messages || []).map((m) => `<p class="us-error">${esc(m)}</p>`).join("");
     const edit = f.mode === "edit";
     return `<div class="us-form us-form-g13" data-us-mode="${esc(f.mode)}"${fxStyle(f, links, members)}>
-      <h3>${esc(f.wasRecurring && edit ? MSG.editAllTitle : edit ? MSG.sheetEdit : MSG.sheetAdd)}</h3>${f.wasRecurring && edit ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
+      ${fxHead(esc(f.wasRecurring && edit ? MSG.editAllTitle : edit ? MSG.sheetEdit : MSG.sheetAdd), fxLabel(f, links, members, ctx.meId))}${f.wasRecurring && edit ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
       <div class="us-field"><label>${esc(MSG.g13Who)}</label><div class="us-chips">${whoChips}</div></div>
       <div class="us-field"><label>${esc(MSG.g13Kind)}</label><div class="us-chips" data-us-kinds>${kindChips}</div></div>
       ${autoCand}
       <div class="us-field"><label for="us-title">${esc(MSG.titleLabel)}</label><input type="text" id="us-title" maxlength="100" placeholder="${esc(MSG.titleHint)}" value="${esc(f.title)}" /></div>
-      <div class="us-field"><label>${esc(MSG.dateLabel)}</label><div class="us-chips">${chip("", 'data-us-kind="FIXED"', MSG.kindFixed, fixed)}${repeating ? `<button type="button" class="us-chip" disabled>${esc(MSG.kindPeriod)}</button>` : chip("", 'data-us-kind="PERIOD"', MSG.kindPeriod, !fixed)}</div></div>
       ${dates}
       ${assignee}
-      <div class="us-field"><label for="us-location">${esc(MSG.locationLabel)}</label><input type="text" id="us-location" maxlength="100" placeholder="${esc(MSG.locationHint)}" value="${esc(f.location)}" /></div>
       <div class="us-field"><label for="us-memo">${esc(MSG.memoLabel)}</label><textarea id="us-memo" maxlength="500" placeholder="${esc(MSG.memoHint)}">${esc(f.memo)}</textarea></div>
       ${/* G21: 공개 범위(공개/비공개) 항목은 화면에서 숨긴다(저장 필드는 그대로) */""}
       <div id="us-errors">${errors}</div>
@@ -1127,22 +1155,13 @@
     const locked = !!f.autoRef; // C2: 연결된 AUTO 예약은 대상(아이 1명)·날짜 종류(날짜 정함)·반복을 바꿀 수 없다
     const fixed = f.dateKind !== "PERIOD";
     const repeating = fixed && isRepeating(f);
-    const repeatBlock = !fixed || locked
-      ? ""
-      : `<div class="us-field"><label>${esc(MSG.repeatLabel)}</label><div class="us-chips">${chip("", 'data-us-repeat="NONE"', MSG.repeatNone, !repeating)}${chip("", 'data-us-repeat="WEEKLY"', MSG.repeatWeekly, f.repeat === "WEEKLY")}${chip("", 'data-us-repeat="BIWEEKLY"', MSG.repeatBiweekly, f.repeat === "BIWEEKLY")}</div></div>`;
-    const repeatDetail = !repeating
-      ? ""
-      : `<div class="us-field"><label>${esc(MSG.repeatDaysLabel)}</label><div class="us-chips">${WEEKDAY_KEYS.map((k) => chip("", `data-us-day="${k}"`, WEEKDAY_LABELS[k], (f.byDay || []).includes(k))).join("")}</div></div>
-         <p class="us-note">${esc(MSG.firstDayHint)}</p>
-         <div class="us-field"><label>${esc(MSG.untilLabel)}</label><div class="us-chips">${chip("", 'data-us-until="NONE"', MSG.untilNone, f.untilMode !== "DATE")}${chip("", 'data-us-until="DATE"', MSG.untilDate, f.untilMode === "DATE")}</div></div>
-         ${f.untilMode === "DATE" ? `<div class="us-field"><label>${esc(MSG.lastRepeatLabel)}</label>${picker(PICKER_PREFIXES.until, f.until)}</div>` : ""}
-         <p class="us-note">${esc(MSG.repeatHint)}</p>`;
+    const repeatBlock = !fixed || locked ? "" : repeatChipsHtml(f, repeating);
+    const repeatDetail = repeatDetailHtml(f, repeating);
     const recM = /^\d{4}-(\d{2})-(\d{2})$/.exec(f.recommendIso || "");
     const recChip = recM && !f.eventDate && !repeating && f.mode === "create" ? `<div class="us-field us-recommend"><div class="us-chips">${chip("", `data-us-recommend="${esc(f.recommendIso)}"`, MSG.recommendChip(`${+recM[1]}/${+recM[2]}`), false)}</div></div>` : "";
     const dates = fixed
       ? `${repeatBlock}${recChip}<div class="us-field"><label>${esc(repeating ? MSG.firstDayLabel : MSG.dateField)}</label>${picker(PICKER_PREFIXES.date, f.eventDate)}</div>
-         ${repeating ? repeatDetail : `<label class="us-check"><input type="checkbox" id="us-multi"${f.multiDay ? " checked" : ""} /> ${esc(MSG.multiDay)}</label>
-         ${f.multiDay ? `<div class="us-field"><label>${esc(MSG.endField)}</label>${picker(PICKER_PREFIXES.end, f.endDate)}</div>` : ""}`}
+         ${repeatDetail}
          <label class="us-check"><input type="checkbox" id="us-allday"${f.allDay ? " checked" : ""} /> ${esc(MSG.allDay)}</label>
          ${f.allDay ? "" : timesBlock(f)}`
       : `<div class="us-field"><label>${esc(MSG.periodStart)}</label>${picker(PICKER_PREFIXES.periodStart, f.periodStart)}</div>
@@ -1150,14 +1169,12 @@
          <p class="us-note">${esc(MSG.periodHint)}</p>`;
     const errors = (o.messages || []).map((m) => `<p class="us-error">${esc(m)}</p>`).join("");
     return `<div class="us-form" data-us-mode="${esc(f.mode)}"${fxStyle(f, links, o.members)}>
-      <h3>${esc(f.wasRecurring && f.mode === "edit" ? MSG.editAllTitle : f.mode === "edit" ? MSG.sheetEdit : MSG.sheetAdd)}</h3>${f.wasRecurring && f.mode === "edit" ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
+      ${fxHead(esc(f.wasRecurring && f.mode === "edit" ? MSG.editAllTitle : f.mode === "edit" ? MSG.sheetEdit : MSG.sheetAdd), fxLabel(f, links, o.members, ""))}${f.wasRecurring && f.mode === "edit" ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
       ${locked && f.mode === "create" && o.autoLabel ? `<p class="us-note us-autoref-note">${esc(MSG.autoFormNote(o.autoLabel))}</p>` : ""}${renderQuickChips(f)}${f.mode === "create" && !f.autoRef && f.quickKey === "vaccine" ? renderAutoCand(o.autoCandidates) : ""}
       <div class="us-field"><label for="us-title">${esc(MSG.titleLabel)}</label><input type="text" id="us-title" maxlength="100" placeholder="${esc(MSG.titleHint)}" value="${esc(f.title)}" /></div>
       <div class="us-field"><label>${esc(MSG.categoryLabel)}</label><div class="us-chips">${cats}</div></div>
       ${locked ? "" : `<div class="us-field"><label>${esc(MSG.targetLabel)}</label><div class="us-chips">${targets}</div></div>`}
-      ${locked ? "" : `<div class="us-field"><label>${esc(MSG.dateLabel)}</label><div class="us-chips">${chip("", 'data-us-kind="FIXED"', MSG.kindFixed, fixed)}${repeating ? `<button type="button" class="us-chip" disabled>${esc(MSG.kindPeriod)}</button>` : chip("", 'data-us-kind="PERIOD"', MSG.kindPeriod, !fixed)}</div></div>`}
       ${dates}
-      <div class="us-field"><label for="us-location">${esc(MSG.locationLabel)}</label><input type="text" id="us-location" maxlength="100" placeholder="${esc(MSG.locationHint)}" value="${esc(f.location)}" /></div>
       <div class="us-field"><label for="us-memo">${esc(MSG.memoLabel)}</label><textarea id="us-memo" maxlength="500" placeholder="${esc(MSG.memoHint)}">${esc(f.memo)}</textarea></div>
       <div id="us-errors">${errors}</div>
       ${o.saving ? `<p class="us-note">${esc(MSG.saving)}</p>` : ""}
@@ -1370,7 +1387,7 @@
     newForm, formFromSchedule, stripId, formToInput, validateForm, messagesFromErrors, prepareSave, changesFromForm, minuteOptions, splitTime,
     renderForm, renderFormG13, upgradeFormG13, g13ApplyWho, g13PickKind, g13Kinds, pickerInitials, esc,
     // B5 반복 일정
-    WEEKDAY_KEYS, WEEKDAY_LABELS, dayLabel, repeatSummary, exceptionsNotice, isRepeating, sameRule, planFullEdit,
+    WEEKDAY_KEYS, WEEKDAY_LABELS, dayLabel, repeatSummary, monthlyNoteInner, exceptionsNotice, isRepeating, sameRule, planFullEdit,
     renderEditScopeSheet, renderDeleteScopeSheet, renderCancelDayConfirm, renderDeleteAllConfirm, renderRuleChangeConfirm,
     dayFormFromOccurrence, validateDayForm, dayFormToMove, renderDayForm,
   };

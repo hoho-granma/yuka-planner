@@ -5502,6 +5502,7 @@
         getMinDate: minField ? () => parse(form[minField]) : undefined,
         onChange: (d) => {
           form[field] = toISODate(d);
+          if (field === "eventDate" && form.repeat === "MONTHLY") { const n = document.querySelector(".us-monthly-note"); if (n) n.innerHTML = UserScheduleView.monthlyNoteInner(form.eventDate); } // D75: 매월 설명은 첫 날의 일을 따라간다
         },
       });
       const v = parse(form[field]);

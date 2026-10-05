@@ -75,17 +75,32 @@
     return DOW_CODE[new Date(y, m - 1, d).getDay()];
   }
   const mondayOf = (s) => addDays(s, -WEEKDAYS.indexOf(weekdayOf(s)));
-  /** 전개할 수 있는 규칙인가(WEEKLY + 올바른 필드). 검증을 통과하지 못한 문서가 전개에서 예외를 던지지 않게 하는 방어선. */
+  /** D75 매월: 규칙의 '일'은 startDate 의 일. 그 달에 그 날이 없으면(29~31일) 그 달 말일로 보정한다(계산값 — 저장 데이터는 바뀌지 않는다). */
+  const daysInMonth = (y, m) => new Date(y, m, 0).getDate(); // m: 1~12
+  const monthIndex = (s) => Number(s.slice(0, 4)) * 12 + Number(s.slice(5, 7)) - 1;
+  /** 매월 규칙에서 그 날짜가 속한 달의 규칙 날짜(보정 후). */
+  function monthlyDayFor(rec, date) {
+    const want = Number(rec.startDate.slice(8, 10));
+    return Math.min(want, daysInMonth(Number(date.slice(0, 4)), Number(date.slice(5, 7))));
+  }
+  /** 매월 규칙에서 그 회차가 '말일 보정'으로 앞당겨진 날짜인가(예: 31일 규칙의 4월 30일). 상세 안내용. */
+  function isMonthEndAdjusted(rec, date) {
+    return !!rec && rec.freq === "MONTHLY" && isDateStr(rec.startDate) && isDateStr(date) && monthlyDayFor(rec, date) < Number(rec.startDate.slice(8, 10));
+  }
+  /** 전개할 수 있는 규칙인가(WEEKLY·MONTHLY + 올바른 필드). 검증을 통과하지 못한 문서가 전개에서 예외를 던지지 않게 하는 방어선. */
   function recurrenceUsable(rec) {
-    return !!rec && typeof rec === "object" && !Array.isArray(rec) && rec.freq === "WEEKLY" && isDateStr(rec.startDate)
-      && Array.isArray(rec.byDay) && rec.byDay.length > 0 && rec.byDay.every((d) => WEEKDAYS.includes(d))
+    const base = !!rec && typeof rec === "object" && !Array.isArray(rec) && isDateStr(rec.startDate)
       && (nil(rec.interval) || (Number.isInteger(rec.interval) && rec.interval >= 1)) && (nil(rec.until) || isDateStr(rec.until));
+    if (!base) return false;
+    if (rec.freq === "MONTHLY") return true; // byDay 없음 — 일은 startDate 에서
+    return rec.freq === "WEEKLY" && Array.isArray(rec.byDay) && rec.byDay.length > 0 && rec.byDay.every((d) => WEEKDAYS.includes(d));
   }
   /** 그 날짜가 반복 규칙이 만드는 회차의 "원래 날짜"인가. 문서(doc) 또는 규칙(rec) 둘 다 받는다. */
   function isRuleDate(docOrRec, date) {
     const rec = docOrRec && docOrRec.recurrence !== undefined ? docOrRec.recurrence : docOrRec;
     if (!recurrenceUsable(rec) || !isDateStr(date)) return false;
     if (date < rec.startDate || (!nil(rec.until) && date > rec.until)) return false;
+    if (rec.freq === "MONTHLY") return Number(date.slice(8, 10)) === monthlyDayFor(rec, date) && (monthIndex(date) - monthIndex(rec.startDate)) % (rec.interval || 1) === 0;
     if (!rec.byDay.includes(weekdayOf(date))) return false;
     return (dayDiff(mondayOf(rec.startDate), mondayOf(date)) / 7) % (rec.interval || 1) === 0;
   }
@@ -196,9 +211,10 @@
 
   function validateRecurrence(rec, err) {
     if (!rec || typeof rec !== "object" || Array.isArray(rec)) return err("I3", "recurrence", "recurrence 는 map");
-    if (rec.freq !== "WEEKLY") err("I3", "recurrence.freq", "v1 은 WEEKLY 만");
+    if (rec.freq !== "WEEKLY" && rec.freq !== "MONTHLY") err("I3", "recurrence.freq", "freq 는 WEEKLY 또는 MONTHLY");
     if (!nil(rec.interval) && !(Number.isInteger(rec.interval) && rec.interval >= 1)) err("I3", "recurrence.interval", "interval 은 1 이상 정수");
-    if (!Array.isArray(rec.byDay) || rec.byDay.length === 0 || rec.byDay.some((d) => !WEEKDAYS.includes(d))) err("I3", "recurrence.byDay", "byDay 는 MO..SU 비어 있지 않은 배열");
+    if (rec.freq === "MONTHLY") { if (!nil(rec.byDay)) err("I3", "recurrence.byDay", "매월 규칙에는 byDay 가 없다(일은 startDate 에서)"); }
+    else if (!Array.isArray(rec.byDay) || rec.byDay.length === 0 || rec.byDay.some((d) => !WEEKDAYS.includes(d))) err("I3", "recurrence.byDay", "byDay 는 MO..SU 비어 있지 않은 배열");
     if (!isDateStr(rec.startDate)) err("I3", "recurrence.startDate", "startDate 는 YYYY-MM-DD");
     if (!nil(rec.until) && (!isDateStr(rec.until) || (isDateStr(rec.startDate) && rec.until < rec.startDate))) err("I3", "recurrence.until", "until 은 startDate 이후의 YYYY-MM-DD 또는 null");
   }
@@ -459,7 +475,7 @@
   return {
     SOURCE_TYPES, CATEGORIES, SCOPES, DATE_KINDS, STATUSES, WEEKDAYS, LIMITS, AUTO_REF_RE, isAutoRef, MAX_EXPANSION_DAYS, REQUIRED_KEYS, OPTIONAL_KEYS, ALLOWED_KEYS, IMMUTABLE_KEYS,
     validate, buildCreateDoc, buildPatch, setStatus, markDone, softDelete, expandOccurrences, normalizeFromCandidate,
-    isDateStr, isTimeStr, addDays, dayDiff, isRecurring, recurrenceUsable, isRuleDate, weekdayOf, exceptionCount, EXCEPTION_WARN_AT,
+    isDateStr, isTimeStr, addDays, dayDiff, isRecurring, recurrenceUsable, isRuleDate, isMonthEndAdjusted, weekdayOf, exceptionCount, EXCEPTION_WARN_AT,
     cancelOccurrence, restoreOccurrence, moveOccurrence, exceptionsToPrune, editAll,
   };
 });

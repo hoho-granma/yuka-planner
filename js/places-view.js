@@ -82,6 +82,7 @@
     viewCalendar: "캘린더에서 보기",
     registered: (label) => `${label} 캘린더에 등록했어요`,
     memoPrefix: "공식 홈페이지: ",
+    memoPlace: "장소: ", // D75: 메모 첫 줄 머리말
     mapBase: "https://map.kakao.com/link/search/",
     routeBase: "https://map.kakao.com/link/to/",
   });
@@ -115,7 +116,13 @@
   }
   /** 일정 메모: 공식 홈페이지 주소(https 만). 없으면 "". */
   function memoFor(place) {
-    return place && Places.isHttpsUrl(place.officialUrl) ? (TEXT.memoPrefix + place.officialUrl).slice(0, 500) : "";
+    // D75: 시설 주소는 location 칸 대신 메모 첫 줄에 `장소: {시설명} {주소}`로 합친다(다음 줄부터 공식 링크). 500자를 넘으면 뒤쪽을 자른다. 주소가 없으면 그 줄은 만들지 않는다.
+    const p = place || {};
+    const addr = String(p.address || "").trim();
+    const lines = [];
+    if (addr) lines.push(`${TEXT.memoPlace}${[String(p.name || "").trim(), addr].filter(Boolean).join(" ")}`);
+    if (Places.isHttpsUrl(p.officialUrl)) lines.push(TEXT.memoPrefix + p.officialUrl);
+    return lines.join("\n").slice(0, 500);
   }
 
   /** 일정 문서 길이 제한(js/user-schedule.js LIMITS.titleMax·locationMax 와 같은 값). */
@@ -447,7 +454,6 @@
     const p = place || {};
     return {
       title: String(p.name || "").slice(0, SCHEDULE_LIMITS.titleMax),
-      location: String(p.address || "").slice(0, SCHEDULE_LIMITS.locationMax),
       category: "FAMILY",
       scope: "FAMILY",
     };

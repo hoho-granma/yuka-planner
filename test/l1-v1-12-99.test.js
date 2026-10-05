@@ -59,12 +59,12 @@ test("1-7: 예약 폼 '추천일 M/D로 하기' 칩 — 추천일이 있고 날�
   const src = require("fs").readFileSync(__dirname + "/../js/app.js", "utf8");
   assert.ok(/us\.form\.eventDate = rec\.getAttribute\("data-us-recommend"\)/.test(src) && !/save[^\n]*data-us-recommend/.test(src));
 });
-test("2-4: 계정 모드 새 일정에도 '2주마다'가 보이고 저장은 interval 2 로 변환, 매월은 없다(비활성 '곧 추가돼요'만)", () => {
+test("2-4: 계정 모드 새 일정에도 '2주마다'가 보이고 저장은 interval 2 로 변환, 매월은 D75 로 활성 칩", () => {
   const V = require("../js/user-schedule-view.js");
   const f = V.upgradeFormG13(V.newForm({ date: "2026-10-12", activeChildKey: null, links: [], defaultAssigneeId: "m1", defaultScope: "FAMILY" }), { meId: "m1" });
   const h = V.renderFormG13({ ...f, repeat: "BIWEEKLY" }, [], { members: [{ memberId: "m1", label: "엄마" }], ctx: { meId: "m1" } });
-  assert.ok(h.includes('data-us-repeat="BIWEEKLY"') && h.includes("2주마다") && !h.includes('data-us-repeat="MONTHLY'));
+  assert.ok(h.includes('data-us-repeat="BIWEEKLY"') && h.includes("2주마다") && h.includes('data-us-repeat="MONTHLY"') && !h.includes("곧 추가돼요"));
   const src = require("fs").readFileSync(__dirname + "/../js/app.js", "utf8");
-  assert.ok(/us\.form\.repeat === "WEEKLY" \|\| us\.form\.repeat === "BIWEEKLY"/.test(src), "2주마다도 시작 날짜의 요일이 기본 선택");
+  assert.ok(/\(us\.form\.repeat === "WEEKLY" \|\| us\.form\.repeat === "BIWEEKLY"\)/.test(src), "2주마다도 시작 날짜의 요일이 기본 선택");
   assert.ok(/interval: f\.repeat === "BIWEEKLY" \? 2 : 1/.test(require("fs").readFileSync(__dirname + "/../js/user-schedule-view.js", "utf8")));
 });

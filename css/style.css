@@ -2047,20 +2047,27 @@ body.acct-design :is(#tab-home, #empty-panel) .acct-nc-me-t small svg { color: v
 /* ═══ v1.12.107 4-2 시트 통일 — 일정 시트·상세 시트·프로필 시트를 확정 디자인(--nd-*)에 맞춘다. 명세 docs/한눈육아-디자인명세-통일-시트3종.md, 결정 D21(상세 시트 흰 면 유지)·D22(단계 완료 인디고).
    정보 수정 시트(v1.12.98~100)와 같은 방식: 시트 범위 셀렉터 안에서만 덮어쓴다. 새 변수·새 색 없음, 앱 전역 --c-primary·.us-chip 기본값은 바꾸지 않는다. 구성원 색 칩·삭제 버튼·분류 뱃지·구성원 원은 그대로. ═══ */
 /* 1. 일정 추가·수정 시트 */
-.modal-panel:has(.us-form) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); background: var(--nd-soft); }
+.modal-panel:has(.us-form) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); background: var(--surface); } /* D75 B: 시트 면은 흰색 — 색은 헤더·선택 칩·저장 버튼에만 */
+.modal-panel:has(.us-form) .us-form { --us-fx-deep: color-mix(in srgb, var(--us-fx, var(--nd-yellow)) 50%, var(--chip-ink)); } /* 포커스·체크 같은 선·표시용 진한 색(흰 바탕 3.8 이상) */
+.modal-panel:has(.us-form) .us-fx-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -24px -20px 10px; padding: 16px 20px; background: var(--us-fx, var(--nd-yellow)); border-radius: 20px 20px 0 0; }
+.modal-panel:has(.us-form) .us-fx-head h3 { margin: 0; font-size: 17px; color: var(--us-fx-ink, var(--nd-ink)); }
+.modal-panel:has(.us-form) .us-fx-who { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: rgba(255, 255, 255, .6); color: var(--us-fx-ink, var(--nd-ink)); }
+.modal-panel:has(.us-form) .us-fx-who i { width: 8px; height: 8px; border-radius: 50%; background: var(--us-fx-deep); }
+.modal-panel:has(.us-form) .tw-tm.on { border-color: var(--us-fx-deep); box-shadow: 0 0 0 2px var(--us-fx, var(--nd-yellow)); }
+.modal-panel:has(.us-form) .us-check input { accent-color: var(--us-fx-deep); }
 .modal-panel:has(.us-form) h3 { color: var(--nd-ink); }
 .modal-panel:has(.us-form) #us-title { background: var(--bg); border: 0; border-radius: 12px; padding-left: 14px; padding-right: 14px; } /* D77: 제목칸 테두리 없음(연한 면), 포커스 때만 선 */
-.modal-panel:has(.us-form) #us-title:focus-visible { outline: 2px solid var(--c-select-border); outline-offset: 0; background: #fff; }
+.modal-panel:has(.us-form) #us-title:focus-visible { outline: 2px solid var(--us-fx-deep, var(--c-select-border)); outline-offset: 0; background: #fff; }
 .modal-panel:has(.us-form) :is(input:not(#us-title), textarea, select), .modal-panel:has(.us-form) .date-picker-trigger { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; }
 .modal-panel:has(.us-form) .us-chip:not(.active):not([style*="--us-color"]) { background: #fff; border: 1.5px solid var(--line); color: var(--text); }
 /* 비선택 구성원 색 칩은 앱 기본(구성원 색 면) 그대로 — 사람 구분 색을 선택 전에도 보이게 한다(QA 사전 차이 1) */
-.modal-panel:has(.us-form) .us-chip.active:not([style*="--us-color"]) { background: var(--nd-yellow); border: 1.5px solid var(--nd-yellow-line); color: var(--nd-ink); font-weight: 800; }
-.modal-panel:has(.us-form) .us-recommend .us-chip { background: #fff; border: 1.5px solid var(--nd-indigo); color: var(--nd-indigo); }
+.modal-panel:has(.us-form) .us-chip.active:not([style*="--us-color"]) { background: var(--us-fx, var(--nd-yellow)); border: 1.5px solid var(--us-fx-line, var(--nd-yellow-line)); color: var(--us-fx-ink, var(--nd-ink)); font-weight: 800; } /* D75 B: 활성 칩 = 선택한 '누구' 색(가족 전체·미선택은 노랑) */
+.modal-panel:has(.us-form) .us-recommend .us-chip { background: #fff; border: 1.5px solid var(--us-fx-deep, var(--nd-yellow-line)); color: var(--nd-ink); }
 .modal-panel:has(.us-form) .us-btn.us-primary { background: var(--nd-indigo); border: 0; color: var(--on-accent); border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
 /* D77: 저장 버튼 = 선택한 '누구' 색(폼 루트 --us-fx·--us-fx-ink, 없으면 기존 주색) */
-.modal-panel:has(.us-form) .us-form .us-actions .us-btn.us-primary[data-us-action="save"] { background: var(--us-fx, var(--nd-indigo)); color: var(--us-fx-ink, var(--on-accent)); }
+.modal-panel:has(.us-form) .us-form .us-actions .us-btn.us-primary[data-us-action="save"] { background: var(--us-fx, var(--nd-yellow)); color: var(--us-fx-ink, var(--nd-ink)); border: 1.5px solid var(--us-fx-line, var(--nd-yellow-line)); } /* D77: 선택 칩과 같은 면·글자·테두리(칩 규칙 2057행과 같은 토큰) */
 .modal-panel:has(.us-form) .us-btn:not(.us-primary):not(.us-danger) { background: #fff; border: 1.5px solid var(--line); color: var(--nd-ink); border-radius: 13px; }
-.modal-panel:has(.us-form) :is(input, textarea, select):focus-visible, .modal-panel:has(.us-form) .date-picker-trigger:focus-visible { border: 2px solid var(--nd-indigo); outline: none; }
+.modal-panel:has(.us-form) :is(input:not(#us-title), textarea, select):focus-visible, .modal-panel:has(.us-form) .date-picker-trigger:focus-visible { border: 2px solid var(--us-fx-deep, var(--nd-indigo)); outline: none; }
 /* 2. 항목 상세 시트 — 시트 면은 흰색 유지(D21 A) */
 .modal-panel:has(.as-steps) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); }
 .modal-panel:has(.as-steps) .acct-sub-head { background: #fff; color: var(--nd-ink); border-bottom: 1px solid var(--line); border-radius: 0; }
