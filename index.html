@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#ff6a1a" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
 <script>/* G19: 계정 모드(기본 ON)에서는 옛 상황 선택 화면이 첫 그림부터 한 번도 보이지 않게 한다(js/feature-flags.js 와 같은 규칙: accounts="0" 일 때만 OFF) */try{if(localStorage.getItem("hannun_feature_accounts")!=="0")document.documentElement.classList.add("hnacc-default");}catch(e){document.documentElement.classList.add("hnacc-default");}</script>
-<link rel="stylesheet" href="css/style.css?v=124" />
+<link rel="stylesheet" href="css/style.css?v=125" />
   <link rel="stylesheet" href="css/places.css?v=11" />
   <link rel="stylesheet" href="css/home-slots.css?v=1" />
 </head>
@@ -130,7 +130,7 @@
     <!-- 2. 대시보드: 하단 탭 4개(홈·캘린더·기록·지원금) + 전체 할 일 서브 화면 -->
     <section id="view-calendar" class="view hidden">
       <header class="app-header">
-        <span class="app-title" id="brand-text">한눈육아</span>
+        <button type="button" class="app-title app-brand-btn" id="brand-text" aria-label="한눈육아 소개 화면 열기">한눈육아</button>
         <div class="header-actions">
           <button type="button" class="btn-refresh" id="btn-refresh" aria-label="최신 버전으로 새로고침">
             <span class="refresh-icon" aria-hidden="true">↻</span><span id="app-version-text"></span>
@@ -277,10 +277,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="js/sync.js?v=5"></script>
   <script src="js/feature-flags.js?v=6"></script>
-  <script src="js/household-sync.js?v=8"></script>
-  <script src="js/household-view.js?v=15"></script>
+  <script src="js/household-sync.js?v=9"></script>
+  <script src="js/household-view.js?v=16"></script>
   <script src="js/auth-service.js?v=4"></script>
-  <script src="js/account-view.js?v=32"></script>
+  <script src="js/account-view.js?v=33"></script>
   <script src="js/account-sync.js?v=5"></script>
   <script src="js/version.js?v=1"></script>
   <script src="js/date-calc.js?v=1"></script>
@@ -290,7 +290,7 @@
   <script src="js/auto-steps.js?v=8"></script>
   <script src="js/next-stage-card.js?v=1"></script>
   <script src="js/capture/parse-ko.js?v=2"></script>
-  <script src="js/capture/draft-view.js?v=2"></script>
+  <script src="js/capture/draft-view.js?v=3"></script>
   <script src="js/capture/capture-model.js?v=2"></script>
   <script src="js/capture/text-recognition.js?v=1"></script>
   <script src="js/capture/photo-compress.js?v=1"></script>
@@ -319,7 +319,7 @@
   <script src="js/time-range.js?v=2"></script>
   <script src="js/time-wheel.js?v=1"></script>
   <script src="js/schedule-kinds.js?v=2"></script>
-  <script src="js/user-schedule-view.js?v=33"></script>
+  <script src="js/user-schedule-view.js?v=34"></script>
   <script src="js/child-anniversaries.js?v=2"></script>
   <script src="js/tab-child-bar.js?v=1"></script>
   <script src="js/home-must.js?v=1"></script>
@@ -334,7 +334,7 @@
   <script src="js/tab-swipe.js?v=1"></script>
   <script src="js/edu-trend.js?v=3"></script>
   <script src="js/records-view.js?v=10"></script>
-  <script src="js/app.js?v=167"></script>
+  <script src="js/app.js?v=168"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

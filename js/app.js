@@ -4258,8 +4258,28 @@
     const st = hh.hid ? HouseholdSync.getStatus(hh.hid) : { pending: 0, permissionDenied: false };
     // 아이 전환 진입점: 가구가 있거나, 가구가 없어도 이 기기에 저장된 아이가 2명 이상일 때.
     const showChildSwitch = !!(hh.hid && hh.code) || loadChildren().length >= 2;
-    return { enabled: true, view: hh.view, childName: childDisplayName(), code: hh.code, pending: st.pending, permissionDenied: st.permissionDenied, rulesUnavailable: hh.rulesUnavailable, notice: hh.notice, joinInput: hh.joinInput, showChildSwitch, canLinkChild: hhCanLinkChild(), hideLeave: acctEnabled() && !!acct.user, acctMode: acctEnabled() && !!acct.user };
+    return { enabled: true, view: hh.view, childName: childDisplayName(), code: hh.code, pending: st.pending, permissionDenied: st.permissionDenied, head: st.head || null, lastError: st.lastError || "", rulesUnavailable: hh.rulesUnavailable, notice: hh.notice, joinInput: hh.joinInput, showChildSwitch, canLinkChild: hhCanLinkChild(), hideLeave: acctEnabled() && !!acct.user, acctMode: acctEnabled() && !!acct.user };
   }
+  // ── D68 쓰기가 서버에 가지 못하고 대기열로만 들어갔을 때(권한 거부·오프라인) 조용히 성공한 것처럼 보이지 않게 안내한다. 입력 순서·대기열 동작은 그대로. ──
+  let usSyncToastTimer = null;
+  function usSyncNote(res) {
+    if (!res || res.pending !== true || typeof HouseholdView === "undefined" || typeof document === "undefined") return;
+    const st = hh.hid ? HouseholdSync.getStatus(hh.hid) : { permissionDenied: false };
+    const text = HouseholdView.syncNoteText(res, st, typeof navigator !== "undefined" ? navigator.onLine : true);
+    if (!text) return;
+    let t = document.getElementById("sync-toast");
+    if (!t) { t = document.createElement("div"); t.id = "sync-toast"; t.className = "sync-toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
+    t.textContent = text;
+    t.classList.remove("hidden");
+    clearTimeout(usSyncToastTimer);
+    usSyncToastTimer = setTimeout(() => t.classList.add("hidden"), 7000);
+    if (typeof hhRender === "function") hhRender();
+  }
+  ["createSchedule", "patchSchedule", "createTodo", "patchTodo", "upsertMember", "removeMember", "addChild", "updateChild", "removeChild"].forEach((k) => {
+    const f = typeof HouseholdSync !== "undefined" ? HouseholdSync[k] : null;
+    if (typeof f !== "function") return;
+    HouseholdSync[k] = async function (...args) { const r = await f.apply(HouseholdSync, args); try { usSyncNote(r); } catch (e) {} return r; };
+  });
   function hhRender() {
     const slot = el("hh-slot");
     if (slot) slot.innerHTML = HouseholdView.renderSection(hhState());
@@ -6464,7 +6484,9 @@
       hero.insertAdjacentElement("afterend", slot);
       slot.addEventListener("click", acctOnClick);
     }
-    slot.innerHTML = AccountView.renderLanding({ user: acct.user, version: typeof self !== "undefined" ? self.APP_VERSION || "" : "" });
+    const introOn = typeof acctIntro !== "undefined" && acctIntro === true && !!acct.user; // D71
+    if (!acct.user && typeof acctIntro !== "undefined") acctIntro = false; // 로그아웃하면 소개 모드 해제
+    slot.innerHTML = AccountView.renderLanding({ user: acct.user, intro: introOn, version: typeof self !== "undefined" ? self.APP_VERSION || "" : "" });
     // G1: 계정 기능이 켜졌을 때만 옛 첫 화면의 문구를 새 톤으로 바꾸고(OFF 는 기존 그대로), 첫 화면 모드(간단/둘러보기)를 적용한다.
     const O = AccountView.MSG.onboard;
     const title = el("hero-title");
@@ -6505,11 +6527,21 @@
     });
   }
   let acctBrowse = false; // (G7 이후 둘러보기 버튼은 없다 — 항상 false)
+  /** D71: 로그인한 사용자가 홈 헤더 '한눈육아'를 누르면 첫 화면(1장)을 다시 본다. 로그인 직후 홈 이동 가드(acctGoHome·acctSplashHold)와는 acctIntro 로만 구분한다. */
+  function acctOpenIntro() {
+    if (!acctEnabled() || !acct.user || newChildMode || acct.splashHold) return;
+    acctIntro = true;
+    showLandingView();
+    acctRenderLanding();
+    acctApplyLandingMode();
+  }
+  if (typeof document !== "undefined" && typeof document.addEventListener === "function") document.addEventListener("click", (ev) => { const b = ev.target && ev.target.closest ? ev.target.closest("#brand-text") : null; if (b) acctOpenIntro(); });
+  let acctIntro = false; // D71: 로그인한 채로 헤더 '한눈육아'를 눌러 첫 화면(소개)을 보는 중 — 새로고침하면 풀린다
   /** 첫 화면 모드: 간단(기본: 로고·가입·가족 코드·로그인만) / 둘러보기(옛 상황 선택·아이 입력 폼 펼침) / 새 아이 입력 중(카드 숨김). OFF 는 클래스를 건드리지 않는다. */
   function acctApplyLandingMode() {
     const v = el("view-landing");
     if (!v || !acctEnabled() || !v.classList) return;
-    const simple = !acct.user && !acctBrowse && !newChildMode;
+    const simple = (!acct.user || (typeof acctIntro !== "undefined" && acctIntro === true)) && !acctBrowse && !newChildMode;
     v.classList.toggle("acct-simple", simple);
     v.classList.toggle("acct-browse", !simple && !acct.user && !newChildMode);
     v.classList.toggle("acct-hidecard", !!newChildMode);
@@ -6889,7 +6921,7 @@
    * 이 기기에 아이가 있으면(복원 뒤 포함) 캘린더 홈, 없으면 '아이를 등록해 주세요' 빈 홈. 아이 추가 입력(newChildMode) 중이면 그대로 둔다.
    */
   async function acctGoHome() {
-    if (!acctEnabled() || !acct.user || newChildMode) return;
+    if (!acctEnabled() || !acct.user || newChildMode || (typeof acctIntro !== "undefined" && acctIntro === true)) return; // D71: 소개 화면을 보는 중이면 홈으로 보내지 않는다
     const lv = el("view-landing");
     if (!lv || !lv.classList || typeof lv.classList.contains !== "function" || lv.classList.contains("hidden")) return;
     if (profile) {
@@ -7135,6 +7167,7 @@
       return acctApplyLandingMode();
     }
     if (action === "beta-off-ask") return; // G18: 베타 끄기는 계정 모드에서 없앴다
+    if (action === "intro-home") { acctIntro = false; showCalendarView(); acctApplyLandingMode(); return; } // D71: 보던 탭으로 복귀(탭은 바꾸지 않았다)
     if (action === "close") return closeDetail();
     if (action === "logout" || action === "confirm-logout") { // P1: 확인 시트 없이 바로 로그아웃(서버 데이터는 지우지 않는다)
       // 가입 의도는 가구 연결이 끝난 계정에서만 지운다. 연결이 안 끝났으면(일시 오류 등) 남겨 두어 다시 로그인할 때 이어서 연결한다.

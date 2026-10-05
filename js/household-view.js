@@ -38,6 +38,9 @@
     pending: (n) => `이 기기에만 저장됨 · 인터넷이 연결되면 자동으로 올라가요. (${n}건 대기)`, // #15
     flushed: "모두 저장했어요.", // #16
     denied: "지금은 서버에 저장할 수 없어요. 이 기기에만 저장돼 있어요.", // #17
+    saveDenied: "서버에 저장하지 못했어요. 이 기기에만 저장돼 있어서 다른 가족에게는 보이지 않을 수 있어요.", // D68: 쓰기가 서버에 가지 못하고 대기열로만 들어갔을 때(권한 거부 등)
+    saveOffline: "인터넷이 연결되면 저장돼요. 지금은 이 기기에만 저장돼 있어요.", // D68: 오프라인 일시 대기
+    diag: (d) => `동기화 점검: 대기 ${d.pending}건${d.permissionDenied ? " · 서버 거부됨" : ""}${d.head ? ` · 첫 항목 ${d.head.collection}/${d.head.id}…` : ""}${d.lastError ? ` · ${d.lastError}` : ""}`, // D68: 컬렉션명·문서 id 앞 6자만
     unavailable: "가족 캘린더는 준비 중이에요. 조금만 기다려 주세요.", // #18
     codeEntryHint: "코드를 입력해 주세요. (아이 코드 6자리 또는 가족 코드 8자리)", // #19 (사용자 수정 반영)
     joinInfo: "8자리 코드로 들어가면 이 가족의 아이와 일정이 모두 보여요.", // #20
@@ -117,9 +120,9 @@
     memErrLong: "이름은 20자까지 입력할 수 있어요.",
     memMax: "구성원은 8명까지 추가할 수 있어요.",
     memDeleteTitle: "구성원을 삭제할까요?",
-    memDeleteBody: "이 사람이 맡은 일정은 남고 담당은 “(삭제된 담당자)”로 보여요.", // G6: 캘린더 칩 지우기 확인과 같은 문구
+    memDeleteBody: "이 사람이 맡은 일정은 남고 대상은 “(삭제된 구성원)”으로 보여요.", // G6: 캘린더 칩 지우기 확인과 같은 문구
     deviceUserLabel: "이 기기를 쓰는 사람",
-    deviceUserNote: "이 기기에서 새 일정을 만들 때 담당이 자동으로 정해져요. 표시용이고 본인 확인은 아니에요. 이 기기에만 저장돼요.",
+    deviceUserNote: "표시용이고 본인 확인은 아니에요. 이 기기에만 저장돼요.",
     deviceUserNone: "선택 안 함",
   });
   /** 역할 → 표시명(칩 라벨 겸용). 규칙(firestore.rules members)의 role 값과 같은 5종. */
@@ -221,6 +224,19 @@
     return "";
   }
 
+  /** D68: 쓰기 결과(res)가 대기열로만 들어갔을 때 사용자에게 보일 안내. 정상 저장이거나 실패(ok:false)면 "". status: { permissionDenied }, online: false 면 오프라인. */
+  function syncNoteText(res, status, online) {
+    if (!res || res.ok !== true || res.pending !== true) return "";
+    if (status && status.permissionDenied) return MSG.saveDenied;
+    return online === false ? MSG.saveOffline : MSG.saveDenied;
+  }
+  /** D68 진단 한 줄(설정 가구 영역): 대기열이 있거나 거부 상태일 때만. 없으면 "". */
+  function diagLine(state) {
+    if (!on(state)) return "";
+    if (!(state.pending > 0 || state.permissionDenied)) return "";
+    return MSG.diag({ pending: state.pending || 0, permissionDenied: !!state.permissionDenied, head: state.head || null, lastError: state.lastError || "" });
+  }
+
   /** 에러(코드 속성 또는 문자열) → 생성/참여/재발급 실패 문구. */
   /** 이 코드의 아이가 가구 링크 목록에 이미 있는가(분리된 링크 포함 — 같은 코드로 링크를 또 만들지 않는다). */
   function isChildLinked(mirror, familyCode) {
@@ -267,7 +283,7 @@
     if (!on(state)) return "";
     const head = `<h4 class="hh-title">${esc(MSG.sectionTitle)}</h4>`;
     if (state.rulesUnavailable) return `<section class="hh-section" data-hh="unavailable">${head}${note(MSG.unavailable)}</section>`;
-    const status = note(statusLine(state), "hh-status");
+    const status = note(statusLine(state), "hh-status") + note(diagLine(state), "hh-diag");
     const notice = renderNotice(state.notice);
     let body = "";
     switch (state.view) {
@@ -511,5 +527,5 @@
     return `<section class="hh-section" data-onb="${esc(st.step || "offer")}">${body}</section>`;
   }
 
-  return { MSG, isChildLinked, canLinkCurrentChild, isEnabled, classifyCode, formRoleOf, inferRoleFromName, roleLabelOf, FORM_ROLES, mergeChildren, childSubtitle, switchSubText, statusLine, failMessage, joinMessage, renderNotice, renderSection, renderCodeEntryHint, renderBetaSwitch, renderBetaSwitchLanding, ROLE_NAMES, ROLES, MEMBER_MAX, MEMBER_NAME_MAX, visibleMembers, nextMemberOrder, activeMemberOf, validateMemberForm, renderMembers, ONB_MSG, shouldOfferOnboarding, onboardingNameUpdates, renderOnboarding };
+  return { MSG, syncNoteText, diagLine, isChildLinked, canLinkCurrentChild, isEnabled, classifyCode, formRoleOf, inferRoleFromName, roleLabelOf, FORM_ROLES, mergeChildren, childSubtitle, switchSubText, statusLine, failMessage, joinMessage, renderNotice, renderSection, renderCodeEntryHint, renderBetaSwitch, renderBetaSwitchLanding, ROLE_NAMES, ROLES, MEMBER_MAX, MEMBER_NAME_MAX, visibleMembers, nextMemberOrder, activeMemberOf, validateMemberForm, renderMembers, ONB_MSG, shouldOfferOnboarding, onboardingNameUpdates, renderOnboarding };
 });

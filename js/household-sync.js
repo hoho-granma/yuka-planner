@@ -541,7 +541,16 @@
         permissionDenied: state.permissionDenied,
         childrenLoaded: !!(hid && state.childrenLoaded[hid]),
         lastError: state.lastError ? String(state.lastError.code || state.lastError.message || state.lastError) : null,
+        head: enabled() && hid ? headOf(loadPending(hid)) : null,
       };
+    }
+    /** D68 진단용: 대기열 맨 앞 항목의 컬렉션·종류·문서 id 앞 6자만(내용·개인정보 없음). 대기열이 비면 null. */
+    function headOf(q) {
+      const e = q && q[0];
+      if (!e || typeof e.path !== "string") return null;
+      const seg = e.path.split("/");
+      const id = String(seg[3] || seg[1] || "");
+      return { collection: seg.length > 2 ? seg[2] : "households", op: e.op, id: id.slice(0, 6) };
     }
     const getMirror = (hid) => (enabled() ? loadMirror(hid) : null);
 

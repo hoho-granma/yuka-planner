@@ -98,6 +98,8 @@ body {
 .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .btn-add-child { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--accent); background: #fff; color: var(--accent); font-size: 22px; line-height: 1; font-weight: 600; cursor: pointer; padding: 0; }
 .app-title { font-weight: 800; font-size: 22px; }
+.app-brand-btn { background: none; border: 0; padding: 0; margin: -6px 0; min-height: 44px; font: inherit; font-weight: 800; font-size: 22px; color: inherit; cursor: pointer; text-align: left; } /* D71: 헤더 '한눈육아'는 누르면 첫 화면(소개)이 열리는 버튼 — 모양은 그대로 */
+.app-brand-btn:focus-visible { outline: 3px solid var(--accent-dark); outline-offset: 2px; border-radius: 6px; }
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .btn-refresh { height: 32px; border-radius: 16px; border: 1.5px solid var(--border); background: #fff; color: var(--text-muted); font-size: 12px; font-weight: 700; font-family: inherit; display: inline-flex; align-items: center; gap: 4px; padding: 0 10px; cursor: pointer; }
 .btn-refresh .refresh-icon { font-size: 15px; line-height: 1; display: inline-block; }
@@ -985,6 +987,9 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .hh-note { margin: 6px 0 0; font-size: 13px; line-height: 1.5; color: var(--text-muted); }
 .hh-note.hh-warn { color: var(--text); }
 .hh-note.hh-status { margin-top: 10px; font-size: 12px; }
+.hh-note.hh-diag { margin-top: 4px; font-size: 11px; color: var(--text-muted); opacity: .8; word-break: break-all; } /* D68 동기화 점검 한 줄 */
+.sync-toast { position: fixed; left: 16px; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 90; max-width: 448px; margin: 0 auto; padding: 12px 14px; border-radius: 12px; background: var(--c-ink); color: #fff; font-size: 13px; line-height: 1.45; text-align: center; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+.sync-toast.hidden { display: none; } /* D68 저장 대기 안내 */
 .hh-consent-title { margin: 4px 0 6px; font-size: 14px; font-weight: 800; }
 .hh-consent-body { margin: 0; font-size: 13px; line-height: 1.55; }
 .hh-code-box { display: flex; align-items: baseline; gap: 10px; padding: 10px 12px; border-radius: 10px; background: #fff; border: 1px dashed var(--line); }
@@ -1911,6 +1916,7 @@ body:has(#view-landing.acct-on:not(.hidden)) { background: var(--nd-ob-bg); }
 #view-landing.acct-on .acct-cta [data-acct-action="open-login"] { min-height: 52px; border-radius: 13px; background: var(--nd-indigo); color: var(--on-accent); font-size: 16px; font-weight: 800; }
 #view-landing.acct-on .acct-cta [data-acct-action="open-signup"] { min-height: 48px; border: 0; background: transparent; color: var(--nd-ink); font-size: 14px; font-weight: 700; }
 #view-landing.acct-on .acct-cta [data-acct-action="open-login"]:active { background: var(--nd-indigo); opacity: .92; }
+#view-landing.acct-on .acct-cta [data-acct-action="intro-home"] { min-height: 52px; border-radius: 13px; background: var(--nd-indigo); color: var(--on-accent); font-size: 16px; font-weight: 800; } /* D71 로그인 상태 첫 화면 [홈으로] — 로그인 버튼과 같은 모양 */
 /* D47: 로그인·가입 폼은 화면 가운데 카드(어둠막 위, 불투명 면, 내부 스크롤). 시트 CSS만 — 렌더 위치·AccountView 로직은 그대로 */
 .modal-panel:has([data-acct-form="login"]), .modal-panel:has([data-acct-form="signup"]) { top: 50%; left: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%); width: calc(100% - 32px); max-width: 480px; max-height: calc(100dvh - 32px); border-radius: 20px; overflow-y: auto; }
 .modal-panel:has([data-acct-form="login"]) .ob-switch, .modal-panel:has([data-acct-form="signup"]) .ob-switch { margin-top: 10px; }

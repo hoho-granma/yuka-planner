@@ -41,9 +41,9 @@ const ST = { enabled: true, hasHousehold: true, members: MEMBERS, activeMemberId
     assert.deepStrictEqual([M.memNameLabel, M.memNamePlaceholder, M.memRoleLabel], ["이름", "이름 (예: 이모님, 할머니)", "역할"]);
     assert.deepStrictEqual([M.memErrEmpty, M.memErrLong, M.memMax], ["이름을 입력해 주세요.", "이름은 20자까지 입력할 수 있어요.", "구성원은 8명까지 추가할 수 있어요."]);
     assert.strictEqual(M.memDeleteTitle, "구성원을 삭제할까요?");
-    assert.strictEqual(M.memDeleteBody, "이 사람이 맡은 일정은 남고 담당은 “(삭제된 담당자)”로 보여요."); // G6 문구 통일
+    assert.strictEqual(M.memDeleteBody, "이 사람이 맡은 일정은 남고 대상은 “(삭제된 구성원)”으로 보여요."); // G6 문구 통일
     assert.strictEqual(M.deviceUserLabel, "이 기기를 쓰는 사람");
-    assert.strictEqual(M.deviceUserNote, "이 기기에서 새 일정을 만들 때 담당이 자동으로 정해져요. 표시용이고 본인 확인은 아니에요. 이 기기에만 저장돼요.");
+    assert.strictEqual(M.deviceUserNote, "표시용이고 본인 확인은 아니에요. 이 기기에만 저장돼요.");
     assert.strictEqual(M.deviceUserNone, "선택 안 함");
     assert.deepStrictEqual(HV.ROLE_NAMES, { MOM: "엄마", DAD: "아빠", GRANDPARENT: "조부모", CAREGIVER: "돌봄 선생님", OTHER: "기타" });
     assert.deepStrictEqual(HV.ROLES, ["MOM", "DAD", "GRANDPARENT", "CAREGIVER", "OTHER"]);

@@ -21,7 +21,7 @@
     found: (n) => `일정 후보 ${n}개를 찾았어요. 맞는지 확인해 주세요.`, none: "일정을 찾지 못했어요.", direct: "직접 입력하기",
     needCheck: "확인 필요", pickDate: "날짜 선택", undecided: "날짜 미정(기간)으로 두기", edit: "수정", remove: "빼기", undo: "되돌리기", raw: "원문 보기 ›",
     who: "누구 일정", familyAll: "가족", whoMe: "나",
-    register: (n) => `${n}개 등록`, cancel: "취소", noAssignee: "담당 미정", noRepeat: "반복 없음", weekly: "매주", biweekly: "2주마다",
+    register: (n) => `${n}개 등록`, cancel: "취소", noAssignee: "대상 미정", noRepeat: "반복 없음", weekly: "매주", biweekly: "2주마다",
   });
   const DAYS = { MO: "월", TU: "화", WE: "수", TH: "목", FR: "금", SA: "토", SU: "일" };
 

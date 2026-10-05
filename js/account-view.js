@@ -18,6 +18,7 @@
       sub: "접종·검진·지원금은 아이 월령에 맞춰 자동으로, 엄마·아빠 일정은 가족과 함께 한 캘린더에서.",
       primary: "회원가입",
       loginBtn: "로그인",
+      introHome: "홈으로", // D71: 로그인한 채 첫 화면을 볼 때의 주 버튼
       codeHint: "가족코드를 받았다면 회원가입에서 입력해요",
       joinTitle: "가족에게 받은 가족코드로 함께하기",
       ob1Title: "육아하며 시기마다 필요한 것,\n한눈에",
@@ -325,6 +326,16 @@
   function renderLanding(state) {
     const s = state || {};
     const O = MSG.onboard;
+    // D71: 로그인한 채로 헤더 '한눈육아'를 눌러 연 첫 화면 — 같은 1장(히어로) + 아래 버튼만 [홈으로]·로그인됨 안내 한 줄(로그아웃·로그인·회원가입 없음).
+    if (s.intro === true && s.user) {
+      return `<div class="card acct-landing acct-ob" id="acct-landing"><div class="acct-main">
+        <section class="acct-slide" data-acct-slide="0"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title).replace("한눈에", '<mark class="acct-hl">한눈에</mark>')}</h1><p class="acct-sub">${lines(O.ob1Sub)}</p></div></section>
+      <div class="acct-cta">
+        <button type="button" class="acct-btn-primary" data-acct-action="intro-home">${esc(O.introHome)}</button>
+        <p class="acct-code-hint">${esc(MSG.loggedInAs(s.user.displayName || s.user.email))}</p>
+        ${s.version ? `<p class="acct-ver">v${esc(s.version)}</p>` : ""}
+      </div></div></div>`;
+    }
     if (s.user) return `<div class="card acct-landing" id="acct-landing"><div class="acct-logo">${esc(MSG.logo)}</div><p class="fine-print">${esc(MSG.loggedInAs(s.user.displayName || s.user.email))}</p><div class="acct-actions"><button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div></div>`;
     // 온보딩 첫 화면(D64): 한 장짜리 — 로고(왼쪽 위)·제목·보조(가운데) + 원 2개, 아래 고정 버튼 [로그인]·[회원가입]·가족코드 안내 한 줄. 2번째 화면(메인 기능 5개)·점은 없앴다(문구 상수 ob2*·FEAT_ICO 는 D51 보류로 보존, 미노출).
     return `<div class="card acct-landing acct-ob" id="acct-landing"><div class="acct-main">

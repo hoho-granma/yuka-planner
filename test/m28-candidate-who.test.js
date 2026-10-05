@@ -23,12 +23,12 @@ test("칩 선택 → 저장 입력: 아이=CHILD+childKeys(담당 없음), 구�
   const fam = input("FAMILY"); assert.deepStrictEqual([fam.scope, "assigneeMemberId" in fam, "childKeys" in fam], ["FAMILY", false, false]);
   const none = M.formFromCandidate({ title: "치과", eventDate: "2026-10-14" }, base()); assert.strictEqual(none.scope, "CHILD", "who 가 없으면 기존 동작(폼 기본 대상)");
 });
-test("후보 카드: '누구 일정' 칩 줄(선택됨 표시·data-cap-who), '담당 미정' 칩은 없고, whoOptions 가 없으면 옛 마크업 그대로", () => {
+test("후보 카드: '누구 일정' 칩 줄(선택됨 표시·data-cap-who), '대상 미정' 칩(옛 마크업)만 whoOptions 없을 때 남고, whoOptions 가 없으면 옛 마크업 그대로", () => {
   const s = { cands: [{ title: "치과", eventDate: "2026-10-14", allDay: true, who: "MEMBER:m1", index: 0 }] };
   const h = DV.renderCandidates(s, { whoOptions: WHO });
   assert.ok(/aria-label="누구 일정"/.test(h) && /us-chip us-chip-sm active" data-cap-who="0" data-cap-who-key="MEMBER:m1" aria-pressed="true">나</.test(h) && /data-cap-who-key="FAMILY"[^>]*>가족</.test(h));
   assert.ok(!h.includes("담당 미정"));
-  const old = DV.renderCandidates(s, {}); assert.ok(old.includes("담당 미정") && !old.includes("data-cap-who"));
+  const old = DV.renderCandidates(s, {}); assert.ok(old.includes("대상 미정") && !old.includes("data-cap-who"));
 });
 test("후보 → 폼 인계(capKeep)와 등록 경로가 '누구'를 그대로 쓴다·붙여넣기·사진은 같은 화면(후보 카드 하나)", () => {
   const APP = read("js/app.js");

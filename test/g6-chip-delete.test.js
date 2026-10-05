@@ -39,8 +39,8 @@ test("편집 버튼은 canEdit 이고 지울 칩이 있을 때만, 편집 모드
 });
 test("확인 시트: 구성원/아이 문구, 다른 계정 구성원 경고, 현재 아이는 막는 안내(삭제 버튼 없음), 저장 중 비활성, 이스케이프", () => {
   const m = V.renderChipDeleteConfirm({ kind: "MEMBER", id: "m3", name: "이모님" });
-  assert.ok(m.includes("이모님을 가족 캘린더 구성원에서 지울까요?") && m.includes("이 사람이 맡은 일정은 남고 담당은 “(삭제된 담당자)”로 보여요.") && m.includes('data-us-chipdel-act="confirm"') && m.includes(">지우기<") && !m.includes("가족 계정으로 로그인 중"));
-  assert.ok(V.renderChipDeleteConfirm({ kind: "MEMBER", id: "m2", name: "아빠", uidWarn: true }).includes("이 사람은 가족 계정으로 로그인 중이에요. 지우면 그 사람 화면에서 “나” 표시와 기본 담당이 풀려요. 가족 캘린더 연결은 그대로예요."));
+  assert.ok(m.includes("이모님을 가족 캘린더 구성원에서 지울까요?") && m.includes("이 사람이 맡은 일정은 남고 대상은 “(삭제된 구성원)”으로 보여요.") && m.includes('data-us-chipdel-act="confirm"') && m.includes(">지우기<") && !m.includes("가족 계정으로 로그인 중"));
+  assert.ok(V.renderChipDeleteConfirm({ kind: "MEMBER", id: "m2", name: "아빠", uidWarn: true }).includes("이 사람은 가족 계정으로 로그인 중이에요. 지우면 그 사람 화면에서 “나” 표시가 풀려요. 가족 캘린더 연결은 그대로예요."));
   const c = V.renderChipDeleteConfirm({ kind: "CHILD", id: "c2", name: "테스트_서울" });
   assert.ok(c.includes("테스트_서울을 가족 캘린더에서 뺄까요?") && c.includes("아이 기록과 체크리스트는 지워지지 않고, 가족 캘린더에서만 보이지 않아요.") && c.includes(">빼기<"));
   const b = V.renderChipDeleteConfirm({ kind: "CHILD", id: "c1", name: "수아", blocked: true });
