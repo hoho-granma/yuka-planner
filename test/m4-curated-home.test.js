@@ -30,10 +30,10 @@ test("unitOf: 넘친 목록에서도 key 로 찾는다", () => {
   const hidden = cur.overflow.now[0];
   assert.strictEqual(CH.unitOf(cur, hidden.key), hidden); assert.strictEqual(CH.unitOf(cur, "nope"), null);
 });
-test("앱 연결(1-1, 플래그 OFF 기본): 플래그 기본 false·정책은 플래그 ON 일 때만 읽음·홈 두 렌더의 맨 앞 한 줄·클릭 한 곳·폴백", () => {
+test("앱 연결(1-1, 플래그 OFF 기본): 플래그 기본 false·정책은 항상 읽고 새 홈은 플래그 ON 일 때만·홈 두 렌더의 맨 앞 한 줄·클릭 한 곳·폴백", () => {
   const app = fs.readFileSync(R + "/js/app.js", "utf8");
   assert.strictEqual(require(R + "/js/feature-flags.js").curation, false);
-  assert.ok(/FEATURES_CURATION_ON\(\) \? loadJsonOrNull\("data\/policy\/curation\.json"\) : null/.test(app));
+  assert.ok(/loadJsonOrNull\("data\/policy\/curation\.json"\), \/\/ 4-1 A안/.test(app), "4-1 A안: 이전 홈 카드도 정책을 쓰므로 항상 읽는다(새 홈 여부는 FEATURES_CURATION_ON 이 따로 결정)");
   assert.ok(/if \(curatedHomeOn\(\) && curatedRenderHome\(\)\) return;/.test(app));
   assert.ok(/document\.addEventListener\("click", curatedHomeClick\)/.test(app));
   assert.ok(/curatedHomeOn = \(\) => FEATURES_CURATION_ON\(\) && !!curationPolicy && !!profile/.test(app) && /catch \(e\) \{ console\.error\("큐레이션 홈 실패\(기존 홈으로\)", e\); HSW\.diag = [^\n]*; return null; \}/.test(app));

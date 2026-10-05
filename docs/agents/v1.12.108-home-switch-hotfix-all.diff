@@ -1,0 +1,156 @@
+diff --git a/css/style.css b/css/style.css
+index a15d26c..41f7d63 100644
+--- a/css/style.css
++++ b/css/style.css
+@@ -1825,6 +1825,7 @@ body.acct-design .a36t-nc { display: block; margin: 2px 0 0; font-size: 12px; fo
+ .hs-notice-x { background: none; border: 0; padding: 4px 6px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
+ .hs-switch-link { margin: 12px 0 4px; text-align: center; }
+ .places-basis-tag { display: block; margin-top: 2px; font-size: 11px; font-weight: 400; color: var(--text-muted); } /* 3-1 '시설 유형 기준' 라벨 */
++.hs-notice-diag { display: block; margin-top: 2px; font-size: 10px; color: var(--text-muted); word-break: break-all; } /* 새 홈 실패 진단(앞 60자) */
+ /* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
+    인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
+ :root {
+diff --git a/js/app.js b/js/app.js
+index b30e799..8d7de7b 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -198,7 +198,7 @@
+   const FEATURES_CURATION_ON = () => !!window.FEATURES && window.FEATURES.curation === true;
+   // ═══ 1-1b 새 홈 미리보기 스위치(기기 저장 hannun_home_v2, 서버·Firestore 쓰기 없음). 사용자 키 > 개발용 플래그 > 단계 기본값. 단계는 ① 로 고정(② 기본 ON 은 코드만 준비 — 전환은 사용자 확인 원문 뒤) ═══
+   const HOME_V2_STAGE = 1;
+-  const HSW = { justEnabled: false, fallbackShown: false };
++  const HSW = { justEnabled: false, fallbackShown: false, diag: "" }; // diag: 새 홈 실패 원인 요지(진단용, 폴백 안내에만 표시)
+   const homeStore = () => { try { return window.localStorage; } catch (e) { return null; } };
+   function homePrefApply() {
+     if (typeof HomeSwitch === "undefined" || !window.FEATURES) return;
+@@ -1434,9 +1434,10 @@
+       const todosHtml = acct36Active() && typeof Over36View.renderTodoCard === "function" ? Over36View.renderTodoCard({ name: childDisplayName(), todos: ChildTodos.homeLines(acct36All(), 3), canTodo: acct36CanTodo() }) : "";
+       const ageText = pregnant ? "" : ChildTimeline.ageLabelAt(profile.birthDate, new Date());
+       const html = CuratedHome.render({ policy: curationPolicy, events, state, today, head: { name: childDisplayName(), ageText, region: profile.district || profile.province || "" }, family: curatedFamilyItems(today), nextStage, explore, todosHtml });
++      if (!html) { const le = typeof CuratedHome.getLastError === "function" ? CuratedHome.getLastError() : null; HSW.diag = `홈 그리기 실패: ${le && le.message ? le.message : "내용 없음"}`; } else HSW.diag = "";
+       if (html) curatedCur = html && typeof Curation !== "undefined" ? Curation.curate(events, state, curationPolicy, today) : null;
+       return html;
+-    } catch (e) { console.error("큐레이션 홈 실패(기존 홈으로)", e); return null; }
++    } catch (e) { console.error("큐레이션 홈 실패(기존 홈으로)", e); HSW.diag = `홈 준비 실패: ${e && e.message ? e.message : e}`; return null; }
+   }
+   function curatedRenderHome() {
+     const wrap = el("home-body");
+@@ -1495,7 +1496,7 @@
+     if (!body || !body.insertAdjacentHTML) return;
+     const pref = HomeSwitch.read(st);
+     if (isNew && HSW.justEnabled && HomeSwitch.noticeDue(st, true)) body.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("on"));
+-    if (!isNew && pref === "on" && !HSW.fallbackShown) { HSW.fallbackShown = true; body.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("fallback")); } // 켜 놓았는데 새 홈이 안 그려졌다(설정 못 읽음 등) — 이전 홈을 그리고 한 번만 알린다
++    if (!isNew && pref === "on" && !HSW.fallbackShown) { HSW.fallbackShown = true; body.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("fallback", HSW.diag || (curationPolicy ? "" : "정책 파일을 못 읽음"))); } // 켜 놓았는데 새 홈이 안 그려졌다(설정 못 읽음 등) — 이전 홈을 그리고 한 번만 알린다
+     if (isNew) HSW.justEnabled = false;
+     if (isNew || HOME_V2_STAGE >= 2) body.insertAdjacentHTML("beforeend", HomeSwitch.linkHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE, pref)); // 새 홈이 실제로 그려졌을 때만(폴백으로 이전 홈이 그려졌으면 단계 ① 링크 없음)
+   }
+@@ -1504,12 +1505,20 @@
+     if (typeof HomeSwitch === "undefined") return;
+     HomeSwitch.write(homeStore(), on);
+     homePrefApply();
+-    HSW.justEnabled = on; HSW.fallbackShown = false;
+-    if (on && !curationPolicy && typeof Curation !== "undefined") { const raw = await loadJsonOrNull("data/policy/curation.json"); curationPolicy = raw ? Curation.normalizePolicy(raw) : null; }
+-    renderHome();
+-    const sw = el("modal-content") && el("modal-content").querySelector ? el("modal-content").querySelector("[data-home-switch-row]") : null;
+-    if (sw) sw.outerHTML = HomeSwitch.rowHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE);
+-    if (typeof window !== "undefined" && window.scrollTo) window.scrollTo(0, 0);
++    HSW.justEnabled = on; HSW.fallbackShown = false; HSW.diag = "";
++    try {
++      if (on && !curationPolicy && typeof Curation !== "undefined") { // 정책을 아직 안 읽었으면 읽는다 — 실패·지연이어도 아래 화면 전환은 반드시 진행(이전 홈+폴백 안내+진단)
++        const raw = await loadJsonOrNull("data/policy/curation.json");
++        curationPolicy = raw ? Curation.normalizePolicy(raw) : null;
++        if (!curationPolicy) HSW.diag = raw ? "정책 해석 실패" : "정책 파일 읽기 실패";
++      }
++    } catch (e) { console.error("큐레이션 정책 읽기 실패(이전 홈으로)", e); curationPolicy = null; HSW.diag = `정책 읽기 실패: ${e && e.message ? e.message : e}`; }
++    finally { // 어떤 예외가 나도 시트를 닫고 홈을 다시 그린다(모바일에서 시트가 화면을 덮어 '켰는데 변화 없음'으로 보였다)
++      try { closeDetail(); } catch (e) {}
++      try { if (typeof currentTab !== "undefined" && currentTab !== "home") switchTab("home"); } catch (e) {}
++      try { renderHome(); } catch (e) { console.error("홈 다시 그리기 실패", e); HSW.diag = `홈 다시 그리기 실패: ${e && e.message ? e.message : e}`; try { const hb = el("home-body"); if (hb && hb.insertAdjacentHTML && !hb.querySelector("[data-home-notice]")) hb.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("fallback", HSW.diag)); } catch (e2) {} }
++      try { if (typeof window !== "undefined" && window.scrollTo) window.scrollTo(0, 0); } catch (e) {}
++    }
+   }
+   function homeSwitchClick(ev) {
+     const t = ev.target && ev.target.closest ? ev.target.closest("[data-home-switch], [data-home-notice-x]") : null;
+diff --git a/js/curated-home.js b/js/curated-home.js
+index 60ee0a2..493d53f 100644
+--- a/js/curated-home.js
++++ b/js/curated-home.js
+@@ -15,16 +15,19 @@
+    *          head, family(배열|null), benefits, nextStage, explore, todosHtml, nextHint }
+    * 폴백(null): 모듈·정책·날짜·이벤트가 없거나 curate/렌더가 던질 때 — 앱은 기존 홈(HNHome.render / Over36View.renderHome)을 그린다.
+    */
++  let lastError = null; // 마지막 폴백(null)의 원인 — 홈 폴백 안내의 진단 문구용(오류가 없으면 null)
+   function render(deps) {
+     const d = deps || {};
++    lastError = null;
+     if (!Curation || !View || !d.policy || !(d.today instanceof Date) || !Array.isArray(d.events)) return null;
+     try {
+       const cur = Curation.curate(d.events, d.state || {}, d.policy, d.today);
+       const benefits = d.benefits === undefined ? (cur.moreCounts.benefits > 0 ? { count: cur.moreCounts.benefits, check: cur.stats.byType.CHECK || 0 } : null) : d.benefits;
+       const html = View.render(cur, { today: d.today, head: d.head, family: d.family, benefits, nextStage: d.nextStage, explore: d.explore, nextHint: d.nextHint, todosHtml: d.todosHtml });
+       return typeof html === "string" && html ? html : null;
+-    } catch (e) { return null; }
++    } catch (e) { lastError = e; return null; }
+   }
++  const getLastError = () => lastError;
+ 
+   /** 단위 key → 단위(지금 꼭·곧·알아두기와 넘친 목록 전체에서). */
+   function unitOf(cur, key) {
+@@ -55,5 +58,5 @@
+     return false;
+   }
+ 
+-  return { render, unitOf, dispatch };
++  return { render, unitOf, dispatch, getLastError };
+ });
+diff --git a/js/home-switch.js b/js/home-switch.js
+index 15d3a9e..06dd2ad 100644
+--- a/js/home-switch.js
++++ b/js/home-switch.js
+@@ -34,10 +34,11 @@
+     return `<div class="detail-row hs-pref" data-home-switch-row><div class="hs-pref-t"><b>${esc(title)}</b><small>${esc(desc)}</small></div>${btn(on, label, stage)}</div>`;
+   }
+   /** 켠 직후 홈 맨 위 1회 안내 띠(단계 ①) / ② 로 바뀐 첫날 안내. kind: "on" | "welcome2" | "fallback". */
+-  function noticeHtml(kind) {
++  function noticeHtml(kind, diag) {
+     const text = kind === "welcome2" ? MSG.welcome2 : kind === "fallback" ? MSG.fallback : MSG.notice;
++    const why = kind === "fallback" && diag ? `<small class="hs-notice-diag">진단: ${esc(String(diag).slice(0, 60))}</small>` : ""; // 오류 요지(앞 60자) — 사용자가 콘솔 없이 읽어 줄 수 있게
+     const link = kind === "fallback" ? "" : `<button type="button" class="hs-notice-link" data-home-switch="off">${esc(MSG.toOld)}</button>`;
+-    return `<div class="hs-notice" data-home-notice>${`<span>${esc(text)}</span>`}${link}<button type="button" class="hs-notice-x" data-home-notice-x aria-label="${esc(MSG.close)}">✕</button></div>`;
++    return `<div class="hs-notice" data-home-notice><span>${esc(text)}${why}</span>${link}<button type="button" class="hs-notice-x" data-home-notice-x aria-label="${esc(MSG.close)}">✕</button></div>`;
+   }
+   /** 홈 맨 아래 작은 링크(단계 ② 전용): 새 홈에서는 '이전 홈으로 보기', 이전 홈에서는 '새 홈으로 보기'. 단계 ① 에서는 비움. */
+   function linkHtml(on, stage, pref) {
+diff --git a/test/m14-home-switch.test.js b/test/m14-home-switch.test.js
+index 73c09b2..385f454 100644
+--- a/test/m14-home-switch.test.js
++++ b/test/m14-home-switch.test.js
+@@ -27,11 +27,13 @@ test("앱 연결: 단계 ① 고정, 기기 저장만, 프로필 시트 줄은 
+   assert.ok(/const HOME_V2_STAGE = 1;/.test(app));
+   const i = app.indexOf("async function homeSwitchSet("), blk = app.slice(i, app.indexOf("\n  }\n", i) + 4);
+   assert.ok(blk.includes("HomeSwitch.write(homeStore(), on)") && !/setDoc|updateDoc|HouseholdSync|fetch\(/.test(blk) && blk.includes("renderHome();"));
++  assert.ok(blk.indexOf("closeDetail();") > 0 && blk.indexOf("closeDetail();") < blk.indexOf("renderHome()"), "켜자마자 시트를 닫고 홈을 다시 그린다(시트 뒤에서만 바뀌지 않게)");
++  assert.ok(/try \{\s*if \(on && !curationPolicy[\s\S]*await loadJsonOrNull[\s\S]*catch \(e\)[\s\S]*finally \{[\s\S]*closeDetail\(\)[\s\S]*try \{ renderHome\(\); \} catch/.test(blk), "정책 읽기·홈 그리기 예외가 나도 finally 에서 시트를 닫고 홈을 다시 그린다");
+   assert.ok(/HomeSwitch\.rowHtml\(FEATURES_CURATION_ON\(\), HOME_V2_STAGE\)/.test(app.slice(app.indexOf("function acctProfileSheet()"), app.indexOf("showProfileSheet = function (pendingPhoto)"))));
+   const d = app.indexOf("function homeSwitchDecorate("), dec = app.slice(d, app.indexOf("\n  }\n", d) + 4);
+-  const run = (pref, on, just) => { const st = mem(pref ? { [H.KEY]: pref } : {}); let html = ""; const sb = { HomeSwitch: H, HSW: { justEnabled: just, fallbackShown: false }, HOME_V2_STAGE: 1, FEATURES_CURATION_ON: () => on, el: () => ({ insertAdjacentHTML: (w, h) => { html += h; } }), homeStore: () => st }; vm.runInNewContext(`${dec}; homeSwitchDecorate(${on})`, sb); return html; };
++  const run = (pref, on, just) => { const st = mem(pref ? { [H.KEY]: pref } : {}); let html = ""; const sb = { HomeSwitch: H, HSW: { justEnabled: just, fallbackShown: false, diag: "홈 그리기 실패: boom" }, curationPolicy: {}, HOME_V2_STAGE: 1, FEATURES_CURATION_ON: () => on, el: () => ({ insertAdjacentHTML: (w, h) => { html += h; } }), homeStore: () => st }; vm.runInNewContext(`${dec}; homeSwitchDecorate(${on})`, sb); return html; };
+   assert.strictEqual(run(null, false, false), "", "키 없음·① 구 홈: 아무것도 안 붙음"); assert.strictEqual(run(null, true, false), "", "개발 플래그로 켠 새 홈: 안내·링크 없음");
+   assert.ok(run("1", true, true).includes("새 홈을 보고 계세요"), "켠 직후 안내 띠"); assert.ok(!run("1", true, false).includes("새 홈을 보고 계세요"), "안내 띠는 그 뒤엔 없음(맨 아래 링크만)");
+-  assert.ok(run("1", false, false).includes("불러오지 못해"), "켜 놨는데 새 홈이 안 그려지면 폴백 안내");
++  assert.ok(run("1", false, false).includes("불러오지 못해") && run("1", false, false).includes("진단: 홈 그리기 실패: boom"), "켜 놨는데 새 홈이 안 그려지면 폴백 안내 + 오류 요지(진단)");
+   assert.ok(run("1", true, false).includes("이전 홈으로 보기"), "스위치로 켠 새 홈 맨 아래 링크"); assert.ok(!run("1", false, false).includes("이전 홈으로 보기"), "폴백(이전 홈이 그려짐)에는 링크 없음");
+ });
+diff --git a/test/m4-curated-home.test.js b/test/m4-curated-home.test.js
+index 56a58e3..418fe3f 100644
+--- a/test/m4-curated-home.test.js
++++ b/test/m4-curated-home.test.js
+@@ -36,7 +36,7 @@ test("앱 연결(1-1, 플래그 OFF 기본): 플래그 기본 false·정책은 
+   assert.ok(/FEATURES_CURATION_ON\(\) \? loadJsonOrNull\("data\/policy\/curation\.json"\) : null/.test(app));
+   assert.ok(/if \(curatedHomeOn\(\) && curatedRenderHome\(\)\) return;/.test(app));
+   assert.ok(/document\.addEventListener\("click", curatedHomeClick\)/.test(app));
+-  assert.ok(/curatedHomeOn = \(\) => FEATURES_CURATION_ON\(\) && !!curationPolicy && !!profile/.test(app) && /catch \(e\) \{ console\.error\("큐레이션 홈 실패\(기존 홈으로\)", e\); return null; \}/.test(app));
++  assert.ok(/curatedHomeOn = \(\) => FEATURES_CURATION_ON\(\) && !!curationPolicy && !!profile/.test(app) && /catch \(e\) \{ console\.error\("큐레이션 홈 실패\(기존 홈으로\)", e\); HSW\.diag = [^\n]*; return null; \}/.test(app));
+   assert.ok(!/localStorage\.setItem\([^)]*\)[^\n]*firestore/i.test(app.slice(app.indexOf("// ═══ 1-0/1-1 큐레이션 홈"), app.indexOf("const renderHomeBase = renderHome;"))), "저장은 기기 저장 한 곳뿐");
+   const idx = fs.readFileSync(R + "/index.html", "utf8");
+   assert.ok(idx.indexOf("js/curation.js") > idx.indexOf("js/hn-logic.js") && idx.indexOf("js/curated-home.js") > idx.indexOf("js/home-slots-view.js") && idx.includes("css/home-slots.css"));

@@ -1,0 +1,338 @@
+diff --git a/css/style.css b/css/style.css
+index eefb31d..0797b03 100644
+--- a/css/style.css
++++ b/css/style.css
+@@ -1827,6 +1827,13 @@ body.acct-design .a36t-nc { display: block; margin: 2px 0 0; font-size: 12px; fo
+ .places-basis-tag { display: block; margin-top: 2px; font-size: 11px; font-weight: 400; color: var(--text-muted); } /* 3-1 '시설 유형 기준' 라벨 */
+ .hs-notice-diag { display: block; margin-top: 2px; font-size: 10px; color: var(--text-muted); word-break: break-all; } /* 새 홈 실패 진단(앞 60자) */
+ .apply-ch-btn { display: inline-block; margin: 6px 0 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--text); font-size: 13.5px; font-weight: 600; text-decoration: none; } /* 3-3 신청하는 곳 버튼 — 기존 .as-btn 모양 */
++/* 4-1 A안 '지금 꼭 할 것' 카드(이전 홈 맨 위) — .home-sec 모양 재사용, 새 변수·새 hex 없음(와인은 --nd-wine) */
++.home-must-row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 6px 0; border: 0; border-top: 1px solid var(--line); background: transparent; font-family: inherit; font-size: 14px; color: var(--text); text-align: left; cursor: pointer; }
++.home-sec-head + .home-must-row { border-top: 0; }
++.hm-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--text-muted); }
++.hm-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
++.hm-d { flex: none; font-size: 12px; font-weight: 800; color: var(--text-muted); }
++.hm-d.urgent { color: var(--nd-wine); }
+ /* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
+    인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
+ :root {
+diff --git a/index.html b/index.html
+index 196aafc..dec6233 100644
+--- a/index.html
++++ b/index.html
+@@ -315,6 +315,7 @@
+   <script src="js/schedule-kinds.js?v=2"></script>
+   <script src="js/user-schedule-view.js?v=32"></script>
+   <script src="js/child-anniversaries.js?v=2"></script>
++  <script src="js/home-must.js?v=1"></script>
+   <script src="js/home-switch.js?v=1"></script>
+   <script src="js/curation.js?v=1"></script>
+   <script src="js/month-tiers.js?v=1"></script>
+diff --git a/js/app.js b/js/app.js
+index c1a63f0..73b9ae7 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -216,7 +216,7 @@
+       loadJsonOrNull("data/policy/home-reappear.json"),
+       loadJsonOrNull("data/policy/info-actions.json"),
+       loadJsonOrNull("data/policy/edu-links.json"),
+-      FEATURES_CURATION_ON() ? loadJsonOrNull("data/policy/curation.json") : null, // 플래그 OFF 면 읽지도 않는다(네트워크 요청 없음)
++      loadJsonOrNull("data/policy/curation.json"), // 4-1 A안: 이전 홈의 '지금 꼭 할 것' 카드도 정책을 쓰므로 항상 읽는다(못 읽으면 null → 카드 없음)
+       ...TODO_CATEGORY_FILES.map(loadJson),
+     ]);
+     regionsData = regions;
+@@ -1414,9 +1414,8 @@
+       return out.slice(0, 5);
+     } catch (e) { return null; }
+   }
+-  function curatedHomeHtml() {
+-    if (!curatedHomeOn()) return null;
+-    try {
++  /** 큐레이션 입력(오늘·일정·상태) — 큐레이션 홈과 이전 홈 맨 위 '지금 꼭 할 것' 카드(4-1 A안)가 같은 값을 쓴다. */
++  function curatedInputs() {
+       const today = new Date(), pregnant = isPregnant();
+       const ageMonths = pregnant ? null : ChildTimeline.completedMonths(profile.birthDate, today);
+       const events = visibleSchedule(true);
+@@ -1430,6 +1429,12 @@
+         linkDateOf: (e) => { const l = links ? AutoSteps.linkOf(links, e) : null; return l && l.date ? new Date(`${l.date}T00:00:00`) : null; },
+         applyOf: (e) => usApplyLinkOf(e), canSchedule: (e) => CalendarModel.isLinkableAuto(e) || AutoSteps.isFamilyLinkable(e, CalendarModel.isLinkableAuto, today),
+       };
++    return { today, pregnant, ageMonths, events, state };
++  }
++  function curatedHomeHtml() {
++    if (!curatedHomeOn()) return null;
++    try {
++      const { today, pregnant, ageMonths, events, state } = curatedInputs();
+       let nextStage = null;
+       try { const m = nsModel(); if (m) nextStage = { head: m.stageLabel, title: m.headline, desc: m.sub }; } catch (e) {}
+       const explore = [];
+@@ -1451,6 +1456,34 @@
+     homeSwitchDecorate(true); // 1-1b: 켠 직후 안내 띠·단계 ② 링크(스위치를 안 쓴 사용자에게는 아무것도 붙지 않음)
+     return true;
+   }
++  // ═══ 4-1 A안: 이전 홈 맨 위 '지금 꼭 할 것' 카드(최대 2줄) — 큐레이션 엔진 now 의 앞 N개(정책 slots.homeMust, 기본 2, 0이면 카드 없음). 새 홈 미리보기가 켜져 있으면 큐레이션 홈이 대신하므로 그리지 않는다. 실패·정책 없음은 조용히 생략(이전 홈 그대로). ═══
++  let HMUST = null; // { cur } — 클릭이 단위를 찾는 데 쓴다
++  function homeMustHtml(skipIds) {
++    HMUST = null;
++    try {
++      if (!curationPolicy || typeof Curation === "undefined" || typeof HomeMust === "undefined" || !profile || FEATURES_CURATION_ON()) return "";
++      const n = curationPolicy.slots && Number.isInteger(curationPolicy.slots.homeMust) ? curationPolicy.slots.homeMust : 2;
++      if (n <= 0) return "";
++      const { today, events, state } = curatedInputs();
++      const cur = Curation.curate(events, state, curationPolicy, today);
++      const skip = new Set(skipIds || []);
++      const all = cur.now.concat((cur.overflow && cur.overflow.now) || []);
++      const list = all.filter((u) => !(u.items && u.items[0] && skip.has(u.items[0].id))); // 36+ 홈의 자동 일정 줄에 이미 있는 항목은 건너뛰고 다음 순위로
++      const units = list.slice(0, n);
++      HMUST = { cur };
++      return HomeMust.render({ units, more: Math.max(0, list.length - units.length), today, colorOf: (u) => { const c = u.items && u.items[0] && CATEGORY_META[u.items[0].category]; return c ? c.color : ""; } });
++    } catch (e) { console.error("지금 꼭 할 것 카드 생략", e); return ""; }
++  }
++  function homeMustClick(ev) {
++    const t = ev.target && ev.target.closest ? ev.target.closest("[data-hm-open], [data-hm-more]") : null;
++    if (!t) return;
++    if (t.hasAttribute("data-hm-more")) return switchTab("checklist");
++    const u = HMUST && HMUST.cur ? CuratedHome.unitOf(HMUST.cur, t.getAttribute("data-hm-open")) : null;
++    if (!u) return;
++    const e = u.items && u.items[0] && !u.items[0].unknown ? u.items[0] : null;
++    if (u.review || !e) return switchTab("checklist");
++    openDetail(e);
++  }
+   function curatedHomeClick(ev) {
+     const t = ev.target && ev.target.closest ? ev.target.closest("[data-hs-act], [data-hs-go]") : null;
+     if (!t || !curatedCur) return;
+@@ -1581,7 +1614,7 @@
+     const familyHtml = typeof usHomeCardHtml === "function" ? usHomeCardHtml({ family: true }) : "";
+     us.homeSig36 = acct36Sig();
+     const autoItems = acct36AutoItems(3).map((e) => ({ id: e.id, title: e.title, dateLabel: e.dateLabel }));
+-    wrap.innerHTML = Over36View.renderHome({ kids, name: childDisplayName(), headText: acct36HeadText(), familyHtml, autoItems, todos: ChildTodos.homeLines(list, 3), canTodo: acct36CanTodo() });
++    wrap.innerHTML = Over36View.renderHome({ kids, name: childDisplayName(), headText: acct36HeadText(), mustHtml: homeMustHtml(autoItems.map((x) => x.id)), familyHtml, autoItems, todos: ChildTodos.homeLines(list, 3), canTodo: acct36CanTodo() });
+   }
+   function acct36RenderTodoTab(focusSel) {
+     const tab = el("tab-checklist");
+@@ -5997,6 +6030,7 @@
+       // G13-3: 계정 모드 홈(가족 일정 먼저 → 아이별 챙길 것 → 혜택). 꺼져 있으면 아래 4개는 없다(기존 홈 그대로).
+       ...(acctEnabled() ? { accountDesign: true } : {}), // G14: 계정 모드 화면 디자인(기록 타임라인 등)
+       ...(acctEnabled() && acct.user ? { accountHome: true, homeChildText: acctHomeChildText(), homeChildren: acctHomeChildren(), switchChild: (code) => { if (code && code !== familyCode) switchToChild(code); } } : {}),
++      get mustHtml() { return homeMustHtml(); }, // 4-1 A안 '지금 꼭 할 것' 카드(홈이 그릴 때만 계산)
+       events: calendarSchedule(),
+       autoLinkedIds: linkIdx ? new Set(linkIdx.keys()) : null,
+       allEvents: schedule,
+@@ -7329,6 +7363,7 @@
+     usInit();
+     acctInit();
+     acct36Init();
++    if (typeof document !== "undefined") document.addEventListener("click", homeMustClick); // 4-1 A안: '지금 꼭 할 것' 카드 클릭(없으면 즉시 반환)
+     acct23Init();
+ 
+     if (profile) {
+diff --git a/js/curation.js b/js/curation.js
+index f058094..b6d3953 100644
+--- a/js/curation.js
++++ b/js/curation.js
+@@ -66,7 +66,7 @@
+     return {
+       warnings,
+       thresholds: { deadlineSoonDays: t.deadlineSoonDays, upcomingDays: t.upcomingDays, shortWindowDays: t.shortWindowDays, reappearDays: t.reappearDays },
+-      slots: { now: s.now, soon: s.soon, know: s.know, expandMax: isInt(s.expandMax, 1) ? s.expandMax : null }, // expandMax: 'N개 더' 펼침 상한(D20, 없으면 제한 없음)
++      slots: { now: s.now, soon: s.soon, know: s.know, expandMax: isInt(s.expandMax, 1) ? s.expandMax : null, homeMust: isInt(s.homeMust, 0) ? s.homeMust : 2 }, // homeMust: 이전 홈 맨 위 '지금 꼭 할 것' 카드 줄 수(4-1 A안, 기본 2, 0이면 카드 없음) // expandMax: 'N개 더' 펼침 상한(D20, 없으면 제한 없음)
+       ids: cleanMap(raw.ids), triggerTypes: cleanMap(raw.triggerTypes), prefixByExposure: pbe, prefix: cleanMap(raw.prefix), subsidyDefault: sd,
+       urgentLongWindowIds: Array.isArray(raw.urgentLongWindowIds && raw.urgentLongWindowIds.ids) ? raw.urgentLongWindowIds.ids.filter((x) => typeof x === "string") : [],
+       aliases: al,
+diff --git a/js/home-must.js b/js/home-must.js
+new file mode 100644
+index 0000000..4c6348d
+--- /dev/null
++++ b/js/home-must.js
+@@ -0,0 +1,42 @@
++/*
++ * home-must — 4-1 A안 이전 홈 맨 위 '지금 꼭 할 것' 카드(최대 2줄)의 순수 마크업. 명세 docs/한눈육아-4-1-A-구현명세.md.
++ * units = Curation.curate().now 의 앞 N개(정책 slots.homeMust, 기본 2, 0이면 카드 없음), more = 나머지 개수('외 N개 ›' → 체크리스트).
++ * 줄: [분류색 점] 제목 … 날짜글자 — L1·L2 'D-N'(와인, 글자+색), L3 '지금 가능', L4 'M월 D일까지'(6개월 넘으면 연도), 지난 날짜·기록 확인 단위는 날짜 없음.
++ * 항목이 없으면 빈 문자열(카드 숨김 = 이전 홈과 같은 화면). DOM·저장소·시각을 만지지 않는다(today 는 인자).
++ */
++(function (root, factory) {
++  if (typeof module !== "undefined" && module.exports) module.exports = factory();
++  else root.HomeMust = factory();
++})(typeof window !== "undefined" ? window : global, function () {
++  "use strict";
++  const DAY = 86400000;
++  const MSG = Object.freeze({ title: "지금 꼭 할 것", now: "지금 가능", more: (n) => `외 ${n}개 ›` });
++  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
++  const sod = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
++  const lv = (u) => Number(String(u.rule || u.level || "L7").slice(1));
++
++  /** 오른쪽 날짜 글자 { text, urgent } — 지난 날짜·날짜 없음·기록 확인은 text "". */
++  function dateOf(u, today) {
++    if (u.review || u.actionKind === "review" || !(today instanceof Date)) return { text: "", urgent: false };
++    const r = lv(u), n = u.daysToEnd;
++    if (r === 1 || r === 2) return Number.isFinite(n) && n >= 0 ? { text: `D-${n}`, urgent: true } : { text: "", urgent: false };
++    if (r === 3) return { text: MSG.now, urgent: false };
++    if (r === 4 && Number.isFinite(n) && n >= 0) {
++      const d = new Date(sod(today).getTime() + n * DAY), far = d.getFullYear() !== today.getFullYear() || d.getTime() - today.getTime() > 183 * DAY;
++      return { text: `${far ? `${d.getFullYear()}년 ` : ""}${d.getMonth() + 1}월 ${d.getDate()}일까지`, urgent: false };
++    }
++    return { text: "", urgent: false };
++  }
++  /** o = { units, more, today, colorOf(u) → 분류색 } */
++  function render(o) {
++    const units = Array.isArray(o && o.units) ? o.units.filter((u) => u && u.key && u.title) : [];
++    if (!units.length) return "";
++    const more = Number.isInteger(o.more) && o.more > 0 ? o.more : 0;
++    const rows = units.map((u) => {
++      const d = dateOf(u, o.today), color = typeof o.colorOf === "function" ? o.colorOf(u) : "";
++      return `<button type="button" class="home-must-row" data-hm-open="${esc(u.key)}"><span class="hm-dot"${color ? ` style="background:${esc(color)}"` : ""}></span><span class="hm-t">${esc(u.title)}</span>${d.text ? `<b class="hm-d${d.urgent ? " urgent" : ""}">${esc(d.text)}</b>` : ""}</button>`;
++    }).join("");
++    return `<section class="home-sec home-must" id="home-must"><div class="home-sec-head"><h3>${esc(MSG.title)}</h3>${more ? `<button type="button" class="home-viewall" data-hm-more>${esc(MSG.more(more))}</button>` : ""}</div>${rows}</section>`;
++  }
++  return { MSG, dateOf, render };
++});
+diff --git a/js/home.js b/js/home.js
+index 8886df9..4c74faf 100644
+--- a/js/home.js
++++ b/js/home.js
+@@ -46,13 +46,14 @@
+   }
+ 
+   /** G13-3: '챙길 것' 머리 — 아이가 여러 명이면 아이 칩(누르면 그 아이로 바꿔 보기), 지금 아이 한 줄. */
+-  function childHead(ctx) {
++  function chipsHtml(ctx) {
+     const kids = Array.isArray(ctx.homeChildren) ? ctx.homeChildren : [];
+-    const chips = kids.length >= 2
++    return kids.length >= 2
+       ? `<div class="home-child-chips" role="tablist">${kids.map((c) => `<button type="button" role="tab" aria-selected="${c.current ? "true" : "false"}" class="home-child-chip${c.current ? " active" : ""}" data-home-child="${ctx.esc(c.code)}">${ctx.esc(c.name)}</button>`).join("")}</div>`
+       : "";
+-    return `${chips}<p class="home-child-line">${ctx.esc(ctx.homeChildText || "")}</p>`;
+   }
++  /** 4-1 A안: 아이 칩은 홈 맨 위(임신 배너 아래)로 올리고, 아이 나이 한 줄은 '챙길 것' 섹션 안에 남긴다. 아이가 1명이면 칩 없음. */
++  const childChipsTop = chipsHtml;
+ 
+   function render(ctx) {
+     const wrap = document.getElementById("home-body");
+@@ -61,6 +62,9 @@
+     const y = today.getFullYear();
+     const m = today.getMonth();
+     const html = [pregnantBanner(ctx)];
++    const acctHomeTop = ctx.accountHome === true;
++    if (acctHomeTop) { const chipsTop = childChipsTop(ctx); if (chipsTop) html.push(chipsTop); } // 4-1 A안: 아이 칩은 맨 위
++    if (ctx.mustHtml) html.push(ctx.mustHtml); // 4-1 A안: '지금 꼭 할 것' 카드(최대 2줄, 없으면 "" → 이전 홈과 같은 화면)
+     // 가족 캘린더(가구)가 켜져 있을 때만 앞으로 7일의 추가 일정 카드가 붙는다. 꺼져 있거나 가구가 없으면 ""(홈 DOM 그대로).
+     // E(1-3): 가구가 활성이면 ctx.homeOrder()(["todo","family"] | ["family","todo"])가 '이번 달 챙길 것'과 이 카드의 순서만 정한다(내용 불변). 36개월 이상(family 먼저)이면 카드 제목이 '오늘·이번 주 우리 가족'.
+     const order = typeof ctx.homeOrder === "function" ? ctx.homeOrder() : null;
+@@ -95,7 +99,7 @@
+       section(
+         `${m + 1}월 챙길 것`,
+         cls.thisMonth.length ? `<button type="button" class="home-viewall" data-act="todos">전체보기 ›</button>` : "",
+-        (acctHome ? childHead(ctx) : "") + (cls.thisMonth.length ? catLines : `<p class="home-empty-line">이번 달에 챙길 항목이 없어요.</p>`),
++        (acctHome ? `<p class="home-child-line">${ctx.esc(ctx.homeChildText || "")}</p>` : "") + (cls.thisMonth.length ? catLines : `<p class="home-empty-line">이번 달에 챙길 항목이 없어요.</p>`),
+         "sec-today"
+       )
+     );
+diff --git a/js/over36-view.js b/js/over36-view.js
+index c131f77..5bac476 100644
+--- a/js/over36-view.js
++++ b/js/over36-view.js
+@@ -61,7 +61,7 @@
+       : "";
+     const quick = `<div class="a36-quick"><small>${esc(MSG.quickTitle)}</small>${MSG.quick.map((q) => `<button type="button" data-a36="quick" data-a36-quick="${esc(q)}">${esc(q)}</button>`).join("")}</div>`;
+     const head = st.headText ? `<p class="home-child-line">${esc(st.headText)}</p>` : "";
+-    return `${chips}${head}${st.familyHtml || ""}${autos}${todo}${quick}`;
++    return `${chips}${head}${st.mustHtml || ""}${st.familyHtml || ""}${autos}${todo}${quick}`; // mustHtml: 4-1 A안 '지금 꼭 할 것' 카드(아이 칩·나이 한 줄 아래)
+   }
+ 
+   /** 할 일 탭(메모장형). st: { name, list:[{id,title,done}], hideDone, canTodo, adding, editId } — 입력 줄은 app 이 열고 닫는다(adding=true 면 맨 아래에 입력 줄). */
+diff --git a/sw.js b/sw.js
+index ba1a99e..b6c1cd9 100644
+--- a/sw.js
++++ b/sw.js
+@@ -65,6 +65,7 @@ const SHELL_ASSETS = [
+   "./js/time-wheel.js",
+   "./js/user-schedule-view.js",
+   "./js/child-anniversaries.js",
++  "./js/home-must.js",
+   "./js/home-switch.js",
+   "./js/curation.js",
+   "./js/month-tiers.js",
+diff --git a/test/g1-onboarding.test.js b/test/g1-onboarding.test.js
+index 41a8310..66fd77c 100644
+--- a/test/g1-onboarding.test.js
++++ b/test/g1-onboarding.test.js
+@@ -106,7 +106,7 @@ console.log("OFF 첫 화면: 베타 미리 써 보기");
+ test("OFF 기본 HTML 은 '베타 버튼 슬롯' 한 줄만 다르다(그 외 HEAD 와 동일 — 기간형 AUTO 삭제로 빠진 #auto-period-slot·달력 아래 안내 문구(W5 후속 4번 삭제)는 양쪽에서 뺀다)", () => {
+   let head;
+   try { head = cp.execFileSync("git", ["show", "5ec3e02:index.html"], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); } catch (e) { return; }
+-  const norm = (h) => h.replace(/\?v=\d+/g, "").replace(/\n\s*<script src="js\/child-anniversaries\.js"><\/script>/, "").replace(/(name="theme-color" content=")#ff8a5c/, "$1#ff6a1a").replace(/style="color:#e0524e;"/, 'style="color:var(--c-danger);"').replace(/\n\s*<div id="beta-preview-slot"><\/div>/, "").replace(/\n\s*<script src="js\/schedule-kinds\.js[^>]*><\/script>/, "").replace(/\n\s*<script src="js\/(?:curation|home-switch|apply-channel-view|month-tiers|home-slots-view|curated-home|subsidy-tiers|edu-3to5-view)\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/home-slots\.css[^>]*>/, "").replace(/\n\s*<script src="js\/capture\/[a-z-]+\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/capture\.css[^>]*>/, "").replace(/ *<div id="auto-period-slot"><\/div>\n/, "").replace(/ *<div class="cal-kind-legend" id="cal-kind-legend">\n[^\n]*\n *<\/div>\n/, "").replace(/\n\s*<script src="js\/(?:auto-after36|auto-steps|next-stage-card|next-stage|time-range|time-wheel|pregnancy-basis)\.js[^>]*><\/script>/g, "").replace(/<script>\/\* G19:[\s\S]*?<\/script>\n/, "").replace(/\n\s*<script src="js\/(child-todos|over36-view|tab-swipe|edu-trend)\.js[^>]*><\/script>/g, ""); // G13/G19: 순수 모듈 스크립트 한 줄·계정 기본 ON 부팅 클래스 스크립트(OFF 에서는 아무 클래스도 붙지 않는다): 순수 모듈 스크립트 한 줄(전역 정의만, OFF 동작 없음)
++  const norm = (h) => h.replace(/\?v=\d+/g, "").replace(/\n\s*<script src="js\/child-anniversaries\.js"><\/script>/, "").replace(/(name="theme-color" content=")#ff8a5c/, "$1#ff6a1a").replace(/style="color:#e0524e;"/, 'style="color:var(--c-danger);"').replace(/\n\s*<div id="beta-preview-slot"><\/div>/, "").replace(/\n\s*<script src="js\/schedule-kinds\.js[^>]*><\/script>/, "").replace(/\n\s*<script src="js\/(?:curation|home-must|home-switch|apply-channel-view|month-tiers|home-slots-view|curated-home|subsidy-tiers|edu-3to5-view)\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/home-slots\.css[^>]*>/, "").replace(/\n\s*<script src="js\/capture\/[a-z-]+\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/capture\.css[^>]*>/, "").replace(/ *<div id="auto-period-slot"><\/div>\n/, "").replace(/ *<div class="cal-kind-legend" id="cal-kind-legend">\n[^\n]*\n *<\/div>\n/, "").replace(/\n\s*<script src="js\/(?:auto-after36|auto-steps|next-stage-card|next-stage|time-range|time-wheel|pregnancy-basis)\.js[^>]*><\/script>/g, "").replace(/<script>\/\* G19:[\s\S]*?<\/script>\n/, "").replace(/\n\s*<script src="js\/(child-todos|over36-view|tab-swipe|edu-trend)\.js[^>]*><\/script>/g, ""); // G13/G19: 순수 모듈 스크립트 한 줄·계정 기본 ON 부팅 클래스 스크립트(OFF 에서는 아무 클래스도 붙지 않는다): 순수 모듈 스크립트 한 줄(전역 정의만, OFF 동작 없음)
+   assert.strictEqual(norm(read("index.html")), norm(head));
+   assert.ok(read("index.html").includes('<div id="beta-preview-slot"></div>'));
+ });
+diff --git a/test/m22-home-must.test.js b/test/m22-home-must.test.js
+new file mode 100644
+index 0000000..6c4f116
+--- /dev/null
++++ b/test/m22-home-must.test.js
+@@ -0,0 +1,47 @@
++// 4-1 A안 이전 홈 맨 위 '지금 꼭 할 것' 카드·아이 칩 맨 위·정책 homeMust. 실행: node --test test/m22-home-must.test.js
++const test = require("node:test"), assert = require("node:assert"), fs = require("fs"), path = require("path"), vm = require("vm");
++const ROOT = path.join(__dirname, "..");
++const HM = require("../js/home-must.js"), C = require("../js/curation.js");
++const rd = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), "utf8"));
++const today = new Date(2026, 9, 5);
++const u = (key, title, rule, days, extra) => ({ key, title, rule, daysToEnd: days, items: [{ id: key, category: "예방접종" }], ...extra });
++test("카드: 줄 모양·날짜 글자(L1·L2 D-N 와인, L3 지금 가능, L4 M월 D일까지)·외 N개·지난 날짜/기록 확인은 날짜 없음", () => {
++  const h = HM.render({ units: [u("a", "DTaP 4차", "L2", 9), u("b", "검진", "L3", 0), u("c", "접종 5", "L4", 40), u("d", "지난 항목", "L2", -3), u("e", "기록", "L5", Infinity, { review: true })], more: 3, today, colorOf: () => "#abc" });
++  assert.ok(h.includes('class="home-sec home-must"') && h.includes("지금 꼭 할 것") && h.includes("외 3개 ›") && h.includes("data-hm-more"));
++  assert.ok(h.includes('<b class="hm-d urgent">D-9</b>') && h.includes('<b class="hm-d">지금 가능</b>') && h.includes("11월 14일까지"));
++  const rows = h.split('class="home-must-row"').slice(1); assert.ok(!/class="hm-d[ "]/.test(rows[3]) && !/class="hm-d[ "]/.test(rows[4]), "지난·기록 확인은 날짜 없음");
++  assert.strictEqual(HM.render({ units: [], more: 0, today }), ""); assert.strictEqual(HM.render({ today }), "");
++  assert.ok(!HM.render({ units: [u("a", "x", "L1", 1)], more: 0, today }).includes("data-hm-more"), "N=0이면 링크 없음");
++  assert.ok(HM.render({ units: [u("a", "x", "L4", 300)], today }).includes("2027년 "), "6개월 넘으면 연도");
++});
++test("정책 homeMust: 기본 2, 정수≥0만 인정(0이면 카드 없음), 실제 curation.json 읽어도 지워지지 않음", () => {
++  const raw = rd("data/policy/curation.json");
++  assert.strictEqual(C.normalizePolicy(raw).slots.homeMust, 2);
++  for (const [v, want] of [[0, 0], [3, 3], [-1, 2], ["x", 2], [1.5, 2]]) assert.strictEqual(C.normalizePolicy({ ...raw, slots: { ...raw.slots, homeMust: v } }).slots.homeMust, want, String(v));
++  assert.strictEqual(C.normalizePolicy(raw).slots.now, raw.slots.now, "엔진 슬롯 수치는 그대로");
++});
++test("이전 홈(home.js): 아이 칩이 맨 위(임신 배너 아래), 꼭 할 것 카드 그다음, 챙길 것 섹션 안에는 나이 한 줄만 / 카드·칩 없으면 기존과 같은 DOM", () => {
++  const sb = { document: { getElementById: () => sb.wrap }, HNLogic: require("../js/hn-logic.js"), window: {}, console };
++  sb.wrap = { innerHTML: "", querySelectorAll: () => [], querySelector: () => null, addEventListener() {} };
++  vm.createContext(sb); vm.runInContext(fs.readFileSync(path.join(ROOT, "js/home.js"), "utf8"), sb);
++  const HOME = sb.HNHome || sb.window.HNHome; assert.ok(HOME && HOME.render);
++  const base = { profile: { birthDate: new Date(2026, 5, 20) }, events: [], completed: {}, today, pregnant: false, ageNow: 3, CATEGORY_META: {}, esc: (s) => String(s), formatDateKR: (d) => String(d), monthKeysOf: () => [], periodRangeOf: () => null, periodGroupLabel: () => "", eventItemHtml: () => "", homeOrder: null, allEvents: [], bindOpen() {}, onViewAll() {}, onOpen() {}, autoLinkText: () => "" };
++  const run = (extra) => { sb.wrap.innerHTML = ""; try { HOME.render({ ...base, ...extra }); } catch (e) { return "ERR:" + e.message; } return sb.wrap.innerHTML; };
++  const two = { accountHome: true, homeChildText: "은찬 · 3개월", homeChildren: [{ code: "a", name: "은찬", current: true }, { code: "b", name: "하린", current: false }] };
++  const h = run({ ...two, mustHtml: '<section id="home-must"></section>' });
++  assert.ok(!h.startsWith("ERR"), h.slice(0, 120));
++  const iChip = h.indexOf("home-child-chips"), iMust = h.indexOf('id="home-must"'), iSec = h.indexOf("sec-today"), iLine = h.indexOf("home-child-line");
++  assert.ok(iChip >= 0 && iChip < iMust && iMust < iSec && iSec < iLine, "칩 → 꼭 할 것 → 챙길 것(섹션 안에 나이 한 줄)");
++  assert.strictEqual(h.split("home-child-chips").length - 1, 1, "칩은 한 번만");
++  const none = run({ ...two }); assert.ok(!none.includes("home-must") && none.indexOf("home-child-chips") < none.indexOf("sec-today"));
++  const one = run({ accountHome: true, homeChildText: "은찬", homeChildren: [{ code: "a", name: "은찬", current: true }], mustHtml: '<section id="home-must"></section>' }); assert.ok(!one.includes("home-child-chips") && one.includes('id="home-must"'), "아이 1명: 칩 없음");
++  assert.ok(!run({}).includes("home-must"), "카드 없으면(비계정 포함) 기존과 같음");
++});
++test("앱 연결: 새 홈 ON이면 카드 안 그림·실패 조용히 생략·정책 0이면 없음·36+ 홈은 자동 일정 항목 건너뜀·클릭은 상세/체크리스트", () => {
++  const app = fs.readFileSync(path.join(ROOT, "js/app.js"), "utf8");
++  const i = app.indexOf("function homeMustHtml("), blk = app.slice(i, app.indexOf("\n  }\n", i) + 4);
++  assert.ok(blk.includes("FEATURES_CURATION_ON()") && blk.includes("if (n <= 0) return \"\"") && /catch \(e\) \{ console\.error\("지금 꼭 할 것 카드 생략", e\); return ""; \}/.test(blk));
++  assert.ok(app.includes("homeMustHtml(autoItems.map((x) => x.id))") && app.includes("get mustHtml() { return homeMustHtml(); }"));
++  const j = app.indexOf("function homeMustClick("), click = app.slice(j, app.indexOf("\n  }\n", j) + 4);
++  assert.ok(click.includes('switchTab("checklist")') && click.includes("openDetail(e)") && !/localStorage|setDoc|updateDoc/.test(blk + click));
++});
+diff --git a/test/m4-curated-home.test.js b/test/m4-curated-home.test.js
+index 418fe3f..7f16866 100644
+--- a/test/m4-curated-home.test.js
++++ b/test/m4-curated-home.test.js
+@@ -30,10 +30,10 @@ test("unitOf: 넘친 목록에서도 key 로 찾는다", () => {
+   const hidden = cur.overflow.now[0];
+   assert.strictEqual(CH.unitOf(cur, hidden.key), hidden); assert.strictEqual(CH.unitOf(cur, "nope"), null);
+ });
+-test("앱 연결(1-1, 플래그 OFF 기본): 플래그 기본 false·정책은 플래그 ON 일 때만 읽음·홈 두 렌더의 맨 앞 한 줄·클릭 한 곳·폴백", () => {
++test("앱 연결(1-1, 플래그 OFF 기본): 플래그 기본 false·정책은 항상 읽고 새 홈은 플래그 ON 일 때만·홈 두 렌더의 맨 앞 한 줄·클릭 한 곳·폴백", () => {
+   const app = fs.readFileSync(R + "/js/app.js", "utf8");
+   assert.strictEqual(require(R + "/js/feature-flags.js").curation, false);
+-  assert.ok(/FEATURES_CURATION_ON\(\) \? loadJsonOrNull\("data\/policy\/curation\.json"\) : null/.test(app));
++  assert.ok(/loadJsonOrNull\("data\/policy\/curation\.json"\), \/\/ 4-1 A안/.test(app), "4-1 A안: 이전 홈 카드도 정책을 쓰므로 항상 읽는다(새 홈 여부는 FEATURES_CURATION_ON 이 따로 결정)");
+   assert.ok(/if \(curatedHomeOn\(\) && curatedRenderHome\(\)\) return;/.test(app));
+   assert.ok(/document\.addEventListener\("click", curatedHomeClick\)/.test(app));
+   assert.ok(/curatedHomeOn = \(\) => FEATURES_CURATION_ON\(\) && !!curationPolicy && !!profile/.test(app) && /catch \(e\) \{ console\.error\("큐레이션 홈 실패\(기존 홈으로\)", e\); HSW\.diag = [^\n]*; return null; \}/.test(app));

@@ -1,0 +1,34 @@
+diff --git a/js/app.js b/js/app.js
+index b30e799..b5ff0d2 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -1505,10 +1505,12 @@
+     HomeSwitch.write(homeStore(), on);
+     homePrefApply();
+     HSW.justEnabled = on; HSW.fallbackShown = false;
+-    if (on && !curationPolicy && typeof Curation !== "undefined") { const raw = await loadJsonOrNull("data/policy/curation.json"); curationPolicy = raw ? Curation.normalizePolicy(raw) : null; }
+-    renderHome();
+-    const sw = el("modal-content") && el("modal-content").querySelector ? el("modal-content").querySelector("[data-home-switch-row]") : null;
+-    if (sw) sw.outerHTML = HomeSwitch.rowHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE);
++    if (on && !curationPolicy && typeof Curation !== "undefined") { // 정책을 아직 안 읽었으면 읽는다 — 실패·지연이어도 아래 화면 전환은 반드시 진행(이전 홈+폴백 안내)
++      try { const raw = await loadJsonOrNull("data/policy/curation.json"); curationPolicy = raw ? Curation.normalizePolicy(raw) : null; } catch (e) { console.error("큐레이션 정책 읽기 실패(이전 홈으로)", e); curationPolicy = null; }
++    }
++    closeDetail(); // 프로필 시트를 닫아 바뀐 홈이 바로 보이게 한다(모바일에서는 시트가 화면을 덮어 '켰는데 변화 없음'으로 보였다)
++    try { if (typeof currentTab !== "undefined" && currentTab !== "home") switchTab("home"); } catch (e) {}
++    try { renderHome(); } catch (e) { console.error("홈 다시 그리기 실패", e); }
+     if (typeof window !== "undefined" && window.scrollTo) window.scrollTo(0, 0);
+   }
+   function homeSwitchClick(ev) {
+diff --git a/test/m14-home-switch.test.js b/test/m14-home-switch.test.js
+index 73c09b2..fac77cf 100644
+--- a/test/m14-home-switch.test.js
++++ b/test/m14-home-switch.test.js
+@@ -27,6 +27,8 @@ test("앱 연결: 단계 ① 고정, 기기 저장만, 프로필 시트 줄은 
+   assert.ok(/const HOME_V2_STAGE = 1;/.test(app));
+   const i = app.indexOf("async function homeSwitchSet("), blk = app.slice(i, app.indexOf("\n  }\n", i) + 4);
+   assert.ok(blk.includes("HomeSwitch.write(homeStore(), on)") && !/setDoc|updateDoc|HouseholdSync|fetch\(/.test(blk) && blk.includes("renderHome();"));
++  assert.ok(blk.indexOf("closeDetail();") > 0 && blk.indexOf("closeDetail();") < blk.indexOf("renderHome()"), "켜자마자 시트를 닫고 홈을 다시 그린다(시트 뒤에서만 바뀌지 않게)");
++  assert.ok(/try \{ const raw = await loadJsonOrNull[\s\S]*catch/.test(blk) && /try \{ renderHome\(\); \} catch/.test(blk), "정책 읽기·홈 그리기 예외도 전환을 막지 않는다");
+   assert.ok(/HomeSwitch\.rowHtml\(FEATURES_CURATION_ON\(\), HOME_V2_STAGE\)/.test(app.slice(app.indexOf("function acctProfileSheet()"), app.indexOf("showProfileSheet = function (pendingPhoto)"))));
+   const d = app.indexOf("function homeSwitchDecorate("), dec = app.slice(d, app.indexOf("\n  }\n", d) + 4);
+   const run = (pref, on, just) => { const st = mem(pref ? { [H.KEY]: pref } : {}); let html = ""; const sb = { HomeSwitch: H, HSW: { justEnabled: just, fallbackShown: false }, HOME_V2_STAGE: 1, FEATURES_CURATION_ON: () => on, el: () => ({ insertAdjacentHTML: (w, h) => { html += h; } }), homeStore: () => st }; vm.runInNewContext(`${dec}; homeSwitchDecorate(${on})`, sb); return html; };

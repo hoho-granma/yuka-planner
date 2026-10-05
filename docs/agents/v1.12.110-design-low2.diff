@@ -1,0 +1,29 @@
+diff --git a/css/home-slots.css b/css/home-slots.css
+index 691b305..1eeb0f9 100644
+--- a/css/home-slots.css
++++ b/css/home-slots.css
+@@ -25,7 +25,7 @@
+ .hs-bar { flex: none; width: 3px; height: 14px; border-radius: 2px; } .hs-evm { color: var(--hs-mute); font-weight: 400; }
+ .hs-none { margin: 4px 0; font-size: 11px; color: var(--hs-mute); } .hs-add { border: 0; background: none; padding: 0; font-size: 10.5px; font-weight: 800; color: var(--hs-main); }
+ .hs-soon { border: 1.5px solid #5536c4; border-radius: 12px; background: #ece8f8; color: #24252a; padding: 6px 11px; }
+-.hs-sr { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-left: 0; font-size: 11.5px; font-weight: 800; color: var(--hs-ink); } .hs-sr + .hs-sr { border-top: 1px solid #5536c4; }
++.hs-sr { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-left: 0; font-size: 11.5px; font-weight: 800; color: var(--hs-ink); } .hs-sr + .hs-sr { border-top: 1px solid #4a45c8; }
+ .hs-wh { font-size: 10.5px; font-weight: 400; color: rgba(36, 37, 42, .8); white-space: nowrap; }
+ .hs-soon .hs-tg-if { border-color: #5536c4; color: #24252a; }
+ .hs-know .hs-kn { padding: 3px 0; }
+diff --git a/js/app.js b/js/app.js
+index 171534b..5b97def 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -839,7 +839,10 @@
+   eventItemHtml = function eventItemHtml(e, opts) { // 1-5b: 마감 임박(표시용 복사본 calUrgent)은 날짜 줄 아래에 와인색 'D-N · M월 D일까지'(글자 포함 — 색만으로 구분하지 않는다)
+     const h = eventItemHtmlBase.apply(this, arguments);
+     if (!e || !e.calUrgent || completed[e.id]) return h;
+-    return h.replace('<p class="summary">', `<p class="sub-when urgent">D-${e.calDays} · ${formatDateKR(e.fixedDate)}까지</p><p class="summary">`);
++    const line = `<p class="sub-when urgent">D-${e.calDays} · ${formatDateKR(e.fixedDate)}까지</p>`;
++    if (h.includes('<p class="summary">')) return h.replace('<p class="summary">', line + '<p class="summary">');
++    const chk = h.indexOf('<span class="check'), at = chk > 0 ? h.lastIndexOf("</div>", chk) : -1; // 설명(.summary)이 없는 카드 형태: 본문(.body) 끝에 붙인다
++    return at > 0 ? h.slice(0, at) + line + h.slice(at) : h + line;
+   };
+   /** 1-5b(플래그 curation ON·정책 읽음일 때만): 마감이 있는 신청형을 마감일 칸에 '마감 ' 글자와 함께 보인다(표시용 복사본 — 엔진 fixedDate 불변, 임박은 날짜 줄 와인색). OFF 면 목록 그대로. */
+   function calendarDeadlineViews(list) {

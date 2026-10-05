@@ -46,13 +46,14 @@
   }
 
   /** G13-3: '챙길 것' 머리 — 아이가 여러 명이면 아이 칩(누르면 그 아이로 바꿔 보기), 지금 아이 한 줄. */
-  function childHead(ctx) {
+  function chipsHtml(ctx) {
     const kids = Array.isArray(ctx.homeChildren) ? ctx.homeChildren : [];
-    const chips = kids.length >= 2
+    return kids.length >= 2
       ? `<div class="home-child-chips" role="tablist">${kids.map((c) => `<button type="button" role="tab" aria-selected="${c.current ? "true" : "false"}" class="home-child-chip${c.current ? " active" : ""}" data-home-child="${ctx.esc(c.code)}">${ctx.esc(c.name)}</button>`).join("")}</div>`
       : "";
-    return `${chips}<p class="home-child-line">${ctx.esc(ctx.homeChildText || "")}</p>`;
   }
+  /** 4-1 A안: 아이 칩은 홈 맨 위(임신 배너 아래)로 올리고, 아이 나이 한 줄은 '챙길 것' 섹션 안에 남긴다. 아이가 1명이면 칩 없음. */
+  const childChipsTop = chipsHtml;
 
   function render(ctx) {
     const wrap = document.getElementById("home-body");
@@ -61,6 +62,9 @@
     const y = today.getFullYear();
     const m = today.getMonth();
     const html = [pregnantBanner(ctx)];
+    const acctHomeTop = ctx.accountHome === true;
+    if (acctHomeTop) { const chipsTop = childChipsTop(ctx); if (chipsTop) html.push(chipsTop); } // 4-1 A안: 아이 칩은 맨 위
+    if (ctx.mustHtml) html.push(ctx.mustHtml); // 4-1 A안: '지금 꼭 할 것' 카드(최대 2줄, 없으면 "" → 이전 홈과 같은 화면)
     // 가족 캘린더(가구)가 켜져 있을 때만 앞으로 7일의 추가 일정 카드가 붙는다. 꺼져 있거나 가구가 없으면 ""(홈 DOM 그대로).
     // E(1-3): 가구가 활성이면 ctx.homeOrder()(["todo","family"] | ["family","todo"])가 '이번 달 챙길 것'과 이 카드의 순서만 정한다(내용 불변). 36개월 이상(family 먼저)이면 카드 제목이 '오늘·이번 주 우리 가족'.
     const order = typeof ctx.homeOrder === "function" ? ctx.homeOrder() : null;
@@ -95,7 +99,7 @@
       section(
         `${m + 1}월 챙길 것`,
         cls.thisMonth.length ? `<button type="button" class="home-viewall" data-act="todos">전체보기 ›</button>` : "",
-        (acctHome ? childHead(ctx) : "") + (cls.thisMonth.length ? catLines : `<p class="home-empty-line">이번 달에 챙길 항목이 없어요.</p>`),
+        (acctHome ? `<p class="home-child-line">${ctx.esc(ctx.homeChildText || "")}</p>` : "") + (cls.thisMonth.length ? catLines : `<p class="home-empty-line">이번 달에 챙길 항목이 없어요.</p>`),
         "sec-today"
       )
     );

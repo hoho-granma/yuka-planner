@@ -216,7 +216,7 @@
       loadJsonOrNull("data/policy/home-reappear.json"),
       loadJsonOrNull("data/policy/info-actions.json"),
       loadJsonOrNull("data/policy/edu-links.json"),
-      FEATURES_CURATION_ON() ? loadJsonOrNull("data/policy/curation.json") : null, // 플래그 OFF 면 읽지도 않는다(네트워크 요청 없음)
+      loadJsonOrNull("data/policy/curation.json"), // 4-1 A안: 이전 홈의 '지금 꼭 할 것' 카드도 정책을 쓰므로 항상 읽는다(못 읽으면 null → 카드 없음)
       ...TODO_CATEGORY_FILES.map(loadJson),
     ]);
     regionsData = regions;
@@ -1411,9 +1411,8 @@
       return out.slice(0, 5);
     } catch (e) { return null; }
   }
-  function curatedHomeHtml() {
-    if (!curatedHomeOn()) return null;
-    try {
+  /** 큐레이션 입력(오늘·일정·상태) — 큐레이션 홈과 이전 홈 맨 위 '지금 꼭 할 것' 카드(4-1 A안)가 같은 값을 쓴다. */
+  function curatedInputs() {
       const today = new Date(), pregnant = isPregnant();
       const ageMonths = pregnant ? null : ChildTimeline.completedMonths(profile.birthDate, today);
       const events = visibleSchedule(true);
@@ -1427,6 +1426,12 @@
         linkDateOf: (e) => { const l = links ? AutoSteps.linkOf(links, e) : null; return l && l.date ? new Date(`${l.date}T00:00:00`) : null; },
         applyOf: (e) => usApplyLinkOf(e), canSchedule: (e) => CalendarModel.isLinkableAuto(e) || AutoSteps.isFamilyLinkable(e, CalendarModel.isLinkableAuto, today),
       };
+    return { today, pregnant, ageMonths, events, state };
+  }
+  function curatedHomeHtml() {
+    if (!curatedHomeOn()) return null;
+    try {
+      const { today, pregnant, ageMonths, events, state } = curatedInputs();
       let nextStage = null;
       try { const m = nsModel(); if (m) nextStage = { head: m.stageLabel, title: m.headline, desc: m.sub }; } catch (e) {}
       const explore = [];
@@ -1447,6 +1452,34 @@
     wrap.innerHTML = html;
     homeSwitchDecorate(true); // 1-1b: 켠 직후 안내 띠·단계 ② 링크(스위치를 안 쓴 사용자에게는 아무것도 붙지 않음)
     return true;
+  }
+  // ═══ 4-1 A안: 이전 홈 맨 위 '지금 꼭 할 것' 카드(최대 2줄) — 큐레이션 엔진 now 의 앞 N개(정책 slots.homeMust, 기본 2, 0이면 카드 없음). 새 홈 미리보기가 켜져 있으면 큐레이션 홈이 대신하므로 그리지 않는다. 실패·정책 없음은 조용히 생략(이전 홈 그대로). ═══
+  let HMUST = null; // { cur } — 클릭이 단위를 찾는 데 쓴다
+  function homeMustHtml(skipIds) {
+    HMUST = null;
+    try {
+      if (!curationPolicy || typeof Curation === "undefined" || typeof HomeMust === "undefined" || !profile || FEATURES_CURATION_ON()) return "";
+      const n = curationPolicy.slots && Number.isInteger(curationPolicy.slots.homeMust) ? curationPolicy.slots.homeMust : 2;
+      if (n <= 0) return "";
+      const { today, events, state } = curatedInputs();
+      const cur = Curation.curate(events, state, curationPolicy, today);
+      const skip = new Set(skipIds || []);
+      const all = cur.now.concat((cur.overflow && cur.overflow.now) || []);
+      const list = all.filter((u) => !(u.items && u.items[0] && skip.has(u.items[0].id))); // 36+ 홈의 자동 일정 줄에 이미 있는 항목은 건너뛰고 다음 순위로
+      const units = list.slice(0, n);
+      HMUST = { cur };
+      return HomeMust.render({ units, more: Math.max(0, list.length - units.length), today, colorOf: (u) => { const c = u.items && u.items[0] && CATEGORY_META[u.items[0].category]; return c ? c.color : ""; } });
+    } catch (e) { console.error("지금 꼭 할 것 카드 생략", e); return ""; }
+  }
+  function homeMustClick(ev) {
+    const t = ev.target && ev.target.closest ? ev.target.closest("[data-hm-open], [data-hm-more]") : null;
+    if (!t) return;
+    if (t.hasAttribute("data-hm-more")) return switchTab("checklist");
+    const u = HMUST && HMUST.cur ? CuratedHome.unitOf(HMUST.cur, t.getAttribute("data-hm-open")) : null;
+    if (!u) return;
+    const e = u.items && u.items[0] && !u.items[0].unknown ? u.items[0] : null;
+    if (u.review || !e) return switchTab("checklist");
+    openDetail(e);
   }
   function curatedHomeClick(ev) {
     const t = ev.target && ev.target.closest ? ev.target.closest("[data-hs-act], [data-hs-go]") : null;
@@ -1578,7 +1611,7 @@
     const familyHtml = typeof usHomeCardHtml === "function" ? usHomeCardHtml({ family: true }) : "";
     us.homeSig36 = acct36Sig();
     const autoItems = acct36AutoItems(3).map((e) => ({ id: e.id, title: e.title, dateLabel: e.dateLabel }));
-    wrap.innerHTML = Over36View.renderHome({ kids, name: childDisplayName(), headText: acct36HeadText(), familyHtml, autoItems, todos: ChildTodos.homeLines(list, 3), canTodo: acct36CanTodo() });
+    wrap.innerHTML = Over36View.renderHome({ kids, name: childDisplayName(), headText: acct36HeadText(), mustHtml: homeMustHtml(autoItems.map((x) => x.id)), familyHtml, autoItems, todos: ChildTodos.homeLines(list, 3), canTodo: acct36CanTodo() });
   }
   function acct36RenderTodoTab(focusSel) {
     const tab = el("tab-checklist");
@@ -5993,6 +6026,7 @@
       // G13-3: 계정 모드 홈(가족 일정 먼저 → 아이별 챙길 것 → 혜택). 꺼져 있으면 아래 4개는 없다(기존 홈 그대로).
       ...(acctEnabled() ? { accountDesign: true } : {}), // G14: 계정 모드 화면 디자인(기록 타임라인 등)
       ...(acctEnabled() && acct.user ? { accountHome: true, homeChildText: acctHomeChildText(), homeChildren: acctHomeChildren(), switchChild: (code) => { if (code && code !== familyCode) switchToChild(code); } } : {}),
+      get mustHtml() { return homeMustHtml(); }, // 4-1 A안 '지금 꼭 할 것' 카드(홈이 그릴 때만 계산)
       events: calendarSchedule(),
       autoLinkedIds: linkIdx ? new Set(linkIdx.keys()) : null,
       allEvents: schedule,
@@ -7325,6 +7359,7 @@
     usInit();
     acctInit();
     acct36Init();
+    if (typeof document !== "undefined") document.addEventListener("click", homeMustClick); // 4-1 A안: '지금 꼭 할 것' 카드 클릭(없으면 즉시 반환)
     acct23Init();
 
     if (profile) {

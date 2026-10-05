@@ -8,11 +8,11 @@ md5 -q docs/agents/v1.12.110-1-1b-link.diff          # 184464974b78454039b06c13c
 git apply --check docs/agents/v1.12.107-108-qa-patch-all.diff && git apply docs/agents/v1.12.107-108-qa-patch-all.diff
 git apply --check docs/agents/v1.12.110-1-1b-link.diff        && git apply docs/agents/v1.12.110-1-1b-link.diff   # 반드시 합본 다음
 ```
-## ② 변경 파일과 적용 후 예상 md5 (106 반영본 기준; 신규는 *)
+## ② 변경 파일과 적용 후 예상 md5 (**기준 = 106 반영본, js/app.js 30b87735105e415dbb454f5195a5b6cb, test/m7 a4389456e4bdcde149a1bd3101157f69**; 신규는 *. 이 묶음이 바꾸는 파일 중 m7·app.js 외에는 기준 변화 없음)
 | 파일 | md5 |
 |---|---|
 | css/style.css | c91f83757d4d2341af71dced30c09fba |
-| js/app.js | 3d852e52f612c8336e781f777d00257e |
+| js/app.js | e4fa914e1a7ead2691d4a54d58a5e8d3 (106 반영본이 36+ 홈 정렬 수정 30b87735… 기준일 때) |
 | js/home-slots-view.js | 878772b1d69e6a5dbc73f54b6c9631b5 |
 | js/home-switch.js | cead70a288dd98b868f3843465dbe209 |
 | js/month-tiers.js | 9f79f6414ab41c88b501efa5717255c5 |
@@ -26,7 +26,7 @@ git apply --check docs/agents/v1.12.110-1-1b-link.diff        && git apply docs/
 (대조: `md5 -q <파일>`. index.html·sw.js·데이터 파일은 이 묶음에서 바뀌지 않음. 기준 데이터 places-age-basis.json 68aa80e0 필요.)
 ## ③ 실행 명령과 36개월 미만 회귀 기준
 ```
-node --test test/*.test.js                                 # 기대 295/295 (106 반영본 280 + 새 테스트 15)
+node --test test/*.test.js                                 # 기대 296/296 (106 반영본 281 [m7 정렬 테스트 1개 포함] + 107·108·110 새 테스트 15 = 296)
 node test/tools/auto-diff.js --base <106 커밋> --scope-months 36 --report /tmp/ad36.txt
 node test/tools/auto-diff.js --base <106 커밋> --scope-months 72 --report /tmp/ad72.txt
 ```

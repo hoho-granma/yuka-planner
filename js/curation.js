@@ -66,7 +66,7 @@
     return {
       warnings,
       thresholds: { deadlineSoonDays: t.deadlineSoonDays, upcomingDays: t.upcomingDays, shortWindowDays: t.shortWindowDays, reappearDays: t.reappearDays },
-      slots: { now: s.now, soon: s.soon, know: s.know, expandMax: isInt(s.expandMax, 1) ? s.expandMax : null }, // expandMax: 'N개 더' 펼침 상한(D20, 없으면 제한 없음)
+      slots: { now: s.now, soon: s.soon, know: s.know, expandMax: isInt(s.expandMax, 1) ? s.expandMax : null, homeMust: isInt(s.homeMust, 0) ? s.homeMust : 2 }, // homeMust: 이전 홈 맨 위 '지금 꼭 할 것' 카드 줄 수(4-1 A안, 기본 2, 0이면 카드 없음) // expandMax: 'N개 더' 펼침 상한(D20, 없으면 제한 없음)
       ids: cleanMap(raw.ids), triggerTypes: cleanMap(raw.triggerTypes), prefixByExposure: pbe, prefix: cleanMap(raw.prefix), subsidyDefault: sd,
       urgentLongWindowIds: Array.isArray(raw.urgentLongWindowIds && raw.urgentLongWindowIds.ids) ? raw.urgentLongWindowIds.ids.filter((x) => typeof x === "string") : [],
       aliases: al,

@@ -61,7 +61,7 @@
       : "";
     const quick = `<div class="a36-quick"><small>${esc(MSG.quickTitle)}</small>${MSG.quick.map((q) => `<button type="button" data-a36="quick" data-a36-quick="${esc(q)}">${esc(q)}</button>`).join("")}</div>`;
     const head = st.headText ? `<p class="home-child-line">${esc(st.headText)}</p>` : "";
-    return `${chips}${head}${st.familyHtml || ""}${autos}${todo}${quick}`;
+    return `${chips}${head}${st.mustHtml || ""}${st.familyHtml || ""}${autos}${todo}${quick}`; // mustHtml: 4-1 A안 '지금 꼭 할 것' 카드(아이 칩·나이 한 줄 아래)
   }
 
   /** 할 일 탭(메모장형). st: { name, list:[{id,title,done}], hideDone, canTodo, adding, editId } — 입력 줄은 app 이 열고 닫는다(adding=true 면 맨 아래에 입력 줄). */

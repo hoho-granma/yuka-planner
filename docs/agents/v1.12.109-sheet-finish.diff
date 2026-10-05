@@ -1,0 +1,52 @@
+diff --git a/css/style.css b/css/style.css
+index 41f7d63..897fe69 100644
+--- a/css/style.css
++++ b/css/style.css
+@@ -1972,3 +1972,21 @@ body.acct-design .modal-panel:has(.as-steps) .as-save { background: var(--nd-ind
+ .modal-panel:has(.acct-prof-head) .acct-fam-pill { border-color: var(--nd-indigo); }
+ .modal-panel:has(.acct-prof-head) .acct-fam-pill b { color: var(--nd-ink); }
+ .modal-panel:has(.acct-prof-head) #btn-view-records { background: #fff; border: 1.5px solid var(--line); border-radius: 13px; color: var(--nd-ink); }
++
++/* ═══ v1.12.108 4-2 마무리 — 임신 정보 수정 시트 선택칸 높이, 일정 상세·다음 단계·아이 전환 시트를 시트 3종 규칙에 맞춘다. 명세 docs/한눈육아-디자인명세-통일-마무리.md ①③. 시트 범위 :has() 안에서만, 새 변수·새 색 없음, 위험(삭제)·구성원·분류 색은 그대로. ═══ */
++/* ① 임신 정보 수정 시트: 선택칸(주·일, 시·도, 시·군·구)을 입력칸과 같은 높이·글자로 */
++.modal-panel:has(#ep-save) .ep-select { min-height: 48px; padding: 10px 14px; font-size: 16px; }
++/* ③-0 항목 상세 시트('예약 일정 만들기' 버튼): .btn-complete 청록 → 인디고 보조 버튼(흰 면 + 1.5px 인디고 선·글자). 다른 화면의 .btn-complete 는 그대로 */
++body.acct-design .modal-panel:has(.as-steps) .auto-link-btn.btn-complete { background: #fff; border: 1.5px solid var(--nd-indigo); color: var(--nd-indigo); }
++/* ③-1 일정 상세 시트 — 시트 면은 흰색 유지(D21 A), '완료' 큰 버튼(--accent)이 주황 → 인디고. 삭제 버튼은 위험색 그대로 */
++.modal-panel:has(.us-detail) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); }
++/* ③-2 다음 단계 '미리 알아보기' 시트 — 시트 면 흰색 유지, 단계 번호는 상세 시트와 같은 모양(D22 A: 현재·완료 인디고), 주 버튼 인디고·보조 흰+선 */
++.modal-panel:has(.ns-chain) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); }
++body.acct-design .modal-panel:has(.ns-chain) .ns-n { background: #fff; border: 1.5px solid var(--line); color: var(--text-muted); }
++body.acct-design .modal-panel:has(.ns-chain) .ns-cn.cur .ns-n, body.acct-design .modal-panel:has(.ns-chain) .ns-cn.fin .ns-n { background: var(--nd-indigo); border-color: var(--nd-indigo); color: #fff; }
++body.acct-design .modal-panel:has(.ns-chain) .ns-primary { background: var(--nd-indigo); color: #fff; border-radius: 13px; font-weight: 800; }
++body.acct-design .modal-panel:has(.ns-chain) .ns-chip { background: #fff; border: 1.5px solid var(--line); color: var(--nd-ink); }
++/* ③-3 아이 전환·추가 시트 — 면 연보라, '새 아이 추가' 인디고 면, 현재 아이 표시('보는 중')는 선택 상태 노랑 */
++.modal-panel:has(.cs-list) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); background: var(--nd-soft); }
++body.acct-design .modal-panel:has(.cs-list) .cs-add { background: var(--nd-indigo); border: 0; color: #fff; border-radius: 13px; min-height: 52px; font-weight: 800; }
++.modal-panel:has(.cs-list) .cs-now { background: var(--nd-yellow); border: 1.5px solid var(--nd-yellow-line); color: var(--nd-ink); }
+diff --git a/test/k10-onboarding-home-design.test.js b/test/k10-onboarding-home-design.test.js
+index dd614d1..f0dfa40 100644
+--- a/test/k10-onboarding-home-design.test.js
++++ b/test/k10-onboarding-home-design.test.js
+@@ -19,7 +19,7 @@ test("앱 전역 슬롯(:root 의 --c-primary·--accent·--c-active 등)은 인
+ });
+ 
+ test("새 규칙의 선택자는 모두 온보딩·홈 범위다(다른 화면 규칙 없음)", () => {
+-  const OK = /^(:root$|\.modal-panel:has\(\.(us-form|as-steps|acct-prof-head)\)|body\.acct-design \.modal-panel:has\(\.as-steps\)|body:has\(#view-landing\.acct-on|#view-landing\.acct-on|\.modal-panel:has\(\[data-acct-form="(login|signup)"\]\)|\.modal-panel:has\(\[data-acct-child-sheet\]\)|body\.acct-design \.modal-panel:has\(\[data-acct-child-sheet\]\)|\.modal-panel:has\(#ep-save\)|body:has\(#view-calendar:not\(\.hidden\) :is\(#tab-home, #empty-panel\)|#view-calendar:has\(:is\(#tab-home, #empty-panel\)|:is\(#tab-home, #empty-panel\)|body\.acct-design :is\(#tab-home, #empty-panel\))/;
++  const OK = /^(:root$|\.modal-panel:has\(\.(us-form|as-steps|acct-prof-head|us-detail|ns-chain|cs-list)\)|body\.acct-design \.modal-panel:has\(\.(as-steps|ns-chain|cs-list)\)|body:has\(#view-landing\.acct-on|#view-landing\.acct-on|\.modal-panel:has\(\[data-acct-form="(login|signup)"\]\)|\.modal-panel:has\(\[data-acct-child-sheet\]\)|body\.acct-design \.modal-panel:has\(\[data-acct-child-sheet\]\)|\.modal-panel:has\(#ep-save\)|body:has\(#view-calendar:not\(\.hidden\) :is\(#tab-home, #empty-panel\)|#view-calendar:has\(:is\(#tab-home, #empty-panel\)|:is\(#tab-home, #empty-panel\)|body\.acct-design :is\(#tab-home, #empty-panel\))/;
+   for (const [sel] of rules(BLOCK.slice(BLOCK.indexOf("}") + 1))) {
+     sel.split(/,(?![^()]*\))/).forEach((s) => assert.ok(OK.test(s.trim()), "범위 밖 선택자: " + s.trim()));
+   }
+diff --git a/test/m16-sheet-unify.test.js b/test/m16-sheet-unify.test.js
+index 59b7519..9594ef1 100644
+--- a/test/m16-sheet-unify.test.js
++++ b/test/m16-sheet-unify.test.js
+@@ -1,7 +1,7 @@
+ // 4-2 시트 통일(일정·상세·프로필): 시트 범위 셀렉터 안에서만, 새 변수·새 색 없음, 상세 시트 면은 흰색(D21 A)·완료 단계 인디고(D22 A). 실행: node --test test/m16-sheet-unify.test.js
+ const test = require("node:test"), assert = require("node:assert"), fs = require("fs"), path = require("path");
+ const css = fs.readFileSync(path.join(__dirname, "..", "css/style.css"), "utf8");
+-const blk = css.slice(css.indexOf("/* ═══ v1.12.107 4-2 시트 통일"));
++const blk = css.slice(css.indexOf("/* ═══ v1.12.107 4-2 시트 통일"), css.indexOf("/* ═══ v1.12.108 4-2 마무리")); // 마무리 블록은 아래 별도 테스트(pending)
+ const noComment = blk.replace(/\/\*[\s\S]*?\*\//g, "");
+ const rules = [...noComment.matchAll(/([^{}]+)\{([^}]*)\}/g)].map((m) => ({ sel: m[1].trim(), body: m[2] })).filter((r) => r.sel);
+ test("모든 규칙은 세 시트 범위 안(일정 .us-form·상세 .as-steps·프로필 .acct-prof-head)에서만", () => {

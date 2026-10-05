@@ -1,0 +1,10 @@
+diff --git a/css/style.css b/css/style.css
+index a15d26c..05942a6 100644
+--- a/css/style.css
++++ b/css/style.css
+@@ -1971,3 +1971,5 @@ body.acct-design .modal-panel:has(.as-steps) .as-save { background: var(--nd-ind
+ .modal-panel:has(.acct-prof-head) .acct-fam-pill { border-color: var(--nd-indigo); }
+ .modal-panel:has(.acct-prof-head) .acct-fam-pill b { color: var(--nd-ink); }
+ .modal-panel:has(.acct-prof-head) #btn-view-records { background: #fff; border: 1.5px solid var(--line); border-radius: 13px; color: var(--nd-ink); }
++.modal-panel:has(.acct-prof-head) .acct-face-add .acct-face-dot { color: var(--nd-indigo); box-shadow: 0 0 0 1.5px var(--nd-indigo); } /* '가족 추가 +' 원: 인디고 1.5px 선(4-2 낮음) */
++.modal-panel:has(.acct-prof-head) .acct-face-add .acct-face-name { color: var(--nd-indigo); }
