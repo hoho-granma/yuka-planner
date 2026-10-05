@@ -1,0 +1,24 @@
+{
+  "_설명": "3~5세 교육 탭 B3 '우리 동네 기관 찾기' 공식 링크. 사이트 루트만, 날짜·수치 없음. D2·D25. 조사 1차(Perplexity P1-3) 2026-10-05.",
+  "links": [
+    {
+      "key": "firstschool",
+      "name": "처음학교로(유치원 입학 신청)",
+      "url": "https://www.go-firstschool.go.kr/"
+    },
+    {
+      "key": "kinderinfo",
+      "name": "유치원알리미(유치원 정보 조회)",
+      "url": "https://e-childschoolinfo.moe.go.kr/"
+    },
+    {
+      "key": "childcare",
+      "name": "아이사랑(어린이집 찾기·등록대기)",
+      "url": "https://www.childcare.go.kr/"
+    }
+  ],
+  "notices": {
+    "firstschoolNotYet": "2027학년도 유치원 모집 일정은 아직 공지 전이에요. 공지가 나오면 처음학교로에서 확인해요."
+  },
+  "_근거": "go-firstschool.go.kr 첫 화면 '등록일정이 없습니다'(Perplexity 열람, 2026-10-05). 링크는 각 기관 공식 도메인 루트. 반영안 패키지 U1(사용자 승인 2026-10-05, hn_data 세션)."
+}

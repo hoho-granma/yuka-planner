@@ -1,0 +1,32 @@
+{
+  "_meta": {
+    "설명": "대구광역시 앱 비노출 항목(범위 밖·종료 등). 앱은 이 파일을 읽지 않는다. excludeReason 참조.",
+    "갱신": "2026-10-05"
+  },
+  "subsidies": [
+    {
+      "id": "DG-002",
+      "name": "대구형 난임부부 시술비 지원 (횟수 제한 폐지)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "대구광역시:ALL"
+      ],
+      "target": "대구시 거주 난임부부(소득 무관)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "체외수정 신선 회당 최대 170만원(45세 이상 110만원), 동결 최대 90만원(45세 이상 50만원), 인공수정 최대 30만원",
+      "paymentMethod": "보건소·정부24 신청 후 지정의료기관에서 지원",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "대구시 거주",
+      "additionalConditions": "2026.9.30부터 지원 횟수 제한 전면 폐지(특·광역시 최초) 보도. 비급여 항목 20~30만원 추가 지원 보도",
+      "officialUrl": "https://www.edaily.co.kr/News/Read?newsId=04546086645576184",
+      "sourceName": "이데일리·뉴스핌·경향(2026.3~9) 대구시 보도",
+      "lastVerified": "2026-09-29",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "[2026-10-05 4차] city.json에서 pending.json으로 이동(삭제·id 변경 없음). 금액은 언론 기준, 횟수 폐지 시행일 공식 확인 필요. 국가 난임시술비 지원에 시가 상향·추가한 부분.",
+      "excludeReason": "임신 전 제도(난임 시술비) — 검증기준 §4 앱 노출 범위 밖"
+    }
+  ]
+}

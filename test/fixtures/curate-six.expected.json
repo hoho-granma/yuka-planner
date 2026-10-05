@@ -28,7 +28,7 @@
   ],
   "more": [
    0,
-   31,
+   30,
    12,
    19
   ]
@@ -59,7 +59,7 @@
    "VX-DTAP+VX-IPV+VX-MMR:L5:apply",
    "SB-04:L5:apply"
   ],
-  "know": [],
+  "know": ["KG-01:L5:schedule"],
   "more": [
    0,
    2,

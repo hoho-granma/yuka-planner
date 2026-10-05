@@ -1,6 +1,6 @@
 {
   "category": "SA",
-  "count": 17,
+  "count": 19,
   "_설명": "학령기(만 7~12세) 확장 2단계 신규 항목. 근거가 확인된 것만 담는다(돌봄/늘봄·인플루엔자·HPV 13~14세 안내는 제외·후속). VX-* 는 extendedVisibility(아이 73개월 이상일 때만 노출), SC-* 는 학교 단계(GRADE_n)로 노출한다. 출처·열람일 2026-10-02. [2026-10-05] SC-13·14 서울 초6 중학교 배정(서울만, startDay/endDay로 정확한 날짜), SC-15~18 초2·3·5·6 구강검진(정보만, familyLinkable:false).",
   "todos": [
     {
@@ -610,6 +610,68 @@
         "학교 가정통신문의 구강검진 안내",
         "검진 일정과 결과 통보 방법"
       ]
+    },
+    {
+      "todo_id": "SC-19",
+      "category": "SC",
+      "title": "초3 방과후 프로그램 이용권(정보)",
+      "parentAction": "학교·교육청 안내에서 신청 방법을 확인해요",
+      "completionCriteria": "신청 방법 확인",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "SCHOOL_TERM_WINDOW",
+      "triggerParams": {
+        "anchor": "ENROLLMENT",
+        "yearOffset": 2,
+        "startMonth": 3,
+        "endMonth": 2
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 0,
+      "source": "교육부 보도자료(온동네 초등돌봄·교육, boardSeq=105261) — 원문 인용 Perplexity 2026-10-05, 직접 열람 전",
+      "verificationStatus": "확인필요",
+      "verificationNote": "연 50만 원 이용권 인용은 있으나 신청기간·신청처 원문 없음, 직접 열람 전 → 비노출. R-3 결과 후 판단",
+      "displayMonth": null,
+      "displayMonthBasis": "학교 단계(재학 학년) 기준 — 월령 그룹이 아니라 '학교·입학' 그룹에 표시",
+      "categoryGroup": "생활·수유",
+      "schoolGroup": "학교·입학",
+      "visibleStages": [
+        "GRADE_3"
+      ],
+      "guideType": "CHECK",
+      "cardSummary": "초3 방과후 이용권 — 신청 방법은 학교·교육청 안내 확인",
+      "why": "교육부 발표에 따르면 초등 3학년 희망 학생에게 연 50만 원의 방과후 프로그램 이용권을 줘요. 신청 방법은 학교·교육청 안내를 확인하세요."
+    },
+    {
+      "todo_id": "SC-20",
+      "category": "SC",
+      "title": "초1·2 늘봄 맞춤형 프로그램(정보)",
+      "parentAction": "학교 안내에서 신청 방법을 확인해요",
+      "completionCriteria": "신청 방법 확인",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "SCHOOL_TERM_WINDOW",
+      "triggerParams": {
+        "anchor": "ENROLLMENT",
+        "yearOffset": 0,
+        "startMonth": 3,
+        "endMonth": 2
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 3,
+      "leadDays": 0,
+      "source": "교육부 누리집(boardSeq=104963) — 원문 인용 Perplexity 2026-10-05, 게시일 불명·직접 열람 전",
+      "verificationStatus": "확인필요",
+      "verificationNote": "'매일 2시간 무상 맞춤형 프로그램' 인용, 게시일 불명(§2-5) → 비노출. 대상은 초1·2이나 현재 정의는 초1(yearOffset 0) 기준 초안 — 초2 적용은 노출 승인 때 결정",
+      "displayMonth": null,
+      "displayMonthBasis": "학교 단계(재학 학년) 기준 — 월령 그룹이 아니라 '학교·입학' 그룹에 표시",
+      "categoryGroup": "생활·수유",
+      "schoolGroup": "학교·입학",
+      "visibleStages": [
+        "GRADE_1"
+      ],
+      "guideType": "CHECK",
+      "cardSummary": "초1·2 늘봄 맞춤형 프로그램 — 신청은 학교 안내 확인",
+      "why": "초등 1·2학년은 매일 2시간 무상 맞춤형 프로그램을 이용할 수 있어요. 신청 방법은 학교 안내를 확인하세요."
     }
   ]
 }

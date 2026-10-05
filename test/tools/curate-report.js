@@ -20,7 +20,7 @@ const schoolPolicy = SP.normalize(rd("data/policy/school.json"));
 const reform = (() => { try { return rd("data/subsidies/reform-2027.json"); } catch (e) { return null; } })();
 const applyBirthRule = (item) => { if (!item || !item.birthRule) return item; const eff = reform && reform.effectiveBirthDate; if (item.birthRule === "preReform") return eff ? { ...item, birthBefore: eff } : item; if (item.birthRule === "postReform") return { ...item, birthOnOrAfter: eff || "9999-12-31" }; return item; };
 const FILES = ["health-checkup", "vaccination", "development", "feeding", "oral", "sleep", "safety", "daily-life", "childcare", "school", "school-age", "pregnancy"].map((f) => `data/todos/${f}.json`).concat("data/subsidies/national-todos.json");
-const defs = FILES.flatMap((f) => rd(f).todos).map(applyBirthRule);
+const defs = FILES.flatMap((f) => rd(f).todos).filter((d) => d.todo_id !== "VX-RSV").map(applyBirthRule); // VX-RSV 는 커밋 전 잔여(제품 결정 전) — 6명 고정 기대값은 커밋된 데이터 기준이라 제외한다. RSV 가 확정·커밋되면 이 필터를 지우고 기대값을 갱신한다.
 const subsidiesFor = (province, district) => {
   const paths = ["data/subsidies/national.json"];
   if (province === "서울특별시") paths.push("data/subsidies/seoul/city.json", `data/subsidies/seoul/districts/${district}.json`);

@@ -29,3 +29,8 @@ test("접종·검진·방문 권고 기간은 '마감' 대신 '까지', 이미 �
 test("신청 기한(지원금 birth_relative)은 그대로 '마감'", () => {
   assert.ok(soon(u2(ent("행정·지원금", null, "birth_relative_days"), 20)).includes("10월 25일 마감"));
 });
+
+test("SC-03(입학연기 신청, 지원금 분류 아님)은 신청 기한이라 '마감', 같은 학교 항목 SC-01은 '까지'", () => {
+  const sc3 = soon(u2({ id: "SC-03__default", category: "생활·수유", detail: {} }, 20)), sc1 = soon(u2({ id: "SC-01__default", category: "생활·수유", detail: {} }, 20));
+  assert.ok(sc3.includes("10월 25일 마감"), sc3); assert.ok(sc1.includes("10월 25일까지") && !sc1.includes("마감"), sc1);
+});

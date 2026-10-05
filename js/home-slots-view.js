@@ -29,8 +29,10 @@
   /** 날짜 표기(hn_pm 결정): 올해 안·6개월 이내는 M월 D일, 해가 넘어가거나 6개월을 넘으면 연도를 붙인다. today 없으면 연도 없이. */
   const dmd = (d, today) => (today && (d.getFullYear() !== today.getFullYear() || d.getTime() - today.getTime() > 183 * DAY) ? `${d.getFullYear()}년 ` : "") + md(d);
   /** 항목 끝날짜의 종류(hn_pm 마감 표기 기준 #1): "deadline" 신청 기한(지원금·제도) · "age" 나이 상한(받을 수 있는 나이의 끝) · "period" 접종·검진·방문 권고 기간. '마감'은 deadline 에만 쓴다. */
+  const APPLY_DEADLINE_IDS = ["SC-03"];
   const endKind = (u) => {
     const it = u.items && u.items[0];
+    if (it && APPLY_DEADLINE_IDS.includes(String(it.id || "").split("__")[0])) return "deadline"; // 지원금이 아니어도 신청 기한이 있는 항목(06 §6: SC-03 입학연기 신청 10/1~12/31) — '마감'
     if (!it || it.category !== "행정·지원금") return "period";
     const d = it.detail || {}, def = d.definition || {};
     return d.deadlineType === "age_window" || def.triggerType === "AGE_WINDOW" ? "age" : "deadline";

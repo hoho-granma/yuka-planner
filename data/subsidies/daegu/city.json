@@ -31,29 +31,6 @@
       "notes": "국가 사업(미숙아 최대 2,000만원 등)과 시비 추가분의 구분 및 항목별 한도는 미확인. 보건소 확인 필요."
     },
     {
-      "id": "DG-002",
-      "name": "대구형 난임부부 시술비 지원 (횟수 제한 폐지)",
-      "scope": "provincial",
-      "applicableRegions": [
-        "대구광역시:ALL"
-      ],
-      "target": "대구시 거주 난임부부(소득 무관)",
-      "minAgeMonths": 0,
-      "maxAgeMonths": 0,
-      "amountText": "체외수정 신선 회당 최대 170만원(45세 이상 110만원), 동결 최대 90만원(45세 이상 50만원), 인공수정 최대 30만원",
-      "paymentMethod": "보건소·정부24 신청 후 지정의료기관에서 지원",
-      "deadlineType": "ongoing",
-      "deadlineValue": null,
-      "residencyRequirement": "대구시 거주",
-      "additionalConditions": "2026.9.30부터 지원 횟수 제한 전면 폐지(특·광역시 최초) 보도. 비급여 항목 20~30만원 추가 지원 보도",
-      "officialUrl": "https://www.edaily.co.kr/News/Read?newsId=04546086645576184",
-      "sourceName": "이데일리·뉴스핌·경향(2026.3~9) 대구시 보도",
-      "lastVerified": "2026-09-29",
-      "status": "확인필요",
-      "verified": false,
-      "notes": "금액은 언론 기준, 횟수 폐지 시행일 공식 확인 필요. 국가 난임시술비 지원에 시가 상향·추가한 부분."
-    },
-    {
       "id": "DG-003",
       "name": "해피맘콜 임산부 택시비 캐시백",
       "scope": "provincial",
@@ -124,6 +101,58 @@
       "status": "확인필요",
       "verified": false,
       "notes": "사업이 아이돌봄서비스(시간제)인지 미확정. 확인 후 유지 또는 삭제 판단."
+    },
+    {
+      "id": "DG-006",
+      "name": "대구 출생축하금(둘째 이상)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "대구광역시:ALL"
+      ],
+      "target": "2자녀 이상 가정(둘째·셋째 이상 출생)",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "둘째 100만원, 셋째 이상 200만원",
+      "amountByBirthOrder": {
+        "first": 0,
+        "second": 1000000,
+        "third": 2000000,
+        "fourthPlus": 2000000
+      },
+      "paymentMethod": "확인 필요",
+      "deadlineType": "unconfirmed",
+      "deadlineValue": null,
+      "residencyRequirement": "확인 필요",
+      "additionalConditions": "출생신고 시 신청. 문의 대구시 출산보육과 053-803-5452",
+      "officialUrl": "https://www.daegu.go.kr/woman/index.do?menu_id=00934300",
+      "sourceName": "대구광역시 여성·가족 페이지(hn_research 2026-10-05 직접 열람)",
+      "lastVerified": "2026-10-05",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "[2026-10-05 4차] 신규. 공식 페이지에 대상·금액·신청 시점은 있으나 페이지 메타 날짜가 2016-01-01이라 최종수정일·종료/변경 공지 확인 불가(검증기준 §2-3) → 확인필요. 지급 방식·거주 요건·신청 기한(개월)은 원문 미확인. 근거: docs/조사-큐4건-GBS지표지역경기배정-20261005.md §3, docs/인천대구-차이표-초안-20261005.md"
+    },
+    {
+      "id": "DG-007",
+      "name": "대구아이조아카드(다자녀 할인)",
+      "scope": "provincial",
+      "applicableRegions": [
+        "대구광역시:ALL"
+      ],
+      "target": "2자녀 이상 가정",
+      "minAgeMonths": 0,
+      "maxAgeMonths": 0,
+      "amountText": "시설 할인·연회비 면제(감면 시설 약 72곳). 금액 없음",
+      "paymentMethod": "카드 발급 후 이용",
+      "deadlineType": "ongoing",
+      "deadlineValue": null,
+      "residencyRequirement": "확인 필요",
+      "additionalConditions": "3자녀 이상(아이조아카드 발급 가정)은 도시철도 무임(DG-004)",
+      "officialUrl": "https://www.daegu.go.kr/woman/index.do?menu_id=00934300",
+      "sourceName": "대구광역시 여성·가족 페이지(hn_research 2026-10-05 직접 열람)",
+      "lastVerified": "2026-10-05",
+      "status": "확인필요",
+      "verified": false,
+      "notes": "[2026-10-05 4차] 신규. 할인 카드라 정보형(curation: ongoing → KNOW·INFO_BENEFIT). 금액이 원문에 없어 검증기준 §2-2 미충족 → 확인필요. 대상 연령 범위는 원문 미확인이라 0으로 둠(숨김 상태)."
     }
   ]
 }

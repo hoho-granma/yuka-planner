@@ -1,12 +1,12 @@
 {
   "category": "CR",
-  "count": 4,
+  "count": 5,
   "todos": [
     {
       "todo_id": "CR-01",
       "category": "CR",
-      "title": "어린이집 입소대기 신청",
-      "parentAction": "아이사랑 포털에서 입소대기 신청",
+      "title": "어린이집 등록대기 신청",
+      "parentAction": "아이사랑 포털에서 등록대기 신청",
       "completionCriteria": "신청 완료",
       "exposureLevel": "CONDITIONAL",
       "triggerType": "AGE_WINDOW",
@@ -17,7 +17,7 @@
       "catchUp": "NOT_APPLICABLE",
       "priority": 2,
       "leadDays": 30,
-      "source": "임신육아종합포털 아이사랑",
+      "source": "임신육아종합포털 아이사랑 — '입소대기'→'등록대기' 용어 변경 공지(central.childcare.go.kr, Perplexity 열람 2026-10-05)",
       "verificationStatus": "확인됨",
       "displayMonth": null,
       "displayMonthLabel": "필요할 때 확인",
@@ -28,7 +28,7 @@
         "정원 현황을 아이사랑포털에서 주기적으로 확인"
       ],
       "abnormalSigns": [
-        "대기가 너무 길어져 입소 계획에 차질이 생기면 복수 기관에 동시 대기 신청을 고려하세요."
+        "대기가 너무 길어져 등원 계획에 차질이 생기면 복수 기관에 동시 대기 신청을 고려하세요."
       ]
     },
     {
@@ -110,6 +110,33 @@
       "abnormalSigns": [
         "2주 이상 적응 거부가 심하거나 퇴행(대소변 실수 재발 등)이 지속되면 담임교사·소아과와 함께 상담하세요."
       ]
+    },
+    {
+      "todo_id": "KG-01",
+      "category": "CR",
+      "title": "유치원 입학 신청(처음학교로)",
+      "parentAction": "유치원에 보낼 계획이면 처음학교로에서 모집 공지를 확인하고 신청해요",
+      "completionCriteria": "신청 완료",
+      "exposureLevel": "CONDITIONAL",
+      "triggerType": "AGE_WINDOW",
+      "triggerParams": {
+        "startMonth": 30,
+        "endMonth": 66
+      },
+      "catchUp": "NOT_APPLICABLE",
+      "priority": 2,
+      "leadDays": 0,
+      "source": "처음학교로(go-firstschool.go.kr) — 2027학년도 일정 공지 전(2026-10-05)",
+      "verificationStatus": "확인됨",
+      "displayMonth": 30,
+      "displayMonthLabel": "30개월부터 · 모집 공지가 나오면",
+      "displayMonthBasis": "유치원 입학은 1년에 한 번 처음학교로로 신청한다. 2027학년도 접수·추첨·등록 날짜는 아직 공지 전이라 날짜를 넣지 않는다(2023학년도 보도자료 일정으로 추정 금지). 30개월 미만에는 미리 보기 그룹에만(D1: 36개월 이후 변화 안내는 30개월부터)",
+      "categoryGroup": "생활·수유",
+      "observationGuide": [
+        "유치원에 보낼 계획인지",
+        "처음학교로 공지(우선모집·일반모집)"
+      ],
+      "abnormalSigns": []
     }
   ]
 }

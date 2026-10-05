@@ -36,7 +36,7 @@ const fs = require("fs"), path = require("path"), vm = require("vm");
 test("연결: 3~5세 분기는 acct36RenderTrend 안 한 곳, 초등(학년 있음)·36개월 미만은 기존 틀, B3 링크는 넘기지 않는다, 액션 4개는 기존 흐름", () => {
   const app = fs.readFileSync(path.join(__dirname, "..", "js/app.js"), "utf8");
   assert.ok(/if \(acct36Is3to5\(\) && typeof Edu3to5View !== "undefined"\) \{ panel\.innerHTML = Edu3to5View\.render\(acct36Edu3to5State\(pv, docs, keys\)\); return; \}/.test(app));
-  assert.ok(/find: null,/.test(app), "처음학교로·기관 링크는 확인 전 비노출");
+  assert.ok(/find: eduLinks \? \{ links: eduLinks\.links/.test(app) && /eduLinks = eduLinksRaw && Array\.isArray\(eduLinksRaw\.links\) \? eduLinksRaw : null/.test(app), "공식 링크(edu-links.json)는 읽혔을 때만 노출, 못 읽으면 null=비노출");
   for (const a of ["edu-open", "edu-plan", "edu-visit", "edu-school"]) assert.ok(app.includes(`a === "${a}"`), a);
   assert.ok(!/https?:\/\/[^"']*(childschoolinfo|childcare\.go|ssum)/.test(fs.readFileSync(path.join(__dirname, "..", "js/edu-3to5-view.js"), "utf8")), "뷰에 URL 하드코딩 없음");
   // acct36Is3to5 판정 추출 실행: 36개월 미만·임신·초등은 false, 3~5세는 true
@@ -52,7 +52,7 @@ test("① B1 은 CR-03(만3세반 전환 준비)을 쓰고 CR-02(12개월)는 �
   const body = fnOf("acct36Edu3to5State");
   assert.ok(body.includes('byBase("CR-03")') && !body.includes('byBase("CR-02")'));
   const ev = (id, title) => ({ id, title, dateLabel: "3월 새 학기 전" });
-  const run = (shown) => vm.runInNewContext(`${body}; acct36Edu3to5State(null, [], [])`, { ChildTimeline: { completedMonths: () => 40, ageLabelAt: () => "3세" }, visibleSchedule: () => shown, profile: { birthDate: new Date(2023, 5, 1), district: "구로구" }, dataset: { subsidy: { subsidies: [] } }, usApplyLinkOf: () => null, EduTrend: { myLessons: () => ({ count: 0, lessons: [] }) }, usActive: () => true, Date });
+  const run = (shown) => vm.runInNewContext(`${body}; acct36Edu3to5State(null, [], [])`, { ChildTimeline: { completedMonths: () => 40, ageLabelAt: () => "3세" }, eduLinks: null, visibleSchedule: () => shown, profile: { birthDate: new Date(2023, 5, 1), district: "구로구" }, dataset: { subsidy: { subsidies: [] } }, usApplyLinkOf: () => null, EduTrend: { myLessons: () => ({ count: 0, lessons: [] }) }, usActive: () => true, Date });
   const st = run([ev("CR-02__default", "만1세반 전환 확인"), ev("CR-03__default", "만3세반(유아반) 전환 준비")]);
   assert.strictEqual(JSON.stringify(st.decide.map((d) => d.id)), '["CR-03__default"]');
   assert.strictEqual(run([ev("CR-02__default", "만1세반 전환 확인")]).decide.length, 0);
@@ -77,4 +77,21 @@ test("④ .a36t-nc CSS(작은 회색, 기존 토큰), ⑤ 만 5세 초등 준비
   assert.ok(!V.render({ ...base, nextSchool: false }).includes("초등 입학 준비"));
   assert.ok(/nextSchoolOpen: \(\(\) => \{ try \{ return !!nsModel\(\)/.test(fnOf("acct36Edu3to5State")));
   assert.ok(/nextSchool: months >= 60/.test(fnOf("acct36Edu3to5State")));
+});
+
+test("B3: edu-links.json 3곳 렌더 — 처음학교로는 방문 버튼 없음, 안내 문장은 B1, 유치원알리미·아이사랑은 방문·상담 일정 제목 미리 채움", () => {
+  const raw = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data/policy/edu-links.json"), "utf8"));
+  const h = V.render({ ...base, find: { links: raw.links }, firstschoolNote: raw.notices.firstschoolNotYet });
+  assert.ok(h.includes('data-a36t="find"') && h.includes("처음학교로(유치원 입학 신청)") && h.includes("유치원알리미") && h.includes("아이사랑") && h.includes('data-a36t="decide"') && h.includes("2027학년도 유치원 모집 일정은 아직 공지 전이에요"));
+  assert.strictEqual((h.match(/data-a36="edu-visit"/g) || []).length, 2); assert.ok(h.includes('data-edu-title="유치원 상담"') && h.includes('data-edu-title="어린이집 방문"'));
+  assert.ok(!V.render({ ...base, find: null }).includes('data-a36t="find"'));
+});
+
+test("B1 처음학교로 안내 한 줄: KG-01 이 날짜 없음일 때만(앱 계산), 일정이 있으면·KG-01 이 없으면 비움", () => {
+  const body = fnOf("acct36Edu3to5State");
+  const run = (kg) => vm.runInNewContext(`${body}; acct36Edu3to5State(null, [], [])`, { ChildTimeline: { completedMonths: () => 40, ageLabelAt: () => "3세" }, visibleSchedule: () => (kg ? [kg] : []), profile: { birthDate: new Date(2023, 5, 1), district: "구로구" }, dataset: { subsidy: { subsidies: [] } }, usApplyLinkOf: () => null, EduTrend: { myLessons: () => ({ count: 0, lessons: [] }) }, usActive: () => true, eduLinks: { links: [], notices: { firstschoolNotYet: "공지 전이에요" } }, Date }).firstschoolNote;
+  const age = (extra) => ({ id: "KG-01__default", title: "유치원 입학 신청", detail: { definition: { triggerType: "AGE_WINDOW" } }, ...extra });
+  assert.strictEqual(run(age()), "공지 전이에요", "나이 기간뿐인 정의 = 모집 날짜 없음");
+  assert.strictEqual(run(age({ windowStart: new Date(2026, 3, 1), windowEnd: new Date(2027, 3, 1) })), "공지 전이에요", "엔진이 만든 나이 창(windowStart)은 모집 날짜가 아니다");
+  assert.strictEqual(run(age({ detail: { definition: { triggerType: "SCHOOL_TERM_WINDOW" } } })), "", "날짜 기준 정의로 바뀌면 안내를 숨긴다"); assert.strictEqual(run(null), "");
 });

@@ -1,0 +1,28 @@
+diff --git a/js/app.js b/js/app.js
+index 6c1f767..ce47465 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -1359,7 +1359,7 @@
+     const nat = byBase("NAT-020") || byBase("SB-08"); // 같은 제도 한 건만(06 §4-1 묶기)
+     if (nat) { const ap = usApplyLinkOf(nat); support.push({ id: nat.id, title: nat.title.replace(/^(?:⚠️ )?확인 필요 · /, ""), applyUrl: ap && ap.url ? ap.url : "", officialUrl: nat.officialUrl || (nat.detail && nat.detail.officialUrl) || "" }); }
+     const regional = ((dataset.subsidy && dataset.subsidy.subsidies) || []).some((x) => !/^NAT-/.test(x.id));
+-    return { region: profile.district || (pv && pv.name) || "", ageLabel: ChildTimeline.ageLabelAt(profile.birthDate, new Date()), decide, support, supportRegionPending: !regional, find: eduLinks ? { links: eduLinks.links } : null, firstschoolNote: (() => { const kg = byBase("KG-01"); return kg && !(kg.windowStart instanceof Date) && !(kg.deadlineDate instanceof Date) && !(kg.date instanceof Date) && eduLinks && eduLinks.notices && eduLinks.notices.firstschoolNotYet ? eduLinks.notices.firstschoolNotYet : ""; })(), mine: EduTrend.myLessons(docs, keys), canAdd: usActive(), nextSchool: months >= 60, nextSchoolOpen: (() => { try { return !!nsModel(); } catch (e) { return false; } })(), };
++    return { region: profile.district || (pv && pv.name) || "", ageLabel: ChildTimeline.ageLabelAt(profile.birthDate, new Date()), decide, support, supportRegionPending: !regional, find: eduLinks ? { links: eduLinks.links } : null, firstschoolNote: (() => { const kg = byBase("KG-01"), td = kg && kg.detail && kg.detail.definition; return kg && td && td.triggerType === "AGE_WINDOW" && eduLinks && eduLinks.notices && eduLinks.notices.firstschoolNotYet ? eduLinks.notices.firstschoolNotYet : ""; })(), mine: EduTrend.myLessons(docs, keys), canAdd: usActive(), nextSchool: months >= 60, nextSchoolOpen: (() => { try { return !!nsModel(); } catch (e) { return false; } })(), };
+   }
+   function acct36RenderTrend() {
+     const panel = el("tab-trend");
+diff --git a/test/m7-edu-3to5.test.js b/test/m7-edu-3to5.test.js
+index b92e731..264a45f 100644
+--- a/test/m7-edu-3to5.test.js
++++ b/test/m7-edu-3to5.test.js
+@@ -90,6 +90,8 @@ test("B3: edu-links.json 3곳 렌더 — 처음학교로는 방문 버튼 없음
+ test("B1 처음학교로 안내 한 줄: KG-01 이 날짜 없음일 때만(앱 계산), 일정이 있으면·KG-01 이 없으면 비움", () => {
+   const body = fnOf("acct36Edu3to5State");
+   const run = (kg) => vm.runInNewContext(`${body}; acct36Edu3to5State(null, [], [])`, { ChildTimeline: { completedMonths: () => 40, ageLabelAt: () => "3세" }, visibleSchedule: () => (kg ? [kg] : []), profile: { birthDate: new Date(2023, 5, 1), district: "구로구" }, dataset: { subsidy: { subsidies: [] } }, usApplyLinkOf: () => null, EduTrend: { myLessons: () => ({ count: 0, lessons: [] }) }, usActive: () => true, eduLinks: { links: [], notices: { firstschoolNotYet: "공지 전이에요" } }, Date }).firstschoolNote;
+-  assert.strictEqual(run({ id: "KG-01__default", title: "유치원 입학 신청" }), "공지 전이에요");
+-  assert.strictEqual(run({ id: "KG-01__default", title: "x", windowStart: new Date(2026, 11, 1) }), ""); assert.strictEqual(run(null), "");
++  const age = (extra) => ({ id: "KG-01__default", title: "유치원 입학 신청", detail: { definition: { triggerType: "AGE_WINDOW" } }, ...extra });
++  assert.strictEqual(run(age()), "공지 전이에요", "나이 기간뿐인 정의 = 모집 날짜 없음");
++  assert.strictEqual(run(age({ windowStart: new Date(2026, 3, 1), windowEnd: new Date(2027, 3, 1) })), "공지 전이에요", "엔진이 만든 나이 창(windowStart)은 모집 날짜가 아니다");
++  assert.strictEqual(run(age({ detail: { definition: { triggerType: "SCHOOL_TERM_WINDOW" } } })), "", "날짜 기준 정의로 바뀌면 안내를 숨긴다"); assert.strictEqual(run(null), "");
+ });

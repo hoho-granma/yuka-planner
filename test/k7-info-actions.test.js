@@ -16,14 +16,14 @@ console.log("정책 데이터·판정");
 test("info-actions.json: 형식이 맞는 항목만 받고, 틀린 항목·빈 라벨·40자 초과는 버린다", () => {
   const n = AS.normalizeInfoActions(JSON.parse(read("data/policy/info-actions.json")));
   assert.deepStrictEqual(Object.keys(n).sort(), ["CR-01__default", "PREG-003", "PREG-003__default"]);
-  assert.strictEqual(n["CR-01__default"].label, "입소대기 신청 일정");
+  assert.strictEqual(n["CR-01__default"].label, "등록대기 신청 일정"); // U4: 입소대기 → 등록대기
   assert.deepStrictEqual(AS.normalizeInfoActions({ actions: { a: { label: "" }, b: {}, c: { label: "x".repeat(41) }, d: { label: " 확인 " }, e: null } }), { d: { label: "확인" } });
   assert.deepStrictEqual(AS.normalizeInfoActions(null), {}); assert.deepStrictEqual(AS.normalizeInfoActions({ actions: [] }), {});
 });
 test("행동 찾기: 이벤트 id 그대로 또는 '__default' 를 붙이거나 뗀 id, 목록에 없으면 null(행동을 만들지 않는다)", () => {
-  const a = AS.normalizeInfoActions({ actions: { "CR-01__default": { label: "입소대기 신청 일정" }, "PREG-003": { label: "산부인과 검진 일정" } } });
-  assert.strictEqual(AS.infoActionOf(a, { id: "CR-01__default" }).label, "입소대기 신청 일정");
-  assert.strictEqual(AS.infoActionOf(a, { id: "CR-01" }).label, "입소대기 신청 일정");
+  const a = AS.normalizeInfoActions({ actions: { "CR-01__default": { label: "등록대기 신청 일정" }, "PREG-003": { label: "산부인과 검진 일정" } } });
+  assert.strictEqual(AS.infoActionOf(a, { id: "CR-01__default" }).label, "등록대기 신청 일정");
+  assert.strictEqual(AS.infoActionOf(a, { id: "CR-01" }).label, "등록대기 신청 일정");
   assert.strictEqual(AS.infoActionOf(a, { id: "PREG-003__default" }).label, "산부인과 검진 일정");
   assert.strictEqual(AS.infoActionOf(a, { id: "FD-01__default" }), null);
   assert.strictEqual(AS.infoActionOf(null, { id: "x" }), null); assert.strictEqual(AS.infoActionOf(a, null), null);
@@ -50,7 +50,7 @@ const env = (o = {}) => {
 test("제안은 정해 둔 행동이 있는 정보 항목에서, 일정을 넣을 수 있는 상태(연결 색인·활성 아이)일 때만 나온다", () => {
   const e = { id: "CR-01__default" };
   let x = env(); x.run(e, "c1", new Map());
-  assert.strictEqual(x.inserted.length, 1); assert.ok(x.inserted[0][1].includes("입소대기 신청 일정")); assert.strictEqual(x.sb.asCur.info.label, "입소대기 신청 일정");
+  assert.strictEqual(x.inserted.length, 1); const dataLabel = JSON.parse(read("data/policy/info-actions.json")).actions["CR-01__default"].label; assert.ok(x.inserted[0][1].includes(dataLabel)); assert.strictEqual(x.sb.asCur.info.label, dataLabel);
   x = env(); x.run({ id: "FD-01__default" }, "c1", new Map()); assert.strictEqual(x.inserted.length, 0, "행동이 없는 항목은 만들지 않는다");
   x = env(); x.run(e, "c1", null); assert.strictEqual(x.inserted.length, 0, "autoLink OFF");
   x = env(); x.run(e, null, new Map()); assert.strictEqual(x.inserted.length, 0, "활성 아이 없음");

@@ -46,6 +46,7 @@
   let nextStagePolicy = null;
   let curationPolicy = null; // 1-0 큐레이션 정책(data/policy/curation.json) — 못 읽으면 null → 큐레이션 홈은 켜져 있어도 기존 홈
   let homeReappearDays = 7;
+  let eduLinks = null; // 3~5세 교육 탭 B3 공식 링크(data/policy/edu-links.json) — 못 읽으면 null(블록 숨김)
   let infoActions = {}; // 정보 항목의 '관련 행동 한 줄'(data/policy/info-actions.json)
   const asInfoSaved = new Map(); // 이번에 '관련 행동'을 일정으로 넣은 정보 항목 id → 날짜(독립 일정이라 정보 항목은 그대로 남으므로 시트에 '넣었어요'를 보인다)
   let regionsData = null;
@@ -205,7 +206,7 @@
   }
   homePrefApply();
   async function loadAll() {
-    const [regions, reform, policy, allow36, pregTiming, nsRaw, reappearRaw, infoRaw, curationRaw, ...categoryFiles] = await Promise.all([
+    const [regions, reform, policy, allow36, pregTiming, nsRaw, reappearRaw, infoRaw, eduLinksRaw, curationRaw, ...categoryFiles] = await Promise.all([
       loadJson("data/regions.json"),
       loadJsonOrNull("data/subsidies/reform-2027.json"),
       loadSchoolPolicy(),
@@ -214,11 +215,13 @@
       loadJsonOrNull("data/policy/next-stage.json"),
       loadJsonOrNull("data/policy/home-reappear.json"),
       loadJsonOrNull("data/policy/info-actions.json"),
+      loadJsonOrNull("data/policy/edu-links.json"),
       FEATURES_CURATION_ON() ? loadJsonOrNull("data/policy/curation.json") : null, // 플래그 OFF 면 읽지도 않는다(네트워크 요청 없음)
       ...TODO_CATEGORY_FILES.map(loadJson),
     ]);
     regionsData = regions;
     homeReappearDays = reappearRaw && Number.isInteger(reappearRaw.reappearDaysBefore) && reappearRaw.reappearDaysBefore >= 0 ? reappearRaw.reappearDaysBefore : 7; // 홈 카드 재등장 창(data/policy/home-reappear.json)
+    eduLinks = eduLinksRaw && Array.isArray(eduLinksRaw.links) ? eduLinksRaw : null;
     infoActions = typeof AutoSteps === "undefined" ? {} : AutoSteps.normalizeInfoActions(infoRaw);
     nextStagePolicy = typeof NextStage === "undefined" ? null : NextStage.normalizePolicy(nsRaw); // 다음 단계 안내(W5) 정책 — 못 읽으면 빈 정책(배너 없음)
     curationPolicy = curationRaw && typeof Curation !== "undefined" ? Curation.normalizePolicy(curationRaw) : null;
@@ -1356,7 +1359,7 @@
     const nat = byBase("NAT-020") || byBase("SB-08"); // 같은 제도 한 건만(06 §4-1 묶기)
     if (nat) { const ap = usApplyLinkOf(nat); support.push({ id: nat.id, title: nat.title.replace(/^(?:⚠️ )?확인 필요 · /, ""), applyUrl: ap && ap.url ? ap.url : "", officialUrl: nat.officialUrl || (nat.detail && nat.detail.officialUrl) || "" }); }
     const regional = ((dataset.subsidy && dataset.subsidy.subsidies) || []).some((x) => !/^NAT-/.test(x.id));
-    return { region: profile.district || (pv && pv.name) || "", ageLabel: ChildTimeline.ageLabelAt(profile.birthDate, new Date()), decide, support, supportRegionPending: !regional, find: null, mine: EduTrend.myLessons(docs, keys), canAdd: usActive(), nextSchool: months >= 60, nextSchoolOpen: (() => { try { return !!nsModel(); } catch (e) { return false; } })(), };
+    return { region: profile.district || (pv && pv.name) || "", ageLabel: ChildTimeline.ageLabelAt(profile.birthDate, new Date()), decide, support, supportRegionPending: !regional, find: eduLinks ? { links: eduLinks.links } : null, firstschoolNote: (() => { const kg = byBase("KG-01"), td = kg && kg.detail && kg.detail.definition; return kg && td && td.triggerType === "AGE_WINDOW" && eduLinks && eduLinks.notices && eduLinks.notices.firstschoolNotYet ? eduLinks.notices.firstschoolNotYet : ""; })(), mine: EduTrend.myLessons(docs, keys), canAdd: usActive(), nextSchool: months >= 60, nextSchoolOpen: (() => { try { return !!nsModel(); } catch (e) { return false; } })(), };
   }
   function acct36RenderTrend() {
     const panel = el("tab-trend");

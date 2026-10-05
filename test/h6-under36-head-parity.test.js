@@ -124,7 +124,7 @@ test("복원 데이터는 HEAD 와 같다(내용 변경 없음): school·school-
     // v1.12.96: school-age.json 에 SC-13~18 만 더해졌다(count·설명 제외) — 그 항목들을 빼면 HEAD 와 같다.
     const strip = (t) => JSON.stringify(JSON.parse(t), function (k, v) {
       if (k === "applyUrl" || k === "applyLabel") return undefined;
-      if (Array.isArray(v) && v.length && v[0] && /^(VX|SC)-/.test(v[0].todo_id || "")) return v.filter((x) => !/^SC-1[3-8]$/.test(x.todo_id));
+      if (Array.isArray(v) && v.length && v[0] && /^(VX|SC)-/.test(v[0].todo_id || "")) return v.filter((x) => !/^SC-1[3-9]$|^SC-20$/.test(x.todo_id));
       if (p === "data/todos/school-age.json" && (k === "count" || k === "_설명")) return undefined;
       if (p === "data/subsidies/national.json" && k === "notes" && this && this.id === "NAT-020") return undefined; // 단계 0: NAT-020 notes 에 유아학비 전환 문장만 더해진다(36개월 미만 노출 판정은 이 테스트의 다른 단언이 고정)
       return v;

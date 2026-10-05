@@ -1,0 +1,100 @@
+diff --git a/css/style.css b/css/style.css
+index a15d26c..fd983e2 100644
+--- a/css/style.css
++++ b/css/style.css
+@@ -1825,6 +1825,7 @@ body.acct-design .a36t-nc { display: block; margin: 2px 0 0; font-size: 12px; fo
+ .hs-notice-x { background: none; border: 0; padding: 4px 6px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
+ .hs-switch-link { margin: 12px 0 4px; text-align: center; }
+ .places-basis-tag { display: block; margin-top: 2px; font-size: 11px; font-weight: 400; color: var(--text-muted); } /* 3-1 '시설 유형 기준' 라벨 */
++.apply-ch-btn { display: inline-block; margin: 6px 0 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--text); font-size: 13.5px; font-weight: 600; text-decoration: none; } /* 3-3 신청하는 곳 버튼 — 기존 .as-btn 모양 */
+ /* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
+    인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
+ :root {
+diff --git a/index.html b/index.html
+index 9b2ce8b..196aafc 100644
+--- a/index.html
++++ b/index.html
+@@ -304,6 +304,7 @@
+   <script src="js/user-schedule.js?v=2"></script>
+   <script src="js/calendar-model.js?v=7"></script>
+   <script src="js/calendar-week.js?v=2"></script>
++  <script src="js/apply-channel-view.js?v=1"></script>
+   <script src="js/apply-links.js?v=2"></script>
+   <script src="js/places.js?v=3"></script>
+   <script src="js/places-view.js?v=12"></script>
+diff --git a/js/app.js b/js/app.js
+index b5a0e7f..171534b 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -2896,6 +2896,7 @@
+           ? subsidyPeriodHtml(subsidyPeriodRows(e.id, s, profile.birthDate), statusLine)
+           : statusLine
+       }</div>
++      ${typeof ApplyChannelView !== "undefined" ? ApplyChannelView.rowHtml(s, usApplyLinkOf(e)) : ""}
+       ${hasDetailValue(s.paymentMethod) ? `<div class="detail-row"><div class="label">지급 방식</div>${detailValueHtml(s.paymentMethod)}</div>` : ""}
+       ${hasDetailValue(s.residencyRequirement) ? `<div class="detail-row"><div class="label">거주 조건</div>${detailValueHtml(s.residencyRequirement)}</div>` : ""}
+       ${hasDetailValue(s.additionalConditions) ? `<div class="detail-row"><div class="label">추가 자격 조건</div>${detailValueHtml(s.additionalConditions)}</div>` : ""}
+diff --git a/js/apply-channel-view.js b/js/apply-channel-view.js
+new file mode 100644
+index 0000000..4538182
+--- /dev/null
++++ b/js/apply-channel-view.js
+@@ -0,0 +1,33 @@
++/*
++ * apply-channel-view — 3-3 지원금 상세 시트의 '신청하는 곳' 한 줄(+온라인이면 버튼). 순수 마크업, 형식은 06 §7-3(승인): 지원금 레코드의
++ *   applyChannel: ["online"|"visit"|"healthCenter"|"onestop", …]  ·  applyPlaceText: 기존 문장에서 옮긴 신청처 원문 한 줄(선택)
++ * 필드가 없거나 비면 빈 문자열 → 지금 화면과 같다. 문장은 데이터(applyPlaceText)가 있으면 그대로, 없으면 채널 이름만 이어 붙인다(새 사실을 만들지 않는다).
++ * 버튼: online 이 들어 있고 기존 신청 링크(ApplyLinks.forSubsidy 결과 { url, label })가 있을 때만. 방문·보건소·원스톱은 문구만.
++ */
++(function (root, factory) {
++  if (typeof module !== "undefined" && module.exports) module.exports = factory();
++  else root.ApplyChannelView = factory();
++})(typeof window !== "undefined" ? window : global, function () {
++  "use strict";
++  const KEYS = Object.freeze({ onestop: "행복출산 원스톱", healthCenter: "보건소", online: "온라인", visit: "방문" });
++  const MSG = Object.freeze({ label: "신청하는 곳" });
++  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
++
++  /** 레코드 → { channels:[유효 키], text } | null. 유효한 채널도 원문도 없으면 null. */
++  function normalize(rec) {
++    if (!rec || typeof rec !== "object") return null;
++    const channels = Array.isArray(rec.applyChannel) ? rec.applyChannel.filter((k, i, a) => Object.prototype.hasOwnProperty.call(KEYS, k) && a.indexOf(k) === i) : [];
++    const text = typeof rec.applyPlaceText === "string" ? rec.applyPlaceText.trim() : "";
++    if (!channels.length && !text) return null;
++    return { channels, text: text || channels.map((k) => KEYS[k]).join(" · ") };
++  }
++  /** 상세 시트의 한 줄(.detail-row). apply = { url, label } | null. */
++  function rowHtml(rec, apply) {
++    const n = normalize(rec);
++    if (!n) return "";
++    const url = apply && typeof apply.url === "string" && /^https?:\/\//.test(apply.url) ? apply.url : "";
++    const btn = n.channels.includes("online") && url ? `<a class="apply-ch-btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(apply.label || "신청 페이지 열기")}</a>` : "";
++    return `<div class="detail-row" data-apply-channel><div class="label">${esc(MSG.label)}</div>${esc(n.text)}${btn}</div>`;
++  }
++  return { KEYS, MSG, normalize, rowHtml };
++});
+diff --git a/sw.js b/sw.js
+index 080b2f1..ba1a99e 100644
+--- a/sw.js
++++ b/sw.js
+@@ -49,6 +49,7 @@ const SHELL_ASSETS = [
+   "./js/user-schedule.js",
+   "./js/calendar-model.js",
+   "./js/calendar-week.js",
++  "./js/apply-channel-view.js",
+   "./js/apply-links.js",
+   "./js/home-order.js",
+   "./js/places.js",
+diff --git a/test/g1-onboarding.test.js b/test/g1-onboarding.test.js
+index 0b30911..41a8310 100644
+--- a/test/g1-onboarding.test.js
++++ b/test/g1-onboarding.test.js
+@@ -106,7 +106,7 @@ console.log("OFF 첫 화면: 베타 미리 써 보기");
+ test("OFF 기본 HTML 은 '베타 버튼 슬롯' 한 줄만 다르다(그 외 HEAD 와 동일 — 기간형 AUTO 삭제로 빠진 #auto-period-slot·달력 아래 안내 문구(W5 후속 4번 삭제)는 양쪽에서 뺀다)", () => {
+   let head;
+   try { head = cp.execFileSync("git", ["show", "5ec3e02:index.html"], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); } catch (e) { return; }
+-  const norm = (h) => h.replace(/\?v=\d+/g, "").replace(/\n\s*<script src="js\/child-anniversaries\.js"><\/script>/, "").replace(/(name="theme-color" content=")#ff8a5c/, "$1#ff6a1a").replace(/style="color:#e0524e;"/, 'style="color:var(--c-danger);"').replace(/\n\s*<div id="beta-preview-slot"><\/div>/, "").replace(/\n\s*<script src="js\/schedule-kinds\.js[^>]*><\/script>/, "").replace(/\n\s*<script src="js\/(?:curation|home-switch|month-tiers|home-slots-view|curated-home|subsidy-tiers|edu-3to5-view)\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/home-slots\.css[^>]*>/, "").replace(/\n\s*<script src="js\/capture\/[a-z-]+\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/capture\.css[^>]*>/, "").replace(/ *<div id="auto-period-slot"><\/div>\n/, "").replace(/ *<div class="cal-kind-legend" id="cal-kind-legend">\n[^\n]*\n *<\/div>\n/, "").replace(/\n\s*<script src="js\/(?:auto-after36|auto-steps|next-stage-card|next-stage|time-range|time-wheel|pregnancy-basis)\.js[^>]*><\/script>/g, "").replace(/<script>\/\* G19:[\s\S]*?<\/script>\n/, "").replace(/\n\s*<script src="js\/(child-todos|over36-view|tab-swipe|edu-trend)\.js[^>]*><\/script>/g, ""); // G13/G19: 순수 모듈 스크립트 한 줄·계정 기본 ON 부팅 클래스 스크립트(OFF 에서는 아무 클래스도 붙지 않는다): 순수 모듈 스크립트 한 줄(전역 정의만, OFF 동작 없음)
++  const norm = (h) => h.replace(/\?v=\d+/g, "").replace(/\n\s*<script src="js\/child-anniversaries\.js"><\/script>/, "").replace(/(name="theme-color" content=")#ff8a5c/, "$1#ff6a1a").replace(/style="color:#e0524e;"/, 'style="color:var(--c-danger);"').replace(/\n\s*<div id="beta-preview-slot"><\/div>/, "").replace(/\n\s*<script src="js\/schedule-kinds\.js[^>]*><\/script>/, "").replace(/\n\s*<script src="js\/(?:curation|home-switch|apply-channel-view|month-tiers|home-slots-view|curated-home|subsidy-tiers|edu-3to5-view)\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/home-slots\.css[^>]*>/, "").replace(/\n\s*<script src="js\/capture\/[a-z-]+\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/capture\.css[^>]*>/, "").replace(/ *<div id="auto-period-slot"><\/div>\n/, "").replace(/ *<div class="cal-kind-legend" id="cal-kind-legend">\n[^\n]*\n *<\/div>\n/, "").replace(/\n\s*<script src="js\/(?:auto-after36|auto-steps|next-stage-card|next-stage|time-range|time-wheel|pregnancy-basis)\.js[^>]*><\/script>/g, "").replace(/<script>\/\* G19:[\s\S]*?<\/script>\n/, "").replace(/\n\s*<script src="js\/(child-todos|over36-view|tab-swipe|edu-trend)\.js[^>]*><\/script>/g, ""); // G13/G19: 순수 모듈 스크립트 한 줄·계정 기본 ON 부팅 클래스 스크립트(OFF 에서는 아무 클래스도 붙지 않는다): 순수 모듈 스크립트 한 줄(전역 정의만, OFF 동작 없음)
+   assert.strictEqual(norm(read("index.html")), norm(head));
+   assert.ok(read("index.html").includes('<div id="beta-preview-slot"></div>'));
+ });

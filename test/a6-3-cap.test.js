@@ -159,7 +159,7 @@ function rows(b, region, mode) {
   return { cal, chk, per, n: vis.length };
 }
 
-test("신규 노출 Todo 7건(다회차 4 + 검진 HC-07~09) / SF-01 달력 +36 / LF-02 달력 +12 / HC-07·08 달력 +7·HC-09 +6 / 달력 총 +72 / 체크리스트 +14, 그 밖의 항목 행 수는 불변", () => {
+test("신규 노출 Todo 7건(다회차 4 + 검진 HC-07~09) / SF-01 달력 +36 / LF-02 달력 +12 / HC-07·08 달력 +7·HC-09 +6 / 달력 총 +102(KG-01 +30 포함) / 체크리스트 +17(KG-01 +3 포함), 그 밖의 항목 행 수는 불변", () => {
   for (const region of Object.keys(REGIONS)) {
     const b = D(2026, 6, 20);
     const A = rows(b, region, "legacy"), N = rows(b, region, "new");
@@ -171,11 +171,12 @@ test("신규 노출 Todo 7건(다회차 4 + 검진 HC-07~09) / SF-01 달력 +36 
     }
     assert.deepStrictEqual(diff, {
       "SF-01": { c: 36, g: 3 }, "LF-02": { c: 12, g: 2 },
+      "KG-01": { c: 30, g: 3 }, // A3(2026-10-05 사용자 승인): 유치원 입학 신청 정보 항목(36+ 허용 목록, KNOW/INFO) — 36~65개월 월령 칸에 노출(캐시 36→72 확장분)
       "HC-07": { c: 7, g: 2 }, "HC-08": { c: 7, g: 2 }, "HC-09": { c: 6, g: 1 }, // 6·7·8차 검진(창 42~48/54~60/66~71) — 기간형이 아니라 월령 칸 항목
       "VX-DTAP__dose-5": { c: 1, g: 1 }, "VX-IPV__dose-4": { c: 1, g: 1 }, "VX-MMR__dose-2": { c: 1, g: 1 }, "VX-JEV__dose-4": { c: 1, g: 1 },
     }, region);
-    assert.strictEqual(N.cal - A.cal, 72, `${region} 달력`);
-    assert.strictEqual(N.chk - A.chk, 14, `${region} 체크리스트`);
+    assert.strictEqual(N.cal - A.cal, 102, `${region} 달력`);
+    assert.strictEqual(N.chk - A.chk, 17, `${region} 체크리스트`);
   }
 });
 
