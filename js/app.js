@@ -1596,6 +1596,56 @@
     if (acctEnabled() && typeof usRefreshHome === "function") usRefreshHome();
     return r;
   };
+  // ═══ D33 A안: 캘린더·체크리스트/할 일·교육 트렌드·어디갈까 탭 위의 '지금 보는 아이' 칩 줄. 아이 2명 이상일 때만, 탭 패널 바로 앞(패널 안쪽을 다시 그려도 지워지지 않는 자리)에 둔다. 칩을 눌러도 탭은 그대로다. ═══
+  function tcbAgeText(code) {
+    try {
+      if (code === familyCode && profile) return isPregnant() ? "" : ChildTimeline.ageLabelAt(profile.birthDate, new Date());
+      const b = (JSON.parse(localStorage.getItem(CHILD_BIRTHS_KEY) || "{}") || {})[code];
+      return b ? ChildTimeline.ageLabelAt(new Date(b + "T00:00:00"), new Date()) : "";
+    } catch (e) { return ""; }
+  }
+  function tabChildBarSync() {
+    if (typeof document === "undefined" || typeof TabChildBar === "undefined") return;
+    const kids = acctEnabled() && profile && !isPregnant() && typeof acctHomeChildren === "function" ? acctHomeChildren().map((c) => ({ ...c, name: c.current ? childDisplayName() : c.name, ageText: tcbAgeText(c.code) })) : [];
+    const html = TabChildBar.render(kids);
+    TabChildBar.TABS.forEach((t) => {
+      const panel = el(`tab-${t}`);
+      if (!panel || !panel.parentNode) return;
+      let bar = document.getElementById(`tcb-${t}`);
+      if (!html) { if (bar) bar.remove(); return; }
+      if (!bar) {
+        bar = document.createElement("div");
+        bar.id = `tcb-${t}`;
+        bar.className = "tab-childbar home-child-chips";
+        bar.setAttribute("role", "tablist");
+        panel.parentNode.insertBefore(bar, panel);
+      }
+      if (bar.innerHTML !== html) bar.innerHTML = html;
+      bar.classList.toggle("hidden", currentTab !== t);
+    });
+  }
+  const renderAllTcbBase = renderAll;
+  renderAll = function renderAll() {
+    const r = renderAllTcbBase.apply(this, arguments);
+    tabChildBarSync();
+    return r;
+  };
+  const switchTabTcbBase = switchTab;
+  switchTab = function switchTab() {
+    const r = switchTabTcbBase.apply(this, arguments);
+    tabChildBarSync();
+    return r;
+  };
+  /** 칩을 누르면 아이를 바꾸되 지금 탭에 머문다: buildAndRender 가 홈으로 보내므로, 끝난 뒤 보던 탭을 되돌린다(그 아이에게 그 탭이 없으면(36개월 미만의 교육 탭 등) 홈에 남는다). */
+  async function tcbChipClick(ev) {
+    const chip = ev.target && ev.target.closest && ev.target.closest(".tab-childbar [data-home-child]");
+    if (!chip || chip.dataset.homeChild === familyCode) return;
+    const tab = currentTab;
+    await switchToChild(chip.dataset.homeChild);
+    const nav = document.querySelector(`.nav-item[data-nav="${tab}"]`);
+    if (tab !== "home" && currentTab !== tab && nav && !nav.classList.contains("hidden")) switchTab(tab);
+  }
+  document.addEventListener("click", tcbChipClick);
   /** 0-B1: 36개월 이상 홈 머리 줄 "이름 · N세(초N) · 지역" — 나이는 앱 표기 규칙(세는 나이, ChildTimeline.ageLabelAt), 초등이면 학년을 괄호로. */
   function acct36HeadText() {
     if (!profile) return "";

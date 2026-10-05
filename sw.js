@@ -64,6 +64,7 @@ const SHELL_ASSETS = [
   "./js/time-wheel.js",
   "./js/user-schedule-view.js",
   "./js/child-anniversaries.js",
+  "./js/tab-child-bar.js",
   "./js/home-must.js",
   "./js/home-switch.js",
   "./js/curation.js",

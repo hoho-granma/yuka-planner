@@ -1833,6 +1833,10 @@ body.acct-design .a36t-nc { display: block; margin: 2px 0 0; font-size: 12px; fo
 .hm-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .hm-d { flex: none; font-size: 12px; font-weight: 800; color: var(--text-muted); }
 .hm-d.urgent { color: var(--nd-wine); }
+/* D33 탭 위 아이 칩 줄 — 홈 칩 재사용, 글자 --text-muted(#62656b)·이름 --nd-ink(#161618) 800 */
+.tab-childbar { margin: 0 0 8px; }
+.tcb-chip small { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+.tcb-chip b { font-weight: 800; color: var(--nd-ink); }
 /* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
    인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
 :root {
