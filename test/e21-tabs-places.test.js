@@ -81,7 +81,7 @@ test("어디갈까 렌더: places.json 을 읽어 내 지역·월령으로 거�
   const other = env({ on: true, tab: "home" }); await other.t.renderPlacesTab();
   assert.strictEqual(other.nodes.body.innerHTML, "");
   const none = env({ on: true, tab: "places", profile: null }); await none.t.renderPlacesTab();
-  assert.ok(none.nodes.body.innerHTML.includes("프로필에서 지역을 정하면 거리로 볼 수 있어요"), "프로필(지역) 없음 → 거리 안내");
+  assert.ok(none.nodes.body.innerHTML.includes("아이를 등록하면 해당 나이와 같이 갈 만한 곳을 추천해 드립니다") && !/data-places-id=/.test(none.nodes.body.innerHTML), "D56: 아이 없음 → 안내만(장소 목록 없음)");
 });
 test("[일정 추가](G2): 장소 상세 시트의 일정 등록 단계가 바로 열린다(기존 일정 폼은 열지 않음), 가구 없으면 등록 없이 상세+안내", async () => {
   const e = env({ on: true, tab: "places" });

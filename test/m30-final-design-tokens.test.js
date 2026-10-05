@@ -30,7 +30,7 @@ test("두 테마에서 같은 값(고정): 완료 청록·위험·마감 와인�
   const K = { warm: ["#294ee1", "#9b26d1", "#199d5a", "#a58815", "#f31664", "#281cdc"], forest: ["#1b7bd9", "#572bdc", "#1e9f3f", "#be8025", "#f20d5d", "#2646c9"] };
   ["vx", "hc", "dv", "lf", "sf", "bn"].forEach((k, i) => { assert.strictEqual(v(rootB, "k-" + k), K.warm[i], "warm k-" + k); assert.strictEqual(v(forestB, "k-" + k), K.forest[i], "forest k-" + k); });
   const keys = ["접종", "검진", "발달", "생활", "안전", "혜택"]; V.setTheme("warm"); assert.deepStrictEqual(keys.map((k) => V.CATEGORY_COLORS[k]), K.warm); V.setTheme("forest"); assert.deepStrictEqual(keys.map((k) => V.CATEGORY_COLORS[k]), K.forest); V.setTheme("warm");
-  assert.ok(!/--d\d+\)/.test(read("css/places.css").slice(read("css/places.css").indexOf(".places-ph {"), read("css/places.css").indexOf(".places-ph > svg"))) && read("css/places.css").includes("linear-gradient(135deg, color-mix(in srgb, var(--c-primary) 28%, #fff), color-mix(in srgb, var(--c-primary) 55%, #fff))"), "어디갈까 사진 자리 = 테마 기본색 그라데이션");
+  assert.ok(/\.places-ph-park \{ background: linear-gradient\(135deg, var\(--d2\), var\(--d9\)\)/.test(read("css/places.css")) && !read("css/places.css").includes("color-mix(in srgb, var(--c-primary) 28%"), "어디갈까 사진 자리 = 분류별 다양한 색 그라데이션(D52 원복)");
   assert.strictEqual(v(rootB, "c-ok"), "#167c8a"); assert.strictEqual(v(rootB, "c-danger"), "#c23a37");
 });
 test("색 직접 쓰기 정리: 규칙 안 hex 는 흰색·허용 목록뿐(#ababab·#000·#fff6cc·#8a1c3d·#f4f3f1·#e0443a 는 변수로), 온보딩 원 변수는 이번 묶음 범위 밖", () => {
@@ -43,7 +43,8 @@ console.log("캘린더 선택·오늘");
 test("선택한 날 = 4면 같은 1.5px 선(--cal-sel) + 투명 배경(아래 4px 막대·30% 면 없음), 오늘 = 숫자 굵게 + 숫자 옆 5px 점(링 없음), 주 보기도 같은 규칙", () => {
   assert.ok(/\.calendar-grid-v2 \.day-cell\.selected \{ outline: none; background: transparent; box-shadow: inset 0 0 0 1\.5px var\(--cal-sel\); \}/.test(CSS));
   assert.ok(!/inset 0 -4px 0/.test(CSS) && !/color-mix\(in srgb, var\(--c-primary\) 30%/.test(CSS));
-  assert.ok(/\.day-cell\.today \{ background: transparent; box-shadow: none; font-weight: 800; \}/.test(CSS) && /\.day-cell\.today \.num::after \{[^}]*width: 5px; height: 5px;[^}]*background: var\(--c-primary\)/.test(CSS));
+  assert.ok(/\.day-cell\.today \{ background: transparent; box-shadow: none; font-weight: 800; \}/.test(CSS) && !/\.day-cell\.today \.num::after/.test(CSS)); // D54: 오늘 작은 점 제거, 굵게만 유지
+  assert.ok(/let selectedCalendarDate = new Date\(\);/.test(read("js/app.js")) && /\.calendar-grid-v2 \.day-cell\.selected \{ outline: none; background: transparent; box-shadow: inset 0 0 0 1\.5px var\(--cal-sel\); \}/.test(CSS), "D54: 기본 선택=오늘 → 오늘 칸 4면 1.5px 테두리");
   assert.ok(/\.week-col\.selected \{ border-color: transparent; box-shadow: inset 0 0 0 1\.5px var\(--cal-sel\); \}/.test(CSS) && /\.week-col\.today \.wk-num::after/.test(CSS));
 });
 

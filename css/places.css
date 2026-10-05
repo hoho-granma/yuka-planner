@@ -109,14 +109,14 @@
 
 /* G7: 큰 카드(분류별 색 머리 영역 — 사진 데이터가 없어 CSS·SVG로 대신) */
 .places-card-big { padding: 0; overflow: hidden; }
-.places-ph { height: 128px; position: relative; background: linear-gradient(135deg, color-mix(in srgb, var(--c-primary) 28%, #fff), color-mix(in srgb, var(--c-primary) 55%, #fff)); }
-.places-ph-park { background: linear-gradient(135deg, color-mix(in srgb, var(--c-primary) 28%, #fff), color-mix(in srgb, var(--c-primary) 55%, #fff)); }
-.places-ph-library { background: linear-gradient(135deg, color-mix(in srgb, var(--c-primary) 28%, #fff), color-mix(in srgb, var(--c-primary) 55%, #fff)); }
-.places-ph-kidscafe { background: linear-gradient(135deg, color-mix(in srgb, var(--c-primary) 28%, #fff), color-mix(in srgb, var(--c-primary) 55%, #fff)); }
-.places-ph-experience { background: linear-gradient(135deg, color-mix(in srgb, var(--c-primary) 28%, #fff), color-mix(in srgb, var(--c-primary) 55%, #fff)); }
-.places-ph-edu { background: linear-gradient(135deg, color-mix(in srgb, var(--c-primary) 28%, #fff), color-mix(in srgb, var(--c-primary) 55%, #fff)); }
-.places-ph-museum { background: linear-gradient(135deg, color-mix(in srgb, var(--c-primary) 28%, #fff), color-mix(in srgb, var(--c-primary) 55%, #fff)); }
-.places-ph-indoor { background: linear-gradient(135deg, color-mix(in srgb, var(--c-primary) 28%, #fff), color-mix(in srgb, var(--c-primary) 55%, #fff)); }
+.places-ph { height: 128px; position: relative; background: linear-gradient(135deg, var(--d1), var(--d6)); }
+.places-ph-park { background: linear-gradient(135deg, var(--d2), var(--d9)); }
+.places-ph-library { background: linear-gradient(135deg, var(--d1), var(--d6)); }
+.places-ph-kidscafe { background: linear-gradient(135deg, var(--d1), var(--d5)); }
+.places-ph-experience { background: linear-gradient(135deg, var(--d4), var(--d9)); }
+.places-ph-edu { background: linear-gradient(135deg, var(--d3), var(--d8)); }
+.places-ph-museum { background: linear-gradient(135deg, var(--d10), var(--d4)); }
+.places-ph-indoor { background: linear-gradient(135deg, var(--d7), var(--d5)); }
 .places-ph > svg { position: absolute; right: 10px; bottom: 8px; width: 56px; height: 56px; opacity: .55; }
 .places-ph-pin { position: absolute; left: 10px; top: 10px; right: 96px; margin: 0; }
 .places-ph-pin .places-badge { background: #fff; }

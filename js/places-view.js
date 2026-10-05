@@ -17,6 +17,7 @@
 
   const TEXT = Object.freeze({
     empty: "조건에 맞는 곳이 없어요. 필터를 줄여 보세요.",
+    noChild: "아이를 등록하면 해당 나이와 같이 갈 만한 곳을 추천해 드립니다", // D56: 아이 없음 = 장소 목록·필터·기준 줄 없이 안내만
     emptyCategory: "이 분류에는 조건에 맞는 곳이 없어요. 다른 분류를 골라 보세요.",
     emptyFilter: "조건에 맞는 곳이 없어요. 필터를 줄여 보세요.",
     filterIndoor: "실내",
@@ -324,6 +325,11 @@
     return `<section class="places-view${sheetOpen ? " is-sheet-open" : ""}">${basisLine}${filterBar(so, conds)}${filterSheet(so, conds, list.length)}${activeRow(conds)}${countRow(so, list.length)}${body}</section>`;
   }
 
+  /** D56: 아이를 등록하기 전(profile 없음) — 지역·나이 기준이 없으니 장소를 그리지 않고 안내 문구만. */
+  function renderNoChild() {
+    return `<section class="places-view"><div class="places-empty"><p>${esc(TEXT.noChild)}</p></div></section>`;
+  }
+
   // ── G14 필터 시트 열고 닫기·조건 지우기(브라우저에서만 문서에 클릭 위임 하나를 단다. app.js 의 #places-body 위임은 그대로) ──
   function setSheet(view, open) {
     ui.sheetOpen = !!open;
@@ -449,5 +455,5 @@
     };
   }
 
-  return { TEXT, SCHEDULE_LIMITS, esc, ageText, setAgeBasis, basisOf, render, filterRow, activeConds, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, routeUrl, memoFor, scheduleDraftFor };
+  return { TEXT, SCHEDULE_LIMITS, esc, ageText, setAgeBasis, basisOf, render, renderNoChild, filterRow, activeConds, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, routeUrl, memoFor, scheduleDraftFor };
 });

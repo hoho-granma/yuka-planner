@@ -84,4 +84,12 @@ test("'예약 없이' 칩은 데이터에 NONE 이 있을 때만 · 클릭 위�
   assert.ok(APP.includes('const flt = ev.target.closest("[data-places-filter]");') && !APP.includes("data-places-browse"));
   assert.ok(APP.includes('pop.scrollIntoView({ block: "nearest" })'));
 });
+test("D56: 아이 없음(profile null)=안내만(목록·필터·기준 줄 없음) / 아이 있음=기존 그대로", () => {
+  const data = { places: [mk("a", {}), mk("b", { reservation: "NONE" })] };
+  const none = env({ data, profile: null }).placesViewHtml();
+  assert.ok(none.includes("아이를 등록하면 해당 나이와 같이 갈 만한 곳을 추천해 드립니다") && count(none) === 0 && !none.includes("places-basis") && !none.includes("data-places-filter") && !none.includes("data-places-cat"));
+  assert.strictEqual(PV.renderNoChild(), `<section class="places-view"><div class="places-empty"><p>${PV.TEXT.noChild}</p></div></section>`);
+  const has = env({ data }).placesViewHtml();
+  assert.ok(count(has) >= 1 && has.includes("places-basis") && !has.includes(PV.TEXT.noChild));
+});
 console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);

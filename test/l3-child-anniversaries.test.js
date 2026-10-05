@@ -37,7 +37,7 @@ test("앱 연결: 계산만(저장·Firestore 호출 없음), 토글 스위치·
 });
 test("비계정(가구 없음)에도 보인다: 사용 가능 판정은 usActive 와 무관, 점 달력·날짜 패널·토글 줄·시트(일정 추가는 가구가 있을 때만), 칩은 아이 색", () => {
   const app = fs.readFileSync(__dirname + "/../js/app.js", "utf8");
-  assert.ok(/const usAnnivAvailable = \(\) => typeof ChildAnniversaries !== "undefined" && !!profile && !isPregnant\(\);/.test(app));
+  assert.ok(/const ANNIV_VISIBLE = false;/.test(app) && /const usAnnivAvailable = \(\) => ANNIV_VISIBLE && typeof ChildAnniversaries !== "undefined" && !!profile && !isPregnant\(\);/.test(app));
   assert.ok(/if \(!usActive\(\)\) \{ \/\/ 2-5/.test(app) && /renderSelectedDayPanel = function renderSelectedDayPanel\(\)/.test(app) && /UserScheduleView\.renderAnnivSwitch\(us\.annivOn\)/.test(app));
   assert.ok(/\$\{usActive\(\) \? `<button[^`]*data-anniv-act="add"/.test(app));
   const V = require("../js/user-schedule-view.js");

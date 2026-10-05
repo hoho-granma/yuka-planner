@@ -1735,6 +1735,12 @@
     if (!acct36Active()) return;
     const t = ev.target;
     if (A36.swallow) { A36.swallow = false; if (t.closest && t.closest("[data-a36-row]")) return; }
+    const autoEl = t.closest && t.closest("[data-a36-auto]");
+    if (autoEl) { // 자동(AUTO) 일정 — 내 일정·할 일 메모장과 섞이지 않게 기존 상세 시트로 연다(D57: a169685가 지운 것 복구)
+      const e = schedule.find((x) => x.id === autoEl.dataset.a36Auto);
+      if (e) { ev.preventDefault && ev.preventDefault(); openDetail(e); }
+      return;
+    }
     const act = t.closest && t.closest("[data-a36]");
     const tog = t.closest && t.closest("[data-a36-toggle]");
     const chip = t.closest && t.closest("#home-body [data-home-child]");
@@ -3536,6 +3542,7 @@
   }
   let placesFilters = { indoor: false, free: false, noReserve: false }; // 보조 필터(이 실행 동안만)
   function placesViewHtml() {
+    if (!profile) return PlacesView.renderNoChild(); // D56: 아이 등록 전에는 서울 구로구 등 기본 목록 대신 안내만
     const d = placesData || { places: [] };
     const valid = d.places.filter((p) => Places.validatePlace(p).length === 0);
     const age = profile && !isPregnant() ? ChildTimeline.completedMonths(profile.birthDate, new Date()) : null;
@@ -4816,7 +4823,8 @@
     });
   }
   // ── 2-5 아이 100일·돌·생일(출생일로 계산만 — 저장 안 함, Firestore 불변). 칸 칩·날짜 패널·상세 시트, 전체 토글 1개(기기 저장) ──
-  const usAnnivAvailable = () => typeof ChildAnniversaries !== "undefined" && !!profile && !isPregnant(); // 비계정(가구 없음)에도 보인다 — 계산만, 저장·Firestore 없음
+  const ANNIV_VISIBLE = false; // D53: 생일·100일·돌 계산 일정(점·날짜 행·토글) 화면 비노출. 모듈·저장값은 유지 — true로 바꾸면 복구
+  const usAnnivAvailable = () => ANNIV_VISIBLE && typeof ChildAnniversaries !== "undefined" && !!profile && !isPregnant(); // 비계정(가구 없음)에도 보인다 — 계산만, 저장·Firestore 없음
   const usAnnivColor = () => { if (!usActive()) return ""; const ck = usActiveChildKey(), l = usLinks().find((x) => x.childKey === ck); return l ? UserScheduleView.keyColor(l.childKey, l.colorKey) : ""; };
   /** 지금 칸에 보일 계산 일정(Map iso → 항목[]). 필터(직접 일정만 보기·다른 구성원만 선택)를 반영한다. */
   function usAnnivByDay(startIso, endIso) {
