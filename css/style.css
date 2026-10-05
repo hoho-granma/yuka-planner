@@ -27,7 +27,7 @@
   --c-badge-nation: #cfe6ff; --c-badge-nation-ink: #0f2a4a;   /* 혜택 '전국 공통' */
   --c-badge-region: #c4f0d8; --c-badge-region-ink: #0c3a24;   /* 혜택 지역 */
   /* S4 완료 = 틸(흰 글자) */
-  --c-hl: #fff0a8;           /* 온보딩 형광펜 */
+  --c-hl: #fff0bd;           /* 온보딩 형광펜 */
   --c-ok: #167c8a;
   --c-ok-ink: #ffffff;
   --success: #167c8a;       /* (옛 이름 = S4) */
@@ -1795,3 +1795,94 @@ body.acct-design .acct-cs-inp, body.acct-design .acct-cs-sel, body.acct-design .
 body.acct-design .acct-cs-inp:focus, body.acct-design .acct-cs-sel:focus { border-bottom: 2px solid var(--c-active); outline: none; }
 .acct-ob1-top::after { left: auto; right: 24px; bottom: 8px; width: 56px; height: 56px; }
 .acct-ob1-top > * { z-index: 2; }
+
+/* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
+   인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
+:root {
+  --nd-indigo: #4a45c8;      /* 주요 버튼·장식 원 1·현재 점 */
+  --nd-wine: #8a1c3d;        /* 장식 원 2 · 시트 선 */
+  --nd-soft: #f0f1ff;        /* 시트·보조 면 */
+  --nd-soft2: #d8d6ff;       /* 보조 버튼 면 */
+  --nd-yellow: #fff0bd;      /* 선택 칩·탭·형광펜 */
+  --nd-yellow-line: #f9cb34; /* 선택 칩 테두리 */
+  --nd-dot-off: #e4dcee;     /* 꺼진 진행 점 */
+  --nd-ob-bg: #f7f3fa;       /* 온보딩 바탕 */
+  --nd-home-bg: #fff8e0;     /* 홈 바탕 */
+  --nd-ink: #161618;
+  --nd-violet: #7a55c9;      /* 홈 추가 버튼 */
+  --nd-navy: #061665;        /* 홈 곧 배너 */
+}
+
+/* ── 온보딩 ① 첫 화면(소개) ── */
+body:has(#view-landing.acct-on:not(.hidden)) { background: var(--nd-ob-bg); }
+#view-landing.acct-on { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); --c-progress: var(--nd-indigo); }
+#view-landing.acct-on .acct-ob1-top { background: #fff; color: var(--text); border-radius: 0 0 28px 28px; }
+#view-landing.acct-on .acct-ob1-top::before { right: -62px; top: -70px; width: 150px; height: 150px; background: var(--nd-indigo); }
+#view-landing.acct-on .acct-ob1-top::after { left: auto; bottom: auto; right: -16px; top: 118px; width: 64px; height: 64px; background: var(--nd-wine); }
+#view-landing.acct-on .acct-logo-w, #view-landing.acct-on .acct-ob1-top .acct-title { color: var(--text); }
+#view-landing.acct-on .acct-ob1-top .acct-sub { color: var(--text-muted); }
+#view-landing.acct-on .acct-hl { background: linear-gradient(transparent 52%, var(--c-hl) 52%); color: var(--text); padding: 0 4px; border-radius: 4px; }
+#view-landing.acct-on .acct-dot::before { width: 8px; margin-left: -4px; border-radius: 50%; background: var(--nd-dot-off); } /* 막대 없이 모두 점 */
+#view-landing.acct-on .acct-dot.on::before { width: 8px; margin-left: -4px; border-radius: 50%; background: var(--nd-indigo); }
+#view-landing.acct-on .acct-cta { background: var(--nd-soft); border: 1.5px solid var(--nd-wine); border-bottom: 0; border-radius: 28px 28px 0 0; padding: 18px 18px 14px; }
+#view-landing.acct-on .acct-cta [data-acct-action="open-signup"] { min-height: 52px; border-radius: 13px; background: var(--nd-indigo); color: #fff; font-size: 16px; font-weight: 800; }
+#view-landing.acct-on .acct-cta [data-acct-action="open-login"] { margin-top: 2px; min-height: 46px; border-radius: 13px; background: var(--nd-soft2); color: var(--nd-ink); border: 1.5px solid #f4f3f1; box-shadow: none; font-size: 14px; font-weight: 700; }
+#view-landing.acct-on .acct-cta [data-acct-action="open-signup"]:active { background: var(--nd-indigo); opacity: .92; }
+
+/* ── 온보딩 ③ 아이 정보(가입·로그인 직후 첫 단계) ── */
+#view-landing.acct-on .acct-stage-toggle { position: relative; overflow: hidden; margin: 0 0 12px; padding: 22px 18px 14px; background: #fff; border-radius: 0 0 28px 28px; }
+#view-landing.acct-on .acct-stage-toggle::before { content: ""; position: absolute; right: -62px; top: -70px; width: 150px; height: 150px; border-radius: 50%; background: var(--nd-indigo); }
+#view-landing.acct-on .acct-stage-toggle::after { content: ""; position: absolute; right: -16px; top: 64px; width: 56px; height: 56px; border-radius: 50%; background: var(--nd-wine); }
+#view-landing.acct-on .acct-stage-toggle > * { position: relative; z-index: 1; }
+#view-landing.acct-on .acct-child-title { color: var(--nd-ink); }
+#view-landing.acct-on .acct-seg { gap: 6px; padding: 3px; background: #fff; border: 0; border-radius: 12px; overflow: visible; }
+#view-landing.acct-on .acct-seg button { min-height: 40px; border: 1.5px solid #fff; border-radius: 10px; background: #fff; color: #ababab; }
+#view-landing.acct-on .acct-seg button.on { background: var(--nd-yellow); border-color: var(--nd-indigo); color: #000; }
+#view-landing.acct-on #query-form.form-card { background: var(--nd-soft); border-color: var(--nd-soft); border-radius: 28px 28px 0 0; }
+#view-landing.acct-on #query-form input[type="text"], #view-landing.acct-on #query-form .date-picker-trigger { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding-left: 14px; padding-right: 14px; }
+#view-landing.acct-on #query-form #childName { border-color: var(--nd-yellow-line); }
+#view-landing.acct-on #query-form .order-chip, #view-landing.acct-on #query-form .region-chip { background: #fff; border: 1.5px solid var(--line); border-radius: 999px; color: var(--text); }
+#view-landing.acct-on #query-form .order-chip.active, #view-landing.acct-on #query-form .region-chip.active { background: var(--nd-yellow); border-color: var(--nd-yellow-line); color: var(--text); font-weight: 800; box-shadow: none; }
+#view-landing.acct-on #query-form .order-chip.active .order-num { background: var(--nd-indigo); color: #fff; }
+#view-landing.acct-on #query-form #btn-submit { background: var(--nd-indigo); border-color: var(--nd-indigo); color: #fff; border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
+
+/* ── 온보딩 ② 로그인·가입 시트 ── */
+.modal-panel:has([data-acct-form="login"]), .modal-panel:has([data-acct-form="signup"]) {
+  --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); --c-progress: var(--nd-indigo);
+  background: var(--nd-soft);
+}
+.modal-panel:has([data-acct-form="login"]) .acct-input, .modal-panel:has([data-acct-form="signup"]) .acct-input { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding: 11px 14px; }
+.modal-panel:has([data-acct-form="login"]) .acct-input:focus, .modal-panel:has([data-acct-form="signup"]) .acct-input:focus { border-color: var(--nd-indigo); outline: none; }
+.modal-panel:has([data-acct-form="login"]) .acct-btn-primary, .modal-panel:has([data-acct-form="signup"]) .acct-btn-primary,
+.modal-panel:has([data-acct-form="login"]) .btn-complete { background: var(--nd-indigo); border: 0; color: #fff; border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
+.modal-panel:has([data-acct-form="signup"]) .acct-step-back { background: #fff; border-radius: 13px; }
+.modal-panel:has([data-acct-form="signup"]) .acct-steps { position: relative; }
+.modal-panel:has([data-acct-form="signup"]) .acct-steps::before { content: ""; position: absolute; right: 44px; top: -4px; width: 40px; height: 40px; border-radius: 50%; background: var(--nd-indigo); border: 3px solid #fff; }
+.modal-panel:has([data-acct-form="signup"]) .acct-steps > * { position: relative; z-index: 1; }
+.modal-panel:has([data-acct-form="signup"]) .acct-prog { gap: 8px; }
+.modal-panel:has([data-acct-form="signup"]) .acct-prog-seg { flex: 0 0 8px; height: 8px; border-radius: 50%; background: var(--nd-dot-off); } /* 막대 없이 모두 점 */
+.modal-panel:has([data-acct-form="signup"]) .acct-prog-seg.on { background: var(--nd-indigo); }
+.modal-panel:has([data-acct-form="signup"]) .acct-step-n { color: var(--nd-indigo); }
+.modal-panel:has([data-acct-form="login"]) .acct-radio, .modal-panel:has([data-acct-form="signup"]) .acct-radio { background: #fff; border: 1.5px solid var(--line); color: var(--text); }
+.modal-panel:has([data-acct-form="login"]) .acct-radio[aria-checked="true"], .modal-panel:has([data-acct-form="signup"]) .acct-radio[aria-checked="true"] { background: var(--nd-yellow); border-color: var(--nd-yellow-line); color: var(--text); font-weight: 800; }
+
+/* ── 홈(홈 탭이 보일 때만) ── */
+body:has(#view-calendar:not(.hidden) #tab-home:not(.hidden)) { background: var(--nd-home-bg); }
+#view-calendar:has(#tab-home:not(.hidden)) .app-title { color: var(--nd-ink); }
+#view-calendar:has(#tab-home:not(.hidden)) .btn-refresh:not(.has-update) { background: transparent; border-color: transparent; color: #ababab; }
+#view-calendar:has(#tab-home:not(.hidden)) .btn-add-child { background: var(--nd-violet); border-color: var(--nd-indigo); color: #fff; }
+#tab-home .home-sec-head h3 { color: var(--nd-ink); }
+#tab-home .home-viewall { background: #fff; }
+#tab-home .sec-us-upcoming .home-more { background: var(--nd-soft); color: var(--nd-ink); border-color: var(--nd-soft); }
+body.acct-design #tab-home .ns-banner { background: var(--nd-navy); border-color: var(--nd-navy); color: #fff; }
+
+/* v1.12.97 보정: 아이 등록 시트(.acct-cs-*, 임신 정보 수정 포함)도 가입 3단계 아이 정보와 같은 인디고 계열 */
+.modal-panel:has([data-acct-child-sheet]) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); background: var(--nd-soft); }
+body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-inp, body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-sel, body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-date .date-picker-trigger { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding-left: 14px; padding-right: 14px; }
+body.acct-design .modal-panel:has([data-acct-child-sheet]) #cr-name { border-color: var(--nd-yellow-line); }
+body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-tg { gap: 6px; padding: 3px; background: #fff; border: 0; border-radius: 12px; overflow: visible; }
+body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-tg button { border: 1.5px solid #fff; border-radius: 10px; background: #fff; color: #ababab; }
+body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-tg button.on { background: var(--nd-yellow); border-color: var(--nd-indigo); color: #000; }
+body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-gch button.on { background: var(--nd-yellow); border-color: var(--nd-yellow-line); color: var(--text); }
+body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-save { background: var(--nd-indigo); color: #fff; border-radius: 13px; box-shadow: none; }
+body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-foot { background: linear-gradient(rgba(240, 241, 255, 0), var(--nd-soft) 14px); }

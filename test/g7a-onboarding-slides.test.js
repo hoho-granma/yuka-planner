@@ -33,7 +33,7 @@ test("점 2개(첫 장 선택)·버튼은 두 장 공통으로 슬라이드 밖 
   assert.ok(/class="acct-dot on" role="tab" aria-selected="true" data-acct-action="slide-go" data-slide-to="0"/.test(h));
   const cta = h.slice(h.indexOf('class="acct-cta"'));
   assert.ok(h.indexOf('class="acct-cta"') > h.indexOf('data-acct-slide="1"') && !h.slice(0, h.indexOf('class="acct-cta"')).includes("open-signup"));
-  assert.deepStrictEqual([...cta.matchAll(/data-acct-action="([^"]+)">([^<]+)</g)].map((m) => [m[1], m[2]]), [["open-login", "로그인"], ["open-signup", "회원가입"]]);
+  assert.deepStrictEqual([...cta.matchAll(/data-acct-action="([^"]+)">([^<]+)</g)].map((m) => [m[1], m[2]]), [["open-signup", "회원가입"], ["open-login", "로그인"]]);
   assert.ok(cta.includes('class="acct-btn-text" data-acct-action="open-signup"') && /\.acct-btn-text \{[^}]*min-height: 48px[^}]*border: 0[^}]*background: transparent[^}]*font-weight: 400/.test(CSS));
   assert.ok(cta.includes('class="acct-code-hint">가족코드를 받았다면 회원가입에서 입력해요'));
   assert.ok(!/open-join|가족코드로 함께하기|이미 계정이 있어요|가입 없이 둘러보기|이전 화면으로 돌아가기|data-acct-action="browse|beta-off-ask|browse-close/.test(h));

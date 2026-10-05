@@ -350,8 +350,8 @@
       </div>
       <div class="acct-dots" role="tablist" aria-label="${esc(O.ob2Aria)}"><button type="button" class="acct-dot on" role="tab" aria-selected="true" data-acct-action="slide-go" data-slide-to="0" aria-label="1/2"></button><button type="button" class="acct-dot" role="tab" aria-selected="false" data-acct-action="slide-go" data-slide-to="1" aria-label="2/2"></button></div>
       <div class="acct-cta">
-        <button type="button" class="acct-btn-primary" data-acct-action="open-login">${esc(O.loginBtn)}</button>
         <button type="button" class="acct-btn-text" data-acct-action="open-signup">${esc(O.primary)}</button>
+        <button type="button" class="acct-btn-primary" data-acct-action="open-login">${esc(O.loginBtn)}</button>
         <p class="acct-code-hint">${esc(O.codeHint)}</p>
         ${s.version ? `<p class="acct-ver">v${esc(s.version)}</p>` : ""}
       </div></div></div>`;
