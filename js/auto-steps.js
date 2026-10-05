@@ -32,12 +32,24 @@
 
   /** 법정·시기 분류가 가족 캘린더에 들어갈 수 있는 AUTO 항목인가(이벤트의 todo 정의 분류로 판단). VX·HC·OR-03·04 는 기존 예약 흐름(calendar-model.isLinkableAuto)이 맡는다. */
   const FAMILY_LINK_CODES = Object.freeze(["SC", "PG", "SB"]);
-  function isFamilyLinkable(event, isLinkableAuto) {
+  /** 신청·마감의 '마지막 날'(그날까지 가능). 지역 지원금의 deadlineDate 는 마감 다음 날(끝 제외)이라 하루를 빼고, 엔진 항목은 windowEnd 가 이미 마지막 날이다. 없으면 null. */
+  function lastDayOf(event) {
+    if (!event) return null;
+    const ok = (d) => d instanceof Date && !isNaN(d.getTime());
+    if (event.isLegacySubsidy === true && ok(event.deadlineDate)) return new Date(event.deadlineDate.getFullYear(), event.deadlineDate.getMonth(), event.deadlineDate.getDate() - 1);
+    if (ok(event.deadlineDate)) return event.deadlineDate;
+    return ok(event.windowEnd) ? event.windowEnd : null;
+  }
+  const ymdNum = (d) => d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  /** today 를 주면 마지막 날이 지난 항목은 일정 넣기 대상이 아니다(today 없으면 기간 검사 안 함). */
+  const expired = (event, today) => { if (!(today instanceof Date)) return false; const l = lastDayOf(event); return !!l && ymdNum(l) < ymdNum(today); };
+  function isFamilyLinkable(event, isLinkableAuto, today) {
     if (!event || (isLinkableAuto && isLinkableAuto(event))) return false;
     const def = event.detail && event.detail.definition;
     if (def && def.familyLinkable === false) return false; // 정의가 일정 넣기를 막은 항목(정보만 있는 항목)
+    if (expired(event, today)) return false; // 0-A3: 지난 마감은 버튼을 숨긴다
     if (def && typeof def.todo_id === "string" && FAMILY_LINK_CODES.includes(def.category)) return true;
-    if (event.isLegacySubsidy === true && event.deadlineDate instanceof Date) return true; // 0-A3: 마감일이 있는 지역 지원금(일정 날짜 = 마감일)
+    if (event.isLegacySubsidy === true && event.deadlineDate instanceof Date) return true; // 0-A3: 마감일이 있는 지역 지원금(일정 날짜 = 마지막 날)
     return event.autoAfter36 === true; // 36개월 이상 허용 목록(지역 지원금 NAT-020·GG-* 포함)
   }
   /** autoRef 값(규칙: "<id>__<키>" 형식). 엔진 항목은 이벤트 id 그대로, 지역 지원금 등 id 에 "__" 가 없는 항목은 "__default" 를 붙인다. */
@@ -139,5 +151,5 @@
     </div>`;
   }
 
-  return { MSG, normalizeInfoActions, infoActionOf, renderInfoAction, FAMILY_LINK_CODES, isFamilyLinkable, autoRefOf, linkOf, categoryOf, pickDate, model, renderSteps, renderAddSheet, md, esc };
+  return { MSG, normalizeInfoActions, infoActionOf, renderInfoAction, FAMILY_LINK_CODES, isFamilyLinkable, lastDayOf, autoRefOf, linkOf, categoryOf, pickDate, model, renderSteps, renderAddSheet, md, esc };
 });

@@ -272,7 +272,7 @@ test("openDetail: 버튼 자리와 핸들러 두 줄만 다르다", () => {
 });
 test("usOpenForm·usShowForm: 라벨 초기화/전달만 다르다 · usSave 는 변경 없음", () => {
   assert.strictEqual(fnSrc(app, "usOpenForm").replace("    us.autoLabel = null;\n", "").replace("usOpenForm(id, dateIso, opts)", "usOpenForm(id, dateIso)").replace(", ...(opts && opts.scope ? { defaultScope: opts.scope } : {})", ""), fnSrc(headApp, "usOpenForm")); // N2 의 defaultScope 옵션 전달만 추가
-  assert.strictEqual(fnSrc(app, "usShowForm").replace(", autoLabel: us.autoLabel", ""), fnSrc(headApp, "usShowForm"));
+  assert.strictEqual(fnSrc(app, "usShowForm").replace(", autoLabel: us.autoLabel", "").replace(", autoCandidates: usAutoCandidates()", ""), fnSrc(headApp, "usShowForm"));
   assert.strictEqual(app.slice(app.indexOf("  async function usSave()"), app.indexOf("\n  }\n", app.indexOf("  async function usSave()"))), headApp.slice(headApp.indexOf("  async function usSave()"), headApp.indexOf("\n  }\n", headApp.indexOf("  async function usSave()"))));
 });
 test("홈: ctx 에 autoLinkText 가 없거나 ''면 홈 HTML 이 이전 커밋과 글자까지 같다", () => {

@@ -78,6 +78,8 @@ test("엔진·골든은 건드리지 않았다: todo-engine.js 는 HEAD 와 동�
 });
 
 test("정보 카드 분류(임신초기검사 PREG-003, 임신 중 Tdap)는 이번에 AUTO 로 만들지 않았다", () => {
-  assert.ok(!PG.some((d) => /Tdap|초기검사/.test(d.title)));
+  // 3-4: 임신 검사·정보 카드가 PG 정의에 추가돼도(PG-10~18) 시점 보정(timing)은 지원금·신청 항목에만 둔다 — 정보 카드 id 가 timing 에 없어야 한다.
+  const infoIds = PG.filter((d) => /Tdap|초기검사/.test(d.title)).map((d) => d.todo_id);
+  assert.ok(infoIds.every((id) => !TIMING[id] && !TIMING[`${id}__default`]));
   assert.ok(!TIMING["PREG-003"]);
 });

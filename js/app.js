@@ -2840,8 +2840,8 @@
   function asDateFor(e) {
     const def = e.detail && e.detail.definition;
     const rec = (calDisplayDays && calDisplayDays.get(e.id) || [])[0] || e.fixedDate || e.windowStart || e.date;
-    const hasDeadline = e.category === "행정·지원금" || (def && def.category === "PG");
-    const dl = hasDeadline ? (e.deadlineDate || e.windowEnd) : null;
+    const hasDeadline = e.category === "행정·지원금"; // 3-4: PG 정의라도 검사·정보형(행정·지원금이 아닌 분류)은 마감이 아니라 권장 기간이라 날짜를 마감으로 쓰지 않는다 — 출생신고·바우처(PG-01·02)는 행정·지원금이다
+    const dl = hasDeadline ? AutoSteps.lastDayOf(e) : null; // 마지막 날(지역 지원금 deadlineDate 는 끝 제외라 하루 빼서 상세의 '신청 기간' 끝과 맞춘다)
     // 정의에 정확한 날짜(startDay/endDay)가 있으면 그 시작~끝을 확정 날짜로 쓴다(권장일·'확인 필요' 문구 없음).
     const tp = def && def.triggerParams, exact = !!(tp && (tp.startDay != null || tp.endDay != null)) && e.windowStart instanceof Date;
     if (exact) return AutoSteps.pickDate({ exact: true, recommendedIso: asIso(e.windowStart), endIso: asIso(e.windowEnd), todayIso: toISODate(new Date()) });
@@ -2862,7 +2862,7 @@
     const applyLink = usApplyLinkOf(e);
     const links = autoLinks();
     const existing = CalendarModel.isLinkableAuto(e);
-    const family = AutoSteps.isFamilyLinkable(e, CalendarModel.isLinkableAuto);
+    const family = AutoSteps.isFamilyLinkable(e, CalendarModel.isLinkableAuto, new Date());
     const ck = usActiveChildKey();
     const done = !!completed[e.id];
     const link = (existing || family) && links ? AutoSteps.linkOf(links, e) : null;
@@ -4498,7 +4498,7 @@
   }
   /** 0-C2: 일정 추가 폼에서 '예방접종'을 골랐을 때 보여 줄 이 아이의 미완료·미연결 접종·검진 후보(가까운 순 최대 6). 자동으로 고르지 않는다. */
   function usAutoCandidates() {
-    if (!autoLinkOn() || usActiveChildKey() == null || !us.form || us.form.mode !== "create" || us.form.autoRef || us.form.kindPick !== "예방접종") return [];
+    if (!autoLinkOn() || usActiveChildKey() == null || !us.form || us.form.mode !== "create" || us.form.autoRef || !(us.form.kindPick === "예방접종" || us.form.quickKey === "vaccine")) return [];
     const links = autoLinks();
     const t0 = new Date(); t0.setHours(0, 0, 0, 0);
     return visibleSchedule(true)
@@ -4797,7 +4797,7 @@
   }
   function usShowForm() {
     modalMode = "profile";
-    el("modal-content").innerHTML = UserScheduleView.renderForm(us.form, usLinks(), { messages: us.messages, saving: us.saving, members: HouseholdView.visibleMembers(usMembers()), autoLabel: us.autoLabel });
+    el("modal-content").innerHTML = UserScheduleView.renderForm(us.form, usLinks(), { messages: us.messages, saving: us.saving, members: HouseholdView.visibleMembers(usMembers()), autoLabel: us.autoLabel, autoCandidates: usAutoCandidates() });
     el("detail-modal").classList.remove("hidden");
     usBindPickers();
   }
@@ -5412,6 +5412,12 @@
       us.form.category = next.category;
       us.form.quickKey = quick.getAttribute("data-us-quick");
       usRefreshAssigneeEmph(root);
+      const oldCand = root.querySelector("[data-us-autocand]"); // 0-C2b: 가구만 켠 비계정 폼 — '예방접종' 칩이면 후보 칩을 폼 다시 그리기 없이 끼워 넣고, 다른 칩이면 걷는다(계정 폼은 종류 칩 경로가 따로 있다)
+      const quickBox = root.querySelector(".us-quick");
+      if (quickBox && !root.querySelector("[data-us-who]")) {
+        if (oldCand) oldCand.remove();
+        if (us.form.quickKey === "vaccine") quickBox.insertAdjacentHTML("afterend", UserScheduleView.renderAutoCand(usAutoCandidates()));
+      }
       const titleInput = root.querySelector("#us-title");
       if (titleInput) titleInput.value = next.title;
       root.querySelectorAll("[data-us-cat]").forEach((x) => x.classList.toggle("active", x.getAttribute("data-us-cat") === next.category));

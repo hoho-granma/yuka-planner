@@ -94,12 +94,13 @@
    *  - 검진·접종은 가능하면 평일. 기간이 하루뿐이면 그날.
    *  - 완료 여부와 무관하게 전체를 한 번에 배치하므로 완료 처리해도 다른 항목의 위치가 바뀌지 않는다.
    *  - 지원금(행정·지원금)은 배치하지 않는다(fixed: 신청 시작일).
-   * opts = { birthDate, monthKeysOf(e) → 대표 월령 배열(숫자 아닌 값은 무시) }. 반환: Map(eventId → Date[])
+   * opts = { birthDate, monthKeysOf(e) → 대표 월령 배열(숫자 아닌 값은 무시), inCalendar?(e) → false 면 칸에 올리지 않음(1-3 D3: 없으면 지금과 동일) }. 반환: Map(eventId → Date[])
    */
   function assignDisplayDays(events, opts) {
     const slots = [];
     for (const e of events) {
       if (e.category === "행정·지원금") continue;
+      if (opts && typeof opts.inCalendar === "function" && !opts.inCalendar(e)) continue;
       const isVx = e.category === "예방접종";
       if (e.scheduleKind === "window" && e.windowStart) {
         const s = sod(e.windowStart);

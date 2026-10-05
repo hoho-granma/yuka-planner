@@ -1894,6 +1894,6 @@ body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-foot { backg
 .modal-panel:has(#ep-save) .date-picker-trigger { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding-left: 14px; padding-right: 14px; }
 .modal-panel:has(#ep-save) .rv-cat { background: #fff; border: 1.5px solid var(--line); border-radius: 999px; color: var(--text); }
 .modal-panel:has(#ep-save) .rv-cat.active { background: var(--nd-yellow); border-color: var(--nd-yellow-line); color: var(--text); font-weight: 800; }
-.modal-panel:has(#ep-save) input:focus-visible, .modal-panel:has(#ep-save) select:focus-visible, .modal-panel:has(#ep-save) .ep-select:focus { border-color: var(--nd-indigo); outline: none; }
+.modal-panel:has(#ep-save) input:focus-visible, .modal-panel:has(#ep-save) select:focus-visible, .modal-panel:has(#ep-save) .ep-select:focus { border-color: var(--nd-indigo); border-width: 2px; outline: none; }
 .modal-panel:has(#ep-save) #ep-save { background: var(--nd-indigo); color: #fff; border: 0; border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
 .modal-panel:has(#ep-save) #ep-cancel { background: #fff; border: 1.5px solid var(--line); border-radius: 13px; color: var(--nd-ink); }

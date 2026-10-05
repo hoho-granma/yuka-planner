@@ -44,7 +44,7 @@ test("카드 문구가 확정본과 글자까지 같다(#1~#4)", () => {
   assert.strictEqual(V.MSG.upcomingTitle, "다가오는 우리 가족 일정");
   assert.strictEqual(V.MSG.upcomingEmpty, "앞으로 7일 안에 등록된 가족 일정이 없어요.");
   assert.strictEqual(V.MSG.upcomingAdd, "일정 추가하기");
-  assert.strictEqual(V.MSG.upcomingMore, "캘린더에서 보기");
+  assert.strictEqual(V.MSG.upcomingMore, "캘린더에서 보기 ›");
   assert.deepStrictEqual([V.MSG.upcomingToday, V.MSG.upcomingTomorrow], ["오늘", "내일"]);
 });
 
@@ -124,7 +124,7 @@ console.log("renderUpcomingCard");
 test("일정 있음: 제목·줄 3개·data-home-date·캘린더에서 보기, 빈 상태 문구 없음", () => {
   const html = V.renderUpcomingCard(pick([sched({ title: "병원" }), sched({ title: "치과", eventDate: "2026-10-06" })]));
   assert.ok(html.includes("다가오는 우리 가족 일정") && html.includes('data-home-date="2026-10-05"') && html.includes('data-home-date="2026-10-06"'));
-  assert.ok(html.includes('data-act="us-cal"') && html.includes("캘린더에서 보기") && !html.includes("등록된 가족 일정이 없어요") && !html.includes('data-act="us-add"'));
+  assert.ok(html.includes('data-act="us-cal"') && html.includes("캘린더에서 보기 ›") && !html.includes("등록된 가족 일정이 없어요") && !html.includes('data-act="us-add"'));
 });
 test("일정 없음: 빈 상태 한 줄 + 일정 추가하기 버튼", () => {
   const html = V.renderUpcomingCard({ items: [], more: 0 });

@@ -42,7 +42,7 @@
       if (!items.length) continue;
       out.stages.push({
         id: s.id, match: m, windowMonths: Number.isInteger(s.windowMonths) && s.windowMonths >= 0 ? s.windowMonths : out.windowMonthsDefault,
-        stageLabel: s.stageLabel || "", headline: s.headline, sub: s.sub || "", sheetTitle: s.sheetTitle || s.headline, intro: s.intro || "", items,
+        stageLabel: s.stageLabel || "", headline: s.headline, sub: s.sub || "", subWhenPast: typeof s.subWhenPast === "string" ? s.subWhenPast : "", sheetTitle: s.sheetTitle || s.headline, intro: s.intro || "", items,
       });
     }
     return out;
@@ -136,7 +136,10 @@
     const { st } = best;
     const months = best.when;
     const whenText = st.match.kind === "age" ? `${months}개월 뒤부터` : st.match.kind === "due" ? (months > 0 ? `출산 예정일까지 ${months}개월` : "출산이 가까워요") : "";
-    const sub = st.sub.replace("{name}", kid.name || "").replace("{when}", whenText).replace(/^\s*·\s*|\s*·\s*$/g, "").replace(/\s+·\s+·\s+/g, " · ");
+    // 0-C3: 끝난 항목(state past)이 있으면 지난 날짜가 든 sub 를 그대로 보이지 않는다 — 정책의 subWhenPast 가 있으면 그것, 없으면 sub 를 비운다(머리 문구만).
+    const anyPast = best.items.some((x) => x.state === "past");
+    const subSrc = anyPast ? st.subWhenPast : st.sub;
+    const sub = subSrc.replace("{name}", kid.name || "").replace("{when}", whenText).replace(/^\s*·\s*|\s*·\s*$/g, "").replace(/\s+·\s+·\s+/g, " · ");
     return { id: st.id, headline: st.headline, sub, sheetTitle: st.sheetTitle, intro: st.intro, stageLabel: st.stageLabel, kidName: kid.name || "", items: best.items, remaining: best.remaining };
   }
 

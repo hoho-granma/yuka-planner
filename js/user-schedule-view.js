@@ -50,7 +50,7 @@
     upcomingTitleFamily: "오늘·이번 주 우리 가족", // E(1-3): 36개월 이상 아이의 홈에서 이 카드가 먼저 올 때의 제목
     upcomingEmpty: "앞으로 7일 안에 등록된 가족 일정이 없어요.",
     upcomingAdd: "일정 추가하기",
-    upcomingMore: "캘린더에서 보기",
+    upcomingMore: "캘린더에서 보기 ›",
     upcomingToday: "오늘",
     upcomingTomorrow: "내일",
     // F3 빠른 추가 칩(승인 문구 10~12)
@@ -936,9 +936,7 @@
     const assignee = f.whoPerson || !asgMembers.length ? "" : `<div class="us-field" data-us-assignee-field><label>${esc(MSG.assigneeAsk)}</label><div class="us-chips">${asgMembers.map((m) => chip("", `data-us-assignee="${esc(m.memberId)}"`, m.memberId === meId ? MSG.g13WhoMe : m.label || "", f.assigneeMemberId === m.memberId, memberColor(m))).join("")}</div><p class="us-note" data-us-assignee-note${assigneeEmphasis(f) ? "" : " hidden"}>${esc(MSG.assigneeNeed)}</p></div>`;
     // 0-C2: '예방접종' 종류를 고르면 그 아이의 미완료 접종·검진 후보를 보여 준다. 고르면(앱이 그 항목으로 예약 폼을 연다) 연결되고, 고르지 않으면 직접 입력 그대로 — 자동 선택 없음.
     const cands = Array.isArray(o.autoCandidates) ? o.autoCandidates : [];
-    const autoCand = f.mode === "create" && !f.autoRef && f.kindPick === "예방접종" && cands.length
-      ? `<div class="us-field us-autocand" data-us-autocand><label>${esc(MSG.autoCandAsk)}</label><div class="us-chips">${cands.map((c) => chip("", `data-us-autoref="${esc(c.id)}"`, c.title, false)).join("")}</div><p class="us-note">${esc(MSG.autoCandHint)}</p></div>`
-      : "";
+    const autoCand = f.mode === "create" && !f.autoRef && f.kindPick === "예방접종" ? renderAutoCand(cands) : "";
     const errors = (o.messages || []).map((m) => `<p class="us-error">${esc(m)}</p>`).join("");
     const edit = f.mode === "edit";
     return `<div class="us-form us-form-g13" data-us-mode="${esc(f.mode)}">
@@ -1042,7 +1040,7 @@
     const errors = (o.messages || []).map((m) => `<p class="us-error">${esc(m)}</p>`).join("");
     return `<div class="us-form" data-us-mode="${esc(f.mode)}">
       <h3>${esc(f.wasRecurring && f.mode === "edit" ? MSG.editAllTitle : f.mode === "edit" ? MSG.sheetEdit : MSG.sheetAdd)}</h3>${f.wasRecurring && f.mode === "edit" ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
-      ${locked && f.mode === "create" && o.autoLabel ? `<p class="us-note us-autoref-note">${esc(MSG.autoFormNote(o.autoLabel))}</p>` : ""}${renderQuickChips(f)}
+      ${locked && f.mode === "create" && o.autoLabel ? `<p class="us-note us-autoref-note">${esc(MSG.autoFormNote(o.autoLabel))}</p>` : ""}${renderQuickChips(f)}${f.mode === "create" && !f.autoRef && f.quickKey === "vaccine" ? renderAutoCand(o.autoCandidates) : ""}
       <div class="us-field"><label for="us-title">${esc(MSG.titleLabel)}</label><input type="text" id="us-title" maxlength="100" placeholder="${esc(MSG.titleHint)}" value="${esc(f.title)}" /></div>
       <div class="us-field"><label>${esc(MSG.categoryLabel)}</label><div class="us-chips">${cats}</div></div>
       ${locked ? "" : `<div class="us-field"><label>${esc(MSG.targetLabel)}</label><div class="us-chips">${targets}</div></div>`}
@@ -1191,6 +1189,11 @@
     if (!t || !f) return null;
     return { title: String(f.title || "").trim() ? f.title : t.title, category: t.category };
   }
+  /** 0-C2/0-C2b: '예방접종' 선택 시 연결 후보 칩 블록(후보가 없으면 ""). 계정 폼(G13)과 가구만 켠 비계정 폼이 같이 쓴다. */
+  function renderAutoCand(cands) {
+    const list = Array.isArray(cands) ? cands : [];
+    return list.length ? `<div class="us-field us-autocand" data-us-autocand><label>${esc(MSG.autoCandAsk)}</label><div class="us-chips">${list.map((c) => chip("", `data-us-autoref="${esc(c.id)}"`, c.title, false)).join("")}</div><p class="us-note">${esc(MSG.autoCandHint)}</p></div>` : "";
+  }
   /** 추가 모드 폼의 칩 줄. 수정·반복 편집 폼에는 그리지 않는다(""). */
   function renderQuickChips(f) {
     if (!f || f.mode !== "create" || f.autoRef) return "";
@@ -1251,7 +1254,7 @@
     categoryLabel, childColor, childColors, occurrenceColor, MEMBER_COLORS, ROLE_LABELS, CATEGORY_COLORS, autoCategoryGroup, selectionMode, toggleSelection, cellChips,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, sourceLabeled, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
-    linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, renderChipDeleteConfirm, withObjectParticle, renderTodoLine, todoDeadlineText, TODO_LIMIT, TODO_MSG, assigneeEmphasis, applyTemplate, renderQuickChips,
+    linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, renderChipDeleteConfirm, withObjectParticle, renderTodoLine, todoDeadlineText, TODO_LIMIT, TODO_MSG, assigneeEmphasis, applyTemplate, renderQuickChips, renderAutoCand,
     renderCard, detailView, renderDetail, detailDots, renderDeleteConfirm, renderAddButton, renderPeriodSection,
     newForm, formFromSchedule, stripId, formToInput, validateForm, messagesFromErrors, prepareSave, changesFromForm, minuteOptions, splitTime,
     renderForm, renderFormG13, upgradeFormG13, g13ApplyWho, g13PickKind, g13Kinds, pickerInitials, esc,
