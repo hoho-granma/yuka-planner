@@ -195,6 +195,15 @@
   }
 
   const FEATURES_CURATION_ON = () => !!window.FEATURES && window.FEATURES.curation === true;
+  // ═══ 1-1b 새 홈 미리보기 스위치(기기 저장 hannun_home_v2, 서버·Firestore 쓰기 없음). 사용자 키 > 개발용 플래그 > 단계 기본값. 단계는 ① 로 고정(② 기본 ON 은 코드만 준비 — 전환은 사용자 확인 원문 뒤) ═══
+  const HOME_V2_STAGE = 1;
+  const HSW = { justEnabled: false, fallbackShown: false };
+  const homeStore = () => { try { return window.localStorage; } catch (e) { return null; } };
+  function homePrefApply() {
+    if (typeof HomeSwitch === "undefined" || !window.FEATURES) return;
+    window.FEATURES.curation = HomeSwitch.effective(HomeSwitch.read(homeStore()), window.FEATURES.curation === true, HOME_V2_STAGE);
+  }
+  homePrefApply();
   async function loadAll() {
     const [regions, reform, policy, allow36, pregTiming, nsRaw, reappearRaw, infoRaw, curationRaw, ...categoryFiles] = await Promise.all([
       loadJson("data/regions.json"),
@@ -1083,6 +1092,7 @@
       <div id="acct-slot"></div>
       ${region ? `<div class="detail-row"><div class="label">거주 지역</div>${esc(region)}</div>` : ""}
       <details class="acct-members-det"><summary><strong>${esc(AccountView.MSG.membersManage)}</strong><small>${esc(AccountView.MSG.membersManageHint)}</small></summary><div id="members-slot"></div></details>
+      ${typeof HomeSwitch !== "undefined" ? HomeSwitch.rowHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE) : ""}
       <div class="detail-row acct-kids"><div class="label">우리 아이</div>${
         profile
           ? `<button type="button" class="acct-kid-row" id="btn-acct-kid-row"><span>${esc(kid)}</span><span class="hr-chev">›</span></button>`
@@ -1346,7 +1356,7 @@
     const nat = byBase("NAT-020") || byBase("SB-08"); // 같은 제도 한 건만(06 §4-1 묶기)
     if (nat) { const ap = usApplyLinkOf(nat); support.push({ id: nat.id, title: nat.title.replace(/^(?:⚠️ )?확인 필요 · /, ""), applyUrl: ap && ap.url ? ap.url : "", officialUrl: nat.officialUrl || (nat.detail && nat.detail.officialUrl) || "" }); }
     const regional = ((dataset.subsidy && dataset.subsidy.subsidies) || []).some((x) => !/^NAT-/.test(x.id));
-    return { region: profile.district || (pv && pv.name) || "", ageLabel: ChildTimeline.ageLabelAt(profile.birthDate, new Date()), decide, support, supportRegionPending: !regional, find: null, mine: EduTrend.myLessons(docs, keys), canAdd: usActive(), nextSchool: months >= 60, };
+    return { region: profile.district || (pv && pv.name) || "", ageLabel: ChildTimeline.ageLabelAt(profile.birthDate, new Date()), decide, support, supportRegionPending: !regional, find: null, mine: EduTrend.myLessons(docs, keys), canAdd: usActive(), nextSchool: months >= 60, nextSchoolOpen: (() => { try { return !!nsModel(); } catch (e) { return false; } })(), };
   }
   function acct36RenderTrend() {
     const panel = el("tab-trend");
@@ -1411,6 +1421,7 @@
     const html = curatedHomeHtml();
     if (!html) return false;
     wrap.innerHTML = html;
+    homeSwitchDecorate(true); // 1-1b: 켠 직후 안내 띠·단계 ② 링크(스위치를 안 쓴 사용자에게는 아무것도 붙지 않음)
     return true;
   }
   function curatedHomeClick(ev) {
@@ -1452,7 +1463,37 @@
     if (!acct36Active()) renderHomeBase.apply(this, arguments);
     else acct36RenderHome();
     nsSync(); // W5: 다음 단계 안내 한 줄 배너(홈 맨 아래, 계정 모드)
+    homeSwitchDecorate(false);
   };
+  /** 1-1b: 안내 띠(켠 직후 1회 · 새 홈 실패 폴백 1회)·단계 ② 링크를 홈 위·아래에 붙인다. 스위치를 쓰지 않은 사용자(키 없음·단계 ①)에게는 아무것도 붙이지 않는다. */
+  function homeSwitchDecorate(isNew) {
+    if (typeof HomeSwitch === "undefined") return;
+    const body = el("home-body"), st = homeStore();
+    if (!body || !body.insertAdjacentHTML) return;
+    const pref = HomeSwitch.read(st);
+    if (isNew && HSW.justEnabled && HomeSwitch.noticeDue(st, true)) body.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("on"));
+    if (!isNew && pref === "on" && !HSW.fallbackShown) { HSW.fallbackShown = true; body.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("fallback")); } // 켜 놓았는데 새 홈이 안 그려졌다(설정 못 읽음 등) — 이전 홈을 그리고 한 번만 알린다
+    if (isNew) HSW.justEnabled = false;
+    body.insertAdjacentHTML("beforeend", HomeSwitch.linkHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE));
+  }
+  /** 스위치 누름: 키 저장 → 플래그 반영 → (필요하면 정책 읽기) → 홈 다시 그림(맨 위로). 한 번 더 묻지 않는다. 서버·가족에게 아무것도 보내지 않는다. */
+  async function homeSwitchSet(on) {
+    if (typeof HomeSwitch === "undefined") return;
+    HomeSwitch.write(homeStore(), on);
+    homePrefApply();
+    HSW.justEnabled = on; HSW.fallbackShown = false;
+    if (on && !curationPolicy && typeof Curation !== "undefined") { const raw = await loadJsonOrNull("data/policy/curation.json"); curationPolicy = raw ? Curation.normalizePolicy(raw) : null; }
+    renderHome();
+    const sw = el("modal-content") && el("modal-content").querySelector ? el("modal-content").querySelector("[data-home-switch-row]") : null;
+    if (sw) sw.outerHTML = HomeSwitch.rowHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE);
+    if (typeof window !== "undefined" && window.scrollTo) window.scrollTo(0, 0);
+  }
+  function homeSwitchClick(ev) {
+    const t = ev.target && ev.target.closest ? ev.target.closest("[data-home-switch], [data-home-notice-x]") : null;
+    if (!t) return;
+    if (t.hasAttribute("data-home-notice-x")) { HomeSwitch.dismissNotice(homeStore()); const n = t.closest("[data-home-notice]"); if (n) n.remove(); return; }
+    homeSwitchSet(t.getAttribute("data-home-switch") === "on");
+  }
   const renderChecklistTabBase = renderChecklistTab;
   renderChecklistTab = function renderChecklistTab() {
     if (!acct36Active()) return renderChecklistTabBase.apply(this, arguments);
@@ -1635,6 +1676,7 @@
     if (!acctEnabled() || typeof document === "undefined") return;
     document.addEventListener("click", acct36OnClick);
     document.addEventListener("click", curatedHomeClick); // 1-0: 큐레이션 홈 클릭(없으면 즉시 반환)
+    document.addEventListener("click", homeSwitchClick); // 1-1b: 새 홈 미리보기 스위치·안내 띠(없으면 즉시 반환)
     document.addEventListener("click", monthAckClick); // 1-3: 주의 '확인했어요'(없으면 즉시 반환)
     document.addEventListener("keydown", acct36OnKey);
     document.addEventListener("focusout", acct36OnFocusOut);
@@ -5048,6 +5090,7 @@
   const usShowFormBase = usShowForm;
   usShowForm = function usShowForm() {
     if (us.form && !us.form.g13 && !us.form.autoRef && (us.form.mode === "create" || us.form.mode === "edit") && usG13()) UserScheduleView.upgradeFormG13(us.form, usG13Ctx());
+    if (us.form && us.form.capKeep) { Object.assign(us.form, us.form.capKeep, { assigneeMemberId: "", whoPerson: false }); delete us.form.capKeep; } // 한 번만(이후 칩 선택은 사용자 것) // 2-1 후보에서 넘어온 폼: 대상·담당을 후보 그대로(담당 미정)로 되돌린다 — '나' 기본값을 쓰지 않는다
     if (!(us.form && us.form.g13)) return usShowFormBase();
     modalMode = "profile";
     el("modal-content").innerHTML = UserScheduleView.renderFormG13(us.form, usLinks(), { messages: us.messages, saving: us.saving, members: HouseholdView.visibleMembers(usMembers()), ctx: usG13Ctx(), autoCandidates: usAutoCandidates() });
@@ -5067,12 +5110,12 @@
   const capChildName = (key) => { const l = usLinks().find((x) => String(x.childKey) === String(key)); return l ? l.displayName || "" : ""; };
   const capShowPaste = () => capShow(CaptureDraftView.renderPaste({ text: CAP.text }, { mode: "keyboard", voice: false }));
   const capShowCands = () => capShow(CaptureDraftView.renderCandidates(CAP.s, { childName: capChildName }));
-  function capBaseForm() { return UserScheduleView.newForm({ date: "", activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: memActiveId() }); }
+  function capBaseForm() { return UserScheduleView.newForm({ date: "", activeChildKey: usActiveChildKey(), links: usLinks(), defaultAssigneeId: "" }); } // 담당은 비워 둔다(후보 화면의 '담당 미정' 그대로 — 일반 폼의 '나' 기본값을 쓰지 않는다)
   function capEditCandidate(i) { // 날짜 고르기·수정·날짜 미정: 기존 일정 폼에 후보 값을 채워 열고, 저장하면 후보 화면으로 돌아온다
     const c = CAP.s && CAP.s.cands[i]; if (!c) return;
     c.removed = true; CAP.s.lastRemoved = null; CAP.s.undo = false;
     us.autoLabel = null; us.form = CaptureModel.formFromCandidate(c, capBaseForm()); us.messages = []; us.saving = false; us.dayForm = null;
-    CAP.backForm = us.form; usShowForm();
+    us.form.capKeep = { scope: us.form.scope, childKeys: (us.form.childKeys || []).slice() }; CAP.backForm = us.form; usShowForm();
   }
   async function capRegister() {
     const list = CaptureModel.registrable(CAP.s); let ok = 0, fail = 0; const now = Date.now();

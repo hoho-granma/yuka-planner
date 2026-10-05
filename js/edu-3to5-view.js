@@ -3,7 +3,7 @@
  * 기존 교육 탭 클래스(.a36t-*)를 그대로 쓰고 새 색·카드 모양은 없다. 숫자·평균·비율은 하나도 그리지 않는다(D9). 또래 범위·지역 트렌드·'다음에 확인할 것'은 3~5세 분기에서 렌더하지 않는다(삭제 아님).
  *   render(st) → html
  * st = { region, ageLabel("N세", 세는 나이), decide:[{id,title,why}], support:[{id,title,why,applyUrl,officialUrl}], supportRegionPending:bool,
- *        find:{ links:[{key,name,url}] } | null, mine:{count,lessons:[{title,weekly}]}, canAdd, nextSchool:bool(만 5세), privacy(문장) }
+ *        find:{ links:[{key,name,url}] } | null, mine:{count,lessons:[{title,weekly}]}, canAdd, nextSchool:bool(만 5세), nextSchoolOpen:bool(다음 단계 시트가 열릴 때만 누를 수 있다), privacy(문장) }
  * B1 올해 정할 것(항목 없으면 숨김) → B2 받을 수 있는 지원(없으면 숨김) → B3 기관 찾기(공식 링크가 확인돼 넘어온 것만, 없으면 숨김) → B4 학원·체험(항상) → B5 현재 상태 → 개인정보 안내.
  */
 (function (root, factory) {
@@ -36,7 +36,7 @@
 
     const decide = (s.decide || []).filter((d) => d && d.title);
     if (decide.length || s.nextSchool) { // B1
-      parts.push(`<section class="a36t-card" data-a36t="decide"><h3>${esc(MSG.decideTitle)}</h3>${decide.map((d) => row(`<div><b>${esc(d.title)}</b>${d.confirm ? `<small class="a36t-nc">${esc(MSG.ifPlan)}</small>` : ""}${d.why ? `<p class="a36t-note">${esc(d.why)}</p>` : ""}</div>${btn(`data-a36="edu-plan" data-edu-id="${esc(d.id)}"`, MSG.plan)}`)).join("")}${s.nextSchool ? `<button type="button" class="a36t-note a36t-link" data-a36="edu-school">${esc(MSG.nextSchool)}</button>` : ""}</section>`);
+      parts.push(`<section class="a36t-card" data-a36t="decide"><h3>${esc(MSG.decideTitle)}</h3>${decide.map((d) => row(`<div><b>${esc(d.title)}</b>${d.confirm ? `<small class="a36t-nc">${esc(MSG.ifPlan)}</small>` : ""}${d.why ? `<p class="a36t-note">${esc(d.why)}</p>` : ""}</div>${btn(`data-a36="edu-plan" data-edu-id="${esc(d.id)}"`, MSG.plan)}`)).join("")}${s.nextSchool ? (s.nextSchoolOpen === true ? `<button type="button" class="a36t-note a36t-link" data-a36="edu-school">${esc(MSG.nextSchool)}</button>` : `<p class="a36t-note">${esc(MSG.nextSchool.replace(/ ›$/, ""))}</p>`) : ""}</section>`);
     }
     const support = (s.support || []).filter((d) => d && d.title);
     if (support.length) { // B2

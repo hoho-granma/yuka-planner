@@ -28,10 +28,22 @@
   const md = (d) => `${d.getMonth() + 1}월 ${d.getDate()}일`;
   /** 날짜 표기(hn_pm 결정): 올해 안·6개월 이내는 M월 D일, 해가 넘어가거나 6개월을 넘으면 연도를 붙인다. today 없으면 연도 없이. */
   const dmd = (d, today) => (today && (d.getFullYear() !== today.getFullYear() || d.getTime() - today.getTime() > 183 * DAY) ? `${d.getFullYear()}년 ` : "") + md(d);
-  /** 항목의 끝이 '나이 상한'(age_window)인가 — 신청 기한이 아니라 받을 수 있는 나이의 끝. 이때는 '마감'을 쓰지 않는다. */
-  const isAgeCap = (u) => !!(u.items && u.items.length && u.items.every((it) => it && it.detail && it.detail.deadlineType === "age_window"));
-  /** 끝 날짜 문구: 신청 기한 → "{날짜} 마감"(suffix 로 '까지' 선택), 나이 상한 → "○○년 ○월까지 받을 수 있어요". */
-  const endText = (u, e, today, suffix) => (isAgeCap(u) ? `${e.getFullYear()}년 ${e.getMonth() + 1}월까지 받을 수 있어요` : `${dmd(e, today)}${suffix}`);
+  /** 항목 끝날짜의 종류(hn_pm 마감 표기 기준 #1): "deadline" 신청 기한(지원금·제도) · "age" 나이 상한(받을 수 있는 나이의 끝) · "period" 접종·검진·방문 권고 기간. '마감'은 deadline 에만 쓴다. */
+  const endKind = (u) => {
+    const it = u.items && u.items[0];
+    if (!it || it.category !== "행정·지원금") return "period";
+    const d = it.detail || {}, def = d.definition || {};
+    return d.deadlineType === "age_window" || def.triggerType === "AGE_WINDOW" ? "age" : "deadline";
+  };
+  const isPast = (u) => Number.isFinite(u.daysToEnd) && u.daysToEnd < 0;
+  const PAST_OK = "기한이 지났지만 지금도 할 수 있어요";
+  /** 끝 날짜 문구: 신청 기한 → "{날짜} 마감"(suffix) · 접종·검진·방문 기간 → "{날짜}까지" · 나이 상한 → "○○년 ○월까지 받을 수 있어요". 이미 지난 날짜는 빈 문자열(날짜를 보이지 않는다 — 호출부가 이유 문장을 쓴다). */
+  function endText(u, e, today, suffix) {
+    if (isPast(u)) return "";
+    const k = endKind(u);
+    if (k === "age") return `${e.getFullYear()}년 ${e.getMonth() + 1}월까지 받을 수 있어요`;
+    return k === "period" ? `${dmd(e, today)}까지` : `${dmd(e, today)}${suffix}`;
+  }
   const ACT_LABEL = { apply: "신청하기", schedule: "일정 넣기", done: "완료", confirm: "해당돼요", review: "기록 확인" };
   const CONFIRM_NO = "아니에요";
   const lv = (u) => Number(String(u.rule || u.level || "L7").slice(1));
@@ -42,9 +54,10 @@
   /** §3-3 날짜 글자: L1·L2 "D-N · M월 D일까지"(강조색+글자 같이), L3 문구, L4 "M월 D일까지". 색만으로 구분하지 않는다. */
   function dateHtml(u, today) {
     const e = endDate(u, today), r = lv(u);
-    if ((r === 1 || r === 2) && e) return `<b class="hs-date hs-date-urgent">D-${u.daysToEnd} · ${endText(u, e, today, "까지")}</b>`;
+    if ((r === 1 || r === 2) && e && !isPast(u)) return `<b class="hs-date hs-date-urgent">D-${u.daysToEnd} · ${endText(u, e, today, "까지")}</b>`;
     if (r === 3) return `<b class="hs-date">기한이 지났지만 지금 가능</b>`;
-    if (r === 4 && e) return `<b class="hs-date">${endText(u, e, today, "까지")}</b>`;
+    if (r === 4 && e && !isPast(u)) return `<b class="hs-date">${endText(u, e, today, "까지")}</b>`;
+    if ((r === 1 || r === 2 || r === 4) && e && isPast(u) && endKind(u) !== "age") return `<b class="hs-date">${PAST_OK}</b>`; // 지난 날짜는 숨기고 이유 문장만
     return "";
   }
   const catOf = (u) => { const it = u.items && u.items[0]; return (it && CAT[it.category]) || ""; };
@@ -69,7 +82,7 @@
   }
   function soonRow(u, today) {
     const e = endDate(u, today), start = u.items && u.items[0] && (u.items[0].entryDate || u.items[0].windowStart);
-    const when = u.reason && u.reason.key === "starting_soon" && start instanceof Date ? `${dmd(start, today)}부터` : e ? endText(u, e, today, " 마감") : "";
+    const when = u.reason && u.reason.key === "starting_soon" && start instanceof Date ? `${dmd(start, today)}부터` : e ? (isPast(u) ? (endKind(u) === "age" ? "" : PAST_OK) : endText(u, e, today, " 마감")) : "";
     return `<div class="hs-sr" data-hs-key="${esc(u.key)}"><span class="hs-sit">${esc(u.title)}${u.type === "CHECK" ? `<span class="hs-tg-if">해당되면</span>` : ""}</span>${when ? `<span class="hs-wh">${when}</span>` : ""}${u.actionKind === "confirm" || u.actionKind === "review" ? actionHtml(u) : ""}</div>`;
   }
   function knowRow(u) {

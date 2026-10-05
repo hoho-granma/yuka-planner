@@ -21,3 +21,13 @@ test("앱 연결: 진입점은 새 일정 시트(계정 모드)에만, 저장은
   assert.ok(blk.includes("UserScheduleView.prepareSave") && blk.includes("UserSchedule.buildCreateDoc") && blk.includes("HouseholdSync.createSchedule"));
   assert.ok(!/localStorage|sessionStorage|setDoc|updateDoc|console\.log\(CAP/.test(blk));
 });
+
+test("담당은 빈칸으로 저장: 후보 기본 폼·후보→폼 인계 모두 담당 없음('나' 기본값 미적용), 대상은 후보 그대로", () => {
+  const i = app.indexOf("function capBaseForm()"), line = app.slice(i, app.indexOf("\n", i));
+  assert.ok(line.includes('defaultAssigneeId: ""') && !line.includes("memActiveId()"));
+  const j = app.indexOf("usShowForm = function usShowForm()"), blk = app.slice(j, app.indexOf("\n  };", j));
+  assert.ok(blk.includes("us.form.capKeep") && blk.includes('assigneeMemberId: ""') && blk.includes("whoPerson: false") && app.includes("us.form.capKeep = { scope: us.form.scope"));
+  const base = V.newForm({ date: "", activeChildKey: "c1", links: [{ childKey: "c1" }], defaultAssigneeId: "" });
+  const f = M.formFromCandidate({ title: "치과", eventDate: "2026-10-14" }, base);
+  const input = V.formToInput(f); assert.ok(!("assigneeMemberId" in input), "저장 입력에 담당 필드 없음");
+});

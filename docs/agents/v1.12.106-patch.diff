@@ -1,0 +1,150 @@
+diff --git a/js/app.js b/js/app.js
+index dd7cc88..6c1f767 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -46,6 +46,7 @@
+   let nextStagePolicy = null;
+   let curationPolicy = null; // 1-0 큐레이션 정책(data/policy/curation.json) — 못 읽으면 null → 큐레이션 홈은 켜져 있어도 기존 홈
+   let homeReappearDays = 7;
++  let eduLinks = null; // 3~5세 교육 탭 B3 공식 링크(data/policy/edu-links.json) — 못 읽으면 null(블록 숨김)
+   let infoActions = {}; // 정보 항목의 '관련 행동 한 줄'(data/policy/info-actions.json)
+   const asInfoSaved = new Map(); // 이번에 '관련 행동'을 일정으로 넣은 정보 항목 id → 날짜(독립 일정이라 정보 항목은 그대로 남으므로 시트에 '넣었어요'를 보인다)
+   let regionsData = null;
+@@ -205,7 +206,7 @@
+   }
+   homePrefApply();
+   async function loadAll() {
+-    const [regions, reform, policy, allow36, pregTiming, nsRaw, reappearRaw, infoRaw, curationRaw, ...categoryFiles] = await Promise.all([
++    const [regions, reform, policy, allow36, pregTiming, nsRaw, reappearRaw, infoRaw, eduLinksRaw, curationRaw, ...categoryFiles] = await Promise.all([
+       loadJson("data/regions.json"),
+       loadJsonOrNull("data/subsidies/reform-2027.json"),
+       loadSchoolPolicy(),
+@@ -214,11 +215,13 @@
+       loadJsonOrNull("data/policy/next-stage.json"),
+       loadJsonOrNull("data/policy/home-reappear.json"),
+       loadJsonOrNull("data/policy/info-actions.json"),
++      loadJsonOrNull("data/policy/edu-links.json"),
+       FEATURES_CURATION_ON() ? loadJsonOrNull("data/policy/curation.json") : null, // 플래그 OFF 면 읽지도 않는다(네트워크 요청 없음)
+       ...TODO_CATEGORY_FILES.map(loadJson),
+     ]);
+     regionsData = regions;
+     homeReappearDays = reappearRaw && Number.isInteger(reappearRaw.reappearDaysBefore) && reappearRaw.reappearDaysBefore >= 0 ? reappearRaw.reappearDaysBefore : 7; // 홈 카드 재등장 창(data/policy/home-reappear.json)
++    eduLinks = eduLinksRaw && Array.isArray(eduLinksRaw.links) ? eduLinksRaw : null;
+     infoActions = typeof AutoSteps === "undefined" ? {} : AutoSteps.normalizeInfoActions(infoRaw);
+     nextStagePolicy = typeof NextStage === "undefined" ? null : NextStage.normalizePolicy(nsRaw); // 다음 단계 안내(W5) 정책 — 못 읽으면 빈 정책(배너 없음)
+     curationPolicy = curationRaw && typeof Curation !== "undefined" ? Curation.normalizePolicy(curationRaw) : null;
+@@ -1356,7 +1359,7 @@
+     const nat = byBase("NAT-020") || byBase("SB-08"); // 같은 제도 한 건만(06 §4-1 묶기)
+     if (nat) { const ap = usApplyLinkOf(nat); support.push({ id: nat.id, title: nat.title.replace(/^(?:⚠️ )?확인 필요 · /, ""), applyUrl: ap && ap.url ? ap.url : "", officialUrl: nat.officialUrl || (nat.detail && nat.detail.officialUrl) || "" }); }
+     const regional = ((dataset.subsidy && dataset.subsidy.subsidies) || []).some((x) => !/^NAT-/.test(x.id));
+-    return { region: profile.district || (pv && pv.name) || "", ageLabel: ChildTimeline.ageLabelAt(profile.birthDate, new Date()), decide, support, supportRegionPending: !regional, find: null, mine: EduTrend.myLessons(docs, keys), canAdd: usActive(), nextSchool: months >= 60, nextSchoolOpen: (() => { try { return !!nsModel(); } catch (e) { return false; } })(), };
++    return { region: profile.district || (pv && pv.name) || "", ageLabel: ChildTimeline.ageLabelAt(profile.birthDate, new Date()), decide, support, supportRegionPending: !regional, find: eduLinks ? { links: eduLinks.links } : null, firstschoolNote: (() => { const kg = byBase("KG-01"); return kg && !(kg.windowStart instanceof Date) && !(kg.deadlineDate instanceof Date) && !(kg.date instanceof Date) && eduLinks && eduLinks.notices && eduLinks.notices.firstschoolNotYet ? eduLinks.notices.firstschoolNotYet : ""; })(), mine: EduTrend.myLessons(docs, keys), canAdd: usActive(), nextSchool: months >= 60, nextSchoolOpen: (() => { try { return !!nsModel(); } catch (e) { return false; } })(), };
+   }
+   function acct36RenderTrend() {
+     const panel = el("tab-trend");
+diff --git a/js/edu-3to5-view.js b/js/edu-3to5-view.js
+index 4c98590..388b0fe 100644
+--- a/js/edu-3to5-view.js
++++ b/js/edu-3to5-view.js
+@@ -3,7 +3,7 @@
+  * 기존 교육 탭 클래스(.a36t-*)를 그대로 쓰고 새 색·카드 모양은 없다. 숫자·평균·비율은 하나도 그리지 않는다(D9). 또래 범위·지역 트렌드·'다음에 확인할 것'은 3~5세 분기에서 렌더하지 않는다(삭제 아님).
+  *   render(st) → html
+  * st = { region, ageLabel("N세", 세는 나이), decide:[{id,title,why}], support:[{id,title,why,applyUrl,officialUrl}], supportRegionPending:bool,
+- *        find:{ links:[{key,name,url}] } | null, mine:{count,lessons:[{title,weekly}]}, canAdd, nextSchool:bool(만 5세), nextSchoolOpen:bool(다음 단계 시트가 열릴 때만 누를 수 있다), privacy(문장) }
++ *        find:{ links:[{key,name,url}] } | null, mine:{count,lessons:[{title,weekly}]}, canAdd, nextSchool:bool(만 5세), firstschoolNote:문장|""(KG-01 이 날짜 없음일 때만 — 정책 notices.firstschoolNotYet), nextSchoolOpen:bool(다음 단계 시트가 열릴 때만 누를 수 있다), privacy(문장) }
+  * B1 올해 정할 것(항목 없으면 숨김) → B2 받을 수 있는 지원(없으면 숨김) → B3 기관 찾기(공식 링크가 확인돼 넘어온 것만, 없으면 숨김) → B4 학원·체험(항상) → B5 현재 상태 → 개인정보 안내.
+  */
+ (function (root, factory) {
+@@ -23,7 +23,7 @@
+     ifPlan: "유치원 보낼 계획이면", regionSet: "지역 설정하기",
+   });
+   // 상담·방문 일정의 미리 채울 제목(날짜는 비워 둔다)
+-  const VISIT_TITLE = { kindergarten: "유치원 상담", daycare: "어린이집 방문" };
++  const VISIT_TITLE = { kindergarten: "유치원 상담", daycare: "어린이집 방문", kinderinfo: "유치원 상담", childcare: "어린이집 방문" }; // firstschool(처음학교로)은 신청 사이트라 상담·방문 버튼을 두지 않는다
+ 
+   const row = (inner) => `<div class="a36t-row">${inner}</div>`;
+   const btn = (attrs, label, ghost) => `<button type="button" class="${ghost ? "a36t-ghost" : "a36t-btn"}" ${attrs}>${esc(label)}</button>`;
+@@ -35,8 +35,8 @@
+     if (!s.region) parts.push(`<section class="a36t-card a36t-region" data-a36t="region"><p class="a36t-note">${esc(T.noRegionNote || "")}</p>${btn('data-a36="trend-region"', MSG.regionSet)}</section>`);
+ 
+     const decide = (s.decide || []).filter((d) => d && d.title);
+-    if (decide.length || s.nextSchool) { // B1
+-      parts.push(`<section class="a36t-card" data-a36t="decide"><h3>${esc(MSG.decideTitle)}</h3>${decide.map((d) => row(`<div><b>${esc(d.title)}</b>${d.confirm ? `<small class="a36t-nc">${esc(MSG.ifPlan)}</small>` : ""}${d.why ? `<p class="a36t-note">${esc(d.why)}</p>` : ""}</div>${btn(`data-a36="edu-plan" data-edu-id="${esc(d.id)}"`, MSG.plan)}`)).join("")}${s.nextSchool ? (s.nextSchoolOpen === true ? `<button type="button" class="a36t-note a36t-link" data-a36="edu-school">${esc(MSG.nextSchool)}</button>` : `<p class="a36t-note">${esc(MSG.nextSchool.replace(/ ›$/, ""))}</p>`) : ""}</section>`);
++    if (decide.length || s.nextSchool || s.firstschoolNote) { // B1
++      parts.push(`<section class="a36t-card" data-a36t="decide"><h3>${esc(MSG.decideTitle)}</h3>${decide.map((d) => row(`<div><b>${esc(d.title)}</b>${d.confirm ? `<small class="a36t-nc">${esc(MSG.ifPlan)}</small>` : ""}${d.why ? `<p class="a36t-note">${esc(d.why)}</p>` : ""}</div>${btn(`data-a36="edu-plan" data-edu-id="${esc(d.id)}"`, MSG.plan)}`)).join("")}${s.firstschoolNote ? `<p class="a36t-note">${esc(s.firstschoolNote)}</p>` : ""}${s.nextSchool ? (s.nextSchoolOpen === true ? `<button type="button" class="a36t-note a36t-link" data-a36="edu-school">${esc(MSG.nextSchool)}</button>` : `<p class="a36t-note">${esc(MSG.nextSchool.replace(/ ›$/, ""))}</p>`) : ""}</section>`);
+     }
+     const support = (s.support || []).filter((d) => d && d.title);
+     if (support.length) { // B2
+@@ -44,7 +44,7 @@
+     }
+     const links = s.find && Array.isArray(s.find.links) ? s.find.links.filter((l) => l && l.name && /^https?:\/\//.test(l.url || "")) : [];
+     if (links.length && s.region) { // B3 — 공식 링크가 확인돼 넘어온 것만(확인 전에는 블록 숨김). 기관 목록은 만들지 않는다
+-      parts.push(`<section class="a36t-card" data-a36t="find"><h3>${esc(MSG.findTitle)} <small>${esc(MSG.base(s.region))}</small></h3>${links.map((l) => row(`<b>${esc(l.name)}</b>${btn(`data-a36="edu-open" data-url="${esc(l.url)}"`, MSG.openSite)}${btn(`data-a36="edu-visit" data-edu-title="${esc(VISIT_TITLE[l.key] || "")}"`, MSG.visitPlan, true)}`)).join("")}</section>`);
++      parts.push(`<section class="a36t-card" data-a36t="find"><h3>${esc(MSG.findTitle)} <small>${esc(MSG.base(s.region))}</small></h3>${links.map((l) => row(`<b>${esc(l.name)}</b>${btn(`data-a36="edu-open" data-url="${esc(l.url)}"`, MSG.openSite)}${l.key === "firstschool" ? "" : btn(`data-a36="edu-visit" data-edu-title="${esc(VISIT_TITLE[l.key] || "")}"`, MSG.visitPlan, true)}`)).join("")}</section>`);
+     }
+     // B4 항상
+     parts.push(`<section class="a36t-card" data-a36t="lesson"><h3>${esc(MSG.lessonTitle)}</h3>${s.canAdd === false ? "" : btn('data-a36="trend-add"', MSG.lessonAdd)}<p class="a36t-note">${esc(MSG.lessonNote)}</p></section>`);
+diff --git a/test/k7-info-actions.test.js b/test/k7-info-actions.test.js
+index a252a4b..4d21458 100644
+--- a/test/k7-info-actions.test.js
++++ b/test/k7-info-actions.test.js
+@@ -16,14 +16,14 @@ console.log("정책 데이터·판정");
+ test("info-actions.json: 형식이 맞는 항목만 받고, 틀린 항목·빈 라벨·40자 초과는 버린다", () => {
+   const n = AS.normalizeInfoActions(JSON.parse(read("data/policy/info-actions.json")));
+   assert.deepStrictEqual(Object.keys(n).sort(), ["CR-01__default", "PREG-003", "PREG-003__default"]);
+-  assert.ok(["입소대기 신청 일정", "등록대기 신청 일정"].includes(n["CR-01__default"].label), "라벨은 사용자 승인 문구(U4 입소대기→등록대기 전환 중 둘 다 허용)");
++  assert.strictEqual(n["CR-01__default"].label, "등록대기 신청 일정"); // U4: 입소대기 → 등록대기
+   assert.deepStrictEqual(AS.normalizeInfoActions({ actions: { a: { label: "" }, b: {}, c: { label: "x".repeat(41) }, d: { label: " 확인 " }, e: null } }), { d: { label: "확인" } });
+   assert.deepStrictEqual(AS.normalizeInfoActions(null), {}); assert.deepStrictEqual(AS.normalizeInfoActions({ actions: [] }), {});
+ });
+ test("행동 찾기: 이벤트 id 그대로 또는 '__default' 를 붙이거나 뗀 id, 목록에 없으면 null(행동을 만들지 않는다)", () => {
+-  const a = AS.normalizeInfoActions({ actions: { "CR-01__default": { label: "입소대기 신청 일정" }, "PREG-003": { label: "산부인과 검진 일정" } } });
+-  assert.strictEqual(AS.infoActionOf(a, { id: "CR-01__default" }).label, "입소대기 신청 일정");
+-  assert.strictEqual(AS.infoActionOf(a, { id: "CR-01" }).label, "입소대기 신청 일정");
++  const a = AS.normalizeInfoActions({ actions: { "CR-01__default": { label: "등록대기 신청 일정" }, "PREG-003": { label: "산부인과 검진 일정" } } });
++  assert.strictEqual(AS.infoActionOf(a, { id: "CR-01__default" }).label, "등록대기 신청 일정");
++  assert.strictEqual(AS.infoActionOf(a, { id: "CR-01" }).label, "등록대기 신청 일정");
+   assert.strictEqual(AS.infoActionOf(a, { id: "PREG-003__default" }).label, "산부인과 검진 일정");
+   assert.strictEqual(AS.infoActionOf(a, { id: "FD-01__default" }), null);
+   assert.strictEqual(AS.infoActionOf(null, { id: "x" }), null); assert.strictEqual(AS.infoActionOf(a, null), null);
+diff --git a/test/m7-edu-3to5.test.js b/test/m7-edu-3to5.test.js
+index 9e8ac44..b92e731 100644
+--- a/test/m7-edu-3to5.test.js
++++ b/test/m7-edu-3to5.test.js
+@@ -36,7 +36,7 @@ const fs = require("fs"), path = require("path"), vm = require("vm");
+ test("연결: 3~5세 분기는 acct36RenderTrend 안 한 곳, 초등(학년 있음)·36개월 미만은 기존 틀, B3 링크는 넘기지 않는다, 액션 4개는 기존 흐름", () => {
+   const app = fs.readFileSync(path.join(__dirname, "..", "js/app.js"), "utf8");
+   assert.ok(/if \(acct36Is3to5\(\) && typeof Edu3to5View !== "undefined"\) \{ panel\.innerHTML = Edu3to5View\.render\(acct36Edu3to5State\(pv, docs, keys\)\); return; \}/.test(app));
+-  assert.ok(/find: null,/.test(app), "처음학교로·기관 링크는 확인 전 비노출");
++  assert.ok(/find: eduLinks \? \{ links: eduLinks\.links/.test(app) && /eduLinks = eduLinksRaw && Array\.isArray\(eduLinksRaw\.links\) \? eduLinksRaw : null/.test(app), "공식 링크(edu-links.json)는 읽혔을 때만 노출, 못 읽으면 null=비노출");
+   for (const a of ["edu-open", "edu-plan", "edu-visit", "edu-school"]) assert.ok(app.includes(`a === "${a}"`), a);
+   assert.ok(!/https?:\/\/[^"']*(childschoolinfo|childcare\.go|ssum)/.test(fs.readFileSync(path.join(__dirname, "..", "js/edu-3to5-view.js"), "utf8")), "뷰에 URL 하드코딩 없음");
+   // acct36Is3to5 판정 추출 실행: 36개월 미만·임신·초등은 false, 3~5세는 true
+@@ -52,7 +52,7 @@ test("① B1 은 CR-03(만3세반 전환 준비)을 쓰고 CR-02(12개월)는 
+   const body = fnOf("acct36Edu3to5State");
+   assert.ok(body.includes('byBase("CR-03")') && !body.includes('byBase("CR-02")'));
+   const ev = (id, title) => ({ id, title, dateLabel: "3월 새 학기 전" });
+-  const run = (shown) => vm.runInNewContext(`${body}; acct36Edu3to5State(null, [], [])`, { ChildTimeline: { completedMonths: () => 40, ageLabelAt: () => "3세" }, visibleSchedule: () => shown, profile: { birthDate: new Date(2023, 5, 1), district: "구로구" }, dataset: { subsidy: { subsidies: [] } }, usApplyLinkOf: () => null, EduTrend: { myLessons: () => ({ count: 0, lessons: [] }) }, usActive: () => true, Date });
++  const run = (shown) => vm.runInNewContext(`${body}; acct36Edu3to5State(null, [], [])`, { ChildTimeline: { completedMonths: () => 40, ageLabelAt: () => "3세" }, eduLinks: null, visibleSchedule: () => shown, profile: { birthDate: new Date(2023, 5, 1), district: "구로구" }, dataset: { subsidy: { subsidies: [] } }, usApplyLinkOf: () => null, EduTrend: { myLessons: () => ({ count: 0, lessons: [] }) }, usActive: () => true, Date });
+   const st = run([ev("CR-02__default", "만1세반 전환 확인"), ev("CR-03__default", "만3세반(유아반) 전환 준비")]);
+   assert.strictEqual(JSON.stringify(st.decide.map((d) => d.id)), '["CR-03__default"]');
+   assert.strictEqual(run([ev("CR-02__default", "만1세반 전환 확인")]).decide.length, 0);
+@@ -78,3 +78,18 @@ test("④ .a36t-nc CSS(작은 회색, 기존 토큰), ⑤ 만 5세 초등 준비
+   assert.ok(/nextSchoolOpen: \(\(\) => \{ try \{ return !!nsModel\(\)/.test(fnOf("acct36Edu3to5State")));
+   assert.ok(/nextSchool: months >= 60/.test(fnOf("acct36Edu3to5State")));
+ });
++
++test("B3: edu-links.json 3곳 렌더 — 처음학교로는 방문 버튼 없음, 안내 문장은 B1, 유치원알리미·아이사랑은 방문·상담 일정 제목 미리 채움", () => {
++  const raw = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data/policy/edu-links.json"), "utf8"));
++  const h = V.render({ ...base, find: { links: raw.links }, firstschoolNote: raw.notices.firstschoolNotYet });
++  assert.ok(h.includes('data-a36t="find"') && h.includes("처음학교로(유치원 입학 신청)") && h.includes("유치원알리미") && h.includes("아이사랑") && h.includes('data-a36t="decide"') && h.includes("2027학년도 유치원 모집 일정은 아직 공지 전이에요"));
++  assert.strictEqual((h.match(/data-a36="edu-visit"/g) || []).length, 2); assert.ok(h.includes('data-edu-title="유치원 상담"') && h.includes('data-edu-title="어린이집 방문"'));
++  assert.ok(!V.render({ ...base, find: null }).includes('data-a36t="find"'));
++});
++
++test("B1 처음학교로 안내 한 줄: KG-01 이 날짜 없음일 때만(앱 계산), 일정이 있으면·KG-01 이 없으면 비움", () => {
++  const body = fnOf("acct36Edu3to5State");
++  const run = (kg) => vm.runInNewContext(`${body}; acct36Edu3to5State(null, [], [])`, { ChildTimeline: { completedMonths: () => 40, ageLabelAt: () => "3세" }, visibleSchedule: () => (kg ? [kg] : []), profile: { birthDate: new Date(2023, 5, 1), district: "구로구" }, dataset: { subsidy: { subsidies: [] } }, usApplyLinkOf: () => null, EduTrend: { myLessons: () => ({ count: 0, lessons: [] }) }, usActive: () => true, eduLinks: { links: [], notices: { firstschoolNotYet: "공지 전이에요" } }, Date }).firstschoolNote;
++  assert.strictEqual(run({ id: "KG-01__default", title: "유치원 입학 신청" }), "공지 전이에요");
++  assert.strictEqual(run({ id: "KG-01__default", title: "x", windowStart: new Date(2026, 11, 1) }), ""); assert.strictEqual(run(null), "");
++});

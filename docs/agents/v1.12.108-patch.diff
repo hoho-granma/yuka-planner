@@ -1,0 +1,117 @@
+diff --git a/css/style.css b/css/style.css
+index b578900..dafe35b 100644
+--- a/css/style.css
++++ b/css/style.css
+@@ -1824,6 +1824,7 @@ body.acct-design .a36t-nc { display: block; margin: 2px 0 0; font-size: 12px; fo
+ .hs-notice span { flex: 1; } .hs-notice-link, .hs-link { background: none; border: 0; padding: 4px; font: inherit; font-size: 12px; color: var(--text-muted); text-decoration: underline; cursor: pointer; }
+ .hs-notice-x { background: none; border: 0; padding: 4px 6px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
+ .hs-switch-link { margin: 12px 0 4px; text-align: center; }
++.places-basis-tag { display: block; margin-top: 2px; font-size: 11px; font-weight: 400; color: var(--text-muted); } /* 3-1 '시설 유형 기준' 라벨 */
+ /* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
+    인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
+ :root {
+diff --git a/js/app.js b/js/app.js
+index 9af5310..9071020 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -3342,7 +3342,10 @@
+   let placesSort = "near"; // "near" | "popular"
+   async function loadPlaces() {
+     if (placesData) return placesData;
+-    if (!placesLoading) placesLoading = loadJsonOrNull("data/places.json").then((d) => { placesData = d && Array.isArray(d.places) ? d : { places: [] }; return placesData; });
++    if (!placesLoading) placesLoading = Promise.all([loadJsonOrNull("data/places.json"), loadJsonOrNull("data/policy/places-age-basis.json")]).then(([d, basis]) => { // 3-1: 시설 유형 기준 나이(못 읽으면 기존 '방문 전 확인')
++      if (typeof PlacesView !== "undefined" && PlacesView.setAgeBasis) PlacesView.setAgeBasis(basis);
++      placesData = d && Array.isArray(d.places) ? d : { places: [] }; return placesData;
++    });
+     return placesLoading;
+   }
+   async function loadPlacesOffices() {
+diff --git a/js/places-view.js b/js/places-view.js
+index d44166e..a498df6 100644
+--- a/js/places-view.js
++++ b/js/places-view.js
+@@ -232,6 +232,23 @@
+       `</div></div>`
+     );
+   }
++  // 3-1 '시설 유형 기준' 권장 나이(data/policy/places-age-basis.json): 공식 ageMonths 가 없는 곳에만, 데이터의 문구 그대로 + 라벨. 공식 값이 있으면 공식 값 우선. 표시 전용 — 나이 필터(Places.ageFits)에는 쓰지 않는다.
++  let ageBasis = null;
++  function setAgeBasis(d) { ageBasis = d && typeof d === "object" && d.byCategory && typeof d.byCategory === "object" ? d : null; }
++  function basisOf(p) {
++    if (!ageBasis || !p || typeof p !== "object") return null;
++    const rule = ageBasis.byCategory[p.category], list = ageBasis.applyTo && ageBasis.applyTo[p.category];
++    if (!rule || typeof rule.text !== "string" || !rule.text || !Array.isArray(list) || !list.includes(p.id)) return null;
++    if (ageBasis.excludeIds && Object.prototype.hasOwnProperty.call(ageBasis.excludeIds, p.id)) return null;
++    return { text: rule.text, label: typeof ageBasis.basisLabel === "string" && ageBasis.basisLabel ? ageBasis.basisLabel : "" };
++  }
++  /** '권장 나이' 한 줄: 공식 값 → 시설 유형 기준(라벨 포함) → 방문 전 확인. */
++  function ageMeta(p) {
++    const official = ageText(p && p.ageMonths);
++    const b = official === null ? basisOf(p) : null;
++    if (!b) return metaItem("권장 나이", official);
++    return `<li class="places-meta-item places-basis"><span class="places-meta-label">권장 나이</span><span class="places-meta-value">${esc(b.text)}${b.label ? `<small class="places-basis-tag">${esc(b.label)}</small>` : ""}</span></li>`;
++  }
+   function metaItem(label, value) {
+     const known = value !== null && value !== undefined && value !== "";
+     return `<li class="places-meta-item${known ? "" : " unknown"}"><span class="places-meta-label">${esc(label)}</span><span class="places-meta-value">${esc(known ? value : TEXT.unknown)}</span></li>`;
+@@ -271,7 +288,7 @@
+       (typeof p.notice === "string" && p.notice ? `<p class="places-card-notice">${esc(p.notice)}</p>` : "") +
+       (p.address || where ? `<p class="places-address">${esc(p.address || where)}</p>` : "") +
+       `<ul class="places-meta">` +
+-      metaItem("권장 나이", ageText(p.ageMonths)) +
++      ageMeta(p) +
+       metaItem("실내·실외", lookup(Places.INDOOR, p.indoor)) +
+       metaItem("비용", lookup(Places.COST, p.cost)) +
+       metaItem("예약", lookup(Places.RESERVATION, p.reservation)) +
+@@ -408,7 +425,7 @@
+       `<h3 class="places-name">${esc(p.name || "")}</h3>` +
+       addrRow + driveRow +
+       (p.summary ? `<p class="places-summary">${esc(p.summary)}</p>` : "") +
+-      `<ul class="places-meta">${metaItem("권장 나이", ageText(p.ageMonths))}${metaItem("실내·실외", lookup(Places.INDOOR, p.indoor))}${metaItem("비용", lookup(Places.COST, p.cost))}${metaItem("예약", lookup(Places.RESERVATION, p.reservation))}</ul>` +
++      `<ul class="places-meta">${ageMeta(p)}${metaItem("실내·실외", lookup(Places.INDOOR, p.indoor))}${metaItem("비용", lookup(Places.COST, p.cost))}${metaItem("예약", lookup(Places.RESERVATION, p.reservation))}</ul>` +
+       (typeof p.notice === "string" && p.notice ? `<p class="places-reserve-note places-detail-notice">${esc(p.notice)}</p>` : "") +
+       resv +
+       (hasHome ? `<div class="places-actions"><a class="places-link" href="${esc(p.officialUrl)}" target="_blank" rel="noopener noreferrer">${esc(TEXT.homepage)}</a></div>` : "") +
+@@ -432,5 +449,5 @@
+     };
+   }
+ 
+-  return { TEXT, SCHEDULE_LIMITS, esc, ageText, render, filterRow, activeConds, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, routeUrl, memoFor, scheduleDraftFor };
++  return { TEXT, SCHEDULE_LIMITS, esc, ageText, setAgeBasis, basisOf, render, filterRow, activeConds, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, routeUrl, memoFor, scheduleDraftFor };
+ });
+diff --git a/test/m17-places-age-basis.test.js b/test/m17-places-age-basis.test.js
+new file mode 100644
+index 0000000..ad71caf
+--- /dev/null
++++ b/test/m17-places-age-basis.test.js
+@@ -0,0 +1,30 @@
++// 3-1 어디갈까 '시설 유형 기준' 권장 나이: 공식 값 우선, 없는 곳(applyTo·excludeIds 제외)에만 데이터 문구+라벨, 못 읽으면 방문 전 확인. 나이 필터는 불변. 실행: node --test test/m17-places-age-basis.test.js
++const test = require("node:test"), assert = require("node:assert"), fs = require("fs"), path = require("path");
++const V = require("../js/places-view.js"), P = require("../js/places.js");
++const rd = (p) => JSON.parse(fs.readFileSync(path.join(__dirname, "..", p), "utf8"));
++const places = rd("data/places.json").places, basis = rd("data/policy/places-age-basis.json");
++const byId = (id) => places.find((x) => x.id === id);
++const li = (p) => { const h = V.renderDetail ? "" : ""; return V.renderCard(p, {}); };
++test("공식 값이 없는 도서관·박물관(applyTo)에 데이터 문구 + '시설 유형 기준' 라벨", () => {
++  V.setAgeBasis(basis);
++  for (const [cat, list] of Object.entries(basis.applyTo)) for (const id of list) {
++    const p = byId(id); assert.ok(p, id); assert.strictEqual(p.category, cat, id);
++    const b = V.basisOf(p); assert.ok(b && b.text === basis.byCategory[cat].text && b.label === "시설 유형 기준", id);
++  }
++  const html = li(byId("gyeonggi-yongin-mus-001"));
++  assert.ok(html.includes("박물관·전시는 만 3세(36개월) 이상 권장인 곳이 많아요") && html.includes("시설 유형 기준"));
++});
++test("공식 값 우선·excludeIds 제외·기준 없는 분류는 '방문 전 확인'", () => {
++  V.setAgeBasis(basis);
++  assert.ok(li(byId("seoul-lib-001")).includes("만 14세 미만") && !li(byId("seoul-lib-001")).includes("시설 유형 기준"), "공식 값이 있는 곳은 공식 값");
++  for (const id of Object.keys(basis.excludeIds)) assert.strictEqual(V.basisOf(byId(id)), null, id);
++  const other = places.find((p) => !basis.byCategory[p.category] && p.ageMonths == null); if (other) assert.ok(li(other).includes("방문 전 확인") && !li(other).includes("시설 유형 기준"));
++});
++test("파일을 못 읽으면 기존 '방문 전 확인', 나이 필터 판정은 기준표와 무관", () => {
++  V.setAgeBasis(null); const p = byId("gyeonggi-yongin-mus-001"); assert.ok(li(p).includes("방문 전 확인") && !li(p).includes("시설 유형 기준"));
++  const before = places.map((x) => P.ageFits(x, 12)); V.setAgeBasis(basis); assert.deepStrictEqual(places.map((x) => P.ageFits(x, 12)), before);
++});
++test("앱 연결: places.json 과 함께 읽고 실패해도 화면은 그대로(null 안전)", () => {
++  const app = fs.readFileSync(path.join(__dirname, "..", "js/app.js"), "utf8");
++  assert.ok(app.includes('loadJsonOrNull("data/policy/places-age-basis.json")') && app.includes("PlacesView.setAgeBasis(basis)"));
++});

@@ -71,6 +71,10 @@ test("④ .a36t-nc CSS(작은 회색, 기존 토큰), ⑤ 만 5세 초등 준비
   const css = fs.readFileSync(path.join(__dirname, "..", "css/style.css"), "utf8");
   const m = /\.a36t-nc \{([^}]*)\}/.exec(css.slice(0, css.indexOf("/* ═══ v1.12.97")));
   assert.ok(m && /font-size: 12px/.test(m[1]) && /var\(--text-muted\)/.test(m[1]));
-  assert.ok(V.render({ ...base, nextSchool: true }).includes("내년에는 초등 입학 준비가 시작돼요 ›") && !V.render({ ...base, nextSchool: false }).includes("초등 입학 준비"));
+  const open = V.render({ ...base, nextSchool: true, nextSchoolOpen: true }), plain = V.render({ ...base, nextSchool: true, nextSchoolOpen: false });
+  assert.ok(open.includes("내년에는 초등 입학 준비가 시작돼요 ›") && open.includes('data-a36="edu-school"'), "열 시트가 있으면 버튼+›");
+  assert.ok(plain.includes("내년에는 초등 입학 준비가 시작돼요") && !plain.includes("준비가 시작돼요 ›") && !plain.includes('data-a36="edu-school"'), "열 시트가 없으면 글자만(›·버튼 없음)");
+  assert.ok(!V.render({ ...base, nextSchool: false }).includes("초등 입학 준비"));
+  assert.ok(/nextSchoolOpen: \(\(\) => \{ try \{ return !!nsModel\(\)/.test(fnOf("acct36Edu3to5State")));
   assert.ok(/nextSchool: months >= 60/.test(fnOf("acct36Edu3to5State")));
 });
