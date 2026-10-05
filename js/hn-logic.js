@@ -96,24 +96,34 @@
    *  - 지원금(행정·지원금)은 배치하지 않는다(fixed: 신청 시작일).
    * opts = { birthDate, monthKeysOf(e) → 대표 월령 배열(숫자 아닌 값은 무시), inCalendar?(e) → false 면 칸에 올리지 않음(1-3 D3: 없으면 지금과 동일) }. 반환: Map(eventId → Date[])
    */
+  /** VX 같은 창 묶음 키(추천일 배치와 큐레이션 묶기가 같은 키를 쓴다). window: 창 시작~끝 / monthly: 대표 월령 k. 지원금·비접종은 항목별 키. */
+  function gkey(e, s, en, k) {
+    const isVx = e.category === "예방접종";
+    if (typeof k === "number") return isVx ? `VXM|${k}` : `S|${e.id}|${k}`;
+    return isVx ? `VX|${ymd(s)}|${ymd(en)}` : `S|${e.id}`;
+  }
+  /** 홈·달력이 보는 일정 목록(순수): 카테고리 필터(ignoreCategoryFilter 면 무시) + 보임 판정(isShown) + 미해당 제외. 프로필이 없으면 빈 목록. */
+  function visibleSchedule(schedule, o) {
+    if (!o || !o.birthDate) return [];
+    return schedule.filter((e) => (o.ignoreCategoryFilter || !o.activeCats || o.activeCats.has(e.category)) && o.isShown(o.birthDate, e) && !(o.isNA && o.isNA(e.id)));
+  }
   function assignDisplayDays(events, opts) {
     const slots = [];
     for (const e of events) {
       if (e.category === "행정·지원금") continue;
       if (opts && typeof opts.inCalendar === "function" && !opts.inCalendar(e)) continue;
-      const isVx = e.category === "예방접종";
       if (e.scheduleKind === "window" && e.windowStart) {
         const s = sod(e.windowStart);
         const en0 = e.windowEnd ? sod(e.windowEnd) : s;
         const en = en0 < s ? s : en0;
-        slots.push({ e, start: s, end: en, gkey: isVx ? `VX|${ymd(s)}|${ymd(en)}` : `S|${e.id}` });
+        slots.push({ e, start: s, end: en, gkey: gkey(e, s, en) });
       } else if (e.scheduleKind === "monthly") {
         for (const k of opts.monthKeysOf(e)) {
           if (typeof k !== "number") continue;
           const s = sod(addMonthsD(opts.birthDate, k));
           const en = addDaysD(sod(addMonthsD(opts.birthDate, k + 1)), -1);
           if (isNaN(s) || isNaN(en)) continue; // 잘못된 월 값의 슬롯은 배치하지 않는다(다른 항목은 정상 배치)
-          slots.push({ e, start: s, end: en, gkey: isVx ? `VXM|${k}` : `S|${e.id}|${k}` });
+          slots.push({ e, start: s, end: en, gkey: gkey(e, s, en, k) });
         }
       }
     }
@@ -586,6 +596,8 @@
     dayRange,
     periodText,
     assignDisplayDays,
+    gkey,
+    visibleSchedule,
     periodRangeOf,
     classifyHomeItems,
     plannedOnDay,

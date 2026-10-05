@@ -110,7 +110,7 @@
       checklistTitle: "체크리스트", checklistHint: "아이 나이를 알면 여기에 월령별 할 일이 채워져요.",
       subsidyHint: "아이 나이를 알면 받을 수 있는 혜택이 여기 나와요.", subsidySeg: ["신청 가능", "예정", "완료"],
       recordTitle: "기록", recordHint: "아이를 등록하면 성장·접종 기록을 남길 수 있어요.",
-      familyTitle: "이번 주 가족 일정", mineTitle: "내 일정",
+      familyTitle: "오늘·이번 주 우리 가족", mineTitle: "내 일정",
       sheetTitle: "아이 등록", close: "닫기",
       nameLabel: "이름", nameHint: "별명도 괜찮아요", namePlaceholder: "예: 하은이, 콩이",
       dateLabel: "날짜", kindBorn: "생년월일", kindDue: "출산 예정일",

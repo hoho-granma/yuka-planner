@@ -1,0 +1,337 @@
+{
+  "_설명": "1-0 큐레이션 판단 규칙 정책(초안, hn_data 2026-10-05). 근거: docs/ux-review/06-큐레이션-엔진-설계.md §3-3·§4·§5-1, docs/agents/지시서-1-0-판단규칙.md §2. 새 사실(날짜·금액·자격)은 만들지 않는다. 판단용 actionType 은 ACT/CHECK/KNOW 3개, sub 는 참고 열.",
+  "_적용순서": "① ids(개별 예외) → ② triggerType(MILESTONE_EVENT·REFERENCE) → ③ prefix + exposureLevel → ④ prefix 기본값. 엔진 밖 지원금 레코드(NAT·PREG·지역)는 ① ids → ② deadlineType=ongoing(상시 혜택형, 슬롯 후보 제외) → ③ conditionLabel 있음=CHECK → ④ subsidyDefault(deadlineType별).",
+  "actionTypes": [
+    "ACT",
+    "CHECK",
+    "KNOW"
+  ],
+  "ids": {
+    "SC-01": {
+      "type": "ACT",
+      "sub": "SCHOOL",
+      "_근거": "06 §5-1"
+    },
+    "SC-02": {
+      "type": "ACT",
+      "sub": "SCHOOL",
+      "_근거": "06 §5-1"
+    },
+    "SC-03": {
+      "type": "CHECK",
+      "sub": "SCHOOL",
+      "_근거": "06 §5-1 예외(입학연기, CONDITIONAL)"
+    },
+    "SC-12": {
+      "type": "ACT",
+      "sub": "SCHOOL",
+      "_근거": "06 §5-1"
+    },
+    "SC-13": {
+      "type": "ACT",
+      "sub": "SCHOOL",
+      "_근거": "06 §5-1"
+    },
+    "SC-14": {
+      "type": "ACT",
+      "sub": "SCHOOL",
+      "_근거": "06 §5-1"
+    },
+    "SB-06": {
+      "type": "CHECK",
+      "sub": "APPLY",
+      "_근거": "D13: eligibility UNKNOWN → 확인형"
+    },
+    "SB-07": {
+      "type": "CHECK",
+      "sub": "APPLY",
+      "_근거": "D13"
+    },
+    "SB-08": {
+      "type": "CHECK",
+      "sub": "APPLY",
+      "_근거": "D13"
+    },
+    "SB-09": {
+      "type": "CHECK",
+      "sub": "APPLY",
+      "_근거": "D13"
+    },
+    "NAT-009": {
+      "type": "CHECK",
+      "sub": "APPLY",
+      "_근거": "D12 고용 조건(조건 키 보강 전까지)"
+    },
+    "NAT-010": {
+      "type": "CHECK",
+      "sub": "APPLY",
+      "_근거": "D12"
+    },
+    "NAT-011": {
+      "type": "CHECK",
+      "sub": "APPLY",
+      "_근거": "D12(06 §3-4 배우자 출산휴가 오판 예시)"
+    },
+    "NAT-012": {
+      "type": "CHECK",
+      "sub": "APPLY",
+      "_근거": "D12"
+    },
+    "NAT-013": {
+      "type": "CHECK",
+      "sub": "APPLY",
+      "_근거": "D12"
+    },
+    "PREG-008": {
+      "type": "CHECK",
+      "sub": "APPLY",
+      "_근거": "D12"
+    },
+    "OR-03": {
+      "type": "ACT",
+      "sub": "BOOK",
+      "_근거": "06 §5-1"
+    },
+    "OR-04": {
+      "type": "ACT",
+      "sub": "BOOK",
+      "_근거": "06 §5-1"
+    },
+    "OR-05": {
+      "type": "KNOW",
+      "sub": "CAUTION",
+      "_근거": "06 §5-1"
+    },
+    "OR-06": {
+      "type": "KNOW",
+      "sub": "TRY",
+      "_근거": "06 §5-1"
+    },
+    "FD-08": {
+      "type": "KNOW",
+      "sub": "CAUTION",
+      "_근거": "06 §5-1"
+    },
+    "FD-14": {
+      "type": "KNOW",
+      "sub": "OBSERVE",
+      "_근거": "06 §5-1"
+    },
+    "SL-01": {
+      "type": "KNOW",
+      "sub": "CAUTION",
+      "_근거": "06 §5-1"
+    },
+    "SL-02": {
+      "type": "KNOW",
+      "sub": "TRY",
+      "_근거": "06 §5-1"
+    },
+    "LF-01": {
+      "type": "KNOW",
+      "sub": "CAUTION",
+      "_근거": "06 §5-1"
+    },
+    "LF-02": {
+      "type": "KNOW",
+      "sub": "CAUTION",
+      "_근거": "06 §5-1"
+    },
+    "CR-01": {
+      "type": "CHECK",
+      "sub": "APPLY",
+      "_근거": "06 §5-1 CHECK(CONDITIONAL CR). 기관 이용 신호가 생기면 ACT(신호 없음)"
+    },
+    "SB-11": {
+      "type": "KNOW",
+      "sub": "INFO",
+      "_근거": "hn_pm 2026-10-05: 정부안은 '지금 꼭'에 올리지 않음. G4에서 미확정이면 후보 제외"
+    },
+    "SB-12": {
+      "type": "KNOW",
+      "sub": "INFO",
+      "_근거": "hn_pm 2026-10-05: 정부안. SB-11과 같음"
+    }
+  },
+  "triggerTypes": {
+    "MILESTONE_EVENT": {
+      "type": "KNOW",
+      "sub": "MILESTONE",
+      "_근거": "06 §5-1 MILESTONE_EVENT 5건(DV-09·OR-01·SF-02·04·05)"
+    },
+    "REFERENCE": {
+      "type": "KNOW",
+      "sub": "INFO",
+      "_근거": "06 §5-1 REFERENCE(OR-02·SB-10)"
+    }
+  },
+  "prefixByExposure": {
+    "SB": {
+      "MUST": {
+        "type": "ACT",
+        "sub": "APPLY"
+      },
+      "CONDITIONAL": {
+        "type": "CHECK",
+        "sub": "APPLY"
+      },
+      "_근거": "06 §5-1 SB(MUST)=ACT, CONDITIONAL SB=CHECK"
+    },
+    "VX": {
+      "CONDITIONAL": {
+        "type": "CHECK",
+        "sub": "BOOK"
+      },
+      "_근거": "hn_pm 2026-10-05: exposureLevel CONDITIONAL인 VX는 CHECK(VX-RSV·VX-HPV)"
+    }
+  },
+  "prefix": {
+    "VX": {
+      "type": "ACT",
+      "sub": "BOOK"
+    },
+    "HC": {
+      "type": "ACT",
+      "sub": "BOOK"
+    },
+    "PG": {
+      "type": "ACT",
+      "sub": "APPLY"
+    },
+    "SC": {
+      "type": "KNOW",
+      "sub": "INFO",
+      "_근거": "학교 검진 SC-04~11·15~18(날짜 학교별) — 행정 5건은 ids"
+    },
+    "DV": {
+      "type": "KNOW",
+      "sub": "OBSERVE"
+    },
+    "FD": {
+      "type": "KNOW",
+      "sub": "TRY"
+    },
+    "OR": {
+      "type": "KNOW",
+      "sub": "TRY"
+    },
+    "LF": {
+      "type": "KNOW",
+      "sub": "TRY"
+    },
+    "SL": {
+      "type": "KNOW",
+      "sub": "TRY"
+    },
+    "SF": {
+      "type": "KNOW",
+      "sub": "CAUTION"
+    },
+    "CR": {
+      "type": "KNOW",
+      "sub": "TRY",
+      "_근거": "06 §5-1 TRY=CR-02~04. 기관 이용 조건 확인은 CR-01(ids, CHECK)만(hn_pm 2026-10-05)"
+    },
+    "SB": {
+      "type": "ACT",
+      "sub": "APPLY"
+    }
+  },
+  "subsidyDefault": {
+    "_적용": "엔진 밖 지원금 레코드(national.json·PREG·지역). conditionLabel 이 있으면 CHECK. 아니면 deadlineType 별.",
+    "conditionLabel": {
+      "type": "CHECK",
+      "sub": "APPLY",
+      "_근거": "06 §5-1 지역 conditionLabel 있음=CHECK"
+    },
+    "birth_relative_days": {
+      "type": "ACT",
+      "sub": "APPLY",
+      "_근거": "06 §5-1 조건 없음 + 마감 있음"
+    },
+    "birth_relative_months": {
+      "type": "ACT",
+      "sub": "APPLY",
+      "_근거": "06 §5-1 조건 없음 + 마감 있음"
+    },
+    "age_window": {
+      "type": "ACT",
+      "sub": "APPLY",
+      "_근거": "06 §5-1 조건 없음 + 마감 있음"
+    },
+    "ongoing": {
+      "type": "KNOW",
+      "sub": "INFO_BENEFIT",
+      "_근거": "hn_pm 2026-10-05: 마감 없는 상시 지원금은 슬롯 후보에서 제외하고 '받을 수 있는 혜택 N개' 한 줄 대상(06 §6 상시 혜택형). conditionLabel보다 먼저 적용. 신청형/서비스형 구분 필드는 만들지 않음"
+    },
+    "unconfirmed": {
+      "type": "ACT",
+      "sub": "APPLY",
+      "_근거": "06 §3-3 G4(행동 링크도 없으면 알아둘 것)를 코드 게이트에서 그대로 적용. 여기서는 신청형 표시만"
+    }
+  },
+  "urgentLongWindowIds": {
+    "ids": [
+      "SB-01",
+      "SB-02",
+      "SB-04",
+      "PG-01",
+      "PG-02",
+      "HC-03",
+      "HC-04",
+      "HC-05",
+      "HC-06",
+      "HC-07",
+      "HC-08",
+      "HC-09"
+    ],
+    "_근거": "지시서 §2: 06 L4의 'priority=1 & MUST' 조항 대신 명시 목록(창이 길어도 미루면 손해). HC-06은 priority 2이지만 지시서 범위 HC-03~09에 포함"
+  },
+  "aliases": {
+    "_설명": "같은 제도 두 경로 — 삭제·id 변경 없이 1건만 보이게 한다. primary 를 보이고 alias 는 묶는다. 현재 화면은 SB-06~09가 eligibility UNKNOWN으로 숨겨져 NAT 쪽만 보인다(2026-10-05 단위 실행 확인).",
+    "pairs": [
+      {
+        "primary": "NAT-031",
+        "alias": "SB-06",
+        "_근거": "미숙아·선천성이상아 의료비. 지금 보이는 쪽=NAT"
+      },
+      {
+        "primary": "NAT-007",
+        "alias": "SB-07",
+        "_근거": "어린이집 보육료. SB-07.subsidyRef=NAT-007 이미 연결"
+      },
+      {
+        "primary": "NAT-020",
+        "alias": "SB-08",
+        "_근거": "유아학비. auto-after36.json _중복정리와 같은 방향(NAT-020 하나만)"
+      },
+      {
+        "primary": "NAT-018",
+        "alias": "SB-09",
+        "_근거": "아이돌봄. 지금 보이는 쪽=NAT"
+      }
+    ]
+  },
+  "thresholds": {
+    "deadlineSoonDays": 30,
+    "upcomingDays": 45,
+    "shortWindowDays": 60,
+    "reappearDays": 7,
+    "_근거": {
+      "deadlineSoonDays": "기존 코드 값 재사용: isUrgent 기본 30일(hn-logic.js)",
+      "upcomingDays": "제안값(근거 없는 신규값 — 조정 1순위)",
+      "shortWindowDays": "기존 코드 값 재사용: 날짜형 판정 60일(schedule.js:105)",
+      "reappearDays": "기존 정책 값 재사용: home-reappear.json 7일"
+    }
+  },
+  "slots": {
+    "now": 3,
+    "soon": 2,
+    "know": 1,
+    "_근거": "제안값(06 §4: 01 문서 H2와 같은 3, 곧 2, 알아두기 대표 1)"
+  },
+  "_추가확인": [],
+  "_결정": [
+    "2026-10-05 hn_pm: CR-02→KNOW(TRY), OR-01→KNOW(MILESTONE, trigger 규칙), VX CONDITIONAL→CHECK 규칙, SB-11·12→KNOW(INFO)+G4 미확정 제외, ongoing 지원금→KNOW(INFO_BENEFIT) 슬롯 제외"
+  ]
+}

@@ -19,7 +19,7 @@
     inputLabel: "입력 방식",
     weeksNow: "지금 임신 주수", weeksAtConfirm: "확인한 날의 임신 주수", confirmDate: "임신 확인일",
     weekUnit: "주", dayUnit: "일",
-    preview: (due) => `출산 예정일은 ${due} 로 계산돼요`,
+    preview: (due) => `출산 예정일은 ${due}로 계산돼요`,
     backToDue: "예정일을 직접 입력하려면 '예정일로 입력'을 눌러 주세요",
     errDue: "출산 예정일을 선택해 주세요.", errWeeks: `임신 주수는 ${MIN_WEEKS}~${MAX_WEEKS}주 사이로 골라 주세요.`, errConfirm: "임신 확인일을 오늘 이전 날짜로 선택해 주세요.", errRange: "계산한 출산 예정일이 너무 멀거나 지났어요. 날짜와 주수를 다시 확인해 주세요.",
   });

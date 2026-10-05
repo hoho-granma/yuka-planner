@@ -1895,5 +1895,12 @@ body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-foot { backg
 .modal-panel:has(#ep-save) .rv-cat { background: #fff; border: 1.5px solid var(--line); border-radius: 999px; color: var(--text); }
 .modal-panel:has(#ep-save) .rv-cat.active { background: var(--nd-yellow); border-color: var(--nd-yellow-line); color: var(--text); font-weight: 800; }
 .modal-panel:has(#ep-save) input:focus-visible, .modal-panel:has(#ep-save) select:focus-visible, .modal-panel:has(#ep-save) .ep-select:focus { border-color: var(--nd-indigo); border-width: 2px; outline: none; }
+/* v1.12.100: ID 선택자(#ep-name)·버튼형 날짜 칸이 포커스 규칙을 덮던 것을 같은 강도로 맞춘다 — 포커스 = 인디고 2px */
+.modal-panel:has(#ep-save) #ep-name:focus-visible, .modal-panel:has(#ep-save) .date-picker-trigger:focus-visible, .modal-panel:has(#ep-save) .date-picker-trigger:focus { border: 2px solid var(--nd-indigo); outline: none; }
+.modal-panel:has(#ep-save) #ep-save:focus-visible, .modal-panel:has(#ep-save) #ep-cancel:focus-visible { outline: 2px solid var(--nd-indigo); outline-offset: 2px; }
 .modal-panel:has(#ep-save) #ep-save { background: var(--nd-indigo); color: #fff; border: 0; border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
 .modal-panel:has(#ep-save) #ep-cancel { background: #fff; border: 1.5px solid var(--line); border-radius: 13px; color: var(--nd-ink); }
+/* v1.12.100 (hn_design QA): 아이 없는 홈을 등록 후 홈과 맞춘다 — 배너 면은 홈 계열 소프트색, 내 카드 아바타·핀 색은 등록 후 홈(--c-badge-auto 살구·빨간 핀) */
+:is(#tab-home, #empty-panel) .acct-nc-ban { background: var(--nd-soft); }
+body.acct-design :is(#tab-home, #empty-panel) .acct-nc-me .acct-nc-av { background: var(--c-badge-auto); color: var(--text); }
+body.acct-design :is(#tab-home, #empty-panel) .acct-nc-me-t small svg { color: #e0443a; fill: currentColor; }

@@ -11,7 +11,7 @@ const rd = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), "utf8"));
 global.TodoEngine = require(path.join(ROOT, "js/todo-engine.js"));
 global.DateCalc = require(path.join(ROOT, "js/date-calc.js"));
 global.ChildTimeline = require(path.join(ROOT, "js/child-timeline.js"));
-vm.runInThisContext(fs.readFileSync(path.join(ROOT, "js/schedule.js"), "utf8") + "\n;globalThis.__buildSchedule = buildSchedule;");
+vm.runInThisContext(fs.readFileSync(path.join(ROOT, "js/schedule.js"), "utf8") + "\n;globalThis.__buildSchedule = buildSchedule; globalThis.__buildEligibilityUnknown = buildEligibilityUnknown;");
 const HN = require(path.join(ROOT, "js/hn-logic.js"));
 
 const FILES = ["health-checkup", "vaccination", "development", "feeding", "oral", "sleep", "safety", "daily-life", "childcare"].map((f) => `data/todos/${f}.json`).concat("data/subsidies/national-todos.json");

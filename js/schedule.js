@@ -321,3 +321,39 @@ function buildSchedule({ birthDate, province, district, gender, birthOrder, stag
   events.sort((a, b) => a.date.getTime() - b.date.getTime());
   return events;
 }
+
+/**
+ * 1-0: 조건 답이 없어(eligibilityCondition 의 속성 미응답) 일정이 되지 못한 항목 — 큐레이션이 '해당되면' 확인형(CHECK) 후보로만 쓴다.
+ * buildSchedule 과 별개의 새 함수(위 152행 근처 제외 경로는 그대로). 학교 정보가 없어 UNKNOWN 인 항목(eligibilityCondition 없음)은 담지 않는다.
+ * 같은 제도 두 경로(aliases {alias→primary})는 primary 가 present(이미 보이는 id 집합)에 있으면 alias 쪽을 뺀다. 반환 [{ id, todo_id, title, attribute }].
+ */
+function buildEligibilityUnknown({ birthDate, province, district, gender, stage }, todoDefinitions, opts) {
+  if (typeof TodoEngine === "undefined" || !todoDefinitions || !todoDefinitions.length) return [];
+  const o = opts || {};
+  const defs = stage !== "pregnant" ? todoDefinitions.filter((d) => !d.pregnancyOnly) : todoDefinitions;
+  const instances = TodoEngine.calculateTodoInstances({
+    today: o.today || new Date(),
+    child: { birthDate, gender },
+    region: { province, district },
+    familyDeclaredAttributes: {},
+    completions: [],
+    todoDefinitions: defs,
+  });
+  const byId = new Map(defs.map((t) => [t.todo_id, t]));
+  const present = o.present instanceof Set ? o.present : new Set();
+  const aliases = o.aliases && typeof o.aliases === "object" ? o.aliases : {};
+  const out = [], seen = new Set();
+  for (const inst of instances) {
+    if (inst.eligibility !== "UNKNOWN" || inst.status !== null) continue;
+    const td = byId.get(inst.todo_id);
+    if (!td || !td.eligibilityCondition || seen.has(inst.todo_id)) continue;
+    if (td.verificationStatus === "확인필요") continue;
+    const tp = td.triggerParams; // 나이 범위(AGE_WINDOW)를 지난 항목은 확인형으로도 내보내지 않는다(opts.ageMonths 가 있을 때)
+    if (Number.isFinite(o.ageMonths) && td.triggerType === "AGE_WINDOW" && tp && ((Number.isFinite(tp.endMonth) && o.ageMonths > tp.endMonth) || (Number.isFinite(tp.startMonth) && o.ageMonths < tp.startMonth))) continue;
+    const primary = aliases[inst.todo_id];
+    if (primary && present.has(primary)) continue; // 같은 제도의 정식 쪽이 이미 보인다
+    seen.add(inst.todo_id);
+    out.push({ id: `${inst.todo_id}__default`, todo_id: inst.todo_id, title: inst.title || td.title, attribute: td.eligibilityCondition.attribute });
+  }
+  return out;
+}

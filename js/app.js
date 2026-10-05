@@ -775,7 +775,7 @@
   // (ChildTimeline.isEventVisible — A6-3).
   function visibleSchedule(ignoreCategoryFilter) {
     if (!profile) return []; // 아이가 없는 상태(마지막 아이를 지운 직후 등): 이전 아이의 일정 목록이 남아 있어도 프로필 없이 월령을 읽지 않는다
-    return schedule.filter((e) => (ignoreCategoryFilter || activeCats.has(e.category)) && ChildTimeline.isEventShown(profile.birthDate, e) && !isNotApplicable(e.id));
+    return HNLogic.visibleSchedule(schedule, { birthDate: profile.birthDate, activeCats, ignoreCategoryFilter, isShown: ChildTimeline.isEventShown, isNA: isNotApplicable }); // 1-0: 순수 함수로 추출(결과 동일)
   }
 
   // "미해당" 표시 — 나에게 해당하지 않는 혜택. completed 맵에 `${id}__na` 키로 저장한다(완료·가족 동기화 경로를

@@ -17,7 +17,7 @@ function env(profile) {
   const errors = [];
   const stale = [{ id: "HC-01__default", category: "영유아검진", date: new Date(2026, 9, 10) }]; // 지운 아이의 옛 일정 목록
   const sb = {
-    console: { error: (...a) => errors.push(a.join(" ")) }, ChildTimeline: CT, profile, schedule: stale, activeCats: new Set(["영유아검진"]), isNotApplicable: () => false,
+    console: { error: (...a) => errors.push(a.join(" ")) }, ChildTimeline: CT, HNLogic: require("../js/hn-logic.js"), profile, schedule: stale, activeCats: new Set(["영유아검진"]), isNotApplicable: () => false,
     hhEnabled: () => true, usActive: () => true, toISODate: () => "2026-10-04", UserSchedule: { addDays: (d) => d },
     UserScheduleView: { renderUpcomingCard: () => "CARD", upcomingItems: () => [], toModelFilter: () => ({}), MSG: {} }, AccountView: { MSG: { nc: { familyTitle: "가족", mineTitle: "내 일정" } } },
     usLinks: () => [], usMembers: () => [], usSelOpts: () => ({}), usMeId: () => "m1",
