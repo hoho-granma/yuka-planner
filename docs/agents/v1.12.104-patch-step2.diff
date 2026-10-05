@@ -1,0 +1,91 @@
+diff --git a/js/home-slots-view.js b/js/home-slots-view.js
+index b88cbe7..a080970 100644
+--- a/js/home-slots-view.js
++++ b/js/home-slots-view.js
+@@ -26,6 +26,12 @@
+   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+   const sod = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+   const md = (d) => `${d.getMonth() + 1}월 ${d.getDate()}일`;
++  /** 날짜 표기(hn_pm 결정): 올해 안·6개월 이내는 M월 D일, 해가 넘어가거나 6개월을 넘으면 연도를 붙인다. today 없으면 연도 없이. */
++  const dmd = (d, today) => (today && (d.getFullYear() !== today.getFullYear() || d.getTime() - today.getTime() > 183 * DAY) ? `${d.getFullYear()}년 ` : "") + md(d);
++  /** 항목의 끝이 '나이 상한'(age_window)인가 — 신청 기한이 아니라 받을 수 있는 나이의 끝. 이때는 '마감'을 쓰지 않는다. */
++  const isAgeCap = (u) => !!(u.items && u.items.length && u.items.every((it) => it && it.detail && it.detail.deadlineType === "age_window"));
++  /** 끝 날짜 문구: 신청 기한 → "{날짜} 마감"(suffix 로 '까지' 선택), 나이 상한 → "○○년 ○월까지 받을 수 있어요". */
++  const endText = (u, e, today, suffix) => (isAgeCap(u) ? `${e.getFullYear()}년 ${e.getMonth() + 1}월까지 받을 수 있어요` : `${dmd(e, today)}${suffix}`);
+   const ACT_LABEL = { apply: "신청하기", schedule: "일정 넣기", done: "완료", confirm: "해당돼요", review: "기록 확인" };
+   const CONFIRM_NO = "아니에요";
+   const lv = (u) => Number(String(u.rule || u.level || "L7").slice(1));
+@@ -36,9 +42,9 @@
+   /** §3-3 날짜 글자: L1·L2 "D-N · M월 D일까지"(강조색+글자 같이), L3 문구, L4 "M월 D일까지". 색만으로 구분하지 않는다. */
+   function dateHtml(u, today) {
+     const e = endDate(u, today), r = lv(u);
+-    if ((r === 1 || r === 2) && e) return `<b class="hs-date hs-date-urgent">D-${u.daysToEnd} · ${md(e)}까지</b>`;
++    if ((r === 1 || r === 2) && e) return `<b class="hs-date hs-date-urgent">D-${u.daysToEnd} · ${endText(u, e, today, "까지")}</b>`;
+     if (r === 3) return `<b class="hs-date">기한이 지났지만 지금 가능</b>`;
+-    if (r === 4 && e) return `<b class="hs-date">${md(e)}까지</b>`;
++    if (r === 4 && e) return `<b class="hs-date">${endText(u, e, today, "까지")}</b>`;
+     return "";
+   }
+   const catOf = (u) => { const it = u.items && u.items[0]; return (it && CAT[it.category]) || ""; };
+@@ -63,7 +69,7 @@
+   }
+   function soonRow(u, today) {
+     const e = endDate(u, today), start = u.items && u.items[0] && (u.items[0].entryDate || u.items[0].windowStart);
+-    const when = u.reason && u.reason.key === "starting_soon" && start instanceof Date ? `${md(start)}부터` : e ? `${md(e)} 마감` : "";
++    const when = u.reason && u.reason.key === "starting_soon" && start instanceof Date ? `${dmd(start, today)}부터` : e ? endText(u, e, today, " 마감") : "";
+     return `<div class="hs-sr" data-hs-key="${esc(u.key)}"><span class="hs-sit">${esc(u.title)}${u.type === "CHECK" ? `<span class="hs-tg-if">해당되면</span>` : ""}</span>${when ? `<span class="hs-wh">${when}</span>` : ""}${u.actionKind === "confirm" || u.actionKind === "review" ? actionHtml(u) : ""}</div>`;
+   }
+   function knowRow(u) {
+diff --git a/js/places-view.js b/js/places-view.js
+index 9f0fb29..d44166e 100644
+--- a/js/places-view.js
++++ b/js/places-view.js
+@@ -134,9 +134,10 @@
+     if (!a || typeof a !== "object") return null;
+     const min = typeof a.min === "number" ? a.min : null;
+     const max = typeof a.max === "number" ? a.max : null;
+-    if (min !== null && max !== null) return min === max ? `${min}개월` : `${min}~${max}개월`;
++    const yrs = max !== null && max >= 71 && (max + 1) % 12 === 0 ? `만 ${(max + 1) / 12}세 미만` : null; // 개월 끝(167·131·71)은 '만 N세 미만'으로 — '167개월까지'를 부모가 나이로 바꿔 읽지 않게(12 의 배수 − 1 만)
++    if (min !== null && max !== null) return min === max ? `${min}개월` : yrs ? `${min}개월~${yrs}` : `${min}~${max}개월`;
+     if (min !== null) return `${min}개월 이상`;
+-    if (max !== null) return `${max}개월까지`;
++    if (max !== null) return yrs || `${max}개월까지`;
+     return null;
+   }
+   const lookup = (map, v) => (v !== null && v !== undefined && Object.prototype.hasOwnProperty.call(map, v) ? map[v] : null);
+diff --git a/test/m11-age-label.test.js b/test/m11-age-label.test.js
+new file mode 100644
+index 0000000..b49e34b
+--- /dev/null
++++ b/test/m11-age-label.test.js
+@@ -0,0 +1,10 @@
++// 도서관 등 권장 나이: 12의 배수−1 개월 끝(71·131·167)은 '만 N세 미만', 그 밖은 지금 표기 그대로. 실행: node --test test/m11-age-label.test.js
++const test = require("node:test"), assert = require("node:assert"), fs = require("fs"), path = require("path");
++const src = fs.readFileSync(path.join(__dirname, "..", "js/places-view.js"), "utf8");
++const i = src.indexOf("  function ageText(a) {"), fn = src.slice(i, src.indexOf("\n  }\n", i) + 4);
++const ageText = new Function(`${fn}; return ageText;`)();
++test("만 N세 미만 표기·그 밖은 기존 그대로", () => {
++  assert.strictEqual(ageText({ min: null, max: 167 }), "만 14세 미만"); assert.strictEqual(ageText({ min: null, max: 71 }), "만 6세 미만");
++  assert.strictEqual(ageText({ min: 0, max: 131 }), "0개월~만 11세 미만");
++  assert.strictEqual(ageText({ min: 0, max: 72 }), "0~72개월"); assert.strictEqual(ageText({ min: null, max: 24 }), "24개월까지"); assert.strictEqual(ageText({ min: 36, max: null }), "36개월 이상"); assert.strictEqual(ageText(null), null);
++});
+diff --git a/test/m12-deadline-text.test.js b/test/m12-deadline-text.test.js
+new file mode 100644
+index 0000000..3cc07e2
+--- /dev/null
++++ b/test/m12-deadline-text.test.js
+@@ -0,0 +1,14 @@
++// 마감 표기(hn_pm #1): '마감'은 신청 기한에만, 나이 상한은 '○○년 ○월까지 받을 수 있어요', 올해 안 6개월 이내는 M월 D일·해 넘김/6개월 초과는 연도. 실행: node --test test/m12-deadline-text.test.js
++const test = require("node:test"), assert = require("node:assert");
++const V = require("../js/home-slots-view.js");
++const today = new Date(2026, 9, 5);
++const unit = (dt, days, extra) => ({ key: "k", title: "아동수당", type: "ACT", rule: "L4", daysToEnd: days, actionKind: "apply", reason: { key: "x", text: "" }, items: [{ id: "SB-04", detail: { deadlineType: dt } }], ...extra });
++const html = (u) => V.render({ now: [], soon: [u], know: [], moreCounts: {} }, { today, family: null });
++test("신청 기한(soon): 올해 안 → M월 D일 마감, 해 넘김 → 연도 포함", () => {
++  assert.ok(html(unit("birth_relative_days", 20, { reason: { key: "deadline_soon", text: "" } })).includes("10월 25일 마감"));
++  assert.ok(html(unit("birth_relative_days", 100, { reason: { key: "deadline_soon", text: "" } })).includes("2027년 1월 13일 마감"));
++});
++test("나이 상한(age_window): '마감' 없이 ○○년 ○월까지 받을 수 있어요", () => {
++  const h = html(unit("age_window", 400, { reason: { key: "deadline_soon", text: "" } }));
++  assert.ok(h.includes("2027년 11월까지 받을 수 있어요") && !/마감<|마감\b/.test(h.replace(/아동수당/g, "")), h);
++});

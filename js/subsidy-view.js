@@ -11,6 +11,8 @@
   let scope = "all"; // all | national | regional
   let expiredOpen = false;
   let conditionalOpen = false;
+  let sureMoreOpen = false;
+  let noOpen = false;
 
   const isNational = (ctx, e) => {
     const p = ctx.subsidyProvider(e);
@@ -62,15 +64,42 @@
     let html = `<p class="sub-region-note">📍 ${ctx.esc(ctx.profile.province)} ${ctx.esc(ctx.profile.district)} 기준이에요.${ctx.pregnant ? " 출산 예정일 기준으로 계산했어요." : ""}</p>`;
 
     if (statusTab === "available") {
-      // 마감 임박 구분·뱃지는 두지 않는다 — 신청 가능 항목을 마감일이 가까운 순으로 나열한다.
-      if (b.available.length) {
-        html += `<h3 class="sub-group-title">지금 신청할 수 있어요</h3>`;
-        html += b.available.map((e) => cardHtml(ctx, e)).join("");
-      }
-      if (!b.available.length) html += `<p class="empty">지금 신청할 수 있는 혜택이 없어요.</p>`;
-      if (b.conditional.length) {
-        html += `<button type="button" class="sub-expired-toggle sub-cond-toggle" data-act="conditional">조건에 해당하면 신청할 수 있는 혜택 ${b.conditional.length}개 ${conditionalOpen ? "접기" : "보기"}</button>`;
-        if (conditionalOpen) html += `<div class="sub-conditional">${b.conditional.map((e) => cardHtml(ctx, e)).join("")}</div>`;
+      // 1-4: 3단 — 마감 임박 / 확실히 받는 것 / 조건 확인(+ 해당 없음 접힘). 개수 요약 줄은 없다(D16). 순수 모델은 js/subsidy-tiers.js.
+      const T = window.FEATURES && window.FEATURES.curation === true ? window.SubsidyTiers : null; // 3단은 '새 홈 미리보기'(플래그 curation)와 함께 켠다 — OFF 면 기존 렌더(사용자 결정 2026-10-05)
+      const answers = ctx.answers || {};
+      const tiers = T ? T.tiers({ available: b.available, urgent: b.urgent, conditional: b.conditional }, { answers, isNA: ctx.isNA, deadlineOf: L.subsidyDeadline, expandMax: ctx.expandMax }) : null;
+      if (!tiers) {
+        // 기존 렌더(플래그 OFF): v1.12.102(871cac1)와 같은 문구·구조 — 마감 임박 구분 없이 신청 가능 항목을 나열하고, 조건형은 접힘으로 둔다.
+        if (b.available.length) {
+          html += `<h3 class="sub-group-title">지금 신청할 수 있어요</h3>`;
+          html += b.available.map((e) => cardHtml(ctx, e)).join("");
+        }
+        if (!b.available.length) html += `<p class="empty">지금 신청할 수 있는 혜택이 없어요.</p>`;
+        if (b.conditional.length) {
+          html += `<button type="button" class="sub-expired-toggle sub-cond-toggle" data-act="conditional">조건에 해당하면 신청할 수 있는 혜택 ${b.conditional.length}개 ${conditionalOpen ? "접기" : "보기"}</button>`;
+          if (conditionalOpen) html += `<div class="sub-conditional">${b.conditional.map((e) => cardHtml(ctx, e)).join("")}</div>`;
+        }
+      } else {
+        const urgentWhen = (it) => { const r = T.rowModel(it.e, { today: ctx.today, deadlineOf: L.subsidyDeadline, urgent: true }); return r.when.kind === "urgent" ? `<div class="sub-when urgent">${ctx.esc(r.when.text)}</div>` : ""; };
+        const tag = (it) => (it.confirmed ? `<div class="sub-confirmed">${ctx.esc(T.MSG.confirmedTag)}</div>` : "");
+        if (tiers.urgent.length) html += `<h3 class="sub-group-title">${T.MSG.urgent}</h3>` + tiers.urgent.map((it) => cardHtml(ctx, it.e, { urgent: true, badge: urgentWhen(it) + tag(it) })).join("");
+        if (tiers.sure.length) {
+          html += `<h3 class="sub-group-title">${T.MSG.sure}</h3>` + tiers.sure.map((it) => cardHtml(ctx, it.e, { badge: tag(it) })).join("");
+          if (tiers.sureMore.length) {
+            html += `<button type="button" class="sub-expired-toggle" data-act="sure-more">${tiers.sureMore.length}개 더 보기 ${sureMoreOpen ? "접기" : "›"}</button>`;
+            if (sureMoreOpen) html += `<div class="sub-sure-more">${tiers.sureMore.map((it) => cardHtml(ctx, it.e, { badge: tag(it) })).join("")}</div>`;
+          }
+        }
+        if (tiers.empty) html += `<p class="empty">${T.MSG.empty}</p>`;
+        const answerFoot = (e) => `<div class="sub-answer"><button type="button" class="chip" data-sub-answer="yes" data-id="${ctx.esc(e.id)}">${T.MSG.yes}</button><button type="button" class="chip" data-sub-answer="no" data-id="${ctx.esc(e.id)}">${T.MSG.no}</button></div>`;
+        if (tiers.conditional.length) {
+          html += `<button type="button" class="sub-expired-toggle sub-cond-toggle" data-act="conditional">${T.MSG.condToggle(tiers.conditional.length, conditionalOpen)}</button>`;
+          if (conditionalOpen) html += `<div class="sub-conditional">${tiers.conditional.map((it) => cardHtml(ctx, it.e, { foot: answerFoot(it.e) })).join("")}</div>`;
+        }
+        if (tiers.no.length) {
+          html += `<button type="button" class="sub-expired-toggle" data-act="no">${T.MSG.noToggle(tiers.no.length, noOpen)}</button>`;
+          if (noOpen) html += `<div class="sub-no">${tiers.no.map((it) => cardHtml(ctx, it.e, { foot: `<div class="sub-answer"><button type="button" class="chip" data-sub-answer="undo" data-id="${ctx.esc(it.e.id)}">${T.MSG.undo}</button></div>` })).join("")}</div>`;
+        }
       }
       if (b.expired.length) {
         html += `<button type="button" class="sub-expired-toggle" data-act="expired">기한이 지난 혜택 ${b.expired.length}개 ${expiredOpen ? "접기" : "보기"}</button>`;
@@ -95,6 +124,21 @@
     ctx.bindOpen(body);
     const togCond = body.querySelector("[data-act='conditional']");
     if (togCond) togCond.addEventListener("click", () => { conditionalOpen = !conditionalOpen; render(ctx); });
+    const togNo = body.querySelector("[data-act='no']");
+    if (togNo) togNo.addEventListener("click", () => { noOpen = !noOpen; render(ctx); });
+    const togSure = body.querySelector("[data-act='sure-more']");
+    if (togSure) togSure.addEventListener("click", () => { sureMoreOpen = !sureMoreOpen; render(ctx); });
+    body.querySelectorAll("[data-sub-answer]").forEach((btn) => btn.addEventListener("click", (ev) => { // D14: 항목 단위 기기 저장(키 hannun_subsidy_answers, Firestore 불변)
+      ev.stopPropagation();
+      const T2 = window.SubsidyTiers, id = btn.dataset.id, v = btn.dataset.subAnswer;
+      if (!T2 || !id) return;
+      let st = null; try { st = window.localStorage; } catch (e) {}
+      T2.saveAnswers(st, T2.withAnswer(T2.loadAnswers(st), id, v === "yes" ? "yes" : v === "no" ? "no" : null));
+      ctx.answers = T2.loadAnswers(st);
+      render(ctx);
+      const target = v === "yes" && Array.isArray(ctx.events) ? ctx.events.find((x) => x && x.id === id) : null;
+      if (target && typeof ctx.openDetail === "function") ctx.openDetail(target); // 홈 카드와 같게: '해당돼요'는 상세에서 신청·확인을 이어 간다(D14)
+    }));
     const tog = body.querySelector("[data-act='expired']");
     if (tog) tog.addEventListener("click", () => { expiredOpen = !expiredOpen; render(ctx); });
     seg.querySelectorAll("[data-st]").forEach((btn) => btn.addEventListener("click", () => { statusTab = btn.dataset.st; render(ctx); window.scrollTo(0, 0); }));

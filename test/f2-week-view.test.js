@@ -41,7 +41,7 @@ test("renderCalendar: 변경은 맨 앞 가드 한 줄뿐이다", () => {
   assert.ok(now.startsWith("  function renderCalendar() {\n    if (calWeekOn()) return renderWeek();\n"));
 });
 test("renderSelectedDayPanel·attachListHandlers·renderCalendarProgress·computeCalendarDays·renderAutoPeriodSlot 는 HEAD 와 글자까지 같다", () => {
-  ["renderSelectedDayPanel", "attachListHandlers", "renderCalendarProgress", "computeCalendarDays", "renderAutoPeriodSlot", "usRefreshCalendar"].forEach((n) => assert.strictEqual(fnSrc(app, n).replace("    if (renderCalTodoLine()) return; // E(1-2)\n", "").replace("    if (renderCalTodoLine()) return;\n", "").replace(/if \(\(!profile && !acctEnabled\(\)\) \|\| !hhEnabled\(\)([^\n]*?return;) \/\/ [^\n]*/, "if (!profile || !hhEnabled()$1"), fnSrc(head, n), n)); // E(1-2): renderCalendarProgress 첫 줄(가구 활성이면 한 줄로 대체)만 다르다
+  ["renderSelectedDayPanel", "attachListHandlers", "renderCalendarProgress", "computeCalendarDays", "renderAutoPeriodSlot", "usRefreshCalendar"].forEach((n) => assert.strictEqual(fnSrc(app, n).replace(", ...calendarTierOpts() }", " }").replace("    if (renderCalTodoLine()) return; // E(1-2)\n", "").replace("    if (renderCalTodoLine()) return;\n", "").replace(/if \(\(!profile && !acctEnabled\(\)\) \|\| !hhEnabled\(\)([^\n]*?return;) \/\/ [^\n]*/, "if (!profile || !hhEnabled()$1"), fnSrc(head, n), n)); // E(1-2): renderCalendarProgress 첫 줄(가구 활성이면 한 줄로 대체)만 다르다
 });
 test("usBuildModel: view 인자(F2)·C2 연결 옵션·칩 달력 필터(복수 선택)만 늘었고 기본(월) 호출은 month 모델", () => {
   const now = fnSrc(app, "usBuildModel");

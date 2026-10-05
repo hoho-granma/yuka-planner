@@ -1,0 +1,164 @@
+diff --git a/css/style.css b/css/style.css
+index 907bee4..ed26941 100644
+--- a/css/style.css
++++ b/css/style.css
+@@ -1810,6 +1810,12 @@ body.acct-design .acct-cs-inp:focus, body.acct-design .acct-cs-sel:focus { borde
+ .mg-know { margin: 8px 0 0; } .mg-know > summary { cursor: pointer; list-style: none; padding: 6px 0; }
+ .mg-know > summary::-webkit-details-marker { display: none; }
+ .mg-ack { margin: 0 0 6px auto; display: block; }
++/* 1-6 '무엇이 달라지나' 카드 — 기존 시트 카드 색·글자 그대로(새 색 없음) */
++body.acct-design .ns-change{margin:0 0 12px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface,#fff)}
++body.acct-design .ns-change h4{margin:0 0 6px;font-size:14px;font-weight:800;text-align:left}
++body.acct-design .ns-change ul{margin:0;padding-left:18px;text-align:left}
++body.acct-design .ns-change .fine-print{margin:6px 0 0;text-align:left}
++body.acct-design .ns-card-only{margin:8px 0}
+ /* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
+    인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
+ :root {
+diff --git a/index.html b/index.html
+index aeee2ef..b25b007 100644
+--- a/index.html
++++ b/index.html
+@@ -287,7 +287,8 @@
+   <script src="js/school-policy.js?v=1"></script>
+   <script src="js/auto-after36.js?v=1"></script>
+   <script src="js/auto-steps.js?v=8"></script>
+-  <script src="js/next-stage.js?v=4"></script>
++  <script src="js/next-stage-card.js?v=1"></script>
++  <script src="js/next-stage.js?v=5"></script>
+   <script src="js/todo-engine.js?v=4"></script>
+   <script src="js/schedule.js?v=18"></script>
+   <script src="js/hn-logic.js?v=12"></script>
+diff --git a/js/app.js b/js/app.js
+index 2af3646..1cf8c77 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -3140,8 +3140,13 @@
+     if (old) old.remove();
+     let m = null;
+     try { m = nsModel(); } catch (e) { console.error("다음 단계 안내 계산 실패", e); }
+-    if (m) body.insertAdjacentHTML("beforeend", NextStage.renderBanner(m));
++    if (m && m.bannerOn === false) { // 1-6: 정보 카드 창(30~32개월)은 배너 없이 카드만 홈 맨 아래에 둔다
++      const card = nsCardHtml(m);
++      if (card) body.insertAdjacentHTML("beforeend", `<div id="ns-banner" class="ns-card-only">${card}</div>`);
++    } else if (m) body.insertAdjacentHTML("beforeend", NextStage.renderBanner(m));
+   }
++  /** 1-6 '무엇이 달라지나' 카드(정책 changes 에서만 — 문장이 없으면 빈 문자열). */
++  const nsCardHtml = (m) => (typeof NextStageCard === "undefined" || !m || !m.stage ? "" : NextStageCard.render(m.stage, { ageMonths: m.ageMonths }, m.items));
+   const nsCanPlan = () => autoLinkOn() && usActiveChildKey() != null;
+   function nsShow(html) {
+     modalMode = "profile";
+@@ -3154,7 +3159,7 @@
+     NSS.m = nsKeepModel(m);
+     if (!NSS.m) return closeDetail();
+     NSS.error = ""; NSS.message = ""; NSS.saving = false;
+-    nsShow(NextStage.renderSheet(NSS.m, { applyOf: (id) => { const e = schedule.find((x) => x.id === id); return e ? usApplyLinkOf(e) : null; }, canPlan: nsCanPlan() }));
++    nsShow(NextStage.renderSheet(NSS.m, { applyOf: (id) => { const e = schedule.find((x) => x.id === id); return e ? usApplyLinkOf(e) : null; }, canPlan: nsCanPlan(), cardHtml: nsCardHtml(NSS.m) }));
+   }
+   /** 일정 넣기 시트의 줄: 아직 안 한 항목만. 날짜를 만들지 않는다(정해진 날이 없으면 시기만, 그것도 없으면 선택 불가). */
+   function nsPlanRows() {
+diff --git a/js/next-stage.js b/js/next-stage.js
+index aa35fdf..2042afc 100644
+--- a/js/next-stage.js
++++ b/js/next-stage.js
+@@ -42,6 +42,7 @@
+       if (!items.length) continue;
+       out.stages.push({
+         id: s.id, match: m, windowMonths: Number.isInteger(s.windowMonths) && s.windowMonths >= 0 ? s.windowMonths : out.windowMonthsDefault,
++        ...(Array.isArray(s.changes) ? { changes: s.changes.filter(isStr) } : {}), ...(isStr(s.changesSource) ? { changesSource: s.changesSource } : {}), ...(Number.isInteger(s.infoWindowMonths) && s.infoWindowMonths > 0 ? { infoWindowMonths: s.infoWindowMonths } : {}),
+         stageLabel: s.stageLabel || "", headline: s.headline, sub: s.sub || "", subWhenPast: typeof s.subWhenPast === "string" ? s.subWhenPast : "", sheetTitle: s.sheetTitle || s.headline, intro: s.intro || "", items,
+       });
+     }
+@@ -106,7 +107,8 @@
+       } else if (m.kind === "age") {
+         if (kid.pregnant || typeof kid.ageMonths !== "number" || !m.fromStage.includes(kid.stage)) continue;
+         const left = m.boundaryMonths - kid.ageMonths;
+-        if (left <= 0 || left > st.windowMonths) continue;
++        const infoWin = st.changes && st.changes.length && st.infoWindowMonths ? st.infoWindowMonths : 0; // 1-6: 정보 카드 창(배너 창보다 길 수 있다)
++        if (left <= 0 || left > Math.max(st.windowMonths, infoWin)) continue;
+         when = left;
+       } else {
+         if (kid.pregnant || !m.fromStage.includes(kid.stage)) continue;
+@@ -140,7 +142,7 @@
+     const anyPast = best.items.some((x) => x.state === "past");
+     const subSrc = anyPast ? st.subWhenPast : st.sub;
+     const sub = subSrc.replace("{name}", kid.name || "").replace("{when}", whenText).replace(/^\s*·\s*|\s*·\s*$/g, "").replace(/\s+·\s+·\s+/g, " · ");
+-    return { id: st.id, headline: st.headline, sub, sheetTitle: st.sheetTitle, intro: st.intro, stageLabel: st.stageLabel, kidName: kid.name || "", items: best.items, remaining: best.remaining };
++    return { bannerOn: st.match.kind !== "age" || months <= st.windowMonths, stage: st, ageMonths: typeof kid.ageMonths === "number" ? kid.ageMonths : null, id: st.id, headline: st.headline, sub, sheetTitle: st.sheetTitle, intro: st.intro, stageLabel: st.stageLabel, kidName: kid.name || "", items: best.items, remaining: best.remaining };
+   }
+ 
+   // ── 마크업 ──
+@@ -163,7 +165,7 @@
+       return `<div class="ns-cn${cur ? " cur" : ""}${it.state !== "open" ? " fin" : ""}" data-ns-item="${esc(it.id)}"><i class="ns-n">${it.state === "done" ? CHECK : i + 1}</i><div class="ns-cb"><small>${esc(cur && !it.when ? MSG.now : it.when)}</small><button type="button" class="ns-ttl" data-ns="detail" data-ns-id="${esc(it.id)}"><b>${esc(it.label)}</b>${badge}</button>${it.detail ? `<span class="ns-dl">${esc(it.detail)}${it.needsCheck ? ` <em class="ns-nc">${esc(MSG.checkNeeded)}</em>` : ""}</span>` : it.needsCheck ? `<span class="ns-dl"><em class="ns-nc">${esc(MSG.checkNeeded)}</em></span>` : ""}${apply && apply.url ? `<a class="ns-chip" href="${esc(apply.url)}" target="_blank" rel="noopener noreferrer">${esc(apply.label)}</a>` : ""}</div></div>`;
+     }).join("");
+     const foot = m.remaining ? (o.canPlan ? `<button type="button" class="ns-primary" data-ns="plan">${CAL}${esc(MSG.planAll)}</button>` : `<p class="ns-note">${esc(MSG.noLink)}</p>`) : "";
+-    return `<div class="ns-sheet" data-ns-sheet="timeline"><div class="ns-sh"><small>${esc(MSG.sheetFrom(m.kidName, m.stageLabel))}</small><b>${esc(m.sheetTitle)}</b></div>${m.intro ? `<p class="ns-intro">${esc(m.intro)}</p>` : ""}<div class="ns-chain">${chain}</div>${foot}<button type="button" class="ns-close" data-ns="close">${esc(MSG.close)}</button></div>`;
++    return `<div class="ns-sheet" data-ns-sheet="timeline"><div class="ns-sh"><small>${esc(MSG.sheetFrom(m.kidName, m.stageLabel))}</small><b>${esc(m.sheetTitle)}</b></div>${m.intro ? `<p class="ns-intro">${esc(m.intro)}</p>` : ""}${o.cardHtml || ""}<div class="ns-chain">${chain}</div>${foot}<button type="button" class="ns-close" data-ns="close">${esc(MSG.close)}</button></div>`;
+   }
+ 
+   /**
+diff --git a/sw.js b/sw.js
+index d36ccae..1170d94 100644
+--- a/sw.js
++++ b/sw.js
+@@ -25,6 +25,7 @@ const SHELL_ASSETS = [
+   "./js/school-policy.js",
+   "./js/auto-after36.js",
+   "./js/auto-steps.js",
++  "./js/next-stage-card.js",
+   "./js/next-stage.js",
+   "./js/sync.js",
+   "./js/feature-flags.js",
+diff --git a/test/g1-onboarding.test.js b/test/g1-onboarding.test.js
+index fbf3e85..c43e687 100644
+--- a/test/g1-onboarding.test.js
++++ b/test/g1-onboarding.test.js
+@@ -106,7 +106,7 @@ console.log("OFF 첫 화면: 베타 미리 써 보기");
+ test("OFF 기본 HTML 은 '베타 버튼 슬롯' 한 줄만 다르다(그 외 HEAD 와 동일 — 기간형 AUTO 삭제로 빠진 #auto-period-slot·달력 아래 안내 문구(W5 후속 4번 삭제)는 양쪽에서 뺀다)", () => {
+   let head;
+   try { head = cp.execFileSync("git", ["show", "5ec3e02:index.html"], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); } catch (e) { return; }
+-  const norm = (h) => h.replace(/\?v=\d+/g, "").replace(/\n\s*<script src="js\/child-anniversaries\.js"><\/script>/, "").replace(/(name="theme-color" content=")#ff8a5c/, "$1#ff6a1a").replace(/style="color:#e0524e;"/, 'style="color:var(--c-danger);"').replace(/\n\s*<div id="beta-preview-slot"><\/div>/, "").replace(/\n\s*<script src="js\/schedule-kinds\.js[^>]*><\/script>/, "").replace(/\n\s*<script src="js\/(?:curation|month-tiers|home-slots-view|curated-home|subsidy-tiers|edu-3to5-view)\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/home-slots\.css[^>]*>/, "").replace(/ *<div id="auto-period-slot"><\/div>\n/, "").replace(/ *<div class="cal-kind-legend" id="cal-kind-legend">\n[^\n]*\n *<\/div>\n/, "").replace(/\n\s*<script src="js\/(?:auto-after36|auto-steps|next-stage|time-range|time-wheel|pregnancy-basis)\.js[^>]*><\/script>/g, "").replace(/<script>\/\* G19:[\s\S]*?<\/script>\n/, "").replace(/\n\s*<script src="js\/(child-todos|over36-view|tab-swipe|edu-trend)\.js[^>]*><\/script>/g, ""); // G13/G19: 순수 모듈 스크립트 한 줄·계정 기본 ON 부팅 클래스 스크립트(OFF 에서는 아무 클래스도 붙지 않는다): 순수 모듈 스크립트 한 줄(전역 정의만, OFF 동작 없음)
++  const norm = (h) => h.replace(/\?v=\d+/g, "").replace(/\n\s*<script src="js\/child-anniversaries\.js"><\/script>/, "").replace(/(name="theme-color" content=")#ff8a5c/, "$1#ff6a1a").replace(/style="color:#e0524e;"/, 'style="color:var(--c-danger);"').replace(/\n\s*<div id="beta-preview-slot"><\/div>/, "").replace(/\n\s*<script src="js\/schedule-kinds\.js[^>]*><\/script>/, "").replace(/\n\s*<script src="js\/(?:curation|month-tiers|home-slots-view|curated-home|subsidy-tiers|edu-3to5-view)\.js[^>]*><\/script>/g, "").replace(/\n\s*<link rel="stylesheet" href="css\/home-slots\.css[^>]*>/, "").replace(/ *<div id="auto-period-slot"><\/div>\n/, "").replace(/ *<div class="cal-kind-legend" id="cal-kind-legend">\n[^\n]*\n *<\/div>\n/, "").replace(/\n\s*<script src="js\/(?:auto-after36|auto-steps|next-stage-card|next-stage|time-range|time-wheel|pregnancy-basis)\.js[^>]*><\/script>/g, "").replace(/<script>\/\* G19:[\s\S]*?<\/script>\n/, "").replace(/\n\s*<script src="js\/(child-todos|over36-view|tab-swipe|edu-trend)\.js[^>]*><\/script>/g, ""); // G13/G19: 순수 모듈 스크립트 한 줄·계정 기본 ON 부팅 클래스 스크립트(OFF 에서는 아무 클래스도 붙지 않는다): 순수 모듈 스크립트 한 줄(전역 정의만, OFF 동작 없음)
+   assert.strictEqual(norm(read("index.html")), norm(head));
+   assert.ok(read("index.html").includes('<div id="beta-preview-slot"></div>'));
+ });
+diff --git a/test/k3-next-stage.test.js b/test/k3-next-stage.test.js
+index 17fe541..c2f905f 100644
+--- a/test/k3-next-stage.test.js
++++ b/test/k3-next-stage.test.js
+@@ -63,7 +63,9 @@ test("임신 중: 출산 예정일 2개월 이내면 '곧 출산' 배너(출생
+ });
+ 
+ test("0~35개월: 36개월 전 3개월 구간(33~35개월)에만 '곧 3~5세', 유아학비는 NAT-020·SB-08 중복 없이 한 줄, 영유아검진 6차 포함", () => {
+-  for (const m of [32, 30, 12, 3]) assert.strictEqual(kidCtx(ago(m), "born"), null, m + "개월");
++  for (const m of [29, 12, 3]) assert.strictEqual(kidCtx(ago(m), "born"), null, m + "개월");
++  for (const m of [32, 30]) { const r = kidCtx(ago(m), "born"); assert.ok(r && r.id === "TO_3_5" && r.bannerOn === false, m + "개월은 배너 없이 정보 카드만(1-6)"); } // 30~32개월
++  for (const m of [33, 34, 35]) assert.strictEqual(kidCtx(ago(m), "born").bannerOn, true, m + "개월은 배너+카드");
+   for (const m of [33, 34, 35]) {
+     const r = kidCtx(ago(m), "born");
+     assert.ok(r && r.id === "TO_3_5", m + "개월");
+diff --git a/test/m10-next-stage-card.test.js b/test/m10-next-stage-card.test.js
+new file mode 100644
+index 0000000..c047efd
+--- /dev/null
++++ b/test/m10-next-stage-card.test.js
+@@ -0,0 +1,19 @@
++// 1-6 '무엇이 달라지나' 카드 연결: changes 는 정책에서만, C(_changesPending)는 읽지 않음, 30~32개월 카드 단독·33개월부터 배너+시트 카드. 실행: node --test test/m10-next-stage-card.test.js
++const test = require("node:test"), assert = require("node:assert"), fs = require("fs"), path = require("path");
++const NS = require("../js/next-stage.js"), CARD = require("../js/next-stage-card.js");
++const raw = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data/policy/next-stage.json"), "utf8"));
++const pol = NS.normalizePolicy(raw);
++const app = fs.readFileSync(path.join(__dirname, "..", "js/app.js"), "utf8");
++test("정책: TO_3_5 에만 changes 3줄, 학년 전환(_changesPending)은 어느 단계에도 안 실린다", () => {
++  const s = pol.stages.find((x) => x.id === "TO_3_5");
++  assert.deepStrictEqual(s.changes, raw.stages.find((x) => x.id === "TO_3_5").changes); assert.strictEqual(s.infoWindowMonths, 6);
++  for (const st of pol.stages) if (st.id !== "TO_3_5" && !raw.stages.find((x) => x.id === st.id).changes) assert.strictEqual(st.changes, undefined, st.id);
++  assert.ok(!JSON.stringify(pol).includes("입학 후 90일"), "C 문구 비노출");
++});
++test("연결: 카드는 시트(cardHtml)와 30~32개월 홈 카드 단독에만, 문장이 없으면 빈 문자열", () => {
++  assert.ok(/cardHtml: nsCardHtml\(NSS\.m\)/.test(app) && /m\.bannerOn === false/.test(app));
++  const s = pol.stages.find((x) => x.id === "TO_3_5");
++  assert.ok(CARD.render(s, { ageMonths: 31 }, []).includes("교육 탭이 새로 열려요"));
++  assert.strictEqual(CARD.render(pol.stages.find((x) => x.id === "TO_BORN"), { ageMonths: null }, []), "");
++  assert.strictEqual(CARD.render(s, { ageMonths: 29 }, []), "", "29개월은 아직");
++});

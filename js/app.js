@@ -1326,6 +1326,28 @@
     btn.addEventListener("click", () => switchTab("trend"));
     if (!TAB_NAMES.includes("trend")) TAB_NAMES.push("trend");
   }
+  /** 3~5세(만 3세 이상~초등 입학 전) 교육 탭 분기. 학년이 있으면(초등 이상) 기존 틀. */
+  function acct36Is3to5() {
+    if (!profile || isPregnant()) return false;
+    const m = ChildTimeline.completedMonths(profile.birthDate, new Date());
+    if (m < ChildTimeline.OVER36_FROM_MONTHS) return false;
+    const g = EduTrend.gradeOf(profile.birthDate, new Date(), { policy: schoolPolicy, enrollmentYearOverride: profile.enrollmentYearOverride });
+    return !(g >= 1);
+  }
+  /** 3~5세 블록 입력: 이 아이의 기존 이벤트·지원 레코드만 쓴다(새 사실·숫자 없음). 처음학교로·기관 링크는 데이터 확인 전이라 넘기지 않는다(B3 숨김). */
+  function acct36Edu3to5State(pv, docs, keys) {
+    const today = new Date(), months = ChildTimeline.completedMonths(profile.birthDate, today);
+    const shown = visibleSchedule(true);
+    const byBase = (id) => shown.find((e) => String(e.id).split("__")[0] === id);
+    const decide = [];
+    const cr = byBase("CR-02");
+    if (cr) decide.push({ id: cr.id, title: cr.title.replace(/^(?:⚠️ )?확인 필요 · /, ""), why: cr.dateLabel || "" });
+    const support = [];
+    const nat = byBase("NAT-020") || byBase("SB-08"); // 같은 제도 한 건만(06 §4-1 묶기)
+    if (nat) { const ap = usApplyLinkOf(nat); support.push({ id: nat.id, title: nat.title.replace(/^(?:⚠️ )?확인 필요 · /, ""), applyUrl: ap && ap.url ? ap.url : "", officialUrl: nat.officialUrl || (nat.detail && nat.detail.officialUrl) || "" }); }
+    const regional = ((dataset.subsidy && dataset.subsidy.subsidies) || []).some((x) => !/^NAT-/.test(x.id));
+    return { region: profile.district || (pv && pv.name) || "", ageLabel: ChildTimeline.ageLabelAt(profile.birthDate, new Date()), decide, support, supportRegionPending: !regional, find: null, mine: EduTrend.myLessons(docs, keys), canAdd: usActive(), nextSchool: months >= 60, };
+  }
   function acct36RenderTrend() {
     const panel = el("tab-trend");
     if (!panel || !profile) return;
@@ -1333,6 +1355,7 @@
     const keys = [acct36LinkKey(), familyCode].filter(Boolean);
     const docs = typeof usDocs === "function" && usActive() ? usDocs() : [];
     const pv = regionsData && regionsData.provinces.find((x) => x.code === profile.province);
+    if (acct36Is3to5() && typeof Edu3to5View !== "undefined") { panel.innerHTML = Edu3to5View.render(acct36Edu3to5State(pv, docs, keys)); return; } // 3~5세: 단계별 블록(또래 범위·트렌드·다음에 확인할 것은 이 분기에서 렌더하지 않는다)
     panel.innerHTML = Over36View.renderTrend({ region: profile.district || (pv && pv.name) || "", gradeLabel: EduTrend.gradeLabel(g), inRange: g >= 0 && g <= 6, mine: EduTrend.myLessons(docs, keys), status: EduTrend.statusFor(null), canAdd: usActive() });
   }
   const renderAllBase = renderAll;
@@ -1560,6 +1583,10 @@
     }
     if (a === "quick") { usOpenForm(null, toISODate(new Date())); us.form.title = act.dataset.a36Quick; usShowForm(); return; }
     if (a === "trend-add") return usOpenForm(null, toISODate(new Date()));
+    if (a === "edu-open") { const u = act.dataset.url; if (u) window.open(u, "_blank", "noopener"); return; }
+    if (a === "edu-plan") { const e = schedule.find((x) => x.id === act.dataset.eduId); if (e) openDetail(e); return; } // 일정 넣기는 상세 시트의 단계(기존 흐름)에서
+    if (a === "edu-visit") { usOpenForm(null, ""); if (us.form) { us.form.title = act.dataset.eduTitle || ""; usShowForm(); } return; } // 제목만 미리 채우고 날짜는 비운다
+    if (a === "edu-school") return nsOpenSheet();
     if (a === "trend-region") return showEditProfileSheet(); // 지역이 없는 아이: 아이 정보 수정 시트에서 지역을 넣는다
     if (a === "menu-close") { A36.menuId = null; return acct36RenderTodoTab(); }
     if (a === "menu-edit") { A36.editId = A36.menuId; A36.menuId = null; A36.adding = false; return acct36RenderTodoTab(); }
@@ -1608,6 +1635,7 @@
     if (!acctEnabled() || typeof document === "undefined") return;
     document.addEventListener("click", acct36OnClick);
     document.addEventListener("click", curatedHomeClick); // 1-0: 큐레이션 홈 클릭(없으면 즉시 반환)
+    document.addEventListener("click", monthAckClick); // 1-3: 주의 '확인했어요'(없으면 즉시 반환)
     document.addEventListener("keydown", acct36OnKey);
     document.addEventListener("focusout", acct36OnFocusOut);
     document.addEventListener("pointerdown", acct36OnPointerDown);
@@ -1778,8 +1806,13 @@
   // 달력 표시용 "추천일" 배치(js/hn-logic.js assignDisplayDays) — 화면을 그릴 때마다 전체를 다시 계산한다
   // (완료 여부와 무관하고 결과가 결정적이라 완료 처리해도 다른 항목 위치가 바뀌지 않는다).
   let calDisplayDays = new Map();
+  /** 1-3·1-5 달력 두 층: 플래그(curation) ON·정책을 읽었을 때만 정보·관찰형(KNOW)을 칸에서 뺀다(술어). OFF 면 {} = 지금과 완전히 같다. */
+  function calendarTierOpts() {
+    if (!FEATURES_CURATION_ON() || !curationPolicy || typeof MonthTiers === "undefined") return {};
+    return { inCalendar: MonthTiers.inCalendarOf({ policy: curationPolicy, today: new Date(), state: {}, startOf: (e) => e.windowStart }) };
+  }
   function computeCalendarDays() {
-    calDisplayDays = HNLogic.assignDisplayDays(calendarDotSchedule(), { birthDate: profile.birthDate, monthKeysOf });
+    calDisplayDays = HNLogic.assignDisplayDays(calendarDotSchedule(), { birthDate: profile.birthDate, monthKeysOf, ...calendarTierOpts() });
   }
 
   /** 그 날짜에 달력에 표시할 항목: 지원금 신청 시작(fixed) + 그날로 추천된 항목. */
@@ -2360,6 +2393,34 @@
   }
 
   /** 전체 체크리스트: 대표 월령(displayMonth, 서비스 범위 안)별로 묶어 아코디언으로 보여준다. 기본은 현재 월령만 펼쳐져 있다. */
+  // ── 1-3 월령 탭 두 층(플래그 curation ON·정책 읽음일 때만): 1층 '이번 달 챙길 것'(할 것·곧 준비) + 2층 '이 시기 알아두기' 접힘(관찰·해볼 것·주의). 남은 N개는 1층 미완료만(D10) ──
+  const MONTH_ACK_KEY = "hannun_month_acked"; // 주의 '확인했어요'(기기 저장, Firestore 불변)
+  function monthAcked() { try { const o = JSON.parse(localStorage.getItem(MONTH_ACK_KEY) || "{}"); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } }
+  function monthTierGroupHtml(list, key) {
+    if (!FEATURES_CURATION_ON() || !curationPolicy || typeof MonthTiers === "undefined" || !list.length) return null;
+    const acked = monthAcked();
+    const g = MonthTiers.group(list, { policy: curationPolicy, today: new Date(), state: {}, ageMonths: isPregnant() ? null : ChildTimeline.completedMonths(profile.birthDate, new Date()), startOf: (e) => e.windowStart, isDone: (id) => !!completed[id], isAcked: (id) => !!acked[id] });
+    const M = MonthTiers.MSG;
+    const row = (it, extra) => `${eventItemHtml(it.e, { compact: true })}${it.from ? `<div class="ev-why fine-print">${esc(it.from)}</div>` : ""}${it.why ? `<div class="ev-why fine-print">${esc(it.why)}</div>` : ""}${extra || ""}`;
+    const sec = (title, items, extra) => (items.length ? `<div class="mg-sec-h fine-print">${esc(title)}</div>${items.map((it) => row(it, extra && extra(it))).join("")}` : "");
+    const sortDone = (a, b) => !!a.done - !!b.done;
+    let body = "";
+    if (g.doList.length || g.soonList.length) body += `<div class="mg-sec-h fine-print">${esc(M.layer1)}</div>` + sec(M.doIt, g.doList.slice().sort(sortDone)) + sec(M.soon, g.soonList);
+    if (g.knowCount || g.ackedList.length) {
+      body += `<details class="mg-know"><summary class="home-more">${esc(M.know(g.knowCount))}</summary>${sec(M.observe, g.know.observe)}${sec(M.tryIt, g.know.tryIt)}${sec(M.caution, g.know.caution, (it) => `<button type="button" class="mg-ack acct-sm-btn" data-ack="${esc(it.e.id)}">${esc(M.ack)}</button>`)}`;
+      if (g.ackedList.length) body += `<details class="mg-acked"><summary class="home-more">${esc(M.acked(g.ackedList.length))}</summary>${g.ackedList.map((it) => row(it)).join("")}</details>`;
+      body += `</details>`;
+    }
+    if (g.empty) body = '<p class="empty-month-note">이 달에 새로 챙길 항목은 없어요</p>';
+    return { badge: g.remaining > 0 ? `<span class="count-badge">${esc(M.remaining(g.remaining))}</span>` : "", body };
+  }
+  function monthAckClick(ev) {
+    const b = ev.target && ev.target.closest ? ev.target.closest("[data-ack]") : null;
+    if (!b) return;
+    const a = monthAcked(); a[b.getAttribute("data-ack")] = 1;
+    try { localStorage.setItem(MONTH_ACK_KEY, JSON.stringify(a)); } catch (e) {}
+    renderChecklistTab();
+  }
   function renderChecklistTab() {
     ensureOpenMonthGroupsInit();
     const scopeBanner = el("checklist-scope-banner");
@@ -2424,15 +2485,16 @@
         const list = groups.get(key);
         const isOpen = openMonthGroups.has(key);
         const doneCount = list.filter((e) => completed[e.id]).length;
+        const tier = monthTierGroupHtml(list, key); // 1-3: 플래그 ON·정책 읽음일 때만(아니면 null = 지금 그대로)
         const label = key === NEED_CHECK_GROUP ? "그때그때 확인해요" : key === SCHOOL_GROUP ? "학교·입학" : isPregnant() && key === 0 ? "임신 중·출산 직후" : checklistGroupLabel(key);
         return `
           <div class="ongoing-group-card month-group-card ${isOpen ? "open" : ""}" data-month="${key}"${key === curKey ? ' data-now="1"' : ""}>
             <button type="button" class="ongoing-group-header">
               <span class="group-text"><strong>${label}</strong></span>
-              <span class="count-badge">${list.length ? `${doneCount}/${list.length}개` : "없음"}</span>
+              ${tier ? tier.badge : `<span class="count-badge">${list.length ? `${doneCount}/${list.length}개` : "없음"}</span>`}
               <span class="chevron">▾</span>
             </button>
-            <div class="ongoing-group-body">${list.length ? "" : '<p class="empty-month-note">이 달에 새로 챙길 항목은 없어요</p>'}${list.slice().sort((a, b) => !!completed[a.id] - !!completed[b.id] || catOrder(a) - catOrder(b)).map((e) => eventItemHtml(e, { compact: true })).join("")}</div>
+            <div class="ongoing-group-body">${tier ? tier.body : `${list.length ? "" : '<p class="empty-month-note">이 달에 새로 챙길 항목은 없어요</p>'}${list.slice().sort((a, b) => !!completed[a.id] - !!completed[b.id] || catOrder(a) - catOrder(b)).map((e) => eventItemHtml(e, { compact: true })).join("")}`}</div>
           </div>
         `;
       })
@@ -5776,6 +5838,10 @@
       today,
       pregnant: isPregnant(),
       ageNow: ChildTimeline.completedMonths(profile.birthDate, today),
+      // 1-4: 지원 목록 3단 — 답(기기 저장)·기존 미해당(읽기)·'N개 더' 상한(정책 값, 없으면 제한 없음)
+      answers: typeof SubsidyTiers !== "undefined" ? SubsidyTiers.loadAnswers((() => { try { return localStorage; } catch (e) { return null; } })()) : {},
+      isNA: (id) => isNotApplicable(id),
+      expandMax: curationPolicy && curationPolicy.slots ? curationPolicy.slots.expandMax : null,
       // G13-3: 계정 모드 홈(가족 일정 먼저 → 아이별 챙길 것 → 혜택). 꺼져 있으면 아래 4개는 없다(기존 홈 그대로).
       ...(acctEnabled() ? { accountDesign: true } : {}), // G14: 계정 모드 화면 디자인(기록 타임라인 등)
       ...(acctEnabled() && acct.user ? { accountHome: true, homeChildText: acctHomeChildText(), homeChildren: acctHomeChildren(), switchChild: (code) => { if (code && code !== familyCode) switchToChild(code); } } : {}),
