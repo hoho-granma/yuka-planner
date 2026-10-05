@@ -37,10 +37,10 @@ test("이전 홈(home.js): 아이 칩이 맨 위(임신 배너 아래), 꼭 할 
   const one = run({ accountHome: true, homeChildText: "은찬", homeChildren: [{ code: "a", name: "은찬", current: true }], mustHtml: '<section id="home-must"></section>' }); assert.ok(!one.includes("home-child-chips") && one.includes('id="home-must"'), "아이 1명: 칩 없음");
   assert.ok(!run({}).includes("home-must"), "카드 없으면(비계정 포함) 기존과 같음");
 });
-test("앱 연결: 새 홈 ON이면 카드 안 그림·실패 조용히 생략·정책 0이면 없음·36+ 홈은 자동 일정 항목 건너뜀·클릭은 상세/체크리스트", () => {
+test("앱 연결: (새 홈 삭제 — 조건 없음) 실패 조용히 생략·정책 0이면 없음·36+ 홈은 자동 일정 항목 건너뜀·클릭은 상세/체크리스트", () => {
   const app = fs.readFileSync(path.join(ROOT, "js/app.js"), "utf8");
   const i = app.indexOf("function homeMustHtml("), blk = app.slice(i, app.indexOf("\n  }\n", i) + 4);
-  assert.ok(blk.includes("FEATURES_CURATION_ON()") && blk.includes("if (n <= 0) return \"\"") && /catch \(e\) \{ console\.error\("지금 꼭 할 것 카드 생략", e\); return ""; \}/.test(blk));
+  assert.ok(!blk.includes("FEATURES_CURATION_ON()") && blk.includes("if (n <= 0) return \"\"") && /catch \(e\) \{ console\.error\("지금 꼭 할 것 카드 생략", e\); return ""; \}/.test(blk));
   assert.ok(app.includes("homeMustHtml(autoItems.map((x) => x.id))") && app.includes("get mustHtml() { return homeMustHtml(); }"));
   const j = app.indexOf("function homeMustClick("), click = app.slice(j, app.indexOf("\n  }\n", j) + 4);
   assert.ok(click.includes('switchTab("checklist")') && click.includes("openDetail(e)") && !/localStorage|setDoc|updateDoc/.test(blk + click));

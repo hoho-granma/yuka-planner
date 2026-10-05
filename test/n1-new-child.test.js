@@ -113,13 +113,13 @@ test("취소 후 다시 취소하거나 모드 밖에서 취소해도 아무 일
 });
 
 console.log("저장·불러오기 시점에만 비운다");
-test("저장(검증 통과): 그때 이전 아이의 로컬 상태를 비우고(프로필·완료·코드·구독·기록) 새 아이를 만든다 — 기존 handleReset 과 같은 순서", async () => {
+test("저장(검증 통과): 그때 이전 아이의 로컬 상태를 비우고(프로필·완료·코드·구독) 새 아이를 만든다 — D72a: 기록 저장소 호출은 삭제 — 기존 handleReset 과 같은 순서", async () => {
   const e = env();
   e.sb.enterNewChildEntry({ codeEntry: false });
   e.log.calls.length = 0;
   await e.sb.handleSubmit({ preventDefault() {} });
-  const order = e.log.calls.filter((c) => ["saveCompleted", "clearCode", "unsub", "records-clear", "records-use:null", "saveProfile", "build", "ensureFamilyCode"].includes(c));
-  assert.deepStrictEqual(order, ["saveCompleted", "clearCode", "unsub", "records-clear", "records-use:null", "saveProfile", "build", "ensureFamilyCode"]);
+  const order = e.log.calls.filter((c) => ["saveCompleted", "clearCode", "unsub", "saveProfile", "build", "ensureFamilyCode"].includes(c));
+  assert.deepStrictEqual(order, ["saveCompleted", "clearCode", "unsub", "saveProfile", "build", "ensureFamilyCode"]);
   assert.deepStrictEqual(JSON.parse(JSON.stringify(e.sb.completed)), {});
   assert.strictEqual(e.sb.profile.name, "하준");
   assert.strictEqual(e.sb.getMode(), false);
@@ -229,7 +229,7 @@ test("가구 플래그 OFF 면 스냅샷·복원 모두 가구 저장소를 건�
 console.log("기존 동작 동일·연결(이전 커밋 소스 대비)");
 test("applyNewChildReset 은 기존 handleReset 의 데이터 부분과 글자까지 같다(화면 전환 줄만 빠짐)", () => {
   const old = fnSrc(headApp, "handleReset");
-  const stripped = old.replace('    el("query-form").reset();\n    setLandingStage(null);\n    updateBrandText();\n    showLandingView();\n', "").replace("function handleReset()", "function applyNewChildReset()").replace("  function applyNewChildReset() {", "  function applyNewChildReset() {");
+  const stripped = old.replace(/    HNRecords\.[^\n]*\n/g, "").replace(/    \/\/ completed와 같은 이유로[^\n]*\n/, "").replace('    el("query-form").reset();\n    setLandingStage(null);\n    updateBrandText();\n    showLandingView();\n', "").replace("function handleReset()", "function applyNewChildReset()").replace("  function applyNewChildReset() {", "  function applyNewChildReset() {");
   const now = fnSrc(app, "applyNewChildReset").replace("  /** 이전 아이의 로컬 상태 비우기(기존 handleReset 의 데이터 부분). 화면 전환은 하지 않는다. */\n", "");
   assert.strictEqual(now, stripped);
 });
@@ -246,9 +246,9 @@ test("handleSubmit·handleLoadCode: 입력 모드 확인 한 줄씩만 추가됐
   // 온보딩 가족 단계 훅(첫 아이 기록 3줄·await·onbMaybeOffer)도 함께 걷어 낸 뒤 비교한다
   const noOnb = strip(strip(strip(submitSrc, /    const wasNewChildMode = newChildMode;\n/), /    \/\/ 온보딩 가족 단계:[^\n]*\n    const onbFirstChild[^\n]*\n/), /\n    onbMaybeOffer\(!onbFirstChild\);/).replace("    await ensureFamilyCode();", "    ensureFamilyCode();");
   const noPb = strip(noOnb, /\n    if \(familyCode && pregRegBasis !== undefined\)[^\n]*\n    pregRegBasis = undefined;/); // 임신 입력 방식 저장 두 줄(W 임신 주차·확인일)도 걷어 낸다
-  assert.strictEqual(strip(noPb, /    \/\/ N1:[^\n]*\n    if \(newChildMode\) finishNewChildEntry\(\);\n/).replace("pregnancyConfirmDate: pregConfirmIso()", "").replace("schoolPolicy, }", "schoolPolicy }"), fnSrc(headApp, "handleSubmit", "  async function "));
+  assert.strictEqual(strip(noPb, /    \/\/ N1:[^\n]*\n    if \(newChildMode\) finishNewChildEntry\(\);\n/).replace("pregnancyConfirmDate: pregConfirmIso()", "").replace("schoolPolicy, }", "schoolPolicy }"), fnSrc(headApp, "handleSubmit", "  async function ").replace(/      HNRecords\.[^\n]*\n/g, "").replace(/      if \(data\.records\) HNRecords[^\n]*\n/g, "").replace(/      HNRecords\.adopt[^\n]*\n/g, ""));
   // H1: 계정 모드에서는 입력칸이 없어 가족코드 분기를 건너뛴다(!acctEnabled()) — 비교 전에 되돌린다
-  assert.strictEqual(strip(loadSrc, /      if \(newChildMode\) finishNewChildEntry\(\);[^\n]*\n/).replace("if (hhEnabled() && !acctEnabled()) {", "if (hhEnabled()) {").replace(/ \/\/ 계정 모드: 입력칸은[^\n]*\n/, "\n"), fnSrc(headApp, "handleLoadCode", "  async function "));
+  assert.strictEqual(strip(loadSrc, /      if \(newChildMode\) finishNewChildEntry\(\);[^\n]*\n/).replace("if (hhEnabled() && !acctEnabled()) {", "if (hhEnabled()) {").replace(/ \/\/ 계정 모드: 입력칸은[^\n]*\n/, "\n"), fnSrc(headApp, "handleLoadCode", "  async function ").replace(/      HNRecords\.[^\n]*\n/g, ""));
 });
 test("저장소 키 상수: HH_CODE_KEY 는 household-sync.js 의 CODE_KEY 와 같다", () => {
   const hs = require("../js/household-sync.js");

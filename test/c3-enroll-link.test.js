@@ -78,15 +78,4 @@ test("[B] app.js: 서버 쓰기는 addChild 1건, 이미 링크면 쓰지 않음
   assert.strictEqual(HV.MSG.linkJoinHint, "이 기기의 아이를 가족 캘린더에 연결할 수 있어요.");
 });
 
-test("[C] 기록: 연결된 AUTO 파생 기록에만 '예약 일정 연결', ctx.autoLinkedIds 없음(플래그 OFF)이면 DOM 불변, 쓰기 없음", () => {
-  const src = read("js/records-view.js");
-  assert.ok(src.includes('const RECORD_LINK_LABEL = "예약 일정 연결";'));
-  assert.ok(/r\.source === "auto" && ctx\.autoLinkedIds && ctx\.autoLinkedIds\.has\(r\.eventId\)/.test(src));
-  // 렌더 한 줄 시뮬레이션: linkedTag 가 빈 문자열이면 이전 마크업과 글자까지 같다
-  assert.ok(src.includes("<small>${meta}</small>${linkedTag}${r.memo"));
-  assert.ok(!/linkedTag = [^;]*\?[^;]*:\s*""/.test(src) === false);
-  assert.ok(!/HNRecords\.|scheduleRef|saveCompleted|setItem/.test(src.slice(src.indexOf("linkedTag"), src.indexOf("linkedTag") + 400)));
-  assert.ok(/autoLinkedIds: linkIdx \? new Set\(linkIdx\.keys\(\)\) : null,/.test(APP) && /const linkIdx = autoLinks\(\);/.test(APP));
-});
-
 console.log(`\n${passed}개 통과${process.exitCode ? ", 일부 실패" : ""}`);

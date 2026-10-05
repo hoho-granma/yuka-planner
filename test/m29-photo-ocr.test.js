@@ -139,7 +139,7 @@ function pipeline(raw, children) { // 앱(capParseRead)과 같은 순서: 정리
     assert.ok(!/vendor\/ocr/.test(sw.slice(0, sw.indexOf("self.addEventListener"))), "SHELL_ASSETS 에 vendor 없음");
     assert.ok(/pathname\.includes\("\/vendor\/ocr\/"\)/.test(sw) && /startsWith\(OCR_CACHE_PREFIX\)/.test(sw) && sw.includes('OCR_CACHE = "hannun-ocr-v1"'));
     assert.strictEqual(OT.CACHE_NAME, "hannun-ocr-v1");
-    for (const f of ["text-recognition", "photo-compress", "ocr-tesseract", "photo-view", "ai-parser"]) assert.ok(html.includes(`js/capture/${f}.js`) && sw.includes(`./js/capture/${f}.js`), f);
+    for (const f of ["text-recognition", "photo-compress", "photo-crop", "ocr-tesseract", "photo-view", "ai-parser"]) assert.ok(html.includes(`js/capture/${f}.js`) && sw.includes(`./js/capture/${f}.js`), f);
   });
   await test("번들: vendor/ocr 에 라이브러리·워커·코어 2종(SIMD/기본)·한글 데이터·라이선스, 처음 받는 양은 6MB 안팎, 새 코드에 외부 주소 없음", () => {
     const dir = path.join(__dirname, "..", "vendor", "ocr"), size = (f) => fs.statSync(path.join(dir, f)).size;
@@ -147,7 +147,7 @@ function pipeline(raw, children) { // 앱(capParseRead)과 같은 순서: 정리
     const a = OT.create({ win: fakeWin().win }), first = a.assets().reduce((n, x) => n + size(x.file), 0);
     assert.ok(first > 5.5e6 && first < 6.2e6, "처음 받는 양 " + first);
     for (const x of a.assets()) assert.ok(Math.abs(size(x.file) - x.bytes) < 3000, x.file + " 크기 상수가 실제와 같다");
-    for (const f of ["text-recognition", "photo-compress", "ocr-tesseract", "photo-view", "ai-parser"]) assert.ok(!/https?:\/\//.test(read(`js/capture/${f}.js`).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")), f + " 외부 주소 없음");
+    for (const f of ["text-recognition", "photo-compress", "photo-crop", "ocr-tesseract", "photo-view", "ai-parser"]) assert.ok(!/https?:\/\//.test(read(`js/capture/${f}.js`).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")), f + " 외부 주소 없음");
   });
   await test("앱 연결: 기본 ON(저장값 '0'이면 OFF), 사진은 저장·전송 없이 메모리에서 버리고(token·revoke), 못 읽으면 직접 입력·붙여넣기로 이어진다", () => {
     const APP = read("js/app.js");

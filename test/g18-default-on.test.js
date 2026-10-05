@@ -13,15 +13,15 @@ const flags = (store, throwing) => {
   return JSON.parse(JSON.stringify(sb.FEATURES));
 };
 test("저장소가 비어 있으면(홈 화면 앱·새 기기) accounts·household·autoLink 모두 true", () => {
-  assert.deepStrictEqual(flags({}), { household: true, autoLink: true, accounts: true, curation: false });
+  assert.deepStrictEqual(flags({}), { household: true, autoLink: true, accounts: true });
   assert.strictEqual(flags({}, true).accounts, true, "저장소 접근이 막혀도 기본 ON");
 });
 test("hannun_feature_accounts='0' 이면 꺼짐(개발용): household 는 '1' 일 때만, autoLink 는 household 에 따른다", () => {
-  assert.deepStrictEqual(flags({ hannun_feature_accounts: "0" }), { household: false, autoLink: false, accounts: false, curation: false });
-  assert.deepStrictEqual(flags({ hannun_feature_accounts: "0", hannun_feature_household: "1" }), { household: true, autoLink: true, accounts: false, curation: false });
+  assert.deepStrictEqual(flags({ hannun_feature_accounts: "0" }), { household: false, autoLink: false, accounts: false });
+  assert.deepStrictEqual(flags({ hannun_feature_accounts: "0", hannun_feature_household: "1" }), { household: true, autoLink: true, accounts: false });
 });
 test("예전 베타 키 '1' 이 남은 기기도 그대로 ON, '0' 이외의 값은 끄지 않는다", () => {
-  assert.deepStrictEqual(flags({ hannun_feature_accounts: "1", hannun_feature_household: "1" }), { household: true, autoLink: true, accounts: true, curation: false });
+  assert.deepStrictEqual(flags({ hannun_feature_accounts: "1", hannun_feature_household: "1" }), { household: true, autoLink: true, accounts: true });
   assert.strictEqual(flags({ hannun_feature_accounts: "false" }).accounts, true);
 });
 test("계정 모드에서는 베타 스위치·미리 써 보기·끄기 경로가 열리지 않는다(정적)", () => {

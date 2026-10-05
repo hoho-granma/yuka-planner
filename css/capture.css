@@ -36,3 +36,26 @@
 @media (prefers-reduced-motion: reduce) { .cap-spin { display: none; } .cap-bar i { transition: none; } }
 .cap-still { font-weight: 800; }
 .cap-rawtext { white-space: pre-wrap; word-break: break-all; }
+/* D73 자르기 화면 — 전체 화면, 새 색 없음(앱 토큰만) */
+.crop-screen { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; background: #fff; overscroll-behavior: contain; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.crop-head { padding: max(12px, env(safe-area-inset-top)) 16px 8px; text-align: center; }
+.crop-head h3 { margin: 0; font-size: 17px; font-weight: 800; color: var(--nd-ink); }
+.crop-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--nd-ink); touch-action: none; }
+.crop-canvas { position: absolute; display: block; pointer-events: none; }
+.crop-box { position: absolute; box-sizing: border-box; border: 1.5px solid #fff; box-shadow: 0 0 0 9999px rgba(0,0,0,.55); touch-action: none; cursor: move; background-image: linear-gradient(rgba(255,255,255,.35) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.35) 1px, transparent 1px); background-size: 33.333% 33.333%; }
+.crop-h { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; touch-action: none; display: grid; place-items: center; }
+.crop-h::after { content: ""; display: block; background: #fff; border: 2px solid var(--accent-dark); box-sizing: border-box; }
+.crop-h-nw::after, .crop-h-ne::after, .crop-h-se::after, .crop-h-sw::after { width: 22px; height: 22px; border-radius: 50%; }
+.crop-h-n::after, .crop-h-s::after { width: 24px; height: 6px; border-radius: 3px; }
+.crop-h-e::after, .crop-h-w::after { width: 6px; height: 24px; border-radius: 3px; }
+.crop-h-nw { left: 0; top: 0; cursor: nwse-resize; } .crop-h-n { left: 50%; top: 0; cursor: ns-resize; } .crop-h-ne { left: 100%; top: 0; cursor: nesw-resize; } .crop-h-e { left: 100%; top: 50%; cursor: ew-resize; }
+.crop-h-se { left: 100%; top: 100%; cursor: nwse-resize; } .crop-h-s { left: 50%; top: 100%; cursor: ns-resize; } .crop-h-sw { left: 0; top: 100%; cursor: nesw-resize; } .crop-h-w { left: 0; top: 50%; cursor: ew-resize; }
+.crop-info { padding: 8px 16px 0; background: #fff; }
+.crop-hint { margin: 0 0 4px; font-size: 14px; color: var(--nd-ink); }
+.crop-privacy { margin: 0; font-size: 12px; color: var(--text-muted); }
+.crop-again { display: block; margin: 4px 0 0 auto; padding: 8px 4px; border: 0; background: none; font: inherit; font-size: 13px; font-weight: 700; color: var(--nd-ink); text-decoration: underline; cursor: pointer; }
+.crop-foot { display: flex; gap: 10px; padding: 12px 16px max(12px, env(safe-area-inset-bottom)); background: #fff; }
+.crop-foot .cap-btn { display: block; min-height: 52px; margin: 0; border-radius: 13px; font-weight: 800; }
+.crop-foot .btn-close.cap-btn { flex: 1; background: #fff; border: 1.5px solid var(--line); color: var(--nd-ink); }
+.crop-foot .btn-complete.cap-btn { flex: 2; background: var(--nd-indigo); color: var(--on-accent); border: 1.5px solid var(--nd-indigo); }
+body.crop-open { overflow: hidden; }

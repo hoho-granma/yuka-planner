@@ -1292,6 +1292,26 @@ input[type="text"], input[type="date"], select { font-size: 16px; min-height: 48
 .acct-fam-pill b { font-size: 15px; letter-spacing: .08em; }
 .acct-fam-me { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; }
 .acct-fam-me .acct-me-text { flex: 1; }
+/* D72b 우리 가족 시트: 얼굴은 버튼(선택 = 이름 굵게 + 아래 막대), 선택 카드·하단 버튼·[닫기] 하단 고정 */
+.acct-face-pick { cursor: pointer; min-height: 44px; font: inherit; color: inherit; }
+.acct-face-pick .acct-face-name { padding-bottom: 3px; border-bottom: 3px solid transparent; }
+.acct-face-pick.on .acct-face-name { font-weight: 800; border-bottom-color: var(--accent-dark); }
+.acct-face-pick:focus-visible { outline: 3px solid var(--accent-dark); outline-offset: 2px; border-radius: 10px; }
+.fam-card-slot { margin-top: 10px; }
+.fam-card { padding: 14px; border: 1px solid var(--border); border-radius: 14px; background: #fff; }
+.fam-card-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.fam-card-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fam-card-title strong { font-size: 16px; overflow-wrap: anywhere; }
+.fam-dot { flex: none; }
+.fam-photo { flex: none; width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+.fam-row { display: flex; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 14px; line-height: 1.5; }
+.fam-k { flex: none; min-width: 72px; font-size: 12px; font-weight: 600; color: var(--text-muted); padding-top: 2px; }
+.fam-v { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.fam-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.fam-actions.fam-danger { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+.fam-card .detail-row { margin-top: 4px; }
+.modal-panel:has(.fam-card-slot) #btn-close-modal { position: sticky; bottom: 0; background: #fff; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+
 .acct-sm-btn { flex: none; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--text); font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .acct-members-det { margin: 12px 0 0; border: 1px solid var(--border); border-radius: 12px; padding: 0 12px; }
 .acct-members-det > summary { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 12px 0; cursor: pointer; list-style: none; }
@@ -1772,7 +1792,7 @@ body.acct-design .as-chips .as-nr { background: var(--surface); color: var(--tex
 body.acct-design .as-info-chip { background: var(--c-badge-auto); color: var(--c-badge-auto-ink); }
 
 /* 캘린더: 오늘 칸 = S1 테두리, 선택한 날 = 오렌지 30% 면 + 2px 테두리 + 아래 4px 막대 */
-.day-cell.today { background: transparent; box-shadow: none; font-weight: 800; } /* D41: 오늘 = 숫자 굵게 + 숫자 옆 작은 점(링 없음) */
+.day-cell.today { background: transparent; box-shadow: inset 0 0 0 1.5px var(--accent-dark); font-weight: 800; } /* D74: 오늘 = 주황 1.5px 테두리 + 숫자 굵게. 아래 선택 규칙이 뒤에 있어 오늘을 선택하면 노랑 한 줄만 */
 .calendar-grid-v2 .day-cell.selected { outline: none; background: transparent; box-shadow: inset 0 0 0 1.5px var(--cal-sel); } /* D41: 선택한 날 = 4면 같은 1.5px 선 + 투명 배경(옛 아래 4px 막대·30% 면 제거) */
 .us-tchip[aria-checked="true"] { background: var(--c-active); border-color: var(--c-active); color: var(--on-accent); }
 
@@ -1879,6 +1899,33 @@ body.acct-design .a36t-nc { display: block; margin: 2px 0 0; font-size: 12px; fo
 #view-landing.acct-simple.acct-on .acct-ob1-top .acct-logo-w { top: calc(20px + env(safe-area-inset-top)); left: max(18px, calc(env(safe-area-inset-left) + 6px)); }
 #view-landing.acct-simple.acct-on .acct-cta { padding: 18px max(18px, env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); }
 @media (max-height: 620px) { #view-landing.acct-simple.acct-on .acct-cta { padding-bottom: calc(6px + env(safe-area-inset-bottom)); } }
+
+/* ═══ D74 날짜 패널 목록: 항목마다 제목 1줄 + 내용 1줄(말줄임), 여백 축소 — docs/agents/d74-calendar-list.md ═══ */
+.selected-day-card { padding: 16px 16px 12px; margin-bottom: 12px; }
+.selected-day-card .selected-day-handle { margin-bottom: 8px; }
+.selected-day-card h3 { margin-bottom: 8px; }
+#selected-day-list.event-list { gap: 6px; }
+#selected-day-list .us-card { margin: 0; padding: 8px 12px; }
+#selected-day-list .us-card .us-body { gap: 1px; }
+.us-card .us-l1, .us-card .us-l2 { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.us-card .us-title { flex: 1 1 auto; min-width: 0; font-size: 15px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.us-card .us-meta { flex: 1 1 auto; min-width: 0; font-size: 12px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.us-card .us-l1 .us-done, .us-card .us-l1 .us-cancelled, .us-card .us-l2 .us-repeat { flex: none; align-self: center; }
+#selected-day-list .event-item.li2 { padding: 8px 12px; gap: 8px; align-items: center; }
+#selected-day-list .event-item.li2 .cat-dot { margin-top: 0; }
+#selected-day-list .event-item.li2 .body { min-width: 0; }
+.li2 .li-l1, .li2 .li-l2 { display: flex; align-items: center; gap: 6px; margin: 0; min-width: 0; }
+.li2 .li-l1 .us-src { flex: none; }
+.li2 .li-l1 .title { flex: 1 1 auto; min-width: 0; font-size: 14px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
+.li2 .li-l2 { font-size: 12px; line-height: 1.3; color: var(--text-muted); }
+.li2 .li-l2 .aud-tag { flex: none; }
+.li2 .li-l2 .li-txt { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.li2 .li-l2 .sub-when.urgent { margin: 0; font-size: 12px; color: var(--nd-wine); font-weight: 800; }
+#selected-day-list .us-group { margin: 10px 0 4px; }
+#selected-day-list .us-group:first-child { margin-top: 0; }
+
+/* ═══ D77 캘린더 '＋ 일정 추가' = 홈 '일정 추가하기'(.sec-us-upcoming .home-more)와 같은 색 토큰(--nd-soft 면·--nd-ink 글자·--nd-soft 테두리, 웜·포레스트 모두), .us-add 한정. 일정 입력 제목칸은 테두리 없음 ═══ */
+.us-btn.us-primary.us-add { background: var(--nd-soft); color: var(--nd-ink); border-color: var(--nd-soft); }
 
 /* ═══ v1.12.97 온보딩·홈 새 디자인(사용자 확정 2026-10-05, docs/한눈육아-디자인확정-온보딩-홈-20261005.md) ═══
    인디고 계열은 아래 --nd-* 로만 두고, 온보딩(첫 화면·로그인·가입·아이 정보)과 홈 안에서만 쓴다. --c-primary 등 앱 전역 슬롯은 바꾸지 않는다(범위 안에서만 다시 정의). */
@@ -2002,13 +2049,16 @@ body.acct-design :is(#tab-home, #empty-panel) .acct-nc-me-t small svg { color: v
 /* 1. 일정 추가·수정 시트 */
 .modal-panel:has(.us-form) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); background: var(--nd-soft); }
 .modal-panel:has(.us-form) h3 { color: var(--nd-ink); }
-.modal-panel:has(.us-form) #us-title { background: #fff; border: 1.5px solid var(--nd-yellow-line); border-radius: 12px; padding-left: 14px; padding-right: 14px; }
+.modal-panel:has(.us-form) #us-title { background: var(--bg); border: 0; border-radius: 12px; padding-left: 14px; padding-right: 14px; } /* D77: 제목칸 테두리 없음(연한 면), 포커스 때만 선 */
+.modal-panel:has(.us-form) #us-title:focus-visible { outline: 2px solid var(--c-select-border); outline-offset: 0; background: #fff; }
 .modal-panel:has(.us-form) :is(input:not(#us-title), textarea, select), .modal-panel:has(.us-form) .date-picker-trigger { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; }
 .modal-panel:has(.us-form) .us-chip:not(.active):not([style*="--us-color"]) { background: #fff; border: 1.5px solid var(--line); color: var(--text); }
 /* 비선택 구성원 색 칩은 앱 기본(구성원 색 면) 그대로 — 사람 구분 색을 선택 전에도 보이게 한다(QA 사전 차이 1) */
 .modal-panel:has(.us-form) .us-chip.active:not([style*="--us-color"]) { background: var(--nd-yellow); border: 1.5px solid var(--nd-yellow-line); color: var(--nd-ink); font-weight: 800; }
 .modal-panel:has(.us-form) .us-recommend .us-chip { background: #fff; border: 1.5px solid var(--nd-indigo); color: var(--nd-indigo); }
 .modal-panel:has(.us-form) .us-btn.us-primary { background: var(--nd-indigo); border: 0; color: var(--on-accent); border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
+/* D77: 저장 버튼 = 선택한 '누구' 색(폼 루트 --us-fx·--us-fx-ink, 없으면 기존 주색) */
+.modal-panel:has(.us-form) .us-form .us-actions .us-btn.us-primary[data-us-action="save"] { background: var(--us-fx, var(--nd-indigo)); color: var(--us-fx-ink, var(--on-accent)); }
 .modal-panel:has(.us-form) .us-btn:not(.us-primary):not(.us-danger) { background: #fff; border: 1.5px solid var(--line); color: var(--nd-ink); border-radius: 13px; }
 .modal-panel:has(.us-form) :is(input, textarea, select):focus-visible, .modal-panel:has(.us-form) .date-picker-trigger:focus-visible { border: 2px solid var(--nd-indigo); outline: none; }
 /* 2. 항목 상세 시트 — 시트 면은 흰색 유지(D21 A) */

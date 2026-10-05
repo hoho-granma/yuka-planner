@@ -74,12 +74,9 @@ test("A2 곧(L6)은 시작까지 남은 날 ≤ upcomingDays, 넘으면 L7(안 �
   assert.strictEqual(r.moreCounts.later, 2);
 });
 test("A5 확인형(CHECK)의 actionKind 는 confirm, 렌더러는 해당돼요/아니에요", () => {
-  const V = require("../js/home-slots-view.js");
   const r = C.curate([ev("X-CHK", { windowEnd: D(5) })], st({ applyOf: () => ({ url: "https://x" }), canSchedule: () => true }), C.normalizePolicy({ ...rd("data/policy/curation.json"), ids: { ...rd("data/policy/curation.json").ids, "X-CHK": { type: "CHECK", sub: "APPLY" } } }), T);
   const u = [...r.now, ...r.soon][0];
   assert.strictEqual(u.type, "CHECK"); assert.strictEqual(u.actionKind, "confirm");
-  const h = V.render(r, { today: T });
-  assert.ok(h.includes('data-hs-act="confirm-yes"') && h.includes('data-hs-act="confirm-no"') && h.includes("해당돼요") && h.includes("아니에요"));
 });
 test("buildEligibilityUnknown: ageMonths 를 주면 나이 범위 밖 항목은 내보내지 않는다", () => {
   const defs = rd("data/subsidies/national-todos.json").todos;
@@ -108,17 +105,8 @@ test("B2(D19): 긴 창 상향(L4)은 창 시작 후 60일 안만, 이후는 L5",
   const lvl = (n) => { const r = C.curate([mk(n)], st({ subsidyStatusOf: () => "available" }), P, T); return [...r.now, ...r.soon][0].rule; };
   assert.deepStrictEqual([lvl(10), lvl(60), lvl(61), lvl(3000)], ["L4", "L4", "L5", "L5"]);
 });
-test("B3(D20): 펼침은 정책 expandMax 개까지 + 전체 보기, expandMax 없으면 제한 없음 · D17 와인색", () => {
-  const V = require("../js/home-slots-view.js");
-  const u = (i) => ({ key: "k" + i, ids: ["k" + i], title: "숨은 " + i, type: "ACT", level: "L4", rule: "L4", daysToEnd: Infinity, actionKind: "done", items: [], reason: { text: "" } });
-  const over = [1, 2, 3, 4, 5, 6, 7].map(u);
-  const base = { now: [u(0)], soon: [], know: [], moreCounts: { now: 7 }, overflow: { now: over, soon: [], know: [] } };
-  const h = V.render({ ...base, expandMax: 5 }, { today: T });
-  assert.strictEqual((h.match(/숨은 /g) || []).length, 6, "보이는 1 + 펼침 5"); assert.ok(h.includes("전체 보기 →") && h.includes('data-hs-go="checklist"'));
-  const h2 = V.render({ ...base, expandMax: null }, { today: T });
-  assert.strictEqual((h2.match(/숨은 /g) || []).length, 8); assert.ok(!h2.includes("전체 보기"));
+test("B3(D20): 정책 expandMax 값 검증(펼침 화면은 새 홈 삭제로 없어짐)", () => {
   assert.strictEqual(C.normalizePolicy({ ...rd("data/policy/curation.json"), slots: { now: 3, soon: 2, know: 1, expandMax: 5 } }).slots.expandMax, 5);
-  assert.ok(/--hn-deadline:\s*(#8a1c3d|var\(--nd-wine\))/.test(fs.readFileSync(path.join(ROOT, "css/home-slots.css"), "utf8")));
 });
 test("정책 검증: slots.expandMax 가 없으면 경고(기본값을 코드에 박지 않는다), 있으면 경고 없음", () => {
   const raw = rd("data/policy/curation.json");

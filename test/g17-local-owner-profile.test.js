@@ -75,11 +75,11 @@ test("정적: 로그아웃은 서버 반영(대기열·flush 실패)이 남으�
 
 // ── 계정 모드 프로필 시트 ──
 function sheet(o) {
-  const els = { "modal-content": { innerHTML: "" }, "detail-modal": { classList: { remove() {} } }, "btn-close-modal": { addEventListener() {} } };
+  const els = { "modal-content": { innerHTML: "" }, "detail-modal": { classList: { remove() {} } }, "btn-close-modal": { addEventListener() {} }, "fam-card": { addEventListener() {} }, "fam-orphans": { addEventListener() {} } };
   const sb = {
     console, AccountView: AV, PERSON_ICON_SVG: "<svg/>", esc: AV.esc, modalMode: null, acctChildView: false,
     profile: o.profile, acct: { account: o.account || {} }, acctIdentity: () => ({ name: "주연", roleName: "엄마" }), acctHomeChildText: () => "아이1 · 생후 3개월",
-    acctKidCount: () => o.kids || 1, acctOpenSlot() {}, hhEnabled: () => false, hhOpenSection() {}, closeDetail() {}, openRecordView() {}, showChildSwitchSheet() {}, beginNewChildEntry() {}, showProfileSheetBase() {},
+    acctKidCount: () => o.kids || 1, acctOpenSlot() {}, hhEnabled: () => false, hhOpenSection() {}, closeDetail() {}, famRender() {}, famOnClick() {}, memOnClick() {}, FAM: { kind: "member", id: "" }, showChildSwitchSheet() {}, beginNewChildEntry() {}, showProfileSheetBase() {},
     el: (id) => els[id] || null,
   };
   vm.createContext(sb);
@@ -87,19 +87,19 @@ function sheet(o) {
   sb.acctProfileSheet();
   return els["modal-content"].innerHTML;
 }
-test("계정 모드 시트: 제목은 내 이름·역할(아이 이름이 제목이 아님), 사람 아이콘, 거주 지역, 구성원 관리, 아이는 '우리 아이' 한 줄(이름·나이)", () => {
+test("계정 모드 시트: 제목은 내 이름·역할(아이 이름이 제목이 아님), 사람 아이콘, 거주 지역, (D72b) 구성원 관리·'우리 아이' 줄 없음, 선택 카드 자리", () => {
   const h = sheet({ profile: { name: "아이1", province: "서울특별시", district: "구로구" } });
   assert.ok(/<h3>주연 · 나\(엄마\)<\/h3>/.test(h) && h.includes("<svg/>") && h.includes('id="acct-slot"'));
-  assert.ok(h.includes("서울특별시 구로구") && h.includes("구성원 관리"));
-  assert.ok(h.includes("우리 아이") && h.includes("아이1 · 생후 3개월") && h.includes('id="btn-acct-kid-row"'));
+  assert.ok(h.includes('id="fam-card"') && h.includes('id="fam-orphans"'), "D72b: 선택 카드 자리(거주 지역·구성원 관리·우리 아이 줄은 카드로 이동)");
+  assert.ok(!h.includes("구성원 관리") && !h.includes("우리 아이") && !h.includes('id="btn-acct-kid-row"') && !h.includes("btn-acct-child-switch"));
   assert.ok(!/<h3>[^<]*아이1/.test(h) && !h.includes("btn-photo") && !h.includes("btn-open-reset") && !h.includes("생년월일"));
 });
-test("계정 모드 시트: 아이가 없으면 '아이 등록하기' 한 줄만(아이 정보·기록 보기 없음)", () => {
+test("계정 모드 시트: 아이가 없으면 (D72b) 프로필 시트에 아이 줄 없음", () => {
   const h = sheet({ profile: null, account: { province: "서울특별시", district: "구로구" } });
-  assert.ok(h.includes('id="btn-acct-kid-add"') && h.includes("아이 등록하기") && !h.includes("btn-acct-kid-row") && !h.includes("btn-view-records"));
+  assert.ok(h.includes('id="fam-card"') && !h.includes("btn-acct-kid-add") && !h.includes("btn-acct-kid-row") && !h.includes("btn-view-records"), "D72b: 아이 등록은 우리 가족 얼굴 줄의 [＋ 아이 등록]");
 });
 test("정적: 시트 분기는 계정 모드+로그인일 때만, OFF 의 showProfileSheet 마크업은 그대로(Base 호출)", () => {
-  assert.ok(APP.includes("if (acctEnabled() && acct.user && !acctChildView) return acctProfileSheet();") && APP.includes("return showProfileSheetBase(pendingPhoto);"));
+  assert.ok(APP.includes("if (acctEnabled() && acct.user && !acctChildView) return acctProfileSheet(!!el(\"fam-card\"));") && APP.includes("return showProfileSheetBase(pendingPhoto);"));
   assert.ok(APP.includes('<h3>${esc(childDisplayName())}</h3>\n        <button type="button" class="btn-edit-icon" id="btn-open-reset"'), "기존 시트 마크업 유지");
 });
 console.log(`\n${passed}개 통과`);

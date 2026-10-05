@@ -76,11 +76,10 @@ test("ageLabel(개월 전용)은 그대로이고 compute().label 은 ageLabelAt,
   assert.strictEqual(CT.compute({ birthDate: D(2026, 12, 31), asOf: D(2026, 9, 30), stage: "pregnant" }).label, null);
   assert.deepStrictEqual(Object.keys(CT.compute({ birthDate: D(2017, 6, 15), asOf: D(2026, 10, 2), stage: "born" })), ["age", "label", "school"]);
 });
-test("호출처: 헤더·프로필 시트·기록 목록/상세/작성 화면 모두 ageLabelAt(생년월일, 기준 날짜)를 쓰고 개월 전용 ageLabel 직접 호출은 남지 않았다", () => {
-  const app = read("js/app.js"), rv = read("js/records-view.js");
-  assert.strictEqual((app.match(/ChildTimeline\.ageLabelAt\(profile\.birthDate, today\)/g) || []).length, 2);
-  assert.ok(rv.includes("ChildTimeline.ageLabelAt(ctx.profile.birthDate, r.date), r.category") && rv.includes('해당 월령</div>${ChildTimeline.ageLabelAt(ctx.profile.birthDate, r.date)}') && rv.includes('ChildTimeline.ageLabelAt(ctx.profile.birthDate, new Date(v + "T12:00:00"))'));
-  for (const f of ["js/app.js", "js/records-view.js", "js/home.js", "js/subsidy-view.js", "js/user-schedule-view.js", "js/household-view.js"]) assert.ok(!/ChildTimeline\.ageLabel\(/.test(read(f)), f);
+test("호출처(D72a: 기록 화면 삭제): 헤더·프로필 시트 모두 ageLabelAt(생년월일, 기준 날짜)를 쓰고 개월 전용 ageLabel 직접 호출은 남지 않았다", () => {
+  const app = read("js/app.js");
+  assert.ok((app.match(/ChildTimeline\.ageLabelAt\(profile\.birthDate, today\)/g) || []).length >= 2);
+  for (const f of ["js/app.js", "js/home.js", "js/subsidy-view.js", "js/user-schedule-view.js", "js/household-view.js"]) assert.ok(!/ChildTimeline\.ageLabel\(/.test(read(f)), f);
 });
 test("월령 의미 문구는 그대로: 체크리스트 구간 라벨·지원금 기간 문구('생후 N개월')는 바뀌지 않았다", () => {
   assert.strictEqual(CT.checklistGroupLabel(5), "생후 5개월");

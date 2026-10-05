@@ -92,7 +92,7 @@ test("autoRef 없는 폼 렌더(추가·수정·기간·반복·다자녀)는 �
   // E(1-4) 로 늘어난 빠른 추가 칩 줄·담당 영역 강조 마크업은 비교에서 뺀다(그 밖의 글자는 같아야 한다).
   // 시간 입력 휠(시안 B)·담당 선택 제거는 의도된 변경: 시각 블록과 담당 영역은 양쪽에서 뺀다.
   const NORM = (h) => h.replace(/<div class="us-field[^"]*"[^>]*><label>담당<\/label><div class="us-chips">.*?<\/div>(?:<p[^>]*>[^<]*<\/p>)*<\/div>\n?\s*/s, "").replace(/<div class="us-times us-tw">.*?<p class="tw-hint">[^<]*<\/p><\/div><\/div>/s, "<TIMES/>").replace(/<div class="us-times">.*?<\/span><\/div>/s, "<TIMES/>").replace(/<div class="us-field us-quick">.*?<\/div><\/div>/s, "").replace(/\n\s*\n/g, "\n").replace(" us-assignee-field", "").replace(" data-us-assignee-field", "").replace(/<p class="us-emph-note"[^>]*>[^<]*<\/p>/, "");
-  const NOINK = (h) => h.replace(/;--us-ink:#[0-9a-f]{6}/g, "").replace(/(data-us-target="FAMILY">)가족<\/button>/g, "$1가족 전체</button>"); // D41: 진한 바탕 글자 자동 흰색(--us-ink)·칩 라벨 '가족 전체'→'가족'은 옛 렌더에 없다 // D41 진한 바탕 글자 자동 흰색(--us-ink)은 옛 렌더에 없다
+  const NOINK = (h) => h.replace(/ style="--us-fx:#[0-9a-f]{6};--us-fx-ink:#[0-9a-f]{6}"/g, "").replace(/;--us-ink:#[0-9a-f]{6}/g, "").replace(/(data-us-target="FAMILY">)가족<\/button>/g, "$1가족 전체</button>"); // D41: 진한 바탕 글자 자동 흰색(--us-ink)·칩 라벨 '가족 전체'→'가족'은 옛 렌더에 없다 // D41 진한 바탕 글자 자동 흰색(--us-ink)은 옛 렌더에 없다
   forms.forEach((f, i) => assert.strictEqual(NORM(NOINK(V.renderForm(f, LINKS, opts))), NORM(RECOLOR(OLD.renderForm(f, LINKS, opts))), "form " + i));
 });
 test("저장: 날짜를 넣으면 prepareSave 통과·autoRef 포함 입력, 날짜 없으면 거부, scope/childKeys 가 어긋나면 거부(I13)", () => {
@@ -139,7 +139,7 @@ test("일정 카드 배지: autoTitleOf 가 제목을 주면 '{항목} 연결', 
   const none = V.dayPanel(day, LINKS, { docById, autoTitleOf: () => "" });
   assert.ok(!("autoLinkText" in none.added.cards[0]));
   assert.deepStrictEqual(J(V.dayPanel(day, LINKS, { docById })), JSON.parse(RECOLOR(JSON.stringify(J(OLD.dayPanel(day, LINKS, { docById }))))));
-  assert.strictEqual(V.renderCard(V.dayPanel(day, LINKS, { docById }).added.cards[0]), RECOLOR(OLD.renderCard(OLD.dayPanel(day, LINKS, { docById }).added.cards[0])));
+  assert.ok(!V.renderCard(V.dayPanel(day, LINKS, { docById }).added.cards[0]).includes("us-autolink")); // D74: 카드 마크업은 2줄로 바뀌어 옛 커밋과 글자 비교하지 않는다
 });
 
 console.log("플래그(FEATURES.autoLink)");
@@ -153,13 +153,13 @@ function flags(store) {
   return { F: sb.FEATURES, calls };
 }
 test("기본 OFF · E(1-2): household 가 켜지면 autolink 기본 ON, hannun_feature_autolink='0' 이면 OFF(override) · household 가 꺼져 있으면 autolink 키를 읽지도 않는다", () => {
-  assert.deepStrictEqual(J(flags({}).F), { household: false, autoLink: false, accounts: false, curation: false });
-  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1" }).F), { household: true, autoLink: true, accounts: false, curation: false });
-  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1", hannun_feature_autolink: "1" }).F), { household: true, autoLink: true, accounts: false, curation: false });
-  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1", hannun_feature_autolink: "0" }).F), { household: true, autoLink: false, accounts: false, curation: false });
+  assert.deepStrictEqual(J(flags({}).F), { household: false, autoLink: false, accounts: false });
+  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1" }).F), { household: true, autoLink: true, accounts: false });
+  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1", hannun_feature_autolink: "1" }).F), { household: true, autoLink: true, accounts: false });
+  assert.deepStrictEqual(J(flags({ hannun_feature_household: "1", hannun_feature_autolink: "0" }).F), { household: true, autoLink: false, accounts: false });
   const off = flags({ hannun_feature_autolink: "1" });
-  assert.deepStrictEqual(J(off.F), { household: false, autoLink: false, accounts: false, curation: false });
-  assert.deepStrictEqual(off.calls, ["hannun_feature_accounts", "hannun_feature_household", "hannun_feature_curation"]); // G18: accounts → household 순(autolink 키는 household 가 꺼져 있으면 읽지 않는다)
+  assert.deepStrictEqual(J(off.F), { household: false, autoLink: false, accounts: false });
+  assert.deepStrictEqual(off.calls, ["hannun_feature_accounts", "hannun_feature_household"]); // G18: accounts → household 순(autolink 키는 household 가 꺼져 있으면 읽지 않는다)
 });
 
 console.log("app.js 연결(소스 추출 스텁)");

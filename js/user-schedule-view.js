@@ -670,15 +670,15 @@
 
   // ── 카드·상세·삭제 확인·추가 버튼 마크업 ────────────────────────────────────
   function renderCard(c) {
-    const meta = [c.categoryLabel, c.timeText, c.dateText].filter(Boolean).map(esc).join(" · ");
-    const rec = c.recurring === true; // 반복 회차만 아래 군더더기가 붙는다 — 단일·기간 일정의 마크업은 B4 와 같다
+    // D74: 제목 1줄(+완료·취소됨) / 내용 1줄(시간·기간·분류·대상·옮김·연결 항목, +반복) — 각 줄은 말줄임
+    const rec = c.recurring === true; // 반복 회차만 '옮김' 글자와 반복 알약이 붙는다
+    const meta = [c.timeText, c.dateText, c.categoryLabel, c.tag, rec ? c.movedText : ""].filter(Boolean).map(esc).concat(c.autoLinkText ? [`<span class="us-autolink">${esc(c.autoLinkText)}</span>`] : []).join(" · ");
+    const pill = c.done ? `<span class="us-done">${esc(c.doneLabel)}</span>` : c.cancelled ? `<span class="us-cancelled">${esc(c.cancelledLabel)}</span>` : "";
     return `<button type="button" class="us-card${c.done ? " done" : ""}${c.cancelled ? " cancelled" : ""}" data-us-key="${esc(c.key)}" data-us-id="${esc(c.scheduleId)}"${rec ? ` data-us-date="${esc(c.originalDate)}"` : ""} style="--us-color:${safeColor(c.color)}">
       <span class="us-bar"></span>
-      <span class="us-body"><strong class="us-title">${esc(c.title)}</strong>
-        <span class="us-meta">${meta}</span>${rec && c.movedText ? `\n        <span class="us-meta us-moved">${esc(c.movedText)}</span>` : ""}
-        ${c.tag ? `<span class="us-tag">${esc(c.tag)}</span>` : ""}${c.autoLinkText ? `<span class="us-tag us-autolink">${esc(c.autoLinkText)}</span>` : ""}${rec ? `<span class="us-tag us-repeat">${esc(c.repeatBadge)}</span>` : ""}
+      <span class="us-body"><span class="us-l1"><strong class="us-title">${esc(c.title)}</strong>${pill}</span>
+        <span class="us-l2"><span class="us-meta">${meta}</span>${rec ? `<span class="us-tag us-repeat">${esc(c.repeatBadge)}</span>` : ""}</span>
       </span>
-      ${c.done ? `<span class="us-done">${esc(c.doneLabel)}</span>` : ""}${c.cancelled ? `<span class="us-cancelled">${esc(c.cancelledLabel)}</span>` : ""}
     </button>`;
   }
   /** 일정 한 건 상세 모달(직접 추가한 일정). D63: '완료했어요' 버튼은 두지 않는다 — 이미 완료 처리된 일정에만 되돌리는 '완료 취소'가 남는다. */
@@ -994,6 +994,16 @@
     return g13ApplyWho(f, f.scope === "CHILD" && (f.childKeys || [])[0] ? `CHILD:${f.childKeys[0]}` : c.meId ? `MEMBER:${c.meId}` : "FAMILY", c); // D40: 새 일정의 '누구' 기본 = 지금 보는 아이(아이가 없는 가구는 본인, 모르면 가족 전체)
   }
   const soonChip = (label) => `<button type="button" class="us-chip us-chip-soon" disabled aria-disabled="true">${esc(label)}<small>${esc(MSG.g13Soon)}</small></button>`;
+  /** D77: 저장 버튼 색 = 선택한 '누구'(구성원·아이·가족 전체)의 칩 색. 폼 루트 style 로 넘기고 CSS 가 쓴다. */
+  function fxStyle(f, links, members) {
+    let col = "";
+    const m = f.whoPerson && f.assigneeMemberId ? (members || []).find((x) => x && x.memberId === f.assigneeMemberId) : null;
+    if (m) col = memberColor(m);
+    else if (f.scope === "CHILD" && (f.childKeys || []).length) col = childColors(links)[f.childKeys[0]] || "";
+    else if (f.scope === "FAMILY") col = familyColor();
+    const c = col ? safeColor(col) : "";
+    return c ? ` style="--us-fx:${c};--us-fx-ink:${inkOn(c)}"` : "";
+  }
   /** 계정 모드 일정 추가·수정 시트. opts: renderForm 과 같음 + { ctx } */
   function renderFormG13(f, links, opts) {
     const o = opts || {};
@@ -1038,7 +1048,7 @@
     const autoCand = f.mode === "create" && !f.autoRef && f.kindPick === "예방접종" ? renderAutoCand(cands) : "";
     const errors = (o.messages || []).map((m) => `<p class="us-error">${esc(m)}</p>`).join("");
     const edit = f.mode === "edit";
-    return `<div class="us-form us-form-g13" data-us-mode="${esc(f.mode)}">
+    return `<div class="us-form us-form-g13" data-us-mode="${esc(f.mode)}"${fxStyle(f, links, members)}>
       <h3>${esc(f.wasRecurring && edit ? MSG.editAllTitle : edit ? MSG.sheetEdit : MSG.sheetAdd)}</h3>${f.wasRecurring && edit ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
       <div class="us-field"><label>${esc(MSG.g13Who)}</label><div class="us-chips">${whoChips}</div></div>
       <div class="us-field"><label>${esc(MSG.g13Kind)}</label><div class="us-chips" data-us-kinds>${kindChips}</div></div>
@@ -1139,7 +1149,7 @@
          <div class="us-field"><label>${esc(MSG.periodEnd)}</label>${picker(PICKER_PREFIXES.periodEnd, f.periodEnd)}</div>
          <p class="us-note">${esc(MSG.periodHint)}</p>`;
     const errors = (o.messages || []).map((m) => `<p class="us-error">${esc(m)}</p>`).join("");
-    return `<div class="us-form" data-us-mode="${esc(f.mode)}">
+    return `<div class="us-form" data-us-mode="${esc(f.mode)}"${fxStyle(f, links, o.members)}>
       <h3>${esc(f.wasRecurring && f.mode === "edit" ? MSG.editAllTitle : f.mode === "edit" ? MSG.sheetEdit : MSG.sheetAdd)}</h3>${f.wasRecurring && f.mode === "edit" ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
       ${locked && f.mode === "create" && o.autoLabel ? `<p class="us-note us-autoref-note">${esc(MSG.autoFormNote(o.autoLabel))}</p>` : ""}${renderQuickChips(f)}${f.mode === "create" && !f.autoRef && f.quickKey === "vaccine" ? renderAutoCand(o.autoCandidates) : ""}
       <div class="us-field"><label for="us-title">${esc(MSG.titleLabel)}</label><input type="text" id="us-title" maxlength="100" placeholder="${esc(MSG.titleHint)}" value="${esc(f.title)}" /></div>

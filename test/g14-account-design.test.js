@@ -129,35 +129,11 @@ test("G14-5 혜택 상세: 머리(라벨·제목) + 상태 카드(신청 전/신
   assert.deepStrictEqual([n.status[1], n.status[n.status.length - 1]], ["btn-complete", "해당 없음으로 표시했어요"]);
   assert.ok(/body\.acct-design \.modal-panel \.acct-sub-head \{[^}]*background: var\(--c-ink\)/.test(g14) && /\.acct-sub-status \{ position: relative; margin: -20px 0 8px/.test(g14));
 });
-test("G14-6 기록: 계정 모드(ctx.accountDesign)는 큰 날짜 숫자 + 자동/직접 태그, 꺼져 있으면 기존 마크업 그대로(날짜 'M/D'·태그 없음)", () => {
-  const vm = require("vm");
-  const html = { list: "" };
-  const el = (id) => (id === "list-record" ? { set innerHTML(v) { html.list = v; }, get innerHTML() { return html.list; }, querySelectorAll: () => [], querySelector: () => null } : id === "record-filter" ? { set innerHTML(v) {}, querySelectorAll: () => [], } : { classList: { toggle() {} }, set innerHTML(v) {} });
-  const recs = [{ id: "c:VX-A", source: "auto", eventId: "VX-A", date: new Date(2026, 9, 2), title: "IPV 1차 접종 완료", category: "건강", memo: "" }, { id: "m1", source: "manual", date: new Date(2026, 8, 28), title: "첫 뒤집기", category: "성장·발달", authorLabel: "엄마", memo: "" }];
-  const sb = { document: { getElementById: el }, window: {}, HNRecords: { getMap: () => ({}), syncError: () => null }, ChildTimeline: { ageLabelAt: () => "생후 3개월" },
-    HNLogic: { deriveAutoRecords: () => ({ records: [recs[0]], orphanCount: 0 }), manualRecordList: () => [recs[1]], mergeRecords: (a, m) => [...a, ...m] }, console };
-  vm.createContext(sb);
-  vm.runInContext(read("js/records-view.js"), sb);
-  const ctx = (extra) => ({ allEvents: [], completed: {}, profile: { birthDate: new Date(2026, 5, 20) }, esc: (x) => String(x), familyCode: "KID111", notApplicable: () => [], autoLinkedIds: null, ...extra });
-  sb.window.HNRecordsView.render(ctx({}));
-  const off = html.list;
-  assert.ok(off.includes('<span class="rec-day">10/2</span>') && !off.includes("rec-src"));
-  sb.window.HNRecordsView.render(ctx({ accountDesign: true }));
-  const on = html.list;
-  assert.ok(on.includes('<span class="rec-day"><b>2</b>10월</span>') && on.includes('<span class="rec-src auto">자동</span> IPV 1차 접종 완료') && on.includes('<span class="rec-src manual">직접</span> 첫 뒤집기'));
-  assert.ok(on.includes('data-rec="c:VX-A"') && on.includes('data-rec="m1"') && on.includes("직접 · 엄마"), "클릭 대상·작성자 표시 그대로");
-  assert.strictEqual(on.replace(/<span class="rec-day"><b>(\d+)<\/b>(\d+)월<\/span>/g, (m, d, mo) => `<span class="rec-day">${mo}/${d}</span>`).replace(/<span class="rec-src (auto|manual)">[^<]*<\/span> /g, "").replace(/<button type="button" class="rec-add"[^>]*>[^<]*<\/button>/, ""), off, "태그·날짜 표기 말고는 같다");
-  assert.ok(/body\.acct-design #list-record \.rec-day b \{/.test(g14) && /\.rec-src\.auto \{ background: var\(--c-badge-auto\)/.test(g14));
-  assert.ok(APP.includes("...(acctEnabled() ? { accountDesign: true } : {})"));
-});
 console.log(`\n${passed}개 통과`);
 
-test("G15: 기록 추가 버튼은 계정 모드만, 체크리스트 '전체' 칩 앞 배치는 계정 모드만, 일정 상세 점은 opts.dots 일 때만, 종류 칩은 제목 일치로 선택", () => {
-  const RV = fs.readFileSync(path.join(__dirname, "../js/records-view.js"), "utf8");
+test("G15: (기록 추가 버튼은 D72a 기록 삭제로 없어짐) 체크리스트 '전체' 칩 앞 배치는 계정 모드만, 일정 상세 점은 opts.dots 일 때만, 종류 칩은 제목 일치로 선택", () => {
   const APP = fs.readFileSync(path.join(__dirname, "../js/app.js"), "utf8");
   const UV = fs.readFileSync(path.join(__dirname, "../js/user-schedule-view.js"), "utf8");
-  assert.ok(RV.includes('if (ctx.accountDesign === true) html += `<button type="button" class="rec-add"'));
-  assert.ok(RV.includes("openEditor(ctx)"));
   assert.ok(APP.includes('const allFirst = containerId === "filter-chips-checklist" && typeof acctEnabled === "function" && acctEnabled();'));
   assert.ok(APP.includes('(allFirst ? allBtn : "") +') && APP.includes('(allFirst ? "" : allBtn);'));
   assert.ok(APP.includes("acctEnabled() ? { dots: UserScheduleView.detailDots(occ, usLinks()) } : undefined"));

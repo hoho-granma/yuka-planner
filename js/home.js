@@ -152,7 +152,6 @@
         const a = b.dataset.act;
         if (a === "todos") ctx.openTodos();
         else if (a === "subsidy") ctx.switchTab("subsidy");
-        else if (a === "record") ctx.switchTab("record");
         else if (a === "cal-today") ctx.goCalendar(new Date());
         else if (a === "us-cal") ctx.goCalendar(new Date());
         else if (a === "us-add") ctx.usAddFromHome();
@@ -195,7 +194,6 @@
         document.getElementById("period-close").addEventListener("click", ctx.closeModal);
       })
     );
-    wrap.querySelectorAll("[data-rec]").forEach((b) => b.addEventListener("click", () => HNRecordsView.openDetail(ctx, b.dataset.rec)));
   }
 
   window.HNHome = { render };

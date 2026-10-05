@@ -346,7 +346,7 @@ test("카드: 완료면 done 클래스와 '완료' 표시, 미완료면 없음",
   const u = V.renderCard({ ...base, done: false, doneLabel: "" });
   assert(d.includes("us-card done") && d.includes('<span class="us-done">완료</span>'));
   assert(!u.includes("done") && !u.includes("us-done"));
-  assert(u.includes("수업·학원 · 종일") && u.includes("가족 일정"));
+  assert(u.includes("종일 · 수업·학원 · 가족 일정"), "D74: 내용 한 줄 = 시간·기간·분류·대상 순");
 });
 test("추가 버튼: 플래그 OFF → '', 가구 없음 → 안내만, 가구 있음 → 버튼", () => {
   assert.strictEqual(V.renderAddButton({ enabled: false, hasHousehold: true }), "");

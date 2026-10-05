@@ -2,7 +2,7 @@
  * photo-view — D37 일정 추가 4메뉴 줄과 사진 흐름 상태 화면(순수 마크업). 명세 docs/한눈육아-디자인명세-일정추가4메뉴.md §1~§3.
  * DOM·저장소·시각을 만지지 않는다. 색은 앱 토큰(var(--nd-*)·--line·--text-muted)만, 새 색 없음. 모든 상태에 [직접 입력으로 계속]·[붙여넣기로 계속] 중 하나 이상이 있다(막다른 화면 금지).
  *   renderMenu(selected) / renderState(kind, o) / mbText(bytes)
- *   kind: "download"(②′ 처음 한 번 데이터 받는 중) | "reading"(① 읽는 중) | "readFail"(④ 글자를 못 찾음) | "unparsed"(⑤ 규칙으로 일정이 안 나옴) | "downloadFail"(⑥ 데이터를 못 받음) | "unavailable"(⑦ 사진을 쓸 수 없음)
+ *   kind: "download"(②′ 처음 한 번 데이터 받는 중) | "reading"(① 읽는 중) | "readFail"(④ 글자를 못 찾음) | "unparsed"(⑤ 규칙으로 일정이 안 나옴) | "downloadFail"(⑥ 데이터를 못 받음) | "unavailable"(⑦ 사진을 쓸 수 없음) | "loading"(D73 사진 준비 중) | "decodeFail"(D73 사진을 열 수 없음); renderCrop(o) = D73 자르기 화면
  *   o: { percent(0..100), long(bool, 읽기가 10초 넘음), bytes, previewUrl, from("camera"|"gallery"), rawText }
  */
 (function (root, factory) {
@@ -27,6 +27,8 @@
     readText: "읽은 글 보기 ›",
     dlFailTitle: "글자 읽는 데이터를 받지 못했어요", dlFailBody: "인터넷 연결을 확인하고 다시 시도해 주세요. 지금 바로 추가하려면 아래 방법을 쓰세요.", retry: "다시 시도",
     offTitle: "사진을 쓸 수 없어요", offBody: "기기 설정에서 카메라·사진 접근을 허용하면 쓸 수 있어요. 지금은 아래 방법으로 추가할 수 있어요.",
+    loadingTitle: "사진을 불러오는 중", cropTitle: "읽을 부분 고르기", cropHint: "읽을 부분만 남기고 잘라 주세요. 자르지 않으면 사진 전체를 읽어요.", cropOk: "업로드", cropCancel: "취소",
+    decodeFailBody: "이 사진은 열 수 없어요. 다른 사진을 고르거나, 스크린샷으로 저장해서 다시 올려 주세요.",
     toDirect: "직접 입력으로 계속", toPaste: "붙여넣기로 계속",
     photoNote: "사진에서 읽은 글자는 틀릴 수 있어요. 날짜와 시각을 꼭 확인해 주세요.",
   });
@@ -52,12 +54,25 @@
     return primary === "paste" ? paste + direct : direct + paste;
   };
 
+  /** D73 자르기 화면(전체 화면). 캔버스·박스·핸들은 PhotoCrop.mount 가 [data-crop-stage] 안에 붙인다. */
+  function renderCrop(o) {
+    const op = o || {};
+    return `<div class="crop-screen" role="dialog" aria-modal="true" aria-label="${esc(MSG.cropTitle)}" data-cap-step="photo-crop"><div class="crop-head"><h3>${esc(MSG.cropTitle)}</h3></div>` +
+      `<div class="crop-stage" data-crop-stage></div><div class="crop-info"><p class="crop-hint">${esc(MSG.cropHint)}</p><p class="crop-privacy">${esc(MSG.privacy)}</p>` +
+      `<button type="button" class="crop-again" data-cap-photo-again>${esc(op.from === "gallery" ? MSG.againGallery : MSG.againCamera)}</button></div>` +
+      `<div class="crop-foot"><button type="button" class="btn-close cap-btn" data-cap-crop-cancel>${esc(MSG.cropCancel)}</button><button type="button" class="btn-complete cap-btn" data-cap-crop-ok>${esc(MSG.cropOk)}</button></div></div>`;
+  }
   function renderState(kind, o) {
     const op = o || {};
     const wrap = (inner) => `<div class="us-form us-capture cap-state" data-cap-step="photo-${esc(kind)}">${inner}</div>`;
     if (kind === "download") {
       const pct = Math.max(0, Math.min(100, Math.round(op.percent || 0)));
       return wrap(`<h3>${esc(MSG.dlTitle)}</h3><p>${esc(MSG.dlBody(mbText(op.bytes)))}</p><div class="cap-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div><button type="button" class="btn-close cap-btn" data-cap-photo-stop>${esc(MSG.stop)}</button>`);
+    }
+    if (kind === "loading") return wrap(`<div class="cap-reading"><span class="cap-spin" aria-hidden="true"></span></div><h3>${esc(MSG.loadingTitle)}</h3><p class="cap-sub" aria-live="polite">${esc(MSG.readingSub)}</p><button type="button" class="btn-close cap-btn" data-cap-photo-stop>${esc(MSG.stop)}</button>`);
+    if (kind === "decodeFail") {
+      const again = `<button type="button" class="btn-close cap-btn" data-cap-photo-again>${esc(op.from === "gallery" ? MSG.againGallery : MSG.againCamera)}</button>`;
+      return wrap(`<h3>${esc(MSG.failTitle)}</h3><p>${esc(MSG.decodeFailBody)}</p>${again}${continueBtns("direct")}`);
     }
     if (kind === "reading") {
       const preview = op.previewUrl ? `<img class="cap-preview" src="${esc(op.previewUrl)}" alt="" width="48" height="48" />` : "";
@@ -77,5 +92,5 @@
     }
     return wrap(`<h3>${esc(MSG.offTitle)}</h3><p>${esc(MSG.offBody)}</p>${continueBtns("direct")}`); // unavailable
   }
-  return { MSG, ICON, mbText, renderMenu, renderState };
+  return { MSG, ICON, mbText, renderMenu, renderState, renderCrop };
 });

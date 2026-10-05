@@ -38,5 +38,12 @@
     }).join("");
     return `<section class="home-sec home-must" id="home-must"><div class="home-sec-head"><h3>${esc(MSG.title)}</h3>${more ? `<button type="button" class="home-viewall" data-hm-more>${esc(MSG.more(more))}</button>` : ""}</div>${rows}</section>`;
   }
-  return { MSG, dateOf, render };
+  /** D72a: 큐레이션 결과(cur)에서 단위 key 로 항목 단위를 찾는다(옛 curated-home.js 의 unitOf — 새 홈 삭제 뒤 이 카드가 이어서 쓴다). */
+  function unitOf(cur, key) {
+    if (!cur) return null;
+    for (const s of ["now", "soon", "know"]) for (const u of [...(cur[s] || []), ...((cur.overflow && cur.overflow[s]) || [])]) if (u.key === key) return u;
+    return null;
+  }
+
+  return { MSG, dateOf, render, unitOf };
 });

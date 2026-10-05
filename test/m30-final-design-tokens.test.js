@@ -36,14 +36,14 @@ test("두 테마에서 같은 값(고정): 완료 청록·위험·마감 와인�
 test("색 직접 쓰기 정리: 규칙 안 hex 는 흰색·허용 목록뿐(#ababab·#000·#fff6cc·#8a1c3d·#f4f3f1·#e0443a 는 변수로), 온보딩 원 변수는 이번 묶음 범위 밖", () => {
   const body = CSS.replace(/^:root \{[\s\S]*?\n\}/, "").replace(/body\.theme-forest \{[^}]*\}/, "").replace(/:root \{\n  --nd-indigo[\s\S]*?\n\}/, "").replace(/\/\*[\s\S]*?\*\//g, "");
   for (const hex of ["#ababab", "#000", "#fff6cc", "#8a1c3d", "#f4f3f1", "#e0443a"]) assert.ok(!body.toLowerCase().includes(hex), hex + " 는 변수로");
-  assert.ok(!/#4a45c8/i.test(read("css/capture.css").replace(/\/\*[\s\S]*?\*\//g, "")) && !/#4a45c8|#8a1c3d/i.test(read("css/home-slots.css").replace(/\/\*[\s\S]*?\*\//g, "")));
+  assert.ok(!/#4a45c8/i.test(read("css/capture.css").replace(/\/\*[\s\S]*?\*\//g, "")));
 });
 
 console.log("캘린더 선택·오늘");
 test("선택한 날 = 4면 같은 1.5px 선(--cal-sel) + 투명 배경(아래 4px 막대·30% 면 없음), 오늘 = 숫자 굵게 + 숫자 옆 5px 점(링 없음), 주 보기도 같은 규칙", () => {
   assert.ok(/\.calendar-grid-v2 \.day-cell\.selected \{ outline: none; background: transparent; box-shadow: inset 0 0 0 1\.5px var\(--cal-sel\); \}/.test(CSS));
   assert.ok(!/inset 0 -4px 0/.test(CSS) && !/color-mix\(in srgb, var\(--c-primary\) 30%/.test(CSS));
-  assert.ok(/\.day-cell\.today \{ background: transparent; box-shadow: none; font-weight: 800; \}/.test(CSS) && !/\.day-cell\.today \.num::after/.test(CSS)); // D54: 오늘 작은 점 제거, 굵게만 유지
+  assert.ok(/\.day-cell\.today \{ background: transparent; box-shadow: inset 0 0 0 1\.5px var\(--accent-dark\); font-weight: 800; \}/.test(CSS) && !/\.day-cell\.today \.num::after/.test(CSS)); // D54: 오늘 작은 점 제거, 굵게만 유지
   assert.ok(/let selectedCalendarDate = new Date\(\);/.test(read("js/app.js")) && /\.calendar-grid-v2 \.day-cell\.selected \{ outline: none; background: transparent; box-shadow: inset 0 0 0 1\.5px var\(--cal-sel\); \}/.test(CSS), "D54: 기본 선택=오늘 → 오늘 칸 4면 1.5px 테두리");
   assert.ok(/\.week-col\.selected \{ border-color: transparent; box-shadow: inset 0 0 0 1\.5px var\(--cal-sel\); \}/.test(CSS) && /\.week-col\.today \.wk-num::after/.test(CSS));
 });

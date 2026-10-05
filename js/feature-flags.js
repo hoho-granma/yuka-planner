@@ -16,14 +16,13 @@
   else root.FEATURES = factory(root.localStorage);
 })(typeof window !== "undefined" ? window : global, function (storage) {
   "use strict";
-  const flags = { household: true, autoLink: false, accounts: true, curation: false }; // curation: 1-0 큐레이션 홈(js/curation.js·home-slots-view.js·curated-home.js) — 기본 OFF, 개발용 "hannun_feature_curation" = "1" 로만 켠다
+  const flags = { household: true, autoLink: false, accounts: true }; // (D72a: curation 플래그 삭제 — 새 홈 미리보기 없음)
   try {
     const get = (k) => (storage ? storage.getItem(k) : null);
     if (get("hannun_feature_accounts") === "0") {
       flags.accounts = false;
       flags.household = get("hannun_feature_household") === "1"; // 계정을 끈 개발 기기: 가구는 예전처럼 "1" 일 때만
     }
-    flags.curation = get("hannun_feature_curation") === "1";
     // autoLink: household 가 켜져 있으면 기본 ON. 끄려면 hannun_feature_autolink = "0".
     if (flags.household && get("hannun_feature_autolink") !== "0") flags.autoLink = true;
   } catch (e) {

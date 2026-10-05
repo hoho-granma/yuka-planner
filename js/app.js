@@ -62,7 +62,7 @@
   viewMonth.setDate(1);
   let currentDayContext = null; // { events, date } — 날짜 클릭으로 연 일정 여러 개 목록
   let modalMode = null; // "day-list" | "detail" | "profile"
-  let currentTab = "home"; // "home" | "calendar" | "record" | "subsidy" | "checklist"(전체 할 일 서브 화면) | "places"(가구·계정 기능이 켜졌을 때만 하단 탭)
+  let currentTab = "home"; // "home" | "calendar" | "subsidy" | "checklist"(전체 할 일 서브 화면) | "places"(가구·계정 기능이 켜졌을 때만 하단 탭)
   let checklistScope = null; // 홈의 "전체 보기"로 들어왔을 때만 { label, ids:Set } — 그 항목들만 보여준다
   let showPastInfant = false; // N5: 72개월 넘은 아이의 체크리스트에서 지난 영유아 항목(미완료)을 보일지(기본 꺼짐, 앱 세션 동안만)
   let checklistStatus = "all"; // 전체 할 일의 완료 상태 필터: "all" | "todo" | "done"
@@ -197,16 +197,7 @@
 
   // D37 사진으로 추가(기기 안 글자 인식) 4메뉴 — 기본 ON(사용자 지시 2026-10-05). 이 기기 저장값 hannun_feature_photoinput="0"(또는 FEATURES.photoInput===false)일 때만 끈다(accounts 플래그와 같은 방식).
   const capPhotoOn = () => { try { return localStorage.getItem("hannun_feature_photoinput") !== "0" && !(!!window.FEATURES && window.FEATURES.photoInput === false); } catch (e) { return true; } };
-  const FEATURES_CURATION_ON = () => !!window.FEATURES && window.FEATURES.curation === true;
-  // ═══ 1-1b 새 홈 미리보기 스위치(기기 저장 hannun_home_v2, 서버·Firestore 쓰기 없음). 사용자 키 > 개발용 플래그 > 단계 기본값. 단계는 ① 로 고정(② 기본 ON 은 코드만 준비 — 전환은 사용자 확인 원문 뒤) ═══
-  const HOME_V2_STAGE = 1;
-  const HSW = { justEnabled: false, fallbackShown: false, diag: "" }; // diag: 새 홈 실패 원인 요지(진단용, 폴백 안내에만 표시)
-  const homeStore = () => { try { return window.localStorage; } catch (e) { return null; } };
-  function homePrefApply() {
-    if (typeof HomeSwitch === "undefined" || !window.FEATURES) return;
-    window.FEATURES.curation = HomeSwitch.effective(HomeSwitch.read(homeStore()), window.FEATURES.curation === true, HOME_V2_STAGE);
-  }
-  homePrefApply();
+  const FEATURES_CURATION_ON = () => false; // D72a: 새 홈 미리보기를 삭제했다 — 월령 두 층·지원 3단·마감 칩(MonthTiers·SubsidyTiers)은 영구 OFF 죽은 코드로 보존
   async function loadAll() {
     const [regions, reform, policy, allow36, pregTiming, nsRaw, reappearRaw, infoRaw, eduLinksRaw, curationRaw, ...categoryFiles] = await Promise.all([
       loadJson("data/regions.json"),
@@ -440,7 +431,6 @@
       completed = data.completed || {};
       saveProfile(profile);
       saveCompleted();
-      if (data.records) HNRecords.mergeRemote(data.records);
       if (!el("view-calendar").classList.contains("hidden")) {
         // 완료 처리만 바뀐 경우엔 보던 탭·달을 유지한 채 일정만 다시 계산한다.
         if (profileChanged) await buildAndRender();
@@ -460,7 +450,6 @@
     }
     try {
       familyCode = await FamilySync.createFamily(profileToPlain(profile), completed);
-      HNRecords.adopt(familyCode);
       rememberChild();
       hhLinkNewChild();
       startListeningFamily();
@@ -1031,17 +1020,15 @@
           : ""
       }
       ${acctEnabled()
-        ? `<details class="acct-members-det"><summary><strong>${esc(AccountView.MSG.membersManage)}</strong><small>${esc(AccountView.MSG.membersManageHint)}</small></summary><div id="members-slot"></div></details><div class="acct-bottom-row">${acctKidCount() >= 2 ? '<button type="button" class="btn-close" id="btn-acct-child-switch">아이 전환</button>' : ""}<button type="button" class="btn-close" id="btn-view-records">기록 보기</button></div>`
-        : `${hhEnabled() ? '<div id="hh-slot"></div><div id="members-slot"></div>' : ""}<div id="beta-slot"></div>${hhEnabled() ? '<button type="button" class="btn-close" id="btn-view-records">기록 보기</button>' : ""}`}${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
+        ? "" // D72b: 계정 모드의 구성원 관리·아이 전환·기록 보기는 '우리 가족' 시트(얼굴 카드)로 옮겼다 — 이 시트는 카드의 [사진]으로만 열린다
+        : `${hhEnabled() ? '<div id="hh-slot"></div><div id="members-slot"></div>' : ""}<div id="beta-slot"></div>`}${isPregnant() ? `<button class="btn-complete" id="btn-switch-born">아이가 태어났어요</button>` : ""}
       ${changed ? `<button class="btn-complete btn-photo-save" id="btn-photo-save">저장</button>` : ""}
       <button class="btn-close" id="btn-close-modal">닫기</button>
     `;
     el("detail-modal").classList.remove("hidden");
     el("btn-close-modal").addEventListener("click", closeDetail);
     if (acctEnabled()) acctOpenSlot();
-    if (el("btn-acct-child-switch")) el("btn-acct-child-switch").addEventListener("click", showChildSwitchSheet); // D4(나): 계정 모드는 아이가 2명 이상일 때만, 기존 전환 시트 재사용
     if (hhEnabled()) hhOpenSection();
-    if (el("btn-view-records")) el("btn-view-records").addEventListener("click", openRecordView);
     betaConfirming = false;
     betaOpenSlot("beta-slot", "renderBetaSwitch");
     el("btn-open-reset").addEventListener("click", showEditProfileSheet);
@@ -1097,38 +1084,123 @@
   // G17: 계정 모드(로그인)의 프로필 시트는 '내 프로필'이다 — 제목은 내 이름·역할, 아이는 '우리 아이' 한 줄(누르면 기존 아이 정보 시트). OFF·로그아웃 상태는 기존 시트 그대로.
   const showProfileSheetBase = showProfileSheet;
   let acctChildView = false; // '우리 아이' 줄에서 연 기존 아이 시트 안에서는 기존 시트로 다시 그린다(사진 저장·수정 취소 등)
-  function acctProfileSheet() {
+  // ── D72b 우리 가족 시트: 얼굴(나·아빠·아이)을 누르면 아래 카드가 그 사람 것으로 바뀌고, 수정·삭제·빼기는 카드 맨 아래에 둔다(구성원 관리·우리 아이 줄·아이 전환·기록 보기·새 홈 줄은 이 시트에서 없앴다). ──
+  let FAM = { kind: "member", id: "" }; // 선택한 얼굴(시트를 새로 열 때 '나'로 초기화)
+  function famSel() {
+    const members = HouseholdView.visibleMembers(usMembers());
+    if (FAM.kind === "member") { const m = members.find((x) => x.memberId === FAM.id); if (m) return { kind: "member", id: m.memberId }; }
+    if (FAM.kind === "child") { const l = usLinks().find((x) => !x.removedAt && String(x.childKey) === String(FAM.id)); if (l) return { kind: "child", id: l.childKey }; }
+    const me = usMeId();
+    return { kind: "member", id: (me && members.some((x) => x.memberId === me) ? me : (members[0] || {}).memberId) || "" };
+  }
+  function famCardData(sel) {
+    const HM = HouseholdView.MSG, AM = AccountView.MSG;
+    if (sel.kind === "member") {
+      const m = HouseholdView.visibleMembers(usMembers()).find((x) => x.memberId === sel.id);
+      if (!m) return null;
+      const isMe = !!sel.id && sel.id === usMeId();
+      const acc = acct.account || {};
+      const region = acc.province ? `${acc.province} ${acc.district || ""}`.trim() : profile ? `${profile.province} ${profile.district}` : "";
+      const name = isMe && (acctIdentity() || {}).name ? (acctIdentity() || {}).name : m.label;
+      const edit = { label: HM.memEdit, attrs: `data-mem-action="edit" data-member-id="${esc(m.memberId)}"` };
+      return {
+        kind: isMe ? "me" : "member", color: UserScheduleView.memberColor(m), name: isMe ? `${name} (${AM.meShort})` : name, sub: HouseholdView.roleLabelOf(m),
+        rows: isMe ? [[AM.emailLabel || "이메일", acct.user && acct.user.email], ["거주 지역", region]] : [],
+        actions: isMe ? [edit, { label: AM.logout, attrs: 'data-acct-action="logout"' }] : [edit, { label: HM.memDelete, attrs: `data-mem-action="ask-delete" data-member-id="${esc(m.memberId)}"`, danger: true }],
+      };
+    }
+    const l = usLinks().find((x) => !x.removedAt && String(x.childKey) === String(sel.id));
+    if (!l) return null;
+    const color = UserScheduleView.childColor(l);
+    const current = !!profile && l.familyCode === familyCode;
+    const actions = [];
+    const rows = [];
+    let extraHtml = "", sub = "", photo = "";
+    if (current) {
+      const today = new Date();
+      const preg = isPregnant();
+      sub = preg ? `임신 ${pregnancyInfo(profile.birthDate, today).weeks}주` : ChildTimeline.ageLabelAt(profile.birthDate, today);
+      rows.push([preg ? "출산 예정일" : "생년월일", formatDateKR(profile.birthDate)]);
+      if (preg && pregConfirmIso()) rows.push([PregnancyBasis.MSG.confirmDate, formatDateKR(new Date(pregConfirmIso() + "T00:00:00"))]);
+      rows.push(["거주 지역", `${profile.province} ${profile.district}`]);
+      extraHtml = enrollmentRowHtml();
+      photo = profile.photoDataUrl || "";
+      actions.push({ label: preg ? "임신 정보 수정" : "아이 정보 수정", attrs: 'data-fam-act="child-edit"' }, { label: "사진", attrs: 'data-fam-act="child-photo"' });
+      if (preg) actions.push({ label: "아이가 태어났어요", attrs: 'data-fam-act="child-born"' });
+    } else {
+      const ageText = acct36AgeText(l.familyCode);
+      if (ageText) sub = ageText;
+    }
+    actions.push({ label: HM.memChildRemove, attrs: `data-mem-action="ask-remove-child" data-member-id="${esc(l.childKey)}"`, danger: true });
+    if (usIsOwnChild(l)) actions.push({ label: HM.memChildDelete, attrs: `data-mem-action="ask-delete-child" data-member-id="${esc(l.childKey)}"`, danger: true });
+    return { kind: "child", color, name: l.displayName || AM.childFallback, sub, photo, rows, extraHtml, actions };
+  }
+  /** 선택 카드(수정·삭제 폼/확인 중이면 그 화면)와 '이 기기에만 있는 아이' 구역을 다시 그린다. 얼굴 줄·스크롤은 건드리지 않는다. */
+  function famRender() {
+    const card = el("fam-card");
+    if (!card) return;
+    if ((mem.view === "form" || mem.view === "delete") && hhEnabled()) {
+      if (mem.view === "form" && mem.form) mem.form.label = memReadLabel();
+      card.innerHTML = HouseholdView.renderMembers({ ...memState(), bare: true });
+    } else {
+      card.innerHTML = AccountView.renderFamCard(famCardData(famSel()));
+    }
+    const orph = el("fam-orphans");
+    if (orph) orph.innerHTML = HouseholdView.renderOrphans(memState());
+  }
+  async function famOnClick(ev) {
+    const act = ev.target.closest && ev.target.closest("[data-fam-act]");
+    if (act) {
+      ev.stopPropagation();
+      const a = act.getAttribute("data-fam-act");
+      if (a === "child-edit") return showEditProfileSheet();
+      if (a === "child-photo") { acctChildView = true; return showProfileSheetBase(); } // 사진 올리기·미리보기·저장은 기존 아이 시트 그대로
+      if (a === "child-born") return showBornSwitchSheet();
+      return;
+    }
+    const en = ev.target.closest && ev.target.closest("[data-enroll]");
+    if (en) return onEnrollChip(en.getAttribute("data-enroll"));
+    await memOnClick(ev); // 수정·삭제·빼기·저장·취소 — 기존 구성원 관리 처리 그대로
+    acctOnClick(ev); // [로그아웃] 등 계정 동작
+  }
+  /** 얼굴을 눌렀을 때: 아이면 그 아이로 전환(홈 현재 아이도 바뀐다, 사용자 결정 a)한 뒤 시트를 다시 연다. */
+  async function famPick(kind, id) {
+    mem.view = "list"; mem.form = null; mem.deleteId = null;
+    if (kind === "child") {
+      const l = usLinks().find((x) => !x.removedAt && String(x.childKey) === String(id));
+      if (l && l.familyCode && l.familyCode !== familyCode) {
+        await switchToChild(l.familyCode); // 시트를 닫고 홈을 다시 그린다
+        FAM = { kind: "child", id };
+        return acctProfileSheet(true);
+      }
+    }
+    FAM = { kind, id };
+    acctRenderSlot();
+    famRender();
+  }
+  function acctProfileSheet(keepSel) {
     acctChildView = false;
     modalMode = "profile";
+    if (!keepSel && !el("fam-card")) FAM = { kind: "member", id: "" };
     const id = acctIdentity();
     const title = id ? (id.roleName ? `${id.name} · ${AccountView.MSG.myRole(id.roleName)}` : id.name) : AccountView.MSG.myAccount;
-    const acc = acct.account || {};
-    const region = acc.province ? `${acc.province} ${acc.district || ""}`.trim() : profile ? `${profile.province} ${profile.district}` : "";
-    const kid = profile ? acctHomeChildText() : "";
     el("modal-content").innerHTML = `
       <div class="profile-name-row acct-prof-head"><span class="avatar profile-sheet-avatar">${PERSON_ICON_SVG}</span><h3>${esc(title)}</h3></div>
       <div id="acct-slot"></div>
-      ${region ? `<div class="detail-row"><div class="label">거주 지역</div>${esc(region)}</div>` : ""}
-      <details class="acct-members-det"><summary><strong>${esc(AccountView.MSG.membersManage)}</strong><small>${esc(AccountView.MSG.membersManageHint)}</small></summary><div id="members-slot"></div></details>
-      ${typeof HomeSwitch !== "undefined" ? HomeSwitch.rowHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE) : ""}
-      <div class="detail-row acct-kids"><div class="label">우리 아이</div>${
-        profile
-          ? `<button type="button" class="acct-kid-row" id="btn-acct-kid-row"><span>${esc(kid)}</span><span class="hr-chev">›</span></button>`
-          : `<button type="button" class="acct-kid-row" id="btn-acct-kid-add"><span>＋ ${esc(AccountView.MSG.emptyButton)}</span><span class="hr-chev">›</span></button>`
-      }</div>
-      <div class="acct-bottom-row">${acctKidCount() >= 2 ? '<button type="button" class="btn-close" id="btn-acct-child-switch">아이 전환</button>' : ""}${profile ? '<button type="button" class="btn-close" id="btn-view-records">기록 보기</button>' : ""}</div>
+      <div id="fam-card" class="fam-card-slot" aria-live="polite"></div>
+      <div id="fam-orphans"></div>
       <button class="btn-close" id="btn-close-modal">닫기</button>`;
     el("detail-modal").classList.remove("hidden");
     el("btn-close-modal").addEventListener("click", closeDetail);
     acctOpenSlot();
     if (hhEnabled()) hhOpenSection();
-    if (el("btn-acct-child-switch")) el("btn-acct-child-switch").addEventListener("click", showChildSwitchSheet);
-    if (el("btn-view-records")) el("btn-view-records").addEventListener("click", openRecordView);
-    if (el("btn-acct-kid-row")) el("btn-acct-kid-row").addEventListener("click", () => { acctChildView = true; showProfileSheetBase(); });
-    if (el("btn-acct-kid-add")) el("btn-acct-kid-add").addEventListener("click", () => { closeDetail(); beginNewChildEntry(); });
+    else famRender();
+    el("fam-card").addEventListener("click", famOnClick);
+    el("fam-orphans").addEventListener("click", memOnClick);
+    famRender();
   }
   showProfileSheet = function (pendingPhoto) {
-    if (acctEnabled() && acct.user && !acctChildView) return acctProfileSheet();
+    if (acctEnabled() && acct.user && !acctChildView) return acctProfileSheet(!!el("fam-card"));
     return showProfileSheetBase(pendingPhoto);
   };
   const closeDetailBase = closeDetail;
@@ -1398,21 +1470,9 @@
     renderAllBase.apply(this, arguments);
     if (acctEnabled()) acct36Sync();
   };
-  // ═══ 1-0/1-1 큐레이션 홈(플래그 curation, 기본 OFF) — curate() → 홈 슬롯. 못 읽거나 실패하면 null 을 돌려 기존 홈을 그린다 ═══
-  let curatedCur = null; // 마지막 curate 결과(클릭 분기가 단위 key 로 항목을 찾는다)
+  // ═══ 큐레이션 입력(D72a: 새 홈 미리보기는 삭제 — 이전 홈 맨 위 '지금 꼭 할 것' 카드가 쓴다) ═══
   const CURATED_ANSWERS_KEY = "hannun_subsidy_answers"; // D14: '해당돼요/아니에요' 항목 단위 기기 저장(Firestore 불변)
   function curatedAnswers() { try { const o = JSON.parse(localStorage.getItem(CURATED_ANSWERS_KEY) || "{}"); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } }
-  const curatedHomeOn = () => FEATURES_CURATION_ON() && !!curationPolicy && !!profile && typeof CuratedHome !== "undefined" && typeof HomeSlotsView !== "undefined";
-  function curatedFamilyItems(today) { // 이번 주 우리 가족 일정(7일 안 직접 일정) — 가구가 없으면 null(영역 숨김)
-    if (!hhEnabled() || !usActive()) return null;
-    try {
-      const a = toISODate(today), b = UserSchedule.addDays(a, 6);
-      const m = usBuildModel(a, b, { scope: "ALL", showAuto: false });
-      const out = [];
-      for (const [, d] of m.days) for (const o of d.user) out.push({ title: o.title, time: o.allDay ? "" : o.startTime || "", color: UserScheduleView.occurrenceColor(o, usLinks()) });
-      return out.slice(0, 5);
-    } catch (e) { return null; }
-  }
   /** 큐레이션 입력(오늘·일정·상태) — 큐레이션 홈과 이전 홈 맨 위 '지금 꼭 할 것' 카드(4-1 A안)가 같은 값을 쓴다. */
   function curatedInputs() {
       const today = new Date(), pregnant = isPregnant();
@@ -1430,37 +1490,12 @@
       };
     return { today, pregnant, ageMonths, events, state };
   }
-  function curatedHomeHtml() {
-    if (!curatedHomeOn()) return null;
-    try {
-      const { today, pregnant, ageMonths, events, state } = curatedInputs();
-      let nextStage = null;
-      try { const m = nsModel(); if (m) nextStage = { head: m.stageLabel, title: m.headline, desc: m.sub }; } catch (e) {}
-      const explore = [];
-      if (!pregnant && !placesHiddenNow() && tabLayoutOn()) explore.push({ title: "어디갈까", desc: "집 근처 갈 만한 곳", go: "places" });
-      const todosHtml = acct36Active() && typeof Over36View.renderTodoCard === "function" ? Over36View.renderTodoCard({ name: childDisplayName(), todos: ChildTodos.homeLines(acct36All(), 3), canTodo: acct36CanTodo() }) : "";
-      const ageText = pregnant ? "" : ChildTimeline.ageLabelAt(profile.birthDate, new Date());
-      const html = CuratedHome.render({ policy: curationPolicy, events, state, today, head: { name: childDisplayName(), ageText, region: profile.district || profile.province || "" }, family: curatedFamilyItems(today), nextStage, explore, todosHtml });
-      if (!html) { const le = typeof CuratedHome.getLastError === "function" ? CuratedHome.getLastError() : null; HSW.diag = `홈 그리기 실패: ${le && le.message ? le.message : "내용 없음"}`; } else HSW.diag = "";
-      if (html) curatedCur = html && typeof Curation !== "undefined" ? Curation.curate(events, state, curationPolicy, today) : null;
-      return html;
-    } catch (e) { console.error("큐레이션 홈 실패(기존 홈으로)", e); HSW.diag = `홈 준비 실패: ${e && e.message ? e.message : e}`; return null; }
-  }
-  function curatedRenderHome() {
-    const wrap = el("home-body");
-    if (!wrap) return false;
-    const html = curatedHomeHtml();
-    if (!html) return false;
-    wrap.innerHTML = html;
-    homeSwitchDecorate(true); // 1-1b: 켠 직후 안내 띠·단계 ② 링크(스위치를 안 쓴 사용자에게는 아무것도 붙지 않음)
-    return true;
-  }
   // ═══ 4-1 A안: 이전 홈 맨 위 '지금 꼭 할 것' 카드(최대 2줄) — 큐레이션 엔진 now 의 앞 N개(정책 slots.homeMust, 기본 2, 0이면 카드 없음). 새 홈 미리보기가 켜져 있으면 큐레이션 홈이 대신하므로 그리지 않는다. 실패·정책 없음은 조용히 생략(이전 홈 그대로). ═══
   let HMUST = null; // { cur } — 클릭이 단위를 찾는 데 쓴다
   function homeMustHtml(skipIds) {
     HMUST = null;
     try {
-      if (!curationPolicy || typeof Curation === "undefined" || typeof HomeMust === "undefined" || !profile || FEATURES_CURATION_ON()) return "";
+      if (!curationPolicy || typeof Curation === "undefined" || typeof HomeMust === "undefined" || !profile) return "";
       const n = curationPolicy.slots && Number.isInteger(curationPolicy.slots.homeMust) ? curationPolicy.slots.homeMust : 2;
       if (n <= 0) return "";
       const { today, events, state } = curatedInputs();
@@ -1477,35 +1512,11 @@
     const t = ev.target && ev.target.closest ? ev.target.closest("[data-hm-open], [data-hm-more]") : null;
     if (!t) return;
     if (t.hasAttribute("data-hm-more")) return switchTab("checklist");
-    const u = HMUST && HMUST.cur ? CuratedHome.unitOf(HMUST.cur, t.getAttribute("data-hm-open")) : null;
+    const u = HMUST && HMUST.cur ? HomeMust.unitOf(HMUST.cur, t.getAttribute("data-hm-open")) : null;
     if (!u) return;
     const e = u.items && u.items[0] && !u.items[0].unknown ? u.items[0] : null;
     if (u.review || !e) return switchTab("checklist");
     openDetail(e);
-  }
-  function curatedHomeClick(ev) {
-    const t = ev.target && ev.target.closest ? ev.target.closest("[data-hs-act], [data-hs-go]") : null;
-    if (!t || !curatedCur) return;
-    const unitE = (key) => { const u = CuratedHome.unitOf(curatedCur, key); return u && u.items && u.items[0] && !u.items[0].unknown ? u.items[0] : null; };
-    CuratedHome.dispatch(t, {
-      apply: (url, key) => { if (url) window.open(url, "_blank", "noopener"); else { const e = unitE(key); if (e) openDetail(e); } },
-      schedule: (key) => { const e = unitE(key); if (e) openDetail(e); }, // 일정 넣기는 상세 시트의 단계(기존 흐름)에서
-      done: (key) => { const e = unitE(key); if (e) toggleComplete(e.id); },
-      confirm: (key, yes) => { // D14: 항목 단위 답(기기 저장). '아니에요'는 홈에서 빠지고, '해당돼요'는 상세에서 신청·확인을 이어 간다
-        const u = CuratedHome.unitOf(curatedCur, key), id = u && u.ids && u.ids[0];
-        if (!id) return;
-        const a = curatedAnswers(); a[String(id).split("__")[0] === id ? id : id] = yes ? "yes" : "no";
-        try { localStorage.setItem(CURATED_ANSWERS_KEY, JSON.stringify(a)); } catch (e) {}
-        const e = unitE(key);
-        if (yes && e) openDetail(e); else renderHome();
-      },
-      review: () => switchTab("checklist"),
-      go: (name) => {
-        if (name === "next-stage") return nsOpenSheet();
-        if (name === "add-schedule") return usOpenForm(null, toISODate(new Date()));
-        switchTab(name === "benefits" ? "subsidy" : name === "month" ? "checklist" : name);
-      },
-    });
   }
   const renderSelectedDayPanelBase = renderSelectedDayPanel;
   renderSelectedDayPanel = function renderSelectedDayPanel() { // 2-5: 가구가 없는 기기는 날짜 패널에 계산 일정 줄을 더한다(가구가 있으면 usRenderDayPanel 이 이미 더한다)
@@ -1518,49 +1529,10 @@
   };
   const renderHomeBase = renderHome;
   renderHome = function renderHome() {
-    if (curatedHomeOn() && curatedRenderHome()) return; // 1-0: 큐레이션 홈(플래그 ON·정책 읽음·성공했을 때만). 아니면 아래 기존 홈 그대로
     if (!acct36Active()) renderHomeBase.apply(this, arguments);
     else acct36RenderHome();
     nsSync(); // W5: 다음 단계 안내 한 줄 배너(홈 맨 아래, 계정 모드)
-    homeSwitchDecorate(false);
   };
-  /** 1-1b: 안내 띠(켠 직후 1회 · 새 홈 실패 폴백 1회)·단계 ② 링크를 홈 위·아래에 붙인다. 스위치를 쓰지 않은 사용자(키 없음·단계 ①)에게는 아무것도 붙이지 않는다. */
-  function homeSwitchDecorate(isNew) {
-    if (typeof HomeSwitch === "undefined") return;
-    const body = el("home-body"), st = homeStore();
-    if (!body || !body.insertAdjacentHTML) return;
-    const pref = HomeSwitch.read(st);
-    if (isNew && HSW.justEnabled && HomeSwitch.noticeDue(st, true)) body.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("on"));
-    if (!isNew && pref === "on" && !HSW.fallbackShown) { HSW.fallbackShown = true; body.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("fallback", HSW.diag || (curationPolicy ? "" : "정책 파일을 못 읽음"))); } // 켜 놓았는데 새 홈이 안 그려졌다(설정 못 읽음 등) — 이전 홈을 그리고 한 번만 알린다
-    if (isNew) HSW.justEnabled = false;
-    if (isNew || HOME_V2_STAGE >= 2) body.insertAdjacentHTML("beforeend", HomeSwitch.linkHtml(FEATURES_CURATION_ON(), HOME_V2_STAGE, pref)); // 새 홈이 실제로 그려졌을 때만(폴백으로 이전 홈이 그려졌으면 단계 ① 링크 없음)
-  }
-  /** 스위치 누름: 키 저장 → 플래그 반영 → (필요하면 정책 읽기) → 홈 다시 그림(맨 위로). 한 번 더 묻지 않는다. 서버·가족에게 아무것도 보내지 않는다. */
-  async function homeSwitchSet(on) {
-    if (typeof HomeSwitch === "undefined") return;
-    HomeSwitch.write(homeStore(), on);
-    homePrefApply();
-    HSW.justEnabled = on; HSW.fallbackShown = false; HSW.diag = "";
-    try {
-      if (on && !curationPolicy && typeof Curation !== "undefined") { // 정책을 아직 안 읽었으면 읽는다 — 실패·지연이어도 아래 화면 전환은 반드시 진행(이전 홈+폴백 안내+진단)
-        const raw = await loadJsonOrNull("data/policy/curation.json");
-        curationPolicy = raw ? Curation.normalizePolicy(raw) : null;
-        if (!curationPolicy) HSW.diag = raw ? "정책 해석 실패" : "정책 파일 읽기 실패";
-      }
-    } catch (e) { console.error("큐레이션 정책 읽기 실패(이전 홈으로)", e); curationPolicy = null; HSW.diag = `정책 읽기 실패: ${e && e.message ? e.message : e}`; }
-    finally { // 어떤 예외가 나도 시트를 닫고 홈을 다시 그린다(모바일에서 시트가 화면을 덮어 '켰는데 변화 없음'으로 보였다)
-      try { closeDetail(); } catch (e) {}
-      try { if (typeof currentTab !== "undefined" && currentTab !== "home") switchTab("home"); } catch (e) {}
-      try { renderHome(); } catch (e) { console.error("홈 다시 그리기 실패", e); HSW.diag = `홈 다시 그리기 실패: ${e && e.message ? e.message : e}`; try { const hb = el("home-body"); if (hb && hb.insertAdjacentHTML && !hb.querySelector("[data-home-notice]")) hb.insertAdjacentHTML("afterbegin", HomeSwitch.noticeHtml("fallback", HSW.diag)); } catch (e2) {} }
-      try { if (typeof window !== "undefined" && window.scrollTo) window.scrollTo(0, 0); } catch (e) {}
-    }
-  }
-  function homeSwitchClick(ev) {
-    const t = ev.target && ev.target.closest ? ev.target.closest("[data-home-switch], [data-home-notice-x]") : null;
-    if (!t) return;
-    if (t.hasAttribute("data-home-notice-x")) { HomeSwitch.dismissNotice(homeStore()); const n = t.closest("[data-home-notice]"); if (n) n.remove(); return; }
-    homeSwitchSet(t.getAttribute("data-home-switch") === "on");
-  }
   const renderChecklistTabBase = renderChecklistTab;
   renderChecklistTab = function renderChecklistTab() {
     if (!acct36Active()) return renderChecklistTabBase.apply(this, arguments);
@@ -1841,8 +1813,6 @@
   function acct36Init() {
     if (!acctEnabled() || typeof document === "undefined") return;
     document.addEventListener("click", acct36OnClick);
-    document.addEventListener("click", curatedHomeClick); // 1-0: 큐레이션 홈 클릭(없으면 즉시 반환)
-    document.addEventListener("click", homeSwitchClick); // 1-1b: 새 홈 미리보기 스위치·안내 띠(없으면 즉시 반환)
     document.addEventListener("click", monthAckClick); // 1-3: 주의 '확인했어요'(없으면 즉시 반환)
     document.addEventListener("keydown", acct36OnKey);
     document.addEventListener("submit", acct36OnSubmit);
@@ -2171,7 +2141,7 @@
       const moreCount = totalMarks - 3;
       const moreHtml = moreCount > 0 ? `<span class="cal-marker-more">+${moreCount}</span>` : "";
       cell.setAttribute("role", "button");
-      cell.setAttribute("aria-label", `${month + 1}월 ${day}일 · 항목 ${totalMarks}건`);
+      cell.setAttribute("aria-label", `${month + 1}월 ${day}일${sameDay(date, today) ? " · 오늘" : ""} · 항목 ${totalMarks}건`);
       // 가구가 있을 때(칩 달력): 직접 등록=꽉 찬 칩, 자동=옅은 칩+같은 색 테두리, 최대 2개+N. 가구가 없으면(dm 없음) 기존 점 표식 그대로.
       cell.innerHTML = dm
         ? `<span class="num">${day}</span><span class="markers chips">${UserScheduleView.cellChips([...userBars.map((occ) => ({ t: "u", occ })), ...periodBars.map((occ) => ({ t: "u", occ, period: true })), ...marks.map((e) => ({ t: "a", title: usAutoTitleOfEvent(e), category: e.category, done: !!completed[e.id] })), ...annivItems.map((a) => ({ t: "a", title: a.title, category: "생활·수유", anniv: true, color: a.color, done: false }))], { links: usLinks(), mode: usSelectionMode(), catColor: us.catColor, autoColor: usAutoChipColor() })}</span>`
@@ -2235,7 +2205,7 @@
     el("selected-day-title").textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 (${dowNames[date.getDay()]})`;
     const html = [...fixed, ...planned]
       .sort(byUrgency)
-      .map((e) => eventItemHtml(e))
+      .map((e) => eventItemListHtml(e))
       .join("");
     el("selected-day-list").innerHTML = html;
     el("selected-day-empty").classList.toggle("hidden", fixed.length + planned.length > 0);
@@ -2469,6 +2439,57 @@
         <span class="check ${isDone ? "checked" : ""}" data-check-id="${e.id}">${isDone ? "✓" : ""}</span>
       </div>
     `;
+  }
+
+  /** 자동 일정의 날짜 줄과 '날짜가 정해진 항목인가' (목록 2줄 표시는 정해진 날짜면 날짜 줄을 생략한다). eventItemHtml 과 같은 규칙 — 그 함수는 이전 커밋과 글자 비교하는 테스트가 있어 그대로 두고 여기에 따로 둔다. */
+  function autoDateLineOf(e) {
+    let special = true;
+    let dateLine;
+    if (e.category === "행정·지원금" && e.isEngineEvent) {
+      dateLine = subsidyDateLineForEngineEvent(e);
+    } else if ((e.category === "예방접종" || e.category === "영유아검진") && e.isEngineEvent) {
+      dateLine = vaccinationPeriodDateLine(e);
+    } else if (e.scheduleKind === "window" && e.windowStart && !e.isLegacySubsidy) {
+      // 권장 기간이 있는 항목(이유식·발달 등)은 특정일이 아니라 기간으로 보여준다(달력의 추천일과는 별개).
+      dateLine = windowRangeText(e);
+    } else if (e.isDateSpecific === false) {
+      dateLine = e.subcategoryLabel || "";
+    } else {
+      dateLine = `${formatDateKR(e.date)} · ${e.dateLabel}`; special = false;
+    }
+    if (e.isLegacySubsidy) {
+      const today = new Date();
+      const ageNow = ChildTimeline.completedMonths(profile.birthDate, today);
+      const pr = subsidyPeriodRows(e.id, e.detail, profile.birthDate);
+      if (isPregnant() && e.periods && e.periods.length) {
+        dateLine = `${pr[0].label} ${pr[0].text}`;
+      } else if (pr.length) {
+        dateLine = `${pr[0].label} ${pr[0].text}`;
+      } else if (subsidyIsActiveNow(e, ageNow, today)) {
+        dateLine = e.deadlineDate ? `지금 신청 가능 · ${formatDateKR(e.deadlineDate)}까지` : "지금 신청 가능";
+      } else if (today < e.entryDate) {
+        dateLine = `${formatDateKR(e.entryDate)}부터 신청 가능`;
+      } else {
+        dateLine = e.deadlineDate ? `신청 기한 지남(${formatDateKR(e.deadlineDate)}까지였어요)` : `신청 기한 지남 · ${e.dateLabel}`;
+      }
+    }
+    if (e.category === "행정·지원금") dateLine = String(dateLine).split(" · ")[0];
+    return { dateLine, special };
+  }
+  /** D74: 날짜 패널(#selected-day-list)용 자동 일정 = 제목 1줄 + 내용 1줄. 완료한 항목은 제목 줄만. */
+  function eventItemListHtml(e) {
+    const isDone = !!completed[e.id];
+    const dl = autoDateLineOf(e);
+    const lead = e.category === "행정·지원금" ? subsidyTagsHtml(e) : "";
+    const parts = [];
+    if (!isDone && e.calUrgent) parts.push(`<span class="sub-when urgent">D-${e.calDays}${e.fixedDate ? " · " + formatDateKR(e.fixedDate) + "까지" : ""}</span>`);
+    if (isDone) parts.push(esc(doneWords(e.category).state));
+    else {
+      if (dl.special && dl.dateLine) parts.push(esc(String(dl.dateLine).replace(/<[^>]*>/g, "")));
+      const sum = e.category === "행정·지원금" ? shortSubsidySummary(e.summary) : e.summary || "";
+      if (sum) parts.push(esc(String(sum).replace(/<[^>]*>/g, "")));
+    }
+    return `<div class="event-item li2 ${isDone ? "completed" : ""}" data-id="${e.id}"><span class="cat-dot" style="background:${CATEGORY_META[e.category].color}"></span><div class="body"><p class="li-l1"><span class="us-src us-src-auto">${esc(UserScheduleView.MSG.srcAuto)}</span><span class="title">${e.title}</span></p><p class="li-l2">${lead}<span class="li-txt">${parts.join(" · ")}</span></p></div><span class="check ${isDone ? "checked" : ""}" data-check-id="${e.id}">${isDone ? "✓" : ""}</span></div>`;
   }
 
   /** 처음 체크리스트 탭을 그릴 때 한 번만 "현재 월령" 그룹을 펼친 상태로 초기화한다. */
@@ -2752,9 +2773,6 @@
     });
   }
 
-  function renderRecordTab() {
-    if (window.HNRecordsView) HNRecordsView.render(hnCtx());
-  }
   function renderHome() {
     if (window.HNHome) HNHome.render(hnCtx());
   }
@@ -2765,7 +2783,7 @@
   /** 페이지 안의 리스트 컨테이너들에만 한정해서 바인딩한다 — 모달(#modal-content)은 각자 따로
    * 바인딩하므로 여기서 document 전체를 선택하면 모달이 열려있을 때 이중 바인딩된다. */
   function attachListHandlers() {
-    const containerIds = ["selected-day-list", "list-record"];
+    const containerIds = ["selected-day-list"];
     containerIds.forEach((id) => {
       const c = el(id);
       if (c) c.querySelectorAll(".event-item").forEach(bindEventItem);
@@ -3457,31 +3475,19 @@
     renderSelectedDayPanel();
     renderRemainingList();
     renderChecklistTab();
-    renderRecordTab();
     renderSubsidyTab();
     attachListHandlers();
   }
 
-  const TAB_NAMES = ["home", "calendar", "record", "subsidy", "checklist", "places"];
+  const TAB_NAMES = ["home", "calendar", "subsidy", "checklist", "places"]; // D72a: 기록 탭 삭제
   // ── E(2-1·2-2) 하단 탭 교체: 가구·계정 기능이 켜졌을 때만 '기록' 탭 자리에 '어디갈까'. 기록은 프로필 시트의 '기록 보기'로 연다(기존 기록 패널 그대로). ──
   const tabLayoutOn = () => hhEnabled();
-  let recordReturnTab = "home";
   /** 1-8(D8): 임신 중(아이 프로필이 임신이거나 아이 없이 임신 예정 계정)에는 어디갈까 탭을 숨긴다 — 출생 후부터 보인다. 36개월 미만·이상 아이에는 영향 없음. */
   const placesHiddenNow = () => isPregnant() || (!profile && acctExpecting());
   function applyTabLayout() {
     const on = tabLayoutOn();
-    const rec = document.querySelector('.nav-item[data-nav="record"]');
     const pl = document.querySelector('.nav-item[data-nav="places"]');
-    if (rec) rec.classList.toggle("hidden", on);
     if (pl) pl.classList.toggle("hidden", !on || placesHiddenNow());
-    const back = el("btn-record-back");
-    if (back) back.classList.toggle("hidden", !on);
-  }
-  /** 프로필 시트 '기록 보기': 기존 기록 패널로 이동(돌아가기 버튼으로 이전 탭 복귀). */
-  function openRecordView() {
-    recordReturnTab = currentTab === "record" || currentTab === "places" ? "home" : currentTab;
-    closeDetail();
-    switchTab("record");
   }
   let placesData = null; // data/places.json — 처음 한 번만 읽는다
   let placesLoading = null;
@@ -3878,7 +3884,6 @@
       saveCompleted();
       familyCode = code;
       FamilySync.saveCode(code);
-      HNRecords.use(code, data.records);
       startListeningFamily();
       await buildAndRender();
       showCalendarView();
@@ -3908,9 +3913,6 @@
     if (unsubscribeFamily) unsubscribeFamily();
     familyCode = null;
     profile = null;
-    // completed와 같은 이유로 코드 없는 임시 기록도 비운다(새 아이에게 이전 아이의 기록이 섞이지 않게).
-    HNRecords.clearLocal();
-    HNRecords.use(null);
   }
   // ── G17 로컬 아이 데이터의 주인(owner uid): 다른 계정의 아이가 이 기기 화면에 섞이지 않게 한다. 계정 모드에서만 쓴다(플래그 OFF 는 읽지도 쓰지도 않는다). ──
   const ACCT_OWNER_KEY = "hannun_local_owner";
@@ -4215,7 +4217,6 @@
       saveCompleted();
       familyCode = code;
       FamilySync.saveCode(code);
-      HNRecords.use(code, data.records);
       startListeningFamily();
       populateDistricts(profile.province, profile.district);
       el("province").value = profile.province;
@@ -4492,6 +4493,7 @@
   }
   const memState = () => ({ acctMode: acctEnabled(), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt), ownChildKeys: usLinks().filter((l) => !l.removedAt && usIsOwnChild(l)).map((l) => l.childKey), orphanChildren: usOrphanChildren(), enabled: hhEnabled(), hasHousehold: !!(hh.hid && hh.code), members: usMembers(), activeMemberId: memActiveId(), view: mem.view, form: mem.form, deleteId: mem.deleteId, saving: mem.saving });
   function memRender() {
+    if (el("fam-card")) return famRender(); // D72b: 우리 가족 시트에서는 선택 카드 안에 그린다
     const slot = el("members-slot");
     if (!slot || !hhEnabled()) return;
     // 이름 입력 중에 다시 그려지면(가구 섹션 클릭·서버 스냅샷) 입력창이 옛 값으로 되돌아가므로, 그리기 전에 지금 입력값을 폼에 반영한다.
@@ -4499,7 +4501,7 @@
     slot.innerHTML = HouseholdView.renderMembers(memState());
   }
   function memReadLabel() {
-    const slot = el("members-slot");
+    const slot = el("fam-card") || el("members-slot");
     const inp = slot && slot.querySelector('[data-mem-input="label"]');
     return inp ? inp.value : mem.form ? mem.form.label : "";
   }
@@ -5187,13 +5189,13 @@
     // 36개월 이상: 칸에 점은 안 찍지만 그날 시작하는 자동 항목(완료한 줄 포함)도 보인다(예: 12월 1일 취학통지서·예비소집 확인)
     const startsToday = acct36Active() ? visibleSchedule(true).filter((e) => toISODate(e.fixedDate || e.date) === iso && !day.benefit.includes(e) && !day.planned.includes(e) && !autoLinkedHidden(e)) : [];
     const plannedRows = day.planned.concat(startsToday);
+    const anniv = usAnnivRowsHtml(date); // D74: '추가한 일정' 머리 줄 없음. 보일 항목이 하나도 없을 때만 빈 안내
     el("selected-day-list").innerHTML =
-      group(panel.added.title) +
-      (panel.added.cards.length ? panel.added.cards.map((c) => UserScheduleView.sourceLabeled(UserScheduleView.renderCard(c), "user")).join("") : `<p class="us-note">${esc(panel.emptyText)}</p>`) +
-      (day.benefit.length ? group(panel.benefit.title) + day.benefit.slice().sort(byUrgency).map((e) => UserScheduleView.sourceLabeled(eventItemHtml(e), "auto")).join("") : "") +
-      (plannedRows.length ? group(panel.planned.title) + plannedRows.slice().sort(byUrgency).map((e) => UserScheduleView.sourceLabeled(eventItemHtml(e), "auto")).join("") : "") +
-      usAnnivRowsHtml(date);
-    el("selected-day-empty").classList.add("hidden");
+      panel.added.cards.map((c) => UserScheduleView.sourceLabeled(UserScheduleView.renderCard(c), "user")).join("") +
+      (day.benefit.length ? group(panel.benefit.title) + day.benefit.slice().sort(byUrgency).map((e) => eventItemListHtml(e)).join("") : "") +
+      (plannedRows.length ? group(panel.planned.title) + plannedRows.slice().sort(byUrgency).map((e) => eventItemListHtml(e)).join("") : "") +
+      anniv;
+    el("selected-day-empty").classList.toggle("hidden", !!(panel.added.cards.length || day.benefit.length || plannedRows.length || anniv));
     addSlot.innerHTML = UserScheduleView.renderAddButton({ enabled: true, hasHousehold: true });
   }
 
@@ -5339,13 +5341,20 @@
     usRefreshCalendar();
   }
   // ═══ D37 사진으로 추가(기기 안 글자 인식): 사진 찍기·불러오기 → 줄이기 → (처음 한 번 데이터 받기) → 글자 읽기 → 규칙 파서 → 기존 후보 확인 화면. 사진은 저장하지도 보내지도 않는다(메모리에서만, 끝나면 바로 버림). 개발값 hannun_feature_photoinput="1"(또는 FEATURES.photoInput)일 때만 4메뉴가 보인다 ═══
-  const CAPP = { token: 0, from: "camera", blob: null, previewUrl: "", rawText: "", svc: null, longTimer: null };
+  const CAPP = { token: 0, from: "camera", blob: null, previewUrl: "", rawText: "", svc: null, longTimer: null, bitmap: null, bw: 0, bh: 0, crop: null, cropEl: null };
   function capSvc() {
     if (!CAPP.svc && typeof TextRecognition !== "undefined" && typeof OcrTesseract !== "undefined") CAPP.svc = TextRecognition.createService({ adapter: OcrTesseract.create({ win: window }) });
     return CAPP.svc;
   }
+  /** D73 자르기 화면과 원본 비트맵을 버린다(취소·닫기·다시 고르기·업로드 직후). */
+  function capCropClose() {
+    if (CAPP.crop) { try { CAPP.crop.destroy(); } catch (e) {} CAPP.crop = null; }
+    if (CAPP.cropEl) { CAPP.cropEl.remove(); CAPP.cropEl = null; }
+    if (typeof document !== "undefined" && document.body) document.body.classList.remove("crop-open");
+    if (CAPP.bitmap) { try { if (typeof CAPP.bitmap.close === "function") CAPP.bitmap.close(); } catch (e) {} CAPP.bitmap = null; }
+  }
   function capPhotoReset() { // 닫으면 읽던 사진·글은 즉시 버린다(진행 중이던 결과는 token 으로 무시)
-    CAPP.token++; clearTimeout(CAPP.longTimer); CAPP.longTimer = null;
+    CAPP.token++; capCropClose(); clearTimeout(CAPP.longTimer); CAPP.longTimer = null;
     if (CAPP.previewUrl) { try { URL.revokeObjectURL(CAPP.previewUrl); } catch (e) {} }
     CAPP.blob = null; CAPP.previewUrl = ""; CAPP.rawText = ""; CAP.photo = false; CAP.photoText = "";
   }
@@ -5374,13 +5383,35 @@
     capPhotoReset(); const token = CAPP.token; CAPP.from = from;
     const stale = () => token !== CAPP.token;
     const PV = CapturePhotoView, svc = capSvc();
-    if (!svc || !svc.available() || typeof PhotoCompress === "undefined") return capShowFlow(PV.renderState("unavailable"), from);
-    capShowFlow(PV.renderState("reading", {}), from);
-    let img;
-    try { img = await PhotoCompress.compress(file); } catch (e) { return stale() ? null : capShowFlow(PV.renderState("readFail", { from }), from); }
-    if (stale()) { try { URL.revokeObjectURL(img.previewUrl); } catch (e) {} return; }
-    CAPP.blob = img.blob; CAPP.previewUrl = img.previewUrl;
-    return capPhotoRun(token);
+    if (!svc || !svc.available() || typeof PhotoCompress === "undefined" || typeof PhotoCrop === "undefined") return capShowFlow(PV.renderState("unavailable"), from);
+    capShowFlow(PV.renderState("loading", {}), from);
+    let o;
+    try { o = await PhotoCompress.open(file); } catch (e) { return stale() ? null : capShowFlow(PV.renderState("decodeFail", { from }), from); }
+    if (stale()) { try { if (o.bitmap.close) o.bitmap.close(); } catch (e) {} return; }
+    CAPP.bitmap = o.bitmap; CAPP.bw = o.width; CAPP.bh = o.height;
+    return capCropOpen(token);
+  }
+  /** D73 전체 화면 자르기: 사진 전체가 기본 박스. [업로드]=박스 영역만 원본에서 잘라 읽기로 넘김(서버 전송 아님). */
+  function capCropOpen(token) {
+    const PV = CapturePhotoView, from = CAPP.from;
+    const host = document.createElement("div"); host.id = "cap-crop"; host.innerHTML = PV.renderCrop({ from });
+    document.body.appendChild(host); document.body.classList.add("crop-open"); CAPP.cropEl = host;
+    CAPP.crop = PhotoCrop.mount(host, { bitmap: CAPP.bitmap, width: CAPP.bw, height: CAPP.bh, win: window });
+    host.addEventListener("click", async (ev) => {
+      const t = ev.target && ev.target.closest ? ev.target.closest("[data-cap-crop-ok],[data-cap-crop-cancel],[data-cap-photo-again]") : null;
+      if (!t || token !== CAPP.token) return;
+      if (t.hasAttribute("data-cap-crop-cancel")) { capPhotoReset(); CAP.s = null; return capShowFlow("", from); }
+      if (t.hasAttribute("data-cap-photo-again")) { capPhotoReset(); capShowFlow("", from); return capPickPhoto(from); }
+      const bmp = CAPP.bitmap, r = PhotoCrop.toSourceRect(CAPP.crop.getRect(), CAPP.bw, CAPP.bh);
+      CAPP.bitmap = null; capCropClose(); CAPP.bitmap = bmp; // 화면만 닫고 비트맵은 자른 뒤 버린다
+      capShowFlow(PV.renderState("reading", {}), from);
+      let img;
+      try { img = await PhotoCompress.cropToBlob(bmp, r); } catch (e) { try { bmp.close && bmp.close(); } catch (x) {} CAPP.bitmap = null; return token !== CAPP.token ? null : capShowFlow(PV.renderState("readFail", { from }), from); }
+      try { bmp.close && bmp.close(); } catch (e) {} CAPP.bitmap = null;
+      if (token !== CAPP.token) { try { URL.revokeObjectURL(img.previewUrl); } catch (e) {} return; }
+      CAPP.blob = img.blob; CAPP.previewUrl = img.previewUrl;
+      return capPhotoRun(token);
+    });
   }
   function capPhotoRetry() { if (!CAPP.blob) return capPickPhoto(CAPP.from || "camera"); CAPP.token++; return capPhotoRun(CAPP.token); }
   async function capPhotoRun(token) {
@@ -6223,7 +6254,7 @@
     );
   }
 
-  // ── 새 화면 모듈(js/home.js · subsidy-view.js · records-view.js)에 넘기는 읽기용 컨텍스트 ─────────────
+  // ── 새 화면 모듈(js/home.js · subsidy-view.js)에 넘기는 읽기용 컨텍스트 ─────────────
   // 새 화면들은 app.js의 클로저 상태를 직접 만지지 않고 여기서 넘겨주는 값·동작만 쓴다.
   function hnCtx() {
     const today = new Date();
@@ -6289,7 +6320,6 @@
         saveCompleted();
         syncCompletedChanges(before);
         renderHome();
-        renderRecordTab();
       },
       usUpcomingHtml: (opts) => {
         const h = usHomeCardHtml(opts);
@@ -6591,7 +6621,7 @@
     const s = el("acct-slot");
     if (s) {
       const family = hh.hid || hh.code ? { members: HouseholdView.visibleMembers(usMembers()).map((m) => ({ memberId: m.memberId, role: m.role, label: m.label, color: UserScheduleView.memberColor(m) })), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt).map((l) => ({ ...l, color: UserScheduleView.childColor(l) })) } : { members: [], meId: null, meName: "", children: [] };
-      s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, account: acct.account, notice: acct.notice, withCode: true, code: hh.code, family });
+      s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, account: acct.account, notice: acct.notice, withCode: true, code: hh.code, family, sel: el("fam-card") ? famSel() : undefined });
     }
   }
   function acctOpenSlot() {
@@ -7133,6 +7163,8 @@
     const b = ev.target.closest("[data-acct-action]");
     if (!b || acct.busy) return;
     const action = b.getAttribute("data-acct-action");
+    if (action === "fam-pick") return famPick(b.getAttribute("data-fam-kind"), b.getAttribute("data-fam-id")); // D72b
+    if (action === "fam-add-child") { closeDetail(); beginNewChildEntry(); return; } // D72b: 프로필 '우리 아이' 줄이 없어진 자리
     if (action === "open-signup" || action === "open-login" || action === "open-join") {
       acct.mode = action === "open-login" ? "login" : "signup";
       acct.form = action === "open-join" ? { join: true, step: 2 } : {}; // 합류는 가족코드(2단계)부터 // G1: 가족 코드로 함께하기 = 가입 시트의 합류 모드(코드 칸 포커스)
@@ -7518,18 +7550,11 @@
     applyTabLayout();
     previewRender();
     if (el("places-body")) el("places-body").addEventListener("click", placesOnClick);
-    if (el("btn-record-back")) el("btn-record-back").addEventListener("click", () => switchTab(recordReturnTab || "home"));
     el("btn-add-child").addEventListener("click", showAddMenuSheet);
     setupRefreshButton();
 
     profile = loadProfile();
     familyCode = FamilySync.getSavedCode();
-    HNRecords.use(familyCode);
-    HNRecords.onChange(() => {
-      if (!profile || el("view-calendar").classList.contains("hidden")) return;
-      renderHome();
-      renderRecordTab();
-    });
 
     if (familyCode) {
       try {
@@ -7547,7 +7572,6 @@
           completed = data.completed || {};
           saveProfile(profile);
           saveCompleted();
-          HNRecords.mergeRemote(data.records);
           startListeningFamily();
         } else {
           FamilySync.clearCode();

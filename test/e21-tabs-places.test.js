@@ -17,18 +17,16 @@ function test(name, fn) { try { fn(); passed++; console.log("  ok  - " + name); 
 const PLACES = JSON.parse(read("data/places.json"));
 
 console.log("마크업·정적 연결");
-test("index.html: 어디갈까 nav(기본 hidden, 라벨 '어디갈까' 물음표 없음, 선 굵기 1.8 SVG)·기록 nav 그대로·패널 제목 '어디갈까?'·스크립트/CSS 순서·돌아가기 버튼(기본 hidden)", () => {
+test("index.html: 어디갈까 nav(기본 hidden, 라벨 '어디갈까' 물음표 없음, 선 굵기 1.8 SVG)·(D72a: 기록 nav 삭제)·패널 제목 '어디갈까?'·스크립트/CSS 순서·돌아가기 버튼(기본 hidden)", () => {
   const nav = HTML.match(/<button type="button" class="nav-item hidden" data-nav="places">[\s\S]*?<\/button>/)[0];
   assert.ok(nav.includes('stroke-width="1.8"') && nav.includes("<span>어디갈까</span>") && !nav.includes("?"));
-  assert.ok(/<button type="button" class="nav-item" data-nav="record">[\s\S]*?<span>기록<\/span>/.test(HTML), "기록 nav 는 기본 노출(OFF 불변)");
-  assert.ok(HTML.indexOf('data-nav="record"') < HTML.indexOf('data-nav="places"'));
+  assert.ok(!HTML.includes('data-nav="record"') && !HTML.includes('id="tab-record"'), "기록 nav·탭 삭제");
   assert.ok(/<div id="tab-places" class="tab-panel hidden">\s*<div class="sub-header"><h2>어디갈까\?<\/h2><\/div>\s*<div id="places-body"><\/div>/.test(HTML));
-  assert.ok(HTML.includes('<button type="button" class="btn-back hidden" id="btn-record-back">‹ 돌아가기</button>'));
   const i = (s) => HTML.indexOf(s);
   assert.ok(i("css/places.css") > i("css/style.css") && i("js/places.js") > 0 && i("js/places.js") < i("js/places-view.js") && i("js/places-view.js") < i("js/app.js"));
   const sw = read("sw.js");
   ["./js/places.js", "./js/places-view.js", "./css/places.css"].forEach((f) => assert.ok(sw.includes(`"${f}"`), f));
-  assert.ok(APP.includes('const TAB_NAMES = ["home", "calendar", "record", "subsidy", "checklist", "places"];'));
+  assert.ok(APP.includes('const TAB_NAMES = ["home", "calendar", "subsidy", "checklist", "places"];'));
   assert.ok(AV.MSG.emptyTab.places && AV.renderEmptyTab("places", {}).includes("갈 만한 곳"), "빈 홈 탭 문구");
 });
 
@@ -50,23 +48,17 @@ function env(o) {
     switchTab: (n) => { log.switched.push(n); sb.currentTab = n; }, currentTab: o.tab || "home", modalMode: null, loadJsonOrNull: async () => PLACES,
     profile: o.profile === undefined ? { name: "수아", province: "서울특별시", district: "구로구", birthDate: new Date(2026, 2, 2) } : o.profile, isPregnant: () => false, childDisplayName: () => "수아", ageInMonths: () => 7 };
   vm.createContext(sb);
-  vm.runInContext(APP.slice(a, b).replace(/^  let (\w+) =/gm, "var $1 =").replace(/^  const (\w+) =/gm, "var $1 =") + "\n;globalThis.__t = { applyTabLayout, openRecordView, renderPlacesTab, placesOnClick, placesViewHtml, get recordReturnTab() { return recordReturnTab; }, get placesCat() { return placesCat; } };", sb);
+  vm.runInContext(APP.slice(a, b).replace(/^  let (\w+) =/gm, "var $1 =").replace(/^  const (\w+) =/gm, "var $1 =") + "\n;globalThis.__t = { applyTabLayout, renderPlacesTab, placesOnClick, placesViewHtml, get placesCat() { return placesCat; } };", sb);
   return { sb, nodes, log, t: sb.__t, us };
 }
-test("applyTabLayout: ON 이면 기록 nav 숨김·어디갈까 nav 표시·돌아가기 표시 / OFF 면 기록 nav 그대로·어디갈까 숨김(불변)", () => {
+test("applyTabLayout(D72a: 기록 nav·돌아가기 삭제): ON 이면 어디갈까 nav 표시 / OFF 면 숨김", () => {
   const on = env({ on: true }); on.t.applyTabLayout();
-  assert.deepStrictEqual([on.nodes.rec.hidden, on.nodes.pl.hidden, on.nodes.back.hidden], [true, false, false]);
+  assert.strictEqual(on.nodes.pl.hidden, false);
   const off = env({ on: false }); off.t.applyTabLayout();
-  assert.deepStrictEqual([off.nodes.rec.hidden, off.nodes.pl.hidden, off.nodes.back.hidden], [false, true, true]);
+  assert.strictEqual(off.nodes.pl.hidden, true);
 });
-test("기록 보기: 시트를 닫고 기록 탭으로 이동, 돌아가기용 이전 탭 기억(기록·어디갈까에서 열면 홈)", () => {
-  const e = env({ on: true, tab: "calendar" });
-  e.t.openRecordView();
-  assert.deepStrictEqual([e.log.closed, e.log.switched, e.t.recordReturnTab], [1, ["record"], "calendar"]);
-  const p = env({ on: true, tab: "places" }); p.t.openRecordView();
-  assert.strictEqual(p.t.recordReturnTab, "home");
-  assert.ok(/id="btn-view-records"/.test(APP) && /\$\{hhEnabled\(\) \? '<button type="button" class="btn-close" id="btn-view-records">기록 보기<\/button>' : ""\}/.test(APP), "프로필 시트 버튼은 가구·계정 ON 일 때만");
-  assert.ok(APP.includes('el("btn-record-back").addEventListener("click", () => switchTab(recordReturnTab || "home"));'));
+test("기록 보기 삭제(D72a): 프로필 시트 버튼·openRecordView·돌아가기 연결이 앱에 없다", () => {
+  assert.ok(!/btn-view-records|openRecordView|btn-record-back|recordReturnTab/.test(APP));
 });
 test("어디갈까 렌더: places.json 을 읽어 내 지역·월령으로 거르고(카드 렌더), 분류 칩을 누르면 다시 그리며, 탭이 바뀌었으면 그리지 않는다", async () => {
   const e = env({ on: true, tab: "places" });

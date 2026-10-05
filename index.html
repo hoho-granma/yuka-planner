@@ -12,9 +12,8 @@
 <meta name="theme-color" content="#ff6a1a" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
 <script>/* G19: 계정 모드(기본 ON)에서는 옛 상황 선택 화면이 첫 그림부터 한 번도 보이지 않게 한다(js/feature-flags.js 와 같은 규칙: accounts="0" 일 때만 OFF) */try{if(localStorage.getItem("hannun_feature_accounts")!=="0")document.documentElement.classList.add("hnacc-default");}catch(e){document.documentElement.classList.add("hnacc-default");}</script>
-<link rel="stylesheet" href="css/style.css?v=125" />
+<link rel="stylesheet" href="css/style.css?v=126" />
   <link rel="stylesheet" href="css/places.css?v=11" />
-  <link rel="stylesheet" href="css/home-slots.css?v=1" />
 </head>
 <body>
 <script>/* D41 theme: 마지막 테마를 첫 그림 전에 붙인다(깜빡임 방지 — 기준은 앱이 아이 월령으로 다시 정한다) */try{var t=localStorage.getItem("hannun_theme_last");t=t==="forest"?"forest":"warm";document.body.classList.add("theme-"+t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="forest"?"#f6f8f5":"#fff8f0")}catch(e){document.body.classList.add("theme-warm")}</script>
@@ -218,14 +217,6 @@
         <p id="empty-checklist" class="empty hidden">해당하는 항목이 없어요.</p>
       </div>
 
-      <!-- 기록 -->
-      <div id="tab-record" class="tab-panel hidden">
-        <button type="button" class="btn-back hidden" id="btn-record-back">‹ 돌아가기</button>
-        <div class="filter-chips record-filter" id="record-filter"></div>
-        <div id="list-record" class="event-list"></div>
-        <p id="empty-record" class="empty hidden"></p>
-      </div>
-
       <!-- 어디갈까(가족 캘린더·계정 기능이 켜졌을 때만 하단 탭에 나온다) -->
       <div id="tab-places" class="tab-panel hidden">
         <div class="sub-header"><h2>어디갈까?</h2></div>
@@ -256,10 +247,6 @@
           <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.5"/><path d="M6.5 9.5v.01M17.5 14.5v.01"/></svg></span>
           <span>육아 혜택</span>
         </button>
-        <button type="button" class="nav-item" data-nav="record">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/></svg></span>
-          <span>기록</span>
-        </button>
         <button type="button" class="nav-item hidden" data-nav="places">
           <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s6.5-5.6 6.5-11a6.5 6.5 0 1 0-13 0c0 5.4 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span>
           <span>어디갈까</span>
@@ -276,11 +263,11 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="js/sync.js?v=5"></script>
-  <script src="js/feature-flags.js?v=6"></script>
+  <script src="js/feature-flags.js?v=7"></script>
   <script src="js/household-sync.js?v=9"></script>
-  <script src="js/household-view.js?v=16"></script>
+  <script src="js/household-view.js?v=17"></script>
   <script src="js/auth-service.js?v=4"></script>
-  <script src="js/account-view.js?v=33"></script>
+  <script src="js/account-view.js?v=34"></script>
   <script src="js/account-sync.js?v=5"></script>
   <script src="js/version.js?v=1"></script>
   <script src="js/date-calc.js?v=1"></script>
@@ -293,17 +280,17 @@
   <script src="js/capture/draft-view.js?v=3"></script>
   <script src="js/capture/capture-model.js?v=2"></script>
   <script src="js/capture/text-recognition.js?v=1"></script>
-  <script src="js/capture/photo-compress.js?v=1"></script>
+  <script src="js/capture/photo-compress.js?v=3"></script>
+  <script src="js/capture/photo-crop.js?v=1"></script>
   <script src="js/capture/ocr-tesseract.js?v=1"></script>
-  <script src="js/capture/photo-view.js?v=2"></script>
+  <script src="js/capture/photo-view.js?v=4"></script>
   <script src="js/capture/ai-parser.js?v=1"></script>
-  <link rel="stylesheet" href="css/capture.css?v=2">
+  <link rel="stylesheet" href="css/capture.css?v=4">
   <script src="js/next-stage.js?v=5"></script>
   <script src="js/todo-engine.js?v=4"></script>
   <script src="js/schedule.js?v=18"></script>
   <script src="js/hn-logic.js?v=12"></script>
-  <script src="js/records.js?v=2"></script>
-  <script src="js/home.js?v=27"></script>
+  <script src="js/home.js?v=28"></script>
   <script src="js/subsidy-tiers.js?v=1"></script>
   <script src="js/subsidy-view.js?v=4"></script>
   <script src="js/date-picker.js?v=3"></script>
@@ -319,22 +306,18 @@
   <script src="js/time-range.js?v=2"></script>
   <script src="js/time-wheel.js?v=1"></script>
   <script src="js/schedule-kinds.js?v=2"></script>
-  <script src="js/user-schedule-view.js?v=34"></script>
+  <script src="js/user-schedule-view.js?v=35"></script>
   <script src="js/child-anniversaries.js?v=2"></script>
   <script src="js/tab-child-bar.js?v=1"></script>
-  <script src="js/home-must.js?v=1"></script>
-  <script src="js/home-switch.js?v=1"></script>
+  <script src="js/home-must.js?v=2"></script>
   <script src="js/curation.js?v=1"></script>
   <script src="js/month-tiers.js?v=1"></script>
-  <script src="js/home-slots-view.js?v=1"></script>
-  <script src="js/curated-home.js?v=1"></script>
   <script src="js/child-todos.js?v=2"></script>
   <script src="js/over36-view.js?v=10"></script>
   <script src="js/edu-3to5-view.js?v=1"></script>
   <script src="js/tab-swipe.js?v=1"></script>
   <script src="js/edu-trend.js?v=3"></script>
-  <script src="js/records-view.js?v=10"></script>
-  <script src="js/app.js?v=168"></script>
+  <script src="js/app.js?v=169"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

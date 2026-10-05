@@ -41,14 +41,23 @@ test("renderCalendar: 변경은 맨 앞 가드 한 줄뿐이다", () => {
   assert.ok(now.startsWith("  function renderCalendar() {\n    if (calWeekOn()) return renderWeek();\n"));
 });
 test("renderSelectedDayPanel·attachListHandlers·renderCalendarProgress·computeCalendarDays·renderAutoPeriodSlot 는 HEAD 와 글자까지 같다", () => {
-  ["renderSelectedDayPanel", "attachListHandlers", "renderCalendarProgress", "computeCalendarDays", "renderAutoPeriodSlot", "usRefreshCalendar"].forEach((n) => assert.strictEqual(fnSrc(app, n).replace(", ...calendarTierOpts() }", " }").replace("    if (renderCalTodoLine()) return; // E(1-2)\n", "").replace("    if (renderCalTodoLine()) return;\n", "").replace(/if \(\(!profile && !acctEnabled\(\)\) \|\| !hhEnabled\(\)([^\n]*?return;) \/\/ [^\n]*/, "if (!profile || !hhEnabled()$1"), fnSrc(head, n), n)); // E(1-2): renderCalendarProgress 첫 줄(가구 활성이면 한 줄로 대체)만 다르다
+  ["renderSelectedDayPanel", "attachListHandlers", "renderCalendarProgress", "computeCalendarDays", "renderAutoPeriodSlot", "usRefreshCalendar"].forEach((n) => assert.strictEqual(fnSrc(app, n).replace("eventItemListHtml(e)", "eventItemHtml(e)").replace('const containerIds = ["selected-day-list"];', 'const containerIds = ["selected-day-list", "list-record"];').replace(", ...calendarTierOpts() }", " }").replace("    if (renderCalTodoLine()) return; // E(1-2)\n", "").replace("    if (renderCalTodoLine()) return;\n", "").replace(/if \(\(!profile && !acctEnabled\(\)\) \|\| !hhEnabled\(\)([^\n]*?return;) \/\/ [^\n]*/, "if (!profile || !hhEnabled()$1"), fnSrc(head, n), n)); // E(1-2): renderCalendarProgress 첫 줄(가구 활성이면 한 줄로 대체)만 다르다
 });
 test("usBuildModel: view 인자(F2)·C2 연결 옵션·칩 달력 필터(복수 선택)만 늘었고 기본(월) 호출은 month 모델", () => {
   const now = fnSrc(app, "usBuildModel");
   assert.ok(now.includes('view: view === "week" ? "week" : "month",') && now.includes("UserScheduleView.toModelFilter(usSel(), us.onlyUser, usLinks(), usMembers(), usSelOpts())") && now.includes("hideLinked: autoLinkOn()"));
 });
 test("usRenderDayPanel: C2 의 배지 옵션 한 곳만 다르다", () => {
-  const now = fnSrc(app, "usRenderDayPanel");
+  // D74: '추가한 일정' 머리 줄 제거·자동 항목 2줄(eventItemListHtml)·빈 날 처리 — 비교 때만 이전 모양으로 되돌린다.
+  const d74 = (src) => src.replace(/    const anniv = usAnnivRowsHtml\(date\);[^\n]*\n    el\("selected-day-list"\)\.innerHTML =[\s\S]*?\n    el\("selected-day-empty"\)\.classList\.toggle\([^\n]*\n/, `    el("selected-day-list").innerHTML =
+      group(panel.added.title) +
+      (panel.added.cards.length ? panel.added.cards.map((c) => UserScheduleView.sourceLabeled(UserScheduleView.renderCard(c), "user")).join("") : \`<p class="us-note">\${esc(panel.emptyText)}</p>\`) +
+      (day.benefit.length ? group(panel.benefit.title) + day.benefit.slice().sort(byUrgency).map((e) => UserScheduleView.sourceLabeled(eventItemHtml(e), "auto")).join("") : "") +
+      (plannedRows.length ? group(panel.planned.title) + plannedRows.slice().sort(byUrgency).map((e) => UserScheduleView.sourceLabeled(eventItemHtml(e), "auto")).join("") : "") +
+      usAnnivRowsHtml(date);
+    el("selected-day-empty").classList.add("hidden");
+`);
+  const now = d74(fnSrc(app, "usRenderDayPanel"));
   const old = fnSrc(head, "usRenderDayPanel");
   // G13-1: 날짜 패널 출처 라벨(sourceLabeled 래핑)도 허용 — 양쪽을 같은 모양으로 되돌려 비교한다(커밋 전후 모두 통과).
   const plain = (src) => src.replace("{ docById: usDocById, ...(autoLinkOn() ? { autoTitleOf: usAutoTitleOf } : {}) }", "{ docById: usDocById }").replace('panel.added.cards.map((c) => UserScheduleView.sourceLabeled(UserScheduleView.renderCard(c), "user"))', "panel.added.cards.map(UserScheduleView.renderCard)").split('UserScheduleView.sourceLabeled(eventItemHtml(e), "auto")').join("eventItemHtml(e)");

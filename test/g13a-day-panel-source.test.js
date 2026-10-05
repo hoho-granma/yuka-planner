@@ -27,7 +27,8 @@ test("앱 연결: 날짜 패널 세 구역(추가한 일정=직접 입력, 혜�
   const fnSrc = APP.slice(i, APP.indexOf("\n  }\n", i));
   assert.ok(fnSrc.indexOf("if (!hhEnabled()) return;") < fnSrc.indexOf("sourceLabeled"));
   assert.strictEqual((fnSrc.match(/, "user"\)/g) || []).length, 1);
-  assert.strictEqual((fnSrc.split('sourceLabeled(eventItemHtml(e), "auto")').length - 1), 2);
+  assert.strictEqual((fnSrc.split("eventItemListHtml(e)").length - 1), 2, "D74: 자동 구역 두 곳은 2줄 목록 항목(자동 알약 포함)");
+  assert.ok(!fnSrc.includes("group(panel.added.title)"), "D74: '추가한 일정' 머리 줄 없음");
 });
 test("CSS: 자동=작은 라벨(S3 자동 뱃지색)(직접 입력 라벨은 화면에 쓰지 않는다), MSG 문구", () => {
   assert.ok(/\.us-src-auto \{ background: var\(--c-badge-auto\)/.test(CSS) && /\.us-src-user \{/.test(CSS));

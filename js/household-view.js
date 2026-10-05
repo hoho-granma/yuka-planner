@@ -365,6 +365,16 @@
   }
   const mchip = (attrs, label, active) => `<button type="button" class="hh-chip${active ? " active" : ""}" ${attrs}>${esc(label)}</button>`;
 
+  /** 이 기기에만 있는 아이(가구에 연결 안 됨) 영역: [연결]·[삭제]. 계정 모드에서 있을 때만 — D72b: 우리 가족 시트 카드 아래 별도 구역으로도 쓴다. */
+  function orphanHtml(state) {
+    const acctMode = !!state && state.acctMode === true;
+    return acctMode && Array.isArray(state.orphanChildren) && state.orphanChildren.length
+      ? `<h4 class="hh-title">${esc(MSG.memOrphanTitle)}</h4><p class="hh-note">${esc(MSG.memOrphanNote)}</p><ul class="hh-members">${state.orphanChildren.map((c) => `<li class="hh-member" data-orphan-code="${esc(c.code)}"><span class="hh-member-name">${esc(c.name || "")}</span><button type="button" class="hh-btn hh-small" data-mem-action="link-orphan" data-child-code="${esc(c.code)}">${esc(MSG.memOrphanLink)}</button><button type="button" class="hh-btn hh-small hh-danger" data-mem-action="ask-delete-orphan" data-child-code="${esc(c.code)}">${esc(MSG.memOrphanDelete)}</button></li>`).join("")}</ul>`
+      : "";
+  }
+  /** D72b: 이 기기에만 있는 아이 구역(마크업만). */
+  const renderOrphans = (state) => (on(state) ? orphanHtml(state) : "");
+
   /**
    * 프로필 시트의 "구성원" 영역(가구가 있을 때만). state: { enabled, hasHousehold, members, activeMemberId, view: "list"|"form"|"delete", form, deleteId, saving }
    *   saving === true 이면 저장·삭제 확인 버튼이 잠긴다(중복 클릭 방지).
@@ -375,7 +385,7 @@
     if (!on(state) || state.hasHousehold !== true) return "";
     const list = visibleMembers(state.members);
     const activeId = activeMemberOf(list, state.activeMemberId);
-    const head = `<h4 class="hh-title">${esc(state.acctMode === true ? MSG.memTitleAcct : MSG.memTitle)}</h4>${note(state.acctMode === true ? MSG.memNoteAcct : MSG.memNote)}`;
+    const head = state.bare === true ? "" : `<h4 class="hh-title">${esc(state.acctMode === true ? MSG.memTitleAcct : MSG.memTitle)}</h4>${note(state.acctMode === true ? MSG.memNoteAcct : MSG.memNote)}`; // D72b: bare = 우리 가족 카드 안(제목·안내 없이 수정·삭제 폼/확인만)
     const roleName = (r) => ROLE_NAMES[r] || ROLE_NAMES.OTHER;
     const acctMode = state.acctMode === true;
     const rn = (m) => (acctMode ? roleLabelOf(m) : roleName(m.role));
@@ -406,9 +416,7 @@
       const kids = acctMode && Array.isArray(state.children) && state.children.length
         ? `<h4 class="hh-title">${esc(MSG.memChildTitle)}</h4><ul class="hh-members">${state.children.map((c) => `<li class="hh-member" data-child-key="${esc(c.childKey)}"><span class="hh-member-name">${esc(c.displayName || "")}</span><button type="button" class="hh-btn hh-small" data-mem-action="ask-remove-child" data-member-id="${esc(c.childKey)}">${esc(MSG.memChildRemove)}</button>${ownKids.has(c.childKey) ? `<button type="button" class="hh-btn hh-small hh-danger" data-mem-action="ask-delete-child" data-member-id="${esc(c.childKey)}">${esc(MSG.memChildDelete)}</button>` : ""}</li>`).join("")}</ul>`
         : "";
-      const orphans = acctMode && Array.isArray(state.orphanChildren) && state.orphanChildren.length
-        ? `<h4 class="hh-title">${esc(MSG.memOrphanTitle)}</h4><p class="hh-note">${esc(MSG.memOrphanNote)}</p><ul class="hh-members">${state.orphanChildren.map((c) => `<li class="hh-member" data-orphan-code="${esc(c.code)}"><span class="hh-member-name">${esc(c.name || "")}</span><button type="button" class="hh-btn hh-small" data-mem-action="link-orphan" data-child-code="${esc(c.code)}">${esc(MSG.memOrphanLink)}</button><button type="button" class="hh-btn hh-small hh-danger" data-mem-action="ask-delete-orphan" data-child-code="${esc(c.code)}">${esc(MSG.memOrphanDelete)}</button></li>`).join("")}</ul>`
-        : "";
+      const orphans = orphanHtml(state);
       const add = acctMode ? "" : list.length >= MEMBER_MAX ? note(MSG.memMax) : `<div class="hh-actions"><button type="button" class="hh-btn" data-mem-action="add">${esc(MSG.memAdd)}</button></div>`;
       body = `${device}<ul class="hh-members">${rows}</ul>${add}${kids}${orphans}`;
     }
@@ -527,5 +535,5 @@
     return `<section class="hh-section" data-onb="${esc(st.step || "offer")}">${body}</section>`;
   }
 
-  return { MSG, syncNoteText, diagLine, isChildLinked, canLinkCurrentChild, isEnabled, classifyCode, formRoleOf, inferRoleFromName, roleLabelOf, FORM_ROLES, mergeChildren, childSubtitle, switchSubText, statusLine, failMessage, joinMessage, renderNotice, renderSection, renderCodeEntryHint, renderBetaSwitch, renderBetaSwitchLanding, ROLE_NAMES, ROLES, MEMBER_MAX, MEMBER_NAME_MAX, visibleMembers, nextMemberOrder, activeMemberOf, validateMemberForm, renderMembers, ONB_MSG, shouldOfferOnboarding, onboardingNameUpdates, renderOnboarding };
+  return { MSG, renderOrphans, syncNoteText, diagLine, isChildLinked, canLinkCurrentChild, isEnabled, classifyCode, formRoleOf, inferRoleFromName, roleLabelOf, FORM_ROLES, mergeChildren, childSubtitle, switchSubText, statusLine, failMessage, joinMessage, renderNotice, renderSection, renderCodeEntryHint, renderBetaSwitch, renderBetaSwitchLanding, ROLE_NAMES, ROLES, MEMBER_MAX, MEMBER_NAME_MAX, visibleMembers, nextMemberOrder, activeMemberOf, validateMemberForm, renderMembers, ONB_MSG, shouldOfferOnboarding, onboardingNameUpdates, renderOnboarding };
 });

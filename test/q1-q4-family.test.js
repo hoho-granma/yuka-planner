@@ -194,8 +194,8 @@ const J = (x) => JSON.parse(JSON.stringify(x));
     assert.strictEqual(count([{ code: "A1", name: "수아" }, { code: "B2", name: "은찬" }]), 2);
     assert.strictEqual(count([{ code: "A1", name: "수아" }], { c1: { familyCode: "B2", displayName: "은찬" } }), 2, "가구 링크의 아이도 센다");
     assert.strictEqual(count([{ code: "A1", name: "수아" }], { c1: { familyCode: "B2", displayName: "은찬", removedAt: 5 } }), 1, "분리된 아이는 제외");
-    assert.ok(APP.includes("acctKidCount() >= 2 ? '<button type=\"button\" class=\"btn-close\" id=\"btn-acct-child-switch\">아이 전환</button>' : \"\""));
-    assert.ok(APP.includes('el("btn-acct-child-switch").addEventListener("click", showChildSwitchSheet)'));
+    assert.ok(!APP.includes("btn-acct-child-switch"), "D72b: 프로필 [아이 전환] 버튼은 우리 가족 얼굴 탭으로 대체");
+    assert.ok(APP.includes('if (l && l.familyCode && l.familyCode !== familyCode) {') && APP.includes("await switchToChild(l.familyCode);"), "아이 얼굴 탭 = 그 아이로 전환");
   });
   await test("D5: 이름·이메일·가족코드 왼쪽 정렬(CSS), [가족 추가]는 로그아웃과 같은 전체 폭 보조 버튼, 내 구성원 줄은 '이름 (나)'+오른쪽 역할, 가입 직후 안내 삭제", () => {
     const css = fs.readFileSync(path.join(__dirname, "../css/style.css"), "utf8");

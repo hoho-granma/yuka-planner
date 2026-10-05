@@ -192,6 +192,7 @@
     copiedShort: "복사했어요",
     codeLabelShort: "가족코드",
     familyTitle: "우리 가족",
+    famAddChild: "아이 등록", // D72b: 우리 가족 줄 [＋ 아이 등록]
     meShort: "나",
     childFallback: "아이",
     membersManage: "구성원 관리",
@@ -396,20 +397,36 @@
   const FACE_FAMILY = "#c9b8ff";
   const FACE_CHILD = Object.freeze(["#ffc233", "#2fe0a0", "#ff5f6d", "#17d3ee"]);
   const okColor = (c) => (/^#[0-9a-fA-F]{6}$/.test(String(c || "")) ? c : ""); // 앱이 팔레트에서 골라 넘긴 색만(없으면 옛 고정색 폴백)
-  const face = (color, label, me) => `<div class="acct-face"><span class="acct-face-dot" style="background:${color}">${esc(String(label || "").slice(0, 1))}</span><span class="acct-face-name">${esc(label)}${me ? ` (${esc(MSG.meShort)})` : ""}</span></div>`;
+  /** D72b: 얼굴은 누르면 그 사람의 카드가 아래에 열리는 버튼(선택 표시 = 이름 굵게 + 아래 막대, aria-pressed). 점 색(D44/D46)은 그대로. kind: "member"|"child". */
+  const face = (color, label, me, kind, id, selected) => `<button type="button" class="acct-face acct-face-pick${selected ? " on" : ""}" data-acct-action="fam-pick" data-fam-kind="${esc(kind)}" data-fam-id="${esc(id)}" aria-pressed="${selected ? "true" : "false"}"><span class="acct-face-dot" style="background:${color}">${esc(String(label || "").slice(0, 1))}</span><span class="acct-face-name">${esc(label)}${me ? ` (${esc(MSG.meShort)})` : ""}</span></button>`;
   /** s.family = { members:[{memberId,role,label}], meId, meName, children:[{childKey,displayName}] } */
   function renderFamilySlot(s) {
     const f = s.family || {};
     const name = (s.account && s.account.displayName) || s.user.displayName || "";
     const role = s.account && s.account.role ? ` · ${esc(MSG.myRole(roleLabel(s.account.role).replace(/\(.*\)/, "")))}` : "";
-    const faces = (f.members || []).map((m) => face(okColor(m.color) || FACE_COLORS[m.role] || FACE_FAMILY, f.meId && m.memberId === f.meId && f.meName ? f.meName : m.label, !!f.meId && m.memberId === f.meId)).join("")
-      + (f.children || []).map((c, i) => face(okColor(c.color) || FACE_CHILD[i % FACE_CHILD.length], c.displayName || MSG.childFallback, false)).join("");
-    const add = s.code ? `<button type="button" class="acct-face acct-face-add" data-acct-action="open-invite"><span class="acct-face-dot">+</span><span class="acct-face-name">${esc(MSG.inviteMenu)}</span></button>` : "";
+    const sel = s.sel || { kind: "member", id: f.meId || "" };
+    const faces = (f.members || []).map((m) => face(okColor(m.color) || FACE_COLORS[m.role] || FACE_FAMILY, f.meId && m.memberId === f.meId && f.meName ? f.meName : m.label, !!f.meId && m.memberId === f.meId, "member", m.memberId, sel.kind === "member" && sel.id === m.memberId)).join("")
+      + (f.children || []).map((c, i) => face(okColor(c.color) || FACE_CHILD[i % FACE_CHILD.length], c.displayName || MSG.childFallback, false, "child", c.childKey, sel.kind === "child" && sel.id === c.childKey)).join("");
+    const add = (s.code ? `<button type="button" class="acct-face acct-face-add" data-acct-action="open-invite"><span class="acct-face-dot">+</span><span class="acct-face-name">${esc(MSG.inviteMenu)}</span></button>` : "") + `<button type="button" class="acct-face acct-face-add" data-acct-action="fam-add-child"><span class="acct-face-dot">+</span><span class="acct-face-name">${esc(MSG.famAddChild)}</span></button>`; // D72b: 프로필의 '우리 아이' 줄이 없어진 자리
     const pill = s.code
       ? `<div class="acct-fam-code"><span class="acct-fam-pill"><span class="acct-fam-pill-l">${esc(MSG.codeLabelShort)}</span><b>${esc(s.code)}</b><button type="button" class="acct-copy-ico" data-acct-action="copy-me" aria-label="${esc(MSG.copyIcon)}" title="${esc(MSG.copyIcon)}">${ICO_COPY}</button></span>${s.notice === MSG.inviteCopied ? `<span class="acct-copied" role="status">${esc(MSG.copiedShort)}</span>` : ""}</div>`
       : `<div class="acct-code-block"><p class="fine-print">${esc(MSG.codeNoneHint)}</p><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-recover">${esc(MSG.codeCreate)}</button></div></div>`;
     return `<div class="detail-row acct-slot acct-fam"><div class="acct-fam-hero"><h4>${esc(MSG.familyTitle)}</h4><div class="acct-faces">${faces}${add}</div>${pill}</div>
-      <div class="acct-fam-me"><span class="avatar acct-me-avatar">${ICO_PERSON}</span><div class="acct-me-text"><strong>${esc(name)}${role}</strong><span class="fine-print">${esc(s.user.email)}</span></div><button type="button" class="acct-sm-btn" data-acct-action="logout">${esc(MSG.logout)}</button></div>${s.notice && s.notice !== MSG.inviteCopied ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
+      ${s.notice && s.notice !== MSG.inviteCopied ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
+  }
+  /**
+   * D72b 선택한 1명의 카드(우리 가족 얼굴 아래). c = { kind:"me"|"member"|"child", color, name, sub, photo, rows:[[라벨,값]], notes:[문장], actions:[{label, attrs, danger}] }
+   * 일반 버튼 → 위험 버튼([삭제]·[빼기]) 순서로 한 줄씩 떨어뜨린다. 저장·이동은 하지 않는다(버튼 의도는 attrs 의 data-mem-action·data-acct-action).
+   */
+  function renderFamCard(c) {
+    if (!c) return "";
+    const rows = (c.rows || []).filter((r) => r && r[1]).map(([k, v]) => `<div class="fam-row"><span class="fam-k">${esc(k)}</span><span class="fam-v">${esc(v)}</span></div>`).join("");
+    const notes = (c.notes || []).filter(Boolean).map((n) => `<p class="fine-print">${esc(n)}</p>`).join("");
+    const btn = (a) => `<button type="button" class="hh-btn hh-small${a.danger ? " hh-danger" : ""}" ${a.attrs}>${esc(a.label)}</button>`;
+    const normal = (c.actions || []).filter((a) => !a.danger).map(btn).join("");
+    const danger = (c.actions || []).filter((a) => a.danger).map(btn).join("");
+    const photo = c.photo ? `<img class="fam-photo" src="${esc(c.photo)}" alt="" />` : `<span class="acct-face-dot fam-dot" style="background:${esc(okColor(c.color) || FACE_FAMILY)}">${esc(String(c.name || "").slice(0, 1))}</span>`;
+    return `<div class="fam-card" data-fam-card="${esc(c.kind)}"><div class="fam-card-head">${photo}<div class="fam-card-title"><strong>${esc(c.name)}</strong>${c.sub ? `<span class="fine-print">${esc(c.sub)}</span>` : ""}</div></div>${rows}${c.extraHtml || ""}${notes}${normal ? `<div class="fam-actions">${normal}</div>` : ""}${danger ? `<div class="fam-actions fam-danger">${danger}</div>` : ""}</div>`;
   }
   /** 가입 직후 아이가 없는 홈의 '내 정보' 카드: 이름 · 나(역할) / 아이를 등록해 주세요 / 이메일. 누르면 내 정보(가족코드). */
   function renderMyCard(state) {
@@ -640,5 +657,5 @@
       <button type="button" class="btn-complete" data-acct-action="confirm-logout">${esc(MSG.logout)}</button><button type="button" class="btn-close" data-acct-action="close">${esc(MSG.cancel)}</button></div>`;
   }
 
-  return { MSG, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, signupTotal, signupStep, signupStepKeys, firstErrorStep, INVITE_ROLES, INVITE_LABEL, inviteLink, inviteText, parseJoinParams, renderLanding, slideIndex, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderFamilySlot, renderMyCard, renderSlotPick, renderRolePick, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderAddTiles, renderAddMenu, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderNoChildBanner, renderNoChildHome, renderNoChildTab, renderChildSheet, renderMe, roleOptions, syncForm, SITUATIONS, esc };
+  return { MSG, renderFamCard, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, signupTotal, signupStep, signupStepKeys, firstErrorStep, INVITE_ROLES, INVITE_LABEL, inviteLink, inviteText, parseJoinParams, renderLanding, slideIndex, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderFamilySlot, renderMyCard, renderSlotPick, renderRolePick, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderAddTiles, renderAddMenu, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderNoChildBanner, renderNoChildHome, renderNoChildTab, renderChildSheet, renderMe, roleOptions, syncForm, SITUATIONS, esc };
 });
