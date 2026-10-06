@@ -6016,7 +6016,24 @@
       usChipDelShow();
     }
   }
-  function usOnCalendarClick(ev) {
+  let usCalendarChildSwitchBusy = false;
+  /** 아이 필터를 추가하면 AUTO 엔진도 그 아이로 전환한다. 월·선택일·필터는 유지한다. */
+  async function usSelectCalendarChild(id) {
+    if (!id.startsWith("CHILD:") || !us.selection.includes(id)) return;
+    const link = usLinks().find((l) => !l.removedAt && l.childKey === id.slice(6));
+    if (!link || !link.familyCode || link.familyCode === familyCode) return;
+    const month = viewMonth, date = selectedCalendarDate;
+    usCalendarChildSwitchBusy = true;
+    try {
+      await switchToChild(link.familyCode);
+      viewMonth = month;
+      selectedCalendarDate = date;
+      switchTab("calendar");
+    } finally {
+      usCalendarChildSwitchBusy = false;
+    }
+  }
+  async function usOnCalendarClick(ev) {
     if (!usActive()) { // 2-5: 가구가 없는 기기도 계산 일정 토글·줄은 쓴다(저장 없음)
       if (ev.target.closest('[data-us-action="toggle-anniv"]')) { us.annivOn = !us.annivOn; ChildAnniversaries.setOn((() => { try { return localStorage; } catch (e) { return null; } })(), us.annivOn); renderCalendar(); renderSelectedDayPanel(); return; }
       const an0 = ev.target.closest("[data-anniv-id]");
@@ -6025,8 +6042,11 @@
     }
     const f = ev.target.closest("[data-us-filter]");
     if (f) {
-      us.selection = UserScheduleView.toggleSelection(usSel(), f.getAttribute("data-us-filter"), usLinks(), usMembers(), usSelOpts());
+      if (usCalendarChildSwitchBusy) return;
+      const id = f.getAttribute("data-us-filter");
+      us.selection = UserScheduleView.toggleSelection(usSel(), id, usLinks(), usMembers(), usSelOpts());
       us.selTouched = true;
+      await usSelectCalendarChild(id);
       return usRefreshCalendar();
     }
     const a = ev.target.closest("[data-us-action]");

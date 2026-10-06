@@ -247,13 +247,10 @@
   const categoryLabel = (key) => (CATEGORIES.find((c) => c.key === key) || { label: "" }).label;
 
   // ── 아이별 색(링크 order 기반 파생 — 저장하지 않는다) ─────────────────────────
-  // 칩 달력 개편(B 마카롱 파스텔): 아이 첫째·둘째·셋째·넷째 이상 / 가족·기타 구성원 / 엄마·아빠(역할 고정, 저장하지 않는다)
-  // 대표색 팔레트 10색: 아이·구성원마다 키(colorKey p1~p10, 없으면 childKey/memberId 해시)로 정해 한 번 정해지면 사람이 늘거나 줄어도 바뀌지 않는다.
-  // 색 적용(v1.12.92): '선명 팝' 순서. 모두 칩 글자색(--chip-ink #1a1410) 대비 5.7:1 이상, 서로 색차(Lab ΔE) 20 이상(test/h4-chips-members-delete.test.js 가 확인). css/style.css 의 --d1~--d10 과 같은 값이다.
-  // D41 최종 팔레트: 테마별 10칸(슬롯 p1~p10 고정, colorKey 호환). 웜 브라운 = 세트 2 '토스트', 딥 포레스트 = 세트 3 '물가 연두'(+d1 #bdf4ff). 배열 순서 = 확정된 색 우선순위(D43, picks/priority-1 final). css/style.css 의 --d1~--d10 과 같은 값이다.
+  // 구성원 대표색: 사용자 확정 ‘선명한 포인트’. 역할 슬롯(아빠·나·아이·가족)은 유지한다.
   const PALETTES = Object.freeze({
-    warm: Object.freeze(["#a1e3f7", "#f4e07c", "#f47ca8", "#7c90f4", "#d2f7a1", "#f7b5a1", "#a1f7a4", "#b07cf4", "#7cf4c8", "#f7a1f4"]),
-    forest: Object.freeze(["#bdf4ff", "#f9d86c", "#fb93c0", "#d5fb93", "#93abfb", "#93fbce", "#b993fb", "#f9846c", "#71f96c", "#f46cf9"]),
+    warm: Object.freeze(["#82c6ed", "#ef92b4", "#a9d271", "#b59ae7", "#efab77", "#f1c45d", "#6fcaba", "#91a3e1", "#cfb489", "#93d3df"]),
+    forest: Object.freeze(["#82c6ed", "#ef92b4", "#a9d271", "#b59ae7", "#efab77", "#f1c45d", "#6fcaba", "#91a3e1", "#cfb489", "#93d3df"]),
   });
   const PALETTE = PALETTES.warm.slice(); // 지금 테마의 10색 — 같은 배열을 제자리에서 바꾼다(setTheme). 칩·막대·얼굴 색은 모두 여기서 나온다.
   let currentTheme = "warm";

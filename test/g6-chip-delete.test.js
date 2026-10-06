@@ -59,7 +59,7 @@ test("을/를 자동 선택: 받침 있으면 '을', 없으면 '를', 한글이 
 
 console.log("앱 연결(소스 추출)");
 function env(o) {
-  const a = APP.indexOf("  // ── G6 칩 지우기"), b = APP.indexOf("  function usOnCalendarClick(ev) {");
+  const a = APP.indexOf("  // ── G6 칩 지우기"), b = APP.indexOf("  async function usOnCalendarClick(ev) {");
   const content = { innerHTML: "", querySelector: () => ({ addEventListener: (t, f) => (content.cb = f) }) };
   const log = { removedM: [], removedC: [], closed: 0, rendered: 0, refreshed: 0, active: [] };
   const store = { ...(o.store || {}) };

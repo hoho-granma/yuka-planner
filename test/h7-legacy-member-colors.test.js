@@ -18,7 +18,7 @@ function adapter() {
 }
 const mk = () => { let T = 1; const a = adapter(); return { a, hs: HS.create({ adapter: a, storage: memStorage(), features: () => ({ household: true }), now: () => ++T, rand: () => 0.5 }) }; };
 const members = (a, hid) => [...a.docs.entries()].filter(([k]) => k.startsWith(`households/${hid}/members/`)).map(([k, v]) => ({ memberId: k.split("/").pop(), ...v }));
-const MOM = "#f7b5a1", DAD = "#7cf4c8";
+const MOM = V.PALETTES.warm[5], DAD = V.PALETTES.warm[8];
 
 test("colorKey 없는 엄마·아빠: 칩(계정 모드·역할 모드)·일정 막대·상세 점이 모두 옛 고정색, 같은 색이다", () => {
   const ms = [{ memberId: "m1", role: "MOM", label: "엄마", order: 1 }, { memberId: "m2", role: "DAD", label: "아빠", order: 2 }];

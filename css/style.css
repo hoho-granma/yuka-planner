@@ -42,8 +42,8 @@
   --c-soon-ink: #ffffff;
   /* S7 칩·달력 10색('선명 팝' p1~p10) + 칩 글자 */
   --k-vx: #294ee1; --k-hc: #9b26d1; --k-dv: #199d5a; --k-lf: #a58815; --k-sf: #f31664; --k-bn: #281cdc; /* D49 종류 라벨 6색(웜) */
-  --d1: #a1e3f7; --d2: #f4e07c; --d3: #f47ca8; --d4: #7c90f4; --d5: #d2f7a1;
-  --d6: #f7b5a1; --d7: #a1f7a4; --d8: #b07cf4; --d9: #7cf4c8; --d10: #f7a1f4;
+  --d1: #82c6ed; --d2: #ef92b4; --d3: #a9d271; --d4: #b59ae7; --d5: #efab77;
+  --d6: #f1c45d; --d7: #6fcaba; --d8: #91a3e1; --d9: #cfb489; --d10: #93d3df;
   --chip-ink: #1a1410;
   --chip-off: #e1dfdb; --chip-off-ink: #62656b;   /* 선택 안 된 사람 뱃지(회색) */
   /* S9 선택한 사람 테두리 */
@@ -71,7 +71,7 @@ body.theme-forest {
   --c-soon: #14382a;
   --on-accent: #ffffff; /* D62: 오렌지 면 글자색 토큰 — 포레스트는 지금처럼 흰색 유지 */
   --k-vx: #1b7bd9; --k-hc: #572bdc; --k-dv: #1e9f3f; --k-lf: #be8025; --k-sf: #f20d5d; --k-bn: #2646c9; /* D49 종류 라벨 6색(포레스트) */
-  --d1: #bdf4ff; --d2: #f9d86c; --d3: #fb93c0; --d4: #d5fb93; --d5: #93abfb; --d6: #93fbce; --d7: #b993fb; --d8: #f9846c; --d9: #71f96c; --d10: #f46cf9;
+  --d1: #82c6ed; --d2: #ef92b4; --d3: #a9d271; --d4: #b59ae7; --d5: #efab77; --d6: #f1c45d; --d7: #6fcaba; --d8: #91a3e1; --d9: #cfb489; --d10: #93d3df;
   --cal-sel: #f9cb34;
   --nd-indigo: #1f6f4a; --nd-soft: #edf3f1; --nd-soft2: #d2e2db; --nd-home-bg: #f6f8f5; --nd-ink: #1b2a22; --nd-violet: #1f6f4a; --nd-navy: #14382a;
 }

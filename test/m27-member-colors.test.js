@@ -59,7 +59,7 @@ test("D46: 아이 6명 이상 — 아이 p3~p5, 6번째부터는 그 밖 풀(p7~
   assert.strictEqual(kids[6].colorKey, "p9", "분리된 아이는 저장값 그대로");
   assert.strictEqual(V.resolveMemberColors(ms, links)[0].colorKey, "p10", "구성원은 아이 6~뒤 다음");
   V.setTheme("warm"); V.setColorOrder({ warm: [1, 0, 2, 3, 4, 5, 6, 7, 8, 9] });
-  const dad = V.resolveMemberColors([M("d", "DAD", "")], [])[0]; assert.strictEqual(V.memberColor(dad), "#f4e07c", "슬롯 p1(아빠)이 순열로 바뀐 색을 받는다");
+  const dad = V.resolveMemberColors([M("d", "DAD", "")], [])[0]; assert.strictEqual(V.memberColor(dad), "#ef92b4", "슬롯 p1(아빠)이 순열로 바뀐 색을 받는다");
   V.setColorOrder(null);
 });
 
@@ -76,11 +76,11 @@ test("색 최종 순서(D40): 자동(AUTO) 칩은 기본이 그 아이 색(autoC
   const person = { t: "u", occ: { title: "병원", scope: "FAMILY", childKeys: [], assigneeRole: m.role, assigneeMemberId: m.memberId, assigneeColorKey: m.colorKey } };
   const kid = { t: "u", occ: { title: "접종", scope: "CHILD", childKeys: ["k1"], assigneeRole: m.role, assigneeMemberId: m.memberId, assigneeColorKey: m.colorKey } };
   const a = { t: "a", title: "BCG", category: "예방접종" };
-  const ctx = { links, mode: "all", catColor: false, autoColor: "#f4e07c" };
+  const ctx = { links, mode: "all", catColor: false, autoColor: "#ef92b4" };
   assert.ok(V.cellChips([person], ctx).includes(`background:${V.PALETTE[6]}`), "구성원 일정=그 구성원 색");
   assert.ok(V.cellChips([kid], ctx).includes(`background:${V.PALETTE[4]}`), "아이 일정=아이 색(옛 담당 값 무시)");
-  assert.ok(V.cellChips([a], ctx).includes("--chip-c:#f4e07c"), "자동 기본=현재 아이 색");
-  const cat = V.cellChips([a], { links, mode: "kids", catColor: true, autoColor: "#f4e07c" });
+  assert.ok(V.cellChips([a], ctx).includes("--chip-c:#ef92b4"), "자동 기본=현재 아이 색");
+  const cat = V.cellChips([a], { links, mode: "kids", catColor: true, autoColor: "#ef92b4" });
   assert.ok(cat.includes(`--chip-c:${V.CATEGORY_COLORS["접종"]}`), "스위치를 켜면 자동만 분류색");
   assert.ok(!/autoByCategory/.test(read("js/user-schedule-view.js")) && !/autoByCategory/.test(read("js/app.js")), "자동 기본을 분류색으로 바꾸는 옵션은 없다");
 });
