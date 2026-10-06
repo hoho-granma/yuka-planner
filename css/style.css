@@ -2113,3 +2113,6 @@ body.acct-design .modal-panel:has(.cs-list) .cs-add { background: var(--nd-indig
 
 /* 일정 폼의 닫기는 제목 영역 안에 배치한다. */
 .modal-panel:has(.us-form) .us-fx-head .modal-x { position: static; float: none; flex: 0 0 32px; margin: 0; background: rgba(255,255,255,.6); color: var(--us-fx-ink, var(--nd-ink)); }
+/* 아이 등록·수정의 생년월일 달력은 펼친 만큼 공간을 확보한다. */
+.acct-cs-date .date-popup, #ep-due-row .date-popup { position: relative; top: auto; margin-top: 6px; }
+body.acct-design .acct-cs:has(.date-popup:not(.hidden)) .acct-cs-foot { position: static; margin: 6px 0 0; padding: 10px 0 14px; background: none; }
