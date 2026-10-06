@@ -1,0 +1,40 @@
+.gr-page { color: var(--text); padding: 12px 0 24px; }
+.gr-heading { padding: 8px 8px 16px; }
+.gr-kicker { font-size: 11px; font-weight: 700; color: var(--accent-dark); letter-spacing: .5px; margin: 0 0 6px; }
+.gr-heading h2 { font-size: 25px; letter-spacing: -1px; margin: 0 0 8px; }
+.gr-heading > p:last-child { font-size: 13px; color: var(--text-muted); margin: 0; }
+.gr-tree { position: relative; height: 355px; background: radial-gradient(ellipse at 50% 55%, var(--nd-soft2), transparent 68%); }
+.gr-tree > svg { position: absolute; inset: 0; width: 100%; height: 330px; }
+.gr-tree path { fill: none; stroke: var(--nd-soft2); stroke-width: 6; stroke-linecap: round; }
+.gr-child { position: absolute; top: 143px; left: calc(50% - 47px); width: 94px; height: 94px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--accent-dark); color: var(--on-accent); border-radius: 50%; box-shadow: 0 0 0 9px var(--nd-soft); }
+.gr-child > span { font-size: 22px; }
+.gr-child strong { max-width: 80px; overflow-wrap: anywhere; font-size: 16px; line-height: 1.2; }
+.gr-child small { font-size: 10px; margin-top: 4px; }
+.gr-node { position: absolute; width: 112px; min-height: 88px; border-radius: 24px 24px 24px 8px; border: 1px solid var(--line); background: var(--surface, #fff); color: var(--text); padding: 12px 6px; font: inherit; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+.gr-node.active { border: 2px solid var(--accent-dark); background: var(--nd-soft); }
+.gr-node strong { font-size: 15px; }.gr-node small { font-size: 11px; color: var(--text-muted); }.gr-node > span { font-size: 11px; color: var(--accent-dark); }
+.gr-node-school { left: 0; top: 37px; }.gr-node-academy { right: 0; top: 43px; }.gr-node-activity { right: 0; top: 232px; }
+.gr-leaf { position: absolute; width: 16px; height: 28px; background: var(--nd-soft2); border-radius: 20px 0 20px 0; transform: rotate(25deg); }
+.gr-leaf-one { left: 27%; top: 125px; }.gr-leaf-two { right: 29%; top: 225px; }
+.gr-map-hint { position: absolute; left: 0; bottom: 6px; width: 100%; text-align: center; font-size: 11px; color: var(--text-muted); }
+.gr-section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.gr-section-head h3 { margin: 0; font-size: 17px; overflow-wrap: anywhere; }.gr-section-head > span { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+.gr-activities { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.gr-activities button { font: inherit; font-size: 12px; border: 1px solid var(--line); border-radius: 20px; padding: 8px 12px; background: var(--surface, #fff); color: var(--text); max-width: 100%; overflow-wrap: anywhere; cursor: pointer; }
+.gr-activities button[aria-pressed="true"] { background: var(--accent-dark); color: var(--on-accent); border-color: var(--accent-dark); }
+.gr-timeline { border-left: 1px solid var(--nd-soft2); padding-left: 18px; margin-left: 7px; }
+.gr-record { position: relative; padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface, #fff); margin-bottom: 14px; }
+.gr-record::before { content: ""; position: absolute; width: 19px; height: 1px; left: -20px; top: 24px; background: var(--nd-soft2); }
+.gr-record time { display: block; font-size: 12px; color: var(--text-muted); }.gr-activity-label { display: inline-block; font-size: 11px; color: var(--accent-dark); background: var(--nd-soft); border-radius: 16px; padding: 3px 8px; margin-top: 8px; overflow-wrap: anywhere; }
+.gr-record h4 { font-size: 16px; margin: 8px 0; overflow-wrap: anywhere; }.gr-record > p { font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; margin: 0; }
+.gr-image-link { display: block; margin-top: 12px; color: var(--accent-dark); font-size: 12px; }.gr-image-link img,.gr-preview img { display: block; max-width: 100%; max-height: 320px; object-fit: contain; border-radius: 10px; background: var(--nd-soft); margin-bottom: 5px; }
+.gr-edit { border: 0; background: none; color: var(--accent-dark); font: inherit; font-size: 12px; padding: 10px 0; cursor: pointer; }
+.gr-empty { font-size: 13px; line-height: 1.8; text-align: center; color: var(--text-muted); padding: 24px 6px; }.gr-empty strong { color: var(--text); }.gr-empty p { margin-bottom: 0; }
+.gr-story { background: var(--nd-soft); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin: 22px 0 16px; }.gr-story h3 { margin: 0 0 8px; font-size: 17px; }.gr-story > p:not(.gr-kicker) { font-size: 14px; line-height: 1.8; overflow-wrap: anywhere; }.gr-story small { font-size: 11px; color: var(--text-muted); }
+.gr-primary,.gr-secondary { display: block; width: 100%; min-height: 48px; font: inherit; font-weight: 700; padding: 12px; border-radius: 13px; border: 0; background: var(--accent-dark); color: var(--on-accent); cursor: pointer; }.gr-primary:disabled { opacity: .5; cursor: default; }.gr-secondary { background: var(--nd-soft); color: var(--text); }
+.gr-storage-note,.gr-form-note { color: var(--text-muted); font-size: 12px; line-height: 1.6; }
+.gr-linked { background: var(--nd-soft); border-radius: 16px; padding: 14px; margin-bottom: 18px; }.gr-linked strong { font-size: 13px; }.gr-linked p { font-size: 13px; margin: 8px 0; overflow-wrap: anywhere; }.gr-linked small { font-size: 11px; color: var(--text-muted); }.gr-linked > small { display: block; }
+.gr-editor { padding: 18px; margin-top: 20px; background: var(--surface, #fff); border: 1px solid var(--line); border-radius: 16px; scroll-margin-top: 16px; }
+.gr-editor label { display: block; font-size: 13px; font-weight: 700; margin: 14px 0 6px; }.gr-editor input,.gr-editor select,.gr-editor textarea { display: block; width: 100%; min-width: 0; box-sizing: border-box; padding: 10px; border: 1px solid var(--line); border-radius: 10px; font: inherit; font-size: 16px; color: var(--text); background: var(--surface, #fff); }.gr-error { color: var(--c-danger); font-size: 13px; }
+.gr-home-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 18px; margin-top: 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--nd-soft); color: var(--text); font: inherit; text-align: left; cursor: pointer; }.gr-home-link strong { display: block; font-size: 16px; margin-bottom: 4px; }.gr-home-link small { display: block; font-size: 12px; color: var(--text-muted); }
+@media (max-width: 360px) { .gr-node { width: 98px; }.gr-child { width: 82px; height: 82px; left: calc(50% - 41px); top: 148px; }.gr-child strong { max-width: 70px; font-size: 14px; } }

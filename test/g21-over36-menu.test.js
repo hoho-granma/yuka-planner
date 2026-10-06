@@ -59,7 +59,7 @@ test("'꽉 찬 칩은…' 안내·'직접 입력' 뱃지: 36개월 이상 판정
   const box = { querySelectorAll: () => [{ remove: () => removed.push(1) }, { remove: () => removed.push(1) }] };
   for (const on of [true, false]) {
     removed.length = 0;
-    const sb = { usRenderDayPanel: function () { return "base"; }, usKidsAre36Plus: () => on, el: () => box };
+    const sb = { usRenderDayPanel: function () { return "base"; }, usKidsAre36Plus: () => on, usScheduleColors: () => null, el: () => box };
     vm.createContext(sb);
     vm.runInContext(APP.slice(APP.indexOf("  const usRenderDayPanelBase = usRenderDayPanel;"), APP.indexOf("  function usChildAge(childKey)")), sb);
     assert.strictEqual(sb.usRenderDayPanel(), "base");

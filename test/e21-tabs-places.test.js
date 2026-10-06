@@ -26,7 +26,7 @@ test("index.html: 어디갈까 nav(기본 hidden, 라벨 '어디갈까' 물음�
   assert.ok(i("css/places.css") > i("css/style.css") && i("js/places.js") > 0 && i("js/places.js") < i("js/places-view.js") && i("js/places-view.js") < i("js/app.js"));
   const sw = read("sw.js");
   ["./js/places.js", "./js/places-view.js", "./css/places.css"].forEach((f) => assert.ok(sw.includes(`"${f}"`), f));
-  assert.ok(APP.includes('const TAB_NAMES = ["home", "calendar", "subsidy", "checklist", "places"];'));
+  assert.ok(APP.includes('const TAB_NAMES = ["home", "calendar", "subsidy", "checklist", "places", "growth"];'));
   assert.ok(AV.MSG.emptyTab.places && AV.renderEmptyTab("places", {}).includes("갈 만한 곳"), "빈 홈 탭 문구");
 });
 
@@ -42,7 +42,7 @@ function env(o) {
   const sb = { console, JSON, Promise, Places: P, PlacesView: PV, ChildTimeline: { ageLabelAt: () => "7개월", completedMonths: () => 7, OVER36_FROM_MONTHS: 36 }, UserScheduleView: V, us,
     document: { querySelector: (sel) => (sel.includes("record") ? nodes.rec : sel.includes("places") ? nodes.pl : null) },
     el: (id) => ({ "btn-record-back": nodes.back, "places-body": nodes.body, "modal-content": nodes.content, "detail-modal": nodes.modal, "btn-places-close": nodes.close }[id] || null),
-    hhEnabled: () => o.on, usActive: () => o.active !== false, usActiveChildKey: () => "c1", usLinks: () => [{ childKey: "c1", displayName: "수아", order: 1 }], memActiveId: () => "m1", usShowForm: () => { log.shown++; log.form = { ...sb.us.form }; },
+    growthActive: () => false, hhEnabled: () => o.on, usActive: () => o.active !== false, usActiveChildKey: () => "c1", usLinks: () => [{ childKey: "c1", displayName: "수아", order: 1 }], memActiveId: () => "m1", usShowForm: () => { log.shown++; log.form = { ...sb.us.form }; },
     esc: (x) => String(x), ADD_MENU_MSG: { needHousehold: "가족 캘린더를 만들어 주세요", close: "닫기" }, closeDetail: () => { log.closed++; }, showProfileSheet: () => { log.profileSheet++; },
     HNDatePicker: { markup: () => '<div id="plr-dp-btn"></div>', bindById: () => ({ set() {} }) }, usMembers: () => [{ memberId: 'm1', role: 'MOM', label: '엄마', order: 1 }], HouseholdView: require('../js/household-view.js'), formatDateKR: () => '', toISODate: () => '2026-10-03', UserSchedule: require('../js/user-schedule.js'), HouseholdSync: {}, usRefreshCalendar() {},
     switchTab: (n) => { log.switched.push(n); sb.currentTab = n; }, currentTab: o.tab || "home", modalMode: null, loadJsonOrNull: async () => PLACES,

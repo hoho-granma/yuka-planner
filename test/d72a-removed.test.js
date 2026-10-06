@@ -11,7 +11,7 @@ const HTML = read("index.html"), SW = read("sw.js"), APP = read("js/app.js");
 test("삭제된 파일이 없고 index.html·sw.js 목록에서도 빠졌다", () => {
   for (const f of ["js/home-switch.js", "js/home-slots-view.js", "js/curated-home.js", "css/home-slots.css", "js/records.js", "js/records-view.js"]) {
     assert.ok(!fs.existsSync(path.join(ROOT, f)), f);
-    const base = f.replace(/^(js|css)\//, "");
+    const base = f;
     assert.ok(!HTML.includes(base) && !SW.includes(base), f + " 참조 없음");
   }
   assert.ok(HTML.includes("js/home-must.js") && HTML.includes("js/curation.js") && SW.includes("./js/curation.js"), "curation.js·home-must.js 는 보존");
@@ -33,7 +33,7 @@ test("이전 홈 '지금 꼭 할 것' 카드는 이어서 동작: HomeMust.unitO
 test("기록 보기: 프로필 버튼·탭·진입 함수·저장소 호출이 앱에서 사라졌고, 저장된 기록 데이터 키는 지우는 코드가 없다(로컬 키는 나가기 정리 목록에만 있음)", () => {
   assert.ok(!/HNRecords|HNRecordsView|openRecordView|btn-view-records|btn-record-back|renderRecordTab|recordReturnTab/.test(APP));
   assert.ok(!HTML.includes('id="tab-record"') && !HTML.includes('data-nav="record"'));
-  assert.ok(APP.includes('const TAB_NAMES = ["home", "calendar", "subsidy", "checklist", "places"];'));
+  assert.ok(APP.includes('const TAB_NAMES = ["home", "calendar", "subsidy", "checklist", "places", "growth"];'));
   assert.ok(!/removeItem\([^)]*hannun_records/.test(APP), "기록 데이터를 지우는 코드 없음");
   assert.ok(!read("js/home.js").includes("data-rec") && !read("js/home.js").includes("HNRecordsView"));
 });

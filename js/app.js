@@ -1532,6 +1532,8 @@
     if (!acct36Active()) renderHomeBase.apply(this, arguments);
     else acct36RenderHome();
     nsSync(); // W5: 다음 단계 안내 한 줄 배너(홈 맨 아래, 계정 모드)
+    const home = el("home-body");
+    if (home && growthActive()) home.insertAdjacentHTML("beforeend", `<button type="button" class="gr-home-link" data-growth-home><span><strong>🌱 ${esc(childDisplayName())}의 성장기록</strong><small>학교·학원·활동의 순간을 이야기로 남겨요</small></span><span aria-hidden="true">›</span></button>`);
   };
   const renderChecklistTabBase = renderChecklistTab;
   renderChecklistTab = function renderChecklistTab() {
@@ -1546,6 +1548,7 @@
   };
   const usRefreshHomeBase = usRefreshHome;
   usRefreshHome = function usRefreshHome() {
+    if (currentTab === "growth" && growthActive() && !el("growth-body").querySelector(".gr-editor")) renderGrowthTab();
     if (!acct36Active() || !hhEnabled()) return usRefreshHomeBase.apply(this, arguments);
     const sig = acct36Sig();
     if (sig !== (us.homeSig36 || "")) {
@@ -1622,6 +1625,10 @@
   const renderAllTcbBase = renderAll;
   renderAll = function renderAll() {
     const r = renderAllTcbBase.apply(this, arguments);
+    applyTabLayout();
+    if (growthActive() && currentTab === "places") switchTab("growth");
+    else if (!growthActive() && currentTab === "growth") switchTab("home");
+    else if (growthActive() && currentTab === "growth") renderGrowthTab();
     tabChildBarSync();
     return r;
   };
@@ -2144,7 +2151,7 @@
       cell.setAttribute("aria-label", `${month + 1}월 ${day}일${sameDay(date, today) ? " · 오늘" : ""} · 항목 ${totalMarks}건`);
       // 가구가 있을 때(칩 달력): 직접 등록=꽉 찬 칩, 자동=옅은 칩+같은 색 테두리, 최대 2개+N. 가구가 없으면(dm 없음) 기존 점 표식 그대로.
       cell.innerHTML = dm
-        ? `<span class="num">${day}</span><span class="markers chips">${UserScheduleView.cellChips([...userBars.map((occ) => ({ t: "u", occ })), ...periodBars.map((occ) => ({ t: "u", occ, period: true })), ...marks.map((e) => ({ t: "a", title: usAutoTitleOfEvent(e), category: e.category, done: !!completed[e.id] })), ...annivItems.map((a) => ({ t: "a", title: a.title, category: "생활·수유", anniv: true, color: a.color, done: false }))], { links: usLinks(), mode: usSelectionMode(), catColor: us.catColor, autoColor: usAutoChipColor() })}</span>`
+        ? `<span class="num">${day}</span><span class="markers chips">${UserScheduleView.cellChips([...userBars.map((occ) => ({ t: "u", occ })), ...periodBars.map((occ) => ({ t: "u", occ, period: true })), ...marks.map((e) => ({ t: "a", title: usAutoTitleOfEvent(e), category: e.category, done: !!completed[e.id] })), ...annivItems.map((a) => ({ t: "a", title: a.title, category: "생활·수유", anniv: true, color: a.color, done: false }))], { links: usLinks(), mode: usSelectionMode(), catColor: us.catColor && !usScheduleColorAvailable(), scheduleSlots: usScheduleColors(), autoColor: usAutoChipColor() })}</span>`
         : `<span class="num">${day}</span><span class="markers">${dotHtml}${moreHtml}</span>`;
       if (!dm && annivItems.length) { // 2-5: 점 표식 달력(가구 없음)에 계산 일정 점을 더한다(기존 점 마크업은 그대로)
         const mk = cell.querySelector(".markers");
@@ -3479,15 +3486,30 @@
     attachListHandlers();
   }
 
-  const TAB_NAMES = ["home", "calendar", "subsidy", "checklist", "places"]; // D72a: 기록 탭 삭제
+  const TAB_NAMES = ["home", "calendar", "subsidy", "checklist", "places", "growth"];
+  function growthActive() {
+    return typeof GrowthRecords !== "undefined" && GrowthRecords.eligible(profile, profile && !isPregnant() ? ChildTimeline.completedMonths(profile.birthDate, new Date()) : null);
+  }
+  function renderGrowthTab() {
+    if (!growthActive()) return;
+    const child = familyCode || usActiveChildKey();
+    if (!child) { el("growth-body").innerHTML = '<p class="empty">아이 정보를 확인한 뒤 다시 시도해 주세요.</p>'; return; }
+    const owner = acct.user && acct.user.uid || "local";
+    const docs = typeof usDocs === "function" && usActive() ? usDocs() : [];
+    const lessons = typeof EduTrend !== "undefined" ? EduTrend.myLessons(docs, [acct36LinkKey(), familyCode].filter(Boolean)).lessons : [];
+    GrowthRecords.mount(el("growth-body"), { name: childDisplayName(), scope: JSON.stringify([owner, child]), lessons, onCalendar: () => switchTab("calendar") });
+  }
+  document.addEventListener("click", (e) => { if (e.target.closest("[data-growth-home]")) switchTab("growth"); });
   // ── E(2-1·2-2) 하단 탭 교체: 가구·계정 기능이 켜졌을 때만 '기록' 탭 자리에 '어디갈까'. 기록은 프로필 시트의 '기록 보기'로 연다(기존 기록 패널 그대로). ──
   const tabLayoutOn = () => hhEnabled();
   /** 1-8(D8): 임신 중(아이 프로필이 임신이거나 아이 없이 임신 예정 계정)에는 어디갈까 탭을 숨긴다 — 출생 후부터 보인다. 36개월 미만·이상 아이에는 영향 없음. */
-  const placesHiddenNow = () => isPregnant() || (!profile && acctExpecting());
+  const placesHiddenNow = () => isPregnant() || (!profile && acctExpecting()) || growthActive();
   function applyTabLayout() {
     const on = tabLayoutOn();
     const pl = document.querySelector('.nav-item[data-nav="places"]');
     if (pl) pl.classList.toggle("hidden", !on || placesHiddenNow());
+    const gr = document.querySelector('.nav-item[data-nav="growth"]');
+    if (gr) gr.classList.toggle("hidden", !growthActive());
   }
   let placesData = null; // data/places.json — 처음 한 번만 읽는다
   let placesLoading = null;
@@ -3705,6 +3727,7 @@
   }
 
   function switchTab(name) {
+    if (name === "growth" && !growthActive()) name = "home";
     if (name === "places" && placesHiddenNow()) name = "home"; // D8: 임신 중에는 어디갈까로 가지 않는다(탭도 숨김)
     applyTabLayout(); // 임신 ↔ 출생 후 전환·아이 교체 뒤에도 탭 노출이 맞게
     if (emptyHome && !profile) return name === "calendar" || name === "places" ? acctNoChildTab(name) : emptyRender(name); // D5/G20: 아이가 없는 계정 — 캘린더·어디갈까는 평소 화면, 홈·체크리스트·혜택·기록은 배너 + 빈 자리
@@ -3725,6 +3748,7 @@
     document.querySelectorAll(".nav-item").forEach((btn) => btn.classList.toggle("active", btn.dataset.nav === navKey));
     window.scrollTo(0, 0);
     if (name === "places") renderPlacesTab();
+    if (name === "growth") renderGrowthTab();
     if (name === "checklist") {
       // 현재 월령 그룹이 보이도록 스크롤한다(과거 월령이 위에 쌓여 있어도 지금 챙길 것부터 보이게).
       requestAnimationFrame(() => {
@@ -4805,6 +4829,25 @@
   // detailKey/detailOcc: 열려 있는 상세의 회차(반복 일정은 같은 문서에서 회차가 여럿이라 id 만으로는 부족), dayForm: "이 날만 수정", plan: 규칙 변경 확인 대기 중인 전체 수정 계획.
   // 칩 달력 개편: selection=복수 선택 배열(비어 있으면 전체), onlyUser=직접 등록한 일정만 보기(아이만 선택했을 때만 효력, 기본 꺼짐), catColor=카테고리별 색(기본 꺼짐, 이 기기에 보존)
   const CAL_CATCOLOR_KEY = "hannun_cal_catcolor";
+  const CAL_SCHEDULECOLOR_KEY = "hannun_cal_schedulecolor";
+  let scheduleColorOn = (() => { try { return localStorage.getItem(CAL_SCHEDULECOLOR_KEY) === "1"; } catch (e) { return false; } })();
+  let scheduleColorCache = { key: "", signature: "", slots: null };
+  function usScheduleColorAvailable() {
+    if (!acctEnabled() || usSelectionMode() !== "kids") return false;
+    const keys = usSel().filter((s) => s.startsWith("CHILD:")).map((s) => s.slice(6));
+    return keys.length > 0 && keys.every((key) => { const age = usChildAge(key); return typeof age === "number" && age >= 36; });
+  }
+  function usScheduleColors() {
+    if (!scheduleColorOn || !usScheduleColorAvailable()) return null;
+    const key = `hannun_cal_schedule_slots:${hh.hid}`, ids = usDocs().filter((d) => !d.deletedAt && d.status !== "CANCELLED").map((d) => d.id), signature = ids.slice().sort().join("|");
+    if (scheduleColorCache.key === key && scheduleColorCache.signature === signature && scheduleColorCache.slots) return scheduleColorCache.slots;
+    let previous = scheduleColorCache.key === key ? scheduleColorCache.slots : null;
+    if (!previous) { try { previous = JSON.parse(localStorage.getItem(key) || "{}"); } catch (e) { previous = {}; } }
+    const slots = UserScheduleView.assignScheduleColors(ids, previous);
+    scheduleColorCache = { key, signature, slots };
+    try { localStorage.setItem(key, JSON.stringify(slots)); } catch (e) {}
+    return slots;
+  }
   const us = { annivOn: (typeof ChildAnniversaries !== "undefined" ? ChildAnniversaries.isOn((() => { try { return localStorage; } catch (e) { return null; } })()) : false), selection: [], selTouched: false, onlyUser: false, catColor: (() => { try { return localStorage.getItem(CAL_CATCOLOR_KEY) === "1"; } catch (e) { return false; } })(), form: null, messages: [], saving: false, detailId: null, detailKey: null, detailOcc: null, dayForm: null, plan: null, autoLabel: null, linkPrompt: null, chipDel: null };
   const usReady = () => typeof UserScheduleView !== "undefined" && typeof UserSchedule !== "undefined" && typeof CalendarModel !== "undefined";
   const usActive = () => hhEnabled() && usReady() && !!hh.hid && !!hh.code;
@@ -5167,7 +5210,7 @@
     const counts = { userItems: model.counts.userItems + model.counts.periodItems, userDone: model.counts.userDone + periodDone };
     top.innerHTML =
       `<div class="card us-top"><p class="us-summary">${esc(UserScheduleView.monthSummary(counts))}</p>` +
-      UserScheduleView.renderFilterChips(UserScheduleView.filterChips(links, usSel(), usMembers(), usSelOpts()), { mode: usSelectionMode(), onlyUser: us.onlyUser, catColor: us.catColor, annivOn: usAnnivAvailable() ? us.annivOn : undefined }) +
+      UserScheduleView.renderFilterChips(UserScheduleView.filterChips(links, usSel(), usMembers(), usSelOpts()), { mode: usSelectionMode(), onlyUser: us.onlyUser, catColor: us.catColor, scheduleColorAvailable: usScheduleColorAvailable(), scheduleColor: scheduleColorOn, annivOn: usAnnivAvailable() ? us.annivOn : undefined }) +
       (usKidsAre36Plus() ? "" : `<p class="us-note">${esc(UserScheduleView.MSG.legend)}</p>`) + `</div>`;
     const skipped = UserScheduleView.skippedNote(model.skipped);
     const period = UserScheduleView.renderPeriodSection(UserScheduleView.periodSection(model.periodList, links));
@@ -5266,6 +5309,8 @@
   const usRenderDayPanelBase = usRenderDayPanel;
   usRenderDayPanel = function usRenderDayPanel() {
     const r = usRenderDayPanelBase.apply(this, arguments);
+    const slots = usScheduleColors(), list = el("selected-day-list");
+    if (slots && list) list.querySelectorAll(".us-card[data-us-id]").forEach((card) => card.style.setProperty("--us-color", UserScheduleView.scheduleColor({ scheduleId: card.dataset.usId }, slots)));
     if (usKidsAre36Plus()) {
       const box = el("selected-day-list");
       if (box && box.querySelectorAll) box.querySelectorAll(".us-src-user").forEach((n) => n.remove());
@@ -5302,11 +5347,13 @@
   function capInjectEntry() {
     if (!capReady() || !acctEnabled() || !us.form || us.form.mode !== "create" || us.form.autoRef) return;
     const box = el("modal-content");
+    const head = box && box.querySelector(".us-form .us-fx-head");
+    if (!head) return;
     if (capPhotoOn()) { // D37: 4메뉴 줄(사진 찍기·사진 불러오기·메시지 붙여넣기·직접 입력=기본 선택) — 아래 폼은 그대로
-      if (box && box.insertAdjacentHTML && !box.querySelector("[data-cap-menu]")) box.insertAdjacentHTML("afterbegin", CapturePhotoView.renderMenu("direct"));
+      if (!box.querySelector("[data-cap-menu]")) head.insertAdjacentHTML("afterend", CapturePhotoView.renderMenu(us.form.capInputMode || "gallery"));
       return;
     }
-    if (box && box.insertAdjacentHTML && !box.querySelector("[data-cap-open]")) box.insertAdjacentHTML("afterbegin", `<button type="button" class="us-chip us-cap-entry" data-cap-open>${CaptureDraftView.MSG.pasteTitle} ›</button>`);
+    if (!box.querySelector("[data-cap-open]")) head.insertAdjacentHTML("afterend", `<button type="button" class="us-chip us-cap-entry" data-cap-open>${CaptureDraftView.MSG.pasteTitle} ›</button>`);
   }
   function capShow(html) { modalMode = "profile"; el("modal-content").innerHTML = html; el("detail-modal").classList.remove("hidden"); }
   const capChildName = (key) => { const l = usLinks().find((x) => String(x.childKey) === String(key)); return l ? l.displayName || "" : ""; };
@@ -5393,6 +5440,7 @@
     if (id === "voice") { capPhotoReset(); return capOpenVoice(); } // D81: 음성 입력 칩(마크업은 시안 확정 뒤)
     if (id === "paste") { CAP.text = ""; CAP.s = null; capPhotoReset(); return capShowPaste(); }
     capPhotoReset(); CAP.s = null; // direct: 입력해 둔 값 유지
+    if (us.form) us.form.capInputMode = "direct";
     return us.form ? usShowForm() : usOpenForm(null, toISODate(new Date()));
   }
   function capPickPhoto(from) {
@@ -6000,6 +6048,11 @@
         try {
           localStorage.setItem(CAL_CATCOLOR_KEY, us.catColor ? "1" : "0");
         } catch (e) {}
+        return usRefreshCalendar();
+      }
+      if (act === "toggle-schedule-color" && usScheduleColorAvailable()) {
+        scheduleColorOn = !scheduleColorOn;
+        try { localStorage.setItem(CAL_SCHEDULECOLOR_KEY, scheduleColorOn ? "1" : "0"); } catch (e) {}
         return usRefreshCalendar();
       }
       if (act === "add") return usOpenForm(null);

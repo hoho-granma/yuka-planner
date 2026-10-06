@@ -38,12 +38,13 @@ test("0-C2b: 비계정 폼도 '예방접종' 빠른 칩이면 후보 칩 블록(
 });
 test("1-8(D8): 임신 중에는 어디갈까 탭을 숨기고 가지 않는다(switchTab 가드·applyTabLayout), 아이 프로필이 임신이 아니면 영향 없음", () => {
   const src = require("fs").readFileSync(__dirname + "/../js/app.js", "utf8");
-  assert.ok(/const placesHiddenNow = \(\) => isPregnant\(\) \|\| \(!profile && acctExpecting\(\)\);/.test(src));
+  assert.ok(/const placesHiddenNow = \(\) => isPregnant\(\) \|\| \(!profile && acctExpecting\(\)\) \|\| growthActive\(\);/.test(src));
   assert.ok(/pl\.classList\.toggle\("hidden", !on \|\| placesHiddenNow\(\)\)/.test(src));
   assert.ok(/if \(name === "places" && placesHiddenNow\(\)\) name = "home";/.test(src));
   const vm = require("vm");
   const fn = (n) => { const i = src.indexOf(`const ${n} = `); return src.slice(i, src.indexOf("\n", i)); };
-  const run = (isP, prof, exp) => vm.runInNewContext(`${fn("placesHiddenNow")}; placesHiddenNow()`, { isPregnant: () => isP, profile: prof, acctExpecting: () => exp });
+  const run = (isP, prof, exp, growth = false) => vm.runInNewContext(`${fn("placesHiddenNow")}; placesHiddenNow()`, { isPregnant: () => isP, profile: prof, acctExpecting: () => exp, growthActive: () => growth });
+  assert.strictEqual(run(false, {}, false, true), true, "36개월 이상은 성장기록으로 전환");
   assert.strictEqual(run(true, {}, false), true);
   assert.strictEqual(run(false, {}, true), false, "아이가 있으면 예정 상태 계정이어도 숨기지 않는다");
   assert.strictEqual(run(false, null, true), true);

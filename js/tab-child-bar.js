@@ -8,7 +8,7 @@
   else root.TabChildBar = factory();
 })(typeof window !== "undefined" ? window : global, function () {
   "use strict";
-  const TABS = Object.freeze(["calendar", "checklist", "trend", "places"]);
+  const TABS = Object.freeze(["calendar", "checklist", "trend", "places", "growth"]);
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
   function render(kids) {

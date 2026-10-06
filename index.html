@@ -223,6 +223,8 @@
         <div id="places-body"></div>
       </div>
 
+      <div id="tab-growth" class="tab-panel hidden"><div id="growth-body"></div></div>
+
       <!-- 지원금·제도 -->
       <div id="tab-subsidy" class="tab-panel hidden">
         <div class="segmented-tabs" id="subsidy-seg" role="tablist" aria-label="신청 상태"></div>
@@ -251,6 +253,7 @@
           <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s6.5-5.6 6.5-11a6.5 6.5 0 1 0-13 0c0 5.4 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span>
           <span>어디갈까</span>
         </button>
+        <button type="button" class="nav-item hidden" data-nav="growth"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-9M12 15C5 15 3 10 3 5c6 0 9 3 9 10zM12 12c0-6 4-9 9-9 0 6-3 9-9 9z"/></svg></span><span>성장기록</span></button>
       </nav>
     </section>
   </main>
@@ -307,9 +310,9 @@
   <script src="js/time-range.js?v=2"></script>
   <script src="js/time-wheel.js?v=1"></script>
   <script src="js/schedule-kinds.js?v=3"></script>
-  <script src="js/user-schedule-view.js?v=36"></script>
+  <script src="js/user-schedule-view.js?v=37"></script>
   <script src="js/child-anniversaries.js?v=2"></script>
-  <script src="js/tab-child-bar.js?v=1"></script>
+  <script src="js/tab-child-bar.js?v=2"></script>
   <script src="js/home-must.js?v=2"></script>
   <script src="js/curation.js?v=1"></script>
   <script src="js/month-tiers.js?v=1"></script>
@@ -318,7 +321,9 @@
   <script src="js/edu-3to5-view.js?v=1"></script>
   <script src="js/tab-swipe.js?v=1"></script>
   <script src="js/edu-trend.js?v=3"></script>
-  <script src="js/app.js?v=171"></script>
+  <link rel="stylesheet" href="css/growth-records.css?v=1" />
+  <script src="js/growth-records.js?v=1"></script>
+  <script src="js/app.js?v=172"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

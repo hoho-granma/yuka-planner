@@ -82,6 +82,7 @@
     onlyUserSwitch: "직접 등록한 일정만 보기", // 칩 달력 개편: 아이만 선택했을 때 보이는 토글 칩(기본 꺼짐, 켜면 자동 일정 칩 숨김)
     annivSwitch: "아이 생일·100일·돌 보기", // 2-5: 기본 켜짐(기기 저장)
     catColorSwitch: "카테고리별 색깔 다르게 하기", // 칩 달력 개편: 기본 꺼짐
+    scheduleColorSwitch: "일정별 색깔 다르게 하기",
     // #15 "반복 일정은 아직 표시되지 않아요." 는 B5 R38 로 폐기 — 반복 일정이 표시되므로 쓰지 않는다.
     sheetAdd: "일정 추가", // #16
     sheetEdit: "일정 수정", // #17
@@ -313,6 +314,18 @@
   const contrastOf = (a, b) => { const x = lumOf(a), y = lumOf(b); return x == null || y == null ? 21 : (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
   const inkOn = (bg) => (contrastOf(INK, bg) < 4.5 ? WHITE : INK);
   const safeColor = (c) => (ALL_COLORS.has(c) ? c : NEUTRAL_COLOR);
+  function assignScheduleColors(ids, previous, random) {
+    const out = Object.create(null), used = Array(PALETTE.length).fill(0), rng = random || Math.random;
+    for (const [id, slot] of Object.entries(previous || {})) if (Number.isInteger(slot) && slot >= 0 && slot < PALETTE.length) out[id] = slot;
+    const keys = [...new Set((ids || []).filter(Boolean))].sort();
+    for (const id of keys) if (Object.prototype.hasOwnProperty.call(out, id)) used[out[id]]++;
+    for (const id of keys) if (!Object.prototype.hasOwnProperty.call(out, id)) {
+      const min = Math.min(...used), choices = used.map((n, i) => n === min ? i : -1).filter((i) => i >= 0);
+      const slot = choices[Math.min(choices.length - 1, Math.floor(Math.max(0, rng()) * choices.length))]; out[id] = slot; used[slot]++;
+    }
+    return out;
+  }
+  function scheduleColor(occ, slots) { const id = occ && (occ.scheduleId || occ.id), slot = slots && slots[id]; return Number.isInteger(slot) && slot >= 0 && slot < PALETTE.length ? PALETTE[slot] : keyColor(id); }
 
   const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const linkKey = (l) => l.childKey || l.id;
@@ -480,7 +493,8 @@
       .join("");
     const editBtn = o.canEdit === true && (del.size > 0 || edit) ? `<button type="button" class="us-chip-edit" data-us-action="chip-edit" aria-pressed="${edit ? "true" : "false"}">${esc(edit ? MSG.chipEditDone : MSG.chipEdit)}</button>` : "";
     const sw = (action, label, on) => `<button type="button" class="us-tchip" role="switch" aria-checked="${on ? "true" : "false"}" data-us-action="${action}">${esc(label)}</button>`;
-    const switches = (o.mode === "kids" && o.hideSwitches !== true ? `<div class="us-optrows">${sw("toggle-only-user", MSG.onlyUserSwitch, o.onlyUser === true)}${sw("toggle-cat-color", MSG.catColorSwitch, o.catColor === true)}</div>` : "") + (typeof o.annivOn === "boolean" ? `<div class="us-optrows">${sw("toggle-anniv", MSG.annivSwitch, o.annivOn)}</div>` : "");
+    const colorSwitch = o.scheduleColorAvailable ? sw("toggle-schedule-color", MSG.scheduleColorSwitch, o.scheduleColor === true) : sw("toggle-cat-color", MSG.catColorSwitch, o.catColor === true);
+    const switches = (o.mode === "kids" && o.hideSwitches !== true ? `<div class="us-optrows">${sw("toggle-only-user", MSG.onlyUserSwitch, o.onlyUser === true)}${colorSwitch}</div>` : "") + (typeof o.annivOn === "boolean" ? `<div class="us-optrows">${sw("toggle-anniv", MSG.annivSwitch, o.annivOn)}</div>` : "");
     return `<div class="us-filter">${items}${editBtn}</div>${switches}`;
   }
   /** 칩 지우기 확인 시트. d: { kind:"MEMBER"|"CHILD", id, name, uidWarn?, blocked?, busy?, error? } — 버튼 data-us-chipdel-act(confirm|cancel). */
@@ -505,7 +519,7 @@
     const list = (items || []).slice().sort((a, b) => (a.t === "u" ? 0 : 1) - (b.t === "u" ? 0 : 1));
     const show = list.slice(0, 2).map((it) => {
       if (it.t === "u") {
-        const col = catMode ? occurrenceColor(it.occ, c.links, "category") : occurrenceColor(it.occ, c.links, c.mode === "kids" ? "child" : "owner");
+        const col = c.scheduleSlots ? scheduleColor(it.occ, c.scheduleSlots) : catMode ? occurrenceColor(it.occ, c.links, "category") : occurrenceColor(it.occ, c.links, c.mode === "kids" ? "child" : "owner");
         const done = it.occ.status === "DONE" || it.occ.done === true;
         return `<span class="cal-chip u${done ? " done" : ""}${it.period ? " p" : ""}" style="background:${safeColor(col)};color:${inkOn(safeColor(col))}">${it.period ? esc(MSG.cellPeriod) : ""}${esc(it.occ.title)}</span>`;
       }
@@ -1079,7 +1093,7 @@
     const errors = (o.messages || []).map((m) => `<p class="us-error">${esc(m)}</p>`).join("");
     const edit = f.mode === "edit";
     return `<div class="us-form us-form-g13" data-us-mode="${esc(f.mode)}"${fxStyle(f, links, members)}>
-      ${fxHead(esc(f.wasRecurring && edit ? MSG.editAllTitle : edit ? MSG.sheetEdit : MSG.sheetAdd), fxLabel(f, links, members, ctx.meId))}${f.wasRecurring && edit ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
+      ${fxHead(esc(f.wasRecurring && edit ? MSG.editAllTitle : edit ? MSG.sheetEdit : MSG.sheetAdd), edit ? fxLabel(f, links, members, ctx.meId) : "")}${f.wasRecurring && edit ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
       <div class="us-field"><label>${esc(MSG.g13Who)}</label><div class="us-chips">${whoChips}</div></div>
       <div class="us-field"><label>${esc(MSG.g13Kind)}</label><div class="us-chips" data-us-kinds>${kindChips}</div></div>
       ${autoCand}
@@ -1169,7 +1183,7 @@
          <p class="us-note">${esc(MSG.periodHint)}</p>`;
     const errors = (o.messages || []).map((m) => `<p class="us-error">${esc(m)}</p>`).join("");
     return `<div class="us-form" data-us-mode="${esc(f.mode)}"${fxStyle(f, links, o.members)}>
-      ${fxHead(esc(f.wasRecurring && f.mode === "edit" ? MSG.editAllTitle : f.mode === "edit" ? MSG.sheetEdit : MSG.sheetAdd), fxLabel(f, links, o.members, ""))}${f.wasRecurring && f.mode === "edit" ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
+      ${fxHead(esc(f.wasRecurring && f.mode === "edit" ? MSG.editAllTitle : f.mode === "edit" ? MSG.sheetEdit : MSG.sheetAdd), f.mode === "edit" ? fxLabel(f, links, o.members, "") : "")}${f.wasRecurring && f.mode === "edit" ? `\n      <p class="us-note">${esc(MSG.editAllNote)}</p>` : ""}
       ${locked && f.mode === "create" && o.autoLabel ? `<p class="us-note us-autoref-note">${esc(MSG.autoFormNote(o.autoLabel))}</p>` : ""}${renderQuickChips(f)}${f.mode === "create" && !f.autoRef && f.quickKey === "vaccine" ? renderAutoCand(o.autoCandidates) : ""}
       <div class="us-field"><label for="us-title">${esc(MSG.titleLabel)}</label><input type="text" id="us-title" maxlength="100" placeholder="${esc(MSG.titleHint)}" value="${esc(f.title)}" /></div>
       <div class="us-field"><label>${esc(MSG.categoryLabel)}</label><div class="us-chips">${cats}</div></div>
@@ -1379,7 +1393,7 @@
 
   return {
     MSG, CATEGORIES, CHILD_PALETTE, PALETTE, COLOR_KEYS, keyColor, get FAMILY_COLOR() { return familyColor(); }, familyColor, roleSlots, resolveChildColors, PICKER_PREFIXES, HOURS, MINUTES,
-    categoryLabel, childColor, childColors, occurrenceColor, memberColor, resolveMemberColors, PALETTES, setTheme, getTheme, setColorOrder, normalizeColorOrder, inkOn, MEMBER_COLORS, ROLE_LABELS, CATEGORY_COLORS, autoCategoryGroup, selectionMode, toggleSelection, cellChips,
+    categoryLabel, childColor, childColors, occurrenceColor, assignScheduleColors, scheduleColor, memberColor, resolveMemberColors, PALETTES, setTheme, getTheme, setColorOrder, normalizeColorOrder, inkOn, MEMBER_COLORS, ROLE_LABELS, CATEGORY_COLORS, autoCategoryGroup, selectionMode, toggleSelection, cellChips,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
     cardData, cellMarks, dayPanel, sourceLabeled, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
     linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, renderChipDeleteConfirm, withObjectParticle, renderTodoLine, todoDeadlineText, TODO_LIMIT, TODO_MSG, assigneeEmphasis, applyTemplate, renderQuickChips, renderAutoCand, renderAnnivSwitch,

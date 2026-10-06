@@ -6,14 +6,14 @@ function test(n, f) { try { f(); console.log("  ok  -", n); } catch (e) { fail++
 const LINKS = [{ childKey: "c1", displayName: "수아", order: 1 }], members = [{ memberId: "m1", label: "엄마", role: "MOM" }, { memberId: "m2", label: "아빠", role: "DAD" }];
 const O = { members, ctx: { meId: "m1" } };
 const head = (h) => (/<div class="us-fx-head"><h3>([^<]*)<\/h3>(?:<span class="us-fx-who"><i><\/i>([^<]*)<\/span>)?<\/div>/.exec(h) || []).slice(1);
-test("헤더: 두 폼 모두 제목 + 선택 칩 라벨 알약(나·아빠·아이 이름·가족)", () => {
+test("헤더: 일정 추가는 사람 배지 없이 제목만, 수정은 기존 배지 유지", () => {
   const g = (o) => V.renderFormG13({ mode: "create", scope: "FAMILY", dateKind: "FIXED", title: "", ...o }, LINKS, O);
-  assert.deepStrictEqual(head(g({})), ["일정 추가", "가족"]);
-  assert.deepStrictEqual(head(g({ whoPerson: true, assigneeMemberId: "m1" })), ["일정 추가", "나"]);
-  assert.deepStrictEqual(head(g({ whoPerson: true, assigneeMemberId: "m2" })), ["일정 추가", "아빠"]);
+  assert.deepStrictEqual(head(g({})), ["일정 추가", undefined]);
+  assert.deepStrictEqual(head(g({ whoPerson: true, assigneeMemberId: "m1" })), ["일정 추가", undefined]);
+  assert.deepStrictEqual(head(g({ whoPerson: true, assigneeMemberId: "m2" })), ["일정 추가", undefined]);
   assert.deepStrictEqual(head(g({ scope: "CHILD", childKeys: ["c1"], mode: "edit" })), ["일정 수정", "수아"]);
-  assert.deepStrictEqual(head(V.renderForm({ mode: "create", scope: "CHILD", childKeys: ["c1"], dateKind: "FIXED", title: "" }, LINKS, {})), ["일정 추가", "수아"]);
-  assert.deepStrictEqual(head(V.renderForm({ mode: "create", scope: "FAMILY", dateKind: "FIXED", title: "" }, LINKS, {})), ["일정 추가", "가족"]);
+  assert.deepStrictEqual(head(V.renderForm({ mode: "create", scope: "CHILD", childKeys: ["c1"], dateKind: "FIXED", title: "" }, LINKS, {})), ["일정 추가", undefined]);
+  assert.deepStrictEqual(head(V.renderForm({ mode: "create", scope: "FAMILY", dateKind: "FIXED", title: "" }, LINKS, {})), ["일정 추가", undefined]);
 });
 test("CSS: 헤더 면=--us-fx, 시트 흰 면, 진한 포커스색 --us-fx-deep, 활성 칩=--us-fx, 모든 규칙 .modal-panel:has(.us-form) 범위", () => {
   assert.ok(/\.modal-panel:has\(\.us-form\) \.us-fx-head \{[^}]*background: var\(--us-fx, var\(--nd-yellow\)\)/.test(CSS));
