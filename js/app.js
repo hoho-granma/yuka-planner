@@ -7617,7 +7617,9 @@
         b.setAttribute("aria-label", "닫기");
         b.textContent = "✕";
         b.addEventListener("click", closeDetail);
-        box.prepend(b);
+        const formHead = box.querySelector(".us-form .us-fx-head");
+        if (formHead) formHead.append(b);
+        else box.prepend(b);
       }
       box.querySelectorAll("button.btn-close").forEach((btn) => {
         if (btn.textContent.trim() === "닫기") btn.classList.add("hidden");

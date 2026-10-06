@@ -43,12 +43,11 @@
   });
   const mbText = (bytes) => Math.max(1, Math.round((Number(bytes) || 0) / 1000000));
 
-  /** 4메뉴 2×2 타일. selected: "direct"(기본 ★) | "camera" | "gallery" | "paste" | "voice". */
+  /** 입력 방법 4개를 한 줄로 표시한다. 기본 선택은 사진 불러오기. */
   function renderMenu(selected) {
-    const sel = selected || "direct";
+    const sel = selected || "gallery";
     const tile = (id, label, sub) => `<button type="button" class="cap-tile${sel === id ? " active" : ""}" data-cap-menu="${id}" aria-pressed="${sel === id ? "true" : "false"}" aria-label="${esc(label)}">${ICON[id]}<span class="cap-tile-t"><b>${esc(label)}</b><small>${esc(sub)}</small></span></button>`;
-    // D82: 5개 — 윗줄 3(사진 찍기·사진 불러오기·메시지 붙여넣기) + 아랫줄 2(음성 입력·직접 입력), 6칸 그리드(CSS)
-    return `<div class="cap-menu" role="group" aria-label="${esc(MSG.menuAria)}">${tile("camera", MSG.camera, MSG.cameraSub)}${tile("gallery", MSG.gallery, MSG.gallerySub)}${tile("paste", MSG.paste, MSG.pasteSub)}${tile("voice", MSG.voice, MSG.voiceSub)}${tile("direct", MSG.direct, MSG.directSub)}</div>`;
+    return `<div class="cap-menu" role="group" aria-label="${esc(MSG.menuAria)}">${tile("gallery", MSG.gallery, MSG.gallerySub)}${tile("paste", MSG.paste, MSG.pasteSub)}${tile("voice", MSG.voice, MSG.voiceSub)}${tile("direct", MSG.direct, MSG.directSub)}</div>`;
   }
 
   const continueBtns = (primary, pasteAttr) => {

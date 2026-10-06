@@ -5,9 +5,9 @@ const CSS = read("css/capture.css"), APP = read("js/app.js");
 let fail = 0;
 function test(n, f) { try { f(); console.log("  ok  -", n); } catch (e) { fail++; console.log("  FAIL-", n, "\n", e.stack.split("\n").slice(0, 3).join("\n")); } }
 test("5칩 3+2: 6칸 그리드, 윗줄 각 2칸·아랫줄 각 3칸, 세로형 64px, 설명 줄 숨김, 둥근 사각형(12px)·흰 면·선택=2px 진한 테두리", () => {
-  assert.ok(/\.cap-menu \{[^}]*grid-template-columns: repeat\(6, 1fr\)/.test(CSS));
-  assert.ok(/\.cap-tile \{[^}]*grid-column: span 2;[^}]*flex-direction: column;[^}]*min-height: 64px;[^}]*border: 1\.5px solid var\(--line\);[^}]*border-radius: 12px;[^}]*background: #fff/.test(CSS));
-  assert.ok(/\.cap-tile:nth-child\(n\+4\) \{ grid-column: span 3; \}/.test(CSS));
+  assert.ok(/\.cap-menu \{[^}]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/.test(CSS));
+  assert.ok(/\.cap-tile \{[^}]*min-width: 0;[^}]*flex-direction: column;[^}]*min-height: 64px;[^}]*border: 1\.5px solid var\(--line\);[^}]*border-radius: 12px;[^}]*background: #fff/.test(CSS));
+  assert.ok(!CSS.includes(".cap-tile:nth-child(n+4)"));
   assert.ok(/\.cap-tile\.active \{[^}]*background: #fff; border: 2px solid var\(--us-fx-deep, var\(--c-select-border\)\)/.test(CSS));
   assert.ok(/\.cap-tile-t small \{ display: none; \}/.test(CSS) && /\.cap-tile:focus-visible \{ outline: 2px solid/.test(CSS) && !/nd-yellow/.test(CSS.slice(CSS.indexOf(".cap-menu {"), CSS.indexOf(".cap-state h3"))), "선택 표시에 노랑·구성원 색 채움 없음");
 });
@@ -16,8 +16,8 @@ test("두 폼(g13·기존)이 같은 renderMenu 한 곳(capInjectEntry)을 쓴�
   const i = APP.indexOf("function capInjectEntry()"), fn = APP.slice(i, APP.indexOf("\n  }\n", i));
   assert.ok(fn.includes('renderMenu(us.form.capInputMode || "gallery")') && /usShowForm = function usShowForm\(\)/.test(APP) && fn.indexOf("usShowFormBase") < 0);
   const h = PV.renderMenu("gallery");
-  ["사진 찍기", "사진 불러오기", "메시지 붙여넣기", "음성 입력", "직접 입력"].forEach((l) => assert.ok(h.includes(`<b>${l}</b>`), l));
-  assert.ok(/role="group" aria-label="일정 추가 방법"/.test(h) && (h.match(/aria-pressed="/g) || []).length === 5);
+  ["사진 불러오기", "메시지 붙여넣기", "음성 입력", "직접 입력"].forEach((l) => assert.ok(h.includes(`<b>${l}</b>`), l));
+  assert.ok(/role="group" aria-label="일정 추가 방법"/.test(h) && (h.match(/aria-pressed="/g) || []).length === 4);
 });
 test("기존 4개 동작 분기 불변 + 음성 입력은 capOpenVoice", () => {
   assert.ok(APP.includes('if (id === "camera" || id === "gallery") return capPickPhoto(id);') && APP.includes('if (id === "voice") { capPhotoReset(); return capOpenVoice(); }') && APP.includes('if (id === "paste") { CAP.text = ""; CAP.s = null; capPhotoReset(); return capShowPaste(); }'));

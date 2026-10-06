@@ -2110,3 +2110,6 @@ body.acct-design .modal-panel:has(.ns-chain) .ns-chip { background: #fff; border
 .modal-panel:has(.cs-list) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); background: var(--nd-soft); }
 body.acct-design .modal-panel:has(.cs-list) .cs-add { background: var(--nd-indigo); border: 0; color: var(--on-accent); border-radius: 13px; min-height: 52px; font-weight: 800; }
 .modal-panel:has(.cs-list) .cs-now { background: var(--nd-yellow); border: 1.5px solid var(--nd-yellow-line); color: var(--nd-ink); }
+
+/* 일정 폼의 닫기는 제목 영역 안에 배치한다. */
+.modal-panel:has(.us-form) .us-fx-head .modal-x { position: static; float: none; flex: 0 0 32px; margin: 0; background: rgba(255,255,255,.6); color: var(--us-fx-ink, var(--nd-ink)); }
