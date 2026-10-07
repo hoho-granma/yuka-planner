@@ -19,3 +19,8 @@ assert.equal(Todos.validate(old).ok,true);
 assert.equal(Todos.validate({...old,ownerKey:'MEMBER:m',dueDate:'2026-10-10',category:'회사',description:'원문'}).ok,true);
 for(const patch of [{ownerKey:'bad'},{dueDate:'tomorrow'},{description:'x'.repeat(501)},{other:'bad'}])assert.equal(Todos.validate({...old,...patch}).ok,false);
 console.log('PASS: character assets, summary, family sorting, deadlines, legacy/extended task schema');
+
+assert.match(UI.avatar('CHILD','F'),/child.jpg$/);
+assert.match(UI.avatar('CHILD','M'),/boy.png$/);
+assert.match(UI.familyAvatar([{gender:'F'}]),/family-girl-final.png$/);
+assert.match(UI.familyAvatar([{gender:'F'},{gender:'M'}]),/family-four-final.png$/);

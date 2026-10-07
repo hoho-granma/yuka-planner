@@ -300,7 +300,7 @@
       stage: p.stage || "born",
       province: p.province,
       district: p.district,
-      gender: p.gender || null,
+      gender: CharacterUI.normalizeGender(p.gender),
       dong: p.dong || "",
       // null로 보내야 set({merge:true})가 서버의 기존 사진을 지운다(필드 생략하면 그대로 남음).
       photoDataUrl: p.photoDataUrl || null,
@@ -323,7 +323,7 @@
       stage: p.stage || "born",
       province: p.province,
       district: p.district,
-      gender: p.gender || null,
+      gender: CharacterUI.normalizeGender(p.gender),
       dong: p.dong || "",
       // 사진도 가족 문서(profile.photoDataUrl)에 들어 있으므로 다른 기기에서 가족코드로 불러와도 함께 복원한다.
       ...(p.photoDataUrl ? { photoDataUrl: p.photoDataUrl } : {}),
@@ -1912,7 +1912,7 @@
         .map((pv) => `<option value="${esc(pv.code)}" ${pv.code === profile.province ? "selected" : ""}>${esc(pv.name)}</option>`)
         .join("")}</select></div>
       <div class="rv-field"><label for="ep-district">시·군·구</label><select id="ep-district" class="ep-select"></select></div>
-      <div class="rv-field"><label for="ep-gender">성별</label><select id="ep-gender"><option value="">선택</option><option value="male" ${profile.gender === "male" ? "selected" : ""}>남아</option><option value="female" ${profile.gender === "female" ? "selected" : ""}>여아</option></select></div><div class="rv-field"><label for="ep-dong">읍·면·동</label><input id="ep-dong" maxlength="30" value="${esc(profile.dong || "")}"/><p class="fine-print">거주지 기준으로 받을 수 있는 지원금, 혜택, 교육 정보를 같이 챙겨드려요.</p></div>
+      <div class="rv-field"><label for="ep-gender">성별</label><select id="ep-gender"><option value="">선택</option><option value="male" ${CharacterUI.normalizeGender(profile.gender) === "male" ? "selected" : ""}>남아</option><option value="female" ${CharacterUI.normalizeGender(profile.gender) === "female" ? "selected" : ""}>여아</option></select></div><div class="rv-field"><label for="ep-dong">읍·면·동</label><input id="ep-dong" maxlength="30" value="${esc(profile.dong || "")}"/><p class="fine-print">거주지 기준으로 받을 수 있는 지원금, 혜택, 교육 정보를 같이 챙겨드려요.</p></div>
       <p id="ep-error" class="fine-print hidden" style="color:var(--c-danger)">이름과 날짜를 입력해 주세요.</p>
       <button class="btn-complete" id="ep-save">저장</button>
       <button class="btn-close" id="ep-cancel">취소</button>
@@ -7752,7 +7752,7 @@
   function charTodoRows(home){if(!usActive())return '';const now=toISODate(new Date()), people=charPeople(false);return CharacterUI.list(HouseholdSync.getTodos(hh.hid).map(t=>{const l=usLinks().find(l=>l.familyCode===t.childKey);return !t.ownerKey&&l?{...t,ownerKey:'CHILD:'+l.childKey}:t;}),people,now,home).map(t=>{const dl=CharacterUI.deadline(t.dueDate,now);return `<div class="hn-task${t.done?' done':''}"><button class="hn-check" data-char-toggle="${esc(t.id)}" aria-label="${t.done?'완료 취소':'완료'}">${t.done?'✓':''}</button>${charImage(charPerson(CharacterUI.owner(t)))}${dl.text?`<time>${esc(dl.text)}</time>`:''}<button class="hn-task-title" data-char-edit="${esc(t.id)}">${esc(t.title)}</button>${dl.tomorrow?'<b class="hn-d1">D-1</b>':''}${t.category?`<span class="hn-category" style="background:${CharacterUI.colors[(CharacterUI.categories[charPerson(CharacterUI.owner(t)).role]||CharacterUI.categories.OTHER).indexOf(t.category)>=0?(CharacterUI.categories[charPerson(CharacterUI.owner(t)).role]||CharacterUI.categories.OTHER).indexOf(t.category):4]}">${esc(t.category)}</span>`:''}</div>`;}).join('');}
   function charTodoSection(home){return `<section class="card hn-tasks" id="hn-family-tasks${home?'':'-tab'}"><div class="hn-section-head"><h3>우리 가족 할일</h3><button class="hn-text-link" data-char-add>할일 추가 +</button></div>${charTodoRows(home)||'<p class="fine-print">등록된 할일이 없어요.</p>'}</section>`;}
   const charHomeBase=renderHome;
-  renderHome=function(){charHomeBase();if(!profile||!acctEnabled())return;updateBrandText();const wrap=el('home-body');if(!wrap)return;wrap.querySelectorAll('#a36-home-todo').forEach(n=>n.remove());let block=wrap.querySelector('#hn-family-tasks');if(block)block.remove();wrap.insertAdjacentHTML('beforeend',charTodoSection(true));wrap.querySelectorAll('.home-child-line').forEach(n=>n.remove());let date=wrap.querySelector('.hn-home-date');if(!date){date=document.createElement('p');date.className='hn-home-date';wrap.prepend(date);}const d=new Date();date.textContent=`${d.getMonth()+1}/${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})`;charHeader();};
+  renderHome=function(){charHomeBase();if(!profile||!acctEnabled())return;updateBrandText();const wrap=el('home-body');if(!wrap)return;wrap.querySelectorAll('#a36-home-todo').forEach(n=>n.remove());let block=wrap.querySelector('#hn-family-tasks');if(block)block.remove();wrap.insertAdjacentHTML('beforeend',charTodoSection(true));wrap.querySelectorAll('.home-child-line').forEach(n=>n.remove());let date=wrap.querySelector('.hn-home-date');if(!date){date=document.createElement('p');date.className='hn-home-date';wrap.prepend(date);}const d=new Date();date.textContent=`${d.getMonth()+1}/${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]}) 오늘 일정`;charHeader();};
   const charBrandBase=updateBrandText;
   updateBrandText=function(){charBrandBase();const b=el('brand-text');if(b&&profile)b.textContent=`한눈육아 – ${childDisplayName()}네집`;};
   function charHeader(){const head=document.querySelector('.app-header');if(!head||!acctEnabled())return;let b=el('hn-profile');if(!b){b=document.createElement('button');b.id='hn-profile';b.className='hn-profile';b.setAttribute('aria-label','내 프로필');b.onclick=()=>acctProfileSheet();head.appendChild(b);}const m=charPeople(true).find(p=>p.key==='MEMBER:'+usMeId())||{role:'MOM',name:'내 프로필'};b.innerHTML=charImage(m);}
