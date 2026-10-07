@@ -1,4 +1,4 @@
-/* Approved shared family design for all ages. */
+/* Preview-only: match the last approved character-calendar mockup for both age groups. */
 :root,body,body.acct-design{--bg:#f4f3f1;--fg:#24252a;--accent:#ff6a1a;--accent-soft:#ffe2d0;--border:#e2e2dd;--muted:#787974;background:#f4f3f1;color:#24252a}
 #view-calendar{background:#f4f3f1}.app-header{padding:20px 20px 10px;gap:10px;align-items:center;background:#f4f3f1}
 #brand-text{font-size:22px!important;font-weight:850!important;letter-spacing:-.8px;line-height:1.25;text-align:left;color:#24252a!important;flex:1;white-space:normal}
@@ -29,22 +29,11 @@ body.acct-design #tab-home .profile-row{display:none}
 /* Keep production version and add controls visible in the review. */
 .header-actions{display:flex!important;gap:6px;align-items:center}
 
-body,body.acct-design,body.theme-forest{--bg:#f4f2f7;--text:#302c3c;--c-ink:#302c3c;--nd-home-bg:#f4f2f7;--nd-ink:#302c3c;--card-bg:#fff;--surface:#fff;--nd-soft:#e9e1f3;--nd-soft2:#e9e1f3;--c-badge-nation:#e9e1f3;--c-badge-nation-ink:#715697;--c-badge-region:#e9e1f3;--c-badge-region-ink:#715697;--accent-soft:#e9e1f3;--accent:#715697;--accent-dark:#715697;--c-active:#715697;--c-primary:#715697;--c-primary-ink:#fff;--on-accent:#fff;--c-link:#715697;--c-select:#715697;--c-select-border:#715697;background:#f4f2f7!important;color:#302c3c}body.theme-forest #view-calendar,#view-calendar,body.theme-forest .app-header,.app-header{background:#f4f2f7!important}#brand-text{color:#302c3c!important}#brand-text .hn-house-name{color:#86709b!important}.hn-people .on .hn-face{outline-color:#715697}.hn-text-link{color:#715697}body.acct-design #subsidy-seg .seg-tab.active,body.acct-design #subsidy-scope .scope-chip.active{background:#715697;border-color:#715697;color:#fff}.hn-category{background:var(--review-category)!important;color:#fff}.tab-btn.active,.nav-tab.active{color:#715697}
-.gr-home-link{background:#e9e1f3!important;border-color:#715697!important;color:#715697!important}.gr-home-link strong{color:#715697!important}.gr-home-link small{color:#302c3c!important}
-#subsidy-seg .seg-tab,#subsidy-scope .scope-chip{color:#715697!important;background:#fff!important;border-color:#715697!important}
-#subsidy-seg .seg-tab.active,#subsidy-scope .scope-chip.active{background:#715697!important;color:#fff!important;border-color:#715697!important}
-#subsidy-seg .seg-tab.active .seg-n{color:#fff!important;background:rgba(255,255,255,.18)!important}
-.prov-tag.prov-nation,.prov-tag.prov-region{background:#e9e1f3!important;color:#715697!important}
-
 #subsidy-seg,#subsidy-seg .seg-tab,#subsidy-scope .scope-chip{border-radius:8px!important}
 
-/* Wider home aligned with the calendar, quieter left-aligned service title. */
 .app-header{padding-left:16px!important;padding-right:16px!important}
 #brand-text{font-size:20px!important;text-align:left!important;letter-spacing:-.6px}
-#brand-text .hn-house-name{color:var(--hn-house-color,#86709b)!important}
 #tab-home{padding-left:16px!important;padding-right:16px!important}
-body.acct-design.acct-36 #tab-checklist>#hn-family-tasks-tab{display:block!important}
-#tab-checklist:has(#hn-family-tasks-tab)>#a36-todo-box{display:none!important}
 
 /* Match home to the calendar's outer container instead of adding a second inset. */
 #tab-home{padding-left:0!important;padding-right:0!important}
@@ -63,21 +52,3 @@ body.acct-design #subsidy-seg .seg-tab,body.acct-design #subsidy-scope .scope-ch
 body.acct-design #subsidy-seg .seg-tab.active,body.acct-design #subsidy-scope .scope-chip.active{background:#ede2d1!important;color:#24252a!important;border-color:#e1d9cb!important}
 body.acct-design #subsidy-seg .seg-tab.active .seg-n{background:#e3d4be!important;color:#24252a!important}
 #us-add-slot .us-add,.us-btn.us-add{background:#ede2d1!important;border-color:#e1d9cb!important;color:#24252a!important}
-
-/* Approved onboarding: wide sand circle + lavender circle, white surface. */
-body:has(#view-landing.acct-on:not(.hidden)){background:#fff!important}
-#view-landing.acct-on{--nd-ob-bg:#fff;--nd-ob-circle1:#eee1cf;--nd-ob-circle2:#e8ddf3;--nd-indigo:#715697;--c-active:#715697;--c-primary:#715697;--text:#302c3c;--text-muted:#797281;background:#fff!important}
-#view-landing.acct-on .acct-ob1-top{background:#fff!important}
-#view-landing.acct-on .acct-ob1-top::before{width:300px;height:300px;right:-160px;top:-130px;background:#eee1cf}
-#view-landing.acct-on .acct-ob1-top::after{background:#e8ddf3}
-#view-landing.acct-on .acct-logo-w{color:#715697}
-#view-landing.acct-on .acct-btn-primary{background:#715697!important;color:#fff!important;border-color:#715697!important;border-radius:8px}
-#view-landing.acct-on .acct-btn-text{color:#715697!important}
-#modal-content .acct-form:is([data-acct-form="signup"],[data-acct-form="login"]){--accent:#715697;--c-active:#715697;--text:#302c3c;--on-accent:#fff;color:#302c3c}
-#modal-content .acct-form:is([data-acct-form="signup"],[data-acct-form="login"]) .acct-input{background:#fff;border:1px solid #ded8e5;border-radius:7px;padding:12px;color:#302c3c}
-#modal-content .acct-form:is([data-acct-form="signup"],[data-acct-form="login"]) .acct-btn-primary,#modal-content .acct-form[data-acct-form="login"] .btn-complete{background:#715697!important;border-color:#715697!important;color:#fff!important;border-radius:8px}
-#modal-content .acct-form:is([data-acct-form="signup"],[data-acct-form="login"]) .acct-radio{border-radius:7px;background:#fff;border:1px solid #ded8e5;color:#302c3c}
-#modal-content .acct-form:is([data-acct-form="signup"],[data-acct-form="login"]) .acct-radio[aria-checked="true"]{background:#e9e1f3;border-color:#b9a6d3;color:#574074}
-#home-body .hn-schedule-date{color:#a5524a}
-#home-body .hn-timeline time{color:#655f70!important}
-#brand-text .hn-house-name{color:#715697!important}

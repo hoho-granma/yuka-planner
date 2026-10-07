@@ -116,17 +116,17 @@ test("G14-5 혜택 상세: 머리(라벨·제목) + 상태 카드(신청 전/신
     vm.runInContext(src + ";globalThis.f = acctDesignSubsidy;", sb);
     sb.f(box);
     sb.f(box); // 두 번 불러도 한 번만(중복 방지)
-    return { top: box.children.map((n) => n.className || n.tag), head: box.children[0].children.map((n) => n.className || n.tag), status: box.children[1].children.map((n) => n.className || n.tag).concat(box.children[1].children[0].textContent), box, nodes };
+    return { top: box.children.map((n) => n.className || n.tag), head: box.children[0].children.map((n) => n.className || n.tag), status: box.children[1].children.map((n) => n.className || n.tag).concat(box.children[1].children[0] ? [box.children[1].children[0].textContent] : []), box, nodes };
   };
   const a = run(false, false);
-  assert.deepStrictEqual(a.top, ["acct-sub-head", "acct-sub-status", "detail-row", "btn-official", "btn-close"]);
+  assert.deepStrictEqual(a.top, ["acct-sub-head", "acct-sub-status", "detail-row", "btn-official", "btn-close", "apply-choice"]);
   assert.deepStrictEqual(a.head, ["cat-badge", "prov-tag detail-tag", "h3"]);
-  assert.deepStrictEqual(a.status, ["strong", "apply-choice", "신청 전이에요"]);
+  assert.deepStrictEqual(a.status, []);
   const d = run(true, false);
   assert.deepStrictEqual([d.status[0], d.status[1], d.status[d.status.length - 1]], ["strong", "detail-row completion-row", "신청 완료"]);
-  assert.ok(d.nodes.choice.parent === d.box.children[1] && d.nodes.comp.parent === d.box.children[1], "확인일·버튼 요소가 그대로 옮겨졌다");
+  assert.ok(d.nodes.choice.parent === d.box && d.nodes.comp.parent === d.box.children[1], "확인일·버튼 요소가 그대로 옮겨졌다");
   const n = run(false, true);
-  assert.deepStrictEqual([n.status[1], n.status[n.status.length - 1]], ["btn-complete", "해당 없음으로 표시했어요"]);
+  assert.deepStrictEqual([n.status[0], n.status[n.status.length - 1]], ["strong", "해당 없음으로 표시했어요"]);
   assert.ok(/body\.acct-design \.modal-panel \.acct-sub-head \{[^}]*background: var\(--c-ink\)/.test(g14) && /\.acct-sub-status \{ position: relative; margin: -20px 0 8px/.test(g14));
 });
 console.log(`\n${passed}개 통과`);

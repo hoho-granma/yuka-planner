@@ -227,6 +227,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     const log = { closed: 0 };
     const ad = fakeAdapter(adapterOver);
     const sb = {
+      charProfiles: new Map(), charProfileLoads: new Set(),
       newChildMode: false, // G16: acctRestore 가 sync 없이도 acctGoHome 을 거친다
       console, window: { FEATURES: { accounts: flag !== false } }, AccountView: AV, AuthService: { create: () => AS.create({ features: () => ({ accounts: true }), adapter: ad }), MSG: AS.MSG, normCode: AV.normCode },
       el: (id) => els[id] || null, closeDetail: () => { log.closed++; }, hh: { hid: null }, HouseholdSync: { getStatus: () => ({ pending: 2 }) },

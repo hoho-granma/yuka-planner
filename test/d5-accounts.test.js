@@ -29,7 +29,7 @@ function env({ flag = true, profile = null, account = null, user = null, emptySt
   ["home", "calendar", "record", "subsidy", "checklist"].forEach((t) => { els["tab-" + t] = { classList: cl() }; });
   const log = { register: 0, landing: 0, districts: [], closed: 0 };
   const authAd = { createUser: async (e) => ({ uid: "u1", email: e, displayName: "" }), signIn: async (e) => ({ uid: "u1", email: e }), signOut: async () => {}, sendReset: async () => {}, deleteUser: async () => {}, updateDisplayName: async (u, n) => ({ ...u, displayName: n }), onChange: () => () => {} };
-  const sb = { console, Date, JSON, Promise, window: { FEATURES: { accounts: flag }, scrollTo() {} }, AccountView: AV,
+  const sb = { charProfiles: new Map(), charProfileLoads: new Set(), console, Date, JSON, Promise, window: { FEATURES: { accounts: flag }, scrollTo() {} }, AccountView: AV,
     AuthService: { create: () => AS.create({ features: () => ({ accounts: true }), adapter: authAd }), MSG: AS.MSG },
     HouseholdSync: { getStatus: () => ({ pending: 0 }), flush: async () => {}, getMirror: () => null, leaveLocal: () => ({ ok: true }) }, HouseholdView: { isChildLinked: () => false, mergeChildren: () => [] },
     el: (id) => els[id] || null, closeDetail: () => { log.closed++; }, hh: { hid: null, code: null }, hhRender() {}, hhLeaveLocal() {}, hhSetJoined() {},
@@ -74,17 +74,17 @@ function env({ flag = true, profile = null, account = null, user = null, emptySt
     e.acct.mode = "signup"; e.acct.form = {};
     await e.click({ action: "next-step" });
     assert.deepStrictEqual([e.acct.form.step, Object.keys(e.acct.errors).sort()], [undefined, ["displayName", "email", "password"]], "1단계 오류만(자녀 유무·역할 오류는 아직 안 나옴)");
-    assert.ok(e.sheet.innerHTML.includes("1 / 3 단계") && e.sheet.innerHTML.includes("계정을 만들어요") && e.sheet.innerHTML.includes('data-acct-action="next-step"') && !e.sheet.innerHTML.includes("submit-signup"));
+    assert.ok(e.sheet.innerHTML.includes('data-acct-input="email"') && e.sheet.innerHTML.includes('data-acct-input="familyCode"') && e.sheet.innerHTML.includes('data-acct-action="submit-signup"') && !e.sheet.innerHTML.includes('data-acct-action="next-step"'), "단일 가입 폼은 내부 단계와 관계없이 모든 입력을 유지한다");
     Object.assign(e.acct.form, { email: "a@b.co", password: "12345678", displayName: "주연" });
     await e.click({ action: "next-step" });
     assert.deepStrictEqual([e.acct.form.step, Object.keys(e.acct.errors)], [2, []]);
-    assert.ok(e.sheet.innerHTML.includes("2 / 3 단계") && e.sheet.innerHTML.includes("누가 함께 쓰나요?") && e.sheet.innerHTML.includes('data-acct-radio="situation"') && e.sheet.innerHTML.includes('data-acct-input="familyCode"') && e.sheet.innerHTML.includes('data-acct-action="prev-step"'));
+    assert.ok(e.sheet.innerHTML.includes('data-acct-input="email"') && e.sheet.innerHTML.includes('data-acct-input="familyCode"') && e.sheet.innerHTML.includes('data-acct-action="submit-signup"') && !e.sheet.innerHTML.includes('data-acct-action="next-step"'), "단일 가입 폼은 내부 단계와 관계없이 모든 입력을 유지한다");
     await e.click({ action: "next-step" });
     assert.deepStrictEqual([e.acct.form.step, Object.keys(e.acct.errors).sort()], [2, ["role", "situation"]], "자녀 유무·역할을 골라야 넘어간다");
     Object.assign(e.acct.form, { situation: "HAS_CHILD", role: "MOM" });
     await e.click({ action: "next-step" });
     assert.strictEqual(e.acct.form.step, 3);
-    assert.ok(e.sheet.innerHTML.includes("3 / 3 단계") && e.sheet.innerHTML.includes('data-acct-input="province"') && e.sheet.innerHTML.includes('data-acct-action="submit-signup"') && !e.sheet.innerHTML.includes('data-acct-action="next-step"'));
+    assert.ok(e.sheet.innerHTML.includes('data-acct-input="email"') && e.sheet.innerHTML.includes('data-acct-input="familyCode"') && e.sheet.innerHTML.includes('data-acct-action="submit-signup"') && !e.sheet.innerHTML.includes('data-acct-action="next-step"'), "단일 가입 폼은 내부 단계와 관계없이 모든 입력을 유지한다");
     await e.click({ action: "prev-step" });
     assert.deepStrictEqual([e.acct.form.step, Object.keys(e.acct.errors)], [2, []]);
     e.acct.form.step = 1; await e.click({ action: "prev-step" });
@@ -95,9 +95,9 @@ function env({ flag = true, profile = null, account = null, user = null, emptySt
     const e = env();
     await e.click({ action: "open-join" });
     assert.deepStrictEqual([e.acct.form.join, e.acct.form.step], [true, 2]);
-    assert.ok(e.sheet.innerHTML.includes("2 / 2 단계") && e.sheet.innerHTML.includes("어느 가족에 합류하나요?") && e.sheet.innerHTML.includes('data-acct-action="submit-signup"') && e.sheet.innerHTML.includes('data-acct-action="join-off"'));
+    assert.ok(e.sheet.innerHTML.includes('data-acct-input="email"') && e.sheet.innerHTML.includes('data-acct-input="familyCode"') && e.sheet.innerHTML.includes('data-acct-action="submit-signup"') && !e.sheet.innerHTML.includes('data-acct-action="next-step"'), "단일 가입 폼은 내부 단계와 관계없이 모든 입력을 유지한다");
     await e.click({ action: "prev-step" });
-    assert.ok(e.sheet.innerHTML.includes("1 / 2 단계") && e.sheet.innerHTML.includes('data-acct-input="email"'));
+    assert.ok(e.sheet.innerHTML.includes('data-acct-input="email"') && e.sheet.innerHTML.includes('data-acct-input="familyCode"') && e.sheet.innerHTML.includes('data-acct-action="submit-signup"') && !e.sheet.innerHTML.includes('data-acct-action="next-step"'), "단일 가입 폼은 내부 단계와 관계없이 모든 입력을 유지한다");
     Object.assign(e.acct.form, { email: "a@b.co", password: "12345678", displayName: "민" });
     await e.click({ action: "next-step" });
     assert.strictEqual(e.acct.form.step, 2);
@@ -111,7 +111,7 @@ function env({ flag = true, profile = null, account = null, user = null, emptySt
     e.acct.mode = "signup"; e.acct.form = { step: 3, situation: "HAS_CHILD", role: "MOM", password: "12345678", displayName: "주연" }; // 이메일 누락
     await e.click({ action: "submit-signup" });
     assert.deepStrictEqual([e.acct.form.step, Object.keys(e.acct.errors)], [1, ["email"]]);
-    assert.ok(e.sheet.innerHTML.includes("1 / 3 단계"));
+    assert.ok(e.sheet.innerHTML.includes('data-acct-input="email"') && e.sheet.innerHTML.includes('data-acct-input="familyCode"') && e.sheet.innerHTML.includes('data-acct-action="submit-signup"') && !e.sheet.innerHTML.includes('data-acct-action="next-step"'), "단일 가입 폼은 내부 단계와 관계없이 모든 입력을 유지한다");
   });
   console.log("가입 intent");
   await test("가입 의도(저장값): situation·role·지역만 있고 아이 이름·생년월일·기관·비밀번호는 없다, 지역 없이도 가입된다", async () => {

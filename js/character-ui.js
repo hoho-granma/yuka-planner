@@ -2,8 +2,8 @@
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.CharacterUI=factory();})(typeof window==='object'?window:globalThis,function(){
 'use strict';
 const base='icons/family/';
-const categories={DAD:['회식','친구약속','회사','운동','기타'],MOM:['회사','친구약속','가족','운동','기타'],CHILD:['학교','학원','병원','놀이','기타'],FAMILY:['여행','외식','행사','운동','기타'],OTHER:['약속','가족','병원','운동','기타']};
-const colors=['#b14d21','#3876a0','#7e5bb0','#427e56','#77716b'];
+const categories={DAD:['회식','친구약속','회사','운동','가족','기타'],MOM:['회사','친구약속','가족','운동','취미','기타'],CHILD:['학교','학원','유치원','병원','놀이','기타'],FAMILY:['여행','외식','행사','운동','모임','기타'],OTHER:['약속','가족','병원','운동','모임','기타']};
+const colors=['#b14d21','#3876a0','#7e5bb0','#427e56','#77716b','#77717f'];
 function normalizeGender(value){const v=String(value||'').trim().toLowerCase();return ['f','female','girl','여아','여자'].includes(v)?'female':['m','male','boy','남아','남자'].includes(v)?'male':null;}
 function avatar(role,gender){gender=normalizeGender(gender);return base+(role==='MOM'?'mom.jpg':role==='DAD'?'dad.jpg':role==='CHILD'?(gender==='male'?'boy.png':gender==='female'?'child.jpg':'child-neutral.svg'):'family-neutral.svg');}
 function familyAvatar(children){children=children.map(c=>({...c,gender:normalizeGender(c.gender)}));if(children.length===1&&children[0].gender==='male')return base+'family-boy-final.png';if(children.length===1&&children[0].gender==='female')return base+'family-girl-final.png';if(children.length===2&&children.some(c=>c.gender==='male')&&children.some(c=>c.gender==='female'))return base+'family-four-final.png';return base+'family-neutral.svg';}

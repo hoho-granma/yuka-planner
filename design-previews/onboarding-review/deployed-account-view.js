@@ -491,7 +491,6 @@
     const account = `${input("email", MSG.emailLabel, "email", f.email || "", 'inputmode="email" autocapitalize="off"')}${err(e, "email")}
       ${input("password", MSG.passwordLabel, "password", f.password || "", 'autocomplete="new-password"')}${err(e, "password")}
       ${input("displayName", MSG.nameLabel, "text", f.displayName || "", 'maxlength="20"')}${err(e, "displayName")}`;
-    if(s.unified===true){return `<div class="acct-form acct-signup-unified" data-acct-form="signup"><h3>${esc(MSG.signupTitle||'회원가입')}</h3>${f.fromLink===true?`<p class="fine-print">${esc(MSG.joinLinkLead)}</p>`:''}${account}${situation}${role}${codeField}${region}${s.error?`<p class="acct-err">${esc(s.error)}</p>`:''}${join?`<button type="button" class="acct-link" data-acct-action="join-off">${esc(MSG.onboard.joinOff)}</button>`:''}<button type="button" class="acct-btn-primary" data-acct-action="submit-signup"${s.busy?' disabled':''}>${esc(s.busy?MSG.signingUp:MSG.submitSignup)}</button><button type="button" class="acct-link" data-acct-action="open-login">${esc(MSG.switchToLogin)}</button></div>`;}
     const q = step === 1 ? MSG.stepQ1 : step === 2 ? (joining ? MSG.stepQ2Join : MSG.stepQ2) : MSG.stepQ3;
     const lead = step === 1 ? (f.fromLink === true ? MSG.joinLinkLead : joining ? "" : MSG.signupLead) : step === 2 && join && f.fromLink !== true ? MSG.onboard.joinSheetLead : "";
     const body = step === 1 ? account : step === 2 ? `${situation}${role}${codeField}` : region;

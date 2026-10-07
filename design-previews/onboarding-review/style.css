@@ -1,0 +1,32 @@
+*{box-sizing:border-box}body{margin:0;background:#eeedf1;color:#302c3c;font:14px/1.6 -apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif}main{max-width:1390px;margin:auto;padding:30px 28px 60px}.studio-head{display:flex;align-items:center;justify-content:space-between;gap:20px}.studio-head h1{font-size:27px;letter-spacing:-1px;margin:0}.studio-head p{color:#757080;margin:6px 0}.eyebrow{font-size:11px;letter-spacing:2px}.studio-head a{color:#715697;text-decoration:none;white-space:nowrap}#designs{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0}#designs button{padding:11px 15px;border:1px solid #d8d3df;border-radius:8px;background:#fff;font:inherit;cursor:pointer}#designs button[aria-pressed=true]{background:#715697;color:white}.toolbar{display:flex;justify-content:space-between;gap:20px;align-items:center;background:#fff;border-radius:12px;padding:18px;margin-bottom:22px}.toolbar h2{font-size:18px;margin:0}.toolbar p{margin:4px 0;color:#797281}.toolbar select{display:block;margin-top:6px;padding:10px;border:1px solid #ddd;border-radius:8px;font:inherit}.screens{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;align-items:start}.screens section>h3{font-size:14px;margin:0 0 10px}.screens section>h3 small{font-size:11px;font-weight:400;color:#82788c}.phone{min-height:730px;border:1px solid #ddd6e5;border-radius:20px;overflow:hidden;background:#f4f2f7;box-shadow:0 12px 32px #302c3c08}.phone button{cursor:pointer;font-family:inherit}
+#intro #view-landing.acct-on{width:100%;max-width:none;margin:0;padding:0;min-height:730px;--nd-ob-bg:var(--preview-bg);--nd-ob-circle1:var(--preview-soft);--nd-ob-circle2:color-mix(in srgb,var(--preview-accent) 18%,var(--preview-bg));background:var(--preview-bg)}
+#intro #acct-landing,#intro .acct-main{min-height:730px;background:var(--preview-bg)}
+#intro #view-landing .acct-ob1-top{background:var(--preview-bg)}
+body[data-design=family] #intro #view-landing .acct-ob1-top::before{width:130px;height:130px;right:-30px;top:-35px;opacity:.65}
+body[data-design=family] #intro #view-landing .acct-ob1-top::after{width:70px;height:70px;left:-20px;opacity:.65}
+body[data-design=cards] #intro #view-landing .acct-ob1-top::before{width:300px;height:300px;right:-160px;top:-130px}
+body[data-design=story] #intro #view-landing .acct-ob1-top::before,body[data-design=story] #intro #view-landing .acct-ob1-top::after{background:transparent;border:2px solid var(--preview-soft)}
+body[data-design=minimal] #intro #view-landing .acct-ob1-top::before,body[data-design=minimal] #intro #view-landing .acct-ob1-top::after{opacity:.18}
+#signup,#login{padding:28px 24px;--accent:#715697;--accent-dark:#715697;--c-active:#715697;--c-primary:#715697;--c-select:#e9e1f3;--c-progress:#715697;--on-accent:#fff;--text:#302c3c;--text-muted:#797281;--bg:#f4f2f7;--line:#dcd6e3;color:#302c3c}
+#signup .acct-form,#login .acct-form{background:transparent;padding:0;border:0;box-shadow:none}
+#signup .acct-form h3,#login .acct-form h3{font-size:24px;margin:0 0 24px;letter-spacing:-.6px}
+#signup .acct-field,#login .acct-field{margin:14px 0}
+#signup .acct-field>label,#login .acct-field>label{display:block;font-size:12px;font-weight:650;margin-bottom:6px}
+#signup .acct-input,#login .acct-input{background:#fff;border:1px solid #ded8e5;border-radius:7px;padding:12px;width:100%;font-size:14px;color:#302c3c;min-height:44px}
+#signup .acct-radios{display:flex;gap:6px;flex-wrap:wrap}
+#signup .acct-radio{padding:9px 12px;border:1px solid #ded8e5;border-radius:7px;background:#fff;color:#302c3c;font-size:12px}
+#signup .acct-radio[aria-checked=true]{background:#e9e1f3;border-color:#b9a6d3;color:#574074}
+#signup .acct-btn-primary,#login .btn-complete{background:#715697!important;border:1px solid #715697!important;color:#fff!important;border-radius:8px!important;width:100%;padding:13px;font-size:14px;font-weight:700;margin-top:18px}
+#signup .acct-link,#login .acct-link,#login .btn-text,#login .btn-close{background:transparent!important;border:0;color:#715697!important;border-radius:7px;font-size:12px;padding:12px}
+#signup .fine-print,#login .fine-print{font-size:11px;color:#797281}
+#feedback{color:#715697}@media(max-width:1050px){.screens{grid-template-columns:repeat(3,360px);overflow-x:auto;padding-bottom:24px}.toolbar{align-items:flex-start}}@media(max-width:600px){main{padding:20px 14px}.studio-head,.toolbar{display:block}.studio-head h1{font-size:23px}.toolbar label{display:block;margin-top:14px}#designs button{font-size:12px;padding:8px}.screens{grid-template-columns:repeat(3,calc(100vw - 42px));gap:14px}}
+/* Fixed approved layout: only decorative circle colors vary. */
+body:has(#view-landing.acct-on:not(.hidden)){background:#eeedf1}
+#intro #view-landing.acct-on{--nd-ob-bg:#fff;--nd-ob-circle1:var(--circle-top);--nd-ob-circle2:var(--circle-bottom);--nd-indigo:#715697;--c-active:#715697;--c-primary:#715697;--on-accent:#fff;--text:#302c3c;--text-muted:#797281}
+#intro #view-landing .acct-ob1-top::before{background:var(--circle-top)}
+#intro #view-landing .acct-ob1-top::after{background:var(--circle-bottom)}
+#intro #view-landing .acct-logo-w{color:#715697}
+#intro #view-landing .acct-btn-primary{background:#715697!important;color:#fff!important;border-color:#715697!important;border-radius:8px}
+#intro #view-landing .acct-btn-text{color:#715697!important}
+.circle-swatches{display:flex;gap:4px;justify-content:center;margin-bottom:5px}.circle-swatches i{width:20px;height:20px;border-radius:50%;border:1px solid #ded8e5}
+#designs button{font-size:12px;padding:10px 13px}#designs button[aria-pressed=true]{background:#f0eaf6;color:#574074;border-color:#715697}

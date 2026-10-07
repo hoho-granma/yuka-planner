@@ -1582,7 +1582,7 @@ body.acct-design .acct-cs-save { width: 100%; margin-top: 0; }
 }
 /* ===== G22: 36개월 이상 아이의 메뉴(4탭·메모장형 할 일·날짜 하프 시트) — 모두 body.acct-design 범위 ===== */
 body.acct-design #a36-todo-box { display: none; }
-body.acct-design.acct-36 #tab-checklist > :not(#a36-todo-box):not(#hn-family-tasks-tab) { display: none !important; }
+body.acct-design.acct-36 #tab-checklist > :not(#a36-todo-box) { display: none !important; }
 body.acct-design.acct-36 #a36-todo-box { display: block; position: relative; }
 body.acct-design .a36-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 10px; }
 body.acct-design .a36-head h2 { margin: 0; font-size: 20px; font-weight: 800; }

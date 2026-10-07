@@ -70,7 +70,7 @@
   function markup(prefix, state) {
     const { sTxt, eTxt } = rangeLabel(state);
     const f = (field, txt) => `<button type="button" class="tw-tm${state.active === field ? " on" : ""}" data-tw-field="${field}" aria-pressed="${state.active === field ? "true" : "false"}" aria-label="${esc((field === "start" ? MSG.start : MSG.end) + " " + txt)}">${esc(txt)}</button>`;
-    return `<div class="tw" data-tw="${esc(prefix)}"><div class="tw-row">${f("start", sTxt)}<b>~</b>${f("end", eTxt)}</div><div class="tw-wheel">${PARTS.map((p) => colHtml(state, p)).join("")}</div>${state.warn ? `<p class="tw-warn" role="alert">${esc(state.warn)}</p>` : ""}<p class="tw-hint">${esc(MSG.hint)}</p></div>`;
+    return `<div class="tw" data-tw="${esc(prefix)}"><div class="tw-row">${f("start", sTxt)}<b>~</b>${f("end", eTxt)}</div><div class="tw-wheel">${PARTS.map((p) => colHtml(state, p)).join("")}</div>${state.warn ? `<p class="tw-warn" role="alert">${esc(state.warn)}</p>` : ""}<p class="tw-hint">${esc(MSG.hint)}</p><button type="button" class="hn-time-confirm" data-tw-confirm>저장</button></div>`;
   }
 
   /**
