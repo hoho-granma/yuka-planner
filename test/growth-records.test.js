@@ -43,3 +43,18 @@ test("교육트렌드의 학원 일정과 같은 필터로 활동 연결, 중복
   assert.deepEqual(G.linkedActivities(records, "scope", "school", mine.lessons), []);
   assert.deepEqual(G.linkedActivities(records, "scope", "academy", []), ["피아노"]);
 });
+test('Line & Leaf: 활동 중복은 한 잎, 빈 카테고리는 서브잎 없음, 아이 범위 유지', () => {
+  const records = [G.prepare(base, 'a', 1), G.prepare({...base,title:'다른 순간'}, 'a', 2), G.prepare({...base,group:'home',activity:'요리'}, 'other', 3)];
+  const html = G.treeMarkup(records,'a',[{title:'피아노'},{title:'독서'}],'수아','academy','');
+  assert.equal((html.match(/data-gr-activity=/g)||[]).length,2);
+  assert.ok(html.includes('data-gr-group="home"') && html.includes('0개 활동'));
+  assert.ok(!html.includes('data-gr-leaf-group="home"'));
+  assert.ok(!html.includes('요리'));
+  assert.ok(html.includes('tabindex="0"'));
+  assert.ok(G.prepare({...base,group:'home'},'a',4));
+});
+test('Line & Leaf: 활동 이름은 마크업으로 실행되지 않음',()=>{
+  const html=G.treeMarkup([],'a',[{title:'<img src=x onerror=alert(1)>'}],'수아','academy','');
+  assert.ok(!html.includes('<img src=x'));
+  assert.ok(html.includes('&lt;img'));
+});

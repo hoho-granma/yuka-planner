@@ -4168,7 +4168,7 @@
     if (!btn || !label) return;
     const hasUpdate = !!latest && !!RUNNING_VERSION && latest !== RUNNING_VERSION;
     btn.classList.toggle("has-update", hasUpdate);
-    label.textContent = hasUpdate ? `새 버전 v${latest}` : RUNNING_VERSION ? `v${RUNNING_VERSION}` : "";
+    label.textContent = RUNNING_VERSION ? `v${RUNNING_VERSION}` : "";
     btn.setAttribute("aria-label", hasUpdate ? `새 버전 v${latest}이 있어요. 눌러서 업데이트` : "최신 버전으로 새로고침");
   }
 
@@ -5285,6 +5285,12 @@
     modalMode = "profile";
     const extra = occ.recurring ? { recurrence: doc.recurrence, exceptionCount: UserSchedule.exceptionCount(doc) } : undefined;
     el("modal-content").innerHTML = UserScheduleView.renderDetail(UserScheduleView.cardData(occ, usLinks(), extra), acctEnabled() ? { dots: UserScheduleView.detailDots(occ, usLinks()) } : undefined);
+    const detail = el("modal-content").querySelector(".us-detail");
+    if (detail && acctEnabled()) {
+      detail.style.setProperty("--hn-detail-person", charTint(charPerson(charOccOwner(occ))));
+      detail.querySelectorAll(".detail-row").forEach(row => { if (row.querySelector(".label")?.textContent.trim() === "대상") row.remove(); });
+      detail.querySelectorAll('[data-us-action="close"]').forEach(button => button.remove());
+    }
     el("detail-modal").classList.remove("hidden");
   }
   function usOpenForm(id, dateIso, opts) {
@@ -7751,17 +7757,17 @@
     const adults=HouseholdView.visibleMembers(usMembers()).filter(m=>pending||m.uid||m.memberId===usMeId()||!acctEnabled()).map(m=>({key:'MEMBER:'+m.memberId,id:m.memberId,role:m.role,name:m.label||'가족'}));
     return [...kids,...adults,{key:'FAMILY',id:'FAMILY',role:'FAMILY',name:'가족',src:CharacterUI.familyAvatar(kids)}];
   }
-  const charTint=p=>p.role==='MOM'?'#c2c0e5':p.role==='DAD'?'#a4cedc':p.role==='CHILD'?(CharacterUI.normalizeGender(p.gender)==='male'?'#b6dfcd':CharacterUI.normalizeGender(p.gender)==='female'?'#f8eaab':'#eddfcf'):'#fecca9';
+  const charTint=p=>p.role==='MOM'?'#fecca9':p.role==='DAD'?'#a4cedc':p.role==='CHILD'?(CharacterUI.normalizeGender(p.gender)==='male'?'#b6dfcd':CharacterUI.normalizeGender(p.gender)==='female'?'#f8eaab':'#eddfcf'):'#c2c0e5';
   const charImage=p=>`<img class="hn-face" src="${esc(p&&p.src||CharacterUI.avatar(p&&p.role,p&&p.gender))}" alt="${esc(p&&p.name||'가족')}" />`;
   function charPerson(key){return charPeople(true).find(p=>p.key===key)||{key,role:'OTHER',name:'가족'};}
   function charOccOwner(o){const d=usDocById(o.scheduleId)||o;return d.scope==='CHILD'&&d.childKeys&&d.childKeys.length?'CHILD:'+d.childKeys[0]:d.assigneeMemberId?'MEMBER:'+d.assigneeMemberId:'FAMILY';}
-  function charRow(o){return `<button type="button" class="hn-timeline" data-char-schedule="${esc(o.scheduleId)}" data-us-id="${esc(o.scheduleId)}" data-us-key="${esc(o.key||'')}"><time>${esc(o.allDay?'종일':o.startTime||'시간 미정')}</time>${charImage(charPerson(charOccOwner(o)))}<strong>${esc(o.title)}</strong></button>`;}
+  function charRow(o){return `<button type="button" class="hn-timeline" data-char-schedule="${esc(o.scheduleId)}" data-us-id="${esc(o.scheduleId)}" data-us-key="${esc(o.key||'')}"><time>${esc(o.allDay?'종일':o.startTime||'시간 미정')}</time>${charImage(charPerson(charOccOwner(o)))}<strong>${esc(o.title)}${CharacterUI.duration(o.startTime,o.endTime,o.allDay)?` <span class="hn-duration">(${esc(CharacterUI.duration(o.startTime,o.endTime,o.allDay))})</span>`:''}</strong></button>`;}
   function charTodoRows(home){if(!usActive())return '';const now=toISODate(new Date()), people=charPeople(false);return CharacterUI.list(HouseholdSync.getTodos(hh.hid).map(t=>{const l=usLinks().find(l=>l.familyCode===t.childKey);return !t.ownerKey&&l?{...t,ownerKey:'CHILD:'+l.childKey}:t;}),people,now,home).map(t=>{const dl=CharacterUI.deadline(t.dueDate,now);return `<div class="hn-task${t.done?' done':''}"><button class="hn-check" data-char-toggle="${esc(t.id)}" aria-label="${t.done?'완료 취소':'완료'}">${t.done?'✓':''}</button>${charImage(charPerson(CharacterUI.owner(t)))}${dl.text?`<time>${esc(dl.text)}</time>`:''}<button class="hn-task-title" data-char-edit="${esc(t.id)}">${esc(t.title)}</button>${dl.tomorrow?'<b class="hn-d1">D-1</b>':''}${t.category?`<span class="hn-category" style="background:${CharacterUI.colors[(CharacterUI.categories[charPerson(CharacterUI.owner(t)).role]||CharacterUI.categories.OTHER).indexOf(t.category)>=0?(CharacterUI.categories[charPerson(CharacterUI.owner(t)).role]||CharacterUI.categories.OTHER).indexOf(t.category):4]}">${esc(t.category)}</span>`:''}</div>`;}).join('');}
   function charTodoSection(home){return `<section class="card hn-tasks" id="hn-family-tasks${home?'':'-tab'}"><div class="hn-section-head"><h3>우리 가족 할일</h3><button class="hn-add-round" data-char-add aria-label="할일 추가">+</button></div>${charTodoRows(home)||'<p class="fine-print">등록된 할일이 없어요.</p>'}</section>`;}
   const charHomeBase=renderHome;
   renderHome=function(){charHomeBase();if(!profile||!acctEnabled())return;updateBrandText();const wrap=el('home-body');if(!wrap)return;wrap.querySelectorAll('#a36-home-todo').forEach(n=>n.remove());let block=wrap.querySelector('#hn-family-tasks');if(block)block.remove();if(acct36Active())wrap.insertAdjacentHTML('beforeend',charTodoSection(true));const growth=wrap.querySelector('.gr-home-link');if(growth)wrap.appendChild(growth);wrap.querySelectorAll('#ns-banner').forEach(n=>n.remove());wrap.querySelectorAll('.home-child-line').forEach(n=>n.remove());wrap.querySelectorAll('.hn-home-date').forEach(n=>n.remove());if(!acct36Active()){const family=wrap.querySelector('.hn-schedules');if(family)wrap.prepend(family);}charHeader();};
   const charBrandBase=updateBrandText;
-  updateBrandText=function(){charBrandBase();const b=el('brand-text');if(b&&profile)b.textContent=`한눈육아 – ${childDisplayName()}네집`;};
+  updateBrandText=function(){charBrandBase();const b=el('brand-text');if(b&&profile)b.innerHTML=`한눈육아 <span class="hn-family-name">· ${esc(childDisplayName())}네집</span>`;};
   function charHeader(){const head=document.querySelector('.app-header');if(!head||!acctEnabled())return;let b=el('hn-profile');if(!b){b=document.createElement('button');b.id='hn-profile';b.className='hn-profile';b.setAttribute('aria-label','내 프로필');b.onclick=()=>acctProfileSheet();head.appendChild(b);}const m=charPeople(true).find(p=>p.key===localStorage.getItem('hn_selected_profile'))||charPeople(true).find(p=>p.key==='MEMBER:'+usMeId())||{role:'MOM',name:'내 프로필'};b.innerHTML=charImage(m);}
   usHomeCardHtml=function(){if(!usActive())return '';const iso=toISODate(new Date()), model=usBuildModel(iso,iso,{scope:'ALL',showAuto:false});const day=model.days.get(iso);const rows=day?day.user:[];return `<section class="card hn-schedules"><div class="hn-section-head"><h3><span class="hn-schedule-date">${new Date().getMonth()+1}/${new Date().getDate()}(${['일','월','화','수','목','금','토'][new Date().getDay()]})</span> 우리 가족 일정</h3><button class="hn-text-link" data-char-calendar>가족캘린더 보기 →</button></div>${rows.map(charRow).join('')||'<p class="fine-print">오늘 등록된 일정이 없어요.</p>'}</section>`;};
   const charChecklistBase=renderChecklistTab;

@@ -4,7 +4,7 @@ const Todos=require('../js/child-todos');
 assert.match(UI.avatar('CHILD','male'),/boy.png$/);
 assert.match(UI.avatar('CHILD','female'),/child.jpg$/);
 assert.match(UI.avatar('CHILD',null),/neutral.svg$/);
-assert.match(UI.familyAvatar([{gender:'male'},{gender:'female'}]),/four-final.png$/);
+assert.match(UI.familyAvatar([{gender:'male'},{gender:'female'}]),/four-lavender.png$/);
 assert.match(UI.familyAvatar([{gender:'male'},{gender:'male'}]),/neutral.svg$/);
 assert.equal(UI.title('안녕하세요 학부모님\n피아노 교재 챙겨주세요\n내일 수업'), '피아노 교재 챙겨주세요');
 assert.equal(UI.title('리드101'),'리드101');
@@ -22,5 +22,12 @@ console.log('PASS: character assets, summary, family sorting, deadlines, legacy/
 
 assert.match(UI.avatar('CHILD','F'),/child.jpg$/);
 assert.match(UI.avatar('CHILD','M'),/boy.png$/);
-assert.match(UI.familyAvatar([{gender:'F'}]),/family-girl-final.png$/);
-assert.match(UI.familyAvatar([{gender:'F'},{gender:'M'}]),/family-four-final.png$/);
+assert.match(UI.familyAvatar([{gender:'F'}]),/family-girl-lavender.png$/);
+assert.match(UI.familyAvatar([{gender:'F'},{gender:'M'}]),/family-four-lavender.png$/);
+const durationAssert = require('node:assert/strict');
+durationAssert.equal(UI.duration('10:30','12:00',false),'1시간 30분');
+durationAssert.equal(UI.duration('10:00','11:00',false),'1시간');
+durationAssert.equal(UI.duration('10:00','10:30',false),'30분');
+durationAssert.equal(UI.duration('10:30','',false),'');
+durationAssert.equal(UI.duration('10:30','12:00',true),'');
+durationAssert.equal(UI.duration('12:00','10:30',false),'');

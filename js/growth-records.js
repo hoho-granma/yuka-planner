@@ -3,7 +3,7 @@
   else root.GrowthRecords = factory();
 })(typeof window !== "undefined" ? window : global, function () {
   "use strict";
-  const GROUPS = [{ id: "school", label: "학교", hint: "학교에서의 하루" }, { id: "academy", label: "학원", hint: "배우는 즐거움" }, { id: "activity", label: "그 외 활동", hint: "새로운 경험" }];
+  const GROUPS = [{ id: "school", label: "학교", hint: "학교에서의 하루" }, { id: "academy", label: "학원", hint: "배우는 즐거움" }, { id: "activity", label: "그 외 활동", hint: "새로운 경험" }, { id: "home", label: "가정 활동", hint: "함께하는 일상" }];
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   function eligible(p, months) { return !!p && p.stage !== "pregnant" && Number.isFinite(months) && months >= 36; }
   function prepare(input, scope, now) {
@@ -22,6 +22,28 @@
   function list(records, scope, group, activity) { return records.filter((r) => r.scope === scope && (!group || r.group === group) && (!activity || r.activity === activity)).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt); }
   function activities(records, scope, group) { return [...new Set(list(records, scope, group).map((r) => r.activity))]; }
   function linkedActivities(records, scope, group, lessons) { return [...new Set((group === "academy" ? (lessons || []).map((l) => l.title).filter(Boolean) : []).concat(activities(records, scope, group)))]; }
+  function treeMarkup(records, scope, lessons, name, selected, activity) {
+    const colors = ["#d8e7f6", "#e5d6fa", "#e3ecd2", "#fbe5d4"];
+    const ink = ["#35587e", "#6c4696", "#526c3c", "#986d4f"];
+    const branches = GROUPS.map((g) => linkedActivities(records, scope, g.id, lessons));
+    const extra = Math.max(0, ...branches.map((a) => a.length - 3)) * 40;
+    const lower = 295 + extra, root = Math.max(414 + extra, lower + 95 + Math.max(branches[2].length, branches[3].length) * 40), height = root + 75;
+    const positions = [[70, 137], [238, 160], [70, lower], [248, lower + 12]];
+    const leaf = (x, y, w, h, fill, label, count, attrs, color, on) => `<g ${attrs} role="button" tabindex="0" aria-label="${esc(label)}${count == null ? "" : ` ${count}개 활동`}" class="gr-svg-leaf${on ? " selected" : ""}"><path d="M${x-w/2} ${y-h/2} Q${x+w/2} ${y-h/2-12} ${x+w/2} ${y} Q${x+w/2} ${y+h/2+9} ${x-w/2} ${y+h/2} Q${x-w/2+11} ${y} ${x-w/2} ${y-h/2}Z" fill="${fill}"/><text x="${x}" y="${y+(count == null ? 4 : -3)}" text-anchor="middle" fill="${color}" class="${count == null ? "gr-sub-label" : "gr-main-label"}">${esc(count == null && label.length > 9 ? label.slice(0,8)+"…" : label)}</text>${count == null ? "" : `<text x="${x}" y="${y+17}" text-anchor="middle" fill="${color}" class="gr-count">${count}개 활동</text>`}</g>`;
+    let paths = `<path d="M176 ${root} Q181 285 180 219" stroke-width="4"/>`;
+    let leaves = "";
+    GROUPS.forEach((g, i) => {
+      const [x,y] = positions[i], left = i % 2 === 0, items = branches[i];
+      paths += `<path d="M176 ${root} Q${left?130:218} ${y+90} ${x} ${y+20}" stroke-width="3"/>`;
+      items.forEach((a,j) => {
+        const sx = left ? 65 : 292, sy = i < 2 ? 33 + j * 40 : lower + 62 + j * 40;
+        paths += `<path d="M${x} ${y+15} Q${left?x-20:x+30} ${sy+15} ${sx} ${sy+7}" stroke-width="1.8"/>`;
+        leaves += leaf(sx, sy, 99, 33, colors[i], a, null, `data-gr-activity="${esc(a)}" data-gr-leaf-group="${g.id}"`, ink[i], selected===g.id&&activity===a);
+      });
+      leaves += leaf(x, y, 124, 87, colors[i], g.label, items.length, `data-gr-group="${g.id}"`, ink[i], selected===g.id&&!activity);
+    });
+    return `<div class="gr-line-tree"><svg viewBox="0 0 360 ${height}" role="group" aria-label="${esc(name)}의 등록 활동 지도"><g class="gr-stems">${paths}<path d="M176 ${root+5} Q142 ${root+20} 123 ${root+30} M176 ${root+5} Q199 ${root+22} 225 ${root+30}"/></g>${leaves}<g transform="translate(176 ${root-7})" aria-hidden="true"><path d="M0 -31 Q-3 -53 -21 -50 Q-26 -34 0 -31 M0 -31 Q2 -54 23 -52 Q28 -36 0 -31" fill="#aacb74"/><ellipse cy="8" rx="15" ry="19" fill="#b9d980"/><circle cy="-12" r="23" fill="#d6e8a9"/><circle cx="-8" cy="-14" r="3" fill="#343d28"/><circle cx="8" cy="-14" r="3" fill="#343d28"/><path d="M-4 -5 Q0 -1 4 -5" fill="none" stroke="#586141" stroke-width="1.5"/><circle cx="-14" cy="-7" r="4" fill="#edbdab"/><circle cx="14" cy="-7" r="4" fill="#edbdab"/></g><text x="176" y="${root+39}" text-anchor="middle" class="gr-child-name">${esc(name)}</text></svg><p class="gr-map-caption">등록된 활동 기준 · 활동 잎을 눌러 기록을 보세요</p></div>`;
+  }
   let dbPromise;
   function db() {
     if (!dbPromise) dbPromise = new Promise((resolve, reject) => {
@@ -46,8 +68,7 @@
       if (!alive) return;
       clearUrls();
       const all = list(records, scope), current = list(records, scope, selected, activity), group = GROUPS.find((g) => g.id === selected), lessons = opts.lessons || [];
-      host.innerHTML = `<div class="gr-page"><header class="gr-heading"><p class="gr-kicker">아이의 경험이 자라는 곳</p><h2>${esc(opts.name)}의 성장기록</h2><p>작은 순간을 모아, 아이만의 이야기를 만들어요.</p></header>
-      <div class="gr-tree" aria-label="학교, 학원, 그 외 활동으로 연결된 성장기록"><svg viewBox="0 0 360 330" preserveAspectRatio="none" aria-hidden="true"><path d="M180 178 Q110 165 67 75 M180 178 Q235 141 294 85 M180 178 Q245 223 292 262 M180 206 Q171 263 180 315"/></svg><span class="gr-leaf gr-leaf-one"></span><span class="gr-leaf gr-leaf-two"></span><div class="gr-child"><span aria-hidden="true">🌱</span><strong>${esc(opts.name)}</strong><small>${loading ? "불러오는 중" : `${all.length}개의 순간`}</small></div>${GROUPS.map((g) => `<button type="button" class="gr-node gr-node-${g.id}${g.id === selected ? " active" : ""}" data-gr-group="${g.id}" aria-pressed="${g.id === selected}"><strong>${g.label}</strong><small>${g.hint}</small><span>${all.filter((r) => r.group === g.id).length}개 기록</span></button>`).join("")}<span class="gr-map-hint">가지를 눌러 활동 기록을 펼쳐보세요</span></div>
+      host.innerHTML = `<div class="gr-page">${treeMarkup(records, scope, lessons, opts.name, selected, activity)}
       <section class="gr-records"><div class="gr-section-head"><h3>${esc(activity || group.label)}의 기록</h3><span>${current.length}개의 순간</span></div><div class="gr-activities" role="group" aria-label="활동별 기록"><button type="button" data-gr-activity="" aria-pressed="${!activity}">전체</button>${linkedActivities(records, scope, selected, lessons).map((a) => `<button type="button" data-gr-activity="${esc(a)}" aria-pressed="${a === activity}">${esc(a)}</button>`).join("")}</div>
       ${selected === "academy" && lessons.length ? `<div class="gr-linked"><strong>교육트렌드에 등록한 학원 일정</strong>${lessons.filter((l) => !activity || l.title === activity).map((l) => `<p>${esc(l.title)} <small>${l.weekly ? `주 ${l.weekly}회` : "반복 없음"}</small></p>`).join("")}<button type="button" class="gr-edit" data-gr-calendar>캘린더에서 일정 보기 →</button><small>수업 일정이 활동으로 연결돼요. 활동 기록은 직접 남겨 주세요.</small></div>` : ""}
       <div class="gr-timeline" aria-live="polite">${loading ? '<p class="gr-empty">기록을 불러오고 있어요.</p>' : failed ? '<p class="gr-empty">기록을 불러오지 못했어요. 저장 공간을 사용할 수 있는지 확인하고 다시 시도해 주세요.</p><button type="button" class="gr-secondary" data-gr-retry>다시 불러오기</button>' : current.length ? current.map((r) => {
@@ -77,17 +98,18 @@
       slot.scrollIntoView({ block: "start" }); form.elements.activity.focus();
     }
     host.onclick = (e) => {
-      const b = e.target.closest("button"); if (!b || !alive) return;
+      const b = e.target.closest("button,[data-gr-group],[data-gr-activity]"); if (!b || !alive) return;
       if (b.hasAttribute("data-gr-group")) { selected = b.dataset.grGroup; activity = ""; render(); }
-      else if (b.hasAttribute("data-gr-activity")) { activity = b.dataset.grActivity; render(); }
+      else if (b.hasAttribute("data-gr-activity")) { activity = b.dataset.grActivity; if (b.dataset.grLeafGroup) selected = b.dataset.grLeafGroup; render(); }
       else if (b.hasAttribute("data-gr-add")) editor();
       else if (b.hasAttribute("data-gr-edit")) editor(records.find((r) => r.id === b.dataset.grEdit));
       else if (b.hasAttribute("data-gr-cancel")) render();
       else if (b.hasAttribute("data-gr-retry")) load();
       else if (b.hasAttribute("data-gr-calendar") && opts.onCalendar) opts.onCalendar();
     };
+    host.onkeydown = (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.matches(".gr-svg-leaf")) { e.preventDefault(); e.target.dispatchEvent(new MouseEvent("click", { bubbles: true })); } };
     async function load() { loading = true; failed = false; render(); try { const result = await read(scope); if (!alive) return; records = result; loading = false; render(); } catch (e) { if (alive) { loading = false; failed = true; render(); } } }
     load();
   }
-  return { GROUPS, eligible, prepare, list, activities, linkedActivities, mount };
+  return { GROUPS, eligible, prepare, list, activities, linkedActivities, treeMarkup, mount };
 });

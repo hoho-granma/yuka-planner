@@ -181,3 +181,14 @@ body.acct-design .hn-detail-sheet .apply-choice #btn-mark-na,body.acct-design .h
 body.acct-design #subsidy-seg{background:#f5eee3!important;border:1px solid #e1d3bd!important;border-radius:8px}
 body.acct-design #subsidy-seg .seg-tab{background:#f5eee3!important;border-color:#e1d3bd!important;color:#24252a!important}
 body.acct-design #subsidy-seg .seg-tab.active{background:#e7d6be!important;border-color:#d7c3a5!important;color:#24252a!important}
+/* Approved compact family calendar and header. */
+#brand-text .hn-family-name{color:#863cdb!important}
+.calendar-grid-v2 .day-cell{min-height:48px!important;padding-top:3px!important;padding-bottom:3px!important}
+.calendar-grid-v2{gap:2px!important}.markers.chips{gap:1px!important;margin-top:2px!important}
+.hn-day-face{height:12px!important;min-height:12px!important;max-height:12px!important;padding:0 2px!important;gap:1px!important;line-height:1!important;border-radius:3px!important}
+.hn-day-face .hn-face{width:10px!important;height:10px!important;min-width:10px!important;border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;border-radius:50%!important;object-fit:cover!important;clip-path:circle(43% at 50% 50%);transform:scale(1.12)}
+.hn-day-face small{font-size:9px!important;line-height:1!important}
+.calendar-grid-v2 .cal-bar{min-height:13px!important;height:13px!important;line-height:13px!important;padding:0 2px!important;font-size:9px!important}
+.hn-timeline time{font-size:12px!important;font-weight:700!important;color:#655f70!important}
+.hn-duration{font-size:12px;font-weight:400;color:#827b89}
+body.acct-design .us-detail>h3{border-top:3px solid var(--hn-detail-person,var(--us-color));padding-top:14px}
