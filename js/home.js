@@ -95,7 +95,7 @@
         return `<button type="button" class="cat-line ${todo.length ? "" : "all-done"}" data-cat="${ctx.esc(c)}"><span class="cl-dot" style="background:${meta.color}"></span><span class="cl-label">${ctx.esc(meta.label)}</span><span class="cl-text">${ctx.esc(text)}</span>${todo.length ? `<span class="cl-n">${todo.length}</span>` : '<span class="cl-n ok">✓</span>'}</button>`;
       })
       .join("");
-    html.push(
+    if (cls.thisMonth.length) html.push(
       section(
         `${m + 1}월 챙길 것`,
         cls.thisMonth.length ? `<button type="button" class="home-viewall" data-act="todos">전체보기 ›</button>` : "",

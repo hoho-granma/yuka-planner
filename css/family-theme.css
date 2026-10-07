@@ -1,0 +1,39 @@
+/* Approved shared family design for all ages. */
+:root,body,body.acct-design{--bg:#f4f3f1;--fg:#24252a;--accent:#ff6a1a;--accent-soft:#ffe2d0;--border:#e2e2dd;--muted:#787974;background:#f4f3f1;color:#24252a}
+#view-calendar{background:#f4f3f1}.app-header{padding:20px 20px 10px;gap:10px;align-items:center;background:#f4f3f1}
+#brand-text{font-size:22px!important;font-weight:850!important;letter-spacing:-.8px;line-height:1.25;text-align:left;color:#24252a!important;flex:1;white-space:normal}
+#brand-text .hn-house-name{color:#8e532f}.header-actions{display:none}.hn-profile{margin-left:0}.hn-profile .hn-face{width:28px;height:28px}
+#tab-home{padding:0 20px 22px}#home-body{padding:0}.hn-home-date{font-size:17px!important;letter-spacing:-.5px;font-weight:700;margin:15px 0 4px;color:#24252a}
+#home-body .card,#home-body .home-sec{background:#fff!important;border:1px solid #e2e2dd!important;border-radius:16px!important;padding:17px!important;margin:15px 0!important;box-shadow:none!important}
+.hn-section-head h3,.home-sec-head h3{font-size:15px!important;font-weight:700;color:#24252a}.hn-timeline{padding:13px 0;border-color:#efefea;gap:10px}.hn-timeline .hn-face{width:28px;height:28px}.hn-timeline time{font-size:11px;color:#777;width:38px}.hn-timeline strong{font-size:13px;font-weight:650}.hn-text-link{color:#8e532f;font-size:11px;background:none}
+.hn-task{border-color:#efefea;padding:13px 0}.hn-task .hn-face{width:28px;height:28px}.hn-task-title{font-size:12px;font-weight:650}.hn-task time{font-size:10px;color:#747969;font-weight:650}.hn-category{font-size:9px}.hn-check{border-color:#ccd2c2}
+.tab-nav,.bottom-nav{background:#fff;border-color:#e3e3dd}.us-summary{display:none}
+body,body.acct-design,body.theme-forest{--bg:#f4f3f1;--card-bg:#fff;--surface:#fff;--border:#e2e2dd;--line:#e2e2dd;--text:#24252a;--c-ink:#24252a;--text-muted:#787974;--c-primary:#ffe2d0;--c-primary-ink:#a64714;--on-accent:#a64714;--accent:#ff6a1a;--c-select:#ff6a1a;--c-active:#b84c15;--c-link:#8e532f;--accent-dark:#b84c15;--c-progress:#b84c15;--c-badge-auto:#ffe2d0;--c-badge-auto-ink:#24252a}
+body.theme-forest #view-calendar,body.theme-forest .app-header{background:#f4f3f1!important}
+
+/* Review request: wrapped category badges, quiet calendar selection, readable benefit tabs. */
+body.acct-design #filter-chips-checklist{flex-wrap:wrap;overflow-x:visible;padding-bottom:0;gap:8px}
+body.acct-design #filter-chips-checklist .cat-chip{background:#fff;border:1px solid var(--cat);color:var(--cat);opacity:1}
+body.acct-design #filter-chips-checklist .cat-chip.active{background:var(--cat);border-color:var(--cat);color:#fff}
+body.acct-design #filter-chips-checklist .cat-chip-dot{display:none}
+body.acct-design #subsidy-seg .seg-tab.active,body.acct-design #subsidy-scope .scope-chip.active{background:#8e532f;border-color:#8e532f;color:#fff}
+body.acct-design #subsidy-seg .seg-tab.active .seg-n{color:#fff;background:rgba(255,255,255,.18)}
+body.acct-design #subsidy-body .event-item{background:#fff!important}
+
+body.acct-design #tab-home .profile-row{display:none}
+#home-body #ns-banner{display:none!important}
+.hn-home-date{display:flex;align-items:center;gap:10px}.hn-home-date .hn-face{width:28px;height:28px}
+#us-filter-slot:empty,#cal-todo-slot:empty{display:none}
+
+#cal-progress-card,#cal-todo-slot,#tcb-calendar{display:none!important}
+/* Keep production version and add controls visible in the review. */
+.header-actions{display:flex!important;gap:6px;align-items:center}
+
+body,body.acct-design,body.theme-forest{--bg:#f4f2f7;--text:#302c3c;--c-ink:#302c3c;--nd-home-bg:#f4f2f7;--nd-ink:#302c3c;--card-bg:#fff;--surface:#fff;--nd-soft:#e9e1f3;--nd-soft2:#e9e1f3;--c-badge-nation:#e9e1f3;--c-badge-nation-ink:#715697;--c-badge-region:#e9e1f3;--c-badge-region-ink:#715697;--accent-soft:#e9e1f3;--accent:#715697;--accent-dark:#715697;--c-active:#715697;--c-primary:#715697;--c-primary-ink:#fff;--on-accent:#fff;--c-link:#715697;--c-select:#715697;--c-select-border:#715697;background:#f4f2f7!important;color:#302c3c}body.theme-forest #view-calendar,#view-calendar,body.theme-forest .app-header,.app-header{background:#f4f2f7!important}#brand-text{color:#302c3c!important}#brand-text .hn-house-name{color:#86709b!important}.hn-people .on .hn-face{outline-color:#715697}.hn-text-link{color:#715697}body.acct-design #subsidy-seg .seg-tab.active,body.acct-design #subsidy-scope .scope-chip.active{background:#715697;border-color:#715697;color:#fff}.hn-category{background:var(--review-category)!important;color:#fff}.tab-btn.active,.nav-tab.active{color:#715697}
+.gr-home-link{background:#e9e1f3!important;border-color:#715697!important;color:#715697!important}.gr-home-link strong{color:#715697!important}.gr-home-link small{color:#302c3c!important}
+#subsidy-seg .seg-tab,#subsidy-scope .scope-chip{color:#715697!important;background:#fff!important;border-color:#715697!important}
+#subsidy-seg .seg-tab.active,#subsidy-scope .scope-chip.active{background:#715697!important;color:#fff!important;border-color:#715697!important}
+#subsidy-seg .seg-tab.active .seg-n{color:#fff!important;background:rgba(255,255,255,.18)!important}
+.prov-tag.prov-nation,.prov-tag.prov-region{background:#e9e1f3!important;color:#715697!important}
+
+#subsidy-seg,#subsidy-seg .seg-tab,#subsidy-scope .scope-chip{border-radius:8px!important}

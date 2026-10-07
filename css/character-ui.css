@@ -4,3 +4,103 @@
 .hn-methods .on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft,#ffe2d0)}.hn-tasks{margin-top:16px}
 
 .hn-home-date{font-weight:700;color:var(--fg,#24252a)}
+
+/* Review request: wrapped category badges, quiet calendar selection, readable benefit tabs. */
+body.acct-design #filter-chips-checklist{flex-wrap:wrap;overflow-x:visible;padding-bottom:0;gap:8px}
+body.acct-design #filter-chips-checklist .cat-chip{background:#fff;border:1px solid var(--cat);color:var(--cat);opacity:1}
+body.acct-design #filter-chips-checklist .cat-chip.active{background:var(--cat);border-color:var(--cat);color:#fff}
+body.acct-design #filter-chips-checklist .cat-chip-dot{display:none}
+body.acct-design #subsidy-seg .seg-tab.active,body.acct-design #subsidy-scope .scope-chip.active{background:#8e532f;border-color:#8e532f;color:#fff}
+body.acct-design #subsidy-seg .seg-tab.active .seg-n{color:#fff;background:rgba(255,255,255,.18)}
+body.acct-design #subsidy-body .event-item{background:#fff}
+
+body.acct-design #tab-home .profile-row{display:none}
+#home-body #ns-banner{display:none!important}
+.hn-home-date{display:flex;align-items:center;gap:10px}.hn-home-date .hn-face{width:28px;height:28px}
+#us-filter-slot:empty,#cal-todo-slot:empty{display:none}
+
+#cal-progress-card,#cal-todo-slot,#tcb-calendar{display:none!important}
+
+/* Shared approved character entry sheet: task and calendar use the same visual controls. */
+.hn-entry .hn-people{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 20px;overflow:visible}
+.hn-entry .hn-people button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;padding:0;min-width:48px;color:var(--fg,#24252a)}
+.hn-entry .hn-people .hn-face{width:48px;height:48px;border:3px solid #fff;box-shadow:0 0 0 1px #e2e2dd;box-sizing:border-box}
+.hn-entry .hn-people button.active .hn-face,.hn-entry .hn-people button.on .hn-face{outline:2px solid var(--accent);outline-offset:2px}
+.hn-entry .hn-methods{display:flex;gap:4px;margin:15px 0;flex-wrap:nowrap}
+.hn-entry .hn-methods button{flex:1;min-width:0;padding:8px 3px;font-size:10px;border:1px solid #ddd;border-radius:8px;background:#fff}
+.hn-entry .hn-methods button.active,.hn-entry .hn-methods button.on{background:var(--accent-soft,#ffe2d0);border-color:var(--accent)}
+.hn-entry textarea,.hn-entry input:not([type=hidden]):not([type=checkbox]){padding:12px;border:1px solid #ddd;border-radius:12px;background:#fafaf7;font:inherit;margin-top:7px}
+.hn-entry [hidden]{display:none!important}
+.hn-entry .hn-entry-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0;padding:13px;background:#f5f4ef;border-radius:12px;font-size:13px}
+.hn-entry-switch input{accent-color:var(--accent);width:19px;height:19px;flex-shrink:0}
+.hn-entry-extra{margin:18px 0;font-size:12px;color:var(--muted,#818476)}
+.hn-entry-extra summary{cursor:pointer;padding:8px 0}
+.hn-entry .hn-categories{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 15px}
+.hn-entry .hn-categories button{border-radius:20px;padding:7px 11px;font-size:11px}
+.hn-entry-actions [data-char-save],.hn-shared-entry .us-actions .us-primary{background:var(--accent);color:#fff;padding:14px;border-radius:13px;border:0;flex:1}
+.hn-shared-entry .us-field{margin:18px 0 8px}
+.hn-shared-entry .us-fx-head{background:transparent;color:var(--fg);border-bottom:0}
+.hn-entry .hn-section-head h3{font-size:22px}
+
+/* Entry controls, compact checklist input and current age indication. */
+.hn-entry .hn-entry-switch{justify-content:flex-start}
+.hn-entry-switch span{flex:1}
+.hn-task-input{display:flex;align-items:flex-start;gap:8px;border:1px solid #ddd;border-radius:12px;background:#fafaf7;padding:12px}
+.hn-input-check{line-height:1.5;color:var(--muted)}
+.hn-entry .hn-task-input textarea{border:0;background:transparent;padding:0;margin:0;min-height:24px;line-height:1.5;resize:vertical}
+.hn-entry-close{width:32px;height:32px;border:0;border-radius:50%;background:#f4f3f1;color:var(--fg);font-size:23px}
+.modal-panel:has(.hn-entry)>.acct-sheet-close,.modal-panel:has(.hn-entry)>[data-acct-action="close"]{display:none!important}
+.hn-entry .hn-people button,.hn-entry .hn-people .hn-face{border:0!important;box-shadow:none!important;outline:0!important;background:transparent!important}
+.hn-entry .hn-people button{position:relative}
+.hn-entry .hn-people button.active::after,.hn-entry .hn-people button.on::after{content:'✓';position:absolute;top:-3px;right:0;background:var(--accent);color:white;border-radius:50%;width:17px;height:17px;font-size:11px;line-height:17px}
+.hn-entry .us-chip,.hn-entry .hn-categories button{border-radius:8px!important}
+.month-group-card[data-now="1"]>.ongoing-group-header{background:var(--accent-soft,#ffe2d0)!important;color:var(--accent-dark,var(--accent))!important;border-radius:12px}
+
+/* Header and compact family actions. */
+#btn-add-child{display:none!important}
+.app-header .header-actions{margin-left:auto;order:2}
+.app-header .hn-profile{order:3;margin-left:0}
+.app-header #btn-refresh,.app-header #btn-refresh.has-update{background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--text-muted,var(--muted))!important;padding:0 4px}
+.app-header #btn-refresh.has-update{color:var(--accent)!important}
+.hn-task time{font-size:13px!important;font-weight:750!important;color:var(--accent-dark,var(--accent))!important}
+.hn-entry-actions{display:flex;gap:10px}
+.hn-entry-actions>button{flex:1;min-width:0;margin:0;padding:14px;border:1px solid var(--accent);border-radius:13px;font:inherit;font-weight:700;min-height:48px;box-sizing:border-box}
+.hn-entry-actions>[data-char-delete]{background:white;color:var(--accent-dark,var(--accent))}
+.hn-entry-actions>[data-char-save]{background:var(--accent);color:white}
+.modal-panel:has(.hn-shared-entry){padding-top:0!important}
+.hn-shared-entry{padding-top:0!important}
+.hn-shared-entry .us-fx-head{margin-top:0!important;padding:16px!important;border-radius:16px 16px 0 0}
+.hn-shared-entry .hn-people button::before{content:none!important;display:none!important}
+.hn-entry .hn-people button.active::after,.hn-entry .hn-people button.on::after{top:auto!important;right:auto!important;left:0;bottom:22px}
+.hn-entry .hn-methods button{display:block!important;line-height:1.4;font-weight:500;min-height:36px}
+.hn-shared-entry .us-times{display:flex;gap:10px}
+.hn-shared-entry .us-times label{flex:1;min-width:0}
+/* Same actions and states, fewer repeated step explanations. */
+body.acct-design .as-steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0}
+body.acct-design .as-st{display:flex;gap:7px;padding:10px;background:#fff;border:1px solid var(--border);border-radius:12px;margin:0}
+body.acct-design .as-st::before,body.acct-design .as-st::after{display:none}
+body.acct-design .as-n{width:20px;height:20px;flex:0 0 20px;background:var(--accent-soft);color:var(--accent-dark,var(--accent));font-size:11px}
+body.acct-design .as-b{min-width:0;flex:1}
+body.acct-design .as-b>b{font-size:12px}
+body.acct-design .as-b>small{font-size:11px;margin-top:3px}
+body.acct-design .as-st[data-as-step="learn"] small,body.acct-design .as-st[data-as-step="apply"] small,body.acct-design .as-st[data-as-step="done"] small{display:none}
+body.acct-design .as-btn{width:100%;padding:7px 4px;font-size:11px;margin-top:6px;min-height:30px;border-radius:8px}
+body.acct-design .as-primary{background:var(--accent);color:white;border-color:var(--accent)}
+
+/* Approved entry refinements: personal header and one green selection mark. */
+.modal-panel:has(.hn-task-entry){padding-top:0!important}
+.hn-task-entry{padding-top:0}
+.hn-task-entry>.hn-section-head{background:var(--hn-person-bg);padding:16px;border-radius:16px 16px 0 0;margin-top:0}
+.hn-task-entry>.hn-section-head .modal-x{position:static;float:none;margin:0;background:rgba(255,255,255,.6)}
+.hn-entry .hn-people button.active::after,.hn-entry .hn-people button.on::after{left:auto!important;right:0!important;bottom:22px;background:#38835d;color:#fff}
+.hn-entry .hn-people button.active span,.hn-entry .hn-people button.on span{font-weight:800}
+.hn-entry .hn-task-input{border:0;border-bottom:1px solid var(--border,#ccc);border-radius:0;background:transparent;box-shadow:none}
+.hn-entry .hn-task-input:focus-within{border-bottom-color:var(--accent);outline:none;box-shadow:none}
+.hn-entry .hn-task-input textarea,.hn-entry .hn-task-input textarea:focus,.hn-entry .hn-task-input textarea:focus-visible{outline:0!important;border:0!important;box-shadow:none!important;background:transparent}
+.hn-entry .hn-methods button,.hn-entry .hn-methods button.active,.hn-entry .hn-methods button.on{background:transparent!important;box-shadow:none}
+.hn-entry .hn-methods button.active,.hn-entry .hn-methods button.on{border-color:var(--accent);color:var(--accent)}
+
+/* Align benefit content with its state tabs and emphasize calendar navigation. */
+#tab-subsidy #subsidy-seg,#tab-subsidy #subsidy-scope,#tab-subsidy #subsidy-body{width:100%;max-width:100%;box-sizing:border-box;margin-left:0;margin-right:0}
+#subsidy-body .event-item,#subsidy-body .sub-group{width:100%;max-width:100%;box-sizing:border-box;margin-left:0;margin-right:0}
+#home-body [data-char-calendar]{font-weight:750}
