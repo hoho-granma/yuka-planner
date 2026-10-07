@@ -13,7 +13,7 @@
 
   const TITLE_MAX = 100;
   const REQUIRED_KEYS = Object.freeze(["v", "childKey", "title", "done", "order", "createdAt", "updatedAt"]);
-  const OPTIONAL_KEYS = Object.freeze(["createdBy", "doneAt", "deletedAt"]);
+  const OPTIONAL_KEYS = Object.freeze(["createdBy", "doneAt", "deletedAt", "ownerKey", "dueDate", "category", "description", "sourceScheduleId"]);
   const ORDER_STEP = 1000;
 
   const clean = (t) => String(t == null ? "" : t).replace(/\s+/g, " ").trim();
@@ -87,6 +87,9 @@
     if (doc.createdBy != null && (typeof doc.createdBy !== "string" || doc.createdBy.length > 60)) errs.push("createdBy");
     if (doc.doneAt != null && typeof doc.doneAt !== "number") errs.push("doneAt");
     if (doc.deletedAt != null && typeof doc.deletedAt !== "number") errs.push("deletedAt");
+    for (const [key,max] of [["ownerKey",67],["category",30],["description",500],["sourceScheduleId",60]]) if (doc[key] != null && (typeof doc[key] !== "string" || doc[key].length > max)) errs.push(key);
+    if (doc.ownerKey != null && !/^(?:(?:CHILD:|MEMBER:).+|FAMILY)$/.test(doc.ownerKey)) errs.push("ownerKey");
+    if (doc.dueDate != null && (typeof doc.dueDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(doc.dueDate))) errs.push("dueDate");
     return { ok: errs.length === 0, errors: errs };
   }
 

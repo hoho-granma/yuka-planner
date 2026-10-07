@@ -336,7 +336,7 @@ service cloud.firestore {
 
       function todoOk(d) {
         return d.keys().hasAll(['v', 'childKey', 'title', 'done', 'order', 'createdAt', 'updatedAt'])
-            && d.keys().hasOnly(['v', 'childKey', 'title', 'done', 'order', 'createdAt', 'updatedAt', 'createdBy', 'doneAt', 'deletedAt'])
+            && d.keys().hasOnly(['v', 'childKey', 'title', 'done', 'order', 'createdAt', 'updatedAt', 'createdBy', 'doneAt', 'deletedAt', 'ownerKey', 'dueDate', 'category', 'description', 'sourceScheduleId'])
             && d.v == 1
             && d.childKey is string && d.childKey.size() >= 1 && d.childKey.size() <= 60
             && d.title is string && d.title.size() >= 1 && d.title.size() <= 100
@@ -345,7 +345,12 @@ service cloud.firestore {
             && d.createdAt is number && d.updatedAt is number
             && (!('createdBy' in d) || d.createdBy == null || (d.createdBy is string && d.createdBy.size() <= 60))
             && (!('doneAt' in d) || d.doneAt == null || d.doneAt is number)
-            && (!('deletedAt' in d) || d.deletedAt == null || d.deletedAt is number);
+            && (!('deletedAt' in d) || d.deletedAt == null || d.deletedAt is number)
+            && (!('ownerKey' in d) || d.ownerKey == null || (d.ownerKey is string && d.ownerKey.size() <= 67 && d.ownerKey.matches('^(CHILD:|MEMBER:).+$|^FAMILY$')))
+            && (!('dueDate' in d) || d.dueDate == null || (d.dueDate is string && d.dueDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
+            && (!('category' in d) || d.category == null || (d.category is string && d.category.size() <= 30))
+            && (!('description' in d) || d.description == null || (d.description is string && d.description.size() <= 500))
+            && (!('sourceScheduleId' in d) || d.sourceScheduleId == null || (d.sourceScheduleId is string && d.sourceScheduleId.size() <= 60));
       }
 
       allow create: if todoOk(request.resource.data);

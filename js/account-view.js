@@ -423,10 +423,10 @@
     const rows = (c.rows || []).filter((r) => r && r[1]).map(([k, v]) => `<div class="fam-row"><span class="fam-k">${esc(k)}</span><span class="fam-v">${esc(v)}</span></div>`).join("");
     const notes = (c.notes || []).filter(Boolean).map((n) => `<p class="fine-print">${esc(n)}</p>`).join("");
     const btn = (a) => `<button type="button" class="hh-btn hh-small${a.danger ? " hh-danger" : ""}" ${a.attrs}>${esc(a.label)}</button>`;
-    const normal = (c.actions || []).filter((a) => !a.danger).map(btn).join("");
-    const danger = (c.actions || []).filter((a) => a.danger).map(btn).join("");
-    const photo = c.photo ? `<img class="fam-photo" src="${esc(c.photo)}" alt="" />` : `<span class="acct-face-dot fam-dot" style="background:${esc(okColor(c.color) || FACE_FAMILY)}">${esc(String(c.name || "").slice(0, 1))}</span>`;
-    return `<div class="fam-card" data-fam-card="${esc(c.kind)}"><div class="fam-card-head">${photo}<div class="fam-card-title"><strong>${esc(c.name)}</strong>${c.sub ? `<span class="fine-print">${esc(c.sub)}</span>` : ""}</div></div>${rows}${c.extraHtml || ""}${notes}${normal ? `<div class="fam-actions">${normal}</div>` : ""}${danger ? `<div class="fam-actions fam-danger">${danger}</div>` : ""}</div>`;
+    const logout=(c.actions||[]).filter(a=>a.attrs.includes('logout')).map(btn).join('');
+    const actions=(c.actions||[]).filter(a=>!a.attrs.includes('logout')).map(btn).join('');
+    const photo=c.photo?`<img class="fam-photo hn-face" src="${esc(c.photo)}" alt=""/>`:'';
+    return `<div class="fam-card" data-fam-card="${esc(c.kind)}"><div class="fam-card-head">${photo}<div class="fam-card-title"><strong>${esc(c.name)}</strong>${c.sub?`<span class="fine-print">${esc(c.sub)}</span>`:''}</div><div class="hn-profile-actions">${actions}</div></div>${rows}${notes}${logout?`<div class="hn-profile-actions">${logout}</div>`:''}</div>`;
   }
   /** 가입 직후 아이가 없는 홈의 '내 정보' 카드: 이름 · 나(역할) / 아이를 등록해 주세요 / 이메일. 누르면 내 정보(가족코드). */
   function renderMyCard(state) {
