@@ -3737,6 +3737,10 @@
   }
 
   function switchTab(name) {
+    if (name === "calendar") {
+      selectedCalendarDate = new Date();
+      viewMonth = new Date(selectedCalendarDate.getFullYear(), selectedCalendarDate.getMonth(), 1);
+    }
     if (name === "growth" && !growthActive()) name = "home";
     if (name === "places" && placesHiddenNow()) name = "home"; // D8: 임신 중에는 어디갈까로 가지 않는다(탭도 숨김)
     applyTabLayout(); // 임신 ↔ 출생 후 전환·아이 교체 뒤에도 탭 노출이 맞게
@@ -3757,6 +3761,7 @@
     const navKey = name;
     document.querySelectorAll(".nav-item").forEach((btn) => btn.classList.toggle("active", btn.dataset.nav === navKey));
     window.scrollTo(0, 0);
+    if (name === "calendar") { renderCalendar(); renderSelectedDayPanel(); }
     if (name === "places") renderPlacesTab();
     if (name === "growth") renderGrowthTab();
     if (name === "checklist") {
@@ -7767,7 +7772,7 @@
   const charHomeBase=renderHome;
   renderHome=function(){charHomeBase();if(!profile||!acctEnabled())return;updateBrandText();const wrap=el('home-body');if(!wrap)return;wrap.querySelectorAll('#a36-home-todo').forEach(n=>n.remove());let block=wrap.querySelector('#hn-family-tasks');if(block)block.remove();if(acct36Active())wrap.insertAdjacentHTML('beforeend',charTodoSection(true));const growth=wrap.querySelector('.gr-home-link');if(growth)wrap.appendChild(growth);wrap.querySelectorAll('#ns-banner').forEach(n=>n.remove());wrap.querySelectorAll('.home-child-line').forEach(n=>n.remove());wrap.querySelectorAll('.hn-home-date').forEach(n=>n.remove());if(!acct36Active()){const family=wrap.querySelector('.hn-schedules');if(family)wrap.prepend(family);}charHeader();};
   const charBrandBase=updateBrandText;
-  updateBrandText=function(){charBrandBase();const b=el('brand-text');if(b&&profile)b.innerHTML=`한눈육아 <span class="hn-family-name">· ${esc(childDisplayName())}네집</span>`;};
+  updateBrandText=function(){charBrandBase();const b=el('brand-text');if(b&&profile)b.innerHTML=`한눈육아<span class="hn-family-name"><span class="hn-brand-dot">·</span>${esc(childDisplayName())}네집</span>`;};
   function charHeader(){const head=document.querySelector('.app-header');if(!head||!acctEnabled())return;let b=el('hn-profile');if(!b){b=document.createElement('button');b.id='hn-profile';b.className='hn-profile';b.setAttribute('aria-label','내 프로필');b.onclick=()=>acctProfileSheet();head.appendChild(b);}const m=charPeople(true).find(p=>p.key===localStorage.getItem('hn_selected_profile'))||charPeople(true).find(p=>p.key==='MEMBER:'+usMeId())||{role:'MOM',name:'내 프로필'};b.innerHTML=charImage(m);}
   usHomeCardHtml=function(){if(!usActive())return '';const iso=toISODate(new Date()), model=usBuildModel(iso,iso,{scope:'ALL',showAuto:false});const day=model.days.get(iso);const rows=day?day.user:[];return `<section class="card hn-schedules"><div class="hn-section-head"><h3><span class="hn-schedule-date">${new Date().getMonth()+1}/${new Date().getDate()}(${['일','월','화','수','목','금','토'][new Date().getDay()]})</span> 우리 가족 일정</h3><button class="hn-text-link" data-char-calendar>가족캘린더 보기 →</button></div>${rows.map(charRow).join('')||'<p class="fine-print">오늘 등록된 일정이 없어요.</p>'}</section>`;};
   const charChecklistBase=renderChecklistTab;

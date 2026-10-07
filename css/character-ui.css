@@ -182,7 +182,8 @@ body.acct-design #subsidy-seg{background:#f5eee3!important;border:1px solid #e1d
 body.acct-design #subsidy-seg .seg-tab{background:#f5eee3!important;border-color:#e1d3bd!important;color:#24252a!important}
 body.acct-design #subsidy-seg .seg-tab.active{background:#e7d6be!important;border-color:#d7c3a5!important;color:#24252a!important}
 /* Approved compact family calendar and header. */
-#brand-text .hn-family-name{color:#863cdb!important}
+#brand-text .hn-family-name{color:#7c6ba2!important}
+#brand-text .hn-brand-dot{display:inline-block;margin:0 3px}
 .calendar-grid-v2 .day-cell{min-height:48px!important;padding-top:3px!important;padding-bottom:3px!important}
 .calendar-grid-v2{gap:2px!important}.markers.chips{gap:1px!important;margin-top:2px!important}
 .hn-day-face{height:12px!important;min-height:12px!important;max-height:12px!important;padding:0 2px!important;gap:1px!important;line-height:1!important;border-radius:3px!important}

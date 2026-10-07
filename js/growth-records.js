@@ -25,24 +25,18 @@
   function treeMarkup(records, scope, lessons, name, selected, activity) {
     const colors = ["#d8e7f6", "#e5d6fa", "#e3ecd2", "#fbe5d4"];
     const ink = ["#35587e", "#6c4696", "#526c3c", "#986d4f"];
-    const branches = GROUPS.map((g) => linkedActivities(records, scope, g.id, lessons));
-    const extra = Math.max(0, ...branches.map((a) => a.length - 3)) * 40;
-    const lower = 295 + extra, root = Math.max(414 + extra, lower + 95 + Math.max(branches[2].length, branches[3].length) * 40), height = root + 75;
-    const positions = [[70, 137], [238, 160], [70, lower], [248, lower + 12]];
-    const leaf = (x, y, w, h, fill, label, count, attrs, color, on) => `<g ${attrs} role="button" tabindex="0" aria-label="${esc(label)}${count == null ? "" : ` ${count}개 활동`}" class="gr-svg-leaf${on ? " selected" : ""}"><path d="M${x-w/2} ${y-h/2} Q${x+w/2} ${y-h/2-12} ${x+w/2} ${y} Q${x+w/2} ${y+h/2+9} ${x-w/2} ${y+h/2} Q${x-w/2+11} ${y} ${x-w/2} ${y-h/2}Z" fill="${fill}"/><text x="${x}" y="${y+(count == null ? 4 : -3)}" text-anchor="middle" fill="${color}" class="${count == null ? "gr-sub-label" : "gr-main-label"}">${esc(count == null && label.length > 9 ? label.slice(0,8)+"…" : label)}</text>${count == null ? "" : `<text x="${x}" y="${y+17}" text-anchor="middle" fill="${color}" class="gr-count">${count}개 활동</text>`}</g>`;
-    let paths = `<path d="M176 ${root} Q181 285 180 219" stroke-width="4"/>`;
-    let leaves = "";
-    GROUPS.forEach((g, i) => {
-      const [x,y] = positions[i], left = i % 2 === 0, items = branches[i];
-      paths += `<path d="M176 ${root} Q${left?130:218} ${y+90} ${x} ${y+20}" stroke-width="3"/>`;
-      items.forEach((a,j) => {
-        const sx = left ? 65 : 292, sy = i < 2 ? 33 + j * 40 : lower + 62 + j * 40;
-        paths += `<path d="M${x} ${y+15} Q${left?x-20:x+30} ${sy+15} ${sx} ${sy+7}" stroke-width="1.8"/>`;
-        leaves += leaf(sx, sy, 99, 33, colors[i], a, null, `data-gr-activity="${esc(a)}" data-gr-leaf-group="${g.id}"`, ink[i], selected===g.id&&activity===a);
-      });
-      leaves += leaf(x, y, 124, 87, colors[i], g.label, items.length, `data-gr-group="${g.id}"`, ink[i], selected===g.id&&!activity);
+    const positions = [[79, 68, -24], [275, 87, 22], [77, 191, -19], [276, 211, 25]];
+    let paths = '', leaves = '';
+    const defs = colors.map((c,i)=>`<linearGradient id="gr-leaf-${i}" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".4" stop-color="${c}"/><stop offset="1" stop-color="${c}" stop-opacity=".75"/></linearGradient>`).join('');
+    GROUPS.forEach((g,i)=>{
+      const count = list(records, scope, g.id).length;
+      const scale = count ? Math.min(1.23, .82 + Math.sqrt(count) * .14) : .68;
+      const w = 122 * scale, h = 82 * scale, [x,y,angle] = positions[i];
+      paths += `<path d="M180 290 C${i%2?202:158} 243 ${i%2?218:142} ${y+64} ${x} ${y+23}" stroke-width="${i<2?5:3.5}"/>`;
+      leaves += `<g data-gr-group="${g.id}" data-gr-record-count="${count}" data-gr-leaf-scale="${scale}" class="gr-svg-leaf${selected===g.id?' selected':''}" role="button" tabindex="0" aria-label="${esc(g.label)} ${count}개 기록"><g transform="translate(${x} ${y}) rotate(${angle})"><path class="gr-leaf-surface" d="M${-w/2} ${h/2} C${-w*.64} ${-h*.4} ${w*.03} ${-h*.62} ${w/2} ${-h/2} C${w*.64} ${h*.4} ${-w*.03} ${h*.62} ${-w/2} ${h/2}Z" fill="url(#gr-leaf-${i})"/><path class="gr-vein" d="M${-w*.42} ${h*.4} Q0 0 ${w*.4} ${-h*.4} M${-w*.12} ${h*.12} Q${-w*.3} ${-h*.02} ${-w*.33} ${-h*.23} M${w*.1} ${-h*.1} Q${w*.25} ${h*.05} ${w*.33} ${h*.14}" stroke="${ink[i]}"/></g><text x="${x}" y="${y-3}" text-anchor="middle" fill="${ink[i]}" class="gr-main-label">${esc(g.label)}</text><text x="${x}" y="${y+16}" text-anchor="middle" fill="${ink[i]}" class="gr-count">${count}개 기록</text></g>`;
     });
-    return `<div class="gr-line-tree"><svg viewBox="0 0 360 ${height}" role="group" aria-label="${esc(name)}의 등록 활동 지도"><g class="gr-stems">${paths}<path d="M176 ${root+5} Q142 ${root+20} 123 ${root+30} M176 ${root+5} Q199 ${root+22} 225 ${root+30}"/></g>${leaves}<g transform="translate(176 ${root-7})" aria-hidden="true"><path d="M0 -31 Q-3 -53 -21 -50 Q-26 -34 0 -31 M0 -31 Q2 -54 23 -52 Q28 -36 0 -31" fill="#aacb74"/><ellipse cy="8" rx="15" ry="19" fill="#b9d980"/><circle cy="-12" r="23" fill="#d6e8a9"/><circle cx="-8" cy="-14" r="3" fill="#343d28"/><circle cx="8" cy="-14" r="3" fill="#343d28"/><path d="M-4 -5 Q0 -1 4 -5" fill="none" stroke="#586141" stroke-width="1.5"/><circle cx="-14" cy="-7" r="4" fill="#edbdab"/><circle cx="14" cy="-7" r="4" fill="#edbdab"/></g><text x="176" y="${root+39}" text-anchor="middle" class="gr-child-name">${esc(name)}</text></svg><p class="gr-map-caption">등록된 활동 기준 · 활동 잎을 눌러 기록을 보세요</p></div>`;
+    const roots = `<path d="M180 290 C162 306 113 298 69 320 M180 291 C159 310 148 312 137 330 M180 292 C176 311 182 317 179 331 M180 290 C196 307 235 303 291 320 M180 292 C203 306 214 315 221 330" stroke-width="1.4"/>`;
+    return `<div class="gr-line-tree"><svg viewBox="0 0 360 350" role="group" aria-label="${esc(name)}의 성장기록 지도"><defs>${defs}</defs><g class="gr-stems">${paths}${roots}</g>${leaves}<image href="icons/growth/sprout-child.png" x="153" y="245" width="54" height="60" aria-hidden="true"/><text x="180" y="345" text-anchor="middle" class="gr-child-name">${esc(name)}</text></svg><p class="gr-map-caption">남긴 성장기록 기준 · 잎을 눌러 기록을 보세요</p></div>`;
   }
   let dbPromise;
   function db() {
