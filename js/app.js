@@ -7900,5 +7900,51 @@ fields.sourceScheduleId=f.sourceScheduleId;
       if (currentTab === "checklist") renderChecklistTab();
     }
   };
+  // Message AI candidates never save data; applying one requires an explicit user click.
+  let messageAnalysis = null;
+  function messageSource(){return charTodoForm&&el('hn-task-text')?{kind:'todo',form:charTodoForm,text:el('hn-task-text').value}:us.form&&el('hn-schedule-content')?{kind:'schedule',form:us.form,text:el('hn-schedule-content').value}:null;}
+  function addMessageAnalysisUI(){
+    const source=messageSource();if(!source)return;
+    if(source.form.messageTitleReview){const input=el(source.kind==='todo'?'hn-task-text':'hn-schedule-content');input.insertAdjacentHTML('beforebegin',`<label for="hn-message-title">제목 확인</label><input id="hn-message-title" maxlength="60" value="${esc(source.form.title||'')}"/>`);el('hn-message-title').oninput=e=>{source.form.title=e.target.value;source.form.titleEdited=true;source.form.titleTouched=true;const title=el('us-title');if(title)title.value=e.target.value;};}
+    const messageMode=source.kind==='todo'?source.form.inputMode==='message':source.form.capInputMode==='paste';
+    if(!messageMode)return;
+    const input=el(source.kind==='todo'?'hn-task-text':'hn-schedule-content');
+    if(el('hn-message-analysis'))return;
+    input.insertAdjacentHTML('afterend','<section id="hn-message-analysis"><button type="button" class="btn-complete" data-message-analyze>메시지에서 찾아 채우기</button><p class="fine-print">누르면 메시지가 외부 AI 서비스로 전송돼요. 분석 후 내용을 확인하고 저장해 주세요.</p><div id="hn-message-results" aria-live="polite"></div></section>');
+  }
+  const messageTodoRender=charTodoRender;
+  charTodoRender=function(){messageTodoRender();addMessageAnalysisUI();};
+  const messageScheduleRender=usShowForm;
+  usShowForm=function(){messageScheduleRender();addMessageAnalysisUI();};
+  document.addEventListener('click',async e=>{
+    const analyze=e.target.closest('[data-message-analyze]'),apply=e.target.closest('[data-message-apply]');
+    if(analyze){
+      if(analyze.disabled)return;
+      const source=messageSource();if(!source)return;
+      const family=hh.hid,uid=acct.user&&acct.user.uid,target=el('hn-message-results');
+      analyze.disabled=true;target.textContent='메시지를 정리하고 있어요…';messageAnalysis=null;
+      const result=await AiParser.parseWithAI(source.text,toISODate(new Date()),{user:acct.user,familyId:family});
+      const current=messageSource();if(!current||current.form!==source.form||current.text!==source.text||hh.hid!==family||acct.user?.uid!==uid||el('hn-message-results')!==target){if(el('hn-message-results')===target){analyze.disabled=false;target.textContent='입력 내용이나 대상이 바뀌어 분석 결과를 적용하지 않았어요. 다시 분석해 주세요.';}return;}
+      analyze.disabled=false;
+      if(!result.ok){target.textContent=result.message;return;}
+      messageAnalysis={...source,family,uid,candidates:result.candidates};
+      target.innerHTML=result.candidates.length?'<p class="fine-print">후보를 골라 폼에 채우세요. 대상·날짜·시간·반복은 저장 전 확인해 주세요.</p>'+result.candidates.map((c,i)=>`<div class="hn-message-candidate"><strong>${esc(c.title)}</strong><p>${esc(c.kind==='todo'?'할일':'일정')} · ${esc(c.date||'날짜 미확인')} · ${esc(c.startTime||'시간 미확인')} · ${esc(c.ownerName||'대상 미확인')} · ${esc(c.category||'분류 미확인')}</p><blockquote>${esc(c.evidence)}</blockquote><button type="button" data-message-apply="${i}">이 ${c.kind==='todo'?'할일':'일정'} 입력폼에 채우기</button></div>`).join(''):'찾은 일정·할일이 없어요. 원문을 유지하고 직접 입력해 주세요.';
+    }
+    if(apply){
+      const state=messageAnalysis,current=messageSource(),candidate=state?.candidates[Number(apply.dataset.messageApply)];
+      if(!candidate||!current||current.form!==state.form||current.text!==state.text||hh.hid!==state.family||acct.user?.uid!==state.uid)return;
+      const notice='분석한 제목·날짜·시간을 확인해 주세요. 대상과 카테고리, 반복은 직접 확인해 주세요.';
+      if(candidate.kind==='todo'){
+        if(current.kind!=='todo')charOpenTodo();
+        const f=charTodoForm;f.messageTitleReview=true;f.text=state.text;f.title=candidate.title;f.titleEdited=true;f.inputMode='message';f.dueDate=candidate.date||'';f.calendarChecked=false;
+        if(candidate.category&&CharacterUI.categoriesFor(charPerson(f.ownerKey)).includes(candidate.category))f.category=candidate.category;
+        charTodoRender();el('hn-task-error').textContent=notice;
+      }else{
+        if(current.kind!=='schedule')usOpenForm(null);
+        const f=us.form;f.messageTitleReview=true;f.charText=state.text;f.memo=state.text;f.title=candidate.title;f.titleTouched=true;f.capInputMode='paste';f.eventDate=candidate.date||'';f.dateKind='FIXED';f.startTime=candidate.startTime||'';f.endTime=candidate.endTime||'';f.allDay=!candidate.startTime;f.repeat='NONE';f.byDay=[];f.multiDay=false;f.endDate='';f.twConfirmed=false;const owner=f.whoPerson?'MEMBER:'+f.assigneeMemberId:f.scope==='CHILD'?'CHILD:'+(f.childKeys||[])[0]:'FAMILY';if(candidate.category&&CharacterUI.categoriesFor(charPerson(owner)).includes(candidate.category)){f.charCategory=candidate.category;f.categoryLabel=candidate.category;f.category=CharacterUI.scheduleCategory(candidate.category,charPerson(owner));}us.messages=[notice];usShowForm();
+      }
+      messageAnalysis=null;
+    }
+  });
   init();
 })();
