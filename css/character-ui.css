@@ -193,3 +193,18 @@ body.acct-design #subsidy-seg .seg-tab.active{background:#e7d6be!important;borde
 .hn-timeline time{font-size:12px!important;font-weight:700!important;color:#655f70!important}
 .hn-duration{font-size:12px;font-weight:400;color:#827b89}
 body.acct-design .us-detail>h3{border-top:3px solid var(--hn-detail-person,var(--us-color));padding-top:14px}
+
+/* Calendar category and full member-colored detail heading. */
+.hn-timeline strong{flex:1;min-width:0}.hn-timeline-category{margin-left:auto;flex-shrink:0;max-width:none!important;white-space:nowrap}
+body.acct-design .modal-panel:has(.us-detail){padding:0 0 24px!important}
+body.acct-design .us-detail>h3{border:0;background:var(--hn-detail-person,var(--us-color));padding:18px 16px;margin:0;min-height:66px;box-sizing:border-box}
+body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,body.acct-design .us-detail>.us-note{margin-left:16px;margin-right:16px}
+.hn-detail-close{margin-left:auto;width:32px;height:32px;border:0;border-radius:50%;background:#ffffff70;color:#34303c;font-size:24px;cursor:pointer}
+.modal-panel:has(.us-detail)>#btn-close-modal{display:none!important}
+
+.modal-panel:has(.us-detail) #modal-content>.modal-x{display:none!important}
+/* Readable category badges, keeping the six choices on one line. */
+.hn-category{font-size:12px;font-weight:650;line-height:1.25;max-width:none;flex-shrink:0}
+.hn-entry .hn-categories,.hn-content-heading .hn-categories,.us-chips[data-us-kinds]{flex-wrap:nowrap;gap:3px;min-width:0}
+.hn-entry .hn-categories button,.hn-content-heading .hn-categories button,.hn-schedule-category{font-size:13px;font-weight:650;line-height:1.3;white-space:nowrap;padding:8px 3px;flex:1 1 auto;min-width:0;letter-spacing:-.3px}
+@media(max-width:350px){.hn-entry .hn-categories button,.hn-content-heading .hn-categories button,.hn-schedule-category{font-size:12px;padding-left:2px;padding-right:2px;letter-spacing:-.5px}}
