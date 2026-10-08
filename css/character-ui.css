@@ -208,3 +208,13 @@ body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,
 .hn-entry .hn-categories,.hn-content-heading .hn-categories,.us-chips[data-us-kinds]{flex-wrap:nowrap;gap:3px;min-width:0}
 .hn-entry .hn-categories button,.hn-content-heading .hn-categories button,.hn-schedule-category{font-size:13px;font-weight:650;line-height:1.3;white-space:nowrap;padding:8px 3px;flex:1 1 auto;min-width:0;letter-spacing:-.3px}
 @media(max-width:350px){.hn-entry .hn-categories button,.hn-content-heading .hn-categories button,.hn-schedule-category{font-size:12px;padding-left:2px;padding-right:2px;letter-spacing:-.5px}}
+
+/* One close control inside the full-width title bar; center repeat badges. */
+.modal-panel:has(.hn-detail-close){padding:0 0 24px!important;box-sizing:border-box;overflow-x:hidden}
+#modal-content:has(.hn-detail-close){padding:0 0 24px!important;margin:0!important;box-sizing:border-box}
+.us-detail:has(.hn-detail-close){width:100%;box-sizing:border-box}
+.us-detail:has(.hn-detail-close)>h3{display:flex!important;align-items:center!important;flex-wrap:nowrap!important;gap:8px;max-width:100%;overflow-wrap:anywhere;line-height:1.35}
+.us-detail:has(.hn-detail-close)>h3 .us-repeat{align-self:center!important;flex-shrink:0;line-height:1.35}
+.hn-detail-close{flex-shrink:0;align-self:center}
+
+.hn-detail-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.us-detail:has(.hn-detail-close)>h3 .us-repeat{margin:0!important;vertical-align:middle}

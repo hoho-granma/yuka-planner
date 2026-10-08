@@ -5295,6 +5295,10 @@
       detail.style.setProperty("--hn-detail-person", charTint(charPerson(charOccOwner(occ))));
       const heading = detail.querySelector('h3');
       if (heading) {
+        const title = document.createElement('span');
+        title.className = 'hn-detail-title';
+        title.textContent = occ.title;
+        if (heading.firstChild && heading.firstChild.nodeType === 3) heading.firstChild.replaceWith(title);
         const close = document.createElement('button');
         close.type = 'button'; close.className = 'hn-detail-close';
         close.setAttribute('aria-label', '닫기'); close.textContent = '×'; close.onclick = closeDetail;
@@ -6847,7 +6851,7 @@
   async function acctIsLinked(uid) {
     if (!acct.sync) return true;
     if (!uid) return false;
-    const r = await acct.sync.restore(uid);
+    const r = await acct.sync.restore(uid, acct.user && acct.user.email);
     return !!(r.ok && r.account && r.account.householdCode);
   }
   // 내가 만든 아이: 이 기기에서 아이 등록 시트로 만들었거나 기기 아이를 가족 캘린더에 연결한 코드(삭제 버튼은 이 아이에게만 있다).
@@ -7119,7 +7123,7 @@
     acct.restoring = true;
     try {
       let intent = acctReadIntent();
-      const r = await acct.sync.restore(u.uid);
+      const r = await acct.sync.restore(u.uid, u.email);
       if (!r.ok) return; // 규칙 미배포·오프라인: 조용히 넘어간다
       acct.account = r.account || null;
       // 복구 경로(D3): 가구 연결도 가입 의도도 없으면(로그아웃·앱 데이터 삭제·계정 문서 쓰기 실패 등) 새 가족을 만들기 전에 반드시 선택 화면을 한 번 거친다
@@ -7657,7 +7661,7 @@
     // 모든 팝업 오른쪽 위에 ✕ 닫기 버튼을 달고, 맨 아래의 "닫기" 버튼은 숨긴다(내용이 바뀔 때마다 적용).
     const ensureModalX = () => {
       const box = el("modal-content");
-      if (!box.querySelector(".modal-x") && !box.querySelector(".acct-step-x")) { // 가입 단계 시트는 자체 ✕(.acct-step-x)가 있다
+      if (!box.querySelector(".modal-x") && !box.querySelector(".acct-step-x") && !box.querySelector(".hn-detail-close")) { // 가입 단계 시트는 자체 ✕(.acct-step-x)가 있다
         const b = document.createElement("button");
         b.type = "button";
         b.className = "modal-x";
@@ -7773,7 +7777,7 @@
   const charImage=p=>`<img class="hn-face" src="${esc(p&&p.src||CharacterUI.avatar(p&&p.role,p&&p.gender))}" alt="${esc(p&&p.name||'가족')}" />`;
   function charPerson(key){return charPeople(true).find(p=>p.key===key)||{key,role:'OTHER',name:'가족'};}
   function charOccOwner(o){const d=usDocById(o.scheduleId)||o;return d.scope==='CHILD'&&d.childKeys&&d.childKeys.length?'CHILD:'+d.childKeys[0]:d.assigneeMemberId?'MEMBER:'+d.assigneeMemberId:'FAMILY';}
-  function charRow(o){const doc=usDocById(o.scheduleId)||o,badge=CharacterUI.categoryBadge(doc.category,charPerson(charOccOwner(o)));return `<button type="button" class="hn-timeline" data-char-schedule="${esc(o.scheduleId)}" data-us-id="${esc(o.scheduleId)}" data-us-key="${esc(o.key||'')}"><time>${esc(o.allDay?'종일':o.startTime||'시간 미정')}</time>${charImage(charPerson(charOccOwner(o)))}<strong>${esc(o.title)}${CharacterUI.duration(o.startTime,o.endTime,o.allDay)?` <span class="hn-duration">(${esc(CharacterUI.duration(o.startTime,o.endTime,o.allDay))})</span>`:''}</strong>${currentTab==='calendar'&&badge.label?`<span class="hn-category hn-timeline-category" style="background:${badge.color}">${esc(badge.label)}</span>`:''}</button>`;}
+  function charRow(o){const doc=usDocById(o.scheduleId)||o,badge=CharacterUI.categoryBadge(doc.categoryLabel||doc.category,charPerson(charOccOwner(o)));return `<button type="button" class="hn-timeline" data-char-schedule="${esc(o.scheduleId)}" data-us-id="${esc(o.scheduleId)}" data-us-key="${esc(o.key||'')}"><time>${esc(o.allDay?'종일':o.startTime||'시간 미정')}</time>${charImage(charPerson(charOccOwner(o)))}<strong>${esc(o.title)}${CharacterUI.duration(o.startTime,o.endTime,o.allDay)?` <span class="hn-duration">(${esc(CharacterUI.duration(o.startTime,o.endTime,o.allDay))})</span>`:''}</strong>${currentTab==='calendar'&&badge.label?`<span class="hn-category hn-timeline-category" style="background:${badge.color}">${esc(badge.label)}</span>`:''}</button>`;}
   function charTodoRows(home){if(!usActive())return '';const now=toISODate(new Date()), people=charPeople(false);return CharacterUI.list(HouseholdSync.getTodos(hh.hid).map(t=>{const l=usLinks().find(l=>l.familyCode===t.childKey);return !t.ownerKey&&l?{...t,ownerKey:'CHILD:'+l.childKey}:t;}),people,now,home).map(t=>{const dl=CharacterUI.deadline(t.dueDate,now);return `<div class="hn-task${t.done?' done':''}"><button class="hn-check" data-char-toggle="${esc(t.id)}" aria-label="${t.done?'완료 취소':'완료'}">${t.done?'✓':''}</button>${charImage(charPerson(CharacterUI.owner(t)))}${dl.text?`<time>${esc(dl.text)}</time>`:''}<button class="hn-task-title" data-char-edit="${esc(t.id)}">${esc(t.title)}</button>${dl.tomorrow?'<b class="hn-d1">D-1</b>':''}${t.category?`<span class="hn-category" style="background:${CharacterUI.colors[(CharacterUI.categories[charPerson(CharacterUI.owner(t)).role]||CharacterUI.categories.OTHER).indexOf(t.category)>=0?(CharacterUI.categories[charPerson(CharacterUI.owner(t)).role]||CharacterUI.categories.OTHER).indexOf(t.category):4]}">${esc(t.category)}</span>`:''}</div>`;}).join('');}
   function charTodoSection(home){return `<section class="card hn-tasks" id="hn-family-tasks${home?'':'-tab'}"><div class="hn-section-head"><h3>우리 가족 할일</h3><button class="hn-add-round" data-char-add aria-label="할일 추가">+</button></div>${charTodoRows(home)||'<p class="fine-print">등록된 할일이 없어요.</p>'}</section>`;}
   const charHomeBase=renderHome;
@@ -7825,7 +7829,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
     if(selection)charHeader();
   };
   const charShowFormBase=usShowForm;
-  usShowForm=function(){if(us.form&&!us.form.capInputMode)us.form.capInputMode='direct';charShowFormBase();if(!us.form||!acctEnabled())return;const box=el('modal-content'),people=charPeople(false);box.querySelectorAll('[data-us-who]').forEach(b=>{const key=b.dataset.usWho,p=people.find(p=>p.key===key);if(!p){b.remove();return;}b.innerHTML=charImage(p)+`<span>${esc(p.name)}</span>`;});const kinds=box.querySelector('[data-us-kinds]');if(kinds){const owner=us.form.whoPerson?'MEMBER:'+us.form.assigneeMemberId:us.form.scope==='CHILD'?'CHILD:'+(us.form.childKeys||[])[0]:'FAMILY',p=charPerson(owner),labels=CharacterUI.categoriesFor(p);if(!us.form.charCategory){us.form.charCategory=labels[0];us.form.category=p.role==='CHILD'?'INSTITUTION':'ETC';}kinds.innerHTML=labels.map((label,i)=>`<button type="button" data-char-schedule-category="${esc(label)}" class="hn-schedule-category ${us.form.charCategory===label?'on':''}" style="--category:${CharacterUI.colors[i]}">${esc(label)}</button>`).join('');const menu=box.querySelector('.cap-menu');if(menu)kinds.parentElement.insertAdjacentElement('afterend',menu);}const title=el('us-title');if(title&&!box.querySelector('#hn-schedule-content')){title.insertAdjacentHTML('beforebegin',`<textarea id="hn-schedule-content" rows="3" maxlength="500" placeholder="짧은 제목이나 받은 메시지를 입력하세요.">${esc(us.form.charText||us.form.memo||us.form.title||'')}</textarea>`);el('hn-schedule-content').oninput=e=>{us.form.charText=e.target.value;us.form.memo=e.target.value;us.form.title=CharacterUI.title(e.target.value);us.form.titleTouched=true;title.value=us.form.title;const memo=el('us-memo');if(memo)memo.value=us.form.memo;};}if(us.form.mode==='create'){const actions=box.querySelector('.us-actions');if(actions)actions.insertAdjacentHTML('beforebegin',`<label class="us-check"><input type="checkbox" id="hn-linked-todo" ${us.form.charLinked?'checked':''}/> 할일 리스트에 넣기</label>`);const check=el('hn-linked-todo');if(check)check.onchange=e=>us.form.charLinked=e.target.checked;}};
+  usShowForm=function(){if(us.form&&!us.form.capInputMode)us.form.capInputMode='direct';charShowFormBase();if(!us.form||!acctEnabled())return;const box=el('modal-content'),people=charPeople(false);box.querySelectorAll('[data-us-who]').forEach(b=>{const key=b.dataset.usWho,p=people.find(p=>p.key===key);if(!p){b.remove();return;}b.innerHTML=charImage(p)+`<span>${esc(p.name)}</span>`;});const kinds=box.querySelector('[data-us-kinds]');if(kinds){const owner=us.form.whoPerson?'MEMBER:'+us.form.assigneeMemberId:us.form.scope==='CHILD'?'CHILD:'+(us.form.childKeys||[])[0]:'FAMILY',p=charPerson(owner),labels=CharacterUI.categoriesFor(p);if(!us.form.charCategory){us.form.charCategory=us.form.categoryLabel||CharacterUI.categoryBadge(us.form.category,p).label||labels[0];us.form.category=CharacterUI.scheduleCategory(us.form.charCategory,p);}kinds.innerHTML=labels.map((label,i)=>`<button type="button" data-char-schedule-category="${esc(label)}" class="hn-schedule-category ${us.form.charCategory===label?'on':''}" style="--category:${CharacterUI.colors[i]}">${esc(label)}</button>`).join('');const menu=box.querySelector('.cap-menu');if(menu)kinds.parentElement.insertAdjacentElement('afterend',menu);}const title=el('us-title');if(title&&!box.querySelector('#hn-schedule-content')){title.insertAdjacentHTML('beforebegin',`<textarea id="hn-schedule-content" rows="3" maxlength="500" placeholder="짧은 제목이나 받은 메시지를 입력하세요.">${esc(us.form.charText||us.form.memo||us.form.title||'')}</textarea>`);el('hn-schedule-content').oninput=e=>{us.form.charText=e.target.value;us.form.memo=e.target.value;us.form.title=CharacterUI.title(e.target.value);us.form.titleTouched=true;title.value=us.form.title;const memo=el('us-memo');if(memo)memo.value=us.form.memo;};}if(us.form.mode==='create'){const actions=box.querySelector('.us-actions');if(actions)actions.insertAdjacentHTML('beforebegin',`<label class="us-check"><input type="checkbox" id="hn-linked-todo" ${us.form.charLinked?'checked':''}/> 할일 리스트에 넣기</label>`);const check=el('hn-linked-todo');if(check)check.onchange=e=>us.form.charLinked=e.target.checked;}};
   // Keep the schedule's existing controls/listeners while using the approved task sheet layout.
   const charSharedFormBase=usShowForm;
   usShowForm=function(){
@@ -7856,7 +7860,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
     sheet.querySelectorAll('[data-us-repeat]').forEach(b=>{const label=b.closest('.us-field').querySelector('label');if(label)label.hidden=true;});
   };
 
-  document.addEventListener('click',e=>{const b=e.target.closest('[data-char-schedule-category]');if(!b||!us.form)return;e.preventDefault();us.form.charCategory=us.form.charCategory===b.dataset.charScheduleCategory?'':b.dataset.charScheduleCategory;us.form.kindPick=us.form.charCategory;const labels=CharacterUI.categoriesFor(charPerson(us.form.whoPerson?'MEMBER:'+us.form.assigneeMemberId:us.form.scope==='CHILD'?'CHILD:'+(us.form.childKeys||[])[0]:'FAMILY'));const idx=labels.indexOf(us.form.charCategory);us.form.category=['INSTITUTION','LESSON','ETC','MEDICAL','FAMILY','ETC'][Math.max(0,idx)]||'ETC';usShowForm();});
+  document.addEventListener('click',e=>{const b=e.target.closest('[data-char-schedule-category]');if(!b||!us.form)return;e.preventDefault();us.form.charCategory=us.form.charCategory===b.dataset.charScheduleCategory?'':b.dataset.charScheduleCategory;us.form.kindPick=us.form.charCategory;const labels=CharacterUI.categoriesFor(charPerson(us.form.whoPerson?'MEMBER:'+us.form.assigneeMemberId:us.form.scope==='CHILD'?'CHILD:'+(us.form.childKeys||[])[0]:'FAMILY'));const idx=labels.indexOf(us.form.charCategory);us.form.category=CharacterUI.scheduleCategory(us.form.charCategory,charPerson(us.form.whoPerson?'MEMBER:'+us.form.assigneeMemberId:us.form.scope==='CHILD'?'CHILD:'+(us.form.childKeys||[])[0]:'FAMILY'));us.form.categoryLabel=us.form.charCategory;usShowForm();});
   async function charReadPhoto(){const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=async()=>{const file=input.files[0],form=charTodoForm;if(!file||!form)return;const err=el('hn-task-error');try{const svc=capSvc();if(!svc||!svc.available())throw Error('이 브라우저에서 사진 인식을 사용할 수 없어요.');err.textContent='사진에서 글자를 읽고 있어요. 잠시 기다려 주세요.';await svc.prepare({onProgress:()=>{}});const result=await svc.recognize(file,{onProgress:()=>{}});if(!result.ok)throw Error('글자를 읽지 못했어요. 다시 선택해 주세요.');if(charTodoForm!==form)return;form.text=String(result.text||'').slice(0,500);form.title=CharacterUI.title(form.text);charTodoRender();el('hn-task-error').textContent='읽은 내용과 제목을 확인한 뒤 저장해 주세요. 날짜는 직접 확인해 주세요.';}catch(e){if(charTodoForm===form&&el('hn-task-error'))el('hn-task-error').textContent=e.message;}};input.click();}
   let charVoice=null;
   function charStartVoice(){const f=charTodoForm;charVoice=CaptureVoice.create({win:window,storage:localStorage,onText:t=>{if(charTodoForm!==f)return;f.text=((f.text||'')+' '+t).trim().slice(0,500);if(!f.titleEdited)f.title=CharacterUI.title(f.text);charTodoRender();},onState:s=>{if(charTodoForm===f&&el('hn-task-error'))el('hn-task-error').textContent=s.listening?'듣고 있어요…':s.mode==='keyboard'?'키보드의 마이크로 받아쓰기해 주세요.':'인식된 글자를 확인해 주세요.';}});if(!charVoice.start()){el('hn-task-error').textContent='키보드의 마이크로 받아쓰기해 주세요.';el('hn-task-text').focus();}}

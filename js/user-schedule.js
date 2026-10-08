@@ -31,7 +31,7 @@
 
   const REQUIRED_KEYS = Object.freeze(["v", "sourceType", "title", "category", "scope", "dateKind", "allDay", "createdAt", "updatedAt"]);
   const OPTIONAL_KEYS = Object.freeze([
-    "tags", "childKeys", "eventDate", "endDate", "periodStart", "periodEnd", "startTime", "endTime", "recurrence", "exceptions",
+    "categoryLabel", "tags", "childKeys", "eventDate", "endDate", "periodStart", "periodEnd", "startTime", "endTime", "recurrence", "exceptions",
     "assigneeMemberId", "needsAssignee", "status", "location", "memo", "provenance", "deletedAt", "authorLabel", "splitFromScheduleId", "autoRef",
   ]);
   const ALLOWED_KEYS = Object.freeze([...REQUIRED_KEYS, ...OPTIONAL_KEYS]);
@@ -120,6 +120,7 @@
 
     if (doc.v !== 1) err("SCHEMA", "v", "v 는 1");
     if (!SOURCE_TYPES.includes(doc.sourceType)) err("SCHEMA", "sourceType", "sourceType enum");
+    if (!nil(doc.categoryLabel) && (typeof doc.categoryLabel !== "string" || !doc.categoryLabel.length || doc.categoryLabel.length > 30)) err("SCHEMA", "categoryLabel", "categoryLabel 1~30자");
     if (!CATEGORIES.includes(doc.category)) err("SCHEMA", "category", "category enum");
     if (!SCOPES.includes(doc.scope)) err("SCHEMA", "scope", "scope enum");
     if (!DATE_KINDS.includes(doc.dateKind)) err("SCHEMA", "dateKind", "dateKind enum");
@@ -303,7 +304,7 @@
     if (!doc || !nil(doc.deletedAt)) return [];
     if (isRecurring(doc)) return expandRecurring(doc, rangeStart, rangeEnd);
     const common = {
-      origin: "USER", sourceType: doc.sourceType, scheduleId: doc.id || null, childKeys: doc.childKeys || [], scope: doc.scope, category: doc.category,
+      origin: "USER", sourceType: doc.sourceType, scheduleId: doc.id || null, childKeys: doc.childKeys || [], scope: doc.scope, category: doc.category, ...(doc.categoryLabel ? {categoryLabel:doc.categoryLabel} : {}),
       title: doc.title, allDay: doc.allDay, startTime: doc.startTime || null, endTime: doc.endTime || null, assigneeMemberId: doc.assigneeMemberId || null,
       status: doc.status || "TODO", memo: doc.memo || "", location: doc.location || "", tags: doc.tags || [], dateKind: doc.dateKind,
     };
@@ -350,7 +351,7 @@
         endTime = mv.endTime || null;
       }
       const o = {
-        origin: "USER", sourceType: doc.sourceType, scheduleId: doc.id || null, childKeys: doc.childKeys || [], scope: doc.scope, category: doc.category,
+        origin: "USER", sourceType: doc.sourceType, scheduleId: doc.id || null, childKeys: doc.childKeys || [], scope: doc.scope, category: doc.category, ...(doc.categoryLabel ? {categoryLabel:doc.categoryLabel} : {}),
         title: doc.title, allDay, startTime, endTime, assigneeMemberId: doc.assigneeMemberId || null,
         status: cancelled ? "CANCELLED" : ex.status === "DONE" ? "DONE" : "TODO", memo: doc.memo || "", location: doc.location || "", tags: doc.tags || [], dateKind: "FIXED",
         key: `u:${doc.id || null}@${orig}`, date, originalDate: orig, recurring: true, rescheduled: moved,

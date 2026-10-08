@@ -72,7 +72,7 @@
             if (!l || !l.ok) return { ok: false, reason: "not-found", step: "household" };
           }
           const t = now();
-          const doc = { v: 1, displayName: intent.displayName, role: intent.role, createdAt: t, updatedAt: t };
+          const doc = { ...(user.email ? {email:user.email} : {}), v: 1, displayName: intent.displayName, role: intent.role, createdAt: t, updatedAt: t };
           if (intent.institution) doc.institution = intent.institution;
           if (intent.situation === "HAS_CHILD" || intent.situation === "EXPECTING") doc.situation = intent.situation;
           if (intent.province && intent.district) { doc.province = intent.province; doc.district = intent.district; }
@@ -86,7 +86,7 @@
       let hid, code, mirror, created = false;
       try {
         if (intent.joiningCode) {
-          const r = await household.joinHousehold(intent.joiningCode);
+          const r = await household.joinHousehold(intent.joiningCode, {metadataOnly:true});
           if (!r || !r.ok) return { ok: false, reason: r && r.reason === "not-found" ? "not-found" : "network", step: "household" };
           hid = r.householdId;
           code = intent.joiningCode;
@@ -103,6 +103,11 @@
         const w = await household.upsertMember(hid, { ...(pick.memberId ? { memberId: pick.memberId } : {}), role: pick.role, label: pick.label, order: pick.order, uid });
         if (!w || !w.ok || !w.memberId) return { ok: false, reason: "network", step: "member" };
         await adapter.set(pathOf(uid), { householdId: hid, householdCode: code, memberId: w.memberId, updatedAt: now() }, { merge: true });
+        // Protected schedules/todos are fetched only after account membership is linked.
+        if (intent.joiningCode) {
+          const joined = await household.joinHousehold(code);
+          if (!joined || !joined.ok) return {ok:false, reason:'network', step:'household'};
+        }
         return { ok: true, resumed: false, householdId: hid, householdCode: code, memberId: w.memberId, created, claimedSeed: pick.claimed };
       } catch (e) {
         return isDenied(e) ? { ok: false, reason: "rules-unavailable" } : { ok: false, reason: "network", step: "household" };
@@ -110,9 +115,14 @@
     }
 
     /** 로그인 후 계정 문서 조회(다른 기기 복원용). { ok, account|null } — 규칙이 없거나 오프라인이면 account:null 로 조용히 넘어간다. */
-    async function restore(uid) {
+    async function restore(uid, email) {
       try {
-        return { ok: true, account: await getAccount(uid) };
+        const account = await getAccount(uid);
+        if (account && email && account.email !== email) {
+          await adapter.set(pathOf(uid), {email, updatedAt:now()}, {merge:true});
+          account.email = email;
+        }
+        return { ok: true, account };
       } catch (e) {
         return { ok: false, account: null, reason: isDenied(e) ? "rules-unavailable" : "network" };
       }

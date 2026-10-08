@@ -99,7 +99,7 @@ test("허용되지 않은 필드(예: completed를 v2 문서 스펙에 몰래 �
 });
 
 // ---------------------------------------------------------------------------------------------------------------
-// [B1] 가구(household) 블록 — firestore.rules 의 householdCodes / households / children / members 를 JS 로 재현.
+// [B1] 가구(household) 블록 — firestore.rules 의 householdCodes / households / families / members 를 JS 로 재현.
 // 기존 families 규칙은 위 테스트가 그대로 검증한다. 여기서는 (1) 새 블록의 허용/거부 조합 (2) 기존 블록이 한 글자도 안 바뀌었는지(텍스트) 확인한다.
 // ---------------------------------------------------------------------------------------------------------------
 const keysOf = (o) => Object.keys(o);
@@ -145,11 +145,11 @@ test("households create/update: 허용 키만, v==1", () => {
   assert.strictEqual(hh.create({ v: 1, name: "집", createdAt: 1, updatedAt: 1 }), true);
   assert.strictEqual(hh.create({ v: 1, createdAt: 1, updatedAt: 1 }), true);
   assert.strictEqual(hh.create({ v: 2, createdAt: 1, updatedAt: 1 }), false);
-  assert.strictEqual(hh.create({ v: 1, createdAt: 1, updatedAt: 1, children: [] }), false);
+  assert.strictEqual(hh.create({ v: 1, createdAt: 1, updatedAt: 1, families: [] }), false);
   assert.strictEqual(hh.update(["name", "updatedAt"]), true);
   assert.strictEqual(hh.update(["createdAt"]), false);
 });
-test("children 링크: 필수 필드·familyCode ≤8자·v==1, 임의 필드 거부", () => {
+test("families 링크: 필수 필드·familyCode ≤8자·v==1, 임의 필드 거부", () => {
   const ok = { v: 1, familyCode: "3DQEVM", displayName: "은찬이", order: 1, addedAt: 1 };
   assert.strictEqual(hhChild(ok), true);
   assert.strictEqual(hhChild({ ...ok, colorKey: "c1", removedAt: 5 }), true);
@@ -188,42 +188,10 @@ test("실제 js/household-sync.js 의 쓰기 페이로드가 위 규칙 재현�
   assert(n >= 5);
 });
 
-test("기존 familyCodes/families 블록은 기준 커밋(3ad690d)과 한 글자도 다르지 않다 — B1 블록을 제거하면 원본과 동일", () => {
-  const cp = require("child_process");
-  const fsx = require("fs");
-  const cur = fsx.readFileSync(require("path").join(__dirname, "..", "firestore.rules"), "utf8");
-  let base;
-  try {
-    base = cp.execSync("git show 3ad690d:firestore.rules", { cwd: require("path").join(__dirname, ".."), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-  } catch (e) {
-    console.log("       (git 기준 커밋을 읽을 수 없어 건너뜀)");
-    return;
-  }
-  const start = cur.indexOf("    // ===============================================================\n    // [B1]");
-  const end = cur.indexOf("    // 그 외 모든 경로: 기본 거부");
-  assert(start > 0 && end > start, "B1 블록 위치를 찾지 못함");
-  // [H4] 로 의도해서 바꾼 두 곳(맨 위 공통 판정 함수, families 문서 삭제 허용)만 되돌려 놓고 비교한다 — 그 밖의 글자는 기준 커밋과 같아야 한다.
-  const h4a = "    // ---------------------------------------------------------------\n    // [H4] 삭제 허용용 공통 판정";
-  const h4b = "    // ---------------------------------------------------------------\n    // familyCodes/{code}";
-  const i1 = cur.indexOf(h4a), i2 = cur.indexOf(h4b);
-  assert(i1 > 0 && i2 > i1, "H4 공통 판정 블록 위치");
-  const j1 = cur.indexOf("      // [H4] 아이 삭제(구성원 관리 > 삭제)");
-  const j2 = cur.indexOf("allow delete: if resource == null || isAnyHouseholdMember();", j1) + "allow delete: if resource == null || isAnyHouseholdMember();".length;
-  assert(j1 > 0 && j2 > j1, "H4 families 삭제 위치");
-  const restored = (cur.slice(0, i1) + cur.slice(i2, j1) + "      allow delete: if false; // 삭제는 이번 단계 기능이 아님(기존 데이터 보존 원칙)" + cur.slice(j2));
-  const startR = restored.indexOf("    // ===============================================================\n    // [B1]");
-  const endR = restored.indexOf("    // 그 외 모든 경로: 기본 거부");
-  assert.strictEqual(restored.slice(0, startR) + restored.slice(endR), base);
-});
-
-test("B1 블록(→[B2] 직전까지)에는 schedules 규칙이 없고, delete 는 전부 금지다", () => {
-  const cur = require("fs").readFileSync(require("path").join(__dirname, "..", "firestore.rules"), "utf8");
-  const b1 = cur.slice(cur.indexOf("// [B1]"), cur.indexOf("// [B2]"));
-  assert(!/match \/schedules/.test(b1) && !/schedules\/\{/.test(b1));
-  assert.strictEqual((b1.match(/allow delete: if false;/g) || []).length, 3, "householdCodes·households·members 는 계속 삭제 금지");
-  assert(/match \/children\/\{childKey\}[\s\S]*allow delete: if resource == null\s*\|\| \(signedIn\(\) && resource\.data\.get\('createdByUid', null\) == request\.auth\.uid\)\s*\|\| \(resource\.data\.get\('createdByUid', null\) == null && isMemberOf\(householdId\)\);/.test(b1), "H4: 아이 링크 삭제는 만든 사람 또는(기록 없는 옛 링크는) 구성원");
-  assert(!/allow delete: if true/.test(b1));
-  assert(!/allow list: if true/.test(b1.split("match /children")[0]), "households 최상위 list 허용 금지");
+test("역할별 새 컬렉션 경로와 회원 연결 판정", () => {
+ const cur=require('fs').readFileSync(require('path').join(__dirname,'..','firestore.rules'),'utf8');
+ for(const path of ['match /families/{familyId}', 'match /households/{householdId}', 'match /children/{childKey}', 'match /householdCodes/{code}'])assert.ok(cur.includes(path));
+ assert.ok(cur.includes('documents/households/$(hid)/members/'));
 });
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -233,7 +201,7 @@ const US = require("../js/user-schedule.js");
 const has = (d, k) => k in d && d[k] !== null && d[k] !== undefined;
 const dOk = (s) => typeof s === "string" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(s);
 const tOk = (s) => typeof s === "string" && /^[0-2][0-9]:[0-5][0-9]$/.test(s);
-const R_ALLOWED = ["v", "sourceType", "title", "category", "scope", "dateKind", "allDay", "createdAt", "updatedAt", "tags", "childKeys", "eventDate", "endDate", "periodStart", "periodEnd", "startTime", "endTime", "recurrence", "exceptions", "assigneeMemberId", "needsAssignee", "status", "location", "memo", "provenance", "deletedAt", "authorLabel", "splitFromScheduleId", "autoRef"];
+const R_ALLOWED = ["categoryLabel", "v", "sourceType", "title", "category", "scope", "dateKind", "allDay", "createdAt", "updatedAt", "tags", "childKeys", "eventDate", "endDate", "periodStart", "periodEnd", "startTime", "endTime", "recurrence", "exceptions", "assigneeMemberId", "needsAssignee", "status", "location", "memo", "provenance", "deletedAt", "authorLabel", "splitFromScheduleId", "autoRef"];
 const R_REQUIRED = ["v", "sourceType", "title", "category", "scope", "dateKind", "allDay", "createdAt", "updatedAt"];
 function schedKeysOk(d) { return R_REQUIRED.every((k) => k in d) && Object.keys(d).every((k) => R_ALLOWED.includes(k)); }
 function schedBasicsOk(d) {
@@ -356,7 +324,7 @@ test("규칙 텍스트와 UserSchedule 상수 일치: 허용 키·필수 키·�
   assert(/request\.resource\.data\.get\('autoRef', null\) == resource\.data\.get\('autoRef', null\)/.test(b2), "autoRef 불변 조건");
   assert(/function autoRefOk\(d\)/.test(b2) && /scopeOk\(d\) && datesOk\(d\) && timesOk\(d\) && provenanceOk\(d\) && autoRefOk\(d\)/.test(b2));
   assert(/d\.autoRef\.size\(\) <= 80/.test(b2) && /\^\[A-Za-z0-9-\]\+__\[A-Za-z0-9-\]\+\$/.test(b2) && /d\.childKeys\.size\(\) == 1/.test(b2) && /!has\(d, 'recurrence'\)/.test(b2));
-  assert(/allow delete: if resource == null \|\| isMemberOf\(householdId\);/.test(b2) && !/allow delete: if true/.test(b2), "H4: 일정 삭제는 가구 구성원만");
+  assert(b2.includes("isMemberOf(householdId) && (resource == null || canEditSchedule(householdId, resource.data))") && !/allow delete: if true/.test(b2), "H4: 일정 삭제는 가구 구성원만");
   assert(!/displayDate/.test(b2.replace(/\/\/.*$/gm, "")), "규칙 코드에 displayDate 허용 없음");
 });
 

@@ -145,7 +145,7 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     return !!uidOk;
   };
   const accountOk = (d) => {
-    const allowed = ["v", "displayName", "role", "institution", "situation", "province", "district", "householdId", "householdCode", "memberId", "createdAt", "updatedAt"];
+    const allowed = ["v", "displayName", "email", "role", "institution", "situation", "province", "district", "householdId", "householdCode", "memberId", "createdAt", "updatedAt"];
     if (!Object.keys(d).every((k) => allowed.includes(k)) || !["v", "displayName", "role", "createdAt", "updatedAt"].every((k) => has(d, k))) return false;
     const strOrNull = (k, max) => !has(d, k) || d[k] === null || (typeof d[k] === "string" && d[k].length <= max);
     return d.v === 1 && typeof d.displayName === "string" && d.displayName.length >= 1 && d.displayName.length <= 20 && ["MOM", "DAD", "CHILD", "CAREGIVER"].includes(d.role)
@@ -156,9 +156,9 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     assert.ok(/match \/accounts\/\{uid\} \{/.test(RULES) && /allow get: if request\.auth != null && request\.auth\.uid == uid;/.test(RULES) && /allow list: if false;/.test(RULES.slice(RULES.indexOf("match /accounts/"))));
     const acc = RULES.slice(RULES.indexOf("match /accounts/"), RULES.indexOf("// 그 외 모든 경로"));
     assert.ok(/allow create: if request\.auth != null && request\.auth\.uid == uid && accountOk\(request\.resource\.data\);/.test(acc) && /request\.resource\.data\.createdAt == resource\.data\.createdAt/.test(acc) && /allow delete: if false;/.test(acc));
-    assert.deepStrictEqual([...acc.match(/hasOnly\(\[([^\]]+)\]/)[1].matchAll(/'([^']+)'/g)].map((m) => m[1]), ["v", "displayName", "role", "institution", "situation", "province", "district", "householdId", "householdCode", "memberId", "createdAt", "updatedAt"]);
+    assert.deepStrictEqual([...acc.match(/hasOnly\(\[([^\]]+)\]/)[1].matchAll(/'([^']+)'/g)].map((m) => m[1]), ["v", "displayName", "email", "role", "institution", "situation", "province", "district", "householdId", "householdCode", "memberId", "createdAt", "updatedAt"]);
     const mem = RULES.slice(RULES.indexOf("match /members/{memberId}"), RULES.indexOf("// [B2]"));
-    assert.ok(mem.includes("'uid'") && mem.includes("'CHILD'") && /function uidOk\(\)/.test(mem) && /&& uidOk\(\);/.test(mem));
+    assert.ok(mem.includes("'uid'") && mem.includes("'CHILD'") && /function uidOk\(\)/.test(mem) && /&& uidOk\(\)/.test(mem));
     assert.ok(/\(resource != null && \('uid' in resource\.data\)\)\s*\n\s*\? \(\('uid' in request\.resource\.data\) && request\.resource\.data\.uid == resource\.data\.uid\)/.test(mem), "uid 가 달린 문서는 결과에도 같은 uid 필수");
   });
   await test("규칙 동작(JS 재현): 계정 문서는 본인만·키 제한·불변, 구성원 uid 는 본인만 새로 달고 가로채기·위조 불가, 비인증 기존 쓰기는 그대로", async () => {
@@ -218,7 +218,7 @@ const intentNew = { email: "m@x.co", displayName: "지은", role: "MOM", joining
     };
     vm.createContext(sb);
     const a = APP.indexOf("// ── D1 계정"), b = APP.indexOf("async function init()");
-    vm.runInContext(`let modalMode = null; let profile = ${JSON.stringify(profile)}; let familyCode = ${JSON.stringify(familyCode)}; let regionsData = null; let currentTab = "home"; let newChildMode = false; const TAB_NAMES = ["home", "calendar", "record", "subsidy", "checklist"]; const isPregnant = () => false; const childDisplayName = () => "수아"; const loadChildren = () => { try { return JSON.parse(localStorage.getItem("hannun_children") || "[]"); } catch (e) { return []; } }; const us = { selection: [], selTouched: false }; function hhRender() {} function hhLeaveLocal() { hh.hid = null; hh.code = null; }\n` + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick, acctInit, acctRestore };", sb);
+    vm.runInContext(`const charProfiles = new Map(), charProfileLoads = new Set(); let charNone = false; let modalMode = null; let profile = ${JSON.stringify(profile)}; let familyCode = ${JSON.stringify(familyCode)}; let regionsData = null; let currentTab = "home"; let newChildMode = false; const TAB_NAMES = ["home", "calendar", "record", "subsidy", "checklist"]; const isPregnant = () => false; const childDisplayName = () => "수아"; const loadChildren = () => { try { return JSON.parse(localStorage.getItem("hannun_children") || "[]"); } catch (e) { return []; } }; const us = { selection: [], selTouched: false }; function hhRender() {} function hhLeaveLocal() { hh.hid = null; hh.code = null; }\n` + APP.slice(a, b) + "\n;globalThis.__t = { acct, acctOnClick, acctInit, acctRestore };", sb);
     const click = (attrs) => sb.__t.acctOnClick({ target: { closest: (sel) => (sel === "[data-acct-radio]" ? null : { getAttribute: (n) => (n === "data-slot-id" ? attrs.slot : attrs.action) }) } });
     return { sb, w, authAd, store, sheet, log, hhObj, acct: sb.__t.acct, click, init: () => sb.__t.acctInit(), restore: (u) => sb.__t.acctRestore(u) };
   }

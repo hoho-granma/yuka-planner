@@ -589,7 +589,7 @@
       scheduleId: occ.scheduleId,
       title: occ.title,
       categoryKey: occ.category,
-      categoryLabel: categoryLabel(occ.category),
+      categoryLabel: occ.categoryLabel || categoryLabel(occ.category),
       scope: occ.scope,
       timeText: occ.dateKind === "PERIOD" ? "" : timeText(occ),
       dateText: dateText(occ),
@@ -809,7 +809,7 @@
       : { repeat: "NONE", byDay: [], untilMode: "NONE", until: "", wasRecurring: false };
     return {
       ...repeatFields,
-      mode: "edit", scheduleId: doc.id || null, title: doc.title || "", category: doc.category || "", scope: doc.scope, childKeys: (doc.childKeys || []).slice(), assigneeMemberId: typeof doc.assigneeMemberId === "string" ? doc.assigneeMemberId : "",
+      mode: "edit", scheduleId: doc.id || null, title: doc.title || "", category: doc.category || "", categoryLabel: doc.categoryLabel || "", charCategory: doc.categoryLabel || "", scope: doc.scope, childKeys: (doc.childKeys || []).slice(), assigneeMemberId: typeof doc.assigneeMemberId === "string" ? doc.assigneeMemberId : "",
       dateKind: doc.dateKind, eventDate: rec ? rec.startDate || "" : doc.eventDate || "", multiDay: !!doc.endDate, endDate: doc.endDate || "", periodStart: doc.periodStart || "", periodEnd: doc.periodEnd || "",
       allDay: doc.allDay !== false, startTime: doc.startTime || "", endTime: doc.endTime || "", location: doc.location || "", memo: doc.memo || "",
       ...(doc.autoRef ? { autoRef: doc.autoRef } : {}),
@@ -819,6 +819,7 @@
   /** 폼 → UserSchedule.buildCreateDoc 입력(MANUAL). 쓰지 않는 필드는 아예 넣지 않는다. */
   function formToInput(f) {
     const input = { sourceType: "MANUAL", title: String(f.title || "").trim(), category: f.category, scope: f.scope, dateKind: f.dateKind, allDay: !!f.allDay };
+    if (f.charCategory || f.categoryLabel) input.categoryLabel = f.charCategory || f.categoryLabel;
     if (f.scope === "CHILD") input.childKeys = (f.childKeys || []).slice();
     if (f.autoRef) input.autoRef = f.autoRef; // C2: 연결은 생성 때만 정해진다(수정은 PATCH_FIELDS 밖)
     if (f.assigneeMemberId && (!f.g13 || (f.scope === "FAMILY" && f.whoPerson === true))) input.assigneeMemberId = f.assigneeMemberId; // 미지정이면 필드 생략(규칙은 null 을 허용하지 않는다). 계정 모드(g13) 새 일정은 구성원 일정(누구=구성원)일 때만 저장 — 아이·가족 일정에 담당 기본값을 남기지 않는다(D40)
@@ -911,7 +912,7 @@
     }
     return { ok: true, input, messages: [] };
   }
-  const PATCH_FIELDS = Object.freeze(["title", "category", "scope", "childKeys", "dateKind", "eventDate", "endDate", "periodStart", "periodEnd", "allDay", "startTime", "endTime", "location", "memo", "assigneeMemberId"]);
+  const PATCH_FIELDS = Object.freeze(["title", "category", "categoryLabel", "scope", "childKeys", "dateKind", "eventDate", "endDate", "periodStart", "periodEnd", "allDay", "startTime", "endTime", "location", "memo", "assigneeMemberId"]);
   /** 규칙 비교(키 순서·interval 생략 무시): 같은 규칙이면 true. Firestore 는 맵 키를 정렬해 돌려줄 수 있어 JSON 문자열 비교를 쓰지 않는다. */
   function sameRule(a, b) {
     if (!a || !b) return !a && !b;

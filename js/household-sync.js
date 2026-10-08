@@ -302,7 +302,7 @@
     }
 
     // ── 참여(새 기기) ─────────────────────────────────────────────────
-    async function joinHousehold(code) {
+    async function joinHousehold(code, options = {}) {
       if (!enabled()) return DISABLED;
       code = String(code || "").trim().toUpperCase();
       const a = getAdapter();
@@ -311,8 +311,8 @@
       const hid = c.data.householdId;
       const h = await a.get("households/" + hid);
       if (!h.exists) return { ok: false, reason: "not-found" };
-      const [kids, members, schedules] = await Promise.all([a.list(`households/${hid}/children`), a.list(`households/${hid}/members`), a.list(`households/${hid}/schedules`)]);
-      const todos = await a.list(`households/${hid}/todos`).catch(() => []); // G22: 규칙 미배포(permission-denied)여도 합류는 계속한다
+      const [kids, members, schedules] = await Promise.all([a.list(`households/${hid}/children`), a.list(`households/${hid}/members`), options.metadataOnly ? Promise.resolve([]) : a.list(`households/${hid}/schedules`)]);
+      const todos = options.metadataOnly ? [] : await a.list(`households/${hid}/todos`).catch(() => []); // G22: 규칙 미배포(permission-denied)여도 합류는 계속한다
       const m = loadMirror(hid);
       m.household = h.data;
       mergeCollection(m, "children", kids, hid);
