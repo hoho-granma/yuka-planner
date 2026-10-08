@@ -3507,7 +3507,9 @@
     const owner = acct.user && acct.user.uid || "local";
     const docs = typeof usDocs === "function" && usActive() ? usDocs() : [];
     const lessons = typeof EduTrend !== "undefined" ? EduTrend.myLessons(docs, [acct36LinkKey(), familyCode].filter(Boolean)).lessons : [];
-    GrowthRecords.mount(el("growth-body"), { name: childDisplayName(), scope: JSON.stringify([owner, child]), lessons, onCalendar: () => switchTab("calendar") });
+    const growthLink = usActive() ? usLinks().find(l => l.familyCode === child && !l.removedAt) : null;
+    const backend = DBPaths.deployment.growthServer && acct.user && growthLink ? GrowthSync.create({getContext:()=>({uid:acct.user && acct.user.uid,familyId:hh.hid,childKey:(usLinks().find(l=>l.familyCode===familyCode&&!l.removedAt)||{}).childKey,childCode:familyCode})}) : null;
+    GrowthRecords.mount(el("growth-body"), { backend, name: childDisplayName(), scope: JSON.stringify([owner, child]), lessons, onCalendar: () => switchTab("calendar") });
   }
   document.addEventListener("click", (e) => { if (e.target.closest("[data-growth-home]")) switchTab("growth"); });
   // ── E(2-1·2-2) 하단 탭 교체: 가구·계정 기능이 켜졌을 때만 '기록' 탭 자리에 '어디갈까'. 기록은 프로필 시트의 '기록 보기'로 연다(기존 기록 패널 그대로). ──
@@ -3549,7 +3551,7 @@
       placesStatsLoading = (async () => {
         try {
           if (typeof firebase === "undefined" || !firebase.firestore) return;
-          const snap = await firebase.firestore().collection("placeStats").get();
+          const snap = await firebase.firestore().collection(DBPaths.map("placeStats")).get();
           const m = {};
           snap.docs.forEach((d) => { const c = d.data() && d.data().count; if (typeof c === "number") m[d.id] = { count: c }; });
           placesStats = m;
@@ -3573,7 +3575,7 @@
     try {
       if (typeof firebase === "undefined" || !firebase.firestore) return;
       const FV = firebase.firestore.FieldValue;
-      await firebase.firestore().collection("placeStats").doc(placeId).set({ count: FV.increment(1), updatedAt: FV.serverTimestamp() }, { merge: true });
+      await firebase.firestore().collection(DBPaths.map("placeStats")).doc(placeId).set({ count: FV.increment(1), updatedAt: FV.serverTimestamp() }, { merge: true });
       const cur = (placesStats[placeId] && placesStats[placeId].count) || 0;
       placesStats[placeId] = { count: cur + 1 };
     } catch (e) { /* 규칙 미배포·오프라인: 조용히 무시 */ }

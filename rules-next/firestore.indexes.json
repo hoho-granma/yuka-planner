@@ -1,0 +1,13 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    {"collectionGroup":"children","fieldPath":"profile","indexes":[]},
+    {"collectionGroup":"children","fieldPath":"completed","indexes":[]},
+    {"collectionGroup":"children","fieldPath":"records","indexes":[]},
+    {"collectionGroup":"schedules","fieldPath":"memo","indexes":[]},
+    {"collectionGroup":"schedules","fieldPath":"exceptions","indexes":[]},
+    {"collectionGroup":"schedules","fieldPath":"provenance","indexes":[]},
+    {"collectionGroup":"growthRecords","fieldPath":"text","indexes":[]},
+    {"collectionGroup":"growthRecords","fieldPath":"attachment","indexes":[]}
+  ]
+}

@@ -43,6 +43,8 @@ const SHELL_ASSETS = [
   "./js/capture/voice.js",
   "./css/capture.css",
   "./js/next-stage.js",
+  "./js/db-paths.js",
+  "./js/growth-sync.js",
   "./js/sync.js",
   "./js/feature-flags.js",
   "./js/household-sync.js",

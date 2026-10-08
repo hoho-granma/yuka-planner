@@ -47,7 +47,7 @@
   /** 실제 Firestore(compat SDK)를 어댑터 계약에 맞춘다. 호출될 때에만 firebase.firestore() 를 만든다. */
   function firestoreAdapter(getDb) {
     const refOf = (path) => {
-      const parts = path.split("/");
+      const parts = (typeof DBPaths !== "undefined" ? DBPaths.map(path) : path).split("/");
       let ref = getDb();
       parts.forEach((seg, i) => {
         ref = i % 2 === 0 ? ref.collection(seg) : ref.doc(seg);

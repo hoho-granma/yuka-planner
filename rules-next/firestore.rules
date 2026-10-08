@@ -432,6 +432,48 @@ service cloud.firestore {
     }
 
 
+    // Growth records: signed-in family members only, revision-controlled shared edits.
+    match /families/{householdId}/growthRecords/{recordId} {
+      function recordOk(d) {
+        return d.keys().hasOnly(['schemaVersion','childKey','activityId','group','activity','recordDate','title','text','attachment','createdByUid','updatedByUid','createdAt','updatedAt','revision','importKey','importFingerprint','legacyCreatedAt','deletedAt'])
+          && d.keys().hasAll(['schemaVersion','childKey','activityId','group','activity','recordDate','title','text','attachment','createdByUid','updatedByUid','createdAt','updatedAt','revision'])
+          && d.schemaVersion == 1 && d.childKey is string && d.activityId is string
+          && d.group in ['school','academy','activity','home']
+          && d.activity is string && d.activity.size() > 0 && d.activity.size() <= 60
+          && d.title is string && d.title.size() > 0 && d.title.size() <= 100
+          && d.text is string && d.text.size() <= 10000
+          && d.recordDate is string && d.recordDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && d.createdByUid is string && d.updatedByUid == request.auth.uid
+          && d.createdAt is int && d.updatedAt is int && d.revision is int
+          && (d.attachment == null || (d.attachment is map
+            && d.attachment.keys().hasOnly(['storagePath','contentType','size','hash'])
+            && d.attachment.storagePath is string
+            && d.attachment.storagePath.matches('^families/' + householdId + '/growthRecords/' + recordId + '/image_[a-f0-9]{64}$')
+            && d.attachment.contentType is string && d.attachment.contentType.matches('^image/.*')
+            && d.attachment.size is int && d.attachment.size > 0 && d.attachment.size <= 15728640
+            && d.attachment.hash is string && d.attachment.hash.matches('^[a-f0-9]{64}$')))
+          && (!('importKey' in d) || (d.importKey == recordId && d.importFingerprint is string && d.importFingerprint.matches('^[a-f0-9]{64}$') && d.legacyCreatedAt is int))
+          && (!('deletedAt' in d) || d.deletedAt is int);
+      }
+      function ownsChild(d) {
+        return exists(/databases/$(database)/documents/families/$(householdId)/childLinks/$(d.childKey))
+          && get(/databases/$(database)/documents/families/$(householdId)/childLinks/$(d.childKey)).data.get('removedAt',null) == null
+          && (isFamilyAdult(householdId) || (isMemberOf(householdId) && memberDocOf(householdId).role == 'CHILD' && memberDocOf(householdId).get('childKey', null) == d.childKey));
+      }
+      allow get, list: if isMemberOf(householdId);
+      allow create: if ownsChild(request.resource.data) && recordOk(request.resource.data)
+        && request.resource.data.createdByUid == request.auth.uid && request.resource.data.revision == 1;
+      allow update: if ownsChild(resource.data) && ownsChild(request.resource.data) && recordOk(request.resource.data)
+        && request.resource.data.childKey == resource.data.childKey
+        && request.resource.data.createdByUid == resource.data.createdByUid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.get('importKey', null) == resource.data.get('importKey', null)
+        && request.resource.data.get('importFingerprint', null) == resource.data.get('importFingerprint', null)
+        && request.resource.data.revision == resource.data.revision + 1;
+      allow delete: if false;
+    }
+
+
     // Read-only legacy data for the transition period. Old client writes must stop
     // before the final reconciliation; its local pending queue is retained for v2 replay.
     match /householdCodes/{code} { allow get: if true; allow list, write: if false; }

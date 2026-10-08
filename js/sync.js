@@ -34,12 +34,12 @@
   async function createFamily(profileData, completedData) {
     let code = randomCode();
     for (let i = 0; i < 3; i++) {
-      const doc = await db.collection("families").doc(code).get();
+      const doc = await db.collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families").doc(code).get();
       if (!doc.exists) break;
       code = randomCode();
     }
     await db
-      .collection("families")
+      .collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families")
       .doc(code)
       .set({
         profile: profileData,
@@ -51,14 +51,14 @@
   }
 
   async function fetchFamily(code) {
-    const doc = await db.collection("families").doc(code.toUpperCase()).get();
+    const doc = await db.collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families").doc(code.toUpperCase()).get();
     if (!doc.exists) return null;
     return doc.data();
   }
 
   async function updateProfile(code, profileData) {
     await db
-      .collection("families")
+      .collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families")
       .doc(code)
       .set({ profile: profileData, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
   }
@@ -66,7 +66,7 @@
   async function updateCompleted(code, completedData) {
     // set({merge:true})는 completed 맵을 필드 단위로 병합해서, 완료 취소로 지운 키가 서버에 그대로
     // 남아 다시 완료로 되돌아온다. update()는 completed 필드를 통째로 교체하므로 삭제가 반영된다.
-    const ref = db.collection("families").doc(code);
+    const ref = db.collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families").doc(code);
     const payload = { completed: completedData, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
     try {
       await ref.update(payload);
@@ -97,7 +97,7 @@
     if (overlap.length) throw new Error("같은 키를 set 과 remove 에 함께 둘 수 없습니다: " + overlap.join(","));
     const removeKeys = Array.from(new Set(removeList));
     if (!setKeys.length && !removeKeys.length) return;
-    const ref = db.collection("families").doc(code);
+    const ref = db.collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families").doc(code);
     const stamp = firebase.firestore.FieldValue.serverTimestamp();
     const del = firebase.firestore.FieldValue.delete();
     const args = [];
@@ -137,7 +137,7 @@
    * id에는 점(.)이 들어가지 않는다(js/records.js newId).
    */
   async function updateRecord(code, id, record) {
-    const ref = db.collection("families").doc(code);
+    const ref = db.collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families").doc(code);
     const stamp = firebase.firestore.FieldValue.serverTimestamp();
     try {
       await ref.update({ ["records." + id]: record, updatedAt: stamp });
@@ -152,12 +152,12 @@
    * 하위 컬렉션은 쓰지 않는다(v1 구조는 한 문서에 다 들어 있다).
    */
   async function deleteFamily(code) {
-    await db.collection("families").doc(String(code).toUpperCase()).delete();
+    await db.collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families").doc(String(code).toUpperCase()).delete();
   }
 
   function listen(code, onChange) {
     return db
-      .collection("families")
+      .collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families")
       .doc(code)
       .onSnapshot(
         (doc) => {

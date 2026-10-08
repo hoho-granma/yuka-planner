@@ -56,6 +56,8 @@
     if (dispose) dispose();
     let alive = true, records = [], selected = "academy", activity = "", urls = [], loading = true, failed = false;
     const scope = opts.scope;
+    const backend = opts.backend || {read,save};
+    let localImport = [], importing = false, importMessage = "";
     function clearUrls() { urls.forEach((u) => URL.revokeObjectURL(u)); urls = []; }
     dispose = () => { alive = false; clearUrls(); };
     function render() {
@@ -67,10 +69,10 @@
       ${selected === "academy" && lessons.length ? `<div class="gr-linked"><strong>교육트렌드에 등록한 학원 일정</strong>${lessons.filter((l) => !activity || l.title === activity).map((l) => `<p>${esc(l.title)} <small>${l.weekly ? `주 ${l.weekly}회` : "반복 없음"}</small></p>`).join("")}<button type="button" class="gr-edit" data-gr-calendar>캘린더에서 일정 보기 →</button><small>수업 일정이 활동으로 연결돼요. 활동 기록은 직접 남겨 주세요.</small></div>` : ""}
       <div class="gr-timeline" aria-live="polite">${loading ? '<p class="gr-empty">기록을 불러오고 있어요.</p>' : failed ? '<p class="gr-empty">기록을 불러오지 못했어요. 저장 공간을 사용할 수 있는지 확인하고 다시 시도해 주세요.</p><button type="button" class="gr-secondary" data-gr-retry>다시 불러오기</button>' : current.length ? current.map((r) => {
         let image = ""; if (r.image) { const u = URL.createObjectURL(r.image); urls.push(u); image = `<a href="${u}" target="_blank" rel="noopener" class="gr-image-link"><img src="${u}" alt="${esc(r.title)} 첨부 이미지" loading="lazy"><span>캡처 크게 보기 ↗</span></a>`; }
-        return `<article class="gr-record"><time datetime="${r.date}">${r.date.replace(/-/g, ".")}</time><span class="gr-activity-label">${esc(r.activity)}</span><h4>${esc(r.title)}</h4>${r.text ? `<p>${esc(r.text)}</p>` : ""}${image}<button type="button" class="gr-edit" data-gr-edit="${esc(r.id)}">기록 수정</button></article>`;
+        return `<article class="gr-record"><time datetime="${r.date}">${r.date.replace(/-/g, ".")}</time><span class="gr-activity-label">${esc(r.activity)}</span><h4>${esc(r.title)}</h4>${r.text ? `<p>${esc(r.text)}</p>` : ""}${image}${r.imageError ? '<p class="gr-error">사진을 불러오지 못했어요.</p><button type="button" class="gr-edit" data-gr-retry>사진 다시 불러오기</button>' : ""}<button type="button" class="gr-edit" data-gr-edit="${esc(r.id)}">기록 수정</button></article>`;
       }).join("") : `<div class="gr-empty"><strong>아직 ${esc(group.label)} 기록이 없어요.</strong><p>선생님이 보내준 메시지나 캡처 한 장으로<br>첫 순간을 남겨보세요.</p></div>`}</div></section>
       ${all.length ? `<section class="gr-story"><p class="gr-kicker">기록으로 이어지는 이야기</p><h3>${esc(opts.name)}의 ${esc(all[0].date.slice(0, 7).replace("-", "."))}</h3><p>${esc(all.filter((r) => r.date.slice(0, 7) === all[0].date.slice(0, 7)).slice(0, 3).map((r) => `${r.activity}에서 “${r.title}”`).join(" · "))}</p><small>남겨둔 기록 제목을 모았어요.</small></section>` : ""}
-      <button type="button" class="gr-primary" data-gr-add${loading || failed ? " disabled" : ""}>＋ 오늘의 성장 남기기</button><p class="gr-storage-note">이 기기에 아이별로 저장돼요. 다른 기기·가족과 자동 공유되지 않아요.</p><div class="gr-editor-slot"></div></div>`;
+      <button type="button" class="gr-primary" data-gr-add${loading || failed ? " disabled" : ""}>＋ 오늘의 성장 남기기</button><p class="gr-storage-note">${opts.backend ? "로그인한 가족과 아이별로 공유돼요. 기기 원본은 유지돼요." : "이 기기에 아이별로 저장돼요. 다른 기기·가족과 자동 공유되지 않아요."}</p>${opts.backend && (localImport.length || importMessage) ? `<div class="gr-import"><p>이 기기의 성장기록 ${localImport.length}개를 가족에게 공유할 수 있어요.</p>${localImport.length?`<button type="button" class="gr-secondary" data-gr-import ${importing?"disabled":""}>${importing?"이전 중…":"기기 기록 서버로 옮기기"}</button>`:""}<p role="status">${esc(importMessage)}</p></div>` : ""}<div class="gr-editor-slot"></div></div>`;
     }
     function editor(record) {
       const r = record || { group: selected, activity, date: today(), title: "", text: "" };
@@ -86,7 +88,7 @@
       form.elements.image.addEventListener("change", () => { const f = form.elements.image.files[0]; const box = form.querySelector(".gr-preview"); box.innerHTML = ""; if (f && /^image\//.test(f.type)) { const u = URL.createObjectURL(f); urls.push(u); box.innerHTML = `<img src="${u}" alt="첨부 이미지 미리보기">`; } });
       form.addEventListener("submit", async (e) => {
         e.preventDefault(); const button = form.querySelector('[type="submit"]'); const error = form.querySelector(".gr-error");
-        try { const data = new FormData(form); const item = prepare({ id: r.id, group: data.get("group"), activity: data.get("activity"), date: data.get("date"), title: data.get("title"), text: data.get("text"), image: form.elements.image.files[0] || r.image }, scope, r.createdAt || Date.now()); button.disabled = true; error.textContent = ""; await save(item); if (!alive) return; records = records.filter((x) => x.id !== item.id).concat(item); selected = item.group; activity = item.activity; render(); host.querySelector(".gr-records").scrollIntoView({ block: "start" }); }
+        try { const data = new FormData(form); const item = { ...r, ...prepare({ id: r.id, group: data.get("group"), activity: data.get("activity"), date: data.get("date"), title: data.get("title"), text: data.get("text"), image: form.elements.image.files[0] || r.image }, scope, r.createdAt || Date.now()), imageChanged: !!form.elements.image.files[0] }; button.disabled = true; error.textContent = ""; const saved = await backend.save(item); if (!alive) return; records = records.filter((x) => x.id !== item.id).concat(saved || item); selected = item.group; activity = item.activity; render(); host.querySelector(".gr-records").scrollIntoView({ block: "start" }); }
         catch (err) { if (alive) { error.textContent = err.name === "QuotaExceededError" ? "기기 저장 공간이 부족해요. 더 작은 이미지를 골라 주세요." : err.message || "기록을 저장하지 못했어요. 다시 시도해 주세요."; button.disabled = false; } }
       });
       slot.scrollIntoView({ block: "start" }); form.elements.activity.focus();
@@ -99,10 +101,18 @@
       else if (b.hasAttribute("data-gr-edit")) editor(records.find((r) => r.id === b.dataset.grEdit));
       else if (b.hasAttribute("data-gr-cancel")) render();
       else if (b.hasAttribute("data-gr-retry")) load();
+      else if (b.hasAttribute("data-gr-import")) importRecords();
       else if (b.hasAttribute("data-gr-calendar") && opts.onCalendar) opts.onCalendar();
     };
     host.onkeydown = (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.matches(".gr-svg-leaf")) { e.preventDefault(); e.target.dispatchEvent(new MouseEvent("click", { bubbles: true })); } };
-    async function load() { loading = true; failed = false; render(); try { const result = await read(scope); if (!alive) return; records = result; loading = false; render(); } catch (e) { if (alive) { loading = false; failed = true; render(); } } }
+    async function importRecords() {
+      if(importing||!opts.backend)return;
+      importing=true;importMessage="";render();
+      try { const result=await backend.importLocal(localImport,scope);if(!alive)return;importMessage=`${result.done}개 이전 완료`+(result.failed.length?` · ${result.failed.length}개 실패: ${result.failed[0].message}`:"");localImport=localImport.filter(r=>result.failed.some(f=>f.id===r.id));records=await backend.read(scope); }
+      catch(e){if(alive)importMessage=e.message;}
+      finally{if(alive){importing=false;render();}}
+    }
+    async function load() { loading = true; failed = false; render(); try { const result = await backend.read(scope); if(opts.backend) { try { localImport = await backend.pendingLocal(await read(scope),scope); } catch(e) { localImport=[];importMessage=e.message || "기기 기록을 확인하지 못했어요."; } } if (!alive) return; records = result; loading = false; render(); } catch (e) { if (alive) { loading = false; failed = true; render(); } } }
     load();
   }
   return { GROUPS, eligible, prepare, list, activities, linkedActivities, treeMarkup, mount };
