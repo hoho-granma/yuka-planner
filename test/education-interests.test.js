@@ -12,5 +12,5 @@ test('comparison is limited to two or three real institutions, fourth selection 
  const fourth=I.select(ids,R.institutions[3].id);assert.equal(fourth.ids.length,3);assert.ok(fourth.error);
  assert.equal(I.select(ids,ids[0]).ids.length,2);assert.equal(V.comparison(ids.slice(0,1)),'');assert.equal(V.comparison(R.institutions.slice(0,4).map(i=>i.id)),'');
  const html=V.comparison(ids);assert.match(html,/공식 출처/);assert.match(html,/검증된 의견 자료 미확보/);
- const list=V.choice({browse:'seongnam',favorites:ids,savedOnly:true,compared:ids,showComparison:true});assert.equal((list.match(/class="ei-heart"/g)||[]).length,3);assert.match(list,/aria-pressed="true"/);assert.match(list,/비교 선택 3\/3/);
+ const list=V.choice({browse:'seongnam',favorites:ids,savedOnly:true,compared:ids,showComparison:true},{directoryItems:R.institutions});assert.equal((list.match(/class="ei-heart"/g)||[]).length,3);assert.match(list,/aria-pressed="true"/);assert.match(list,/비교 선택 3\/3/);
 });

@@ -1,0 +1,23 @@
+{
+  "items": [],
+  "coverage": [
+    {
+      "name": "경기도교육청성남도서관",
+      "status": "failed"
+    },
+    {
+      "name": "성남아트센터",
+      "status": "unsupported"
+    },
+    {
+      "name": "판교환경생태학습원",
+      "status": "unsupported"
+    },
+    {
+      "name": "성남시청소년재단",
+      "status": "unsupported"
+    }
+  ],
+  "checkedAt": "2026-10-08T10:10:16.402Z",
+  "source": "https://lib.goe.go.kr/sn/module/teach/index.do?menu_idx=142&search_large_code=54"
+}

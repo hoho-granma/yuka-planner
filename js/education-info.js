@@ -8,13 +8,15 @@
  function mount(host,opts){
   stop();let alive=true,tab='trend',chosenSubject=opts.subject||'국어',related='',relatedLoading=false,relatedError='',requestSequence=0;
   const cleanup=()=>{alive=false;host.onclick=null;host.onchange=null;host.oninput=null;};stop=cleanup;
-  const localCatalogue=opts.provinceName==='경기도'&&opts.district==='성남시';
-  const referenceState={region:opts.provinceName==='경기도'?'gyeonggi':'national',grade:'',browse:localCatalogue?'seongnam':'',subject:'',district:'',query:'',compared:[],notice:''};
+  const localCatalogue=opts.provinceName==='경기도'&&/성남시/.test(opts.district||'');
+  const referenceState={region:opts.provinceName==='경기도'?'gyeonggi':'national',grade:Number.isInteger(Number(opts.grade))&&Number(opts.grade)>=1&&Number(opts.grade)<=6?String(opts.grade):'',browse:localCatalogue?'seongnam':'',subject:'',institutionType:'',district:['분당구','수정구','중원구'].find(g=>[opts.district,opts.dong,opts.gu].join(' ').includes(g))||'',query:'',compared:[],notice:''};
   let storage;try{storage=opts.storage||globalThis.localStorage;}catch(e){}
-  const saved=interests.read(storage,opts,reference.institutions.map(i=>i.id));Object.assign(referenceState,{favorites:saved.ids,savedOnly:false,storageError:saved.error,showComparison:false});
+  const saved=interests.read(storage,opts,id=>reference.institutions.some(i=>i.id===id)||/^J10:\d+$/.test(id));Object.assign(referenceState,{favorites:saved.ids,savedOnly:false,storageError:saved.error,showComparison:false});
+  let programs=null,programLoading=false,programError='',programSequence=0;
+  let directory=null,directoryLoading=false,directoryError='',directoryLimit=20,directorySequence=0;
   const bank=opts.bank||globalThis.LearningCheckBank;
   function render(){if(!alive||opts.isCurrent&&!opts.isCurrent()){host.innerHTML="";return;}
-   const head=`<div class="ei-head"><p class="lc-kicker">${esc(opts.name)} · ${esc(opts.region||'지역 미확인')} · ${esc(opts.ageLabel||'')}</p><h2>교육정보</h2></div><div class="ei-tabs" role="group" aria-label="교육정보 종류">${[['trend','또래·지역'],['choice','교육 선택']].map(([k,l])=>`<button type="button" data-ei="tab" data-tab="${k}" aria-pressed="${tab===k}">${l}</button>`).join('')}</div>`;
+   const head=`<div class="ei-tabs" role="group" aria-label="교육정보 종류">${[['trend','또래·지역'],['choice','교육 선택']].map(([k,l])=>`<button type="button" data-ei="tab" data-tab="${k}" aria-pressed="${tab===k}">${l}</button>`).join('')}</div>`;
    let body='';
    if(tab==='child'){
     const preschool=opts.months<96;
@@ -22,18 +24,28 @@
    }else if(tab==='trend'){
     body=referenceView.trend(referenceState);
    }else{
-    body=referenceView.choice(referenceState,{localCatalogue,canPlan:!!opts.canPlan&&typeof opts.onPlan==='function'});
+    body=referenceView.choice(referenceState,{localCatalogue,directoryItems:[...(directory?.items||[]),...reference.institutions.filter(i=>referenceState.favorites.includes(i.id)&&!directory?.items.some(x=>x.id===i.id))],loading:directoryLoading,error:directoryError,limit:directoryLimit,canPlan:!!opts.canPlan&&typeof opts.onPlan==='function'});
    }
-   host.innerHTML=`<div class="ei-page">${head}${body}${relatedLoading?'<section class="ei-card" role="status">연결된 기록을 확인하고 있어요.</section>':related}${relatedError?`<p class="lc-error" role="alert">${esc(relatedError)}</p>`:''}<details class="ei-legacy"><summary>현재 등록한 교육 일정·기존 안내 보기</summary>${opts.legacy||''}</details></div>`;
+   if(tab==='choice'&&referenceState.publicOpen){const selected=globalThis.EducationPublicPrograms&&programs?globalThis.EducationPublicPrograms.select(programs.items,{grade:opts.grade,birthDate:opts.birthDate}):{items:[],uncertain:0};body+=`<section class="ei-card" role="region" aria-label="공공 프로그램"><h3>공공 프로그램</h3>${programLoading?'<p role="status">접수 기간과 대상 정보를 확인하고 있어요.</p>':''}${programError?`<p class="lc-error" role="alert">${esc(programError)}</p>`:''}${programs?`${selected.items.map(p=>`<article class="ei-program-row"><span class="lc-badge">${p.status==='open'?'접수 중':'접수 예정'}</span><h4>${esc(p.title)}</h4><p>${esc(p.provider)} · ${esc(p.target)}</p><p>접수 ${esc(p.registrationStart.slice(0,16).replace('T',' '))} ~ ${esc(p.registrationEnd.slice(0,16).replace('T',' '))}</p><a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">공식 신청 안내 ↗</a></article>`).join('')}${selected.items.length?'':(programs.coverage||[]).some(c=>['partial','ok'].includes(c.status))?'<p>확인된 자료에서 우리 아이에게 맞는 접수 중·예정 프로그램을 찾지 못했어요.</p>':'<p>접수 가능한 목록을 확인하지 못했어요. 프로그램이 없다는 뜻은 아니에요.</p>'}${selected.uncertain?'<p class="ei-brief-note">대상 연령·학년을 확정할 수 없는 항목은 표시하지 않았어요.</p>':''}<p class="ei-brief-note">확인 ${esc(programs.checkedAt.slice(0,10))}</p><ul class="ei-option-list">${(programs.coverage||[]).map(c=>`<li>${esc(c.name)}: ${c.status==='partial'?'일부 분야 확인':c.status==='failed'?'조회 실패':'조회 연결 준비 중'}</li>`).join('')}</ul>`:''}</section>`;}
+   host.innerHTML=`<div class="ei-page">${head}${body}${relatedLoading?'<section class="ei-card" role="status">연결된 기록을 확인하고 있어요.</section>':related}${relatedError?`<p class="lc-error" role="alert">${esc(relatedError)}</p>`:''}</div>`;
   }
+  async function loadDirectory(){if(directoryLoading)return;const seq=++directorySequence;directoryLoading=true;directoryError='';render();try{const data=await (opts.directoryReader||globalThis.EducationDirectory?.read||(()=>Promise.reject(Error('not ready'))))();if(!alive||seq!==directorySequence||opts.isCurrent&&!opts.isCurrent())return;
+   directory={...data,items:data.items.map(i=>{const rich=reference.institutions.find(x=>x.id===i.id);const district=['분당구','수정구','중원구'].find(g=>i.address.includes(g))||'';const course=i.course||'';const subject=rich?.subject||(/영어|외국어|실용외국어/.test(course)?'영어':/수학/.test(course)?'수학':/과학/.test(course)?'과학':/독서|논술|국어/.test(course)?'국어·독서':/미술|음악|피아노|예능/.test(course)?'미술·음악':/체육|태권도|줄넘기/.test(course)?'체육·줄넘기':course);return {...i,district,subject};})};
+   if(!referenceState.district&&opts.dong){const dong=opts.dong.trim();const matches=[...new Set(directory.items.filter(i=>i.address.includes(dong)).map(i=>i.district).filter(Boolean))];if(matches.length===1)referenceState.district=matches[0];}directoryLimit=20;
+  }catch(e){if(alive&&seq===directorySequence)directoryError=String(e.code||'').includes('failed-precondition')?'기관 조회 서버 설정을 확인 중이에요.':'기관 목록을 불러오지 못했어요. 잠시 후 다시 시도하세요.';}finally{if(alive&&seq===directorySequence){directoryLoading=false;render();}}}
   host.onclick=async e=>{const b=e.target.closest('[data-ei]');if(!b||!alive)return;if(opts.isCurrent&&!opts.isCurrent()){host.innerHTML='';return;}
-   if(b.dataset.ei==='tab'){requestSequence++;relatedLoading=false;tab=['trend','choice'].includes(b.dataset.tab)?b.dataset.tab:'trend';referenceState.institution='';related='';relatedError='';render();}
-   if(b.dataset.ei==='favorite'){const id=b.dataset.id;if(!reference.institutions.some(i=>i.id===id)||referenceState.storageError)return;const next=referenceState.favorites.includes(id)?referenceState.favorites.filter(x=>x!==id):referenceState.favorites.concat(id);try{interests.write(storage,opts,next);referenceState.favorites=next;referenceState.compared=referenceState.compared.filter(x=>next.includes(x));referenceState.notice='';if(referenceState.compared.length<2)referenceState.showComparison=false;}catch(err){referenceState.notice='관심 학원을 저장하지 못했어요. 저장 공간을 확인해 주세요.';}render();}
-   if(b.dataset.ei==='collection'){referenceState.savedOnly=b.dataset.saved==='true';Object.assign(referenceState,{query:'',subject:'',district:'',notice:''});if(referenceState.savedOnly)referenceState.browse='seongnam';referenceState.showComparison=false;referenceState.institution='';render();}
+   if(b.dataset.ei==='filter-region'){referenceState.regionOpen=!referenceState.regionOpen;render();}
+   if(b.dataset.ei==='filter-search'){referenceState.searchOpen=!referenceState.searchOpen;render();if(referenceState.searchOpen)host.querySelector('[data-ei-field="query"]')?.focus();}
+   if(b.dataset.ei==='public-programs'){referenceState.publicOpen=!referenceState.publicOpen;if(!referenceState.publicOpen){render();return;}const seq=++programSequence;programLoading=true;programError='';render();try{const result=await (opts.programReader||globalThis.EducationDirectory?.readPrograms||(()=>Promise.reject(Error('not ready'))))();if(!alive||seq!==programSequence||opts.isCurrent&&!opts.isCurrent())return;programs=result;}catch(e){if(alive&&seq===programSequence)programError='공공 프로그램을 불러오지 못했어요. 로그인과 조회 서버를 확인해 주세요.';}finally{if(alive&&seq===programSequence){programLoading=false;render();}}}
+   if(b.dataset.ei==='directory')await loadDirectory();
+   if(b.dataset.ei==='directory-more'){directoryLimit+=20;render();}
+   if(b.dataset.ei==='tab'){requestSequence++;relatedLoading=false;tab=['trend','choice'].includes(b.dataset.tab)?b.dataset.tab:'trend';referenceState.institution='';related='';relatedError='';render();if(tab==='choice'&&referenceState.browse==='seongnam'&&!directory&&!directoryLoading)await loadDirectory();}
+   if(b.dataset.ei==='favorite'){const id=b.dataset.id;if(![...reference.institutions,...(directory?.items||[])].some(i=>i.id===id)||referenceState.storageError)return;const next=referenceState.favorites.includes(id)?referenceState.favorites.filter(x=>x!==id):referenceState.favorites.concat(id);try{interests.write(storage,opts,next);referenceState.favorites=next;referenceState.compared=referenceState.compared.filter(x=>next.includes(x));referenceState.notice='';if(referenceState.compared.length<2)referenceState.showComparison=false;}catch(err){referenceState.notice='관심 학원을 저장하지 못했어요. 저장 공간을 확인해 주세요.';}render();}
+   if(b.dataset.ei==='collection'){referenceState.savedOnly=b.dataset.saved==='true';Object.assign(referenceState,{notice:''});if(referenceState.savedOnly)referenceState.browse='seongnam';referenceState.showComparison=false;referenceState.institution='';render();}
    if(b.dataset.ei==='compare-select'){const id=b.dataset.id;if(!referenceState.favorites.includes(id))return;const next=interests.select(referenceState.compared,id);referenceState.compared=next.ids;referenceState.notice=next.error;referenceState.showComparison=false;render();}
    if(b.dataset.ei==='compare'){referenceState.showComparison=referenceState.compared.length>=2&&referenceState.compared.length<=3;render();host.querySelector('#ei-comparison')?.scrollIntoView({block:'start'});}
    if(b.dataset.ei==='subject'){requestSequence++;relatedLoading=false;chosenSubject=b.dataset.subject;related='';relatedError='';render();}
-   if(b.dataset.ei==='institution'){if(reference.institutions.some(i=>i.id===b.dataset.id)){referenceState.institution=b.dataset.id;render();}}
+   if(b.dataset.ei==='institution'){if([...reference.institutions,...(directory?.items||[])].some(i=>i.id===b.dataset.id)){referenceState.institution=b.dataset.id;render();}}
    if(b.dataset.ei==='back-choice'){referenceState.institution='';render();}
    if(b.dataset.ei==='reset-filters'){Object.assign(referenceState,{subject:'',district:'',query:'',notice:''});render();}
    if(b.dataset.ei==='plan'&&opts.canPlan){const draft=reference.plan(b.dataset.id,b.dataset.kind);if(draft)opts.onPlan?.(draft);}
@@ -52,8 +64,9 @@
   host.onchange=e=>{
    if(!alive||opts.isCurrent&&!opts.isCurrent())return;
    const key=e.target.dataset.eiField;
-   if(!['region','grade','browse','subject','district','query'].includes(key))return;
-   referenceState[key]=e.target.value;referenceState.notice='';render();
+   if(key==='collection'){referenceState.savedOnly=e.target.value==='saved';Object.assign(referenceState,{query:'',subject:'',district:'',notice:'',institution:'',showComparison:false,publicOpen:false});render();return;}
+   if(!['region','grade','browse','subject','district','query','institutionType'].includes(key))return;
+   referenceState[key]=e.target.value;referenceState.notice='';directoryLimit=20;render();if(key==='browse'&&referenceState.browse==='seongnam'&&!directory&&!directoryLoading)loadDirectory();
   };
   host.oninput=e=>{if(!alive||opts.isCurrent&&!opts.isCurrent()||e.target.dataset.eiField!=='query')return;const position=e.target.selectionStart;referenceState.query=e.target.value;render();const input=host.querySelector('[data-ei-field="query"]');if(input){input.focus();input.setSelectionRange(position,position);}};
   render();return cleanup;

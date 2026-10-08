@@ -218,3 +218,12 @@ body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,
 .hn-detail-close{flex-shrink:0;align-self:center}
 
 .hn-detail-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.us-detail:has(.hn-detail-close)>h3 .us-repeat{margin:0!important;vertical-align:middle}
+
+/* Readability: family lists and matched category/input-method typography. */
+.hn-timeline strong,.hn-task-title{font-size:16px!important;line-height:1.5}
+#selected-day-list .hn-timeline time,#home-body .hn-timeline time{font-size:15px!important}
+.hn-task time{font-size:14px!important}
+.hn-entry{--hn-option-font-size:14px;--hn-option-font-weight:650}
+.hn-entry .hn-methods button,.hn-entry .hn-categories button,.hn-content-heading .hn-categories button,.hn-entry .hn-schedule-category{font-size:var(--hn-option-font-size,14px)!important;font-weight:var(--hn-option-font-weight,650)!important;line-height:1.3;white-space:nowrap}
+.hn-entry .hn-methods button{min-width:0;padding:11px 2px!important}
+@media(max-width:350px){.hn-entry{--hn-option-font-size:13px}}
