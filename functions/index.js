@@ -3,9 +3,8 @@ const {initializeApp}=require('firebase-admin/app');
 const {getFirestore}=require('firebase-admin/firestore');
 const {onCall,HttpsError}=require('firebase-functions/v2/https');
 const {createService}=require('./family-access');
-const {defineBoolean}=require('firebase-functions/params');
 // Enable together with client App Check configuration before release.
-const appCheckEnforced=defineBoolean('APP_CHECK_ENFORCED',{default:false});
+const appCheckEnforced=process.env.APP_CHECK_ENFORCED === 'true';
 initializeApp();
 const service=createService(getFirestore());
 exports.familyAccess=onCall({region:'asia-northeast3',enforceAppCheck:appCheckEnforced,maxInstances:5},async request=>{

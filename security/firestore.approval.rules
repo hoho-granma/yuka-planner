@@ -186,10 +186,50 @@ service cloud.firestore {
     }
 
     match /families/{householdId}/growthRecords/{recordId} {
+      function optionalText(d, key, limit) {
+        return !(key in d) || d[key] == null || (d[key] is string && d[key].size() <= limit);
+      }
+      function optionalDate(d, key) {
+        return !(key in d) || d[key] == null || (d[key] is string && d[key].matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'));
+      }
+      function optionalMap(d, key) {
+        return !(key in d) || d[key] == null || (d[key] is map && d[key].size() <= 40);
+      }
+      function evidenceOk(d) {
+        return (!('evidenceEntries' in d) || (d.evidenceEntries is list && d.evidenceEntries.size() <= 20
+          && (d.evidenceEntries.size() <= 0 || d.evidenceEntries[0] is map)
+          && (d.evidenceEntries.size() <= 1 || d.evidenceEntries[1] is map)
+          && (d.evidenceEntries.size() <= 2 || d.evidenceEntries[2] is map)
+          && (d.evidenceEntries.size() <= 3 || d.evidenceEntries[3] is map)
+          && (d.evidenceEntries.size() <= 4 || d.evidenceEntries[4] is map)
+          && (d.evidenceEntries.size() <= 5 || d.evidenceEntries[5] is map)
+          && (d.evidenceEntries.size() <= 6 || d.evidenceEntries[6] is map)
+          && (d.evidenceEntries.size() <= 7 || d.evidenceEntries[7] is map)
+          && (d.evidenceEntries.size() <= 8 || d.evidenceEntries[8] is map)
+          && (d.evidenceEntries.size() <= 9 || d.evidenceEntries[9] is map)
+          && (d.evidenceEntries.size() <= 10 || d.evidenceEntries[10] is map)
+          && (d.evidenceEntries.size() <= 11 || d.evidenceEntries[11] is map)
+          && (d.evidenceEntries.size() <= 12 || d.evidenceEntries[12] is map)
+          && (d.evidenceEntries.size() <= 13 || d.evidenceEntries[13] is map)
+          && (d.evidenceEntries.size() <= 14 || d.evidenceEntries[14] is map)
+          && (d.evidenceEntries.size() <= 15 || d.evidenceEntries[15] is map)
+          && (d.evidenceEntries.size() <= 16 || d.evidenceEntries[16] is map)
+          && (d.evidenceEntries.size() <= 17 || d.evidenceEntries[17] is map)
+          && (d.evidenceEntries.size() <= 18 || d.evidenceEntries[18] is map)
+          && (d.evidenceEntries.size() <= 19 || d.evidenceEntries[19] is map)
+          ))
+          && optionalText(d,'experienceId',128) && optionalText(d,'datePrecision',30)
+          && (!('experienceStatus' in d) || d.experienceStatus == null || d.experienceStatus in ['unknown','planned','occurred','notOccurred'])
+          && (!('relationshipStatus' in d) || d.relationshipStatus == null || d.relationshipStatus in ['unknown','confirmed','duplicateCandidate'])
+          && optionalDate(d,'occurredDate') && optionalDate(d,'feedbackAt')
+          && optionalMap(d,'institutionRef') && optionalMap(d,'activitySnapshot') && optionalMap(d,'occurrenceRef');
+      }
       function recordOk(d) {
-        return d.keys().hasOnly(['schemaVersion','childKey','activityId','group','activity','recordDate','title','text','attachment','createdByUid','updatedByUid','createdAt','updatedAt','revision','importKey','importFingerprint','legacyCreatedAt','deletedAt'])
+        return d.keys().hasOnly(['schemaVersion','childKey','activityId','group','activity','recordDate','title','text','attachment','createdByUid','updatedByUid','createdAt','updatedAt','revision','importKey','importFingerprint','legacyCreatedAt','deletedAt','experienceId','experienceStatus','occurredDate','datePrecision','feedbackAt','institutionRef','activitySnapshot','occurrenceRef','relationshipStatus','evidenceEntries'])
           && d.keys().hasAll(['schemaVersion','childKey','activityId','group','activity','recordDate','title','text','attachment','createdByUid','updatedByUid','createdAt','updatedAt','revision'])
-          && d.schemaVersion == 1 && d.childKey is string && d.activityId is string
+          && d.schemaVersion in [1,2] && evidenceOk(d)
+          && (d.schemaVersion == 2 || !d.keys().hasAny(['experienceId','experienceStatus','occurredDate','datePrecision','feedbackAt','institutionRef','activitySnapshot','occurrenceRef','relationshipStatus','evidenceEntries']))
+          && d.childKey is string && d.activityId is string
           && d.group in ['school','academy','activity','home']
           && d.activity is string && d.activity.size() > 0 && d.activity.size() <= 60
           && d.title is string && d.title.size() > 0 && d.title.size() <= 100
@@ -208,19 +248,20 @@ service cloud.firestore {
           && (!('deletedAt' in d) || d.deletedAt is int);
       }
       function ownsChild(d) {
-        return exists(/databases/$(database)/documents/families/$(householdId)/childLinks/$(d.childKey))
-          && get(/databases/$(database)/documents/families/$(householdId)/childLinks/$(d.childKey)).data.get('removedAt',null) == null
-          && (isFamilyAdult(householdId) || (isMemberOf(householdId) && access(householdId).permission == 'MEMBER' && memberDocOf(householdId).role == 'CHILD' && memberDocOf(householdId).get('childKey', null) == d.childKey));
+        let a = access(householdId);
+        return signedIn() && a.status == 'ACTIVE' && a.permission in ['ADMIN','MEMBER']
+          && childLive(householdId,d.childKey) && (a.role != 'CHILD' || a.get('childKey',null) == d.childKey);
       }
       allow get, list: if isMemberOf(householdId);
       allow create: if ownsChild(request.resource.data) && recordOk(request.resource.data)
         && request.resource.data.createdByUid == request.auth.uid && request.resource.data.revision == 1;
-      allow update: if ownsChild(resource.data) && ownsChild(request.resource.data) && recordOk(request.resource.data)
+      allow update: if ownsChild(resource.data) && recordOk(request.resource.data)
         && request.resource.data.childKey == resource.data.childKey
         && request.resource.data.createdByUid == resource.data.createdByUid
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.get('importKey', null) == resource.data.get('importKey', null)
         && request.resource.data.get('importFingerprint', null) == resource.data.get('importFingerprint', null)
+        && request.resource.data.schemaVersion >= resource.data.schemaVersion
         && request.resource.data.revision == resource.data.revision + 1;
       allow delete: if false;
     }

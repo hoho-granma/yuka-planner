@@ -1,268 +1,74 @@
-// 한눈육아 Firestore 보안 규칙 (v2 스키마용)
-//
-// 아직 배포하지 않았다 — 이 리포에 firestore.rules가 없었다는 것이
-// docs/Firestore-스키마-설계.md 섹션 10에서 지적한 가장 큰 위험이었다.
-// 배포(firebase deploy --only firestore:rules)는 사용자 승인 후 별도로 진행한다.
-//
-// 설계 원칙(docs/Firestore-스키마-설계.md 섹션 10과 동일):
-//   - 어떤 collection도 조건 없는 list(전체 열람)를 허용하지 않는다.
-//     예외: family 서브트리 내부(children, completions)의 list는 허용한다 —
-//     그 쿼리를 구성하려면 이미 familyId/childId를 알아야 하므로,
-//     "무작위로 전체를 훑는" 것과는 다른 상황이다.
-//   - collection-group 쿼리(예: 모든 family의 completions를 한번에 훑는 것)에 대한
-//     규칙은 의도적으로 넣지 않는다 → 규칙이 없으면 기본적으로 거부된다.
-//   - "가족코드를 아는 사람 = 그 가족 데이터를 볼 권한이 있는 사람"이라는 제품 정책은
-//     familyCodes 조회를 통해서만 familyId를 얻을 수 있게 하는 것으로 구현한다.
-//     familyId 자체를 어떻게든 알아낸 사람을 막는 방법은 Firestore 규칙만으로는 없다
-//     (Firestore Rules로 해결 불가능한 부분 — docs 참고, 아래에도 명시).
-
+// Candidate only. Activate after reviewed account migration and client rollout.
+// Never append these rules to the legacy rules: overlapping allows are additive.
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ---------------------------------------------------------------
-    // [H4] 삭제 허용용 공통 판정 — 로그인한 계정(request.auth)이 그 가구의 구성원인지 본다.
-    //   구성원 = accounts/{내 uid} 가 그 가구를 가리키고(householdId), 그 계정의 memberId 구성원 문서의 uid 가 내 uid 이며 삭제되지 않았을 것.
-    //   한계: accounts.householdId 는 본인이 쓰는 값이지만, 구성원 문서의 uid 는 한 번 달리면 바꿀 수 없어(members 규칙 uidOk)
-    //   남의 가구 구성원인 척하려면 그 가구의 아직 주인 없는 구성원 자리를 먼저 차지해야 한다(그러려면 가구 코드를 알아야 한다).
-    //   로그인하지 않은 옛 사용자는 삭제할 수 없다.
-    // ---------------------------------------------------------------
     function signedIn() { return request.auth != null; }
+    function access(hid) { return get(/databases/$(database)/documents/familyAccess/$(hid)/members/$(request.auth.uid)).data; }
+    function isMemberOf(hid) { return signedIn() && access(hid).status == 'ACTIVE'; }
+    function memberDocOf(hid) { return access(hid); }
     function acctDoc() { return get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data; }
-    function memberDocOf(hid) { return get(/databases/$(database)/documents/families/$(hid)/members/$(acctDoc().memberId)).data; }
-    function isMemberOf(hid) {
-      let account = signedIn() ? get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data : null;
-      let memberId = account != null ? account.get('memberId', null) : null;
-      let member = memberId is string ? get(/databases/$(database)/documents/families/$(hid)/members/$(memberId)).data : null;
-      return signedIn() && account != null && account.get('householdId', null) == hid
-          && member != null && member.get('uid', null) == request.auth.uid
-          && member.get('deletedAt', null) == null;
+    function isFamilyAdult(hid) { return isMemberOf(hid) && access(hid).role != 'CHILD' && access(hid).permission in ['ADMIN','MEMBER']; }
+    function isAdmin(hid) { return isMemberOf(hid) && access(hid).permission == 'ADMIN'; }
+    function childLive(hid, key) {
+      return exists(/databases/$(database)/documents/families/$(hid)/childLinks/$(key))
+        && get(/databases/$(database)/documents/families/$(hid)/childLinks/$(key)).data.get('removedAt',null) == null;
     }
-    // Family sharing: adults edit all family items; a linked child edits only their own.
-    function isFamilyAdult(hid) {
-      return isMemberOf(hid) && acctDoc().role != 'CHILD' && memberDocOf(hid).role in ['MOM','DAD','GRANDPARENT','CAREGIVER','OTHER'];
+    function canEditSchedule(hid,d) {
+      return isFamilyAdult(hid) || (isMemberOf(hid) && access(hid).permission == 'MEMBER'
+        && access(hid).role == 'CHILD' && d.scope == 'CHILD' && d.childKeys == [access(hid).childKey] && childLive(hid,access(hid).childKey));
     }
-    function canEditSchedule(hid, d) {
-      let account = signedIn() ? acctDoc() : null;
-      let member = account != null && account.get('memberId', null) is string ? memberDocOf(hid) : null;
-      let key = member != null ? member.get('childKey', null) : null;
-      let link = key is string ? get(/databases/$(database)/documents/families/$(hid)/childLinks/$(key)).data : null;
-      return isMemberOf(hid) && ((account.role != 'CHILD' && member.role in ['MOM','DAD','GRANDPARENT','CAREGIVER','OTHER'])
-        || (member.role == 'CHILD' && key is string && d.scope == 'CHILD' && d.childKeys == [key]
-            && link != null && link.get('removedAt', null) == null));
+    function canEditTodo(hid,d) {
+      return isFamilyAdult(hid) || (isMemberOf(hid) && access(hid).permission == 'MEMBER'
+        && access(hid).role == 'CHILD' && d.get('ownerKey','CHILD:' + d.get('childKey','')) == 'CHILD:' + access(hid).childKey && childLive(hid,access(hid).childKey));
     }
-    function canEditTodo(hid, d) {
-      let account = signedIn() ? acctDoc() : null;
-      let member = account != null && account.get('memberId', null) is string ? memberDocOf(hid) : null;
-      let key = member != null ? member.get('childKey', null) : null;
-      let link = key is string ? get(/databases/$(database)/documents/families/$(hid)/childLinks/$(key)).data : null;
-      return isMemberOf(hid) && ((account.role != 'CHILD' && member.role in ['MOM','DAD','GRANDPARENT','CAREGIVER','OTHER'])
-        || (member.role == 'CHILD' && key is string && d.get('ownerKey', 'CHILD:' + d.get('childKey', '')) == 'CHILD:' + key
-            && link != null && link.get('removedAt', null) == null));
+    match /familyAccess/{hid}/members/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list: if isAdmin(hid);
+      allow write: if false;
     }
-    // 아무 가구의 구성원이면 true — families/{코드} 문서에는 가구 연결 정보가 없어 '어느 가구인지'까지는 규칙으로 가를 수 없다.
-    function isAnyHouseholdMember() {
-      return signedIn()
-          && exists(/databases/$(database)/documents/accounts/$(request.auth.uid))
-          && acctDoc().get('householdId', null) is string
-          && acctDoc().get('memberId', null) is string
-          && isMemberOf(acctDoc().householdId);
-    }
-
-    // ---------------------------------------------------------------
-    // familyCodes/{code} — 코드→familyId 조회 및 코드 유일성 보장 전용
-    // ---------------------------------------------------------------
-    match /familyCodes/{code} {
-      // 정확한 코드 문자열을 아는 클라이언트만 get 가능(코드 자체가 자격증명).
-      allow get: if true;
-
-      // 전체 코드 목록을 훑는 것은 절대 금지 — 이게 열려 있으면 6자리 코드의
-      // 엔트로피(32^6)가 전혀 의미 없어진다.
-      allow list: if false;
-
-      // 신규 코드 발급: 필요한 필드만, active=true로만 생성 가능.
-      // "이미 존재하는 코드 문서를 덮어써서 다른 가족의 코드를 가로채는" 것을
-      // create 규칙(문서가 없을 때만 성립)으로 원천 차단한다.
-      allow create: if request.resource.data.keys().hasOnly(['familyId', 'active', 'createdAt', 'revokedAt'])
-                    && request.resource.data.active == true
-                    && request.resource.data.familyId is string;
-
-      // 재발급 시 기존 코드를 비활성화하는 것만 허용(active, revokedAt 두 필드만 변경 가능).
-      // familyId 자체는 한 번 만들어지면 바꿀 수 없다(다른 가족 코드로 탈취 방지).
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'revokedAt'])
-                    && request.resource.data.familyId == resource.data.familyId;
-
-      allow delete: if false;
-    }
-
-    // ---------------------------------------------------------------
-    // families/{familyId} — 가족 단위 데이터
-    //   ※ 레거시 v1 문서(families/{code}, profile+completed 통짜)도 같은
-    //     컬렉션에 당분간 공존한다. 문서ID 형태(6자 코드 vs Firestore auto-id)만
-    //     다를 뿐 규칙은 동일하게 적용된다 — 레거시 문서도 "문서ID(=코드)를 아는
-    //     사람만 접근 가능"이라는 지금까지의 동작과 동일하므로 회귀(regression)가 아니다.
-    // ---------------------------------------------------------------
-    match /children/{familyId} {
-      allow get: if true; // familyId를 아는 것 자체가 자격 증명(설계상 감수하는 지점, 문서 참고)
-      allow list: if false; // 전체 family 목록 열람 금지 — 가장 중요한 규칙
-
-      // 레거시(v1, js/sync.js createFamily())와 v2(js/sync-v2.js createFamilyV2())가
-      // 같은 최상위 families 컬렉션을 공유한다(문서 ID 형태만 다름 — 6자 코드 vs auto-id).
-      // 두 쓰기 패턴을 모두 허용해야 기존 서비스가 안 깨진다.
-      allow create: if
-        // v1: createFamily()가 실제로 쓰는 필드 그대로 — { profile, completed, updatedAt }
-        (request.resource.data.keys().hasOnly(['profile', 'completed', 'updatedAt'])
-          && request.resource.data.profile is map)
-        ||
-        // v2: createFamilyV2()가 쓰는 필드
-        (request.resource.data.keys().hasAll(['currentCode', 'province', 'district'])
-          && request.resource.data.currentCode is string);
-
-      allow update: if
-        // 레거시: updateProfile()은 {profile, updatedAt}만, updateCompleted()는 {completed, updatedAt}만,
-        // updateRecord()(UX 개편: 직접 작성한 성장·활동 기록)는 {records.<id>, updatedAt}만 쓴다.
-        // merge:true로 쓴다(js/sync.js). archived/migratedTo/migratedAt은 마이그레이션 시 레거시 문서에
-        // 표시하는 필드라 여기 같이 허용한다(docs/Firestore-마이그레이션-계획.md).
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['profile', 'completed', 'records', 'updatedAt', 'archived', 'migratedTo', 'migratedAt'])
-        ||
-        // v2
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['province', 'district', 'familyDeclaredAttributes', 'currentCode', 'updatedAt', 'archived', 'migratedTo', 'migratedAt']);
-
-      // [H4] 아이 삭제(구성원 관리 > 삭제): 로그인한 가구 구성원만, 이미 없는 문서의 삭제(재시도)는 허용. v1 구조는 아이 한 명의 데이터(프로필·완료·직접 기록)가
-      //   이 문서 하나에 다 들어 있다. 하위 컬렉션(children/completions)은 앱이 쓰지 않아 삭제를 열지 않았다.
-      allow delete: if resource == null || isAnyHouseholdMember();
-
-      // -------------------------------------------------------------
-      // families/{familyId}/children/{childId} — 아이 프로필
-      // -------------------------------------------------------------
-      match /children/{childId} {
-        // list 허용 이유: 이 경로 자체가 이미 familyId를 요구하므로,
-        // "이 가족의 자녀 목록"을 보는 것이지 "전체 서비스의 자녀 목록"이 아니다.
-        allow get, list: if true;
-
-        allow create: if request.resource.data.keys().hasAll(['birthDate']);
-        allow update: if request.resource.data.diff(resource.data).affectedKeys()
-                        .hasOnly(['birthDate', 'gender', 'childDeclaredAttributes', 'updatedAt']);
-        allow delete: if false;
-
-        // -----------------------------------------------------------
-        // .../completions/{completionId} — CompletionRecord
-        // -----------------------------------------------------------
-        match /completions/{completionId} {
-          // list 허용 이유: children과 동일 — 이미 familyId+childId를 아는 경로.
-          allow get, list: if true;
-
-          // 문서 ID가 반드시 "todo_id__occurrenceKey__recordType" 합성키와
-          // 일치해야만 생성 가능 — 임의의 ID로 데이터를 채우는 것을 방지하고
-          // upsert(같은 조합=같은 문서)를 규칙 수준에서 강제한다.
-          allow create: if request.resource.data.keys().hasAll(['todo_id', 'occurrenceKey', 'recordType', 'recordedAt'])
-                        && request.resource.data.recordType in ['MILESTONE_REPORTED', 'TODO_COMPLETED']
-                        && completionId == request.resource.data.todo_id + '__' + request.resource.data.occurrenceKey + '__' + request.resource.data.recordType;
-
-          // 완료 기록 수정은 recordedAt 정정 정도만 허용(핵심 식별 필드는 변경 불가).
-          allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['recordedAt', 'createdAt'])
-                        && request.resource.data.todo_id == resource.data.todo_id
-                        && request.resource.data.occurrenceKey == resource.data.occurrenceKey
-                        && request.resource.data.recordType == resource.data.recordType;
-
-          allow delete: if false;
-        }
-      }
-    }
-
-    // ===============================================================
-    // [B1] 가구(household) 블록 — 추가만 한다. 위의 familyCodes/families 블록은 수정하지 않았다.
-    //   설계: docs/한눈육아-확장설계-2단계-상세.md §2, §11-3.
-    //   - 가구 코드(householdCodes)는 가구 전체의 마스터 키다. 코드→householdId 조회만 get 허용, 목록 열람 금지.
-    //   - 아이 링크(children)는 families/{코드}의 코드를 가리키는 링크일 뿐 프로필 복사본이 아니다.
-    //   - 모든 삭제 금지(소프트 삭제: removedAt/deletedAt/active=false).
-    //   - schedules 는 B2에서 필드 확정 후 추가한다(이번에 넣지 않음).
-    // ===============================================================
-
-    // householdCodes/{code} — 코드→householdId 조회 전용(재발급 가능). familyCodes 와 같은 방식.
-    match /familyInviteCodes/{code} {
-      allow get: if true;
-      allow list: if false;
-      allow create: if request.resource.data.keys().hasOnly(['householdId', 'active', 'createdAt', 'revokedAt'])
-                    && request.resource.data.keys().hasAll(['householdId', 'active', 'createdAt'])
-                    && request.resource.data.active == true
-                    && request.resource.data.householdId is string;
-      // 재발급 시 이전 코드를 비활성화하는 것만 허용. householdId 는 바꿀 수 없다.
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'revokedAt'])
-                    && request.resource.data.householdId == resource.data.householdId;
-      allow delete: if false;
-    }
-
-    // households/{householdId}
-    match /families/{householdId} {
-      allow get: if true;
-      allow list: if false; // 전체 가구 목록 열람 금지
-      allow create: if request.resource.data.keys().hasOnly(['v', 'name', 'createdAt', 'updatedAt'])
-                    && request.resource.data.keys().hasAll(['v', 'createdAt', 'updatedAt'])
-                    && request.resource.data.v == 1;
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'updatedAt']);
-      allow delete: if false;
-
-      // 이 가구에 속한 아이 링크 — 이미 householdId 를 아는 경로이므로 list 허용.
-      match /childLinks/{childKey} {
-        allow get, list: if true;
-        // [H4] createdByUid: 이 아이를 만든 계정. 만들 때는 내 uid 와 같을 때만 쓸 수 있고, 이후에는 바꾸거나 지울 수 없다.
-        allow create, update: if request.resource.data.keys().hasOnly(['v', 'familyCode', 'displayName', 'order', 'colorKey', 'addedAt', 'removedAt', 'createdByUid'])
-                              && request.resource.data.keys().hasAll(['v', 'familyCode', 'displayName', 'order', 'addedAt'])
-                              && (resource == null
-                                  ? (!('createdByUid' in request.resource.data)
-                                     || (signedIn() && request.resource.data.createdByUid is string && request.resource.data.createdByUid == request.auth.uid))
-                                  : request.resource.data.get('createdByUid', null) == resource.data.get('createdByUid', null))
-                              && request.resource.data.v == 1
-                              && request.resource.data.familyCode is string
-                              && request.resource.data.familyCode.size() <= 8
-                              && request.resource.data.displayName is string
-                              && request.resource.data.displayName.size() <= 40;
-        // [H4] 삭제: 만든 사람(createdByUid == 내 uid), 또는 만든 사람 기록이 없는 옛 링크는 가구 구성원. 이미 없는 문서의 삭제(재시도)는 허용.
-        allow delete: if resource == null
-                      || (signedIn() && resource.data.get('createdByUid', null) == request.auth.uid)
-                      || (resource.data.get('createdByUid', null) == null && isMemberOf(householdId));
-      }
-
-      // 담당자가 될 수 있는 사람들(계정이 아니라 표시 라벨).
-      match /members/{memberId} {
-        allow get, list: if true;
-        // D2: 선택 필드 uid(이 구성원을 맡은 계정)와 role CHILD 추가.
-        //  - 이미 uid 가 달린 문서: 쓰기 결과에도 같은 uid 가 반드시 남아 있어야 한다(제거·변경·전체 교체로 지우기 불가 → 2단계 가로채기 차단).
-        //  - uid 가 없는 문서(또는 새 문서): uid 없이 쓰거나, 본인(request.auth.uid)의 uid 를 처음 다는 것만 허용.
-        // 인증 없는 기존 사용자의 쓰기(uid 를 건드리지 않는 merge 수정, uid 없는 구성원 생성)는 그대로 허용된다.
-        function uidOk() {
-          return (resource != null && ('uid' in resource.data))
-              ? (('uid' in request.resource.data) && request.resource.data.uid == resource.data.uid)
-              : (!('uid' in request.resource.data) || (request.auth != null && request.resource.data.uid == request.auth.uid));
-        }
-        allow create, update: if request.resource.data.keys().hasOnly(['v', 'role', 'label', 'order', 'colorKey', 'uid', 'childKey', 'createdAt', 'updatedAt', 'deletedAt'])
-                              && request.resource.data.keys().hasAll(['v', 'role', 'label', 'order', 'createdAt', 'updatedAt'])
-                              && request.resource.data.v == 1
-                              && request.resource.data.role in ['MOM', 'DAD', 'GRANDPARENT', 'CAREGIVER', 'OTHER', 'CHILD']
-                              && request.resource.data.label is string
-                              && request.resource.data.label.size() <= 20
-                              && uidOk()
-                              && (!('childKey' in request.resource.data) || (request.resource.data.childKey is string && exists(/databases/$(database)/documents/families/$(householdId)/childLinks/$(request.resource.data.childKey))))
-                              && (resource == null ? !('childKey' in request.resource.data) || isFamilyAdult(householdId)
-                                  : (request.resource.data.get('childKey', null) == resource.data.get('childKey', null)
-                                      && (!('uid' in resource.data) || request.resource.data.role == resource.data.role)) || isFamilyAdult(householdId));
+    // All invitations, join decisions and authorization fields are server-only.
+    match /families/{hid} {
+      allow get: if isMemberOf(hid);
+      allow list, create, delete: if false;
+      allow update: if isAdmin(hid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','updatedAt']);
+      match /members/{mid} {
+        allow get, list: if isMemberOf(hid);
+        allow create: if isFamilyAdult(hid)
+          && request.resource.data.keys().hasOnly(['v','role','label','order','colorKey','createdAt','updatedAt'])
+          && request.resource.data.keys().hasAll(['v','role','label','order','createdAt','updatedAt'])
+          && request.resource.data.v == 1 && request.resource.data.role in ['MOM','DAD','GRANDPARENT','CAREGIVER','OTHER','CHILD']
+          && request.resource.data.label is string && request.resource.data.label.size() <= 20;
+        // Unlinked display labels do not confer access. Linked roles and UIDs are immutable from clients.
+        allow update: if isFamilyAdult(hid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['label','order','colorKey','updatedAt']);
         allow delete: if false;
       }
+      match /childLinks/{key} {
+        allow get, list: if isMemberOf(hid);
+        allow create, delete: if false;
+        allow update: if isFamilyAdult(hid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','order','colorKey','updatedAt']);
+      }
     }
-
-    // ===============================================================
-    // [B2] 사용자 일정(schedules) 블록 — 추가만 한다. 위의 familyCodes/families/[B1] 블록은 수정하지 않았다.
-    //   설계: docs/한눈육아-확장설계-2단계-상세.md §3(스키마·불변식 I1~I12), §6(반복 저장 구조).
-    //   - 경로는 households/{hid}/schedules/{sid} (B1 의 households match 와 별도 블록 — B1 줄을 건드리지 않기 위해).
-    //   - 삭제 금지(소프트 삭제: deletedAt). displayDate 는 허용 키에 없다(I12). 회차는 저장하지 않는다(반복은 recurrence+exceptions).
-    //   - 불변: v, createdAt, sourceType.
-    //   - 규칙으로 검증할 수 없는 것(클라이언트 UserSchedule.validate 가 담당): exceptions 개별 키 형식(I10), childKeys 가 실제 아이 링크인지,
-    //     recurrence 내부 필드 세부, 인증 없음(누가 썼는지).
-    // ===============================================================
+    match /children/{code} {
+      function childIndex() { return get(/databases/$(database)/documents/childAccess/$(code)).data; }
+      function hid() { return childIndex().householdId; }
+      function owns() { return isFamilyAdult(hid()) || (isMemberOf(hid()) && access(hid()).role == 'CHILD' && access(hid()).permission == 'MEMBER' && access(hid()).childKey == childIndex().childKey && childLive(hid(),childIndex().childKey)); }
+      allow get: if signedIn() && isMemberOf(hid()) && childLive(hid(),childIndex().childKey);
+      allow list, create, delete: if false;
+      allow update: if signedIn() && owns() && childLive(hid(),childIndex().childKey)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['profile','completed','records','updatedAt']);
+      // Nested v2 child/completion structures are not currently used: deny by default.
+    }
+    match /accounts/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list, create, delete: if false;
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','email','institution','situation','province','district','updatedAt'])
+        && request.resource.data.displayName is string && request.resource.data.displayName.size() >= 1 && request.resource.data.displayName.size() <= 20
+        && (!('email' in request.resource.data) || request.resource.data.email == request.auth.token.get('email',null));
+    }
     match /families/{householdId}/schedules/{scheduleId} {
       allow get, list: if isMemberOf(householdId); // signed-in family members only
 
@@ -349,14 +155,6 @@ service cloud.firestore {
       allow delete: if isMemberOf(householdId) && (resource == null || canEditSchedule(householdId, resource.data)); // [H4] 아이 삭제 때 그 아이의 일정을 지운다(가구 구성원만). 평소에는 소프트 삭제(deletedAt)를 쓴다.
     }
 
-    // ===============================================================
-    // [G22] 할 일(todos) 블록 — 추가만 한다(위 블록은 수정하지 않았다). 36개월 이상 아이의 체크리스트(메모장형), 가구 공유.
-    //   - 경로는 households/{hid}/todos/{tid}. 문서 모양은 js/child-todos.js(ChildTodos.validate)와 같다.
-    //   - 필수 키: v(=1) · childKey(1~60자) · title(1~100자) · done(bool) · order(number) · createdAt · updatedAt. 선택: createdBy(≤60자) · doneAt · deletedAt.
-    //   - 삭제 금지(소프트 삭제: deletedAt). 불변: v · createdAt · childKey.
-    //   - 읽기·쓰기 범위는 위 schedules 블록과 같다: 이 앱의 가구 구조에는 인증 주체가 없어 '구성원만'을 규칙으로 가를 수 없다
-    //     (householdId 를 아는 경로에서만 접근 — schedules 와 동일한 판정). 구성원 전용 강화는 후속(schedules 와 함께).
-    // ===============================================================
     match /families/{householdId}/todos/{todoId} {
       allow get, list: if isMemberOf(householdId); // signed-in family members only
 
@@ -387,57 +185,51 @@ service cloud.firestore {
       allow delete: if isMemberOf(householdId) && (resource == null || canEditTodo(householdId, resource.data)); // [H4] 아이 삭제 때 그 아이의 할 일을 지운다(가구 구성원만). 평소에는 소프트 삭제(deletedAt)를 쓴다.
     }
 
-    // ===============================================================
-    // [D2] 계정(accounts) 블록 — 추가만 한다(위 블록은 members 의 uid·role CHILD 허용 외에는 수정하지 않았다).
-    //   설계: docs/한눈육아-D1-계정설계.md §1·§2. accounts/{uid} = 로그인한 사람 1명이 속한 가구·구성원을 가리키는 문서.
-    //   - 본인(request.auth.uid == uid)만 읽고 쓴다. 목록 열람·삭제 금지. v·createdAt 은 생성 후 불변.
-    //   - 기존 비인증 사용자의 규칙(가구·아이·일정·완료)은 그대로다(구성원 전용 읽기 강화는 후속).
-    // ===============================================================
-    match /accounts/{uid} {
-      function accountOk(d) {
-        return d.keys().hasOnly(['v', 'displayName', 'email', 'role', 'institution', 'situation', 'province', 'district', 'householdId', 'householdCode', 'memberId', 'createdAt', 'updatedAt'])
-            && d.keys().hasAll(['v', 'displayName', 'role', 'createdAt', 'updatedAt'])
-            && d.v == 1
-            && (!('email' in d) || (d.email is string && d.email.size() <= 320 && d.email == request.auth.token.get('email', null)))
-            && d.displayName is string && d.displayName.size() >= 1 && d.displayName.size() <= 20
-            && d.role in ['MOM', 'DAD', 'CHILD', 'CAREGIVER']
-            && (!('institution' in d) || d.institution == null || d.institution in ['DAYCARE', 'KINDERGARTEN', 'ELEMENTARY', 'NONE'])
-            && (!('situation' in d) || d.situation == null || d.situation in ['HAS_CHILD', 'EXPECTING'])
-            && (!('province' in d) || d.province == null || (d.province is string && d.province.size() <= 30))
-            && (!('district' in d) || d.district == null || (d.district is string && d.district.size() <= 30))
-            && (!('householdId' in d) || d.householdId == null || (d.householdId is string && d.householdId.size() <= 60))
-            && (!('householdCode' in d) || d.householdCode == null || (d.householdCode is string && d.householdCode.size() <= 8))
-            && (!('memberId' in d) || d.memberId == null || (d.memberId is string && d.memberId.size() <= 60));
-      }
-      allow get: if request.auth != null && request.auth.uid == uid;
-      allow list: if false;
-      allow create: if request.auth != null && request.auth.uid == uid && accountOk(request.resource.data);
-      allow update: if request.auth != null && request.auth.uid == uid && accountOk(request.resource.data)
-                    && request.resource.data.v == resource.data.v
-                    && request.resource.data.createdAt == resource.data.createdAt
-                    && (resource.data.role != 'CHILD' || request.resource.data.role == 'CHILD');
-      allow delete: if false;
-    }
-
-    // [P4 초안 — 배포 전] placeStats/{placeId} — 어디갈까 인기순 신호(장소별 [일정 등록하기] 완료 횟수).
-    //   읽기는 공개(get/list), 쓰기는 count 를 정확히 1 만 올리는 것만 허용. 삭제 금지. 키는 count·updatedAt 뿐.
-    //   한계: 인증 없는 구조라 조작(반복 +1)을 Rules 만으로 막을 수 없다 — 정렬 보조 신호로만 쓰고 숫자는 화면에 내지 않는다.
-    match /placeUsageStats/{placeId} {
-      allow get, list: if true;
-      allow create: if request.resource.data.keys().hasOnly(['count', 'updatedAt'])
-                    && request.resource.data.count == 1;
-      allow update: if request.resource.data.keys().hasOnly(['count', 'updatedAt'])
-                    && request.resource.data.count == resource.data.count + 1;
-      allow delete: if false;
-    }
-
-
-    // Growth records: signed-in family members only, revision-controlled shared edits.
     match /families/{householdId}/growthRecords/{recordId} {
+      function optionalText(d, key, limit) {
+        return !(key in d) || d[key] == null || (d[key] is string && d[key].size() <= limit);
+      }
+      function optionalDate(d, key) {
+        return !(key in d) || d[key] == null || (d[key] is string && d[key].matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'));
+      }
+      function optionalMap(d, key) {
+        return !(key in d) || d[key] == null || (d[key] is map && d[key].size() <= 40);
+      }
+      function evidenceOk(d) {
+        return (!('evidenceEntries' in d) || (d.evidenceEntries is list && d.evidenceEntries.size() <= 20
+          && (d.evidenceEntries.size() <= 0 || d.evidenceEntries[0] is map)
+          && (d.evidenceEntries.size() <= 1 || d.evidenceEntries[1] is map)
+          && (d.evidenceEntries.size() <= 2 || d.evidenceEntries[2] is map)
+          && (d.evidenceEntries.size() <= 3 || d.evidenceEntries[3] is map)
+          && (d.evidenceEntries.size() <= 4 || d.evidenceEntries[4] is map)
+          && (d.evidenceEntries.size() <= 5 || d.evidenceEntries[5] is map)
+          && (d.evidenceEntries.size() <= 6 || d.evidenceEntries[6] is map)
+          && (d.evidenceEntries.size() <= 7 || d.evidenceEntries[7] is map)
+          && (d.evidenceEntries.size() <= 8 || d.evidenceEntries[8] is map)
+          && (d.evidenceEntries.size() <= 9 || d.evidenceEntries[9] is map)
+          && (d.evidenceEntries.size() <= 10 || d.evidenceEntries[10] is map)
+          && (d.evidenceEntries.size() <= 11 || d.evidenceEntries[11] is map)
+          && (d.evidenceEntries.size() <= 12 || d.evidenceEntries[12] is map)
+          && (d.evidenceEntries.size() <= 13 || d.evidenceEntries[13] is map)
+          && (d.evidenceEntries.size() <= 14 || d.evidenceEntries[14] is map)
+          && (d.evidenceEntries.size() <= 15 || d.evidenceEntries[15] is map)
+          && (d.evidenceEntries.size() <= 16 || d.evidenceEntries[16] is map)
+          && (d.evidenceEntries.size() <= 17 || d.evidenceEntries[17] is map)
+          && (d.evidenceEntries.size() <= 18 || d.evidenceEntries[18] is map)
+          && (d.evidenceEntries.size() <= 19 || d.evidenceEntries[19] is map)
+          ))
+          && optionalText(d,'experienceId',128) && optionalText(d,'datePrecision',30)
+          && (!('experienceStatus' in d) || d.experienceStatus == null || d.experienceStatus in ['unknown','planned','occurred','notOccurred'])
+          && (!('relationshipStatus' in d) || d.relationshipStatus == null || d.relationshipStatus in ['unknown','confirmed','duplicateCandidate'])
+          && optionalDate(d,'occurredDate') && optionalDate(d,'feedbackAt')
+          && optionalMap(d,'institutionRef') && optionalMap(d,'activitySnapshot') && optionalMap(d,'occurrenceRef');
+      }
       function recordOk(d) {
-        return d.keys().hasOnly(['schemaVersion','childKey','activityId','group','activity','recordDate','title','text','attachment','createdByUid','updatedByUid','createdAt','updatedAt','revision','importKey','importFingerprint','legacyCreatedAt','deletedAt'])
+        return d.keys().hasOnly(['schemaVersion','childKey','activityId','group','activity','recordDate','title','text','attachment','createdByUid','updatedByUid','createdAt','updatedAt','revision','importKey','importFingerprint','legacyCreatedAt','deletedAt','experienceId','experienceStatus','occurredDate','datePrecision','feedbackAt','institutionRef','activitySnapshot','occurrenceRef','relationshipStatus','evidenceEntries'])
           && d.keys().hasAll(['schemaVersion','childKey','activityId','group','activity','recordDate','title','text','attachment','createdByUid','updatedByUid','createdAt','updatedAt','revision'])
-          && d.schemaVersion == 1 && d.childKey is string && d.activityId is string
+          && d.schemaVersion in [1,2] && evidenceOk(d)
+          && (d.schemaVersion == 2 || !d.keys().hasAny(['experienceId','experienceStatus','occurredDate','datePrecision','feedbackAt','institutionRef','activitySnapshot','occurrenceRef','relationshipStatus','evidenceEntries']))
+          && d.childKey is string && d.activityId is string
           && d.group in ['school','academy','activity','home']
           && d.activity is string && d.activity.size() > 0 && d.activity.size() <= 60
           && d.title is string && d.title.size() > 0 && d.title.size() <= 100
@@ -456,56 +248,28 @@ service cloud.firestore {
           && (!('deletedAt' in d) || d.deletedAt is int);
       }
       function ownsChild(d) {
-        return exists(/databases/$(database)/documents/families/$(householdId)/childLinks/$(d.childKey))
-          && get(/databases/$(database)/documents/families/$(householdId)/childLinks/$(d.childKey)).data.get('removedAt',null) == null
-          && (isFamilyAdult(householdId) || (isMemberOf(householdId) && memberDocOf(householdId).role == 'CHILD' && memberDocOf(householdId).get('childKey', null) == d.childKey));
+        let a = access(householdId);
+        return signedIn() && a.status == 'ACTIVE' && a.permission in ['ADMIN','MEMBER']
+          && childLive(householdId,d.childKey) && (a.role != 'CHILD' || a.get('childKey',null) == d.childKey);
       }
       allow get, list: if isMemberOf(householdId);
       allow create: if ownsChild(request.resource.data) && recordOk(request.resource.data)
         && request.resource.data.createdByUid == request.auth.uid && request.resource.data.revision == 1;
-      allow update: if ownsChild(resource.data) && ownsChild(request.resource.data) && recordOk(request.resource.data)
+      allow update: if ownsChild(resource.data) && recordOk(request.resource.data)
         && request.resource.data.childKey == resource.data.childKey
         && request.resource.data.createdByUid == resource.data.createdByUid
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.get('importKey', null) == resource.data.get('importKey', null)
         && request.resource.data.get('importFingerprint', null) == resource.data.get('importFingerprint', null)
+        && request.resource.data.schemaVersion >= resource.data.schemaVersion
         && request.resource.data.revision == resource.data.revision + 1;
       allow delete: if false;
     }
 
 
-    // Read-only legacy data for the transition period. Old client writes must stop
-    // before the final reconciliation; its local pending queue is retained for v2 replay.
-    match /householdCodes/{code} { allow get: if true; allow list, write: if false; }
-    match /households/{hid} {
-      allow get: if true; allow list, write: if false;
-      match /children/{id} { allow get, list: if true; allow write: if false; }
-      match /members/{id} { allow get, list: if true; allow write: if false; }
-      match /schedules/{id} { allow get, list: if isMemberOf(hid); allow write: if false; }
-      match /todos/{id} { allow get, list: if isMemberOf(hid); allow write: if false; }
-    }
-    match /families/{legacyChildCode} {
-      allow get: if legacyChildCode.matches('^[A-Z0-9]{6}$');
-      match /children/{id} { allow get, list: if legacyChildCode.matches('^[A-Z0-9]{6}$'); }
-      match /todos/{id} { allow get, list: if legacyChildCode.matches('^[A-Z0-9]{6}$'); }
-    }
-    match /placeStats/{id} { allow get, list: if true; allow write: if false; }
-
-    // 그 외 모든 경로: 기본 거부(명시하지 않으면 Firestore 규칙은 기본적으로 거부한다).
-    // TodoDefinition/지역/지원금 데이터는 Firestore에 두지 않으므로 여기에 규칙이 없다
-    // (docs/Firestore-스키마-설계.md 섹션 7).
+    match /placeUsageStats/{id} { allow read: if true; allow write: if false; }
+    // Includes legacy families/{code}, households, all code maps, childAccess,
+    // privateFamilyInvites, familyJoinRequests and familyRateLimits.
+    match /{document=**} { allow read, write: if false; }
   }
 }
-
-// ---------------------------------------------------------------------
-// Firestore Rules만으로 해결되지 않는 것 (임의로 해결됐다고 가정하지 않는다)
-// ---------------------------------------------------------------------
-// 1. familyCodes 문서 생성 자체를 아무나 무제한으로 반복할 수 있다(스팸/쿼터 소모 공격).
-//    인증이 없는 구조라 Rules만으로 요청자를 구분할 방법이 없다.
-//    완화책은 Firebase App Check 도입인데, 이번 단계 범위 밖이라 적용하지 않았다.
-// 2. 6자리 코드를 무작위로 순차 시도(brute force)하는 것 자체는 Rules로 막을 수 없다
-//    (Rules는 요청 하나하나를 개별 판단할 뿐 요청 빈도를 모른다).
-//    App Check 또는 Cloud Functions 기반 rate limit이 필요하며 이번 단계에서 다루지 않는다.
-// 3. familyId(Firestore auto-id)를 어떤 경로로든 알아낸 제3자는 규칙상 정상 접근자와
-//    구분되지 않는다 — "코드를 아는 사람=접근 권한이 있는 사람"이라는 제품 정책 자체가
-//    그렇게 설계됐기 때문이며, 진짜 사용자 인증이 도입되기 전까지는 구조적 한계다.

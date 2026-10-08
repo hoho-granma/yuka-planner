@@ -1,8 +1,10 @@
 """Authorization on isolated emulator only. Never contacts production."""
-import base64,json,time,urllib.request,urllib.error
+import os,base64,json,time,urllib.request,urllib.error
 from pathlib import Path
 PROJECT='demo-hannun-access'
-BASE=f'http://127.0.0.1:8788/v1/projects/{PROJECT}/databases/(default)/documents/'
+FIRESTORE_PORT=int(os.environ.get('FAMILY_TEST_FIRESTORE_PORT','8788'))
+assert FIRESTORE_PORT in [8788,8888]
+BASE=f'http://127.0.0.1:{FIRESTORE_PORT}/v1/projects/{PROJECT}/databases/(default)/documents/'
 def token(uid):
  def enc(d):return base64.urlsafe_b64encode(json.dumps(d).encode()).decode().rstrip('=')
  return enc({'alg':'none','typ':'JWT'})+'.'+enc({'sub':uid,'user_id':uid,'aud':PROJECT,'iss':'https://securetoken.google.com/'+PROJECT,'iat':int(time.time()),'exp':int(time.time())+3600,'firebase':{'sign_in_provider':'custom'}})+'.'
@@ -22,7 +24,7 @@ def req(path,uid='owner',data=None,delete=False):
  except urllib.error.HTTPError as e:return e.code
 # Load exactly the candidate rules under test, avoiding stale emulator configuration.
 rules=Path('security/firestore.approval.rules').read_text()
-load=urllib.request.Request('http://127.0.0.1:8788/emulator/v1/projects/'+PROJECT+':securityRules',method='PUT',headers={'Content-Type':'application/json'},data=json.dumps({'rules':{'files':[{'name':'firestore.rules','content':rules}]}}).encode())
+load=urllib.request.Request(f'http://127.0.0.1:{FIRESTORE_PORT}/emulator/v1/projects/'+PROJECT+':securityRules',method='PUT',headers={'Content-Type':'application/json'},data=json.dumps({'rules':{'files':[{'name':'firestore.rules','content':rules}]}}).encode())
 with urllib.request.urlopen(load) as response: assert response.status==200
 count=0
 def check(label,path,uid,data=None,allowed=True,delete=False):
@@ -65,6 +67,21 @@ check('parent profile edit','children/ABC123','dad',dict(profile={'name':'은찬
 check('profile deletion not any family member','children/ABC123','outsider',allowed=False,delete=True)
 check('raw child link takeover','families/f1/childLinks/ABC123','dad',dict(v=1,familyCode='OTHER1',displayName='x',order=1,addedAt=1),False)
 check('linked role elevation','families/f1/members/kid','kid',dict(v=1,uid='kid',role='MOM',label='kid',order=1,createdAt=1,updatedAt=1),False)
+# Version 2 evidence extensions keep the same family/child authorization boundary.
+r2=dict(r,schemaVersion=2,experienceId='exp1',experienceStatus='occurred',occurredDate='2026-10-08',datePrecision='day',feedbackAt=None,institutionRef=None,activitySnapshot={'label':'미술'},occurrenceRef=None,relationshipStatus='confirmed',evidenceEntries=[{'evidenceId':'e1','evidenceVersion':1,'original':'그림 완성'}])
+req('families/f1/growthRecords/v2',delete=True)
+check('v2 adult creation','families/f1/growthRecords/v2','mom',r2)
+check('v2 adult revision','families/f1/growthRecords/v2','dad',dict(r2,updatedByUid='dad',revision=2))
+r20=dict(r2,evidenceEntries=[{'evidenceId':'e'+str(i),'evidenceVersion':1}for i in range(20)])
+req('families/f1/growthRecords/v2-full',delete=True)
+check('v2 full evidence creation','families/f1/growthRecords/v2-full','mom',r20)
+check('v2 full evidence revision','families/f1/growthRecords/v2-full','dad',dict(r20,updatedByUid='dad',revision=2))
+for uid in [None,'pending','outsider','viewer','removed']:
+ check('v2 unauthorized write','families/f1/growthRecords/v2-denied',uid,r2,False)
+for extra in [dict(evidenceEntries=['invalid']),dict(evidenceEntries=[{'evidenceId':'x','evidenceVersion':1}]*21),dict(experienceStatus='invented'),dict(institutionRef='invalid'),dict(extraPrivateField='unexpected')]:
+ check('v2 malformed evidence','families/f1/growthRecords/v2-invalid','mom',dict(r2,**extra),False)
+check('v1 cannot smuggle v2 fields','families/f1/growthRecords/v1-invalid','mom',dict(r2,schemaVersion=1),False)
+check('v2 cannot downgrade','families/f1/growthRecords/v2','dad',dict(r,updatedByUid='dad',revision=3),False)
 # Revocation affects authorization immediately even when account pointers are retained.
 req('familyAccess/f1/members/dad',data=dict(status='REVOKED',permission='MEMBER',role='DAD',memberId='dad'))
 check('revoked read denied','families/f1/schedules/new','dad',allowed=False)

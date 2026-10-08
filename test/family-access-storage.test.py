@@ -1,7 +1,11 @@
 """Storage authorization checks against demo-only localhost emulators."""
-import base64,json,time,urllib.request,urllib.error,urllib.parse
+import os,base64,json,time,urllib.request,urllib.error,urllib.parse
 PROJECT='demo-hannun-access'
-BASE=f'http://127.0.0.1:8788/v1/projects/{PROJECT}/databases/(default)/documents/'
+STORAGE_PORT=int(os.environ.get('FAMILY_TEST_STORAGE_PORT','9199'))
+assert STORAGE_PORT in [9199,9299]
+FIRESTORE_PORT=int(os.environ.get('FAMILY_TEST_FIRESTORE_PORT','8788'))
+assert FIRESTORE_PORT in [8788,8888]
+BASE=f'http://127.0.0.1:{FIRESTORE_PORT}/v1/projects/{PROJECT}/databases/(default)/documents/'
 def token(uid):
  def enc(d):return base64.urlsafe_b64encode(json.dumps(d).encode()).decode().rstrip('=')
  return enc({'alg':'none','typ':'JWT'})+'.'+enc({'sub':uid,'user_id':uid,'aud':PROJECT,'iss':'https://securetoken.google.com/'+PROJECT,'iat':int(time.time()),'exp':int(time.time())+3600,'firebase':{'sign_in_provider':'custom'}})+'.'
@@ -19,7 +23,7 @@ path='families/sf1/growthRecords/record'+str(time.time_ns())+'/image_'+'a'*64
 def request(uid,path=path,method='GET',contentType='image/png',childKey='child1'):
  headers={}
  if uid:headers['Authorization']='Firebase '+token(uid)
- url='http://127.0.0.1:9199/v0/b/'+bucket+'/o'
+ url=f'http://127.0.0.1:{STORAGE_PORT}/v0/b/'+bucket+'/o'
  if method=='POST':
   boundary='hannun-storage-test';headers['Content-Type']='multipart/related; boundary='+boundary;headers['X-Goog-Upload-Protocol']='multipart'
   meta=json.dumps({'name':path,'contentType':contentType,'metadata':{'childKey':childKey}})
