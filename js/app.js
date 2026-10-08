@@ -7869,7 +7869,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
   };
 
   document.addEventListener('click',e=>{const b=e.target.closest('[data-char-schedule-category]');if(!b||!us.form)return;e.preventDefault();us.form.charCategory=us.form.charCategory===b.dataset.charScheduleCategory?'':b.dataset.charScheduleCategory;us.form.kindPick=us.form.charCategory;const labels=CharacterUI.categoriesFor(charPerson(us.form.whoPerson?'MEMBER:'+us.form.assigneeMemberId:us.form.scope==='CHILD'?'CHILD:'+(us.form.childKeys||[])[0]:'FAMILY'));const idx=labels.indexOf(us.form.charCategory);us.form.category=CharacterUI.scheduleCategory(us.form.charCategory,charPerson(us.form.whoPerson?'MEMBER:'+us.form.assigneeMemberId:us.form.scope==='CHILD'?'CHILD:'+(us.form.childKeys||[])[0]:'FAMILY'));us.form.categoryLabel=us.form.charCategory;usShowForm();});
-  async function charReadPhoto(){const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=async()=>{const file=input.files[0],form=charTodoForm;if(!file||!form)return;const err=el('hn-task-error');try{const svc=capSvc();if(!svc||!svc.available())throw Error('이 브라우저에서 사진 인식을 사용할 수 없어요.');err.textContent='사진에서 글자를 읽고 있어요. 잠시 기다려 주세요.';await svc.prepare({onProgress:()=>{}});const result=await svc.recognize(file,{onProgress:()=>{}});if(!result.ok)throw Error('글자를 읽지 못했어요. 다시 선택해 주세요.');if(charTodoForm!==form)return;form.text=String(result.text||'').slice(0,500);form.title=CharacterUI.title(form.text);charTodoRender();el('hn-task-error').textContent='읽은 내용과 제목을 확인한 뒤 저장해 주세요. 날짜는 직접 확인해 주세요.';}catch(e){if(charTodoForm===form&&el('hn-task-error'))el('hn-task-error').textContent=e.message;}};input.click();}
+  async function charReadPhoto(){const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=async()=>{const file=input.files[0],form=charTodoForm;if(!file||!form)return;const family=hh.hid,uid=acct.user?.uid,job={};form.ocrJob=job;form.ocrReady=false;const err=el('hn-task-error');try{const svc=capSvc();if(!svc||!svc.available())throw Error('이 브라우저에서 사진 인식을 사용할 수 없어요.');err.textContent='사진에서 글자를 읽고 있어요. 잠시 기다려 주세요.';const prepared=await svc.prepare({onProgress:()=>{}});if(prepared&&prepared.ok===false)throw Error('글자 인식 데이터를 불러오지 못했어요.');const result=await svc.recognize(file,{onProgress:()=>{}});if(!result.ok)throw Error('글자를 읽지 못했어요. 다시 선택해 주세요.');if(form.ocrJob!==job||charTodoForm!==form||form.inputMode!=='photo'||hh.hid!==family||acct.user?.uid!==uid||!el('hn-task-text'))return;form.ocrReady=true;form.ocrTruncated=String(result.text||'').length>500;form.text=String(result.text||'').slice(0,500);form.title=CharacterUI.title(form.text);charTodoRender();el('hn-task-error').textContent=form.ocrTruncated?'앞 500자만 읽은 내용에 반영했어요. 사진을 나누어 올려 누락된 부분도 확인해 주세요.':'읽은 글자를 확인·수정하고 사진 내용 분석 버튼을 눌러 주세요.';}catch(e){if(form.ocrJob===job&&charTodoForm===form&&form.inputMode==='photo'&&hh.hid===family&&acct.user?.uid===uid&&el('hn-task-text')&&el('hn-task-error'))el('hn-task-error').textContent=e.message;}};input.click();}
   let charVoice=null;
   function charStartVoice(){const f=charTodoForm;charVoice=CaptureVoice.create({win:window,storage:localStorage,onText:t=>{if(charTodoForm!==f)return;f.text=((f.text||'')+' '+t).trim().slice(0,500);if(!f.titleEdited)f.title=CharacterUI.title(f.text);charTodoRender();},onState:s=>{if(charTodoForm===f&&el('hn-task-error'))el('hn-task-error').textContent=s.listening?'듣고 있어요…':s.mode==='keyboard'?'키보드의 마이크로 받아쓰기해 주세요.':'인식된 글자를 확인해 주세요.';}});if(!charVoice.start()){el('hn-task-error').textContent='키보드의 마이크로 받아쓰기해 주세요.';el('hn-task-text').focus();}}
 
@@ -7879,9 +7879,9 @@ fields.sourceScheduleId=f.sourceScheduleId;
   function charScheduleText(form,text){if(us.form!==form)return;form.charText=String(text||'').slice(0,500);form.memo=form.charText;form.title=CharacterUI.title(form.charText);form.titleTouched=true;usShowForm();}
   capMenuClick=function(mode){
     if(!us.form||!el('modal-content').querySelector('.hn-shared-entry'))return charCapMenuBase(mode);
-    const form=us.form;form.capInputMode=mode;if(charScheduleVoice)charScheduleVoice.stop();usShowForm();
+    const form=us.form;form.capInputMode=mode;if(mode==='gallery')form.ocrReady=false;if(charScheduleVoice)charScheduleVoice.stop();usShowForm();
     if(mode==='gallery'){
-      const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=async()=>{if(!input.files[0])return;try{const svc=capSvc();if(!svc||!svc.available())throw Error('사진 인식을 사용할 수 없어요.');us.messages=['사진에서 글자를 읽고 있어요.'];usShowForm();const prepared=await svc.prepare({onProgress:()=>{}});if(prepared&&prepared.ok===false)throw Error('글자 인식 데이터를 불러오지 못했어요.');const result=await svc.recognize(input.files[0],{onProgress:()=>{}});if(!result.ok)throw Error('사진의 글자를 읽지 못했어요.');if(us.form!==form)return;us.messages=['읽은 내용과 날짜·시간을 확인한 뒤 저장해 주세요.'];charScheduleText(form,result.text);}catch(e){if(us.form===form){us.messages=[e.message];usShowForm();}}};input.click();
+      const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=async()=>{if(!input.files[0])return;const family=hh.hid,uid=acct.user?.uid,job={};form.ocrJob=job;try{const svc=capSvc();if(!svc||!svc.available())throw Error('사진 인식을 사용할 수 없어요.');us.messages=['사진에서 글자를 읽고 있어요.'];usShowForm();const prepared=await svc.prepare({onProgress:()=>{}});if(prepared&&prepared.ok===false)throw Error('글자 인식 데이터를 불러오지 못했어요.');const result=await svc.recognize(input.files[0],{onProgress:()=>{}});if(!result.ok)throw Error('사진의 글자를 읽지 못했어요.');if(form.ocrJob!==job||us.form!==form||form.capInputMode!=='gallery'||hh.hid!==family||acct.user?.uid!==uid||!el('hn-schedule-content'))return;form.ocrReady=true;form.ocrTruncated=String(result.text||'').length>500;us.messages=[form.ocrTruncated?'앞 500자만 반영했어요. 사진을 나누어 올려 누락된 부분도 확인해 주세요.':'읽은 글자를 확인·수정하고 사진 내용 분석 버튼을 눌러 주세요.'];charScheduleText(form,result.text);}catch(e){if(form.ocrJob===job&&us.form===form&&form.capInputMode==='gallery'&&hh.hid===family&&acct.user?.uid===uid&&el('hn-schedule-content')){us.messages=[e.message];usShowForm();}}};input.click();
     }else if(mode==='voice'){
       charScheduleVoice=CaptureVoice.create({win:window,storage:localStorage,onText:text=>charScheduleText(form,((form.charText||form.memo||form.title||'')+' '+text).trim()),onState:state=>{if(us.form===form){const errors=el('us-errors');if(errors)errors.textContent=state.listening?'듣고 있어요…':'인식된 내용을 확인해 주세요.';}}});if(!charScheduleVoice.start())el('hn-schedule-content').focus();
     }else el('hn-schedule-content').focus();
@@ -7906,11 +7906,11 @@ fields.sourceScheduleId=f.sourceScheduleId;
   function addMessageAnalysisUI(){
     const source=messageSource();if(!source)return;
     if(source.form.messageTitleReview){const input=el(source.kind==='todo'?'hn-task-text':'hn-schedule-content');input.insertAdjacentHTML('beforebegin',`<label for="hn-message-title">제목 확인</label><input id="hn-message-title" maxlength="60" value="${esc(source.form.title||'')}"/>`);el('hn-message-title').oninput=e=>{source.form.title=e.target.value;source.form.titleEdited=true;source.form.titleTouched=true;const title=el('us-title');if(title)title.value=e.target.value;};}
-    const messageMode=source.kind==='todo'?source.form.inputMode==='message':source.form.capInputMode==='paste';
-    if(!messageMode)return;
+    const analysisMode=AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode);
+    if(!analysisMode)return;
     const input=el(source.kind==='todo'?'hn-task-text':'hn-schedule-content');
     if(el('hn-message-analysis'))return;
-    input.insertAdjacentHTML('afterend','<section id="hn-message-analysis"><button type="button" class="btn-complete" data-message-analyze>메시지에서 찾아 채우기</button><p class="fine-print">누르면 메시지가 외부 AI 서비스로 전송돼요. 분석 후 내용을 확인하고 저장해 주세요.</p><div id="hn-message-results" aria-live="polite"></div></section>');
+    input.insertAdjacentHTML('afterend',`<section id="hn-message-analysis"><button type="button" class="btn-complete" data-message-analyze ${analysisMode==='photo'&&!source.form.ocrReady?'disabled':''}>${analysisMode==='photo'?'사진 내용 분석해서 채우기':'메시지에서 찾아 채우기'}</button><p class="fine-print">${analysisMode==='photo'?'읽은 글자만 외부 AI 서비스로 전송돼요. 사진 원본은 보내지 않아요.':'누르면 메시지가 외부 AI 서비스로 전송돼요.'} 분석 후 내용을 확인하고 저장해 주세요.</p><div id="hn-message-results" aria-live="polite"></div></section>`);
   }
   const messageTodoRender=charTodoRender;
   charTodoRender=function(){messageTodoRender();addMessageAnalysisUI();};
@@ -7921,13 +7921,14 @@ fields.sourceScheduleId=f.sourceScheduleId;
     if(analyze){
       if(analyze.disabled)return;
       const source=messageSource();if(!source)return;
+      if(AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode)==='photo'&&!source.form.ocrReady)return;
       const family=hh.hid,uid=acct.user&&acct.user.uid,target=el('hn-message-results');
-      analyze.disabled=true;target.textContent='메시지를 정리하고 있어요…';messageAnalysis=null;
+      analyze.disabled=true;target.textContent='내용을 정리하고 있어요…';messageAnalysis=null;
       const result=await AiParser.parseWithAI(source.text,toISODate(new Date()),{user:acct.user,familyId:family});
       const current=messageSource();if(!current||current.form!==source.form||current.text!==source.text||hh.hid!==family||acct.user?.uid!==uid||el('hn-message-results')!==target){if(el('hn-message-results')===target){analyze.disabled=false;target.textContent='입력 내용이나 대상이 바뀌어 분석 결과를 적용하지 않았어요. 다시 분석해 주세요.';}return;}
       analyze.disabled=false;
       if(!result.ok){target.textContent=result.message;return;}
-      messageAnalysis={...source,family,uid,candidates:result.candidates};
+      messageAnalysis={...source,analysisMode:AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode),family,uid,candidates:result.candidates};
       target.innerHTML=result.candidates.length?'<p class="fine-print">후보를 골라 폼에 채우세요. 대상·날짜·시간·반복은 저장 전 확인해 주세요.</p>'+result.candidates.map((c,i)=>`<div class="hn-message-candidate"><strong>${esc(c.title)}</strong><p>${esc(c.kind==='todo'?'할일':'일정')} · ${esc(c.date||'날짜 미확인')} · ${esc(c.startTime||'시간 미확인')} · ${esc(c.ownerName||'대상 미확인')} · ${esc(c.category||'분류 미확인')}</p><blockquote>${esc(c.evidence)}</blockquote><button type="button" data-message-apply="${i}">이 ${c.kind==='todo'?'할일':'일정'} 입력폼에 채우기</button></div>`).join(''):'찾은 일정·할일이 없어요. 원문을 유지하고 직접 입력해 주세요.';
     }
     if(apply){
@@ -7936,12 +7937,12 @@ fields.sourceScheduleId=f.sourceScheduleId;
       const notice='분석한 제목·날짜·시간을 확인해 주세요. 대상과 카테고리, 반복은 직접 확인해 주세요.';
       if(candidate.kind==='todo'){
         if(current.kind!=='todo')charOpenTodo();
-        const f=charTodoForm;f.messageTitleReview=true;f.text=state.text;f.title=candidate.title;f.titleEdited=true;f.inputMode='message';f.dueDate=candidate.date||'';f.calendarChecked=false;
+        const f=charTodoForm;f.messageTitleReview=true;f.text=state.text;f.title=candidate.title;f.titleEdited=true;f.inputMode=state.analysisMode==='photo'?'photo':'message';f.ocrReady=state.analysisMode==='photo';f.dueDate=candidate.date||'';f.calendarChecked=false;
         if(candidate.category&&CharacterUI.categoriesFor(charPerson(f.ownerKey)).includes(candidate.category))f.category=candidate.category;
         charTodoRender();el('hn-task-error').textContent=notice;
       }else{
         if(current.kind!=='schedule')usOpenForm(null);
-        const f=us.form;f.messageTitleReview=true;f.charText=state.text;f.memo=state.text;f.title=candidate.title;f.titleTouched=true;f.capInputMode='paste';f.eventDate=candidate.date||'';f.dateKind='FIXED';f.startTime=candidate.startTime||'';f.endTime=candidate.endTime||'';f.allDay=!candidate.startTime;f.repeat='NONE';f.byDay=[];f.multiDay=false;f.endDate='';f.twConfirmed=false;const owner=f.whoPerson?'MEMBER:'+f.assigneeMemberId:f.scope==='CHILD'?'CHILD:'+(f.childKeys||[])[0]:'FAMILY';if(candidate.category&&CharacterUI.categoriesFor(charPerson(owner)).includes(candidate.category)){f.charCategory=candidate.category;f.categoryLabel=candidate.category;f.category=CharacterUI.scheduleCategory(candidate.category,charPerson(owner));}us.messages=[notice];usShowForm();
+        const f=us.form;f.messageTitleReview=true;f.charText=state.text;f.memo=state.text;f.title=candidate.title;f.titleTouched=true;f.capInputMode=state.analysisMode==='photo'?'gallery':'paste';f.ocrReady=state.analysisMode==='photo';f.eventDate=candidate.date||'';f.dateKind='FIXED';f.startTime=candidate.startTime||'';f.endTime=candidate.endTime||'';f.allDay=!candidate.startTime;f.repeat='NONE';f.byDay=[];f.multiDay=false;f.endDate='';f.twConfirmed=false;const owner=f.whoPerson?'MEMBER:'+f.assigneeMemberId:f.scope==='CHILD'?'CHILD:'+(f.childKeys||[])[0]:'FAMILY';if(candidate.category&&CharacterUI.categoriesFor(charPerson(owner)).includes(candidate.category)){f.charCategory=candidate.category;f.categoryLabel=candidate.category;f.category=CharacterUI.scheduleCategory(candidate.category,charPerson(owner));}us.messages=[notice];usShowForm();
       }
       messageAnalysis=null;
     }

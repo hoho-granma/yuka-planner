@@ -1,9 +1,10 @@
-/* Message-only AI adapter. No API secret or automatic persistence in the browser. */
+/* Text AI adapter for pasted messages and locally extracted OCR text. No API secret or automatic persistence in the browser. */
 (function(root,factory){if(typeof module!=='undefined'&&module.exports)module.exports=factory();else root.AiParser=factory();})(typeof window!=='undefined'?window:global,function(){
  'use strict';
  const RULE_FAILED='rule-failed';
  const ruleFailed=(text,cands)=>/[0-9A-Za-z가-힣]/.test(String(text||''))&&!(cands||[]).some(c=>c&&c.eventDate);
  const enabled=()=>true;
+ const analysisMode=(kind,mode)=>kind==='todo'?(mode==='photo'?'photo':mode==='message'?'message':null):(mode==='gallery'?'photo':mode==='paste'?'message':null);
  async function parseWithAI(text,baseDate,context){
   const c=context||{},user=c.user;
   if(!user)return {ok:false,reason:'unauthenticated',message:'로그인 후 사용할 수 있어요.'};
@@ -18,5 +19,5 @@
    return result?.ok&&Array.isArray(result.candidates)?result:{ok:false,reason:'failed',message:'분석 결과를 확인하지 못했어요.'};
   }catch{return {ok:false,reason:'offline',message:'서버에 연결하지 못했어요. 입력한 내용은 그대로 유지돼요.'};}
  }
- return {RULE_FAILED,ruleFailed,enabled,parseWithAI};
+ return {RULE_FAILED,ruleFailed,enabled,analysisMode,parseWithAI};
 });
