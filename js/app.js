@@ -1426,7 +1426,7 @@
     btn.type = "button";
     btn.className = "nav-item hidden";
     btn.dataset.nav = "trend";
-    btn.innerHTML = `<span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><span>${Over36View.TREND.nav}</span>`;
+    btn.innerHTML = `<span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><span>${typeof EducationInfo!=="undefined"?"교육정보":Over36View.TREND.nav}</span>`;
     ck.parentNode.insertBefore(btn, places || ck.nextSibling);
     btn.addEventListener("click", () => switchTab("trend"));
     if (!TAB_NAMES.includes("trend")) TAB_NAMES.push("trend");
@@ -1453,15 +1453,24 @@
     const regional = ((dataset.subsidy && dataset.subsidy.subsidies) || []).some((x) => !/^NAT-/.test(x.id));
     return { region: profile.district || (pv && pv.name) || "", ageLabel: ChildTimeline.ageLabelAt(profile.birthDate, new Date()), decide, support, supportRegionPending: !regional, find: eduLinks ? { links: eduLinks.links } : null, firstschoolNote: (() => { const kg = byBase("KG-01"), td = kg && kg.detail && kg.detail.definition; return kg && td && td.triggerType === "AGE_WINDOW" && eduLinks && eduLinks.notices && eduLinks.notices.firstschoolNotYet ? eduLinks.notices.firstschoolNotYet : ""; })(), mine: EduTrend.myLessons(docs, keys), canAdd: usActive(), nextSchool: months >= 60, nextSchoolOpen: (() => { try { return !!nsModel(); } catch (e) { return false; } })(), };
   }
+  let educationRequestedSubject = "";
   function acct36RenderTrend() {
     const panel = el("tab-trend");
     if (!panel || !profile) return;
+    if(typeof EducationInfo!=="undefined") EducationInfo.unmount();
     const g = EduTrend.gradeOf(profile.birthDate, new Date(), { policy: schoolPolicy, enrollmentYearOverride: profile.enrollmentYearOverride });
     const keys = [acct36LinkKey(), familyCode].filter(Boolean);
     const docs = typeof usDocs === "function" && usActive() ? usDocs() : [];
     const pv = regionsData && regionsData.provinces.find((x) => x.code === profile.province);
-    if (acct36Is3to5() && typeof Edu3to5View !== "undefined") { panel.innerHTML = Edu3to5View.render(acct36Edu3to5State(pv, docs, keys)); return; } // 3~5세: 단계별 블록(또래 범위·트렌드·다음에 확인할 것은 이 분기에서 렌더하지 않는다)
-    panel.innerHTML = Over36View.renderTrend({ region: profile.district || (pv && pv.name) || "", gradeLabel: EduTrend.gradeLabel(g), inRange: g >= 0 && g <= 6, mine: EduTrend.myLessons(docs, keys), status: EduTrend.statusFor(null), canAdd: usActive() });
+    if (acct36Is3to5() && typeof Edu3to5View !== "undefined") { panel.innerHTML = Edu3to5View.render(acct36Edu3to5State(pv, docs, keys)); return; }
+    const legacy = Over36View.renderTrend({ region: profile.district || (pv && pv.name) || "", gradeLabel: EduTrend.gradeLabel(g), inRange: g >= 0 && g <= 6, mine: EduTrend.myLessons(docs, keys), status: EduTrend.statusFor(null), canAdd: usActive() });
+    if (typeof EducationInfo === "undefined") { panel.innerHTML = legacy; return; }
+    const educationScope=JSON.stringify([acct.user&&acct.user.uid||"local",familyCode||usActiveChildKey()]), educationFamily=hh.hid;
+    EducationInfo.mount(panel, {scope:educationScope,familyId:hh.hid||null,reader:activeGrowthBackend(),isCurrent:()=>currentTab==="trend"&&educationFamily===hh.hid&&educationScope===JSON.stringify([acct.user&&acct.user.uid||"local",familyCode||usActiveChildKey()]),legacy, name: childDisplayName(), region: [pv && pv.name, profile.district].filter(Boolean).join(" "), ageLabel: ChildTimeline.ageLabelAt(profile.birthDate, new Date()), months: ChildTimeline.completedMonths(profile.birthDate,new Date()), subject: educationRequestedSubject,
+      provinceName:pv&&pv.name||"",district:profile.district||"",canPlan:usActive()&&usActiveChildKey()!=null,
+      onPlan:(draft)=>{if(!usActive()||usActiveChildKey()==null)return;usOpenForm(null,"",{scope:"CHILD"});if(us.form){Object.assign(us.form,{title:draft.title,titleTouched:true,charText:(draft.title+'\n'+draft.memo).slice(0,500),category:"ETC",categoryLabel:"체험",charCategory:"체험",eventDate:"",startTime:"",endTime:"",location:draft.location,memo:draft.memo});usShowForm();}},
+      onHistory:()=>{growthRequestedView="history";switchTab("growth");}, onCheck:()=>{growthRequestedView="check";switchTab("growth");}});
+    educationRequestedSubject="";
   }
   const renderAllBase = renderAll;
   renderAll = function renderAll() {
@@ -1546,7 +1555,7 @@
   };
   const usRefreshHomeBase = usRefreshHome;
   usRefreshHome = function usRefreshHome() {
-    if (currentTab === "growth" && growthActive() && !el("growth-body").querySelector(".gr-editor")) renderGrowthTab();
+    if (currentTab === "growth" && growthActive() && !el("growth-body").querySelector(".gr-editor") && (!el("growth-body").querySelector(".lc-page") || growthRenderScope!==JSON.stringify([acct.user&&acct.user.uid||"local",familyCode||usActiveChildKey()])+"|"+(hh.hid||""))) renderGrowthTab();
     if (!acct36Active() || !hhEnabled()) return usRefreshHomeBase.apply(this, arguments);
     const sig = acct36Sig();
     if (sig !== (us.homeSig36 || "")) {
@@ -3501,6 +3510,12 @@
   function growthActive() {
     return typeof GrowthRecords !== "undefined" && GrowthRecords.eligible(profile, profile && !isPregnant() ? ChildTimeline.completedMonths(profile.birthDate, new Date()) : null);
   }
+  function activeGrowthBackend() {
+    const child=familyCode||usActiveChildKey();
+    const link=usActive()?usLinks().find(l=>l.familyCode===child&&!l.removedAt):null;
+    return DBPaths.deployment.growthServer&&acct.user&&link?GrowthSync.create({getContext:()=>({uid:acct.user&&acct.user.uid,familyId:hh.hid,childKey:(usLinks().find(l=>l.familyCode===familyCode&&!l.removedAt)||{}).childKey,childCode:familyCode})}):null;
+  }
+  let growthRequestedView = "history", growthRenderScope = "";
   function renderGrowthTab() {
     if (!growthActive()) return;
     const child = familyCode || usActiveChildKey();
@@ -3508,9 +3523,15 @@
     const owner = acct.user && acct.user.uid || "local";
     const docs = typeof usDocs === "function" && usActive() ? usDocs() : [];
     const lessons = typeof EduTrend !== "undefined" ? EduTrend.myLessons(docs, [acct36LinkKey(), familyCode].filter(Boolean)).lessons : [];
-    const growthLink = usActive() ? usLinks().find(l => l.familyCode === child && !l.removedAt) : null;
-    const backend = DBPaths.deployment.growthServer && acct.user && growthLink ? GrowthSync.create({getContext:()=>({uid:acct.user && acct.user.uid,familyId:hh.hid,childKey:(usLinks().find(l=>l.familyCode===familyCode&&!l.removedAt)||{}).childKey,childCode:familyCode})}) : null;
-    GrowthRecords.mount(el("growth-body"), { backend, name: childDisplayName(), scope: JSON.stringify([owner, child]), lessons, onCalendar: () => switchTab("calendar") });
+    const backend = activeGrowthBackend();
+    const scope = JSON.stringify([owner, child]);
+    growthRenderScope=scope+"|"+(hh.hid||"");
+    const currentFamily=hh.hid;
+    const mountGrowth=typeof GrowthLearningView!=="undefined"?GrowthLearningView.mount:GrowthRecords.mount;
+    mountGrowth(el("growth-body"), { backend, name: childDisplayName(), scope, familyId: hh.hid || null, grade:EduTrend.gradeOf(profile.birthDate,new Date(),{policy:schoolPolicy,enrollmentYearOverride:profile.enrollmentYearOverride}), semester:new Date().getMonth()<7?1:2, months: ChildTimeline.completedMonths(profile.birthDate,new Date()), initialView:growthRequestedView, lessons,
+      isCurrent:()=>currentTab==="growth" && currentFamily===hh.hid && scope===JSON.stringify([acct.user&&acct.user.uid||"local",familyCode||usActiveChildKey()]),
+      onEducation:(subject)=>{educationRequestedSubject=subject||"";switchTab("trend");},onCalendar: () => switchTab("calendar") });
+    growthRequestedView="history";
   }
   document.addEventListener("click", (e) => { if (e.target.closest("[data-growth-home]")) switchTab("growth"); });
   // ── E(2-1·2-2) 하단 탭 교체: 가구·계정 기능이 켜졌을 때만 '기록' 탭 자리에 '어디갈까'. 기록은 프로필 시트의 '기록 보기'로 연다(기존 기록 패널 그대로). ──
@@ -3754,6 +3775,8 @@
       renderFilterChips();
       renderChecklistTab();
     }
+    if(currentTab === "growth" && name !== "growth" && typeof GrowthLearningView !== "undefined") GrowthLearningView.unmount();
+    if(currentTab === "trend" && name !== "trend" && typeof EducationInfo !== "undefined") EducationInfo.unmount();
     const previousTab = currentTab;
     currentTab = name;
     if (name !== "checklist" && checklistScope) {
@@ -7177,6 +7200,8 @@
     const p = el("empty-panel");
     if (p) p.classList.add("hidden");
     const changed = currentTab !== name;
+    if(currentTab === "growth" && name !== "growth" && typeof GrowthLearningView !== "undefined") GrowthLearningView.unmount();
+    if(currentTab === "trend" && name !== "trend" && typeof EducationInfo !== "undefined") EducationInfo.unmount();
     currentTab = name;
     TAB_NAMES.forEach((t) => el(`tab-${t}`).classList.toggle("hidden", t !== name));
     document.querySelectorAll(".nav-item").forEach((btn) => btn.classList.toggle("active", btn.dataset.nav === name));

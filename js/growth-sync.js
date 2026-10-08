@@ -1,6 +1,7 @@
 /* Family growth storage. No automatic import, no deletion of local originals. */
 (function(root,factory){if(typeof module!=="undefined"&&module.exports)module.exports=factory();else root.GrowthSync=factory();})(typeof window!=="undefined"?window:global,function(){
   "use strict";
+  const Evidence=typeof module!=='undefined'&&module.exports?require('./growth-evidence'):globalThis.GrowthEvidence;
   const GROUPS=['school','academy','activity','home'];
   const ID=/^[A-Za-z0-9_-]{1,160}$/;
   function context(c){if(!c||!ID.test(c.familyId||'')||!ID.test(c.childKey||'')||!c.uid)throw Error('로그인과 아이의 가족 연결을 확인해 주세요.');return c;}
@@ -33,23 +34,23 @@
       async image(path){const x=await ref(path);return x.sdk.getBlob(x.ref,15*1024*1024);},
     };
   }
-  function create({getContext,adapter,now=()=>Date.now(),hash=digest}){
+  function create({getContext,adapter,now=()=>Date.now(),hash=digest,structuredWrites=false}){
     let ad=adapter;
     const a=()=>ad||(ad=browserAdapter());
     const c=()=>context(getContext());
     const root=ctx=>typeof DBPaths!=='undefined'?DBPaths.map('households/'+ctx.familyId):'households/'+ctx.familyId;
     function same(ctx){const next=c();if(next.uid!==ctx.uid||next.familyId!==ctx.familyId||next.childKey!==ctx.childKey)throw Error('선택한 가족이나 아이가 변경됐어요. 다시 열어 주세요.');}
     const recordsPath=ctx=>root(ctx)+'/growthRecords';
-    async function hydrate(d,ctx,scope){
-      let image=null,imageError=false;
-      if(d.attachment){try{image=await a().image(d.attachment.storagePath);}catch(e){imageError=true;}}
+    async function hydrate(d,ctx,scope,attachments=true){
+      let image=null,imageError=false,attachmentStatus=d.attachment?(attachments?'pending':'not_requested'):'none';
+      if(d.attachment&&attachments){try{image=await a().image(d.attachment.storagePath);attachmentStatus='ok';}catch(e){imageError=true;attachmentStatus=/unauthorized|permission-denied/.test(e.code||'')?'permission_denied':'failed';}}
       same(ctx);
-      return {id:d.id,scope,group:d.group,activity:d.activity,activityId:d.activityId,title:d.title,text:d.text,date:d.recordDate,createdAt:d.legacyCreatedAt||d.createdAt,revision:d.revision,image,imageError,attachment:d.attachment||null,server:true};
+      return {...Evidence.fields(d),schemaVersion:d.schemaVersion||1,registeredAt:d.createdAt,deletedAt:d.deletedAt||null,id:d.id,scope,group:d.group,activity:d.activity,activityId:d.activityId,title:d.title,text:d.text,date:d.recordDate,createdAt:d.legacyCreatedAt||d.createdAt,revision:d.revision,image,imageError,attachmentStatus,attachment:d.attachment||null,server:true};
     }
-    async function read(scope){const ctx=c(),rows=await a().list(recordsPath(ctx),ctx.childKey);same(ctx);return Promise.all(rows.filter(d=>!d.deletedAt).map(d=>hydrate(d,ctx,scope)));}
+    async function read(scope,options={}){const ctx=c(),rows=await a().list(recordsPath(ctx),ctx.childKey);same(ctx);return Promise.all(rows.filter(d=>!d.deletedAt).map(d=>hydrate(d,ctx,scope,options.attachments!==false)));}
     async function fingerprintOf(record){
       const imageHash=record.image?await hash(new Uint8Array(await record.image.arrayBuffer())):'';
-      return {imageHash,fingerprint:await hash(JSON.stringify([record.group,record.activity,record.title,record.text,record.date,imageHash]))};
+      const parts=[record.group,record.activity,record.title,record.text,record.date,imageHash];const extension=Evidence.fields(record);if(Object.keys(extension).length)parts.push(extension);return {imageHash,fingerprint:await hash(JSON.stringify(parts))};
     }
     async function pendingLocal(records,scope){
       const ctx=c();if(scope!==JSON.stringify([ctx.uid,ctx.childCode]))throw Error('기기 기록의 대상 아이를 확인해 주세요.');
@@ -58,7 +59,7 @@
       same(ctx);return pending;
     }
     async function save(record,options={}){
-      validate(record);const ctx=c();
+      validate(record);const extension=Evidence.fields(record);if(Object.keys(extension).length&&!structuredWrites)throw Error('구조화 기록 저장 규칙이 아직 활성화되지 않았어요. 원문은 변경하지 않았습니다.');const ctx=c();
       const imported=!!options.import;
       const id=imported?'import_'+await hash(record.scope+'\u0000'+record.id):record.id;
       const activityId=record.activityId||'activity_'+await hash(ctx.childKey+'\u0000'+record.group+'\u0000'+record.activity);
@@ -79,7 +80,7 @@
         if(imported&&existing){if(existing.importFingerprint!==fingerprint)throw Error('이전 기록이 서버에서 변경됐어요. 덮어쓰지 않았습니다.');return null;}
         if(!imported&&existing&&existing.revision!==record.revision)throw Error('가족이 이 기록을 수정했어요. 다시 불러온 뒤 수정해 주세요.');
         if(!imported&&!existing&&record.server)throw Error('기존 기록을 찾을 수 없어요. 다시 불러와 주세요.');
-        return {schemaVersion:1,childKey:ctx.childKey,activityId,group:record.group,activity:record.activity,recordDate:record.date,title:record.title,text:record.text,attachment,
+        return {...(existing?Evidence.fields(existing):{}),...extension,schemaVersion:Object.keys(extension).length||existing?.schemaVersion===2?2:1,childKey:ctx.childKey,activityId,group:record.group,activity:record.activity,recordDate:record.date,title:record.title,text:record.text,attachment,
           createdByUid:existing?existing.createdByUid:ctx.uid,updatedByUid:ctx.uid,createdAt:existing?existing.createdAt:now(),updatedAt:now(),revision:existing?existing.revision+1:1,
           ...(imported?{importKey:id,importFingerprint:fingerprint,legacyCreatedAt:record.createdAt}:existing&&existing.importKey?{importKey:existing.importKey,importFingerprint:existing.importFingerprint,legacyCreatedAt:existing.legacyCreatedAt}:{})};
       });
@@ -93,7 +94,15 @@
       for(const record of records){same(ctx);try{await save(record,{import:true});result.done++;}catch(e){result.failed.push({id:record.id,message:e.message});}onProgress({...result});}
       return result;
     }
-    return {read,save,importLocal,pendingLocal};
+    function status(e){return /permission-denied|unauthorized|unauthenticated/.test(e.code||'')?'permission_denied':/선택한 가족/.test(e.message||'')?'context_changed':'failed';}
+    async function related(scope,filter={}){
+      let ctx;try{ctx=c();}catch(e){return {status:'permission_denied',items:[],message:e.message};}if(scope!==JSON.stringify([ctx.uid,ctx.childCode]))return {status:'context_changed',items:[]};try{const records=await read(scope,{attachments:false});same(ctx);const items=records.filter(r=>(!filter.activityId||r.activityId===filter.activityId)&&(!filter.educationRef||(r.evidenceEntries||[]).some(e=>(e.educationRefs||[]).some(x=>x.id===filter.educationRef))));return {status:items.length?'ok':'empty',items:items.map(r=>Evidence.project(r,ctx)),context:{familyId:ctx.familyId,childKey:ctx.childKey}};}catch(e){return {status:status(e),items:[],message:e.message};}
+    }
+    async function resolveReference(scope,ref){
+      let ctx;try{ctx=c();}catch(e){return {status:'permission_denied',message:e.message};}if(scope!==JSON.stringify([ctx.uid,ctx.childCode]))return {status:'context_changed'};if(ref.familyId!==ctx.familyId||ref.childKey!==ctx.childKey)return {status:'context_changed'};
+      try{const records=await read(scope);same(ctx);return Evidence.resolve(records.find(r=>r.id===ref.recordId),ref,ctx);}catch(e){return {status:status(e),message:e.message};}
+    }
+    return {read,save,importLocal,pendingLocal,related,resolveReference};
   }
   return {create,validate,context};
 });
