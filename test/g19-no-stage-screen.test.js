@@ -17,6 +17,14 @@ const bootClass = (store, throwing) => {
   vm.runInContext(m[0].replace(/^<script>|<\/script>$/g, ""), sb);
   return [...cls];
 };
+test("초기 데이터 로딩 중에는 옛 가족코드 랜딩 전체를 숨기고, 계정 UI가 준비되면 표시한다", () => {
+  const guard = HTML.match(/<style>[^<]*html\.hnacc-default #view-landing:not\(\.acct-on\)\{visibility:hidden\}<\/style>/);
+  assert.ok(guard, "외부 CSS·앱 실행 전 적용되는 초기 화면 가드");
+  assert.ok(HTML.indexOf(guard[0]) < HTML.indexOf('css/style.css'));
+  const splash = APP.slice(APP.indexOf("function acctSplashShow()"), APP.indexOf("function acctSplashArm("));
+  assert.ok(!splash.includes("d.innerHTML"), "인증 복원 대기마다 한눈육아 로고를 표시하지 않는다");
+  assert.ok(splash.includes("document.body.appendChild(d)"), "복원 중 화면 보호 유지");
+});
 test("첫 그림 전 head 스크립트: 저장소가 비어 있거나 접근이 막혀도 계정 기본 ON 클래스, accounts='0' 일 때만 붙지 않는다(OFF)", () => {
   assert.deepStrictEqual(bootClass({}), ["hnacc-default"]);
   assert.deepStrictEqual(bootClass({}, true), ["hnacc-default"]);

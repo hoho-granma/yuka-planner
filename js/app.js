@@ -6594,7 +6594,7 @@
     d.id = "acct-splash";
     d.className = "acct-splash";
     d.setAttribute("aria-hidden", "true");
-    d.innerHTML = `<span class="acct-splash-logo">${AccountView.esc(AccountView.MSG.logo)}</span>`;
+    // 인증·가족 복원 동안 중립 배경만 유지한다. 매 진입마다 로고 화면을 반복 노출하지 않는다.
     document.body.appendChild(d);
     acctSplashArm(SPLASH_MAX_MS, acctSplashHide);
   }

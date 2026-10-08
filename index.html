@@ -12,6 +12,7 @@
 <meta name="theme-color" content="#ff6a1a" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
 <script>/* G19: 계정 모드(기본 ON)에서는 옛 상황 선택 화면이 첫 그림부터 한 번도 보이지 않게 한다(js/feature-flags.js 와 같은 규칙: accounts="0" 일 때만 OFF) */try{if(localStorage.getItem("hannun_feature_accounts")!=="0")document.documentElement.classList.add("hnacc-default");}catch(e){document.documentElement.classList.add("hnacc-default");}</script>
+<style>/* 인증 UI가 준비되기 전에는 옛 가족코드 시작 화면을 그리지 않는다. */html.hnacc-default #view-landing:not(.acct-on){visibility:hidden}</style>
 <link rel="stylesheet" href="css/style.css?v=132" />
   <link rel="stylesheet" href="css/places.css?v=11" />
 </head>
@@ -327,7 +328,7 @@
   <link rel="stylesheet" href="css/character-ui.css?v=25"/>
   <link rel="stylesheet" href="css/family-theme.css?v=6"/>
   <script src="js/family-theme.js?v=6"></script>
-  <script src="js/app.js?v=196"></script>
+  <script src="js/app.js?v=197"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
