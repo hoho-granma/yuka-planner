@@ -36,16 +36,17 @@ test("하루 끝: 시작을 늦은 밤으로 돌려도 끝은 23:45 를 넘지 �
   const s = W.reduce(W.initState("22:00", "23:00"), { type: "set", field: "start", time: "23:30" });
   assert.deepStrictEqual([s.start, s.end], ["23:30", "23:45"]);
 });
-test("마크업: 한 줄 범위(시작·끝 버튼, 같은 오전/오후면 끝은 시각만) + 3열 휠 + ▲▼ + 안내 + 경고", () => {
+test("마크업: 24시간 시작·끝 시/분 선택 + 안내 + 경고", () => {
   const s = W.initState("16:00", "17:00");
   const h = W.markup("us-time", s);
-  assert.ok(h.includes(">오후 4:00<") && h.includes(">5:00<") && h.includes('data-tw-field="start"') && h.includes('data-tw-field="end"'));
-  assert.strictEqual((h.match(/data-tw-col="/g) || []).length, 3);
-  assert.strictEqual((h.match(/data-tw-step="/g) || []).length, 6);
+  assert.ok(h.includes('data-tw-input="start"') && h.includes('data-tw-input="end"'));
+  assert.strictEqual((h.match(/<select /g)||[]).length,4);
+  assert.ok(h.includes('<option value="23">23</option>') && h.includes('<option value="59">59</option>'));
+  assert.ok(!h.includes('data-tw-col=') && !h.includes('오전/오후'));
   assert.ok(h.includes("시작을 바꾸면 끝도 같은 길이로 따라와요") && !h.includes("tw-warn"));
   const w = W.markup("us-time", { ...s, warn: "경고" });
   assert.ok(w.includes('class="tw-warn" role="alert"'));
-  assert.ok(W.markup("x", W.initState("11:30", "13:00")).includes(">오후 1:00<"), "오전→오후 걸치면 끝에도 오전/오후");
+  assert.ok(W.markup("x", W.initState("11:30", "13:00")).includes('<option value="13" selected>13</option>'), "오전→오후 걸치면 끝에도 오전/오후");
 });
 
 console.log("앱 연결(폼 값 ↔ 휠)·합성 이벤트");
@@ -65,7 +66,7 @@ test("폼 연결: 시간 일정이면 폼 값(startTime·endTime)이 휠 상태�
   assert.deepStrictEqual(JSON.parse(JSON.stringify(g.usTwState())), { start: "16:00", end: "17:00", active: "start", warn: "" });
   g.usTwApply(W.reduce(g.usTwState(), { type: "step", part: "hour", dir: 1 }));
   assert.deepStrictEqual([sb.us.form.startTime, sb.us.form.endTime, sb.us.form.twActive], ["17:00", "18:00", "start"]);
-  assert.ok(box.outerHTML.includes('data-tw="us"') && box.outerHTML.includes(">오후 5:00<"));
+  assert.ok(box.outerHTML.includes('data-tw="us"') && box.outerHTML.includes('<option value="17" selected>17</option>'));
 });
 test("폼 연결: 종일이거나 기간(PERIOD)·폼 없음이면 휠 상태가 없다(이벤트 무시), 시간 일정을 처음 보이면 기본 시간(오전 9:00~10:00)을 폼에 채운다", () => {
   const { sb, g } = glue();
@@ -104,7 +105,7 @@ test("폼 마크업: 시간 입력은 한 줄 범위+휠 하나(시작·끝 선�
   const f = V.newForm({ date: "2026-10-06", activeChildKey: "c1", links: [{ childKey: "c1", displayName: "은찬", order: 1 }] });
   assert.ok(!V.renderForm(f, []).includes("data-tw"));
   const timed = V.renderForm({ ...f, allDay: false, startTime: "16:00", endTime: "17:30", twActive: "end" }, []);
-  assert.ok(timed.includes('data-tw="us"') && timed.includes('class="tw-tm on" data-tw-field="end"') && !timed.includes("data-us-time"));
+  assert.ok(timed.includes('data-tw="us"') && timed.includes('data-tw-input="end"') && !timed.includes("data-us-time"));
   assert.ok(!V.renderForm(f, [], { members: [{ memberId: "m1", label: "엄마" }] }).includes("data-us-assignee"));
   const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8"), sw = fs.readFileSync(path.join(__dirname, "..", "sw.js"), "utf8");
   assert.ok(/time-wheel\.js\?v=\d+"><\/script>\s*<script src="js\/schedule-kinds/.test(html) && sw.includes('"./js/time-wheel.js"'));
@@ -186,7 +187,7 @@ test("AUTO 연결 예약(VX·HC) 폼: 종일을 끄면 기본 시간이 채워�
   assert.deepStrictEqual([prep.input.autoRef, prep.input.allDay, prep.input.startTime, prep.input.endTime], ["VX-DTAP__dose-2", false, "22:00", "23:00"]);
   assert.ok(US2.buildCreateDoc(prep.input, 1790000000000).ok, "저장 문서 검증 통과");
   const html = V2.renderForm(form, links, { autoLabel: "DTaP 접종 (2차)" });
-  assert.ok(html.includes('data-tw="us"') && html.includes(">오후 10:00<") && !html.includes("data-us-assignee"));
+  assert.ok(html.includes('data-tw="us"') && html.includes('<option value="22" selected>22</option>') && !html.includes("data-us-assignee"));
   change("us-allday", true);
   assert.deepStrictEqual([form.allDay, form.startTime, form.endTime], [true, "", ""]);
   assert.ok(!V2.renderForm(form, links).includes('data-tw="us"'));
@@ -200,4 +201,20 @@ test("끝이 시작보다 빠르게 만들면 경고와 자동 값, 저장 검�
   assert.strictEqual(V2.validateForm({ ...form, endTime: "15:00" }).ok, false);
 });
 
+test("24시간 직접 선택: 분 단위 보존, 길이 유지, 잘못된 끝·자정 경계 거부", () => {
+  const exact=(state,field,time)=>W.reduce(state,{type:'exact',field,time});
+  const state={start:'09:07',end:'10:37',active:'start',warn:''};
+  const changed=exact(state,'start','14:11');assert.deepStrictEqual([changed.start,changed.end],['14:11','15:41']);
+  assert.strictEqual(exact(changed,'end','16:03').end,'16:03');
+  assert.strictEqual(exact(changed,'end','13:59').end,'15:41');
+  assert.ok(exact(changed,'end','13:59').warn);
+  const late=exact(state,'start','23:58');assert.deepStrictEqual([late.start,late.end],['23:58','23:59']);
+  assert.strictEqual(exact(state,'start','23:59').start,'09:07');
+});
+test("24시간 select change가 폼의 정확한 HH:MM으로 전달된다", () => {
+  const handlers={};let state={start:'09:07',end:'10:07',active:'start',warn:''};
+  W.bind({addEventListener:(n,fn)=>handlers[n]=fn,contains:()=>true},()=>state,s=>state=s);
+  const target={dataset:{twInput:'start',twPart:'hour'},value:'15',closest:()=>target};
+  handlers.change({target});assert.deepStrictEqual([state.start,state.end],['15:07','16:07']);
+});
 console.log(`\n${passed}개 통과`);

@@ -1,5 +1,5 @@
 /*
- * time-wheel — 시간 입력 UI(시안 g28-B): 한 줄 범위('오후 4:00 ~ 5:00')를 탭하면 아래 휠(오전/오후·시·분 15분 단위)로 조정한다.
+ * time-wheel — 시간 입력 UI: 시작·끝의 24시간 시/분 선택. 기존 휠 reducer는 호환용으로 유지한다.
  *   시작을 바꾸면 끝이 같은 길이로 따라오고, 끝이 시작보다 빠르거나 같으면 경고 한 줄 + 자동 값으로 되돌린다(계산은 TimeRange).
  * 순수 부분: initState · reduce · markup (DOM 없음). DOM 부분: bind(root, onChange) — 클릭(▲▼·칸 선택)·마우스 휠·세로 끌기를 reduce 로 모은다.
  * 상태 = { start:"HH:MM", end:"HH:MM", active:"start"|"end", warn:"" }. 저장 형식은 기존 그대로 'HH:MM' 두 필드.
@@ -38,6 +38,14 @@
   function reduce(state, action) {
     const st = { start: state.start, end: state.end, active: state.active, warn: state.warn || "" };
     if (action.type === "field") return { ...st, active: action.field === "end" ? "end" : "start", warn: "" };
+    if (action.type === "exact") {
+      const value=TR.toMin(action.time),start=TR.toMin(st.start),end=TR.toMin(st.end);
+      if(value==null)return st;
+      if(action.field==='end')return value>start?{...st,end:action.time,active:'end',warn:''}:{...st,warn:TR.MSG.endBeforeStartShort};
+      if(value>=1439)return {...st,warn:'끝 시간을 지정할 수 있도록 시작을 23:58 이전으로 선택해 주세요.'};
+      const length=end>start?end-start:60;
+      return {...st,start:action.time,end:TR.fromMin(Math.min(1439,value+length)),active:'start',warn:''};
+    }
     if (action.type === "set") {
       const r = action.field === "end" ? TR.changeEnd(st, action.time) : TR.changeStart(st, action.time);
       return { start: r.start, end: r.end, active: action.field === "end" ? "end" : "start", warn: r.warn };
@@ -68,9 +76,12 @@
   };
   /** 한 줄 범위 + 휠 마크업. prefix 는 폼 안에서 이 입력을 구분하는 이름(예: "us-time"). */
   function markup(prefix, state) {
-    const { sTxt, eTxt } = rangeLabel(state);
-    const f = (field, txt) => `<button type="button" class="tw-tm${state.active === field ? " on" : ""}" data-tw-field="${field}" aria-pressed="${state.active === field ? "true" : "false"}" aria-label="${esc((field === "start" ? MSG.start : MSG.end) + " " + txt)}">${esc(txt)}</button>`;
-    return `<div class="tw" data-tw="${esc(prefix)}"><div class="tw-row">${f("start", sTxt)}<b>~</b>${f("end", eTxt)}</div><div class="tw-wheel">${PARTS.map((p) => colHtml(state, p)).join("")}</div>${state.warn ? `<p class="tw-warn" role="alert">${esc(state.warn)}</p>` : ""}<p class="tw-hint">${esc(MSG.hint)}</p><button type="button" class="hn-time-confirm" data-tw-confirm>저장</button></div>`;
+    const field = (name) => {
+      const value = state[name], minutes = TR.toMin(value) ?? 540;
+      const select = (part, count, selected) => `<select data-tw-input="${name}" data-tw-part="${part}" aria-label="${name === 'start' ? MSG.start : MSG.end} ${part === 'hour' ? MSG.hour : MSG.min}">${Array.from({length:count},(_,n)=>`<option value="${n}"${n===selected?' selected':''}>${String(n).padStart(2,'0')}</option>`).join('')}</select>`;
+      return `<div class="tw-direct-field"><strong>${name === 'start' ? MSG.start : MSG.end}</strong><div class="tw-direct-value">${select('hour',24,Math.floor(minutes/60))}<span aria-hidden="true">:</span>${select('min',60,minutes%60)}</div></div>`;
+    };
+    return `<div class="tw tw-direct" data-tw="${esc(prefix)}"><div class="tw-wheel tw-direct-grid">${field('start')}${field('end')}</div>${state.warn ? `<p class="tw-warn" role="alert">${esc(state.warn)}</p>` : ''}<p class="tw-hint">24시간 기준 · ${esc(MSG.hint)}</p><button type="button" class="hn-time-confirm" data-tw-confirm>저장</button></div>`;
   }
 
   /**
@@ -79,6 +90,15 @@
    */
   function bind(rootEl, getState, onChange) {
     const send = (a) => { const cur = getState(); if (cur) onChange(reduce(cur, a)); }; // 상태가 없으면(열린 폼 없음) 무시
+    rootEl.addEventListener("change", (ev) => {
+      const input=ev.target.closest?.('[data-tw-input]');
+      if(!input||!rootEl.contains(input))return;
+      const state=getState();if(!state)return;
+      const field=input.dataset.twInput,minutes=TR.toMin(state[field]);if(minutes==null)return;
+      const hour=input.dataset.twPart==='hour'?Number(input.value):Math.floor(minutes/60);
+      const minute=input.dataset.twPart==='min'?Number(input.value):minutes%60;
+      send({type:'exact',field,time:TR.fromMin(hour*60+minute)});
+    });
     rootEl.addEventListener("click", (ev) => {
       const t = ev.target && ev.target.closest ? ev.target.closest("[data-tw-field],[data-tw-step]") : null;
       if (!t || !rootEl.contains(t)) return;

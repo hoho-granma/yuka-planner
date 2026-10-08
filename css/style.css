@@ -2116,3 +2116,18 @@ body.acct-design .modal-panel:has(.cs-list) .cs-add { background: var(--nd-indig
 /* 아이 등록·수정의 생년월일 달력은 펼친 만큼 공간을 확보한다. */
 .acct-cs-date .date-popup, #ep-due-row .date-popup { position: relative; top: auto; margin-top: 6px; }
 body.acct-design .acct-cs:has(.date-popup:not(.hidden)) .acct-cs-foot { position: static; margin: 6px 0 0; padding: 10px 0 14px; background: none; }
+
+/* FB-001: discrete display transitions preserve the existing sheet lifecycle. */
+.modal{opacity:1;transition:opacity 160ms ease,display 160ms allow-discrete}
+.modal.hidden{opacity:0;pointer-events:none}
+.modal-panel{translate:0 0;transition:translate 160ms ease,opacity 160ms ease}
+.modal.hidden .modal-panel{translate:0 14px;opacity:0}
+@starting-style{.modal:not(.hidden){opacity:0}.modal:not(.hidden) .modal-panel{translate:0 14px;opacity:0}}
+@media(prefers-reduced-motion:reduce){.modal,.modal-panel{transition:none!important}}
+/* FB-004: native 24-hour selectors, including every minute, across schedule forms. */
+.tw-direct .tw-direct-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;width:100%;box-sizing:border-box}
+.tw-direct-field{min-width:0;padding:12px;border:1px solid var(--border,#dedbe3);border-radius:10px}
+.tw-direct-field>strong{display:block;font-size:14px;margin-bottom:8px}
+.tw-direct-value{display:flex;align-items:center;gap:4px;min-width:0}
+.tw-direct-value select{flex:1;min-width:0;width:0;min-height:44px;padding:6px 2px;font-size:17px;font-weight:650;color:var(--fg,#24252a);background:transparent;border:0;border-bottom:1px solid var(--border,#dedbe3);border-radius:0}
+.tw-direct-value select:focus-visible{outline:2px solid var(--accent,#8975a7);outline-offset:2px}

@@ -3753,6 +3753,7 @@
       renderFilterChips();
       renderChecklistTab();
     }
+    const previousTab = currentTab;
     currentTab = name;
     if (name !== "checklist" && checklistScope) {
       // 범위 보기는 전체 할 일 화면을 벗어나면 풀리고, 펼침 상태도 기본(현재·다음 월령)으로 돌린다.
@@ -3760,6 +3761,11 @@
       openMonthGroups = null;
     }
     TAB_NAMES.forEach((t) => el(`tab-${t}`).classList.toggle("hidden", t !== name));
+    const enteringPanel = el(`tab-${name}`);
+    if (previousTab !== name && enteringPanel?.animate && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      enteringPanel.getAnimations().forEach(animation => animation.cancel());
+      enteringPanel.animate([{opacity:0,translate:'0 6px'},{opacity:1,translate:'0 0'}],{duration:160,easing:'ease-out'});
+    }
     const navKey = name;
     document.querySelectorAll(".nav-item").forEach((btn) => btn.classList.toggle("active", btn.dataset.nav === navKey));
     window.scrollTo(0, 0);
