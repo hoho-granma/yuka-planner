@@ -3,9 +3,9 @@ const assert=require('node:assert/strict');
 const serverRequire=require('node:module').createRequire(require('node:path').resolve(__dirname,'../functions/package.json'));
 const {initializeApp}=serverRequire('firebase-admin/app');
 const {getFirestore}=serverRequire('firebase-admin/firestore');
-const {createService}=require('../functions/family-access');
+const {createService,hash}=require('../functions/family-access');
 // Hard fail instead of accidentally using production credentials.
-assert.equal(process.env.FIRESTORE_EMULATOR_HOST,'127.0.0.1:8788');
+assert(['127.0.0.1:8788','127.0.0.1:8888'].includes(process.env.FIRESTORE_EMULATOR_HOST));
 initializeApp({projectId:'demo-hannun-access'});
 const db=getFirestore();
 const s=createService(db);
@@ -13,11 +13,15 @@ const denied=(fn,code)=>assert.rejects(fn,e=>e.code===code);
 (async()=>{
  const a=await s.createFamily('svc-mom',{displayName:'엄마',role:'MOM'}),hid=a.householdId;
  const inv=await s.issueInvite('svc-mom',{householdId:hid,role:'DAD'});
+ const storedInvite=(await db.doc('privateFamilyInvites/'+hash(inv.code)).get()).data();
+ assert.equal(storedInvite.purgeAt.toMillis(),inv.expiresAt+30*86400000);
  await Promise.all(['svc-dad','svc-other'].map(uid=>s.requestJoin(uid,{code:inv.code,displayName:uid},'127.0.0.1')));
  const results=await Promise.allSettled(['svc-dad','svc-other'].map(targetUid=>s.decideJoin('svc-mom',{householdId:hid,targetUid,approve:true})));
  assert.equal(results.filter(r=>r.status==='fulfilled').length,1,'one-use invite must not admit two simultaneous approvals');
  assert.equal(results.filter(r=>r.status==='rejected').length,1);
  const winner=results[0].status==='fulfilled'?'svc-dad':'svc-other';
+ const decided=(await db.doc('familyJoinRequests/'+winner).get()).data();
+ assert.equal(decided.purgeAt.toMillis(),decided.decidedAt+30*86400000);
  const member=await db.doc(`familyAccess/${hid}/members/${winner}`).get();assert.equal(member.data().permission,'MEMBER');
  await denied(()=>s.issueInvite(winner,{householdId:hid}),'permission-denied');
  await s.removeMember('svc-mom',{householdId:hid,targetUid:winner});assert.equal((await s.status(winner)).status,'REVOKED');

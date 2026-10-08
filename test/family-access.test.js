@@ -115,3 +115,25 @@ test('development callable works without App Check SDK or site key',async()=>{
  const fb={auth:()=>({currentUser:{uid:'test'}}),functions:()=>{},app:()=>({functions:region=>{assert.equal(region,'asia-northeast3');return {httpsCallable:name=>{assert.equal(name,'familyAccess');return async data=>{payload=data;return {data:{status:'PENDING'}};};}};}})};
  assert.equal((await API.create({firebase:fb}).status()).status,'PENDING');assert.deepEqual(payload,{action:'status'});
 });
+
+test('TTL cleanup preserves pending decisions for thirty days after invitation expiry',async()=>{
+ const {s,hid,db}=await setup(),inv=await s.issueInvite('mom',{householdId:hid});
+ const record=db.store.get('privateFamilyInvites/'+hash(inv.code));assert(record.purgeAt instanceof Date);assert.equal(+record.purgeAt,inv.expiresAt+30*86400000);
+ await s.requestJoin('dad',{code:inv.code,displayName:'아빠'},'ip');assert.equal(+db.store.get('familyJoinRequests/dad').purgeAt,+record.purgeAt);
+ await s.decideJoin('mom',{householdId:hid,targetUid:'dad',approve:false});assert.equal(+db.store.get('familyJoinRequests/dad').purgeAt,1000+30*86400000);
+});
+test('removed TTL invitation does not prevent reissue or revocation and an active account survives request cleanup',async()=>{
+ const {s,hid,db}=await setup();let inv=await s.issueInvite('mom',{householdId:hid});
+ db.store.delete('privateFamilyInvites/'+hash(inv.code));await s.revokeInvite('mom',{householdId:hid});
+ inv=await s.issueInvite('mom',{householdId:hid});await s.requestJoin('dad',{code:inv.code,displayName:'아빠'},'ip');await s.decideJoin('mom',{householdId:hid,targetUid:'dad',approve:true});
+ db.store.delete('familyJoinRequests/dad');assert.equal((await s.status('dad')).status,'ACTIVE');
+});
+
+test('signup without approval service fails closed instead of granting its own family membership',async()=>{
+ const calls=[];const sync=require('../js/account-sync').create({adapter:{get:async()=>{calls.push('get');},set:async()=>{calls.push('set');}},household:{createHousehold:async()=>calls.push('create')}});
+ assert.equal((await sync.completeSignup({user:{uid:'mom'},intent:{displayName:'엄마',role:'MOM'}})).reason,'approval-service-required');assert.equal(calls.length,0);
+});
+test('new family signup fetches metadata without reading schedules before subscription',async()=>{
+ const calls=[];const sync=require('../js/account-sync').create({adapter:{},household:{joinHousehold:async(...args)=>{calls.push(args);return {ok:true};}},access:{createFamily:async()=>({ok:true,householdId:'f1',created:true})}});
+ const result=await sync.completeSignup({user:{uid:'mom'},intent:{displayName:'엄마',role:'MOM'}});assert.equal(result.householdCode,'f1');assert.deepEqual(calls,[['f1',{metadataOnly:true}]]);
+});

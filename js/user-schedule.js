@@ -4,7 +4,7 @@
  *
  * 원칙
  *   - DOM·Firestore·localStorage·다른 모듈에 의존하지 않는다. 자동 일정(TodoEngine·buildSchedule·assignDisplayDays·completed)을 참조하지 않는다.
- *   - 저장 위치: households/{hid}/schedules/{sid}. AUTO 일정은 저장하지 않으며 displayDate 필드는 스키마에 없다(I12).
+ *   - 저장 위치: families/{hid}/schedules/{sid}. AUTO 일정은 저장하지 않으며 displayDate 필드는 스키마에 없다(I12).
  *   - 날짜·시각은 "YYYY-MM-DD"/"HH:mm" 문자열 그대로(타임존 변환 없음, I11). 날짜 산술은 로컬 Date 만 쓴다(toISOString 금지).
  *   - 삭제는 소프트(deletedAt)만. 반복 일정은 B2 에서 저장 구조·검증까지만 — 실제 전개는 B5(expandOccurrences 는 반복 문서를 건너뛴다).
  *   - Firestore I/O 는 하지 않는다(B4 에서 household-sync.js 와 연결). 패치 값 null = 해당 필드 삭제(B4 어댑터가 FieldValue.delete() 로 변환).

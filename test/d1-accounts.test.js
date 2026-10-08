@@ -194,14 +194,14 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     assert.deepStrictEqual(mk({ hannun_feature_accounts: "1" }), { household: true, autoLink: true, accounts: true }); // E(1-2): 가구가 켜지면 autoLink 기본 ON
     assert.deepStrictEqual(mk({}), { household: true, autoLink: true, accounts: true });
   });
-  await test("app.js: 모든 진입점이 acctEnabled 가드 뒤, 서버(Firestore) 쓰기 없음, 가입 정보는 의도로만 보관하고 비밀번호는 저장하지 않는다", () => {
+  await test("app.js: 계정 진입점 가드와 승인 서버 연결, 가입 의도에 비밀번호를 저장하지 않는다", () => {
     const a = APP.indexOf("// ── D1 계정"), b = APP.indexOf("async function init()");
     const blk = APP.slice(a, b);
     assert.ok(/function acctInit\(\) \{\n    if \(acctJoinLinkStart\(\)\) return;[^\n]*\n    if \(!acctEnabled\(\)\) return;/.test(blk));
     assert.ok(/async function acctOnClick\(ev\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
     assert.ok(/function acctRenderLanding\(\) \{\n    if \(!acctEnabled\(\)\) return;/.test(blk));
-    // D2: 서버 읽기(lookupHousehold·joinHousehold)와 AccountSync(계정 문서·가구 생성)만 허용 — 아이·일정·완료에는 쓰지 않는다
-    assert.ok(!/FamilySync|HouseholdSync\.(create|update|patch|remove)/.test(blk)); // upsertMember 는 가족 추가(acctSendInvite)의 빈 자리 만들기 한 곳뿐
+    // 가입·참여는 승인 API를 주입한다. 승인된 복원에서 아이 프로필을 읽는 것은 정상이다.
+    assert.ok(blk.includes("{access:approvalApi()}"));
     assert.ok(blk.includes("localStorage.setItem(ACCT_INTENT_KEY, JSON.stringify(intent));") && !/setItem\([^)]*password/i.test(blk));
     assert.ok(APP.includes("    usInit();\n    acctInit();") && APP.includes("${acctEnabled() ? '<div id=\"acct-slot\"></div>' : \"\"}") && APP.includes("if (acctEnabled()) acctOpenSlot();"));
   });
@@ -210,9 +210,9 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     assert.ok(blk.includes("acct.svc.signOut()") && blk.includes("if (linked) acctClearIntent();"));
     assert.ok(!/leaveLocal|HH_ID_KEY|removeItem\([^)]*(PROFILE|COMPLETED|CHILDREN)|clearCode|saveCompleted|saveProfile/.test(blk));
   });
-  await test("OFF 불변: index.html 에 정적 계정 마크업·Auth SDK 스크립트가 없다(플래그 ON 일 때 동적 로드), sw.js 에는 새 스크립트만 추가", () => {
+  await test("계정 SDK는 동적 로드하며 HTML에 계정 입력 폼을 정적으로 만들지 않는다", () => {
     const html = read("index.html");
-    assert.ok(!/firebase-auth-compat/.test(html) && !/acct-/.test(html));
+    assert.ok(!/firebase-auth-compat/.test(html) && !/<(?:input|form)[^>]*data-acct-/.test(html));
     assert.ok(html.includes('<script src="js/auth-service.js?v=4"></script>') && /<script src="js\/account-view\.js\?v=\d+"><\/script>/.test(html));
     const sw = read("sw.js");
     assert.ok(sw.includes('"./js/auth-service.js"') && sw.includes('"./js/account-view.js"') && !sw.includes("firebase-auth-compat"));

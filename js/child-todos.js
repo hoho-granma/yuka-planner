@@ -1,6 +1,6 @@
 /*
  * child-todos — 36개월 이상 아이의 '할 일(체크리스트)' 문서 규칙(순수 모듈: DOM·저장소·네트워크 없음).
- * 저장 위치: households/{hid}/todos/{todoId} (가구 공유). 쓰기·미러·대기열은 js/household-sync.js(HouseholdSync.createTodo/patchTodo)가 맡는다.
+ * 저장 위치: families/{hid}/todos/{todoId} (가구 공유). 쓰기·미러·대기열은 js/household-sync.js(HouseholdSync.createTodo/patchTodo)가 맡는다.
  * 문서 필드: v(=1) · childKey(가구 안 아이 링크 키, 없으면 그 아이의 familyCode) · title(1~100자) · done(bool) · order(number) · createdAt · updatedAt
  *            · createdBy(선택, 만든 구성원 id) · doneAt(선택) · deletedAt(선택, 소프트 삭제). 삭제는 문서를 지우지 않고 deletedAt 만 남긴다(규칙: delete 금지).
  * firestore.rules 의 todoOk 와 같은 규칙을 test/g22-*.test.js 가 JS 로 재현해 맞춘다.

@@ -1,0 +1,7 @@
+{
+  "fieldOverrides": [
+    {"collectionGroup":"familyRateLimits","fieldPath":"expiresAt","ttl":true,"indexes":[]},
+    {"collectionGroup":"privateFamilyInvites","fieldPath":"purgeAt","ttl":true,"indexes":[]},
+    {"collectionGroup":"familyJoinRequests","fieldPath":"purgeAt","ttl":true,"indexes":[]}
+  ]
+}

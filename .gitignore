@@ -1,1 +1,4 @@
 .DS_Store
+
+# Private Firestore backups (never commit user data).
+.local-backups/

@@ -12,6 +12,7 @@ const label = value => {
   return value.trim();
 };
 const relation = value => { if (!ROLES.includes(value)) fail('invalid-argument','관계를 확인해 주세요.'); return value; };
+const RETENTION_MS=30*86400000;
 const CODE_CHARS='23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 function newCode() {
   // Rejection sampling avoids modulo bias; keep existing eight-character input UI.
@@ -75,14 +76,15 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
     return db.runTransaction(async tx=>{
       await manager(tx,hid,uid);
       const family=await get(tx,'families/'+hid),collision=await get(tx,'privateFamilyInvites/'+key);
+      const previous=family.currentInviteHash?await get(tx,'privateFamilyInvites/'+family.currentInviteHash):null;
       if(slotMemberId) {
         const slot=await get(tx,`families/${hid}/members/${slotMemberId}`);
         if(!slot||slot.uid||slot.deletedAt||slot.role!==requestedRole)fail('failed-precondition','초대할 가족 구성원을 확인해 주세요.');
       }
       if(collision)fail('aborted','초대코드를 다시 만들어 주세요.');
-      if(family.currentInviteHash)tx.update(ref('privateFamilyInvites/'+family.currentInviteHash),{status:'REVOKED'});
+      if(previous)tx.update(ref('privateFamilyInvites/'+family.currentInviteHash),{status:'REVOKED'});
       const t=now();
-      tx.set(ref('privateFamilyInvites/'+key),{householdId:hid,status:'ACTIVE',issuedByUid:uid,createdAt:t,expiresAt:t+86400000,requestedRole,...(slotMemberId?{slotMemberId}:{})});
+      tx.set(ref('privateFamilyInvites/'+key),{householdId:hid,status:'ACTIVE',issuedByUid:uid,createdAt:t,expiresAt:t+86400000,purgeAt:new Date(t+86400000+RETENTION_MS),requestedRole,...(slotMemberId?{slotMemberId}:{})});
       tx.update(ref('families/'+hid),{currentInviteHash:key,updatedAt:t});
       return {ok:true,code,expiresAt:t+86400000};
     });
@@ -100,7 +102,7 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
       const previousInvite=previous?.status==='PENDING'?await get(tx,'privateFamilyInvites/'+previous.inviteHash):null;
       if(previous?.status==='PENDING' && previous.inviteHash!==key && previousInvite?.status==='ACTIVE' && previousInvite.expiresAt>now())fail('failed-precondition','기존 참여 요청을 먼저 취소해 주세요.');
       if(previous?.status==='PENDING' && previous.inviteHash===key)return {ok:true,status:'PENDING'};
-      tx.set(ref('familyJoinRequests/'+uid),{uid,householdId:inv.householdId,inviteHash:key,label:name,requestedRole:inv.requestedRole,status:'PENDING',createdAt:now()});
+      tx.set(ref('familyJoinRequests/'+uid),{uid,householdId:inv.householdId,inviteHash:key,label:name,requestedRole:inv.requestedRole,status:'PENDING',createdAt:now(),purgeAt:new Date(inv.expiresAt+RETENTION_MS)});
       // Never expose family id, profile or roster before approval.
       return {ok:true,status:'PENDING'};
     });
@@ -136,7 +138,7 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
         tx.set(ref('accounts/'+target),{v:1,displayName:req.label,role,householdId:hid,memberId,createdAt:a?.createdAt||t,updatedAt:t},{merge:true});
         tx.update(ref('privateFamilyInvites/'+req.inviteHash),{status:'USED',usedByUid:target,usedAt:t});
       }
-      tx.update(ref('familyJoinRequests/'+target),{status:approve?'APPROVED':'REJECTED',decidedByUid:uid,decidedAt:t});
+      tx.update(ref('familyJoinRequests/'+target),{status:approve?'APPROVED':'REJECTED',decidedByUid:uid,decidedAt:t,purgeAt:new Date(t+RETENTION_MS)});
       return {ok:true};
     });
   }
@@ -157,7 +159,7 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
   async function cancelJoin(uid) {
     return db.runTransaction(async tx=>{
       const r=await get(tx,'familyJoinRequests/'+uid);
-      if(r?.status==='PENDING')tx.update(ref('familyJoinRequests/'+uid),{status:'CANCELLED',decidedAt:now()});
+      if(r?.status==='PENDING')tx.update(ref('familyJoinRequests/'+uid),{status:'CANCELLED',decidedAt:now(),purgeAt:new Date(now()+RETENTION_MS)});
       return {ok:true};
     });
   }
@@ -165,7 +167,8 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
     const hid=id(data.householdId);
     return db.runTransaction(async tx=>{
       await manager(tx,hid,uid);const f=await get(tx,'families/'+hid);
-      if(f.currentInviteHash)tx.update(ref('privateFamilyInvites/'+f.currentInviteHash),{status:'REVOKED'});
+      const inv=f.currentInviteHash?await get(tx,'privateFamilyInvites/'+f.currentInviteHash):null;
+      if(inv)tx.update(ref('privateFamilyInvites/'+f.currentInviteHash),{status:'REVOKED'});
       return {ok:true};
     });
   }

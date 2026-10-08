@@ -13,13 +13,6 @@
   const db = firebase.firestore();
 
   const CODE_KEY = "hannun_family_code";
-  const CODE_CHARS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // 0/O, 1/I/L 등 헷갈리는 문자 제외
-
-  function randomCode(len = 6) {
-    let s = "";
-    for (let i = 0; i < len; i++) s += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
-    return s;
-  }
 
   function getSavedCode() {
     return localStorage.getItem(CODE_KEY);
@@ -31,42 +24,23 @@
     localStorage.removeItem(CODE_KEY);
   }
 
-  const approval = () => typeof DBPaths !== "undefined" && DBPaths.deployment.familyApproval === true;
   async function createFamily(profileData, completedData) {
-    if(approval()) {
-      const api=FamilyAccess.create(),state=await api.status();
-      if(state.status!=="ACTIVE")throw new Error("가족 연결을 확인해 주세요.");
-      const r=await api.createChild({householdId:state.householdId,profile:profileData});
-      if(completedData&&Object.keys(completedData).length)await updateCompleted(r.code,completedData);
-      saveCode(r.code);return r.code;
-    }
-    let code = randomCode();
-    for (let i = 0; i < 3; i++) {
-      const doc = await db.collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families").doc(code).get();
-      if (!doc.exists) break;
-      code = randomCode();
-    }
-    await db
-      .collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families")
-      .doc(code)
-      .set({
-        profile: profileData,
-        completed: completedData || {},
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      });
-    saveCode(code);
-    return code;
+    const api=FamilyAccess.create(),state=await api.status();
+    if(state.status!=="ACTIVE")throw new Error("가족 연결을 확인해 주세요.");
+    const r=await api.createChild({householdId:state.householdId,profile:profileData});
+    if(completedData&&Object.keys(completedData).length)await updateCompleted(r.code,completedData);
+    saveCode(r.code);return r.code;
   }
 
   async function fetchFamily(code) {
-    const doc = await db.collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families").doc(code.toUpperCase()).get();
+    const doc = await db.collection("children").doc(code.toUpperCase()).get();
     if (!doc.exists) return null;
     return doc.data();
   }
 
   async function updateProfile(code, profileData) {
     await db
-      .collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families")
+      .collection("children")
       .doc(code)
       .set({ profile: profileData, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
   }
@@ -74,7 +48,7 @@
   async function updateCompleted(code, completedData) {
     // set({merge:true})는 completed 맵을 필드 단위로 병합해서, 완료 취소로 지운 키가 서버에 그대로
     // 남아 다시 완료로 되돌아온다. update()는 completed 필드를 통째로 교체하므로 삭제가 반영된다.
-    const ref = db.collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families").doc(code);
+    const ref = db.collection("children").doc(code);
     const payload = { completed: completedData, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
     try {
       await ref.update(payload);
@@ -105,7 +79,7 @@
     if (overlap.length) throw new Error("같은 키를 set 과 remove 에 함께 둘 수 없습니다: " + overlap.join(","));
     const removeKeys = Array.from(new Set(removeList));
     if (!setKeys.length && !removeKeys.length) return;
-    const ref = db.collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families").doc(code);
+    const ref = db.collection("children").doc(code);
     const stamp = firebase.firestore.FieldValue.serverTimestamp();
     const del = firebase.firestore.FieldValue.delete();
     const args = [];
@@ -145,7 +119,7 @@
    * id에는 점(.)이 들어가지 않는다(js/records.js newId).
    */
   async function updateRecord(code, id, record) {
-    const ref = db.collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families").doc(code);
+    const ref = db.collection("children").doc(code);
     const stamp = firebase.firestore.FieldValue.serverTimestamp();
     try {
       await ref.update({ ["records." + id]: record, updatedAt: stamp });
@@ -156,21 +130,18 @@
   }
 
   /**
-   * 아이 문서(families/{코드}: 프로필·완료·직접 기록 전부)를 서버에서 지운다. 거부되면 던진다(호출부가 재시도·안내). 이미 없는 문서는 성공으로 본다.
+   * 아이 문서(children/{코드}: 프로필·완료·직접 기록 전부)를 서버에서 지운다. 거부되면 던진다(호출부가 재시도·안내). 이미 없는 문서는 성공으로 본다.
    * 하위 컬렉션은 쓰지 않는다(v1 구조는 한 문서에 다 들어 있다).
    */
   async function deleteFamily(code) {
-    if(approval()) {
-      const api=FamilyAccess.create(),state=await api.status();
-      if(state.status!=="ACTIVE")throw new Error("가족 연결을 확인해 주세요.");
-      await api.removeChild({householdId:state.householdId,code});return;
-    }
-    await db.collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families").doc(String(code).toUpperCase()).delete();
+    const api=FamilyAccess.create(),state=await api.status();
+    if(state.status!=="ACTIVE")throw new Error("가족 연결을 확인해 주세요.");
+    await api.removeChild({householdId:state.householdId,code});
   }
 
   function listen(code, onChange) {
     return db
-      .collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families")
+      .collection("children")
       .doc(code)
       .onSnapshot(
         (doc) => {

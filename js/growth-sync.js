@@ -38,7 +38,7 @@
     let ad=adapter;
     const a=()=>ad||(ad=browserAdapter());
     const c=()=>context(getContext());
-    const root=ctx=>typeof DBPaths!=='undefined'?DBPaths.map('households/'+ctx.familyId):'households/'+ctx.familyId;
+    const root=ctx=>'families/'+ctx.familyId;
     function same(ctx){const next=c();if(next.uid!==ctx.uid||next.familyId!==ctx.familyId||next.childKey!==ctx.childKey)throw Error('선택한 가족이나 아이가 변경됐어요. 다시 열어 주세요.');}
     const recordsPath=ctx=>root(ctx)+'/growthRecords';
     async function hydrate(d,ctx,scope,attachments=true){

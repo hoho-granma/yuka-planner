@@ -3550,7 +3550,7 @@
   let placesCat = "ALL";
   let placesOffices = null; // data/district-offices.json(기준점 시·군·구청 좌표) — 없으면 거리 기능은 꺼진다
   let placesOfficesLoading = null;
-  let placesStats = {}; // placeStats/{id} {count} — 인기순 정렬용(화면에 숫자는 내지 않는다). 못 읽으면 빈 값
+  let placesStats = {}; // placeUsageStats/{id} {count} — 인기순 정렬용(화면에 숫자는 내지 않는다). 못 읽으면 빈 값
   let placesStatsLoading = null;
   let placesDriveMax = null; // null=전체 / 30 / 60 / 90 (이 실행 동안만)
   let placesSort = "near"; // "near" | "popular"
@@ -3567,13 +3567,13 @@
     if (!placesOfficesLoading) placesOfficesLoading = loadJsonOrNull("data/district-offices.json").then((d) => { placesOffices = d && typeof d === "object" ? d : {}; return placesOffices; });
     return placesOfficesLoading;
   }
-  /** 인기순 신호: placeStats 컬렉션을 읽는다. 규칙 미배포·오프라인이면 조용히 빈 값. */
+  /** 인기순 신호: placeUsageStats 컬렉션을 읽는다. 규칙 미배포·오프라인이면 조용히 빈 값. */
   async function loadPlacesStats() {
     if (!placesStatsLoading) {
       placesStatsLoading = (async () => {
         try {
           if (typeof firebase === "undefined" || !firebase.firestore) return;
-          const snap = await firebase.firestore().collection(DBPaths.map("placeStats")).get();
+          const snap = await firebase.firestore().collection("placeUsageStats").get();
           const m = {};
           snap.docs.forEach((d) => { const c = d.data() && d.data().count; if (typeof c === "number") m[d.id] = { count: c }; });
           placesStats = m;
@@ -3597,7 +3597,7 @@
     try {
       if (typeof firebase === "undefined" || !firebase.firestore) return;
       const FV = firebase.firestore.FieldValue;
-      await firebase.firestore().collection(DBPaths.map("placeStats")).doc(placeId).set({ count: FV.increment(1), updatedAt: FV.serverTimestamp() }, { merge: true });
+      await firebase.firestore().collection("placeUsageStats").doc(placeId).set({ count: FV.increment(1), updatedAt: FV.serverTimestamp() }, { merge: true });
       const cur = (placesStats[placeId] && placesStats[placeId].count) || 0;
       placesStats[placeId] = { count: cur + 1 };
     } catch (e) { /* 규칙 미배포·오프라인: 조용히 무시 */ }
@@ -4310,7 +4310,7 @@
 
   // ── 가족 캘린더(가구) — 문구·마크업 js/household-view.js, Firestore I/O 는 js/household-sync.js 만 한다. ──
   // 플래그(FEATURES.household)가 꺼져 있으면 아래 함수는 호출되지 않거나 즉시 반환한다(기존 화면·동작 그대로).
-  // 아이 문서(families/{코드})에는 쓰지 않는다. 가구 ID 는 이 기기 localStorage(hannun_household_id)에만 둔다(R1).
+  // 아이 문서(children/{코드})에는 쓰지 않는다. 가구 ID 는 이 기기 localStorage(hannun_household_id)에만 둔다(R1).
   const HH_ID_KEY = "hannun_household_id";
   const HH_CODE_KEY = "hannun_household_code"; // household-sync.js 의 CODE_KEY 와 같은 값(입력 중 가구 참여를 취소할 때 되돌리는 용도)
   const hh = { view: "none", hid: null, code: null, notice: null, rulesUnavailable: false, lifecycle: false };
@@ -5894,7 +5894,7 @@
   }
   /**
    * 아이 삭제 때 함께 지울 것(서버에서 진짜 삭제): 이 아이만 대상인 일정(이미 소프트 삭제한 것 포함)·이 아이 할 일(링크키 또는 familyCode, 소프트 삭제 포함)·
-   * 아이 문서(families/{코드}: 프로필·완료·직접 기록 — 같은 코드를 쓰는 다른 살아 있는 링크가 없을 때만)·링크(같은 코드의 분리된 옛 링크 포함).
+   * 아이 문서(children/{코드}: 프로필·완료·직접 기록 — 같은 코드를 쓰는 다른 살아 있는 링크가 없을 때만)·링크(같은 코드의 분리된 옛 링크 포함).
    * 여러 아이 공동 일정은 지우지 않고 이 아이만 대상에서 뺀다(shared). events/todos 개수는 사용자에게 보이는(살아 있는) 것만 센다.
    */
   function usChildDeleteWork(key) {
@@ -5931,12 +5931,12 @@
       if (!r || !r.ok) throw usDeleteFail("network");
     }
     const hard = async (path) => { const r = await HouseholdSync.hardDelete(hh.hid, path); if (!r || !r.ok) throw usDeleteFail((r && r.reason) || "network"); };
-    for (const d of w.eventDocs) await hard(`households/${hh.hid}/schedules/${d.id}`);
-    for (const t of w.todoDocs) await hard(`households/${hh.hid}/todos/${t.id}`);
+    for (const d of w.eventDocs) await hard(`families/${hh.hid}/schedules/${d.id}`);
+    for (const t of w.todoDocs) await hard(`families/${hh.hid}/todos/${t.id}`);
     if (w.familyCode) {
       try { await FamilySync.deleteFamily(w.familyCode); } catch (e) { throw usDeleteFail(e && e.code === "permission-denied" ? "permission-denied" : "network"); }
     }
-    for (const k of w.linkKeys) await hard(`households/${hh.hid}/children/${k}`);
+    for (const k of w.linkKeys) await hard(`families/${hh.hid}/childLinks/${k}`);
     if (l && l.familyCode) usForgetChildLocal(l.familyCode);
   }
   /**
@@ -6049,7 +6049,7 @@
       if (wasCurrent && unsubscribeFamily) { unsubscribeFamily(); unsubscribeFamily = null; }
       try {
         for (const t of HouseholdSync.getTodos(hh.hid).filter((x) => x.childKey === code)) {
-          const r = await HouseholdSync.hardDelete(hh.hid, `households/${hh.hid}/todos/${t.id}`);
+          const r = await HouseholdSync.hardDelete(hh.hid, `families/${hh.hid}/todos/${t.id}`);
           if (!r || !r.ok) throw usDeleteFail((r && r.reason) || "network");
         }
         if (loadCreatedCodes().includes(code)) {
@@ -6643,7 +6643,7 @@
       if(!result.ok)throw new Error("가족 정보를 불러오지 못했어요. 다시 시도해 주세요.");
       if(!valid())return;
       acctOwnerSync(u);
-      const joined=await HouseholdSync.joinHousehold(state.householdId);
+      const joined=await HouseholdSync.joinHousehold(state.householdId,{metadataOnly:true});
       if(!valid())return;
       if(!joined.ok)throw new Error("가족 연결을 확인해 주세요.");
       acct.account={...result.account,householdCode:state.householdId,permission:state.permission};
@@ -7009,7 +7009,7 @@
     return !!(r.ok && r.account && r.account.householdCode);
   }
   // 내가 만든 아이: 이 기기에서 아이 등록 시트로 만들었거나 기기 아이를 가족 캘린더에 연결한 코드(삭제 버튼은 이 아이에게만 있다).
-  // 서버 링크(households/{hid}/children)에는 만든 사람 필드가 없고 규칙이 새 필드를 막아, 같은 계정의 다른 기기에서는 이 표시가 없다.
+  // 서버 링크(families/{hid}/childLinks)에는 만든 사람 필드가 없고 규칙이 새 필드를 막아, 같은 계정의 다른 기기에서는 이 표시가 없다.
   const CREATED_KEY = "hannun_created_children";
   function loadCreatedCodes() {
     try { const l = JSON.parse(localStorage.getItem(CREATED_KEY)); return Array.isArray(l) ? l : []; } catch (e) { return []; }

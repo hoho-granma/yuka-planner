@@ -5,7 +5,7 @@
  * 원칙
  *   - 플래그(FEATURES.household)가 꺼져 있으면 **Firestore 를 읽지도 쓰지도 않고** localStorage 도 건드리지 않는다.
  *     어댑터(firebase.firestore())는 켜진 뒤 첫 I/O 때에야 만든다(지연 생성).
- *   - 쓰기 경로는 householdCodes/** , households/** 로만 제한한다. families/**(아이 문서)에는 어떤 경우에도 쓰지 않는다.
+ *   - 쓰기 경로는 families/{hid}의 구성원·아이 연결·일정·할 일로 제한한다. 아이 프로필(children)은 여기서 쓰지 않는다.
  *   - 삭제 없음(소프트 삭제만). 쓰기는 문서 단위 + 로컬 미러 즉시 반영 + 실패 시 대기열(실패를 삼키지 않는다).
  *   - Firestore SDK 의 enablePersistence 는 쓰지 않는다(자체 미러+대기열).
  *   - 어댑터를 주입할 수 있어 Node 에서 가짜 어댑터로 테스트한다(test/household-sync.logic.test.js).
@@ -25,9 +25,10 @@
   const CODE_KEY = "hannun_household_code";
   const MIRROR_PREFIX = "hannun_household:";
   const PENDING_PREFIX = "hannun_household_pending:";
-  const CODE_CHARS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // 0/O, 1/I/L 제외 (sync.js 와 동일)
-  const CODE_LEN = 8;
-  const WRITE_ROOTS = ["householdCodes", "households"];
+  const CODE_CHARS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // 문서 ID 생성용: 0/O, 1/I/L 제외
+  // Invitation codes are generated only by the server.
+  const WRITE_ROOTS = ["families"];
+  const Paths = typeof module !== "undefined" && module.exports ? require("./db-paths") : globalThis.DBPaths;
   // 칩·일정 막대의 대표색 키(p1~p10). 색 값은 user-schedule-view.js 의 PALETTE 와 같은 순서다. 만들 때 한 번 정해 문서에 남기면 이후 바뀌지 않는다.
   const COLOR_KEYS = Object.freeze(Array.from({ length: 10 }, (_, i) => "p" + (i + 1)));
   const LEGACY_ROLE_KEY = Object.freeze({ MOM: "p6", DAD: "p9" });
@@ -39,15 +40,12 @@
     live.forEach((d) => { const k = d.colorKey || LEGACY_ROLE_KEY[d.role]; if (count[k] != null) count[k]++; });
     return COLOR_KEYS.reduce((best, k) => (count[k] < count[best] ? k : best), COLOR_KEYS[0]);
   }
-  const DEFAULT_MEMBERS = [
-    { role: "MOM", label: "엄마" },
-    { role: "DAD", label: "아빠" },
-  ];
+
 
   /** 실제 Firestore(compat SDK)를 어댑터 계약에 맞춘다. 호출될 때에만 firebase.firestore() 를 만든다. */
   function firestoreAdapter(getDb) {
     const refOf = (path) => {
-      const parts = (typeof DBPaths !== "undefined" ? DBPaths.map(path) : path).split("/");
+      const parts = path.split("/");
       let ref = getDb();
       parts.forEach((seg, i) => {
         ref = i % 2 === 0 ? ref.collection(seg) : ref.doc(seg);
@@ -97,7 +95,6 @@
 
     const state = { permissionDenied: false, lastError: null, childrenLoaded: {} }; // childrenLoaded[hid]: 이번 실행에서 서버의 아이 링크 목록을 한 번 받았는가(오프라인·첫 로드 중에는 false — 미러가 옛 값일 수 있다)
 
-    const approval = () => opts.approval ? opts.approval() : typeof DBPaths !== "undefined" && DBPaths.deployment.familyApproval === true;
     const accessApi = () => opts.access || (typeof FamilyAccess !== "undefined" && FamilyAccess.create());
     const enabled = () => !!features().household;
     const DISABLED = Object.freeze({ ok: false, reason: "disabled" });
@@ -107,12 +104,6 @@
       for (let i = 0; i < 6; i++) s += CODE_CHARS[Math.floor(rand() * CODE_CHARS.length)];
       return prefix + now().toString(36) + s.toLowerCase();
     }
-    function newCode() {
-      let s = "";
-      for (let i = 0; i < CODE_LEN; i++) s += CODE_CHARS[Math.floor(rand() * CODE_CHARS.length)];
-      return s;
-    }
-
     // ── 로컬 저장소(미러·대기열·코드) ───────────────────────────────────
     function readJson(key, dflt) {
       try {
@@ -140,9 +131,9 @@
     const saveMirror = (m) => writeJson(MIRROR_PREFIX + m.householdId, m);
     const currentUid = () => opts.uid ? opts.uid() : typeof firebase !== "undefined" && typeof firebase.auth === "function" ? firebase.auth().currentUser?.uid : null;
     const queueOwnerKey = hid => "hannun_pending_owner:" + hid;
-    const loadPending = hid => approval() && (!currentUid() || storage?.getItem(queueOwnerKey(hid)) !== currentUid()) ? [] : readJson(PENDING_PREFIX + hid, []);
+    const loadPending = hid => (!currentUid() || storage?.getItem(queueOwnerKey(hid)) !== currentUid()) ? [] : readJson(PENDING_PREFIX + hid, []);
     function prepareQueueOwner(hid) {
-      if(!approval())return;
+
       const uid=currentUid();
       if(!uid)throw Object.assign(new Error("로그인이 필요해요."),{code:"unauthenticated"});
       const owner=storage?.getItem(queueOwnerKey(hid)),raw=readJson(PENDING_PREFIX+hid,[]);
@@ -159,13 +150,13 @@
       if (!WRITE_ROOTS.includes(path.split("/")[0])) throw new Error("household-sync 는 이 경로에 쓸 수 없다: " + path);
     }
 
-    // 로컬 미러에 반영하는 변환(문서 단위). path 는 households/{hid}[/children|members/{id}]
+    // 로컬 미러에 반영하는 변환(문서 단위). path 는 families/{hid}[/children|members/{id}]
     function applyToMirror(m, op) {
       const seg = op.path.split("/");
-      if (seg[0] !== "households") return;
+      if (seg[0] !== "families") return;
       const data = op.payload;
       if (seg.length === 2) m.household = { ...(m.household || {}), ...data };
-      else if (seg[2] === "children") m.children[seg[3]] = { ...(m.children[seg[3]] || {}), ...data };
+      else if (seg[2] === "childLinks") m.children[seg[3]] = { ...(m.children[seg[3]] || {}), ...data };
       else if (seg[2] === "members") m.members[seg[3]] = { ...(m.members[seg[3]] || {}), ...data };
       else if (seg[2] === "schedules") applyScheduleOp(m, seg[3], op);
       else if (seg[2] === "todos") m.todos[seg[3]] = op.merge ? mergeNulls(m.todos[seg[3]], op.payload) : { ...data };
@@ -209,7 +200,10 @@
       if (cur.exceptions && Object.keys(cur.exceptions).length === 0) delete cur.exceptions;
     }
 
-    async function run(op) {
+    async function run(op, hid) {
+      op = {...op, path:Paths.queuedPath(op.path)};
+      assertWritablePath(op.path);
+      if (op.path.split("/")[1] !== hid) throw new Error("다른 가족의 변경은 보낼 수 없습니다.");
       const a = getAdapter();
       if (op.op === "set") await a.set(op.path, op.payload, op.merge ? { merge: true } : undefined);
       else await a.update(op.path, op.payload);
@@ -234,7 +228,7 @@
       const entry = { op: op.op, path: op.path, payload: op.payload, merge: !!op.merge, ts: now() };
       if (q.length === 0 && !state.permissionDenied) {
         try {
-          await run(entry);
+          await run(entry, hid);
           return { ok: true, pending: false };
         } catch (e) {
           noteError(e);
@@ -246,19 +240,28 @@
     }
 
     /** 대기열을 앞에서부터 보낸다. 실패하면 거기서 멈춘다(순서 보존). */
-    async function flush(hid) {
+    const flushing = new Map();
+    function flush(hid) {
+      if (!enabled()) return Promise.resolve(DISABLED);
+      if (flushing.has(hid)) return flushing.get(hid);
+      const task=flushQueue(hid).finally(()=>flushing.delete(hid));
+      flushing.set(hid,task); return task;
+    }
+    async function flushQueue(hid) {
       if (!enabled()) return DISABLED;
       prepareQueueOwner(hid);
+      const uid=currentUid();
       let q = loadPending(hid);
       let sent = 0;
       while (q.length) {
         try {
-          await run(q[0]);
+          await run(q[0], hid);
         } catch (e) {
           noteError(e);
           break;
         }
-        q = q.slice(1);
+        if (currentUid() !== uid || storage?.getItem(queueOwnerKey(hid)) !== uid) break;
+        q = loadPending(hid).slice(1); // Preserve edits appended while the network request was in flight.
         savePending(hid, q);
         sent++;
         state.permissionDenied = false;
@@ -267,96 +270,33 @@
     }
 
     // ── 가구 생성(지연) ────────────────────────────────────────────────
-    /** members: 처음 만들 구성원 시드(기본 엄마·아빠). 계정 모드는 [] 를 넘겨 구성원을 '나' 하나로 시작한다. */
-    async function createHousehold({ name, firstChild, members } = {}) {
+    /** 가족 생성과 코드 조회는 승인 서버에서만 한다. */
+    async function createHousehold() {
       if (!enabled()) return DISABLED;
-      if (approval()) return {ok:false,reason:"server-family-creation-required"};
-      const hid = newId("h");
-      const t = now();
-      let code = newCode();
-      try {
-        for (let i = 0; i < 8; i++) {
-          const ex = await getAdapter().get("householdCodes/" + code);
-          if (!ex.exists) break;
-          code = newCode();
-        }
-      } catch (e) {
-        noteError(e); // 오프라인이면 그대로 진행(충돌은 규칙이 덮어쓰기를 거부)
-      }
-      const hdoc = { v: 1, createdAt: t, updatedAt: t };
-      if (name) hdoc.name = name;
-      // 순서가 중요하다: 가구 문서 → 코드 → 아이 링크 → 담당자
-      await write(hid, { op: "set", path: "households/" + hid, payload: hdoc });
-      await write(hid, { op: "set", path: "householdCodes/" + code, payload: { householdId: hid, active: true, createdAt: t, revokedAt: null } });
-      if (storage) storage.setItem(CODE_KEY, code);
-      let childKey = null;
-      if (firstChild) childKey = (await addChild(hid, { ...firstChild, order: 1 })).childKey;
-      const seeds = Array.isArray(members) ? members : DEFAULT_MEMBERS;
-      for (let i = 0; i < seeds.length; i++) await upsertMember(hid, { ...seeds[i], order: i + 1, ...(seeds === DEFAULT_MEMBERS ? { legacyColor: true } : {}) }); // 기본 엄마·아빠 시드는 colorKey 없이 — 옛 고정색(엄마 분홍·아빠 파랑) 그대로
-      return { ok: true, householdId: hid, code, childKey };
+      return {ok:false,reason:"server-family-creation-required"};
+    }
+    async function lookupHousehold() {
+      if (!enabled()) return DISABLED;
+      return {ok:false,reason:"approval-required"};
+    }
+    async function peekMembers() {
+      if (!enabled()) return DISABLED;
+      return {ok:false,reason:"approval-required"};
     }
 
-    /** 코드 사전 확인(D2 가입): 읽기만 한다 — 로컬 저장소·미러를 건드리지 않는다. { ok:true, householdId } | { ok:false, reason:"not-found" } (서버 오류는 던진다) */
-    async function lookupHousehold(code) {
+    async function joinHousehold(hid, options = {}) {
       if (!enabled()) return DISABLED;
-      if (approval()) return {ok:false,reason:"approval-required"};
-      code = String(code || "").trim().toUpperCase();
-      const a = getAdapter();
-      const c = await a.get("householdCodes/" + code);
-      if (!c.exists || !c.data || c.data.active !== true) return { ok: false, reason: "not-found" };
-      const h = await a.get("households/" + c.data.householdId);
-      if (!h.exists) return { ok: false, reason: "not-found" };
-      return { ok: true, householdId: c.data.householdId };
+      const status = await accessApi().status();
+      if (status.status !== "ACTIVE" || status.householdId !== hid) return {ok:false,reason:"approval-required"};
+      return joinApprovedHousehold(hid, options);
     }
-
-    /** 읽기 전용: 코드의 가구 구성원 목록만 가져온다(미러·저장된 코드는 건드리지 않는다). 합류 전 '누구로 합류하나요?' 용. */
-    async function peekMembers(code) {
-      if (!enabled()) return DISABLED;
-      if (approval()) return {ok:false,reason:"approval-required"};
-      code = String(code || "").trim().toUpperCase();
-      const a = getAdapter();
-      const c = await a.get("householdCodes/" + code);
-      if (!c.exists || !c.data || c.data.active !== true) return { ok: false, reason: "not-found" };
-      const hid = c.data.householdId;
-      const members = await a.list(`households/${hid}/members`);
-      return { ok: true, householdId: hid, members: members.map((d) => ({ memberId: d.id, ...d.data })) };
-    }
-
-    // ── 참여(새 기기) ─────────────────────────────────────────────────
-    async function joinHousehold(code, options = {}) {
-      if (!enabled()) return DISABLED;
-      if (approval()) {
-        const state = await accessApi().status();
-        if (state.status !== "ACTIVE" || state.householdId !== code) return {ok:false,reason:"approval-required"};
-        return joinApprovedHousehold(state.householdId);
-      }
-      code = String(code || "").trim().toUpperCase();
-      const a = getAdapter();
-      const c = await a.get("householdCodes/" + code);
-      if (!c.exists || !c.data || c.data.active !== true) return { ok: false, reason: "not-found" };
-      const hid = c.data.householdId;
-      const h = await a.get("households/" + hid);
-      if (!h.exists) return { ok: false, reason: "not-found" };
-      const [kids, members, schedules] = await Promise.all([a.list(`households/${hid}/children`), a.list(`households/${hid}/members`), options.metadataOnly ? Promise.resolve([]) : a.list(`households/${hid}/schedules`)]);
-      const todos = options.metadataOnly ? [] : await a.list(`households/${hid}/todos`).catch(() => []); // G22: 규칙 미배포(permission-denied)여도 합류는 계속한다
-      const m = loadMirror(hid);
-      m.household = h.data;
-      mergeCollection(m, "children", kids, hid);
-      mergeCollection(m, "members", members, hid);
-      mergeCollection(m, "schedules", schedules, hid);
-      mergeCollection(m, "todos", todos, hid);
-      saveMirror(m);
-      if (storage) storage.setItem(CODE_KEY, code);
-      return { ok: true, householdId: hid, mirror: m };
-    }
-
-    async function joinApprovedHousehold(hid) {
-      if (!enabled()) return DISABLED;
-      const a = getAdapter(),h = await a.get("households/" + hid);
+    async function joinApprovedHousehold(hid, options = {}) {
+      const a = getAdapter(), h = await a.get("families/" + hid);
       if (!h.exists) return {ok:false,reason:"not-found"};
-      const [kids,members,schedules,todos] = await Promise.all([a.list(`households/${hid}/children`),a.list(`households/${hid}/members`),a.list(`households/${hid}/schedules`),a.list(`households/${hid}/todos`)]);
+      const kinds = options.metadataOnly ? ["children","members"] : ["children","members","schedules","todos"];
+      const docs = await Promise.all(kinds.map(kind => a.list(`families/${hid}/${kind === "children" ? "childLinks" : kind}`)));
       const m = loadMirror(hid); m.household = h.data;
-      for (const [kind,docs] of [["children",kids],["members",members],["schedules",schedules],["todos",todos]]) mergeCollection(m,kind,docs,hid);
+      kinds.forEach((kind,i) => mergeCollection(m,kind,docs[i],hid));
       saveMirror(m); if (storage) storage.setItem(CODE_KEY,hid);
       return {ok:true,householdId:hid,mirror:m};
     }
@@ -366,7 +306,7 @@
       const pendingIds = new Set(
         loadPending(hid)
           .map((e) => e.path.split("/"))
-          .filter((s) => s[2] === kind)
+          .filter((s) => s[2] === kind || (kind === "children" && s[2] === "childLinks"))
           .map((s) => s[3])
       );
       const next = {};
@@ -382,35 +322,24 @@
 
     // ── 아이 링크 / 담당자 ────────────────────────────────────────────
     /** createdByUid: 이 아이를 만든 계정(로그인한 계정 모드에서만. 규칙이 request.auth.uid 와 같을 때만 허용한다). colorKey 를 주지 않으면 가장 덜 쓰인 색을 정해 남긴다. */
-    async function addChild(hid, { familyCode, displayName, order, colorKey, createdByUid }) {
+    async function addChild(hid, { familyCode }) {
       if (!enabled()) return DISABLED;
-      if (approval()) {
-        const r=await accessApi().resolveChild({householdId:hid,code:familyCode});
-        if(r.ok)await joinApprovedHousehold(hid);
-        return r;
-      }
-      const childKey = newId("c");
-      const payload = { v: 1, familyCode, displayName: displayName || "", order: order || 1, addedAt: now() };
-      payload.colorKey = colorKey || pickColorKey(loadMirror(hid));
-      if (createdByUid) payload.createdByUid = String(createdByUid);
-      const r = await write(hid, { op: "set", path: `households/${hid}/children/${childKey}`, payload });
-      return { ...r, childKey };
+      const r=await accessApi().resolveChild({householdId:hid,code:familyCode});
+      if(r.ok)await joinApprovedHousehold(hid,{metadataOnly:true});
+      return r;
     }
     async function updateChild(hid, childKey, fields) {
       if (!enabled()) return DISABLED;
-      return write(hid, { op: "set", merge: true, path: `households/${hid}/children/${childKey}`, payload: fields });
+      return write(hid, { op: "set", merge: true, path: `families/${hid}/childLinks/${childKey}`, payload: fields });
     }
     /** 소프트 분리 — 링크는 남기고 removedAt 만 표시(아이 문서는 그대로). */
     async function removeChild(hid, childKey) {
       if (!enabled()) return DISABLED;
-      if (approval()) {
-        const code=loadMirror(hid).children[childKey]?.familyCode;
-        if(!code)return {ok:false,reason:"not-found"};
-        const r=await accessApi().removeChild({householdId:hid,code});
-        if(r.ok)await joinApprovedHousehold(hid);
-        return r;
-      }
-      return write(hid, { op: "set", merge: true, path: `households/${hid}/children/${childKey}`, payload: { removedAt: now() } });
+      const code=loadMirror(hid).children[childKey]?.familyCode;
+      if(!code)return {ok:false,reason:"not-found"};
+      const r=await accessApi().removeChild({householdId:hid,code});
+      if(r.ok)await joinApprovedHousehold(hid,{metadataOnly:true});
+      return r;
     }
     async function upsertMember(hid, { memberId, role, label, order, colorKey, uid, legacyColor }) {
       if (!enabled()) return DISABLED;
@@ -420,13 +349,13 @@
       const payload = { v: 1, role, label, order: order || 1, createdAt: existing ? existing.createdAt : t, updatedAt: t };
       if (colorKey) payload.colorKey = colorKey;
       else if (legacyColor && LEGACY_ROLE_KEY[role]) { /* 옛 고정색 유지: colorKey 를 남기지 않는다 */ } else if (!existing || (!existing.colorKey && !LEGACY_ROLE_KEY[existing.role])) payload.colorKey = pickColorKey(loadMirror(hid)); // 새 구성원(또는 색이 없는 엄마·아빠 외 기존 구성원)만 정한다 — 이미 있는 색, 옛 엄마·아빠의 고정색은 건드리지 않는다
-      if (approval() && (uid || existing?.uid)) {
+      if (uid || existing?.uid) {
         const r=await accessApi().updateMember({householdId:hid,memberId:id,label,role,order,...(payload.colorKey?{colorKey:payload.colorKey}:{})});
-        if(r.ok)await joinApprovedHousehold(hid);
+        if(r.ok)await joinApprovedHousehold(hid,{metadataOnly:true});
         return {...r,memberId:id};
       }
-      if (uid) payload.uid = uid; // D2: 이 구성원을 맡은 계정(없으면 필드를 건드리지 않는다)
-      const r = await write(hid, { op: "set", merge: true, path: `households/${hid}/members/${id}`, payload });
+
+      const r = await write(hid, { op: "set", merge: true, path: `families/${hid}/members/${id}`, payload });
       return { ...r, memberId: id };
     }
     /**
@@ -436,7 +365,7 @@
      */
     async function hardDelete(hid, path) {
       if (!enabled()) return DISABLED;
-      if (approval() && path.split("/")[2] === "children") return removeChild(hid,path.split("/")[3]);
+      if (path.split("/")[2] === "childLinks") return removeChild(hid,path.split("/")[3]);
       assertWritablePath(path);
       try {
         await getAdapter().delete(path);
@@ -445,50 +374,46 @@
       }
       const seg = path.split("/");
       const m = loadMirror(hid);
-      if (seg[0] === "households" && seg.length === 4 && m[seg[2]] && typeof m[seg[2]] === "object") delete m[seg[2]][seg[3]];
+      if (seg[0] === "families" && seg.length === 4 && m[seg[2]] && typeof m[seg[2]] === "object") delete m[seg[2]][seg[3]];
       saveMirror(m);
       const q = loadPending(hid);
-      const kept = q.filter((e) => e.path !== path);
+      const kept = q.filter((e) => Paths.queuedPath(e.path) !== path);
       if (kept.length !== q.length) savePending(hid, kept);
       return { ok: true };
     }
     async function removeMember(hid, memberId) {
       if (!enabled()) return DISABLED;
-      if (approval()) {
-        const r=await accessApi().removeMember({householdId:hid,memberId});
-        if(r.ok)await joinApprovedHousehold(hid);
-        return r;
-      }
-      const t = now();
-      return write(hid, { op: "set", merge: true, path: `households/${hid}/members/${memberId}`, payload: { deletedAt: t, updatedAt: t } });
+      const r=await accessApi().removeMember({householdId:hid,memberId});
+      if(r.ok)await joinApprovedHousehold(hid,{metadataOnly:true});
+      return r;
     }
 
-    // ── 사용자 일정(households/{hid}/schedules/{sid}) ────────────────────────
+    // ── 사용자 일정(families/{hid}/schedules/{sid}) ────────────────────────
     // 문서 모양·검증은 UserSchedule(B2)이 정한다. 여기서는 저장 위치·미러·대기열만 맡는다(스키마를 다시 정의하지 않는다).
     /** doc: UserSchedule.buildCreateDoc 의 결과. 문서 ID 는 클라이언트가 만든다. */
     async function createSchedule(hid, doc) {
       if (!enabled()) return DISABLED;
       const scheduleId = newId("s");
-      const r = await write(hid, { op: "set", path: `households/${hid}/schedules/${scheduleId}`, payload: { ...doc } });
+      const r = await write(hid, { op: "set", path: `families/${hid}/schedules/${scheduleId}`, payload: { ...doc } });
       return { ...r, scheduleId };
     }
     /** patch: UserSchedule.buildPatch 의 patch(평탄 맵, "exceptions.<날짜>" dot-path, null=필드 삭제). 문서 단위 update. */
     async function patchSchedule(hid, scheduleId, patch) {
       if (!enabled()) return DISABLED;
-      return write(hid, { op: "update", path: `households/${hid}/schedules/${scheduleId}`, payload: { ...patch } });
+      return write(hid, { op: "update", path: `families/${hid}/schedules/${scheduleId}`, payload: { ...patch } });
     }
-    // ── 할 일(households/{hid}/todos/{tid}) — 36개월 이상 아이의 체크리스트(G22). 문서 모양·검증은 ChildTodos 가 정한다. 같은 미러·대기열을 쓴다(오프라인에서 추가하면 대기열에 들어간다).
+    // ── 할 일(families/{hid}/todos/{tid}) — 36개월 이상 아이의 체크리스트(G22). 문서 모양·검증은 ChildTodos 가 정한다. 같은 미러·대기열을 쓴다(오프라인에서 추가하면 대기열에 들어간다).
     /** doc: ChildTodos.buildCreate 의 doc. 문서 ID 는 클라이언트가 만든다. */
     async function createTodo(hid, doc) {
       if (!enabled()) return DISABLED;
       const todoId = newId("t");
-      const r = await write(hid, { op: "set", path: `households/${hid}/todos/${todoId}`, payload: { ...doc } });
+      const r = await write(hid, { op: "set", path: `families/${hid}/todos/${todoId}`, payload: { ...doc } });
       return { ...r, todoId };
     }
     /** patch: ChildTodos.patch* 의 결과. 문서 하나에 set+merge(null 값은 미러에서 필드 삭제로 반영). */
     async function patchTodo(hid, todoId, patch) {
       if (!enabled()) return DISABLED;
-      return write(hid, { op: "set", merge: true, path: `households/${hid}/todos/${todoId}`, payload: { ...patch } });
+      return write(hid, { op: "set", merge: true, path: `families/${hid}/todos/${todoId}`, payload: { ...patch } });
     }
     /** 미러의 할 일 목록 [{id, ...문서}] */
     function getTodos(hid) {
@@ -501,57 +426,47 @@
       return Object.entries(loadMirror(hid).schedules).map(([id, d]) => ({ ...d, id }));
     }
 
-    /** 가구 코드 재발급 — 새 코드 문서를 만들고 이전 코드를 비활성화한다(R3). */
-    async function reissueCode(hid, oldCode) {
+    /** 초대 재발급 — 서버가 이전 초대를 취소하고 새 초대를 발급한다. */
+    async function reissueCode(hid) {
       if (!enabled()) return DISABLED;
-      if (approval()) return accessApi().issueInvite({householdId:hid});
-      const t = now();
-      let code = newCode();
-      try {
-        for (let i = 0; i < 8; i++) {
-          const ex = await getAdapter().get("householdCodes/" + code);
-          if (!ex.exists) break;
-          code = newCode();
-        }
-      } catch (e) {
-        noteError(e);
-      }
-      await write(hid, { op: "set", path: "householdCodes/" + code, payload: { householdId: hid, active: true, createdAt: t, revokedAt: null } });
-      if (oldCode) await write(hid, { op: "update", path: "householdCodes/" + oldCode, payload: { active: false, revokedAt: t } });
-      if (storage) storage.setItem(CODE_KEY, code);
-      return { ok: true, code };
+      return accessApi().issueInvite({householdId:hid});
     }
 
     // ── 리스너(등록/해제를 한 곳에서) ─────────────────────────────────
-    let unsubs = [];
+    let unsubs = [], listeningHid = null, listeningCallback = null, listeningGeneration = 0;
     function startListening(hid, onChange) {
       if (!enabled()) return DISABLED;
+      if (listeningHid === hid && unsubs.length) { listeningCallback = onChange; return {ok:true,reused:true}; }
       stopListening();
+      listeningHid = hid; listeningCallback = onChange;
+      const generation=++listeningGeneration;
       state.childrenLoaded[hid] = false;
       const a = getAdapter();
       const apply = (fn) => {
+        if (generation !== listeningGeneration) return;
         const m = loadMirror(hid);
         fn(m);
         saveMirror(m);
-        if (onChange) onChange(m);
+        if (listeningCallback) listeningCallback(m);
       };
-      const err = (e) => noteError(e);
+      const err = (e) => { if (generation === listeningGeneration) { noteError(e); listeningHid = null; } };
       unsubs = [
-        a.listen("households/" + hid, (d) => d && apply((m) => (m.household = { ...d.data })), err),
-        a.listen(`households/${hid}/children`, (docs) => apply((m) => { mergeCollection(m, "children", docs, hid); state.childrenLoaded[hid] = true; }), err),
-        a.listen(`households/${hid}/members`, (docs) => apply((m) => mergeCollection(m, "members", docs, hid)), err),
-        a.listen(`households/${hid}/schedules`, (docs) => apply((m) => mergeCollection(m, "schedules", docs, hid)), err),
-        a.listen(`households/${hid}/todos`, (docs) => apply((m) => mergeCollection(m, "todos", docs, hid)), err),
+        a.listen("families/" + hid, (d) => d && apply((m) => (m.household = { ...d.data })), err),
+        a.listen(`families/${hid}/childLinks`, (docs) => apply((m) => { mergeCollection(m, "children", docs, hid); state.childrenLoaded[hid] = true; }), err),
+        a.listen(`families/${hid}/members`, (docs) => apply((m) => mergeCollection(m, "members", docs, hid)), err),
+        a.listen(`families/${hid}/schedules`, (docs) => apply((m) => mergeCollection(m, "schedules", docs, hid)), err),
+        a.listen(`families/${hid}/todos`, (docs) => apply((m) => mergeCollection(m, "todos", docs, hid)), err),
       ];
       return { ok: true };
     }
     function stopListening() {
+      listeningGeneration++;
       unsubs.forEach((u) => {
         try {
           u();
         } catch (e) {}
       });
-      unsubs = [];
+      unsubs = []; listeningHid = null; listeningCallback = null;
     }
 
     /** 앱 시작·online·visibilitychange 에서 대기열을 보낸다. 플래그가 꺼져 있으면 아무것도 등록하지 않는다. */
@@ -611,7 +526,7 @@
       if (!e || typeof e.path !== "string") return null;
       const seg = e.path.split("/");
       const id = String(seg[3] || seg[1] || "");
-      return { collection: seg.length > 2 ? seg[2] : "households", op: e.op, id: id.slice(0, 6) };
+      return { collection: seg.length > 2 ? seg[2] : "families", op: e.op, id: id.slice(0, 6) };
     }
     const getMirror = (hid) => (enabled() ? loadMirror(hid) : null);
 
