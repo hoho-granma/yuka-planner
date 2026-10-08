@@ -1,0 +1,20 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function member(hid) { return firestore.get(/databases/(default)/documents/familyAccess/$(hid)/members/$(request.auth.uid)).data; }
+    function belongs(hid) { return request.auth != null && member(hid).status == 'ACTIVE'; }
+    function mayUpload(hid) {
+      let key = request.resource.metadata.get('childKey','');
+      return member(hid).permission in ['ADMIN','MEMBER'] &&
+        (member(hid).role != 'CHILD' || (member(hid).childKey == key
+          && firestore.get(/databases/(default)/documents/families/$(hid)/childLinks/$(key)).data.get('removedAt',null) == null));
+    }
+    match /families/{hid}/growthRecords/{rid}/{fileId} {
+      allow read: if belongs(hid);
+      allow create: if resource == null && belongs(hid) && mayUpload(hid) && fileId.matches('^image_[a-f0-9]{64}$')
+        && request.resource.size > 0 && request.resource.size <= 15728640 && request.resource.contentType.matches('^image/.*');
+      allow update, delete: if false;
+    }
+    match /{path=**} { allow read, write: if false; }
+  }
+}

@@ -3479,6 +3479,7 @@
   }
 
   function closeDetail() {
+    if(typeof approvalViewDispose!=="undefined"&&approvalViewDispose&&acctApprovalEnabled()&&el("modal-content").querySelector(".fa-card")){approvalViewDispose();approvalViewDispose=null;}
     el("detail-modal").classList.add("hidden");
     currentDayContext = null;
     modalMode = null;
@@ -3801,6 +3802,7 @@
   }
 
   function showCalendarView() {
+    if(acctApprovalEnabled() && acct.approvalState!=="ACTIVE")return;
     el("view-landing").classList.add("hidden");
     el("view-calendar").classList.remove("hidden");
     window.scrollTo(0, 0);
@@ -4331,7 +4333,9 @@
   });
   function hhRender() {
     const slot = el("hh-slot");
-    if (slot) slot.innerHTML = HouseholdView.renderSection(hhState());
+    if (slot) slot.innerHTML = acctApprovalEnabled()
+      ? '<button type="button" class="btn-complete" data-hh-action="approval-manage">가족 초대·참여 관리</button>'
+      : HouseholdView.renderSection(hhState());
     memRender(); // 가구 상태(가입·생성)가 바뀌면 구성원 영역도 다시 그린다
   }
   /** 앱 시작·online·앱으로 돌아올 때 대기열을 다시 보내고, 끝나면 화면 상태 줄을 갱신한다(household-sync.attachLifecycle 은 화면 갱신 콜백이 없어 쓰지 않는다). */
@@ -4339,7 +4343,7 @@
     if (hh.lifecycle) return;
     hh.lifecycle = true;
     const go = async () => {
-      if (!hh.hid) return;
+      if (!hh.hid || (acctApprovalEnabled() && acct.approvalState!=="ACTIVE")) return;
       try {
         await HouseholdSync.flush(hh.hid);
       } catch (e) {
@@ -4409,6 +4413,10 @@
     }
   }
   async function hhOnClick(ev) {
+    if(acctApprovalEnabled()) {
+      const b=ev.target.closest("[data-hh-action]");
+      if(b)return acctApprovalOpenManage();
+    }
     const b = ev.target.closest("[data-hh-action]");
     if (!b) return;
     ev.stopPropagation();
@@ -4798,7 +4806,7 @@
   }
 
   async function hhInit() {
-    if (!hhEnabled()) return;
+    if (!hhEnabled() || acctApprovalEnabled()) return;
     const hint = el("hh-code-hint");
     if (hint) hint.innerHTML = HouseholdView.renderCodeEntryHint({ enabled: true });
     hhLoadSaved();
@@ -4874,7 +4882,7 @@
   }
   const us = { annivOn: (typeof ChildAnniversaries !== "undefined" ? ChildAnniversaries.isOn((() => { try { return localStorage; } catch (e) { return null; } })()) : false), selection: [], selTouched: false, onlyUser: false, catColor: (() => { try { return localStorage.getItem(CAL_CATCOLOR_KEY) === "1"; } catch (e) { return false; } })(), form: null, messages: [], saving: false, detailId: null, detailKey: null, detailOcc: null, dayForm: null, plan: null, autoLabel: null, linkPrompt: null, chipDel: null };
   const usReady = () => typeof UserScheduleView !== "undefined" && typeof UserSchedule !== "undefined" && typeof CalendarModel !== "undefined";
-  const usActive = () => hhEnabled() && usReady() && !!hh.hid && !!hh.code;
+  const usActive = () => hhEnabled() && usReady() && !!hh.hid && !!hh.code && (!acctApprovalEnabled() || acct.approvalState === "ACTIVE");
   const usMirror = () => (hh.hid ? HouseholdSync.getMirror(hh.hid) : null);
   const usRawMembers = () => Object.entries((usMirror() || {}).members || {}).map(([memberId, m]) => ({ memberId, ...m }));
   const usLinks = () => UserScheduleView.resolveChildColors(Object.entries((usMirror() || {}).children || {}).map(([childKey, l]) => ({ childKey, ...l })), usRawMembers()); // D46: 아이 색도 역할 슬롯(p3~p5…)으로, 화면용(저장 안 함)
@@ -6546,6 +6554,115 @@
   const acctEnabled = () => typeof AccountView !== "undefined" && typeof AuthService !== "undefined" && !!window.FEATURES && window.FEATURES.accounts === true;
   const ACCT_INTENT_KEY = "hannun_account_intent";
   const acct = { svc: null, sync: null, user: null, account: null, joining: false, recoverShown: false, form: {}, errors: {}, error: null, busy: false, completing: false, restoring: false, notice: null, mode: null, migrate: null };
+  const acctApprovalEnabled = () => typeof DBPaths !== "undefined" && DBPaths.deployment.familyApproval === true;
+  let approvalUnsubscribe = null, approvalViewDispose = null;
+  const approvalApi = () => acct.approvalApi || (acct.approvalApi = FamilyAccess.create());
+  function acctApprovalGate(state, message) {
+    acct.approvalState = state;
+    hideEmptyHome(); showLandingView(); acctRenderLanding();
+    const host = el("acct-landing-slot");
+    if (!host) return;
+    if (approvalViewDispose) approvalViewDispose();
+    approvalViewDispose = FamilyAccessView.mount(host, {mode:"pending",status:state,api:approvalApi(),
+      onStatus:async result=>{
+        if(result.status==="ACTIVE"){if(approvalViewDispose){approvalViewDispose();approvalViewDispose=null;}await acctApprovalRestore(acct.user);}
+      }});
+    if(message)host.querySelector("[data-fa-notice]").textContent=message;
+    const logout=document.createElement("button"); logout.type="button";logout.textContent="로그아웃";
+    logout.setAttribute("data-acct-action","logout");host.appendChild(logout);
+    const retry=document.createElement("button");retry.type="button";retry.textContent="가족 연결 다시 하기";
+    retry.setAttribute("data-acct-action","recover-join-open");host.appendChild(retry);
+  }
+  function acctApprovalQuarantine() {
+    const uid=acctOwnerRead() || acct.user?.uid || "unknown";
+    // Keep unsent edits in an account-specific archive; never replay them for another login.
+    const archive={};
+    for(let i=0;i<localStorage.length;i++) {
+      const k=localStorage.key(i);
+      if(k && k.startsWith("hannun_household_pending:"))archive[k]=localStorage.getItem(k);
+    }
+    let archived=true;
+    try {if(Object.keys(archive).length)localStorage.setItem("hannun_private_archive:"+uid+":"+Date.now(),JSON.stringify(archive));}catch(e){archived=false;}
+    // If local storage is full, retain the original queue under its family key.
+    // Authorization and owner checks prevent another account from replaying it.
+    if(approvalUnsubscribe){approvalUnsubscribe();approvalUnsubscribe=null;}
+    HouseholdSync.stopListening();
+    if(unsubscribeFamily){unsubscribeFamily();unsubscribeFamily=null;}
+    if(typeof GrowthLearningView!=="undefined")GrowthLearningView.unmount();
+    if(typeof GrowthRecords!=="undefined"&&GrowthRecords.unmount)GrowthRecords.unmount();
+    const preserved=!archived?archive:null;
+    acctWipeLocalChild();
+    if(preserved)for(const [k,v]of Object.entries(preserved))localStorage.setItem(k,v);
+    localStorage.removeItem(HH_ID_KEY);localStorage.removeItem(HouseholdSync.CODE_KEY||"hannun_household_code");
+    hh.hid=null;hh.code=null;charProfiles.clear();charProfileLoads.clear();us.selection=[];
+    newChildMode=false;newChildSnapshot=null;el("new-child-bar").classList.add("hidden");
+  }
+  async function acctApprovalRestore(u) {
+    if(!u || acct.busy || acct.completing || acct.restoring)return;
+    acct.restoring=true;
+    const uid=u.uid,epoch=acct.approvalEpoch;
+    const valid=()=>acct.user?.uid===uid&&acct.approvalEpoch===epoch;
+    try {
+      const state=await approvalApi().status();
+      if(!valid())return; // A previous login must not restore into the next account.
+      acct.approvalState=state.status;
+      if(state.status!=="ACTIVE") {
+        if(state.status==="REVOKED")acctApprovalQuarantine();
+        if(state.status==="NONE") {
+          const intent=acctReadIntent();
+          if(intent){acct.restoring=false;await acctFinishSignup(intent,false);return;}
+          acct.form={displayName:u.displayName||"",email:u.email||"",role:""};acct.joining=false;
+          acctShowSheet("recover");showLandingView();return;
+        }
+        acctApprovalGate(state.status);return;
+      }
+      const result=await acct.sync.restore(uid,u.email);
+      if(!result.ok)throw new Error("가족 정보를 불러오지 못했어요. 다시 시도해 주세요.");
+      if(!valid())return;
+      acctOwnerSync(u);
+      const joined=await HouseholdSync.joinHousehold(state.householdId);
+      if(!valid())return;
+      if(!joined.ok)throw new Error("가족 연결을 확인해 주세요.");
+      acct.account={...result.account,householdCode:state.householdId,permission:state.permission};
+      acctClearIntent();
+      hhSetJoined(state.householdId,state.householdId);
+      if(profile&&familyCode) {
+        const linked=Object.values(joined.mirror.children||{}).some(c=>c.familyCode===familyCode&&!c.removedAt);
+        if(!linked)acctWipeLocalChild();
+        else {const data=await FamilySync.fetchFamily(familyCode);if(!valid())return;if(data?.profile){profile=profileFromPlain(data.profile);completed=data.completed||{};saveProfile(profile);saveCompleted();startListeningFamily();}}
+      }
+      await acctAfterHousehold({}, {created:false,householdId:state.householdId});
+      if(!valid())return;
+      if(approvalUnsubscribe)approvalUnsubscribe();
+      approvalUnsubscribe=firebase.firestore().doc(`familyAccess/${state.householdId}/members/${uid}`).onSnapshot(snapshot=>{
+        if(snapshot.metadata.fromCache||!valid())return;
+        if(!snapshot.exists||snapshot.data().status!=="ACTIVE") {
+          acctApprovalQuarantine();acct.account=null;acctApprovalGate("REVOKED");
+        } else acct.account.permission=snapshot.data().permission;
+      },()=>{if(valid())acctApprovalGate("UNKNOWN","인터넷 연결을 확인하고 상태 확인을 눌러 주세요.");});
+      if(approvalViewDispose){approvalViewDispose();approvalViewDispose=null;}
+      await acctGoHome();
+    } catch(e) {
+      if(valid())acctApprovalGate("UNKNOWN",e.message||"가족 연결을 확인하지 못했어요.");
+    } finally {if(valid()){acct.restoring=false;acctSplashRelease();}}
+  }
+  async function acctApprovalOpenManage() {
+    if(!acct.user)return;
+    try {
+      const state=await approvalApi().status();
+      if(state.status!=="ACTIVE")return acctApprovalGate(state.status);
+      if(state.permission!=="ADMIN")return acctApprovalGateForMember();
+      const refresh=()=>approvalApi().listRequests({householdId:state.householdId});
+      const model=await refresh();
+      if(approvalViewDispose)approvalViewDispose();
+      modalMode="account";el("detail-modal").classList.remove("hidden");
+      approvalViewDispose=FamilyAccessView.mount(el("modal-content"),{api:approvalApi(),householdId:state.householdId,model,onRefresh:refresh,onStatus:async state=>{acct.approvalState=state.status;if(acct.account)acct.account.permission=state.permission;}});
+    } catch(e){acct.error=e.message||"가족 관리 화면을 불러오지 못했어요.";acctShowSheet("me");}
+  }
+  function acctApprovalGateForMember() {
+    modalMode="account";el("modal-content").innerHTML='<section class="fa-card"><h2>가족 초대</h2><p>새 가족의 초대와 참여 승인은 가족 관리자에게 요청해 주세요.</p></section>';
+    el("detail-modal").classList.remove("hidden");
+  }
   function acctInit() {
     if (acctJoinLinkStart()) return; // Q3: 계정 기능이 꺼진 기기는 켠 뒤 새로고침
     if (!acctEnabled()) return;
@@ -6555,11 +6672,16 @@
     if (typeof el === "function" && el("entry-fine-print")) el("entry-fine-print").textContent = AccountView.MSG.onboard.formNote;
     acct.svc = AuthService.create();
     // D2: accounts 문서·가구 연결(가짜 어댑터로 테스트 가능). 같은 Firestore 어댑터를 쓰되 계정 문서 쓰기는 이 서비스만 한다.
-    if (typeof AccountSync !== "undefined") acct.sync = AccountSync.create({ adapter: HouseholdSync.firestoreAdapter(() => firebase.firestore()), household: HouseholdSync });
+    if (typeof AccountSync !== "undefined") acct.sync = AccountSync.create({ adapter: HouseholdSync.firestoreAdapter(() => firebase.firestore()), household: HouseholdSync, ...(acctApprovalEnabled()?{access:approvalApi()}:{}) });
     // 인증 확인이 끝나기 전엔 중립 화면(로고)만 보여 준다(로그인한 사람이 온보딩을 잠깐 보고 로그아웃된 줄 알지 않게). 로그아웃 표시가 있는 기기는 기다리지 않고 바로 온보딩.
     if (acctSignedOutMark()) acct.authKnown = true;
     else acctSplashShow();
     acct.svc.onChange((u, info) => {
+      if(acctApprovalEnabled()) {
+        acct.approvalEpoch=(acct.approvalEpoch||0)+1;acct.restoring=false;
+        if(approvalUnsubscribe){approvalUnsubscribe();approvalUnsubscribe=null;}
+        acct.approvalState=u?"UNKNOWN":"SIGNED_OUT";
+      }
       acct.user = u;
       // 오프라인·SDK 로드 실패(확인 불가)는 '로그아웃됨'이 아니다: 이 기기에 로그아웃 표시가 있을 때만 로그아웃으로 본다(로그인했던 기기는 홈 유지).
       acct.authKnown = !(info && info.unknown) || acctSignedOutMark();
@@ -6615,6 +6737,7 @@
   function acctRestoreSlow() {
     acct.splashHold = false;
     acctSplashHide();
+    if(acctApprovalEnabled()&&acct.approvalState!=="ACTIVE")return acctApprovalGate("UNKNOWN","가족 연결 확인이 지연되고 있어요. 상태 확인을 눌러 주세요.");
     if (acct.user && !profile && !newChildMode && typeof showEmptyHome === "function") showEmptyHome();
   }
   /**
@@ -6657,7 +6780,7 @@
     if (d && d.remove) d.remove();
   }
   function acctGateHome() {
-    if (!acctEnabled() || acct.user || !acct.authKnown || newChildMode) return false;
+    if (!acctEnabled() || (acct.user && (!acctApprovalEnabled() || acct.approvalState === "ACTIVE")) || !acct.authKnown || newChildMode) return false;
     if (el("view-landing") && !el("view-landing").classList.contains("hidden")) return false;
     if (typeof hideEmptyHome === "function") hideEmptyHome();
     showLandingView();
@@ -6732,7 +6855,7 @@
   function acctApplyLandingMode() {
     const v = el("view-landing");
     if (!v || !acctEnabled() || !v.classList) return;
-    const simple = (!acct.user || (typeof acctIntro !== "undefined" && acctIntro === true)) && !acctBrowse && !newChildMode;
+    const simple = (!acct.user || (acctApprovalEnabled() && acct.approvalState !== "ACTIVE") || (typeof acctIntro !== "undefined" && acctIntro === true)) && !acctBrowse && !newChildMode;
     v.classList.toggle("acct-simple", simple);
     v.classList.toggle("acct-browse", !simple && !acct.user && !newChildMode);
     v.classList.toggle("acct-hidecard", !!newChildMode);
@@ -6782,7 +6905,7 @@
     const s = el("acct-slot");
     if (s) {
       const family = hh.hid || hh.code ? { members: HouseholdView.visibleMembers(usMembers()).map((m) => ({ memberId: m.memberId, role: m.role, label: m.label, color: UserScheduleView.memberColor(m) })), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt).map((l) => ({ ...l, color: UserScheduleView.childColor(l) })) } : { members: [], meId: null, meName: "", children: [] };
-      s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, account: acct.account, notice: acct.notice, withCode: true, code: hh.code, family, sel: el("fam-card") ? famSel() : undefined });
+      s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, account: acct.account, notice: acct.notice, withCode: !acctApprovalEnabled(), code: acctApprovalEnabled()?null:hh.code, family, sel: el("fam-card") ? famSel() : undefined });
     }
   }
   function acctOpenSlot() {
@@ -6799,7 +6922,7 @@
     el("modal-content").innerHTML =
       acct.mode === "signup" ? AccountView.renderSignup({...st,unified:true})
       : acct.mode === "login" ? AccountView.renderLogin(st)
-      : acct.mode === "me" ? AccountView.renderMe({ user: acct.user, account: acct.account, code: hh.code, notice: acct.notice })
+      : acct.mode === "me" ? AccountView.renderMe({ user: acct.user, account: acct.account, code: acctApprovalEnabled()?null:hh.code, notice: acct.notice })
       : acct.mode === "role" ? AccountView.renderRolePick({ form: acct.form, errors: acct.errors, busy: acct.busy, error: acct.error })
       : acct.mode === "slot" ? AccountView.renderSlotPick({ slots: acct.slotPick && acct.slotPick.slots, busy: acct.busy, error: acct.error })
       : acct.mode === "invite" ? AccountView.renderInvite({ code: hh.code, role: acct.form && acct.form.inviteRole, preview: acctInvitePreview(), canSchedule: usActive(), notice: acct.notice, busy: acct.busy, error: acct.error })
@@ -6920,6 +7043,7 @@
   }
   /** 가구가 정해진 직후: 새 가구면 이 기기 아이를 바로 연결(고를 것이 없다), 기존 가구에 합류했으면 아직 연결 안 된 아이가 있을 때 선택 시트를 준비한다. */
   async function acctPlanKids(res) {
+    if(acctApprovalEnabled())return;
     const m = HouseholdSync.getMirror(res.householdId);
     if (res.created) {
       const kids = acctUnlinkedKids(m);
@@ -6957,7 +7081,7 @@
     acct.completing = true;
     let res;
     // D4: 이 기기에 이미 가구가 있고 합류 코드가 없으면 새 가구를 만들지 않고 이 기기 가구를 계정에 귀속한다(가구가 서버에 없으면 원래 흐름으로).
-    const adopt = !intent.joiningCode && !!hh.hid && !!hh.code;
+    const adopt = !acctApprovalEnabled() && !intent.joiningCode && !!hh.hid && !!hh.code;
     try {
       res = await acct.sync.completeSignup({ user: acct.user, intent: adopt ? { ...intent, joiningCode: hh.code } : intent });
       if (adopt && !res.ok && res.reason === "not-found") res = await acct.sync.completeSignup({ user: acct.user, intent });
@@ -6976,9 +7100,13 @@
         return { ok: false, rolledBack: true };
       }
       // 일시 오류(네트워크 등): 로그인 상태와 가입 의도를 남겨 다음 로그인·앱 시작 때 이어서 연결한다.
-      acct.error = res.reason === "rules-unavailable" ? AuthService.MSG.serverNotReady : AuthService.MSG.linkFailed;
+      acct.error = res.message || (res.reason === "rules-unavailable" ? AuthService.MSG.serverNotReady : AuthService.MSG.linkFailed);
       return { ok: false, rolledBack: false };
     }
+    if(acctApprovalEnabled() && res.pending) {
+      acctClearIntent();acct.account=null;acctApprovalGate("PENDING");acctSplashRelease();return {ok:true,pending:true};
+    }
+    if(acctApprovalEnabled()) {acct.approvalState="ACTIVE";acct.ownerReady=true;}
     acct.account = { displayName: intent.displayName, role: intent.role, memberId: res.memberId, householdId: res.householdId, householdCode: res.householdCode, ...(intent.situation ? { situation: intent.situation } : {}), ...(intent.province ? { province: intent.province, district: intent.district } : {}) };
     if (hh.code && hh.code !== res.householdCode) {
       // 이 기기에 다른 가구가 연결돼 있다: 사용자가 고르기 전에는 바꾸지 않는다(선택 시트 — 계정 가족 쓰기 / 이 기기 아이를 가족에 추가).
@@ -7112,6 +7240,7 @@
    * 이 기기에 아이가 있으면(복원 뒤 포함) 캘린더 홈, 없으면 '아이를 등록해 주세요' 빈 홈. 아이 추가 입력(newChildMode) 중이면 그대로 둔다.
    */
   async function acctGoHome() {
+    if(acctApprovalEnabled() && acct.approvalState!=="ACTIVE")return;
     if (!acctEnabled() || !acct.user || newChildMode || (typeof acctIntro !== "undefined" && acctIntro === true)) return; // D71: 소개 화면을 보는 중이면 홈으로 보내지 않는다
     const lv = el("view-landing");
     if (!lv || !lv.classList || typeof lv.classList.contains !== "function" || lv.classList.contains("hidden")) return;
@@ -7124,6 +7253,7 @@
   }
   /** 로그인 상태가 됐을 때: 끝나지 않은 가입이 있으면 이어서 마무리, 아니면 계정 가구를 이 기기에 복원(이 기기에 다른 가구가 있으면 건드리지 않는다 — D4). */
   async function acctRestore(u) {
+    if(acctApprovalEnabled())return acctApprovalRestore(u);
     // G16: 복원을 못 하는 경우(계정 동기화 모듈 없음)에도 로그인한 사람이 첫 화면(아이 입력 폼)에 남지 않게 홈으로 보낸다.
     if (typeof acctOwnerSync === "function") acctOwnerSync(u); // G17: 다른 계정의 로컬 아이 데이터가 남아 있으면 복원 전에 비운다
     if (!acct.sync) { await acctGoHome(); return; }
@@ -7178,6 +7308,7 @@
 
   /** Q3 가족 추가 시트 열기(역할 선택은 비워 둔다). */
   function acctOpenInvite() {
+    if(acctApprovalEnabled())return acctApprovalOpenManage();
     acct.form = {};
     acct.notice = null;
     acct.error = null;
@@ -7300,6 +7431,7 @@
       fin = { ok: false };
     }
     acct.busy = false;
+    if(fin.pending){acct.busy=false;closeDetail();acctApprovalGate("PENDING");acctSplashRelease();return;}
     if (!fin.ok) { acctSplashRelease(); return acctShowSheet(acct.mode === "slot" ? "signup" : undefined); }
     acct.form = {};
     acct.notice = null; // D5: 가입 직후 "가입했어요" 안내는 정보 가치가 낮아 없앤다
@@ -7312,6 +7444,7 @@
       acctSplashRelease();
     }
     acctMaybeShowMigrate();
+    if(acctApprovalEnabled())await acctApprovalRestore(acct.user);
   }
   async function acctOnClick(ev) {
     if (!acctEnabled()) return;
@@ -7384,6 +7517,10 @@
         acct.mode = "login";
         acct.error = r.message || AuthService.MSG.generic;
         return acctShowSheet();
+      }
+      if(acctApprovalEnabled()) {
+        acctApprovalQuarantine();acct.approvalState="SIGNED_OUT";
+        if(approvalViewDispose){approvalViewDispose();approvalViewDispose=null;}
       }
       // 정리 범위: 가구 id·코드·미러·대기열·이 기기 사용자 키만. 아이·완료·기록·사진은 그대로 둔다.
       // P1: 계정 모드에서는 이 기기의 가구 연결을 계정 가구와 같든 다르든 모두 정리한다(로그아웃한 계정의 가구가 다음 사람 화면에 남지 않게).
@@ -7500,7 +7637,7 @@
       if (!v.ok) return acctShowSheet("recover");
       acct.busy = true;
       acctShowSheet("recover");
-      if (joining) {
+      if (joining && !acctApprovalEnabled()) {
         let look;
         try {
           look = await HouseholdSync.lookupHousehold(v.intent.joiningCode);
@@ -7516,6 +7653,7 @@
       const fin = await acctFinishSignup(v.intent, false);
       acct.busy = false;
       if (!fin.ok) return acctShowSheet("recover");
+      if(fin.pending){closeDetail();acctApprovalGate("PENDING");return;}
       acct.form = {};
       acct.joining = false;
       acct.notice = AccountView.MSG.recoverDone;
@@ -7535,7 +7673,7 @@
       acct.busy = true;
       acctShowSheet();
       // 코드 사전 확인(읽기만): 잘못된 코드면 계정을 만들기 전에 막는다(신규 가족으로 몰래 만들지 않는다).
-      if (v.intent.joiningCode) {
+      if (v.intent.joiningCode && !acctApprovalEnabled()) {
         let look;
         try {
           look = await HouseholdSync.lookupHousehold(v.intent.joiningCode);
@@ -7558,7 +7696,7 @@
       }
       acct.user = r.user;
       // H2: 가족코드로 합류하면 가입하지 않은 자리 목록을 보여 준다(하나면 자동 선택, 없으면 기존처럼 직접 고른 역할).
-      if (v.intent.joiningCode && acct.sync && !v.intent.memberRole) { // 초대 링크(memberRole)는 역할로 빈 자리를 바로 차지하므로 자리 선택을 건너뛴다
+      if (v.intent.joiningCode && acct.sync && !v.intent.memberRole && !acctApprovalEnabled()) { // 초대 링크(memberRole)는 역할로 빈 자리를 바로 차지하므로 자리 선택을 건너뛴다
         let slots = [];
         try {
           const j = await HouseholdSync.peekMembers(v.intent.joiningCode); // 읽기 전용(저장된 가구 코드·미러를 바꾸지 않는다)
@@ -7723,7 +7861,7 @@
     profile = loadProfile();
     familyCode = FamilySync.getSavedCode();
 
-    if (familyCode) {
+    if (familyCode && !acctApprovalEnabled()) {
       try {
         const data = await FamilySync.fetchFamily(familyCode);
         if (data && data.profile) {
@@ -7747,7 +7885,7 @@
       } catch (e) {
         console.error("가족코드 조회 실패, 로컬 데이터로 진행합니다.", e);
       }
-    } else if (profile) {
+    } else if (profile && !acctApprovalEnabled()) {
       ensureFamilyCode();
     }
     betaOpenSlot("beta-landing-slot", "renderBetaSwitchLanding");
@@ -7758,7 +7896,7 @@
     if (typeof document !== "undefined") document.addEventListener("click", homeMustClick); // 4-1 A안: '지금 꼭 할 것' 카드 클릭(없으면 즉시 반환)
     acct23Init();
 
-    if (profile) {
+    if (profile && !acctApprovalEnabled()) {
       populateDistricts(profile.province, profile.district);
       el("province").value = profile.province;
       el("childName").value = profile.name || "";

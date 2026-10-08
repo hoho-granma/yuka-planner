@@ -1,0 +1,8 @@
+{
+  "name": "hannun-family-access",
+  "private": true,
+  "main": "index.js",
+  "engines": { "node": "22" },
+  "scripts": { "test": "node --test ../test/family-access.test.js" },
+  "dependencies": { "firebase-admin": "^13.0.0", "firebase-functions": "^6.0.0" }
+}

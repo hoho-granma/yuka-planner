@@ -1,0 +1,33 @@
+'use strict';
+const assert=require('node:assert/strict');
+const serverRequire=require('node:module').createRequire(require('node:path').resolve(__dirname,'../functions/package.json'));
+const {initializeApp}=serverRequire('firebase-admin/app');
+const {getFirestore}=serverRequire('firebase-admin/firestore');
+const {createService}=require('../functions/family-access');
+// Hard fail instead of accidentally using production credentials.
+assert.equal(process.env.FIRESTORE_EMULATOR_HOST,'127.0.0.1:8788');
+initializeApp({projectId:'demo-hannun-access'});
+const db=getFirestore();
+const s=createService(db);
+const denied=(fn,code)=>assert.rejects(fn,e=>e.code===code);
+(async()=>{
+ const a=await s.createFamily('svc-mom',{displayName:'엄마',role:'MOM'}),hid=a.householdId;
+ const inv=await s.issueInvite('svc-mom',{householdId:hid,role:'DAD'});
+ await Promise.all(['svc-dad','svc-other'].map(uid=>s.requestJoin(uid,{code:inv.code,displayName:uid},'127.0.0.1')));
+ const results=await Promise.allSettled(['svc-dad','svc-other'].map(targetUid=>s.decideJoin('svc-mom',{householdId:hid,targetUid,approve:true})));
+ assert.equal(results.filter(r=>r.status==='fulfilled').length,1,'one-use invite must not admit two simultaneous approvals');
+ assert.equal(results.filter(r=>r.status==='rejected').length,1);
+ const winner=results[0].status==='fulfilled'?'svc-dad':'svc-other';
+ const member=await db.doc(`familyAccess/${hid}/members/${winner}`).get();assert.equal(member.data().permission,'MEMBER');
+ await denied(()=>s.issueInvite(winner,{householdId:hid}),'permission-denied');
+ await s.removeMember('svc-mom',{householdId:hid,targetUid:winner});assert.equal((await s.status(winner)).status,'REVOKED');
+ const attempts=await Promise.allSettled(Array.from({length:12},()=>s.requestJoin('svc-guesser',{code:'ZZZZZZZZ',displayName:'test'},'guesser')));
+ assert.equal(attempts.filter(r=>r.reason?.code==='not-found').length,10);
+ assert.equal(attempts.filter(r=>r.reason?.code==='resource-exhausted').length,2);
+ const child=await s.createChild('svc-mom',{householdId:hid,profile:{name:'은찬',birthDate:'2026-06-20'}});
+ assert.equal((await db.doc('childAccess/'+child.code).get()).data().householdId,hid);
+ await s.removeChild('svc-mom',{householdId:hid,code:child.code});
+ assert((await db.doc(`families/${hid}/childLinks/${child.code}`).get()).data().removedAt);
+ console.log('Real Firestore server transactions: PASS (concurrent one-use approval, quota, revocation, child ownership)');
+ await db.terminate();
+})().catch(e=>{console.error(e);process.exitCode=1;});

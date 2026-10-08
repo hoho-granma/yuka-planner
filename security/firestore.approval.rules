@@ -1,0 +1,234 @@
+// Candidate only. Activate after reviewed account migration and client rollout.
+// Never append these rules to the legacy rules: overlapping allows are additive.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function access(hid) { return get(/databases/$(database)/documents/familyAccess/$(hid)/members/$(request.auth.uid)).data; }
+    function isMemberOf(hid) { return signedIn() && access(hid).status == 'ACTIVE'; }
+    function memberDocOf(hid) { return access(hid); }
+    function acctDoc() { return get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data; }
+    function isFamilyAdult(hid) { return isMemberOf(hid) && access(hid).role != 'CHILD' && access(hid).permission in ['ADMIN','MEMBER']; }
+    function isAdmin(hid) { return isMemberOf(hid) && access(hid).permission == 'ADMIN'; }
+    function childLive(hid, key) {
+      return exists(/databases/$(database)/documents/families/$(hid)/childLinks/$(key))
+        && get(/databases/$(database)/documents/families/$(hid)/childLinks/$(key)).data.get('removedAt',null) == null;
+    }
+    function canEditSchedule(hid,d) {
+      return isFamilyAdult(hid) || (isMemberOf(hid) && access(hid).permission == 'MEMBER'
+        && access(hid).role == 'CHILD' && d.scope == 'CHILD' && d.childKeys == [access(hid).childKey] && childLive(hid,access(hid).childKey));
+    }
+    function canEditTodo(hid,d) {
+      return isFamilyAdult(hid) || (isMemberOf(hid) && access(hid).permission == 'MEMBER'
+        && access(hid).role == 'CHILD' && d.get('ownerKey','CHILD:' + d.get('childKey','')) == 'CHILD:' + access(hid).childKey && childLive(hid,access(hid).childKey));
+    }
+    match /familyAccess/{hid}/members/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list: if isAdmin(hid);
+      allow write: if false;
+    }
+    // All invitations, join decisions and authorization fields are server-only.
+    match /families/{hid} {
+      allow get: if isMemberOf(hid);
+      allow list, create, delete: if false;
+      allow update: if isAdmin(hid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','updatedAt']);
+      match /members/{mid} {
+        allow get, list: if isMemberOf(hid);
+        allow create: if isFamilyAdult(hid)
+          && request.resource.data.keys().hasOnly(['v','role','label','order','colorKey','createdAt','updatedAt'])
+          && request.resource.data.keys().hasAll(['v','role','label','order','createdAt','updatedAt'])
+          && request.resource.data.v == 1 && request.resource.data.role in ['MOM','DAD','GRANDPARENT','CAREGIVER','OTHER','CHILD']
+          && request.resource.data.label is string && request.resource.data.label.size() <= 20;
+        // Unlinked display labels do not confer access. Linked roles and UIDs are immutable from clients.
+        allow update: if isFamilyAdult(hid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['label','order','colorKey','updatedAt']);
+        allow delete: if false;
+      }
+      match /childLinks/{key} {
+        allow get, list: if isMemberOf(hid);
+        allow create, delete: if false;
+        allow update: if isFamilyAdult(hid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','order','colorKey','updatedAt']);
+      }
+    }
+    match /children/{code} {
+      function childIndex() { return get(/databases/$(database)/documents/childAccess/$(code)).data; }
+      function hid() { return childIndex().householdId; }
+      function owns() { return isFamilyAdult(hid()) || (isMemberOf(hid()) && access(hid()).role == 'CHILD' && access(hid()).permission == 'MEMBER' && access(hid()).childKey == childIndex().childKey && childLive(hid(),childIndex().childKey)); }
+      allow get: if signedIn() && isMemberOf(hid()) && childLive(hid(),childIndex().childKey);
+      allow list, create, delete: if false;
+      allow update: if signedIn() && owns() && childLive(hid(),childIndex().childKey)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['profile','completed','records','updatedAt']);
+      // Nested v2 child/completion structures are not currently used: deny by default.
+    }
+    match /accounts/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list, create, delete: if false;
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','email','institution','situation','province','district','updatedAt'])
+        && request.resource.data.displayName is string && request.resource.data.displayName.size() >= 1 && request.resource.data.displayName.size() <= 20
+        && (!('email' in request.resource.data) || request.resource.data.email == request.auth.token.get('email',null));
+    }
+    match /families/{householdId}/schedules/{scheduleId} {
+      allow get, list: if isMemberOf(householdId); // signed-in family members only
+
+      function has(d, k) { return (k in d) && d[k] != null; }
+      function dateOk(s) { return s is string && s.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'); }
+      function timeOk(s) { return s is string && s.matches('^[0-2][0-9]:[0-5][0-9]$'); }
+
+      function keysOk(d) {
+        return d.keys().hasAll(['v', 'sourceType', 'title', 'category', 'scope', 'dateKind', 'allDay', 'createdAt', 'updatedAt'])
+            && d.keys().hasOnly(['v', 'sourceType', 'title', 'category', 'categoryLabel', 'scope', 'dateKind', 'allDay', 'createdAt', 'updatedAt',
+                                 'tags', 'childKeys', 'eventDate', 'endDate', 'periodStart', 'periodEnd', 'startTime', 'endTime',
+                                 'recurrence', 'exceptions', 'assigneeMemberId', 'needsAssignee', 'status', 'location', 'memo',
+                                 'provenance', 'deletedAt', 'authorLabel', 'splitFromScheduleId', 'autoRef']);
+      }
+
+      function basicsOk(d) {
+        return d.v == 1
+            && d.sourceType in ['MANUAL', 'OCR', 'VOICE', 'IMPORT']
+            && (!('categoryLabel' in d) || (d.categoryLabel is string && d.categoryLabel.size() >= 1 && d.categoryLabel.size() <= 30))
+            && d.category in ['LESSON', 'INSTITUTION', 'MEDICAL', 'FAMILY', 'ETC']
+            && d.scope in ['CHILD', 'FAMILY']
+            && d.dateKind in ['FIXED', 'PERIOD']
+            && d.allDay is bool
+            && d.createdAt is number && d.updatedAt is number
+            && d.title is string && d.title.size() >= 1 && d.title.size() <= 100
+            && (!has(d, 'memo') || (d.memo is string && d.memo.size() <= 500))
+            && (!has(d, 'location') || (d.location is string && d.location.size() <= 100))
+            && (!has(d, 'tags') || (d.tags is list && d.tags.size() <= 10))
+            && (!has(d, 'status') || d.status in ['TODO', 'DONE', 'CANCELLED', 'RESCHEDULED'])
+            && (!has(d, 'deletedAt') || d.deletedAt is number)
+            && (!has(d, 'exceptions') || (d.exceptions is map && d.exceptions.size() <= 200))
+            && (!has(d, 'assigneeMemberId') || d.assigneeMemberId is string);
+      }
+
+      // I7: scope ↔ childKeys
+      function scopeOk(d) {
+        return (d.scope == 'CHILD' && has(d, 'childKeys') && d.childKeys is list && d.childKeys.size() >= 1 && d.childKeys.size() <= 10)
+            || (d.scope == 'FAMILY' && (!has(d, 'childKeys') || (d.childKeys is list && d.childKeys.size() == 0)));
+      }
+
+      // C2: autoRef — AUTO 항목 연결(선택). 있으면 아이 1명 일정·단일(비반복) 일정이어야 한다.
+      //   규칙으로 검증할 수 없는 것: 대상 todo_id/occurrenceKey 의 실존, childKeys[0] 이 그 가구의 실제 아이 링크인지(클라이언트 UserSchedule.validate 가 담당).
+      function autoRefOk(d) {
+        return !has(d, 'autoRef')
+          || (d.autoRef is string && d.autoRef.size() <= 80 && d.autoRef.matches('^[A-Za-z0-9-]+__[A-Za-z0-9-]+$')
+              && d.scope == 'CHILD' && has(d, 'childKeys') && d.childKeys is list && d.childKeys.size() == 1
+              && !has(d, 'recurrence'));
+      }
+
+      // I1~I4: 날짜 종류별 필드 일관성
+      function datesOk(d) {
+        return has(d, 'recurrence')
+          ? (d.dateKind == 'FIXED' && d.recurrence is map && d.recurrence.get('freq', null) in ['WEEKLY', 'MONTHLY']
+             && !has(d, 'eventDate') && !has(d, 'periodStart') && !has(d, 'periodEnd') && !has(d, 'endDate') && !has(d, 'status'))
+          : (d.dateKind == 'FIXED'
+             ? (has(d, 'eventDate') && dateOk(d.eventDate) && !has(d, 'periodStart') && !has(d, 'periodEnd')
+                && (!has(d, 'endDate') || (dateOk(d.endDate) && d.endDate >= d.eventDate)))
+             : (has(d, 'periodStart') && has(d, 'periodEnd') && dateOk(d.periodStart) && dateOk(d.periodEnd) && d.periodStart <= d.periodEnd
+                && !has(d, 'eventDate') && !has(d, 'endDate')));
+      }
+
+      // I5, I6: 시각
+      function timesOk(d) {
+        return d.allDay
+          ? (!has(d, 'startTime') && !has(d, 'endTime'))
+          : (has(d, 'startTime') && timeOk(d.startTime) && (!has(d, 'endTime') || (timeOk(d.endTime) && d.endTime > d.startTime)));
+      }
+
+      // I8: 확인 없는 OCR/VOICE/IMPORT 저장 금지
+      function provenanceOk(d) {
+        return d.sourceType == 'MANUAL' || (has(d, 'provenance') && d.provenance is map && d.provenance.get('confirmedByUser', false) == true);
+      }
+
+      function scheduleOk(d) {
+        return keysOk(d) && basicsOk(d) && scopeOk(d) && datesOk(d) && timesOk(d) && provenanceOk(d) && autoRefOk(d);
+      }
+
+      allow create: if canEditSchedule(householdId, request.resource.data) && scheduleOk(request.resource.data);
+      allow update: if canEditSchedule(householdId, resource.data) && canEditSchedule(householdId, request.resource.data) && scheduleOk(request.resource.data)
+                    && request.resource.data.v == resource.data.v
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.sourceType == resource.data.sourceType
+                    && request.resource.data.get('autoRef', null) == resource.data.get('autoRef', null); // C2: 연결은 생성 때만 정한다
+      allow delete: if isMemberOf(householdId) && (resource == null || canEditSchedule(householdId, resource.data)); // [H4] 아이 삭제 때 그 아이의 일정을 지운다(가구 구성원만). 평소에는 소프트 삭제(deletedAt)를 쓴다.
+    }
+
+    match /families/{householdId}/todos/{todoId} {
+      allow get, list: if isMemberOf(householdId); // signed-in family members only
+
+      function todoOk(d) {
+        return d.keys().hasAll(['v', 'childKey', 'title', 'done', 'order', 'createdAt', 'updatedAt'])
+            && d.keys().hasOnly(['v', 'childKey', 'title', 'done', 'order', 'createdAt', 'updatedAt', 'createdBy', 'doneAt', 'deletedAt', 'ownerKey', 'dueDate', 'category', 'description', 'sourceScheduleId'])
+            && d.v == 1
+            && d.childKey is string && d.childKey.size() >= 1 && d.childKey.size() <= 60
+            && d.title is string && d.title.size() >= 1 && d.title.size() <= 100
+            && d.done is bool
+            && d.order is number
+            && d.createdAt is number && d.updatedAt is number
+            && (!('createdBy' in d) || d.createdBy == null || (d.createdBy is string && d.createdBy.size() <= 60))
+            && (!('doneAt' in d) || d.doneAt == null || d.doneAt is number)
+            && (!('deletedAt' in d) || d.deletedAt == null || d.deletedAt is number)
+            && (!('ownerKey' in d) || d.ownerKey == null || (d.ownerKey is string && d.ownerKey.size() <= 67 && d.ownerKey.matches('^(CHILD:|MEMBER:).+$|^FAMILY$')))
+            && (!('dueDate' in d) || d.dueDate == null || (d.dueDate is string && d.dueDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
+            && (!('category' in d) || d.category == null || (d.category is string && d.category.size() <= 30))
+            && (!('description' in d) || d.description == null || (d.description is string && d.description.size() <= 500))
+            && (!('sourceScheduleId' in d) || d.sourceScheduleId == null || (d.sourceScheduleId is string && d.sourceScheduleId.size() <= 60));
+      }
+
+      allow create: if canEditTodo(householdId, request.resource.data) && todoOk(request.resource.data);
+      allow update: if canEditTodo(householdId, resource.data) && canEditTodo(householdId, request.resource.data) && todoOk(request.resource.data)
+                    && request.resource.data.v == resource.data.v
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.childKey == resource.data.childKey;
+      allow delete: if isMemberOf(householdId) && (resource == null || canEditTodo(householdId, resource.data)); // [H4] 아이 삭제 때 그 아이의 할 일을 지운다(가구 구성원만). 평소에는 소프트 삭제(deletedAt)를 쓴다.
+    }
+
+    match /families/{householdId}/growthRecords/{recordId} {
+      function recordOk(d) {
+        return d.keys().hasOnly(['schemaVersion','childKey','activityId','group','activity','recordDate','title','text','attachment','createdByUid','updatedByUid','createdAt','updatedAt','revision','importKey','importFingerprint','legacyCreatedAt','deletedAt'])
+          && d.keys().hasAll(['schemaVersion','childKey','activityId','group','activity','recordDate','title','text','attachment','createdByUid','updatedByUid','createdAt','updatedAt','revision'])
+          && d.schemaVersion == 1 && d.childKey is string && d.activityId is string
+          && d.group in ['school','academy','activity','home']
+          && d.activity is string && d.activity.size() > 0 && d.activity.size() <= 60
+          && d.title is string && d.title.size() > 0 && d.title.size() <= 100
+          && d.text is string && d.text.size() <= 10000
+          && d.recordDate is string && d.recordDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && d.createdByUid is string && d.updatedByUid == request.auth.uid
+          && d.createdAt is int && d.updatedAt is int && d.revision is int
+          && (d.attachment == null || (d.attachment is map
+            && d.attachment.keys().hasOnly(['storagePath','contentType','size','hash'])
+            && d.attachment.storagePath is string
+            && d.attachment.storagePath.matches('^families/' + householdId + '/growthRecords/' + recordId + '/image_[a-f0-9]{64}$')
+            && d.attachment.contentType is string && d.attachment.contentType.matches('^image/.*')
+            && d.attachment.size is int && d.attachment.size > 0 && d.attachment.size <= 15728640
+            && d.attachment.hash is string && d.attachment.hash.matches('^[a-f0-9]{64}$')))
+          && (!('importKey' in d) || (d.importKey == recordId && d.importFingerprint is string && d.importFingerprint.matches('^[a-f0-9]{64}$') && d.legacyCreatedAt is int))
+          && (!('deletedAt' in d) || d.deletedAt is int);
+      }
+      function ownsChild(d) {
+        return exists(/databases/$(database)/documents/families/$(householdId)/childLinks/$(d.childKey))
+          && get(/databases/$(database)/documents/families/$(householdId)/childLinks/$(d.childKey)).data.get('removedAt',null) == null
+          && (isFamilyAdult(householdId) || (isMemberOf(householdId) && access(householdId).permission == 'MEMBER' && memberDocOf(householdId).role == 'CHILD' && memberDocOf(householdId).get('childKey', null) == d.childKey));
+      }
+      allow get, list: if isMemberOf(householdId);
+      allow create: if ownsChild(request.resource.data) && recordOk(request.resource.data)
+        && request.resource.data.createdByUid == request.auth.uid && request.resource.data.revision == 1;
+      allow update: if ownsChild(resource.data) && ownsChild(request.resource.data) && recordOk(request.resource.data)
+        && request.resource.data.childKey == resource.data.childKey
+        && request.resource.data.createdByUid == resource.data.createdByUid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.get('importKey', null) == resource.data.get('importKey', null)
+        && request.resource.data.get('importFingerprint', null) == resource.data.get('importFingerprint', null)
+        && request.resource.data.revision == resource.data.revision + 1;
+      allow delete: if false;
+    }
+
+
+    match /placeUsageStats/{id} { allow read: if true; allow write: if false; }
+    // Includes legacy families/{code}, households, all code maps, childAccess,
+    // privateFamilyInvites, familyJoinRequests and familyRateLimits.
+    match /{document=**} { allow read, write: if false; }
+  }
+}

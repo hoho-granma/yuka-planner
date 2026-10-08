@@ -1,0 +1,11 @@
+/* Uses the application's active theme; approval screens share the existing card tone. */
+.fa-card { padding:24px; margin:16px 0; border:1px solid var(--border, #ddd); border-radius:16px; background:var(--surface, #fff); color:var(--text, #24252a); font-size:16px; line-height:1.6; }
+.fa-card h2 { margin:0 0 16px; font-size:20px; }
+.fa-card p { margin:12px 0; }
+.fa-row { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:16px 0; border-bottom:1px solid var(--border, #ddd); }
+.fa-card button, .fa-card select { padding:10px 14px; border:1px solid var(--border, #ddd); border-radius:12px; background:var(--surface, #fff); color:inherit; font:inherit; }
+.fa-card button { cursor:pointer; min-height:44px; }
+.fa-card button[data-fa-action="approve"], .fa-card button[data-fa-action="issueInvite"] { background:var(--c-primary, #ff6a1a); color:#fff; border-color:var(--c-primary, #ff6a1a); }
+.fa-card button:disabled { opacity:.5; cursor:wait; }
+.fa-card label { display:block; }
+[data-fa-notice] { overflow-wrap:anywhere; font-size:16px; }

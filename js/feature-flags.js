@@ -28,5 +28,6 @@
   } catch (e) {
     // 저장소 접근이 막혀도 기본값(ON)을 쓴다
   }
+  if(typeof DBPaths!=="undefined"&&DBPaths.deployment.familyApproval===true){flags.accounts=true;flags.household=true;}
   return flags;
 });

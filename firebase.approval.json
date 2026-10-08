@@ -1,0 +1,6 @@
+{
+  "functions": [{"source": "functions", "codebase": "family-access"}],
+  "firestore": {"rules": "security/firestore.approval.rules"},
+  "storage": {"rules": "security/storage.approval.rules"},
+  "emulators": {"firestore": {"port": 8788}, "functions": {"port": 5002}, "ui": {"enabled": false}}
+}

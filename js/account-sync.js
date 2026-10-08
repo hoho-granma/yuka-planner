@@ -62,6 +62,14 @@
     /** 가입 마무리. user = { uid, displayName }, intent = AccountView.validateSignup 의 intent. */
     async function completeSignup({ user, intent }) {
       const uid = user.uid;
+      if (opts.access) {
+        try {
+          if (intent.joiningCode) return {...await opts.access.requestJoin({code:intent.joiningCode,displayName:intent.displayName}),pending:true};
+          const r=await opts.access.createFamily(intent);
+          if(r.ok)await household.joinHousehold(r.householdId);
+          return {...r,householdCode:r.householdId};
+        } catch(e) {return {ok:false,reason:e.code?.replace("functions/","")||"network",message:e.message};}
+      }
       let acc;
       try {
         acc = await getAccount(uid);
@@ -130,6 +138,7 @@
 
     /** 가족코드를 다시 만든 뒤 내 계정 문서의 코드를 새 코드로 바꾼다(다른 기기 로그인 때 새 코드로 복원되게). */
     async function setHouseholdCode(uid, code) {
+      if(opts.access)return {ok:true}; // Invitation expiry must never replace the account's stable family ID.
       try {
         await adapter.set(pathOf(uid), { householdCode: code, updatedAt: now() }, { merge: true });
         return { ok: true };

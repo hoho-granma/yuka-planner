@@ -31,7 +31,15 @@
     localStorage.removeItem(CODE_KEY);
   }
 
+  const approval = () => typeof DBPaths !== "undefined" && DBPaths.deployment.familyApproval === true;
   async function createFamily(profileData, completedData) {
+    if(approval()) {
+      const api=FamilyAccess.create(),state=await api.status();
+      if(state.status!=="ACTIVE")throw new Error("가족 연결을 확인해 주세요.");
+      const r=await api.createChild({householdId:state.householdId,profile:profileData});
+      if(completedData&&Object.keys(completedData).length)await updateCompleted(r.code,completedData);
+      saveCode(r.code);return r.code;
+    }
     let code = randomCode();
     for (let i = 0; i < 3; i++) {
       const doc = await db.collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families").doc(code).get();
@@ -152,6 +160,11 @@
    * 하위 컬렉션은 쓰지 않는다(v1 구조는 한 문서에 다 들어 있다).
    */
   async function deleteFamily(code) {
+    if(approval()) {
+      const api=FamilyAccess.create(),state=await api.status();
+      if(state.status!=="ACTIVE")throw new Error("가족 연결을 확인해 주세요.");
+      await api.removeChild({householdId:state.householdId,code});return;
+    }
     await db.collection(typeof DBPaths !== "undefined" ? DBPaths.map("families") : "families").doc(String(code).toUpperCase()).delete();
   }
 

@@ -1,0 +1,8 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>가족 승인 화면 검토</title><style>
+body{margin:0;background:#f4f3f1;color:#24252a;font:16px/1.6 system-ui,sans-serif}main{max-width:560px;margin:32px auto;padding:16px}.fa-card{border:1px solid #ddd;border-radius:16px;background:white;padding:24px;margin:16px 0}h1{font-size:24px}h2{font-size:20px}.fa-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px 0;border-bottom:1px solid #eee}button,select{font:inherit;padding:10px 14px;border:1px solid #ddd;border-radius:12px;background:white;color:inherit}button{cursor:pointer}button[data-fa-action=approve],button[data-fa-action=issueInvite]{background:#ff6a1a;color:white;border-color:#ff6a1a}button:disabled{opacity:.5}label{display:block}p{margin:12px 0}
+</style><main><h1>가족 참여 승인 · 화면 검토</h1><p>예시 데이터로 보는 화면입니다. 실제 가족이나 서버에 연결되지 않습니다.</p><div id="pending"></div><div id="management"></div></main><script src="../js/family-access-view.js"></script><script>
+FamilyAccessView.mount(document.getElementById('pending'),{mode:'pending',api:{status:async()=>({status:'PENDING'}),cancelJoin:async()=>({ok:true})}});
+const model={requests:[{uid:'example-dad',label:'아빠',role:'DAD'}],members:[{uid:'example-mom',label:'엄마',role:'MOM',permission:'ADMIN'},{uid:'example-grandma',label:'할머니',role:'GRANDPARENT',permission:'MEMBER'}]};
+const api=Object.fromEntries(['decideJoin','issueInvite','revokeInvite','removeMember','transferAdmin'].map(k=>[k,async()=>({ok:true,code:'DEMO2345'})]));
+FamilyAccessView.mount(document.getElementById('management'),{api,householdId:'example',model});
+</script></html>
