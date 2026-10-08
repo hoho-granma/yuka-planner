@@ -1,7 +1,7 @@
-/* Collection v2 rollout; growth server remains disabled until Storage is ready. */
+/* Collection v2 rollout; family growth server storage enabled after authenticated live checks. */
 (function(root,factory){if(typeof module!=="undefined"&&module.exports)module.exports=factory();else root.DBPaths=factory();})(typeof window!=="undefined"?window:global,function(){
   "use strict";
-  const deployment=Object.freeze({collectionV2:true,growthServer:false});
+  const deployment=Object.freeze({collectionV2:true,growthServer:true});
   function map(path,v2=deployment.collectionV2){
     if(!v2)return path;
     const p=path.split('/');

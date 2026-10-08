@@ -1,0 +1,28 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function account() { return firestore.get(/databases/(default)/documents/accounts/$(request.auth.uid)).data; }
+    function member(familyId) { return firestore.get(/databases/(default)/documents/families/$(familyId)/members/$(account().memberId)).data; }
+    function belongs(familyId) {
+      return request.auth != null && account().householdId == familyId
+        && member(familyId).uid == request.auth.uid && member(familyId).get('deletedAt', null) == null;
+    }
+    function mayUpload(familyId) {
+      let childKey = request.resource.metadata.get('childKey','');
+      return (account().role != 'CHILD' && member(familyId).role in ['MOM','DAD','GRANDPARENT','CAREGIVER','OTHER'])
+        || (member(familyId).role == 'CHILD' && member(familyId).get('childKey',null) == childKey
+          && firestore.exists(/databases/(default)/documents/families/$(familyId)/childLinks/$(childKey))
+          && firestore.get(/databases/(default)/documents/families/$(familyId)/childLinks/$(childKey)).data.get('removedAt',null) == null);
+    }
+    match /families/{familyId}/growthRecords/{recordId}/{fileId} {
+      allow read: if belongs(familyId);
+      // Upload before record commit; child uploads are bound to their live child link.
+      allow create: if belongs(familyId) && mayUpload(familyId)
+        && fileId.matches('^image_[a-f0-9]{64}$')
+        && request.resource.size > 0 && request.resource.size <= 15728640
+        && request.resource.contentType.matches('^image/.*');
+      allow update, delete: if false; // immutable content hash; old attachment is retained
+    }
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}
