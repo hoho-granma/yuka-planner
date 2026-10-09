@@ -220,7 +220,7 @@ body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,
 .hn-detail-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.us-detail:has(.hn-detail-close)>h3 .us-repeat{margin:0!important;vertical-align:middle}
 
 /* Readability: family lists and matched category/input-method typography. */
-.hn-timeline strong,.hn-task-title{font-size:16px!important;line-height:1.5}
+.hn-timeline strong,.hn-task-title{font-size:15px!important;line-height:1.5}
 #selected-day-list .hn-timeline time,#home-body .hn-timeline time{font-size:15px!important}
 .hn-task time{font-size:14px!important}
 .hn-entry{--hn-option-font-size:14px;--hn-option-font-weight:650}

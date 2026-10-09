@@ -79,7 +79,7 @@
         const auto = d.autoCount > 0 ? `<span class="wk-auto">${esc(MSG.autoCount(d.autoCount))}</span>` : "";
         const empty = !user.length && !(d.autoCount > 0) ? `<span class="wk-empty">${esc(MSG.dayEmpty)}</span>` : "";
         const total = user.length + (d.autoCount > 0 ? d.autoCount : 0);
-        return `<button type="button" class="week-col${dow === 0 ? " is-sunday" : dow === 6 ? " is-saturday" : ""}${d.holiday ? " is-holiday" : ""}${d.today ? " today" : ""}${d.selected ? " selected" : ""}" data-wk-date="${esc(d.date)}" aria-label="${esc(`${Number(d.date.slice(5, 7))}월 ${day}일(${DOW[dow]})${d.holiday ? " · " + d.holiday : ""} · 항목 ${total}건`)}"><span class="wk-num">${day}</span>${d.holiday ? `<span class="cal-holiday" title="${esc(d.holiday)}">${esc(d.holiday)}</span>` : ""}${items}${more}${auto}${empty}</button>`;
+        return `<button type="button" class="week-col${dow === 0 ? " is-sunday" : dow === 6 ? " is-saturday" : ""}${d.holiday ? " is-holiday" : ""}${d.today ? " today" : ""}${d.selected ? " selected" : ""}" data-wk-date="${esc(d.date)}" aria-label="${esc(`${Number(d.date.slice(5, 7))}월 ${day}일(${DOW[dow]})${d.holiday ? " · " + d.holiday : ""} · 항목 ${total}건`)}"><span class="wk-num">${day}</span>${items}${more}${auto}${empty}</button>`;
       })
       .join("");
   }

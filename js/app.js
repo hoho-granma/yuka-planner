@@ -2166,7 +2166,6 @@
       cell.innerHTML = dm
         ? `<span class="num">${day}</span><span class="markers chips">${UserScheduleView.cellChips([...userBars.map((occ) => ({ t: "u", occ })), ...periodBars.map((occ) => ({ t: "u", occ, period: true })), ...marks.map((e) => ({ t: "a", title: usAutoTitleOfEvent(e), category: e.category, done: !!completed[e.id] })), ...annivItems.map((a) => ({ t: "a", title: a.title, category: "생활·수유", anniv: true, color: a.color, done: false }))], { links: usLinks(), mode: usSelectionMode(), catColor: us.catColor && !usScheduleColorAvailable(), scheduleSlots: usScheduleColors(), autoColor: usAutoChipColor() })}</span>`
         : `<span class="num">${day}</span><span class="markers">${dotHtml}${moreHtml}</span>`;
-      if (holiday) cell.querySelector(".num").insertAdjacentHTML("afterend", `<span class="cal-holiday" title="${esc(holiday)}">${esc(holiday)}</span>`);
       if (!dm && annivItems.length) { // 2-5: 점 표식 달력(가구 없음)에 계산 일정 점을 더한다(기존 점 마크업은 그대로)
         const mk = cell.querySelector(".markers");
         if (mk) mk.insertAdjacentHTML("beforeend", annivItems.slice(0, Math.max(0, 3 - Math.min(3, userBars.length) - marks.length)).map((a) => `<span class="cal-marker todo" style="background:${a.color || "var(--accent)"}"></span>`).join(""));

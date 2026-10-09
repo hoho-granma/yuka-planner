@@ -82,13 +82,17 @@ body:has(#view-landing.acct-on:not(.hidden)){background:#fff!important}
 #home-body .hn-timeline time{color:#655f70!important}
 #brand-text .hn-house-name{color:#715697!important}
 
-/* One final typography rule for family headings and list titles. */
+/* Shared size for family headings and their home/task list content. */
+:root { --hn-family-list-font-size:15px; }
 #home-body .hn-section-head h3,
 #home-body .hn-timeline strong,
 #home-body .hn-task-title,
+#home-body .hn-timeline time,
+#home-body .hn-task time,
 #hn-family-tasks-tab .hn-section-head h3,
-#hn-family-tasks-tab .hn-task-title {
-  font-size:15px!important;
+#hn-family-tasks-tab .hn-task-title,
+#hn-family-tasks-tab .hn-task time {
+  font-size:var(--hn-family-list-font-size)!important;
   font-weight:700!important;
   line-height:1.5;
 }

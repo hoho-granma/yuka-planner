@@ -75,8 +75,23 @@
 /* Approved open filters: compact rectangles, one subject row. */
 .ei-region-tags{gap:5px;margin:10px 0 12px}
 .ei-region-tags button{border-radius:5px;min-height:36px;padding:7px 9px;font-size:12px}
-.ei-subject-tags{flex-wrap:nowrap;gap:4px;overflow-x:auto;padding:2px 0 5px;max-width:100%;box-sizing:border-box}
-.ei-subject-tags button{flex:0 0 auto;white-space:nowrap;border-radius:5px;padding:7px 4px;font-size:11px;min-height:34px}
-.ei-row-text .ei-kind-tag{display:inline-block;width:fit-content;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:650;line-height:1.5;margin:4px 0 1px}
-.ei-kind-academy{background:#e9e1f3;color:#604584}
-.ei-kind-office{background:#deeee8;color:#316352}
+.ei-subject-tags{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));flex-wrap:nowrap;gap:4px;padding:2px 0 5px;width:100%;max-width:100%;box-sizing:border-box}
+.ei-subject-tags button{min-width:0;width:100%;box-sizing:border-box;white-space:nowrap;border-radius:5px;padding:7px 0;font-size:11px;min-height:34px}
+
+/* Three status actions share one row, including narrow screens. */
+.gr-check-actions{display:grid;grid-template-columns:1.15fr 1.3fr .8fr;gap:5px}
+.gr-check-actions>a,.gr-check-actions>button{display:flex!important;align-items:center;justify-content:center;min-width:0;box-sizing:border-box;padding:10px 2px!important;font-size:11px!important;white-space:nowrap;text-decoration:none}
+
+/* Approved soft list: name and district-level full address, with subject icons. */
+.ei-institution-list{border-radius:16px}
+.ei-interest-row{border:0;border-radius:0;border-bottom:1px solid var(--border,#e3deea)}
+.ei-interest-row:last-child{border-bottom:0}
+.ei-institution-row{padding:17px 12px}
+.ei-row-icon{border-radius:9px;width:34px;height:34px}
+.ei-row-icon.ei-subject-math{background:#eee6f5;color:#715697}
+.ei-row-icon.ei-subject-english{background:#e5eef6;color:#3974a5}
+.ei-row-icon.ei-subject-science{background:#f6efdb;color:#a27b23}
+.ei-row-icon.ei-subject-reading{background:#f0e8df;color:#93684b}
+.ei-row-icon.ei-subject-art{background:#f7e7ec;color:#ae5b6f}
+.ei-row-icon.ei-subject-sport{background:#e4f0e9;color:#398265}
+.ei-row-text small{overflow-wrap:anywhere}
