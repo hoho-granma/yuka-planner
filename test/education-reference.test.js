@@ -21,7 +21,7 @@ test('catalogue filters never turn missing samples into absence of institutions'
   assert.equal(R.search({district:'중원구'}).length,1);
   assert.equal(R.search({query:'분당수내청담'}).length,1);
   const html=V.choice({searchOpen:true,browse:'seongnam',subject:'미술·음악',compared:[],query:'<img src=x onerror=alert(1)>'},{localCatalogue:false});
-  assert.match(html,/이 조건에 맞는 등록 기관이 없어요/);
+  assert.match(html,/현재 조회 자료에서 일치하는 학원을 찾지 못했어요/);
   assert.match(html,/&lt;img/);assert.doesNotMatch(html,/<img src=x/);
   assert.match(html,/현재 접수 가능한 공공 프로그램 살펴보기/);
   assert.match(V.comparison(['J10:36022','J10:3000067743']),/기간·회차·추가비 미확인/);

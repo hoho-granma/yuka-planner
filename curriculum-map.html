@@ -1,0 +1,22 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>학년·학기별 교과 내용</title>
+<style>body{font-family:Arial,'Apple SD Gothic Neo',sans-serif;color:#24252a;margin:0;background:#f4f3f1;line-height:1.7}main{max-width:760px;padding:20px 16px 40px;margin:auto}h1{font-size:22px;margin:6px 0}.note{font-size:12px;color:#666}.bar{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}.bar button{border:1px solid #e5e2dd;background:#fff;border-radius:10px;padding:10px 14px;font:inherit;font-size:13px;cursor:pointer}.bar button[aria-pressed=true]{background:#ffe2d0;font-weight:700;border-color:#ff6a1a}.bar button:disabled{opacity:.45;cursor:default}.card{background:#fff;border:1px solid #e5e2dd;border-radius:16px;padding:16px 18px;margin-bottom:12px}.card h2{font-size:16px;margin:0 0 2px}.type{font-size:11px;color:#777;margin:0 0 8px}ol{list-style:none;padding:0;margin:0}li{display:flex;gap:10px;padding:9px 0;border-top:1px solid #eee;font-size:13px}li b{flex:none;min-width:38px;color:#ff6a1a}li span{flex:1}.tag{flex:none;font-size:11px;background:#ffe2d0;border-radius:8px;padding:2px 7px;align-self:flex-start}.empty{font-size:13px;color:#666}a{color:inherit}</style></head>
+<body><main><h1>학년·학기별 교과 내용</h1><p class="note" id="meta"></p>
+<div class="bar" id="grades" role="group" aria-label="학년"></div><div class="bar" id="terms" role="group" aria-label="학기"></div>
+<p class="note" id="gnote"></p><div id="out"></div>
+<p class="note">‘문항 있음’은 현재 교과 이해확인 문제지가 그 단원과 관련된 영역을 다룬다는 뜻이에요. 단원 전체를 확인한다는 뜻은 아니에요. 학교가 고른 교과서에 따라 달라질 수 있어요.</p></main>
+<script src="js/curriculum-map-data.js"></script>
+<script>
+const M=CurriculumMap,esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const p=new URLSearchParams(location.search);let grade=+p.get('grade')||3,term=+p.get('term')||2;
+document.getElementById('meta').textContent=`${M.curriculum} 교육과정 · 출판사 공개 목차 기준 · ${M.checkedAt} 확인`;
+function render(){
+ document.getElementById('grades').innerHTML=[1,2,3,4,5,6].map(g=>`<button type="button" data-g="${g}" aria-pressed="${g===grade}"${M.grades[g]?'':' disabled'}>${g}학년${M.grades[g]?'':' · 미확인'}</button>`).join('');
+ document.getElementById('terms').innerHTML=[1,2].map(t=>`<button type="button" data-t="${t}" aria-pressed="${t===term}">${t}학기</button>`).join('');
+ const G=M.grades[grade];document.getElementById('gnote').textContent=G?G.note:'';
+ document.getElementById('out').innerHTML=!G?'<p class="empty">이 학년은 아직 확인하지 못했어요.</p>':Object.entries(G.subjects).map(([name,s])=>{
+  const rows=s.terms[term]||s.terms[0]||[];const annual=!s.terms[term]&&s.terms[0];
+  return `<section class="card"><h2>${esc(name)}</h2><p class="type">${esc(s.type)}${annual?' · 학기 구분 없이 1년 단원':''} · <a href="${esc(s.source)}" target="_blank" rel="noopener">출처</a></p><ol>${rows.length?rows.map(r=>`<li><b>${esc(r[0])}</b><span>${esc(r[1])}</span>${r[2]?`<em class="tag" style="font-style:normal">문항 있음 · ${esc(r[2])}</em>`:''}</li>`).join(''):'<li><span>확인한 단원이 없어요.</span></li>'}</ol></section>`}).join('');
+}
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;if(b.dataset.g)grade=+b.dataset.g;if(b.dataset.t)term=+b.dataset.t;render();});
+render();
+</script></body></html>

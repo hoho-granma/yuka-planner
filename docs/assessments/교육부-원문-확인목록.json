@@ -1,0 +1,14 @@
+{
+  "retrievedAt": "2026-10-08",
+  "officialPage": "https://www.moe.go.kr/boardCnts/viewRenew.do?boardID=141&boardSeq=93458&lev=0&m=040401&opType=N&page=1&s=moe",
+  "downloadUrl": "https://www.moe.go.kr/boardCnts/fileDown.do?fileSeq=1512facbda6c234a1641ac7e9c156ca2&m=040401&s=moe",
+  "originalHashes": {
+    "[별책8] 수학과 교육과정.hwp": "aab8eed59ecf244223d04afad75f4cf5ac5085fadcfc3cf52c2f6d54ddfc7856",
+    "[별책7] 사회과 교육과정.hwp": "3815d0c5254d3012026e3a0b6ee36873ec566c47217bb5a660098ec2a82f93d6",
+    "[별책9] 과학과 교육과정.hwp": "d049caa5b3e7420a0505345dc70ca325faf65a18468ba393eec103b44b78c790",
+    "[별책14] 영어과 교육과정.hwp": "0e006d706ba2666ec32135ce2d8e739cd3748764559492e04fb7a3e04b77aeb6",
+    "[별책5] 국어과 교육과정.hwp": "4676c508a0d895447475de5ac6bf7f30c21976eecbe3f721312d8dda4a997b12"
+  },
+  "extractionNote": "HWP 본문 텍스트를 직접 추출하여 선택 코드 확인. 제어 문자로 표 첫 문장 일부 훼손 가능. 원문 재대조 필요.",
+  "latestAmendmentReview": "pending"
+}

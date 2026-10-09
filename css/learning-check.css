@@ -47,3 +47,15 @@
 
 .ei-page .ei-review-link{display:inline-block;margin-top:14px;padding:10px 13px;border:1px solid #ddd6e6;border-radius:8px;background:#eeebf2;color:#716092;font-size:14px;font-weight:600;text-decoration:none}
 .ei-table .ei-review-link{font-size:12px;padding:7px 9px}
+
+.ei-region-tags{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 16px}
+.ei-region-tags>span{font-size:14px;font-weight:600;margin-right:2px}
+.ei-region-tags button{min-height:44px;padding:8px 14px;border:1px solid var(--border,#ddd);border-radius:22px;background:var(--card,#fff);color:var(--fg,#24252a);font:inherit;font-size:14px;cursor:pointer}
+.ei-region-tags button[aria-pressed="true"]{background:var(--accent-soft,#ffe2d0);border-color:var(--accent,#ff6a1a);font-weight:700}
+.ei-detail-section{padding:16px 0;border-top:1px solid var(--border,#ddd)}
+.ei-detail-section h4{margin:0 0 10px;font-size:16px}
+.ei-fee-text{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;font-size:15px}
+.ei-empty-guide h3{font-size:16px}
+.ei-empty-guide p{line-height:1.7}
+.ei-opinion-group h5{margin:12px 0 8px;font-size:14px;font-weight:700}
+.ei-opinion-context{display:block;margin-top:5px;font-size:13px;color:var(--text-secondary,#666);line-height:1.5}

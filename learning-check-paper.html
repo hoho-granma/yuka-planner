@@ -1,5 +1,121 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>교과 이해 확인 · 문제지</title><style>body{font-family:Arial,'Apple SD Gothic Neo',sans-serif;color:#24252a;margin:0;background:#f4f3f1;line-height:1.7}main{max-width:800px;padding:24px;margin:auto}.toolbar{display:flex;gap:10px;padding:14px;background:white;position:sticky;top:0}button,select{font:inherit;padding:10px;border:1px solid #ddd;border-radius:10px;background:#fff}.question{background:white;border:1px solid #ddd;border-radius:14px;padding:20px;margin:20px 0}.answer{height:160px;border-bottom:1px solid #ddd;margin-top:15px;background:repeating-linear-gradient(white,white 31px,#eee 32px)}.notice{font-size:12px;color:#666}.prompt{white-space:pre-wrap}h3{font-size:16px}@media print{@page{size:A4;margin:16mm}body{background:white}main{padding:0}.toolbar{display:none}.question{break-inside:avoid;border:0;border-bottom:1px solid #ddd;padding:0 0 10mm}.answer{height:45mm}}</style></head><body><div class="toolbar"><select id="subject" aria-label="과목"><option>국어</option><option>수학</option><option>사회</option><option>영어</option><option>과학</option></select><button id="print">문제지 인쇄</button></div><main><h1 id="title"></h1><p>이름 __________　수행 날짜 __________</p><p class="notice">공립 3~4학년군 일부 교육과정 참고 · 교사 검토 전 자체 문항 · 전체 학년 수준을 판정하는 검사가 아닙니다.</p><div id="questions"></div></main><script src="js/learning-check-bank.js?v=1"></script><script>
-const escapeText=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const select=document.getElementById('subject');const requested=new URLSearchParams(location.search).get('subject');if([...select.options].some(o=>o.value===requested))select.value=requested;
-function render(){document.getElementById('title').textContent=select.value+' · 교과 이해 확인';document.getElementById('questions').innerHTML=LearningCheckBank.items.filter(q=>q.subject===select.value&&q.level==='reference').map((q,n)=>`<article class="question"><h3>${n+1}. ${escapeText(q.area)}</h3><p class="prompt">${escapeText(q.prompt)}</p><div class="answer"></div></article>`).join('');}select.onchange=render;document.getElementById('print').onclick=()=>window.print();render();
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>교과 이해 확인 · 문제지</title>
+<style>
+:root{--ink:#111;--mute:#555;--line:#bbb;--acc:#ff6a1a;--bg:#f4f3f1;--fs:12pt}
+*{box-sizing:border-box}
+body{font-family:"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;color:var(--ink);margin:0;background:var(--bg);line-height:1.65;font-size:var(--fs);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.toolbar{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;background:#fff;border-bottom:1px solid #ddd;font-size:13px}
+.toolbar label{display:flex;gap:6px;align-items:center}
+button,select{font:inherit;font-size:13px;padding:8px 10px;border:1px solid #ccc;border-radius:8px;background:#fff}
+#print{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+.hint{flex-basis:100%;color:var(--mute);font-size:12px;margin:0}
+main{max-width:794px;margin:16px auto;padding:0 12px 40px}
+.sheet{background:#fff;border:1px solid #ddd;border-radius:6px;padding:14mm 14mm 12mm;margin-bottom:16px}
+.sheet+.sheet{break-before:page}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:8px}
+.head h1{font-size:19pt;margin:0;letter-spacing:-.03em}
+.head small{font-size:9.5pt;color:var(--mute)}
+.fill{display:flex;flex-wrap:wrap;gap:6mm;font-size:11pt;margin:4px 0 8px}
+.fill span{flex:1;min-width:48mm;border-bottom:1px solid var(--ink);padding-bottom:1px;white-space:nowrap}
+.notice{font-size:9pt;color:var(--mute);margin:0 0 8px}
+.q{break-inside:avoid;page-break-inside:avoid;border-top:1px solid var(--line);padding:8px 0 4px;margin-top:6px}
+.q:first-of-type{border-top:0}
+.qh{display:flex;gap:8px;align-items:baseline}
+.no{flex:none;min-width:7mm;height:7mm;border:1.5px solid var(--ink);border-radius:50%;display:inline-grid;place-items:center;font-weight:700;font-size:11pt}
+.qh h2{font-size:12.5pt;margin:0}
+.unit{font-size:9pt;color:var(--mute);margin:0 0 0 2px}
+.tag{font-size:8.5pt;border:1px solid var(--ink);border-radius:4px;padding:0 5px;margin-left:6px;white-space:nowrap}
+.prompt{white-space:pre-wrap;margin:6px 0 6px 0;overflow-wrap:anywhere}
+.ans{border:1px solid var(--line);border-radius:4px;margin-top:6px}
+.ans.lines{height:38mm;background:repeating-linear-gradient(#fff 0,#fff 9mm,#ccc 9mm,#ccc calc(9mm + .3mm))}
+.ans.grid{height:56mm;background-image:linear-gradient(#ddd .3mm,transparent .3mm),linear-gradient(90deg,#ddd .3mm,transparent .3mm);background-size:6mm 6mm}
+.ans.rec{height:32mm;padding:2mm 3mm;font-size:9.5pt;color:var(--mute)}
+.ans.rec.tall{height:40mm}
+.ans.rec.short{height:22mm}
+.pm{display:grid;gap:3px;font-size:9.5pt;margin:6px 0 2px}
+.pm div{display:flex;flex-wrap:wrap;gap:3px 10px}
+.pm b{min-width:19mm;font-weight:700}
+.bx{display:inline-block;width:3.2mm;height:3.2mm;border:1px solid var(--ink);margin-right:3px;vertical-align:-.3mm}
+.crit{font-size:10pt;border-left:3px solid var(--ink);padding:2px 0 2px 8px;margin:4px 0}
+.crit p{margin:2px 0}
+.foot{margin-top:10px;font-size:8.5pt;color:var(--mute);border-top:1px solid var(--line);padding-top:4px}
+@media (max-width:640px){.sheet{padding:12px}.fill span{min-width:40%}}
+@media print{
+ @page{size:A4;margin:12mm 13mm}
+ body{background:#fff;font-size:11.5pt}
+ .toolbar{display:none}
+ main{max-width:none;margin:0;padding:0}
+ .sheet{border:0;border-radius:0;padding:0;margin:0}
+ .no{border-width:1.2pt}
+ .ans.lines{height:30mm}.ans.grid{height:40mm}.ans.rec{height:24mm}.ans.rec.tall{height:30mm}.ans.rec.short{height:18mm}.q{padding:6px 0 2px;margin-top:4px}
+}
+
+/* 압축(2단) 인쇄 */
+.cp{background:#fff;border:1px solid #ddd;border-radius:6px;padding:12mm 12mm 10mm;margin-bottom:16px}
+.cp h1{font-size:15pt;margin:0 0 3px;letter-spacing:-.02em}
+.cp .meta{font-size:8.5pt;line-height:1.5;margin:0 0 3px}
+.cp .fill{font-size:9.5pt;margin:4px 0 6px;gap:5mm}.cp .fill span{min-width:36mm}
+.cols{column-count:2;column-gap:8mm;margin-top:6px}
+.cols h2.sec{font-size:11.5pt;margin:8px 0 4px;padding-bottom:2px;border-bottom:1.5px solid var(--ink);break-after:avoid;break-inside:avoid;column-span:none}
+.cols h2.sec small{font-weight:400;font-size:8pt;color:var(--mute);margin-left:6px}
+.cq{break-inside:avoid;page-break-inside:avoid;border:1px solid var(--ink);border-radius:2px;padding:2mm 2.5mm 1.5mm;margin:0 0 3mm;font-size:9.5pt;line-height:1.5}
+.cq h3{font-size:10.5pt;margin:0 0 1px;display:flex;gap:5px;align-items:baseline}
+.cq h3 .id{font-size:8.5pt;font-weight:700;border:1px solid var(--ink);border-radius:3px;padding:0 4px;flex:none}
+.cq .pr{white-space:pre-wrap;margin:2px 0;overflow-wrap:anywhere}
+.cq .wr{border-bottom:1px solid #999;height:7mm}
+.cq .wr.two{height:13mm;background:repeating-linear-gradient(#fff 0,#fff 6mm,#999 6mm,#999 calc(6mm + .25mm))}
+.cq .ck{font-size:7.6pt;letter-spacing:-.02em;white-space:nowrap;border-top:1px solid #999;margin-top:2mm;padding-top:1mm;line-height:1.6}
+.cq .cr{font-size:8.5pt;border-left:2px solid var(--ink);padding-left:5px;margin:2px 0;color:#222}
+.cq .tag{font-size:7.5pt;padding:0 3px;margin-left:3px}
+@media print{.cp{border:0;border-radius:0;padding:0;margin:0}.cols{margin-top:4px}}
+</style></head><body>
+<div class="toolbar">
+ <button id="close" type="button" aria-label="문제지 닫기">← 닫기</button>
+ <label>과목 <select id="subject" aria-label="과목"><option>국어</option><option>수학</option><option>사회</option><option>영어</option><option>과학</option><option value="전체">전체 과목</option></select></label>
+ <label>배치 <select id="layout" aria-label="배치"><option value="compact">압축 2단</option><option value="full">넉넉한 칸</option></select></label>
+ <label>종류 <select id="mode" aria-label="종류"><option value="child">아이용 문제지</option><option value="parent">부모용 기록·기준표</option></select></label>
+ <label>글자 <select id="size" aria-label="글자 크기"><option value="11.5pt">보통</option><option value="13pt">크게</option></select></label>
+ <button id="print" type="button">인쇄</button>
+ <p class="hint">A4 세로 · 흑백 인쇄에 맞춤. 압축 2단은 답을 별도 종이에 쓰는 방식이라 종이를 아껴요(전체 과목 약 7쪽). 인쇄 창에서 “배율 100%”, “머리글/바닥글 끄기”를 선택하세요. 아이용은 정답 기준이 없고, 부모용에 확인 기준과 기록 칸이 있어요.</p>
+</div>
+<main id="out"></main>
+<script src="js/learning-check-bank.js?v=3"></script>
+<script>
+const B=LearningCheckBank,SUBJ=['국어','수학','사회','영어','과학'];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id),sel=$('subject'),mode=$('mode'),size=$('size'),layout=$('layout');
+const P=new URLSearchParams(location.search);
+if([...sel.options].some(o=>o.value===P.get('subject')))sel.value=P.get('subject');
+if(P.get('mode')==='parent')mode.value='parent';if(P.get('layout')==='full')layout.value='full';if(!P.get('subject'))sel.value='전체';
+const oral=q=>q.subject==='영어'||/끊어 읽기/.test(q.area)||/소리와 떨림/.test(q.area)&&/목에 손/.test(q.prompt);
+const kind=q=>oral(q)?'rec tall':q.subject==='수학'?'grid':q.subject==='사회'||q.subject==='과학'||q.subject==='국어'?'lines':'lines';
+const box=q=>kind(q)==='lines'?'<div class="ans lines" aria-label="답 쓰는 곳"></div>':kind(q)==='grid'?'<div class="ans grid" aria-label="계산하는 곳"></div>':'<div class="ans rec">아이가 한 말과 행동을 그대로 적어 주세요.</div>';
+const items=s=>B.items.filter(q=>q.subject===s&&q.level==='reference');
+function parentBlock(q){return `<div class="crit"><p><b>확인 기준</b> ${esc(q.expected)}</p><p><b>관찰</b> ${esc(q.observe)}</p></div>
+<div class="pm"><div><b>받은 도움</b><span><i class="bx"></i>혼자</span><span><i class="bx"></i>문제만 읽어 줌</span><span><i class="bx"></i>단어 뜻 설명</span><span><i class="bx"></i>풀이 도움</span><span><i class="bx"></i>답 본 뒤 다시</span></div>
+<div><b>상황</b><span><i class="bx"></i>배운 적 있음</span><span><i class="bx"></i>처음 접함</span><span><i class="bx"></i>용어가 어려움</span></div>
+<div><b>부모 관찰</b><span><i class="bx"></i>기준에 맞음</span><span><i class="bx"></i>더 확인</span><span><i class="bx"></i>아직</span></div></div>`}
+function sheet(s,m){
+ const qs=items(s);let last='';
+ const body=qs.map((q,i)=>{const nth=qs.filter(x=>x.area===q.area).indexOf(q);const head=q.area!==last?(last=q.area,`<p class="unit">${esc(q.unit)}</p>`):'';
+  return `<section class="q">${head}<div class="qh"><span class="no">${i+1}</span><h2>${esc(q.area)}${oral(q)?'<span class="tag">부모와 함께</span>':''}<span class="tag">${'AB'[nth]}</span></h2></div><div class="prompt">${esc(q.prompt)}</div>${m==='parent'?parentBlock(q)+'<div class="ans rec short">아이의 답·설명을 그대로 적어 주세요.</div>':box(q)}</section>`}).join('');
+ return `<article class="sheet"><div class="head"><h1>${s} · 교과 이해 확인${m==='parent'?' (부모용)':''}</h1><small>${esc(B.version)} · 초3 참고 문항</small></div>
+ <div class="fill"><span>이름</span><span>수행 날짜</span>${m==='parent'?'<span>기록한 사람</span>':''}</div>
+ <p class="notice">2022 개정 초3 교과서 단원을 참고한 부분 점검입니다. 모르는 문제는 건너뛰어도 되고, 점수나 학년 수준을 정하지 않아요. 시간은 재지 않습니다.</p>
+ ${body}<p class="foot">교사 검토 전 자체 문항 · 단원은 미래엔 교과서 기준(학교 출판사에 따라 다를 수 있음) · 인쇄 ${esc(B.createdAt)}</p></article>`}
+
+function compact(list,m){
+ const sections=list.map(s=>{const qs=items(s);let last='';return qs.map((q,i)=>{const nth=qs.filter(x=>x.area===q.area).indexOf(q);let head='';
+  if(!last){head=`<h2 class="sec">${s}<small>${esc(qs[0].unit.split(' ')[0])} 중심</small></h2>`;}last=q.area;
+  const wr=oral(q)?'':q.subject==='수학'||q.subject==='국어'&&/쓰기|고쳐/.test(q.area)?'<div class="wr two"></div>':'<div class="wr"></div>';
+  return head+`<div class="cq"><h3><span class="id">${s.slice(0,1)}${String(i+1).padStart(2,'0')}${'AB'[nth]}</span>${esc(q.area)}${oral(q)?'<span class="tag">부모와 함께</span>':''}</h3><div class="unit">${esc(q.unit)}</div><div class="pr">${esc(q.prompt)}</div>${m==='parent'?`<div class="cr"><b>기준</b> ${esc(q.expected)}</div>`:''}${wr}<div class="ck">도움: <i class="bx"></i>혼자 <i class="bx"></i>읽어 줌 <i class="bx"></i>뜻 설명 <i class="bx"></i>풀이 <i class="bx"></i>답 본 뒤 <i class="bx"></i>처음 접함<br>관찰: <i class="bx"></i>기준에 맞음 <i class="bx"></i>더 확인 <i class="bx"></i>아직 · 메모 ____________</div></div>`}).join('')}).join('');
+ return `<article class="cp"><h1>초3 교과 이해 확인 | ${m==='parent'?'부모용 기록·기준표':'아이용 질문지'} | 압축 인쇄용</h1>
+ <p class="meta">2022 개정 초3 교과서 단원 기준 · 총 ${list.reduce((n,s)=>n+items(s).length,0)}문항 · ${esc(B.version)}</p>
+ <p class="meta"><b>압축 인쇄:</b> A4 · 2단 · 인쇄 배율 100% 권장. 답과 계산은 별도 종이에 적거나 말로 확인하세요. 한 번에 배운 단원의 3~6문항만 진행하세요. 모르는 문제는 건너뛰어도 되고 점수·학년 수준을 정하지 않아요. 시간은 재지 않습니다.</p>
+ <div class="fill"><span>이름</span><span>날짜</span><span>학교 교과서·배운 단원</span></div>
+ <div class="cols">${sections}</div><p class="foot">교사 검토 전 자체 문항 · 단원은 미래엔 교과서 기준(학교 출판사에 따라 다를 수 있음) · ${esc(B.createdAt)}</p></article>`}
+function render(){document.documentElement.style.setProperty('--fs',size.value);const list=sel.value==='전체'?SUBJ:[sel.value];
+ document.title=(sel.value==='전체'?'전체 과목':sel.value)+' · 교과 이해 확인 · '+(mode.value==='parent'?'부모용':'문제지');
+ $('out').innerHTML=layout.value==='compact'?compact(list,mode.value):list.map(s=>sheet(s,mode.value)).join('')}
+sel.onchange=mode.onchange=size.onchange=layout.onchange=render;$('print').onclick=()=>window.print();
+$('close').onclick=()=>{window.close();setTimeout(()=>{if(!window.closed){if(history.length>1)history.back();else location.href='./';}},100);};render();
 </script></body></html>

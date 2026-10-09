@@ -1,0 +1,92 @@
+{
+  "verificationDate": "2026-10-09",
+  "scope": "공식 무키 5건 샘플 2지역. 전체 수집·운영 적재가 아님",
+  "samples": [
+    {
+      "file": "neis-guro.json",
+      "source": "https://open.neis.go.kr/hub/acaInsTiInfo",
+      "requestParameters": {
+        "Type": "json",
+        "pIndex": 1,
+        "pSize": 5,
+        "ATPT_OFCDC_SC_CODE": "B10",
+        "ADMST_ZONE_NM": "구로구"
+      },
+      "rowCount": 5,
+      "reportedTotal": 790,
+      "fields": [
+        "ATPT_OFCDC_SC_CODE",
+        "ATPT_OFCDC_SC_NM",
+        "ADMST_ZONE_NM",
+        "ACA_INSTI_SC_NM",
+        "ACA_ASNUM",
+        "ACA_NM",
+        "ESTBL_YMD",
+        "REG_YMD",
+        "REG_STTUS_NM",
+        "CAA_BEGIN_YMD",
+        "CAA_END_YMD",
+        "TOFOR_SMTOT",
+        "DTM_RCPTN_ABLTY_NMPR_SMTOT",
+        "REALM_SC_NM",
+        "LE_ORD_NM",
+        "LE_CRSE_LIST_NM",
+        "LE_CRSE_NM",
+        "PSNBY_THCC_CNTNT",
+        "THCC_OTHBC_YN",
+        "BRHS_ACA_YN",
+        "FA_RDNMA",
+        "FA_RDNDA",
+        "FA_RDNZC",
+        "FA_TELNO",
+        "LOAD_DTM"
+      ],
+      "withFeeText": 4,
+      "sha256": "6ba35feaedae380c5d037d1ab50810485868ba0066425fb6fe59f0bdbf408afe",
+      "capturedFileMtimeUtc": "2026-10-09T02:29:18.145414+00:00"
+    },
+    {
+      "file": "neis-seongnam.json",
+      "source": "https://open.neis.go.kr/hub/acaInsTiInfo",
+      "requestParameters": {
+        "Type": "json",
+        "pIndex": 1,
+        "pSize": 5,
+        "ATPT_OFCDC_SC_CODE": "J10",
+        "ADMST_ZONE_NM": "성남시"
+      },
+      "rowCount": 5,
+      "reportedTotal": 3309,
+      "fields": [
+        "ATPT_OFCDC_SC_CODE",
+        "ATPT_OFCDC_SC_NM",
+        "ADMST_ZONE_NM",
+        "ACA_INSTI_SC_NM",
+        "ACA_ASNUM",
+        "ACA_NM",
+        "ESTBL_YMD",
+        "REG_YMD",
+        "REG_STTUS_NM",
+        "CAA_BEGIN_YMD",
+        "CAA_END_YMD",
+        "TOFOR_SMTOT",
+        "DTM_RCPTN_ABLTY_NMPR_SMTOT",
+        "REALM_SC_NM",
+        "LE_ORD_NM",
+        "LE_CRSE_LIST_NM",
+        "LE_CRSE_NM",
+        "PSNBY_THCC_CNTNT",
+        "THCC_OTHBC_YN",
+        "BRHS_ACA_YN",
+        "FA_RDNMA",
+        "FA_RDNDA",
+        "FA_RDNZC",
+        "FA_TELNO",
+        "LOAD_DTM"
+      ],
+      "withFeeText": 4,
+      "sha256": "390d11b606a3be470612ced16cd4f14f9feaec1baeace623d34097034f251d68",
+      "capturedFileMtimeUtc": "2026-10-09T02:29:18.018883+00:00"
+    }
+  ]
+}

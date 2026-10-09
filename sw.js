@@ -30,6 +30,8 @@ const SHELL_ASSETS = [
   "./js/education-info.js",
   "./js/education-interests.js",
   "./learning-check-paper.html",
+  "./curriculum-map.html",
+  "./js/curriculum-map-data.js",
   "./js/education-reference.js",
   "./js/education-reference-view.js",
   "./js/growth-learning-view.js",
