@@ -94,5 +94,7 @@ body:has(#view-landing.acct-on:not(.hidden)){background:#fff!important}
 #hn-family-tasks-tab .hn-task time {
   font-size:var(--hn-family-list-font-size)!important;
   font-weight:700!important;
+  font-family:inherit!important;
+  letter-spacing:normal;
   line-height:1.5;
 }

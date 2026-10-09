@@ -17,7 +17,7 @@ test('directory result from a disposed child screen cannot replace the next chil
  const click=data=>old.onclick({target:{closest:()=>({dataset:data})}});const pending=click({ei:'tab',tab:'choice'});cleanup();const next={innerHTML:''};E.mount(next,{grade:1});const before=next.innerHTML;resolve({items:[{name:'OLD_PRIVATE_NAME'}],checkedAt:'2026-10-08'});await pending;assert.equal(next.innerHTML,before);assert.doesNotMatch(next.innerHTML,/OLD_PRIVATE_NAME/);E.unmount();
 });
 test('choice auto-loads once with the profile ward and the toggle preserves filters',async()=>{
- const E=require('../js/education-info');let calls=0;const host={innerHTML:''};E.mount(host,{provinceName:'경기도',district:'성남시',gu:'분당구',grade:3,directoryReader:async()=>{calls++;return {checkedAt:'2026-10-08',items:[{id:'J10:100',name:'분당기관',course:'영어',address:'성남시 분당구'},{id:'J10:101',name:'수정기관',course:'영어',address:'성남시 수정구'}]};}});
+ const E=require('../js/education-info');let calls=0;const host={innerHTML:''};E.mount(host,{provinceName:'경기도',district:'성남시',gu:'분당구',grade:3,directoryReader:async()=>{calls++;return {checkedAt:'2026-10-08',items:[{id:'J10:100',name:'분당기관',institutionType:'학원',course:'영어',address:'성남시 분당구'},{id:'J10:101',name:'수정기관',institutionType:'학원',course:'영어',address:'성남시 수정구'}]};}});
  const click=d=>host.onclick({target:{closest:()=>({dataset:d})}});await click({ei:'tab',tab:'choice'});
  assert.equal(calls,1);assert.match(host.innerHTML,/data-district="분당구" aria-pressed="true"/);assert.match(host.innerHTML,/분당기관/);assert.doesNotMatch(host.innerHTML,/수정기관|전체 기관 불러오기|성남시 전체 등록 기관/);
  await click({ei:'collection',saved:'true'});await click({ei:'collection',saved:'false'});assert.match(host.innerHTML,/data-district="분당구" aria-pressed="true"/);await click({ei:'tab',tab:'trend'});await click({ei:'tab',tab:'choice'});assert.equal(calls,1);E.unmount();
@@ -85,4 +85,43 @@ test('official Bundang research roster tracks all academies and never counts pen
  for(const [status,count]of Object.entries(roster.counts)){if(status==='total')assert.equal(count,roster.items.length);else assert.equal(count,roster.items.filter(i=>i.status===status).length);}
  for(const r of roster.items.filter(i=>i.status==='verified_cafe'))assert.ok(r.sources.length&&r.opinions.length&&r.checkedAt);
  assert.equal(roster.items.find(i=>i.name==='미금컴퓨터보습학원').status,'matching_pending');
+});
+
+test('sports names classify generic-course institutions without classifying unrelated names',async()=>{
+ const E=require('../js/education-info'),host={innerHTML:''};
+ E.mount(host,{grade:2,directoryReader:async()=>({checkedAt:'2026-10-09',items:[
+ {id:'sport1',name:'판교 줄넘기학원',course:'기타',address:'성남시 분당구 판교로 1'},
+ {id:'sport2',name:'백현 태권도',course:'기타',address:'성남시 분당구 판교로 2'},
+ {id:'math1',name:'판교 수학학원',course:'수학',address:'성남시 분당구 판교로 3'}]})});
+ const click=dataset=>host.onclick({target:{closest:()=>({dataset})}});
+ await click({ei:'tab',tab:'choice'});await click({ei:'filter-subject',subject:'체육·줄넘기'});
+ assert.match(host.innerHTML,/판교 줄넘기학원/);assert.match(host.innerHTML,/백현 태권도/);assert.doesNotMatch(host.innerHTML,/판교 수학학원|수영쌤 영어학원/);E.unmount();
+});
+
+test('expanded sports and named math use stable icons across all and subject views',async()=>{
+ const E=require('../js/education-info'),host={innerHTML:''};
+ const sports=['태권도','줄넘기','주짓수','유도','검도','합기도','복싱','수영','축구','클라이밍'];
+ const items=sports.map((sport,n)=>({id:'expanded'+n,name:'판교 '+sport+'교습소',course:'기타',address:'성남시 분당구 판교로 1'}));
+ items.push({id:'mixed-math',name:'판교 수학학원',course:'영어 수학',address:'성남시 분당구 판교로 2'}, {id:'non-sport',name:'수영쌤 영어학원',course:'영어',address:'성남시 분당구 판교로 3'});
+ E.mount(host,{grade:2,directoryReader:async()=>({checkedAt:'2026-10-09',items})});
+ const click=dataset=>host.onclick({target:{closest:()=>({dataset})}});
+ await click({ei:'tab',tab:'choice'});
+ const icon=()=>host.innerHTML.match(/data-id="mixed-math">([\s\S]*?)<span class="ei-row-text">/)[1];
+ const allIcon=icon();assert.match(allIcon,/ei-subject-math/);
+ await click({ei:'filter-subject',subject:'수학'});assert.equal(icon(),allIcon);
+ await click({ei:'filter-subject',subject:'체육·줄넘기'});
+ for(const sport of sports)assert.ok(host.innerHTML.includes('판교 '+sport+'교습소'));
+ assert.doesNotMatch(host.innerHTML,/판교 수학학원|수영쌤 영어학원/);E.unmount();
+});
+
+test('grade three defaults to academy and kind toggle preserves art filter with distinct icons',async()=>{
+ const E=require('../js/education-info'),host={innerHTML:''};
+ E.mount(host,{grade:3,directoryReader:async()=>({checkedAt:'2026-10-09',items:[
+ {id:'art',name:'그림 미술학원',institutionType:'학원',course:'미술',address:'성남시 분당구 판교로'},
+ {id:'music',name:'피아노 음악학원',institutionType:'학원',course:'음악',address:'성남시 분당구 판교로'},
+ {id:'office',name:'피아노 교습소',institutionType:'교습소',course:'음악',address:'성남시 분당구 판교로'}]})});
+ const click=dataset=>host.onclick({target:{closest:()=>({dataset})}});
+ await click({ei:'tab',tab:'choice'});assert.match(host.innerHTML,/data-kind="학원" aria-pressed="true"/);assert.doesNotMatch(host.innerHTML,/피아노 교습소/);
+ await click({ei:'filter-subject',subject:'미술·음악'});assert.match(host.innerHTML,/ei-subject-art/);assert.match(host.innerHTML,/ei-subject-music/);
+ await click({ei:'institution-kind',kind:'교습소'});assert.match(host.innerHTML,/피아노 교습소/);assert.doesNotMatch(host.innerHTML,/그림 미술학원|피아노 음악학원/);assert.match(host.innerHTML,/data-subject="미술·음악" aria-pressed="true"/);E.unmount();
 });

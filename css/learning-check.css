@@ -95,3 +95,11 @@
 .ei-row-icon.ei-subject-art{background:#f7e7ec;color:#ae5b6f}
 .ei-row-icon.ei-subject-sport{background:#e4f0e9;color:#398265}
 .ei-row-text small{overflow-wrap:anywhere}
+
+.ei-row-icon.ei-subject-music{background:#f0e7f5;color:#8760a7}
+.ei-kind-toggle{display:flex;gap:0;margin-left:auto;border:1px solid var(--border,#ddd7e4);border-radius:5px;overflow:hidden;flex-shrink:0}
+.ei-region-tags .ei-kind-toggle button{border:0;border-radius:0;padding:7px 5px;font-size:11px;min-height:34px}
+.ei-kind-toggle button[aria-pressed="true"]{background:var(--accent,#715697);color:var(--on-accent,#fff)}
+@media(max-width:390px){.ei-region-tags{gap:3px}.ei-region-tags>span{font-size:11px}.ei-region-tags>button{padding:7px 4px;font-size:11px}}
+
+.ei-page button[data-ei="directory-more"]{display:block;width:100%;margin:16px auto;padding:12px 8px;border:0!important;background:transparent!important;text-align:center;font-size:15px!important;font-weight:600;color:var(--accent,#715697)}
