@@ -129,11 +129,16 @@ function pipeline(raw, children) { // 앱(capParseRead)과 같은 순서: 정리
     const d = PV.renderState("download", { percent: 42, bytes: 5751155 }); assert.ok(d.includes("약 6MB") && d.includes("와이파이") && /aria-valuenow="42"/.test(d) && /width:42%/.test(d));
     assert.ok(PV.renderState("unparsed", { rawText: "읽은 글" }).includes("규칙으로 분석하지 못했어요") && PV.renderState("unparsed", { rawText: "읽은 글" }).includes("읽은 글 보기 ›"));
   });
-  await test("AI 보강은 자리만: 화면 어디에도 AI·자동 보정 문구가 없고, parseWithAI 는 호출해도 네트워크 없이 not-enabled", async () => {
+  await test("사진 상태 화면은 자동 AI 처리를 암시하지 않고, 메시지 AI는 비로그인 호출을 차단한다", async () => {
     const all = ["download", "reading", "readFail", "unparsed", "downloadFail", "unavailable"].map((k) => PV.renderState(k, { rawText: "x" })).join("") + PV.renderMenu();
     assert.ok(!/\bAI\b|인공지능|자동 보정/.test(all));
-    assert.strictEqual(AI.enabled(), false); assert.deepStrictEqual(await AI.parseWithAI("x", new Date(), {}), { ok: false, reason: "not-enabled" });
-    assert.ok(!/fetch\(|XMLHttpRequest|sendBeacon/.test(read("js/capture/ai-parser.js").replace(/\/\*[\s\S]*?\*\//, "")));
+    const originalFetch = global.fetch; let calls = 0;
+    try {
+      global.fetch = async () => { calls++; throw Error('unexpected network call'); };
+      assert.strictEqual(AI.enabled(), true);
+      assert.strictEqual((await AI.parseWithAI("x", new Date(), {})).reason, "unauthenticated");
+      assert.strictEqual(calls, 0);
+    } finally { global.fetch = originalFetch; }
   });
 
   console.log("배포·번들");

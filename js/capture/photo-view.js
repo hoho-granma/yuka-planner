@@ -44,10 +44,10 @@
   const mbText = (bytes) => Math.max(1, Math.round((Number(bytes) || 0) / 1000000));
 
   /** 입력 방법 4개를 한 줄로 표시한다. 기본 선택은 사진 불러오기. */
-  function renderMenu(selected) {
+  function renderMenu(selected, options = {}) {
     const sel = selected || "gallery";
     const tile = (id, label, sub) => `<button type="button" class="cap-tile${sel === id ? " active" : ""}" data-cap-menu="${id}" aria-pressed="${sel === id ? "true" : "false"}" aria-label="${esc(label)}">${ICON[id]}<span class="cap-tile-t"><b>${esc(label)}</b><small>${esc(sub)}</small></span></button>`;
-    return `<div class="cap-menu" role="group" aria-label="${esc(MSG.menuAria)}">${tile("gallery", MSG.gallery, MSG.gallerySub)}${tile("paste", MSG.paste, MSG.pasteSub)}${tile("voice", MSG.voice, MSG.voiceSub)}${tile("direct", MSG.direct, MSG.directSub)}</div>`;
+    return `<div class="cap-menu" role="group" aria-label="${esc(MSG.menuAria)}">${tile("gallery", MSG.gallery, MSG.gallerySub)}${tile("paste", MSG.paste, MSG.pasteSub)}${options.voiceEnabled === false ? '' : tile("voice", MSG.voice, MSG.voiceSub)}${tile("direct", MSG.direct, MSG.directSub)}</div>`;
   }
 
   const continueBtns = (primary, pasteAttr) => {

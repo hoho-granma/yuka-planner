@@ -14,7 +14,7 @@ test("5칩 3+2: 6칸 그리드, 윗줄 각 2칸·아랫줄 각 3칸, 세로형 6
 test("두 폼(g13·기존)이 같은 renderMenu 한 곳(capInjectEntry)을 쓴다 — 5칩, 기본 gallery, 라벨 사용자 문구 그대로", () => {
   assert.strictEqual((APP.match(/CapturePhotoView\.renderMenu\(/g) || []).length >= 1, true);
   const i = APP.indexOf("function capInjectEntry()"), fn = APP.slice(i, APP.indexOf("\n  }\n", i));
-  assert.ok(fn.includes('renderMenu(us.form.capInputMode || "gallery")') && /usShowForm = function usShowForm\(\)/.test(APP) && fn.indexOf("usShowFormBase") < 0);
+  assert.ok(fn.includes('renderMenu(us.form.capInputMode || "gallery", { voiceEnabled: VOICE_INPUT_ENABLED })') && /usShowForm = function usShowForm\(\)/.test(APP) && fn.indexOf("usShowFormBase") < 0);
   const h = PV.renderMenu("gallery");
   ["사진 불러오기", "메시지 붙여넣기", "음성 입력", "직접 입력"].forEach((l) => assert.ok(h.includes(`<b>${l}</b>`), l));
   assert.ok(/role="group" aria-label="일정 추가 방법"/.test(h) && (h.match(/aria-pressed="/g) || []).length === 4);
