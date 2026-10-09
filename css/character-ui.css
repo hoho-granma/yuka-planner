@@ -253,3 +253,7 @@ body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,
 .hn-allday-label[data-tw-edit]:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 
 .hn-shared-entry .us-times.us-tw[hidden]{display:none!important}
+
+.calendar-weekdays>span:first-child, #calendar-grid .is-sunday .num, #calendar-grid .is-sunday .wk-num {color:#d94b40}
+.calendar-weekdays>span:last-child, #calendar-grid .is-saturday:not(.is-holiday) .num, #calendar-grid .is-saturday:not(.is-holiday) .wk-num {color:#3974bd}
+#selected-day-list .hn-timeline strong {font-size:13px!important;font-weight:650;line-height:1.5}

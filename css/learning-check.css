@@ -69,3 +69,14 @@
 .ei-page .ei-card p,.ei-page .ei-facts,.ei-page .ei-option-list{font-size:15px}
 .gr-disclosure{font-size:15px;line-height:1.5}
 .gr-check p,.gr-check .lc-option-list{font-size:15px}
+
+.ei-region-tags>span,.ei-region-tags button{font-size:12px}
+
+/* Approved open filters: compact rectangles, one subject row. */
+.ei-region-tags{gap:5px;margin:10px 0 12px}
+.ei-region-tags button{border-radius:5px;min-height:36px;padding:7px 9px;font-size:12px}
+.ei-subject-tags{flex-wrap:nowrap;gap:4px;overflow-x:auto;padding:2px 0 5px;max-width:100%;box-sizing:border-box}
+.ei-subject-tags button{flex:0 0 auto;white-space:nowrap;border-radius:5px;padding:7px 4px;font-size:11px;min-height:34px}
+.ei-row-text .ei-kind-tag{display:inline-block;width:fit-content;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:650;line-height:1.5;margin:4px 0 1px}
+.ei-kind-academy{background:#e9e1f3;color:#604584}
+.ei-kind-office{background:#deeee8;color:#316352}

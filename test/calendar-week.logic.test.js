@@ -78,7 +78,7 @@ test("renderWeekCols: 7열·오늘/선택 클래스·날짜 속성·일정 제�
   days[3] = day(days[3].date, { selected: true, user: [{ title: "병원", color: "#ff7a59", done: false }], autoCount: 2 });
   const h = W.renderWeekCols(days);
   assert.strictEqual((h.match(/data-wk-date=/g) || []).length, 7);
-  assert.ok(h.includes('class="week-col today" data-wk-date="2026-10-04"'));
+  assert.ok(h.includes('class="week-col is-sunday today" data-wk-date="2026-10-04"'));
   assert.ok(h.includes('class="week-col selected" data-wk-date="2026-10-07"'));
   assert.ok(h.includes("병원") && h.includes("자동 일정 2개") && h.includes("--wk-color:#ff7a59"));
   assert.strictEqual((h.match(/일정 없음/g) || []).length, 6);

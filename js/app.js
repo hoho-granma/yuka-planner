@@ -2157,6 +2157,8 @@
           .join("");
       const moreCount = totalMarks - 3;
       const moreHtml = moreCount > 0 ? `<span class="cal-marker-more">+${moreCount}</span>` : "";
+      cell.classList.toggle("is-sunday", date.getDay() === 0);
+      cell.classList.toggle("is-saturday", date.getDay() === 6);
       if (holiday) cell.classList.add("is-holiday");
       cell.setAttribute("role", "button");
       cell.setAttribute("aria-label", `${month + 1}월 ${day}일${holiday ? " · " + holiday : ""}${sameDay(date, today) ? " · 오늘" : ""} · 항목 ${totalMarks}건`);
