@@ -2001,9 +2001,7 @@
     el("cal-legend").innerHTML = Object.values(CATEGORY_META)
       .map((g) => `<span class="cal-legend-item"><span class="dot" style="background:${g.color}"></span>${g.label}</span>`)
       .join("");
-    const oldNote=el("calendar-grid").parentNode.querySelector(".cal-holiday-source");
-    if(oldNote)oldNote.remove();
-    if(typeof KoreanHolidays!=="undefined") el("calendar-grid").insertAdjacentHTML("afterend", `<p class="cal-holiday-source">${KoreanHolidays.years.includes(viewMonth.getFullYear())?"공휴일 기본 표시 · 2026–2027년 확인 자료":"이 연도의 공휴일 자료는 아직 확인하지 못했어요"} · <a href="${KoreanHolidays.source}" target="_blank" rel="noopener noreferrer">공식 출처 ↗</a></p>`);
+
   }
 
   // 달력 표시용 "추천일" 배치(js/hn-logic.js assignDisplayDays) — 화면을 그릴 때마다 전체를 다시 계산한다
@@ -2224,7 +2222,9 @@
     const { fixed, planned } = calendarDayItems(date);
     const byUrgency = (a, b) => (!!completed[a.id] - !!completed[b.id]) || (isImportantEvent(b) ? 1 : 0) - (isImportantEvent(a) ? 1 : 0);
     const dowNames = ["일", "월", "화", "수", "목", "금", "토"];
-    el("selected-day-title").textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 (${dowNames[date.getDay()]})${typeof KoreanHolidays !== "undefined" && KoreanHolidays.get(toISODate(date)) ? " · " + KoreanHolidays.get(toISODate(date)) : ""}`;
+    const holiday = typeof KoreanHolidays !== "undefined" ? KoreanHolidays.get(toISODate(date)) : "";
+    el("selected-day-title").textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 (${dowNames[date.getDay()]})${holiday ? " · " + holiday : ""}`;
+    el("selected-day-title").classList.toggle("is-holiday", !!holiday);
     const html = [...fixed, ...planned]
       .sort(byUrgency)
       .map((e) => eventItemListHtml(e))
@@ -6380,6 +6380,7 @@
       // "이 날만 수정": 종일(시각 없는 문서일 때만 보임)과 시각 선택
       if (t.id === "us-allday") {
         us.dayForm.allDay = t.checked;
+        us.dayForm.twConfirmed = false;
         usShowDayForm();
       }
       return;
@@ -6391,6 +6392,7 @@
       usShowForm();
     } else if (t.id === "us-allday") {
       us.form.allDay = t.checked;
+      us.form.twConfirmed = false;
       if (t.checked) { us.form.startTime = ""; us.form.endTime = ""; }
       usShowForm();
     }
@@ -8040,7 +8042,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
 
     if(menu){if(head)head.after(menu);menu.innerHTML=[['direct','직접 입력'],['gallery','사진'],['paste','메시지'],['voice','음성 입력']].filter(([mode])=>mode!=='voice'||VOICE_INPUT_ENABLED).map(([mode,label])=>`<button type="button" data-cap-menu="${mode}" class="${(us.form.capInputMode||'gallery')===mode?'active':''}">${label}</button>`).join('');}
     const linked=sheet.querySelector('#hn-linked-todo');if(linked){linked.parentElement.classList.add('hn-entry-switch');const text=linked.parentElement.lastChild;if(text&&text.nodeType===3){const span=document.createElement('span');span.textContent=text.textContent;text.replaceWith(span);}}
-    const allDay=sheet.querySelector('#us-allday');if(allDay&&linked){const row=allDay.closest('label');row.classList.add('hn-entry-switch');linked.parentElement.before(row);const text=row.lastChild;if(text&&text.nodeType===3){const span=document.createElement('span');span.textContent=text.textContent;span.className='hn-allday-label';text.replaceWith(span);}const savedLabel=row.querySelector('.hn-allday-label');if(savedLabel&&!us.form.allDay&&us.form.twConfirmed)savedLabel.textContent=us.form.startTime+' ~ '+us.form.endTime;const times=sheet.querySelector('.us-times');if(times)row.after(times);}
+    const allDay=sheet.querySelector('#us-allday');if(allDay&&linked){const row=allDay.closest('label');row.classList.add('hn-entry-switch');linked.parentElement.before(row);const text=row.lastChild;if(text&&text.nodeType===3){const span=document.createElement('span');span.textContent=text.textContent;span.className='hn-allday-label';text.replaceWith(span);}const savedLabel=row.querySelector('.hn-allday-label');if(savedLabel&&!us.form.allDay&&us.form.twConfirmed){savedLabel.textContent=us.form.startTime+' ~ '+us.form.endTime;savedLabel.dataset.twEdit='';savedLabel.setAttribute('role','button');savedLabel.setAttribute('tabindex','0');savedLabel.setAttribute('aria-label','시간 수정: '+savedLabel.textContent);savedLabel.setAttribute('aria-expanded','false');}const times=sheet.querySelector('.us-times');if(times){row.after(times);times.hidden=!!us.form.twConfirmed;times.style.display=us.form.twConfirmed?"none":"";}}
     sheet.querySelectorAll('[data-us-repeat]').forEach(b=>{const label=b.closest('.us-field').querySelector('label');if(label)label.hidden=true;});
   };
 
@@ -8049,7 +8051,28 @@ fields.sourceScheduleId=f.sourceScheduleId;
   let charVoice=null;
   function charStartVoice(){if(!VOICE_INPUT_ENABLED)return;const f=charTodoForm;charVoice=CaptureVoice.create({win:window,storage:localStorage,onText:t=>{if(charTodoForm!==f)return;f.text=((f.text||'')+' '+t).trim().slice(0,500);if(!f.titleEdited)f.title=CharacterUI.title(f.text);charTodoRender();},onState:s=>{if(charTodoForm===f&&el('hn-task-error'))el('hn-task-error').textContent=s.listening?'듣고 있어요…':s.mode==='keyboard'?'키보드의 마이크로 받아쓰기해 주세요.':'인식된 글자를 확인해 주세요.';}});if(!charVoice.start()){el('hn-task-error').textContent='키보드의 마이크로 받아쓰기해 주세요.';el('hn-task-text').focus();}}
 
-  document.addEventListener('click',e=>{const button=e.target.closest('[data-tw-confirm]');if(!button||!usTwForm())return;e.preventDefault();const wheel=button.closest('.tw');wheel.classList.add('hn-time-confirmed');button.textContent='저장됨';button.disabled=true;const form=usTwForm();form.twConfirmed=true;const label=el('modal-content').querySelector('.hn-allday-label');if(label)label.textContent=form.startTime+' ~ '+form.endTime;});
+  function charTimeAction(e) {
+    const edit=e.target.closest('[data-tw-edit]'),button=e.target.closest('[data-tw-confirm]');
+    if(!edit&&!button)return;
+    const form=usTwForm();if(!form)return;
+    e.preventDefault();
+    if(form!==us.form){
+      const wheel=(edit||button).closest('.tw');if(!wheel)return;
+      wheel.classList.toggle('hn-time-confirmed',!edit);
+      const control=edit||button;
+      control.textContent=edit?'저장':form.startTime+' ~ '+form.endTime;
+      control.removeAttribute(edit?'data-tw-edit':'data-tw-confirm');
+      control.setAttribute(edit?'data-tw-confirm':'data-tw-edit','');
+      form.twConfirmed=!edit;return;
+    }
+    form.twConfirmed=!edit;
+    usShowForm();
+    const modal=el('modal-content');
+    if(edit)modal.querySelector('[data-tw-input="start"]')?.focus();
+    else modal.querySelector('[data-tw-edit]')?.focus();
+  }
+  document.addEventListener('click',charTimeAction);
+  document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.closest('[data-tw-edit]'))charTimeAction(e);});
   let charScheduleVoice=null;
   const charCapMenuBase=capMenuClick;
   function charScheduleText(form,text){if(us.form!==form)return;form.charText=String(text||'').slice(0,500);form.memo=form.charText;form.title=CharacterUI.title(form.charText);form.titleTouched=true;usShowForm();}

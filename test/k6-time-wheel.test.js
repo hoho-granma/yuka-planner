@@ -36,14 +36,14 @@ test("하루 끝: 시작을 늦은 밤으로 돌려도 끝은 23:45 를 넘지 �
   const s = W.reduce(W.initState("22:00", "23:00"), { type: "set", field: "start", time: "23:30" });
   assert.deepStrictEqual([s.start, s.end], ["23:30", "23:45"]);
 });
-test("마크업: 24시간 시작·끝 시/분 선택 + 안내 + 경고", () => {
+test("마크업: 시작·끝 시/분 선택, 불필요한 안내 생략, 경고 유지", () => {
   const s = W.initState("16:00", "17:00");
   const h = W.markup("us-time", s);
   assert.ok(h.includes('data-tw-input="start"') && h.includes('data-tw-input="end"'));
   assert.strictEqual((h.match(/<select /g)||[]).length,4);
   assert.ok(h.includes('<option value="23">23</option>') && h.includes('<option value="59">59</option>'));
   assert.ok(!h.includes('data-tw-col=') && !h.includes('오전/오후'));
-  assert.ok(h.includes("시작을 바꾸면 끝도 같은 길이로 따라와요") && !h.includes("tw-warn"));
+  assert.ok(!h.includes("시작을 바꾸면 끝도 같은 길이로 따라와요") && !h.includes("24시간 기준") && !h.includes("tw-warn"));
   const w = W.markup("us-time", { ...s, warn: "경고" });
   assert.ok(w.includes('class="tw-warn" role="alert"'));
   assert.ok(W.markup("x", W.initState("11:30", "13:00")).includes('<option value="13" selected>13</option>'), "오전→오후 걸치면 끝에도 오전/오후");

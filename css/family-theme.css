@@ -81,3 +81,14 @@ body:has(#view-landing.acct-on:not(.hidden)){background:#fff!important}
 #home-body .hn-schedule-date{color:#a5524a}
 #home-body .hn-timeline time{color:#655f70!important}
 #brand-text .hn-house-name{color:#715697!important}
+
+/* One final typography rule for family headings and list titles. */
+#home-body .hn-section-head h3,
+#home-body .hn-timeline strong,
+#home-body .hn-task-title,
+#hn-family-tasks-tab .hn-section-head h3,
+#hn-family-tasks-tab .hn-task-title {
+  font-size:15px!important;
+  font-weight:700!important;
+  line-height:1.5;
+}

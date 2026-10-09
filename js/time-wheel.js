@@ -81,7 +81,7 @@
       const select = (part, count, selected) => `<select data-tw-input="${name}" data-tw-part="${part}" aria-label="${name === 'start' ? MSG.start : MSG.end} ${part === 'hour' ? MSG.hour : MSG.min}">${Array.from({length:count},(_,n)=>`<option value="${n}"${n===selected?' selected':''}>${String(n).padStart(2,'0')}</option>`).join('')}</select>`;
       return `<div class="tw-direct-field"><strong>${name === 'start' ? MSG.start : MSG.end}</strong><div class="tw-direct-value">${select('hour',24,Math.floor(minutes/60))}<span aria-hidden="true">:</span>${select('min',60,minutes%60)}</div></div>`;
     };
-    return `<div class="tw tw-direct" data-tw="${esc(prefix)}"><div class="tw-wheel tw-direct-grid">${field('start')}${field('end')}</div>${state.warn ? `<p class="tw-warn" role="alert">${esc(state.warn)}</p>` : ''}<p class="tw-hint">24시간 기준 · ${esc(MSG.hint)}</p><button type="button" class="hn-time-confirm" data-tw-confirm>저장</button></div>`;
+    return `<div class="tw tw-direct" data-tw="${esc(prefix)}"><div class="tw-wheel tw-direct-grid">${field('start')}${field('end')}</div>${state.warn ? `<p class="tw-warn" role="alert">${esc(state.warn)}</p>` : ''}<button type="button" class="hn-time-confirm" data-tw-confirm>저장</button></div>`;
   }
 
   /**
