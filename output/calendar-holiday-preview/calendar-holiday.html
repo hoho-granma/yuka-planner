@@ -1,0 +1,59 @@
+<div id="hn-holiday-preview" class="viz-dotted-background">
+  <main class="hp-app" aria-label="공휴일 색상 캘린더 시안">
+    <header class="hp-header"><strong>우리 가족 캘린더</strong><span>한눈육아</span></header>
+    <div class="hp-people" aria-label="구성원 선택">
+      <button type="button" class="cursor-interaction hp-person active" aria-pressed="true"><span class="hp-avatar">수</span>수아</button>
+      <button type="button" class="cursor-interaction hp-person" aria-pressed="false"><span class="hp-avatar">주</span>주연</button>
+      <button type="button" class="cursor-interaction hp-person" aria-pressed="false"><span class="hp-avatar">중</span>중빠</button>
+    </div>
+    <div class="hp-month"><strong>2026년 10월</strong><span>월 보기</span></div>
+    <div class="hp-weekdays" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+    <div class="hp-grid" role="group" aria-label="2026년 10월 날짜 선택"></div>
+    <section class="hp-detail" aria-live="polite"><h3 class="hp-date">10월 9일 (금) · 한글날</h3><p>등록된 일정이 없어요.</p></section>
+    <nav class="hp-nav" aria-label="메뉴 미리보기"><span><i data-lucide="house" aria-hidden="true"></i>홈</span><span class="hp-current"><i data-lucide="calendar-days" aria-hidden="true"></i>캘린더</span><span><i data-lucide="list-checks" aria-hidden="true"></i>할일</span><span><i data-lucide="sprout" aria-hidden="true"></i>성장기록</span></nav>
+  </main>
+</div>
+<style>
+#hn-holiday-preview{padding:20px 12px;box-sizing:border-box}
+#hn-holiday-preview .hp-app{--hp-bg:#f4f3f1;--hp-ink:#24252a;--hp-red:#d94b40;--hp-muted:#77747c;max-width:390px;margin:auto;background:var(--hp-bg);color:var(--hp-ink);font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;border-radius:22px;overflow:hidden;box-shadow:0 8px 28px #24252a12}
+#hn-holiday-preview .hp-header{display:flex;align-items:center;justify-content:space-between;padding:24px 18px 12px;gap:12px}
+#hn-holiday-preview .hp-header strong{font-size:20px;font-weight:750}
+#hn-holiday-preview .hp-header>span{font-size:11px;color:var(--hp-muted)}
+#hn-holiday-preview .hp-people{display:flex;gap:6px;padding:5px 18px 14px}
+#hn-holiday-preview .hp-person{min-width:48px;display:flex;align-items:center;flex-direction:column;gap:6px;padding:3px 1px;background:transparent;border:0;color:var(--hp-ink);font-size:11px}
+#hn-holiday-preview .hp-avatar{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#e9dfcf;font-size:15px;font-weight:700}
+#hn-holiday-preview .hp-person:nth-child(2) .hp-avatar{background:#ded7e9}
+#hn-holiday-preview .hp-person:nth-child(3) .hp-avatar{background:#dce4d8}
+#hn-holiday-preview .hp-person.active .hp-avatar{outline:1px solid #715697;outline-offset:3px}
+#hn-holiday-preview .hp-month{display:flex;justify-content:space-between;align-items:center;padding:10px 18px 15px}
+#hn-holiday-preview .hp-month strong{font-size:19px;font-weight:750}
+#hn-holiday-preview .hp-month>span{font-size:12px;color:var(--hp-muted)}
+#hn-holiday-preview .hp-weekdays,#hn-holiday-preview .hp-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;margin:0 12px}
+#hn-holiday-preview .hp-weekdays{padding:0 0 8px;text-align:center;font-size:11px;color:var(--hp-muted)}
+#hn-holiday-preview .hp-weekdays span:first-child{color:var(--hp-red)}
+#hn-holiday-preview .hp-day{font-family:inherit;min-width:0;min-height:58px;padding:5px 2px;border:0;border-radius:9px;background:#fff;color:var(--hp-ink);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:13px}
+#hn-holiday-preview .hp-day.hp-off{background:transparent;color:#b6b1b9}
+#hn-holiday-preview .hp-day.hp-selected{box-shadow:inset 0 0 0 2px #edc846}
+#hn-holiday-preview .hp-day.hp-holiday{color:var(--hp-red)}
+#hn-holiday-preview .hp-holiday-name{font-size:10px;line-height:1.35;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+#hn-holiday-preview .hp-bar{display:block;width:100%;height:12px;line-height:12px;background:#e6dbe9;color:#40374b;border-radius:3px;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hn-holiday-preview .hp-detail{margin:18px 12px 16px;padding:16px;background:#fff;border:1px solid #e7e3dd;border-radius:16px}
+#hn-holiday-preview .hp-date{margin:0;font-size:15px;font-weight:700;line-height:1.5}
+#hn-holiday-preview .hp-date.hp-red{color:var(--hp-red)}
+#hn-holiday-preview .hp-detail p{margin:14px 0 3px;color:var(--hp-muted);font-size:13px}
+#hn-holiday-preview .hp-nav{display:flex;justify-content:space-around;border-top:1px solid #e7e3dd;background:#fff;padding:13px 8px 16px}
+#hn-holiday-preview .hp-nav>span{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;color:var(--hp-muted)}
+#hn-holiday-preview .hp-nav svg{width:20px;height:20px}
+#hn-holiday-preview .hp-nav .hp-current{color:#ff6a1a}
+</style>
+<script>
+(function(){
+const root=document.getElementById('hn-holiday-preview'),grid=root.querySelector('.hp-grid'),heading=root.querySelector('.hp-date'),detail=root.querySelector('.hp-detail p');
+const holidays={3:'개천절',5:'대체공휴일',9:'한글날'},week=['일','월','화','수','목','금','토'];
+let selected=Number(window.openai?.widgetState?.modelContent?.day)||9;if(selected<1||selected>31)selected=9;
+for(let i=0;i<35;i++){const day=i-3,button=document.createElement('button');button.type='button';button.className='hp-day cursor-interaction';if(day<1||day>31){button.classList.add('hp-off');button.textContent=day<1?30+day:day-31;button.disabled=true;}else{button.dataset.day=day;button.innerHTML='<span>'+day+'</span>'+(holidays[day]?'<span class="hp-holiday-name">'+holidays[day]+'</span>':'')+(day===8?'<span class="hp-bar">일정 예시</span>':'');button.classList.toggle('hp-holiday',!!holidays[day]);button.setAttribute('aria-label','10월 '+day+'일'+(holidays[day]?' '+holidays[day]:''));button.addEventListener('click',()=>{selected=day;paint();window.openai?.setWidgetState({modelContent:{day:selected},privateContent:null}).catch(()=>{});});}grid.append(button);}
+function paint(){for(const button of grid.querySelectorAll('[data-day]')){const on=Number(button.dataset.day)===selected;button.classList.toggle('hp-selected',on);button.setAttribute('aria-pressed',String(on));}heading.textContent='10월 '+selected+'일 ('+week[new Date(2026,9,selected).getDay()]+')'+(holidays[selected]?' · '+holidays[selected]:'');heading.classList.toggle('hp-red',!!holidays[selected]);detail.textContent=selected===8?'일정 예시':'등록된 일정이 없어요.';}
+root.querySelectorAll('.hp-person').forEach(button=>button.addEventListener('click',()=>{const on=!button.classList.contains('active');button.classList.toggle('active',on);button.setAttribute('aria-pressed',String(on));}));
+window.addEventListener('openai:set_globals',event=>{const day=event.detail?.globals?.widgetState?.modelContent?.day;if(Number.isInteger(day)&&day>=1&&day<=31){selected=day;paint();}});paint();
+})();
+</script>
