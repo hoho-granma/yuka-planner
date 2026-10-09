@@ -6650,11 +6650,13 @@
         }
         acctApprovalGate(state.status);return;
       }
-      const result=await acct.sync.restore(uid,u.email);
-      if(!result.ok)throw new Error("가족 정보를 불러오지 못했어요. 다시 시도해 주세요.");
-      if(!valid())return;
       acctOwnerSync(u);
-      const joined=await HouseholdSync.joinHousehold(state.householdId,{metadataOnly:true});
+      const [result,joined]=await Promise.all([
+        acct.sync.restore(uid,u.email),
+        HouseholdSync.joinHousehold(state.householdId,{metadataOnly:true,isCurrent:valid})
+      ]);
+      if(!valid())return;
+      if(!result.ok)throw new Error("가족 정보를 불러오지 못했어요. 다시 시도해 주세요.");
       if(!valid())return;
       if(!joined.ok)throw new Error("가족 연결을 확인해 주세요.");
       acct.account={...result.account,householdCode:state.householdId,permission:state.permission};

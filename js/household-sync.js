@@ -288,13 +288,18 @@
       if (!enabled()) return DISABLED;
       const status = await accessApi().status();
       if (status.status !== "ACTIVE" || status.householdId !== hid) return {ok:false,reason:"approval-required"};
+      if(options.isCurrent && !options.isCurrent())return {ok:false,reason:"session-changed"};
       return joinApprovedHousehold(hid, options);
     }
     async function joinApprovedHousehold(hid, options = {}) {
-      const a = getAdapter(), h = await a.get("families/" + hid);
-      if (!h.exists) return {ok:false,reason:"not-found"};
+      const a = getAdapter();
       const kinds = options.metadataOnly ? ["children","members"] : ["children","members","schedules","todos"];
-      const docs = await Promise.all(kinds.map(kind => a.list(`families/${hid}/${kind === "children" ? "childLinks" : kind}`)));
+      const [h,...docs] = await Promise.all([
+        a.get("families/" + hid),
+        ...kinds.map(kind => a.list(`families/${hid}/${kind === "children" ? "childLinks" : kind}`))
+      ]);
+      if(options.isCurrent && !options.isCurrent())return {ok:false,reason:"session-changed"};
+      if (!h.exists) return {ok:false,reason:"not-found"};
       const m = loadMirror(hid); m.household = h.data;
       kinds.forEach((kind,i) => mergeCollection(m,kind,docs[i],hid));
       saveMirror(m); if (storage) storage.setItem(CODE_KEY,hid);
