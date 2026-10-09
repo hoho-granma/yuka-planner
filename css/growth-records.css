@@ -43,3 +43,6 @@
 
 /* Compact Scandi tree: record counts size main leaves; activity filters remain below. */
 .gr-line-tree{max-width:390px;margin-bottom:12px}.gr-line-tree svg{height:auto;max-height:350px}.gr-svg-leaf .gr-leaf-surface{filter:drop-shadow(0 2px 2px #b1a0ba18)}.gr-svg-leaf .gr-vein{fill:none;stroke-width:.65;opacity:.16}.gr-svg-leaf.selected .gr-vein{stroke-width:.65}.gr-main-label{font-size:14px}.gr-count{font-size:11px}.gr-child-name{fill:#7c6ba2}
+.gr-activities button{font-size:14px}
+.gr-record h4{font-size:17px}
+.gr-record>p{font-size:15px}

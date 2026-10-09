@@ -59,3 +59,13 @@
 .ei-empty-guide p{line-height:1.7}
 .ei-opinion-group h5{margin:12px 0 8px;font-size:14px;font-weight:700}
 .ei-opinion-context{display:block;margin-top:5px;font-size:13px;color:var(--text-secondary,#666);line-height:1.5}
+.ei-subject-tags{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 14px}
+.ei-subject-tags button{border:1px solid var(--border);border-radius:999px;background:var(--card-bg,#fff);color:var(--text);padding:7px 12px;font:inherit;font-size:12px;line-height:1.4;cursor:pointer}
+.ei-subject-tags button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent,#fff);font-weight:700}
+.ei-subject-tags button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.ei-metric>span{font-size:14px;white-space:normal;line-height:1.5}
+.ei-metric strong{font-size:23px}
+.ei-metric p{font-size:14px}
+.ei-page .ei-card p,.ei-page .ei-facts,.ei-page .ei-option-list{font-size:15px}
+.gr-disclosure{font-size:15px;line-height:1.5}
+.gr-check p,.gr-check .lc-option-list{font-size:15px}
