@@ -66,6 +66,7 @@ const SHELL_ASSETS = [
   "./js/auth-service.js",
   "./js/account-view.js",
   "./js/account-sync.js",
+  "./js/app-access.js",
   "./js/family-access.js",
   "./js/family-access-view.js",
   "./css/family-access.css",

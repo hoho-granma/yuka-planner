@@ -62,6 +62,19 @@ service cloud.firestore {
       // Nested v2 child/completion structures are not currently used: deny by default.
     }
     match /accounts/{uid} {
+      match /appAccess/{eventId} {
+        allow get, list: if signedIn() && request.auth.uid == uid;
+        allow create: if signedIn() && request.auth.uid == uid
+          && exists(/databases/$(database)/documents/accounts/$(uid))
+          && request.resource.data.keys().hasAll(['schemaVersion','accessedAt','appVersion','reason'])
+          && request.resource.data.keys().hasOnly(['schemaVersion','accessedAt','appVersion','reason'])
+          && request.resource.data.schemaVersion == 1
+          && request.resource.data.accessedAt == request.time
+          && request.resource.data.appVersion is string
+          && request.resource.data.appVersion.size() > 0 && request.resource.data.appVersion.size() <= 32
+          && request.resource.data.reason in ['app_open','resume'];
+        allow update, delete: if false;
+      }
       allow get: if signedIn() && request.auth.uid == uid;
       allow list, create, delete: if false;
       allow update: if signedIn() && request.auth.uid == uid

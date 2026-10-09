@@ -6662,6 +6662,7 @@
       if(!valid())return;
       if(!joined.ok)throw new Error("가족 연결을 확인해 주세요.");
       acct.account={...result.account,householdCode:state.householdId,permission:state.permission};
+      acct.accessLog?.record("app_open");
       acctClearIntent();
       hhSetJoined(state.householdId,state.householdId);
       if(profile&&familyCode) {
@@ -6709,6 +6710,14 @@
     // G16: 첫 화면 입력 폼의 OFF 안내문('회원가입 없이 바로 시작해요…')을 계정 모드에서는 처음부터 중립 문구로 바꾼다(로그인 직후 새 아이 입력 폼에도 OFF 문구가 보이지 않게).
     if (typeof el === "function" && el("entry-fine-print")) el("entry-fine-print").textContent = AccountView.MSG.onboard.formNote;
     acct.svc = AuthService.create();
+    const accessLog = typeof AppAccess !== "undefined" ? AppAccess.create({
+      db:()=>firebase.firestore(),getUid:()=>acct.user?.uid,
+      getVersion:()=>self.APP_VERSION,timestamp:()=>firebase.firestore.FieldValue.serverTimestamp()
+    }) : null;
+    acct.accessLog = accessLog;
+    document.addEventListener("visibilitychange",()=>{
+      if(document.visibilityState==="visible"&&accessLog)accessLog.record("resume");
+    });
     // D2: accounts 문서·가구 연결(가짜 어댑터로 테스트 가능). 같은 Firestore 어댑터를 쓰되 계정 문서 쓰기는 이 서비스만 한다.
     if (typeof AccountSync !== "undefined") acct.sync = AccountSync.create({ adapter: HouseholdSync.firestoreAdapter(() => firebase.firestore()), household: HouseholdSync, ...(acctApprovalEnabled()?{access:approvalApi()}:{}) });
     // 인증 확인이 끝나기 전엔 중립 화면(로고)만 보여 준다(로그인한 사람이 온보딩을 잠깐 보고 로그아웃된 줄 알지 않게). 로그아웃 표시가 있는 기기는 기다리지 않고 바로 온보딩.
@@ -6721,6 +6730,7 @@
         acct.approvalState=u?"UNKNOWN":"SIGNED_OUT";
       }
       acct.user = u;
+      if(u&&accessLog)accessLog.record("app_open");
       // 오프라인·SDK 로드 실패(확인 불가)는 '로그아웃됨'이 아니다: 이 기기에 로그아웃 표시가 있을 때만 로그아웃으로 본다(로그인했던 기기는 홈 유지).
       acct.authKnown = !(info && info.unknown) || acctSignedOutMark();
       if (u) acctSignedOutMark(false);
@@ -7146,6 +7156,7 @@
     }
     if(acctApprovalEnabled()) {acct.approvalState="ACTIVE";acct.ownerReady=true;}
     acct.account = { displayName: intent.displayName, role: intent.role, memberId: res.memberId, householdId: res.householdId, householdCode: res.householdCode, ...(intent.situation ? { situation: intent.situation } : {}), ...(intent.province ? { province: intent.province, district: intent.district } : {}) };
+    acct.accessLog?.record("app_open");
     if (hh.code && hh.code !== res.householdCode) {
       // 이 기기에 다른 가구가 연결돼 있다: 사용자가 고르기 전에는 바꾸지 않는다(선택 시트 — 계정 가족 쓰기 / 이 기기 아이를 가족에 추가).
       acctClearIntent();
@@ -7304,6 +7315,7 @@
       const r = await acct.sync.restore(u.uid, u.email);
       if (!r.ok) return; // 규칙 미배포·오프라인: 조용히 넘어간다
       acct.account = r.account || null;
+      if(acct.account)acct.accessLog?.record("app_open");
       // 복구 경로(D3): 가구 연결도 가입 의도도 없으면(로그아웃·앱 데이터 삭제·계정 문서 쓰기 실패 등) 새 가족을 만들기 전에 반드시 선택 화면을 한 번 거친다
       // — 합류하려던 사람이 새 가족을 잘못 만들지 않도록. 이 기기에 이미 가구가 있으면 묻지 않는다.
       if (!intent && !(r.account && r.account.householdCode)) {
