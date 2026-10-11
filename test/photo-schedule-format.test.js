@@ -84,5 +84,11 @@ test('후보 편집 순서·한줄 안내·휴일 색상·담당 사진을 유�
  const html=Review.html([{title:'휴교',date:'2026-08-15',category:'학교',isHoliday:true,selected:true,editing:true,ownerDisplay:'은찬',ownerImage:'icons/child.png'}]);
  const fields=[...html.matchAll(/data-batch-field="([^"]+)"/g)].map(m=>m[1]);
  assert.deepEqual(fields,['title','date','endDate','startTime','endTime','category','location','organizerName','memo','isImportant']);
- assert.match(html,/1개 · 1개 선택/);assert.match(html,/선택·수정 후 저장해 주세요/);assert.match(html,/hn-holiday/);assert(!html.includes('hn-holiday-label'));assert(!html.includes('data-batch-field="isHoliday"'));assert.match(html,/hn-review-avatar/);assert.match(html,/src="icons\/child.png"/);assert(!html.includes('연도 미표기'));
+ assert.match(html,/1개 · 1개 선택/);assert.match(html,/등록할 일정/);assert(!html.includes('선택·수정 후 저장해 주세요'));assert.match(html,/hn-holiday/);assert(!html.includes('hn-holiday-label'));assert(!html.includes('data-batch-field="isHoliday"'));assert.match(html,/hn-review-avatar/);assert.match(html,/src="icons\/child.png"/);assert(!html.includes('연도 미표기'));
+});
+
+
+test('휴일도 기존 카테고리 색상을 사용하고 제목만 휴일 클래스로 표시',()=>{
+ const html=Review.timeline({title:'휴교',allDay:true,category:'학교',isHoliday:true},{categoryColor:'#dacff0'});
+ assert.match(html,/hn-holiday/);assert.match(html,/background:#dacff0/);assert.match(html,/>종일<\/time>/);
 });
