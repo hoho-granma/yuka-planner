@@ -8167,6 +8167,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
   document.addEventListener('change',e=>{const batch=messageSource()?.form.messageBatch,c=batch?.candidates[Number(e.target.dataset.batchSelect)];if(c&&!c.saved&&!batch.saving)c.selected=e.target.checked;});
   document.addEventListener('click',async e=>{
     const source=messageSource(),batch=source?.form.messageBatch;if(!batch)return;
+    const close=e.target.closest('[data-batch-close]');if(close){const c=batch.candidates[Number(close.dataset.batchClose)];if(c&&!batch.saving){c.editing=false;renderMessageBatch(source.form);el('hn-message-results').querySelector(`.hn-edit-icon[data-batch-edit="${close.dataset.batchClose}"]`)?.focus();}return;}
     const edit=e.target.closest('[data-batch-edit]');if(edit){const c=batch.candidates[Number(edit.dataset.batchEdit)];if(!c||c.saved||batch.saving)return;c.editing=!c.editing;renderMessageBatch(source.form);if(c.editing)el('hn-message-results').querySelector(`[data-batch-fields="${edit.dataset.batchEdit}"] input`)?.focus();return;}
     if(!e.target.closest('[data-batch-save]')||batch.saving)return;
     const status=el('hn-message-results').querySelector('[data-batch-status]');
@@ -8205,7 +8206,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
       const family=hh.hid,uid=acct.user&&acct.user.uid,target=el('hn-message-results'),photo=source.form.photo,mode=AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode);
       if(source.form.messageBatch?.saving)return;
       try{
-      analyze.disabled=true;target.innerHTML=ScheduleReview.analysisStatus('busy',mode,'',photo?.image);target.scrollIntoView?.({block:'nearest',behavior:'smooth'});const preview=el('modal-content').querySelector('.hn-photo-preview');if(preview)preview.dataset.photoState='busy';target.setAttribute('aria-busy','true');messageAnalysis=null;
+      analyze.disabled=true;target.innerHTML=ScheduleReview.analysisStatus('busy',mode);const preview=el('modal-content').querySelector('.hn-photo-preview');if(preview){preview.dataset.photoState='busy';preview.scrollIntoView?.({block:'nearest',behavior:'smooth'});}else target.scrollIntoView?.({block:'nearest',behavior:'smooth'});target.setAttribute('aria-busy','true');messageAnalysis=null;
       const result=await AiParser.parseWithAI(source.text,toISODate(new Date()),{user:acct.user,familyId:family,image:AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode)==='photo'?source.form.photo?.image:undefined});
       const current=messageSource();if(!current||current.form!==source.form||current.text!==source.text||current.form.photo!==photo||AiParser.analysisMode(current.kind,current.kind==='todo'?current.form.inputMode:current.form.capInputMode)!==mode||hh.hid!==family||acct.user?.uid!==uid||el('hn-message-results')!==target){if(el('hn-message-results')===target){analyze.disabled=false;target.setAttribute('aria-busy','false');if(preview)preview.dataset.photoState='idle';target.textContent='입력 내용이나 대상이 바뀌어 분석 결과를 적용하지 않았어요. 다시 분석해 주세요.';}return;}
       analyze.disabled=false;target.setAttribute('aria-busy','false');if(preview)preview.dataset.photoState=result.ok?'idle':'error';

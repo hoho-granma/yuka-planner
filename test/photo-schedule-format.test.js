@@ -74,8 +74,8 @@ test('주최자 접두어는 달력 제목에서 숨기고 상세 담당에는 �
  assert.match(View.renderDetail(card),/티처투어/);
  assert.equal(View.displayTitle({...occ,title:'빕스 티처투어 체험'}),'빕스 티처투어 체험');
 });
-test('사진 분석은 버튼 아래에도 사진과 스캔 선을 표시하고 실패 시 직접 입력 제공',()=>{
- const busy=Review.analysisStatus('busy','photo','','data:image/png;base64,aA==');
- assert.match(busy,/hn-analysis-scan/);assert.match(busy,/hn-photo-scan/);assert.match(busy,/data:image\/png/);
- assert.match(Review.analysisStatus('error','photo','실패'),/data-message-manual/);
+test('분석 중 사진을 추가로 만들지 않고 후보는 번호 대신 실제 제목 행으로 표시',()=>{
+ assert(!Review.analysisStatus('busy','photo','','data:image/png;base64,aA==').includes('<img'));
+ const html=Review.html([{title:'Summer Camp',date:'2026-08-03',endDate:'2026-08-07',category:'학교',ownerDisplay:'은찬',selected:true}]);
+ assert(!html.includes('일정 1'));assert.match(html,/hn-review-head/);assert.match(html,/Summer Camp/);assert.match(html,/data-batch-select/);assert.match(html,/hn-edit-icon/);assert.match(html,/data-batch-close/);assert.match(html,/2026-08-03 ~ 2026-08-07/);
 });
