@@ -23,9 +23,9 @@ exports.familyAccess=onCall({region:'asia-northeast3',enforceAppCheck:appCheckEn
 });
 
 // Explicit deployment only; original message and model responses are never logged.
-const {createMessageParser}=require('./message-parser');
+const {createMessageParser,DEFAULT_MODEL}=require('./message-parser');
 const messageKey=defineSecret('OPENROUTER_API_KEY');
-const messageModel=defineString('MESSAGE_PARSER_MODEL',{default:'qwen/qwen3.8-flash'});
+const messageModel=defineString('MESSAGE_PARSER_MODEL',{default:DEFAULT_MODEL});
 exports.parseFamilyMessage=onCall({region:'asia-northeast3',enforceAppCheck:appCheckEnforced,secrets:[messageKey],maxInstances:2,concurrency:4,timeoutSeconds:120},async request=>{
  if(!request.auth)throw new HttpsError('unauthenticated','로그인이 필요해요.');
  try{return await createMessageParser({db:getFirestore(),key:messageKey.value(),model:messageModel.value(),reportFailure:event=>console.warn('schedule-analysis-failure',event)})(request.auth.uid,request.data);}
