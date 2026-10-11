@@ -6978,7 +6978,7 @@
     const s = el("acct-slot");
     if (s) {
       const family = hh.hid || hh.code ? { members: HouseholdView.visibleMembers(usMembers()).map((m) => ({ memberId: m.memberId, role: m.role, label: m.label, color: UserScheduleView.memberColor(m) })), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt).map((l) => ({ ...l, color: UserScheduleView.childColor(l) })) } : { members: [], meId: null, meName: "", children: [] };
-      s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, account: acct.account, notice: acct.notice, withCode: !acctApprovalEnabled(), code: acctApprovalEnabled()?null:hh.code, family, sel: el("fam-card") ? famSel() : undefined });
+      s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, account: acct.account, notice: acct.notice, withCode: !acctApprovalEnabled(), approval: acctApprovalEnabled(), code: acctApprovalEnabled()?null:hh.code, family, sel: el("fam-card") ? famSel() : undefined });
     }
   }
   function acctOpenSlot() {

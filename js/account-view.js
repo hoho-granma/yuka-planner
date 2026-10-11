@@ -164,6 +164,8 @@
     codeCopy: "가족코드 복사",
     codeCreate: "가족 만들고 가족코드 받기",
     codeReissue: "가족코드 다시 만들기",
+    codeInviteHint: "가족이 만들어졌어요. 다른 가족은 초대코드로 합류해요. 초대코드는 24시간 동안 쓸 수 있고, 가족이 가입하면 여기서 승인해요.",
+    codeInviteBtn: "초대코드 만들기",
     codeNoneHint: "아직 가족 캘린더가 연결되지 않았어요. 가족을 만들면 가족코드가 생겨요.",
     slotTitle: "누구로 합류하나요?",
     slotLead: "가족이 미리 만들어 둔 자리예요. 고르면 역할이 자동으로 정해져요.",
@@ -407,10 +409,12 @@
     const sel = s.sel || { kind: "member", id: f.meId || "" };
     const faces = (f.members || []).map((m) => face(okColor(m.color) || FACE_COLORS[m.role] || FACE_FAMILY, f.meId && m.memberId === f.meId && f.meName ? f.meName : m.label, !!f.meId && m.memberId === f.meId, "member", m.memberId, sel.kind === "member" && sel.id === m.memberId)).join("")
       + (f.children || []).map((c, i) => face(okColor(c.color) || FACE_CHILD[i % FACE_CHILD.length], c.displayName || MSG.childFallback, false, "child", c.childKey, sel.kind === "child" && sel.id === c.childKey)).join("");
-    const add = (s.code ? `<button type="button" class="acct-face acct-face-add" data-acct-action="open-invite"><span class="acct-face-dot">+</span><span class="acct-face-name">${esc(MSG.inviteMenu)}</span></button>` : "") + `<button type="button" class="acct-face acct-face-add" data-acct-action="fam-add-child"><span class="acct-face-dot">+</span><span class="acct-face-name">${esc(MSG.famAddChild)}</span></button>`; // D72b: 프로필의 '우리 아이' 줄이 없어진 자리
+    const add = (s.code || s.approval ? `<button type="button" class="acct-face acct-face-add" data-acct-action="open-invite"><span class="acct-face-dot">+</span><span class="acct-face-name">${esc(MSG.inviteMenu)}</span></button>` : "") + `<button type="button" class="acct-face acct-face-add" data-acct-action="fam-add-child"><span class="acct-face-dot">+</span><span class="acct-face-name">${esc(MSG.famAddChild)}</span></button>`; // D72b: 프로필의 '우리 아이' 줄이 없어진 자리
     const pill = s.code
       ? `<div class="acct-fam-code"><span class="acct-fam-pill"><span class="acct-fam-pill-l">${esc(MSG.codeLabelShort)}</span><b>${esc(s.code)}</b><button type="button" class="acct-copy-ico" data-acct-action="copy-me" aria-label="${esc(MSG.copyIcon)}" title="${esc(MSG.copyIcon)}">${ICO_COPY}</button></span>${s.notice === MSG.inviteCopied ? `<span class="acct-copied" role="status">${esc(MSG.copiedShort)}</span>` : ""}</div>`
-      : `<div class="acct-code-block"><p class="fine-print">${esc(MSG.codeNoneHint)}</p><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-recover">${esc(MSG.codeCreate)}</button></div></div>`;
+      : s.approval
+        ? `<div class="acct-code-block"><p class="fine-print">${esc(MSG.codeInviteHint)}</p><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-invite">${esc(MSG.codeInviteBtn)}</button></div></div>`
+        : `<div class="acct-code-block"><p class="fine-print">${esc(MSG.codeNoneHint)}</p><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-recover">${esc(MSG.codeCreate)}</button></div></div>`;
     return `<div class="detail-row acct-slot acct-fam"><div class="acct-fam-hero"><h4>${esc(MSG.familyTitle)}</h4><div class="acct-faces">${faces}${add}</div>${pill}</div>
       ${s.notice && s.notice !== MSG.inviteCopied ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
   }
