@@ -88,6 +88,7 @@ body:has(#view-landing.acct-on:not(.hidden)){background:#fff!important}
 #home-body .hn-schedule-date,
 #home-body .hn-timeline,
 #home-body .hn-timeline strong,
+#home-body .hn-duration,
 #home-body .hn-task-title,
 #home-body .hn-timeline time,
 #home-body .hn-task time,

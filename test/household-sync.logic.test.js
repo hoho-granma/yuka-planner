@@ -72,3 +72,12 @@ test('기존 일정 수정은 제목·기간·메모·주최·별표를 서버�
  for(const record of [server,reopened]){assert.equal(record.title,'여름 캠프 변경');assert.equal(record.memo,'준비물: 물통과 모자');assert.equal(record.endDate,'2026-08-08');assert(record.tags.includes('주최:MIAC'));assert(record.tags.includes('주요일정'));}
  const deletion=US.softDelete(server,3);assert.equal(deletion.ok,true);await f.hs.patchSchedule('f1',saved.scheduleId,deletion.patch);assert(f.records.get('families/f1/schedules/'+saved.scheduleId).deletedAt);
 });
+
+test('할일 수정은 미러·서버·리스너 재조회에서 제목과 기한을 함께 유지',async()=>{
+ const f=setup(),r=await f.hs.createTodo('f1',{title:'물통 챙기기',ownerKey:'CHILD:c1',dueDate:'2026-10-12',description:'원본 안내'});
+ const saved=await f.hs.patchTodo('f1',r.todoId,{title:'수영복 챙기기',dueDate:'2026-10-13',updatedAt:2000});assert(saved.ok);
+ assert.equal(f.hs.getTodos('f1')[0].title,'수영복 챙기기');assert.equal(f.hs.getTodos('f1')[0].dueDate,'2026-10-13');
+ assert.equal(f.records.get('families/f1/todos/'+r.todoId).title,'수영복 챙기기');
+ f.hs.startListening('f1');const listener=f.listeners.find(l=>l.p==='families/f1/todos');listener.fn([{id:r.todoId,data:f.records.get('families/f1/todos/'+r.todoId)}]);
+ assert.equal(f.hs.getTodos('f1')[0].title,'수영복 챙기기');assert.equal(f.hs.getTodos('f1')[0].description,'원본 안내');
+});
