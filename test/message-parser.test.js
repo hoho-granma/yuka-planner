@@ -77,3 +77,9 @@ test('공급자 인증 실패와 요청 한도를 구분하여 직접 입력을 
   const f=fixture({error:true,status});await assert.rejects(f.parse('u',input),e=>e.code===code&&e.message.includes('직접 입력'));
  }
 });
+
+test('일정 배열 응답도 같은 날짜·시간·근거 검증을 통과한 후보만 허용',async()=>{
+ const f=fixture({content:JSON.stringify([candidate()])});const result=await f.parse('u',input);assert.equal(result.candidates.length,1);
+ assert.equal(f.stats().request.reasoning.enabled,false);
+ const invalid=fixture({content:JSON.stringify([candidate({date:'2026-02-30'})])});await assert.rejects(invalid.parse('u',input));
+});
