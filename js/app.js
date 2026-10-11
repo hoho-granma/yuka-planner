@@ -5345,7 +5345,7 @@
       if (heading) {
         const title = document.createElement('span');
         title.className = 'hn-detail-title';
-        title.textContent = occ.title;
+        title.textContent = UserScheduleView.displayTitle(occ);
         if (heading.firstChild && heading.firstChild.nodeType === 3) heading.firstChild.replaceWith(title);
         const close = document.createElement('button');
         close.type = 'button'; close.className = 'hn-detail-close';
@@ -8085,9 +8085,9 @@ fields.sourceScheduleId=f.sourceScheduleId;
 
   document.addEventListener('click',e=>{const b=e.target.closest('[data-char-schedule-category]');if(!b||!us.form)return;e.preventDefault();us.form.charCategory=us.form.charCategory===b.dataset.charScheduleCategory?'':b.dataset.charScheduleCategory;us.form.kindPick=us.form.charCategory;const labels=CharacterUI.categoriesFor(charPerson(us.form.whoPerson?'MEMBER:'+us.form.assigneeMemberId:us.form.scope==='CHILD'?'CHILD:'+(us.form.childKeys||[])[0]:'FAMILY'));const idx=labels.indexOf(us.form.charCategory);us.form.category=CharacterUI.scheduleCategory(us.form.charCategory,charPerson(us.form.whoPerson?'MEMBER:'+us.form.assigneeMemberId:us.form.scope==='CHILD'?'CHILD:'+(us.form.childKeys||[])[0]:'FAMILY'));us.form.categoryLabel=us.form.charCategory;usShowForm();});
   async function charSelectPhoto(form,kind){
-    const input=document.createElement('input');input.type='file';input.accept='image/*,.heic,.heif';
-    input.onchange=async()=>{if(!input.files[0])return;const job={};form.photoJob=job;
-      try{const photo=await AiParser.preparePhoto(input.files[0]);if(form.photoJob!==job||(kind==='todo'?charTodoForm:us.form)!==form)return;form.photo=photo;form.messageBatch=null;messageAnalysis=null;if(kind==='todo')charTodoRender();else usShowForm();}
+    const input=document.createElement('input');input.type='file';input.accept='image/*,.heic,.heif';input.hidden=true;document.body.append(input);input.oncancel=()=>input.remove();
+    input.onchange=async()=>{const file=input.files[0];input.remove();if(!file)return;const job={};form.photoJob=job;
+      try{const photo=await AiParser.preparePhoto(file);if(form.photoJob!==job||(kind==='todo'?charTodoForm:us.form)!==form)return;form.photo=photo;form.messageBatch=null;messageAnalysis=null;if(kind==='todo')charTodoRender();else usShowForm();}
       catch(e){if((kind==='todo'?charTodoForm:us.form)!==form)return;if(kind==='todo')el('hn-task-error').textContent=e.message;else{us.messages=[e.message];usShowForm();}}
     };input.click();
   }
@@ -8204,7 +8204,8 @@ fields.sourceScheduleId=f.sourceScheduleId;
       if(AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode)==='photo'&&!source.form.photo)return;
       const family=hh.hid,uid=acct.user&&acct.user.uid,target=el('hn-message-results'),photo=source.form.photo,mode=AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode);
       if(source.form.messageBatch?.saving)return;
-      analyze.disabled=true;target.innerHTML=ScheduleReview.analysisStatus('busy',mode);const preview=el('modal-content').querySelector('.hn-photo-preview');if(preview)preview.dataset.photoState='busy';target.setAttribute('aria-busy','true');messageAnalysis=null;
+      try{
+      analyze.disabled=true;target.innerHTML=ScheduleReview.analysisStatus('busy',mode,'',photo?.image);target.scrollIntoView?.({block:'nearest',behavior:'smooth'});const preview=el('modal-content').querySelector('.hn-photo-preview');if(preview)preview.dataset.photoState='busy';target.setAttribute('aria-busy','true');messageAnalysis=null;
       const result=await AiParser.parseWithAI(source.text,toISODate(new Date()),{user:acct.user,familyId:family,image:AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode)==='photo'?source.form.photo?.image:undefined});
       const current=messageSource();if(!current||current.form!==source.form||current.text!==source.text||current.form.photo!==photo||AiParser.analysisMode(current.kind,current.kind==='todo'?current.form.inputMode:current.form.capInputMode)!==mode||hh.hid!==family||acct.user?.uid!==uid||el('hn-message-results')!==target){if(el('hn-message-results')===target){analyze.disabled=false;target.setAttribute('aria-busy','false');if(preview)preview.dataset.photoState='idle';target.textContent='입력 내용이나 대상이 바뀌어 분석 결과를 적용하지 않았어요. 다시 분석해 주세요.';}return;}
       analyze.disabled=false;target.setAttribute('aria-busy','false');if(preview)preview.dataset.photoState=result.ok?'idle':'error';
@@ -8215,6 +8216,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
         renderMessageBatch(source.form);return;
       }
       target.innerHTML=result.candidates.length?'<p class="fine-print">후보를 골라 폼에 채우세요. 대상·날짜·시간·반복은 저장 전 확인해 주세요.</p>'+result.candidates.map((c,i)=>`<div class="hn-message-candidate"><strong>${esc(c.title)}</strong><p>${esc(c.kind==='todo'?'할일':'일정')} · ${esc(c.date||'날짜 미확인')} · ${esc(c.startTime||'시간 미확인')} · ${esc(c.ownerName||'대상 미확인')} · ${esc(c.category||'분류 미확인')}</p><blockquote>${esc(c.evidence)}</blockquote><button type="button" data-message-apply="${i}">이 ${c.kind==='todo'?'할일':'일정'} 입력폼에 채우기</button></div>`).join(''):'찾은 일정·할일이 없어요. 원문을 유지하고 직접 입력해 주세요.';
+      }catch(error){if(el('hn-message-results')===target){target.innerHTML=ScheduleReview.analysisStatus('error',mode,'분석을 시작하지 못했어요. 다시 시도하거나 직접 입력해 주세요.');const preview=el('modal-content').querySelector('.hn-photo-preview');if(preview)preview.dataset.photoState='error';}}finally{if(analyze.isConnected)analyze.disabled=false;if(target.isConnected)target.setAttribute('aria-busy','false');}
     }
     if(apply){
       const state=messageAnalysis,current=messageSource(),candidate=state?.candidates[Number(apply.dataset.messageApply)];

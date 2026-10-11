@@ -65,3 +65,17 @@ test('사진 로딩은 스캔용 상태, 실패는 X와 직접 입력 버튼이�
  const busy=Review.analysisStatus('busy','photo');assert(!busy.includes('내용을 정리'));assert(busy.includes('hn-analysis-sr'));
  const error=Review.analysisStatus('error','photo','<script>');assert(error.includes('×'));assert(error.includes('data-message-manual'));assert(!error.includes('<script>'));
 });
+
+
+test('주최자 접두어는 달력 제목에서 숨기고 상세 담당에는 유지',()=>{
+ const occ={...base,title:'티처투어 빕스',date:'2026-10-25'};
+ assert.equal(View.displayTitle(occ),'빕스');
+ const card=View.cardData(occ,[]);assert.equal(card.title,'빕스');assert.equal(card.organizerText,'티처투어');
+ assert.match(View.renderDetail(card),/티처투어/);
+ assert.equal(View.displayTitle({...occ,title:'빕스 티처투어 체험'}),'빕스 티처투어 체험');
+});
+test('사진 분석은 버튼 아래에도 사진과 스캔 선을 표시하고 실패 시 직접 입력 제공',()=>{
+ const busy=Review.analysisStatus('busy','photo','','data:image/png;base64,aA==');
+ assert.match(busy,/hn-analysis-scan/);assert.match(busy,/hn-photo-scan/);assert.match(busy,/data:image\/png/);
+ assert.match(Review.analysisStatus('error','photo','실패'),/data-message-manual/);
+});

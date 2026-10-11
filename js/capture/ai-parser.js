@@ -1,6 +1,7 @@
 /* Text AI adapter for pasted messages and direct image analysis. No API secret or automatic persistence in the browser. */
 (function(root,factory){if(typeof module!=='undefined'&&module.exports)module.exports=factory();else root.AiParser=factory();})(typeof window!=='undefined'?window:global,function(){
  'use strict';
+ async function withTimeout(work,ms){let timer;try{return await Promise.race([Promise.resolve().then(work),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('timeout')),ms);})]);}finally{clearTimeout(timer);}}
  const RULE_FAILED='rule-failed';
  const ruleFailed=(text,cands)=>/[0-9A-Za-z가-힣]/.test(String(text||''))&&!(cands||[]).some(c=>c&&c.eventDate);
  const enabled=()=>true;
@@ -9,15 +10,17 @@
   const c=context||{},user=c.user;
   if(!user)return {ok:false,reason:'unauthenticated',message:'로그인 후 사용할 수 있어요.'};
   if((!text.trim()&&!c.image)||text.length>4000)return {ok:false,reason:'invalid',message:'메시지는 4,000자 이내로 입력해 주세요.'};
+  let requestTimer;
   try{
    const authUser=typeof user.getIdToken==='function'?user:typeof firebase!=='undefined'&&firebase.auth?firebase.auth().currentUser:null;
    if(!authUser||authUser.uid!==user.uid)return {ok:false,reason:'unauthenticated',message:'다시 로그인해 주세요.'};
-   const token=await authUser.getIdToken(),response=await fetch('https://asia-northeast3-yuka-planner.cloudfunctions.net/parseFamilyMessage',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},signal:AbortSignal.timeout(c.image?125000:35000),body:JSON.stringify({data:{text,baseDate,familyId:c.familyId,...(c.image?{image:c.image}:{})}})});
+   const token=await withTimeout(()=>authUser.getIdToken(),15000),controller=new AbortController();requestTimer=setTimeout(()=>controller.abort(),c.image?125000:35000);
+   const response=await fetch('https://asia-northeast3-yuka-planner.cloudfunctions.net/parseFamilyMessage',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},signal:controller.signal,body:JSON.stringify({data:{text,baseDate,familyId:c.familyId,...(c.image?{image:c.image}:{})}})});
    const body=await response.json();
    if(!response.ok||body.error)return {ok:false,reason:'failed',message:body.error?.message||'메시지 분석을 사용할 수 없어요. 직접 입력해 주세요.'};
    const result=body.result||body.data;
    return result?.ok&&Array.isArray(result.candidates)?result:{ok:false,reason:'failed',message:'분석 결과를 확인하지 못했어요.'};
-  }catch{return {ok:false,reason:'offline',message:'서버에 연결하지 못했어요. 입력한 내용은 그대로 유지돼요.'};}
+  }catch{return {ok:false,reason:'offline',message:'서버에 연결하지 못했어요. 입력한 내용은 그대로 유지돼요.'};}finally{clearTimeout(requestTimer);}
  }
  async function preparePhoto(file){
   if(!file||!/^image\/(jpeg|png|webp|heic|heif)$/.test(file.type)&&! /\.(heic|heif)$/i.test(file.name))throw Error('사진 파일을 선택해 주세요.');

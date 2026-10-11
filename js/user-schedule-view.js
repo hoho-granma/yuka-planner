@@ -518,7 +518,7 @@
       if (it.t === "u") {
         const col = c.scheduleSlots ? scheduleColor(it.occ, c.scheduleSlots) : catMode ? occurrenceColor(it.occ, c.links, "category") : occurrenceColor(it.occ, c.links, c.mode === "kids" ? "child" : "owner");
         const done = it.occ.status === "DONE" || it.occ.done === true;
-        return `<span class="cal-chip u${done ? " done" : ""}${it.period ? " p" : ""}" style="background:${safeColor(col)};color:${inkOn(safeColor(col))}">${it.period ? esc(MSG.cellPeriod) : ""}${esc(it.occ.title)}</span>`;
+        return `<span class="cal-chip u${done ? " done" : ""}${it.period ? " p" : ""}" style="background:${safeColor(col)};color:${inkOn(safeColor(col))}">${it.period ? esc(MSG.cellPeriod) : ""}${esc(displayTitle(it.occ))}</span>`;
       }
       const col = it.anniv && it.color ? it.color : catMode && !it.anniv ? CATEGORY_COLORS[autoCategoryGroup(it)] : c.autoColor || familyColor(); // 기념일 칩은 그 아이의 구성원 색
       return `<span class="cal-chip a${it.done ? " done" : ""}" style="--chip-c:${safeColor(col)}">${esc(catMode && !it.anniv ? autoCategoryGroup(it) : it.title)}</span>`; // 2-5: 100일·돌·생일 칩은 분류 모드에서도 '생활' 대신 제목을 보인다
@@ -581,13 +581,19 @@
     return (o.badges || []).map((b) => (b.removed ? MSG.removedChild : b.displayName)).join(" · ");
   }
   /** CalendarModel 의 Occurrence(decorate 포함) → 카드/상세용 평범한 객체. */
+  function displayTitle(occ){
+    const title=String(occ.title||''),host=(occ.tags||[]).find(t=>typeof t==='string'&&t.startsWith('주최:'))?.slice(3)||occ.organizerName;
+    if(!host)return title;
+    for(const prefix of ['['+host+'] ',host+' : ',host+': ',host+' · ',host+' - ',host+' '])if(title.startsWith(prefix)&&title.slice(prefix.length).trim())return title.slice(prefix.length).trim();
+    return title;
+  }
   function cardData(occ, links, extra) {
     const cancelled = occ.status === "CANCELLED";
     const done = !cancelled && (occ.status === "DONE" || occ.done === true);
     const base = {
       key: occ.key,
       scheduleId: occ.scheduleId,
-      title: occ.title,
+      title: displayTitle(occ),
       categoryKey: occ.category,
       categoryLabel: occ.categoryLabel || categoryLabel(occ.category),
       scope: occ.scope,
@@ -735,7 +741,7 @@
     const badges = (v.done ? ` <span class="us-done">${esc(MSG.done)}</span>` : "") + (v.cancelled ? ` <span class="us-cancelled">${esc(v.cancelledLabel)}</span>` : "") + (v.recurring ? ` <span class="us-repeat">${esc(v.repeatBadge)}</span>` : "");
     const notice = v.recurring && v.exceptionsNotice ? `<p class="us-note">${esc(v.exceptionsNotice)}</p>` : "";
     return `<div class="us-detail${v.isHoliday?' hn-holiday':''}" style="--us-color:${safeColor(v.color)}"><h3>${esc(v.title)}${badges}<button type="button" class="hn-important-toggle" data-us-action="toggle-important" aria-pressed="${!!v.isImportant}" aria-label="${v.isImportant?'주요 일정 해제':'주요 일정 등록'}">${v.isImportant?'★':'☆'}</button></h3>${rows}${notice}${opts&&opts.canViewOriginal&&v.sourcePhotoTag?'<button type="button" class="us-btn" data-us-action="view-original">원본 보기</button>':''}
-      <div class="us-actions">${v.actions.map((a) => `<button type="button" class="us-btn${a.id === "toggle-done" ? " us-primary" : ""}" data-us-action="${a.id}">${esc(a.label)}</button>`).join("")}</div></div>`;
+      <div class="us-actions">${v.actions.map((a) => `<button type="button" class="us-btn${a.id === "toggle-done" ? " us-primary" : ""}${a.id === "edit" ? " hn-edit-action" : ""}" data-us-action="${a.id}">${a.id==="edit"?`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l4 4M4 20l4-1 12-12a2.8 2.8 0 0 0-4-4L4 15z"/></svg>`:""}${esc(a.label)}</button>`).join("")}</div></div>`;
   }
   function renderDeleteConfirm() {
     return `<div class="us-confirm"><h3>${esc(MSG.deleteTitle)}</h3><p>${esc(MSG.deleteBody)}</p>
@@ -1402,7 +1408,7 @@
     MSG, CATEGORIES, CHILD_PALETTE, PALETTE, COLOR_KEYS, keyColor, get FAMILY_COLOR() { return familyColor(); }, familyColor, roleSlots, resolveChildColors, PICKER_PREFIXES, HOURS, MINUTES,
     categoryLabel, childColor, childColors, occurrenceColor, assignScheduleColors, scheduleColor, memberColor, resolveMemberColors, PALETTES, setTheme, getTheme, setColorOrder, normalizeColorOrder, inkOn, MEMBER_COLORS, ROLE_LABELS, CATEGORY_COLORS, autoCategoryGroup, selectionMode, toggleSelection, cellChips,
     filterChips, normalizeSelection, toModelFilter, renderFilterChips,
-    cardData, cellMarks, dayPanel, sourceLabeled, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
+    displayTitle, cardData, cellMarks, dayPanel, sourceLabeled, monthSummary, periodSection, skippedNote, timeText, dateText, tagText,
     linkKindWord, autoCompleteTarget, renderLinkRecordSheet, renderLinkKeepSheet, autoLinkNote, renderAutoLinkButton, clock12, upcomingItems, renderUpcomingCard, QUICK_TEMPLATES, renderChipDeleteConfirm, withObjectParticle, renderTodoLine, todoDeadlineText, TODO_LIMIT, TODO_MSG, assigneeEmphasis, applyTemplate, renderQuickChips, renderAutoCand, renderAnnivSwitch,
     renderCard, detailView, renderDetail, detailDots, renderDeleteConfirm, renderAddButton, renderPeriodSection,
     newForm, formFromSchedule, stripId, formToInput, validateForm, messagesFromErrors, prepareSave, changesFromForm, minuteOptions, splitTime,
