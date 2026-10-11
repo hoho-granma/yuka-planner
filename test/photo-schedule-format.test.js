@@ -45,7 +45,7 @@ test('기간·담당(주최자)·메모를 상세에 표시하며 주요 일정 
  const tags=Review.tagsFor({category:'학교',organizerName:'MIAC',isImportant:true,isHoliday:false});
  const doc=Schedule.buildCreateDoc(View.formToInput({...base,title:'여름 캠프',allDay:true,startTime:'',endTime:'',eventDate:'2026-08-03',endDate:'2026-08-07',multiDay:true,charCategory:'학교',category:'INSTITUTION',tags,memo:'준비물: 물통'}),1).doc;
  const occ=Schedule.expandOccurrences({...doc,id:'camp'},'2026-08-01','2026-08-31')[0],card=View.cardData(occ,[]),html=View.renderDetail(card);
- for(const text of ['기간','2026-08-03 ~ 2026-08-07','담당(주최자)','MIAC','준비물: 물통','toggle-important'])assert(html.includes(text),text);
+ for(const text of ['기간','2026-08-03 ~ 2026-08-07','담당(주최자)','MIAC','준비물: 물통'])assert(html.includes(text),text);
  assert.equal(card.isImportant,true);const f=View.formFromSchedule(doc);Review.applyEntryText(f,'여름 캠프 변경');
  const after=Schedule.buildPatch(doc,View.changesFromForm(f,doc),2).after;assert(after.tags.includes('주요일정'));assert(after.tags.includes('주최:MIAC'));
 });
@@ -83,7 +83,7 @@ test('분석 중 사진을 추가로 만들지 않고 후보는 번호 대신 �
 test('후보 편집 순서·한줄 안내·휴일 색상·담당 사진을 유지',()=>{
  const html=Review.html([{title:'휴교',date:'2026-08-15',category:'학교',isHoliday:true,selected:true,editing:true,ownerDisplay:'은찬',ownerImage:'icons/child.png'}]);
  const fields=[...html.matchAll(/data-batch-field="([^"]+)"/g)].map(m=>m[1]);
- assert.deepEqual(fields,['title','date','endDate','startTime','endTime','category','location','organizerName','memo','isImportant']);
+ assert.deepEqual(fields,['title','date','endDate','startTime','endTime','category','location','organizerName','memo']);
  assert.match(html,/1개 · 1개 선택/);assert.match(html,/등록할 일정/);assert(!html.includes('선택·수정 후 저장해 주세요'));assert.match(html,/hn-holiday/);assert(!html.includes('hn-holiday-label'));assert(!html.includes('data-batch-field="isHoliday"'));assert.match(html,/hn-review-avatar/);assert.match(html,/src="icons\/child.png"/);assert(!html.includes('연도 미표기'));
 });
 
@@ -91,4 +91,18 @@ test('후보 편집 순서·한줄 안내·휴일 색상·담당 사진을 유�
 test('휴일도 기존 카테고리 색상을 사용하고 제목만 휴일 클래스로 표시',()=>{
  const html=Review.timeline({title:'휴교',allDay:true,category:'학교',isHoliday:true},{categoryColor:'#dacff0'});
  assert.match(html,/hn-holiday/);assert.match(html,/background:#dacff0/);assert.match(html,/>종일<\/time>/);
+});
+
+
+test('주요 일정 태그가 있는 기존 일정도 후보·상세에 별표나 설정을 노출하지 않음',()=>{
+ const occ={...base,date:'2026-10-25',tags:['체험','주최:티처투어','주요일정'],isImportant:true};
+ const html=Review.html([{...occ,selected:true,editing:true}])+View.renderDetail(View.cardData(occ,[]));
+ assert(!html.includes('toggle-important'));assert(!html.includes('hn-important'));assert(!html.includes('data-batch-field="isImportant"'));assert(!html.includes('★'));assert(!html.includes('☆'));
+});
+
+test('번역된 기간 제목은 저장 후 종료일까지 동일한 제목으로 표시',()=>{
+ const doc=Schedule.buildCreateDoc(View.formToInput({...base,title:'여름 캠프',eventDate:'2026-08-03',endDate:'2026-08-07',multiDay:true,allDay:true,startTime:'',endTime:'',charCategory:'학교',category:'INSTITUTION'}),1).doc;
+ const model=require('../js/calendar-model').buildCalendarModel({range:{start:'2026-08-01',end:'2026-08-10'},user:{schedules:[{...doc,id:'camp'}]}});
+ for(const date of ['2026-08-03','2026-08-04','2026-08-05','2026-08-06','2026-08-07']){const rows=model.days.get(date).user;assert.equal(rows.length,1);assert.equal(View.cardData(rows[0],[]).title,'여름 캠프');}
+ assert.equal(model.days.get('2026-08-08').user.length,0);
 });

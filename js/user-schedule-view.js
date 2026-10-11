@@ -740,7 +740,7 @@
       .join("");
     const badges = (v.done ? ` <span class="us-done">${esc(MSG.done)}</span>` : "") + (v.cancelled ? ` <span class="us-cancelled">${esc(v.cancelledLabel)}</span>` : "") + (v.recurring ? ` <span class="us-repeat">${esc(v.repeatBadge)}</span>` : "");
     const notice = v.recurring && v.exceptionsNotice ? `<p class="us-note">${esc(v.exceptionsNotice)}</p>` : "";
-    return `<div class="us-detail${v.isHoliday?' hn-holiday':''}" style="--us-color:${safeColor(v.color)}"><h3>${esc(v.title)}${badges}<button type="button" class="hn-important-toggle" data-us-action="toggle-important" aria-pressed="${!!v.isImportant}" aria-label="${v.isImportant?'주요 일정 해제':'주요 일정 등록'}">${v.isImportant?'★':'☆'}</button></h3>${rows}${notice}${opts&&opts.canViewOriginal&&v.sourcePhotoTag?'<button type="button" class="us-btn" data-us-action="view-original">원본 보기</button>':''}
+    return `<div class="us-detail${v.isHoliday?' hn-holiday':''}" style="--us-color:${safeColor(v.color)}"><h3>${esc(v.title)}${badges}</h3>${rows}${notice}${opts&&opts.canViewOriginal&&v.sourcePhotoTag?'<button type="button" class="us-btn" data-us-action="view-original">원본 보기</button>':''}
       <div class="us-actions">${v.actions.map((a) => `<button type="button" class="us-btn${a.id === "toggle-done" ? " us-primary" : ""}${a.id === "edit" ? " hn-edit-action" : ""}" data-us-action="${a.id}">${a.id==="edit"?`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l4 4M4 20l4-1 12-12a2.8 2.8 0 0 0-4-4L4 15z"/></svg>`:""}${esc(a.label)}</button>`).join("")}</div></div>`;
   }
   function renderDeleteConfirm() {

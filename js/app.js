@@ -6192,17 +6192,6 @@
     try{const image=await SourcePhoto.read(doc.tags,acct.user);if(acct.user?.uid!==uid||hh.hid!==family||!detail.isConnected)return;const img=document.createElement('img');img.alt='이 일정의 원본 사진';img.src=image;section.textContent='';section.append(img);}
     catch(e){if(section.isConnected)section.textContent=e.message;}
   }
-  async function usToggleImportant(id){
-        if(us.importantSaving)return;
-        const doc=usDocById(id),family=hh.hid;if(!doc)return;
-        us.importantSaving=true;const detailKey=us.detailKey;
-        try{const tags=(doc.tags||[]).includes('주요일정')?(doc.tags||[]).filter(t=>t!=='주요일정'):[...(doc.tags||[]),'주요일정'];
-          if(tags.length>10)throw Error('태그가 많아 주요 일정으로 표시하지 못했어요.');
-          const r=UserSchedule.buildPatch(UserScheduleView.stripId(doc),{tags},Date.now());if(!r.ok)throw Error('주요 일정 상태를 확인해 주세요.');
-          const res=await HouseholdSync.patchSchedule(family,id,r.patch);if(!res.ok)throw Error('주요 일정으로 저장하지 못했어요.');
-          if(hh.hid===family){usRefreshCalendar();if(us.detailId===id&&el('modal-content').querySelector('.us-detail'))usOpenDetail(id,detailKey);}
-        }catch(e){usModalNote(e.message);}finally{us.importantSaving=false;}return;
-  }
   function usOnModalClick(ev) {
     const an = ev.target.closest("[data-anniv-act]"); // 2-5 상세 시트: 이 날 일정 추가 / 끄기 / 닫기
     if (an) {
@@ -6243,7 +6232,6 @@
         return;
       }
       if (act === "view-original") return usViewOriginal(id);
-      if (act === "toggle-important") return usToggleImportant(id);
       if (act === "delete") {
         el("modal-content").innerHTML = rec ? UserScheduleView.renderDeleteScopeSheet(occ.originalDate) : UserScheduleView.renderDeleteConfirm();
         return;

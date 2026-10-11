@@ -60,7 +60,7 @@ test('사진의 연도 기본값은 서버에서도 기준 연도로 맞추고 �
 
 test('주최자·카테고리·휴일 의미 추출 지시는 모델에 함께 전달',async()=>{
  const f=fixture();await f.parse('u',input);const instructions=f.stats().request.messages[0].content;
- for(const term of ['organizerName','티처투어','학교','학원','체험','School Closed','isHoliday'])assert(instructions.includes(term),term);
+ for(const term of ['organizerName','티처투어','학교','학원','체험','School Closed','isHoliday','concise Korean','original visible language','second visual sweep'])assert(instructions.includes(term),term);
  assert.throws(()=>validate({candidates:[candidate({organizerName:'원문에 없는 주최자'})]},input.text));
  assert.throws(()=>validate({candidates:[candidate({isHoliday:'red'})]},input.text));
 });
