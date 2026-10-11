@@ -5337,7 +5337,7 @@
     us.plan = null;
     modalMode = "profile";
     const extra = occ.recurring ? { recurrence: doc.recurrence, exceptionCount: UserSchedule.exceptionCount(doc) } : undefined;
-    el("modal-content").innerHTML = UserScheduleView.renderDetail(UserScheduleView.cardData(occ, usLinks(), extra), acctEnabled() ? { dots: UserScheduleView.detailDots(occ, usLinks()) } : undefined);
+    el("modal-content").innerHTML = UserScheduleView.renderDetail(UserScheduleView.cardData(occ, usLinks(), extra), {...(acctEnabled()?{dots:UserScheduleView.detailDots(occ,usLinks())}:{}),fullDate:occ.endDate?occ.date+' ~ '+occ.endDate:occ.date||'',isPeriod:!!occ.endDate,canViewOriginal:SourcePhoto.reference(doc.tags)?.uid===acct.user?.uid});
     const detail = el("modal-content").querySelector(".us-detail");
     if (detail && acctEnabled()) {
       detail.style.setProperty("--hn-detail-person", charTint(charPerson(charOccOwner(occ))));
@@ -5777,6 +5777,10 @@
         }
       }
       us.saving = false;
+      if(us.form.mode==='edit'&&us.form.repeat==='NONE'&&us.form.eventDate){
+        const selected=toISODate(selectedCalendarDate),end=us.form.endDate||us.form.eventDate;
+        if(selected<us.form.eventDate||selected>end){selectedCalendarDate=new Date(us.form.eventDate+'T12:00:00');viewMonth=new Date(selectedCalendarDate.getFullYear(),selectedCalendarDate.getMonth(),1);}
+      }
       us.form = null;
       closeDetail();
       usRefreshCalendar();
@@ -6181,6 +6185,24 @@
     const c = ev.target.closest(".us-card");
     if (c) usOpenDetail(c.getAttribute("data-us-id"), c.getAttribute("data-us-key"));
   }
+  async function usViewOriginal(id){
+    const doc=usDocById(id),detail=el('modal-content').querySelector('.us-detail');if(!doc||!detail)return;
+    let section=detail.querySelector('.hn-original-view');if(section){section.remove();return;}
+    const uid=acct.user?.uid,family=hh.hid;section=document.createElement('section');section.className='hn-original-view';section.setAttribute('aria-live','polite');section.textContent='원본 사진을 불러오고 있어요…';detail.append(section);
+    try{const image=await SourcePhoto.read(doc.tags,acct.user);if(acct.user?.uid!==uid||hh.hid!==family||!detail.isConnected)return;const img=document.createElement('img');img.alt='이 일정의 원본 사진';img.src=image;section.textContent='';section.append(img);}
+    catch(e){if(section.isConnected)section.textContent=e.message;}
+  }
+  async function usToggleImportant(id){
+        if(us.importantSaving)return;
+        const doc=usDocById(id),family=hh.hid;if(!doc)return;
+        us.importantSaving=true;const detailKey=us.detailKey;
+        try{const tags=(doc.tags||[]).includes('주요일정')?(doc.tags||[]).filter(t=>t!=='주요일정'):[...(doc.tags||[]),'주요일정'];
+          if(tags.length>10)throw Error('태그가 많아 주요 일정으로 표시하지 못했어요.');
+          const r=UserSchedule.buildPatch(UserScheduleView.stripId(doc),{tags},Date.now());if(!r.ok)throw Error('주요 일정 상태를 확인해 주세요.');
+          const res=await HouseholdSync.patchSchedule(family,id,r.patch);if(!res.ok)throw Error('주요 일정으로 저장하지 못했어요.');
+          if(hh.hid===family){usRefreshCalendar();if(us.detailId===id&&el('modal-content').querySelector('.us-detail'))usOpenDetail(id,detailKey);}
+        }catch(e){usModalNote(e.message);}finally{us.importantSaving=false;}return;
+  }
   function usOnModalClick(ev) {
     const an = ev.target.closest("[data-anniv-act]"); // 2-5 상세 시트: 이 날 일정 추가 / 끄기 / 닫기
     if (an) {
@@ -6220,6 +6242,8 @@
         else usOpenForm(id);
         return;
       }
+      if (act === "view-original") return usViewOriginal(id);
+      if (act === "toggle-important") return usToggleImportant(id);
       if (act === "delete") {
         el("modal-content").innerHTML = rec ? UserScheduleView.renderDeleteScopeSheet(occ.originalDate) : UserScheduleView.renderDeleteConfirm();
         return;
@@ -7976,7 +8000,7 @@
   const charImage=p=>`<img class="hn-face" src="${esc(p&&p.src||CharacterUI.avatar(p&&p.role,p&&p.gender))}" alt="${esc(p&&p.name||'가족')}" />`;
   function charPerson(key){return charPeople(true).find(p=>p.key===key)||{key,role:'OTHER',name:'가족'};}
   function charOccOwner(o){const d=usDocById(o.scheduleId)||o;return d.scope==='CHILD'&&d.childKeys&&d.childKeys.length?'CHILD:'+d.childKeys[0]:d.assigneeMemberId?'MEMBER:'+d.assigneeMemberId:'FAMILY';}
-  function charRow(o){const doc=usDocById(o.scheduleId)||o,badge=CharacterUI.categoryBadge(doc.categoryLabel||doc.category,charPerson(charOccOwner(o)));return `<button type="button" class="hn-timeline" data-char-schedule="${esc(o.scheduleId)}" data-us-id="${esc(o.scheduleId)}" data-us-key="${esc(o.key||'')}"><time>${esc(o.allDay?'종일':o.startTime||'시간 미정')}</time>${charImage(charPerson(charOccOwner(o)))}<strong>${esc(o.title)}${CharacterUI.duration(o.startTime,o.endTime,o.allDay)?` <span class="hn-duration">(${esc(CharacterUI.duration(o.startTime,o.endTime,o.allDay))})</span>`:''}</strong>${currentTab==='calendar'&&badge.label?`<span class="hn-category hn-timeline-category" style="background:${badge.color}">${esc(badge.label)}</span>`:''}</button>`;}
+  function charRow(o){const doc=usDocById(o.scheduleId)||o,person=charPerson(charOccOwner(o)),badge=CharacterUI.categoryBadge(doc.categoryLabel||doc.category,person);return ScheduleReview.timeline({...o,tags:doc.tags||[],categoryLabel:currentTab==='calendar'?badge.label:'' ,category:''},{ownerHtml:charImage(person),attributes:`data-char-schedule="${esc(o.scheduleId)}" data-us-id="${esc(o.scheduleId)}" data-us-key="${esc(o.key||'')}"`});}
   function charTodoRows(home){if(!usActive())return '';const now=toISODate(new Date()), people=charPeople(false);return CharacterUI.list(HouseholdSync.getTodos(hh.hid).map(t=>{const l=usLinks().find(l=>l.familyCode===t.childKey);return !t.ownerKey&&l?{...t,ownerKey:'CHILD:'+l.childKey}:t;}),people,now,home).map(t=>{const dl=CharacterUI.deadline(t.dueDate,now);return `<div class="hn-task${t.done?' done':''}"><button class="hn-check" data-char-toggle="${esc(t.id)}" aria-label="${t.done?'완료 취소':'완료'}">${t.done?'✓':''}</button>${charImage(charPerson(CharacterUI.owner(t)))}${dl.text?`<time>${esc(dl.text)}</time>`:''}<button class="hn-task-title" data-char-edit="${esc(t.id)}">${esc(t.title)}</button>${dl.tomorrow?'<b class="hn-d1">D-1</b>':''}${t.category?`<span class="hn-category" style="background:${CharacterUI.colors[(CharacterUI.categories[charPerson(CharacterUI.owner(t)).role]||CharacterUI.categories.OTHER).indexOf(t.category)>=0?(CharacterUI.categories[charPerson(CharacterUI.owner(t)).role]||CharacterUI.categories.OTHER).indexOf(t.category):4]}">${esc(t.category)}</span>`:''}</div>`;}).join('');}
   function charTodoSection(home){return `<section class="card hn-tasks" id="hn-family-tasks${home?'':'-tab'}"><div class="hn-section-head"><h3>우리 가족 할일</h3><button class="hn-add-round" data-char-add aria-label="할일 추가">+</button></div>${charTodoRows(home)||'<p class="fine-print">등록된 할일이 없어요.</p>'}</section>`;}
   const charHomeBase=renderHome;
@@ -8028,7 +8052,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
     if(selection)charHeader();
   };
   const charShowFormBase=usShowForm;
-  usShowForm=function(){if(us.form&&!us.form.capInputMode)us.form.capInputMode='direct';charShowFormBase();if(!us.form||!acctEnabled())return;const box=el('modal-content'),people=charPeople(false);box.querySelectorAll('[data-us-who]').forEach(b=>{const key=b.dataset.usWho,p=people.find(p=>p.key===key);if(!p){b.remove();return;}b.innerHTML=charImage(p)+`<span>${esc(p.name)}</span>`;});const kinds=box.querySelector('[data-us-kinds]');if(kinds){const owner=us.form.whoPerson?'MEMBER:'+us.form.assigneeMemberId:us.form.scope==='CHILD'?'CHILD:'+(us.form.childKeys||[])[0]:'FAMILY',p=charPerson(owner),labels=CharacterUI.categoriesFor(p);if(!us.form.charCategory){us.form.charCategory=us.form.categoryLabel||CharacterUI.categoryBadge(us.form.category,p).label||labels[0];us.form.category=CharacterUI.scheduleCategory(us.form.charCategory,p);}kinds.innerHTML=labels.map((label,i)=>`<button type="button" data-char-schedule-category="${esc(label)}" class="hn-schedule-category ${us.form.charCategory===label?'on':''}" style="--category:${CharacterUI.colors[i]}">${esc(label)}</button>`).join('');const menu=box.querySelector('.cap-menu');if(menu)kinds.parentElement.insertAdjacentElement('afterend',menu);}const title=el('us-title');if(title&&!box.querySelector('#hn-schedule-content')){title.insertAdjacentHTML('beforebegin',`<textarea id="hn-schedule-content" rows="3" maxlength="500" placeholder="짧은 제목이나 받은 메시지를 입력하세요.">${esc(us.form.charText||us.form.memo||us.form.title||'')}</textarea>`);el('hn-schedule-content').oninput=e=>{us.form.charText=e.target.value;us.form.memo=e.target.value;us.form.title=CharacterUI.title(e.target.value);us.form.titleTouched=true;title.value=us.form.title;const memo=el('us-memo');if(memo)memo.value=us.form.memo;};}if(us.form.mode==='create'){const actions=box.querySelector('.us-actions');if(actions)actions.insertAdjacentHTML('beforebegin',`<label class="us-check"><input type="checkbox" id="hn-linked-todo" ${us.form.charLinked?'checked':''}/> 할일 리스트에 넣기</label>`);const check=el('hn-linked-todo');if(check)check.onchange=e=>us.form.charLinked=e.target.checked;}};
+  usShowForm=function(){if(us.form&&!us.form.capInputMode)us.form.capInputMode='direct';charShowFormBase();if(!us.form||!acctEnabled())return;const box=el('modal-content'),people=charPeople(false);box.querySelectorAll('[data-us-who]').forEach(b=>{const key=b.dataset.usWho,p=people.find(p=>p.key===key);if(!p){b.remove();return;}b.innerHTML=charImage(p)+`<span>${esc(p.name)}</span>`;});const kinds=box.querySelector('[data-us-kinds]');if(kinds){const owner=us.form.whoPerson?'MEMBER:'+us.form.assigneeMemberId:us.form.scope==='CHILD'?'CHILD:'+(us.form.childKeys||[])[0]:'FAMILY',p=charPerson(owner),labels=[...CharacterUI.categoriesFor(p)];if(!us.form.charCategory){us.form.charCategory=us.form.categoryLabel||CharacterUI.categoryBadge(us.form.category,p).label||labels[0];us.form.category=CharacterUI.scheduleCategory(us.form.charCategory,p);}if(!labels.includes(us.form.charCategory))labels.push(us.form.charCategory);kinds.innerHTML=labels.map((label,i)=>`<button type="button" data-char-schedule-category="${esc(label)}" class="hn-schedule-category ${us.form.charCategory===label?'on':''}" style="--category:${CharacterUI.colors[i]}">${esc(label)}</button>`).join('');const menu=box.querySelector('.cap-menu');if(menu)kinds.parentElement.insertAdjacentElement('afterend',menu);}const title=el('us-title');if(title&&!box.querySelector('#hn-schedule-content')){title.insertAdjacentHTML('beforebegin',`<textarea id="hn-schedule-content" rows="3" maxlength="500" placeholder="짧은 제목이나 받은 메시지를 입력하세요.">${esc(ScheduleReview.entryText(us.form))}</textarea>`);el('hn-schedule-content').oninput=e=>{ScheduleReview.applyEntryText(us.form,e.target.value,CharacterUI.title);title.value=us.form.title;const memo=el('us-memo');if(memo)memo.value=us.form.memo;};}if(us.form.mode==='create'){const actions=box.querySelector('.us-actions');if(actions)actions.insertAdjacentHTML('beforebegin',`<label class="us-check"><input type="checkbox" id="hn-linked-todo" ${us.form.charLinked?'checked':''}/> 할일 리스트에 넣기</label>`);const check=el('hn-linked-todo');if(check)check.onchange=e=>us.form.charLinked=e.target.checked;}};
   // Keep the schedule's existing controls/listeners while using the approved task sheet layout.
   const charSharedFormBase=usShowForm;
   usShowForm=function(){
@@ -8042,7 +8066,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
     const title=sheet.querySelector('#us-title'),content=sheet.querySelector('#hn-schedule-content');
     if(title)title.hidden=true;
     if(content){const field=content.closest('.us-field'),label=field.querySelector('label');if(label)label.remove();content.rows=4;}
-    const memo=sheet.querySelector('#us-memo');if(memo)memo.closest('.us-field').hidden=true;
+    const memo=sheet.querySelector('#us-memo');if(memo)memo.closest('.us-field').hidden=us.form.mode!=='edit';
     const menu=sheet.querySelector('.cap-menu');if(menu){menu.classList.add('hn-methods');if(content)content.closest('.us-field').before(menu);}
     const kinds=sheet.querySelector('[data-us-kinds]'),actions=sheet.querySelector('.us-actions');
     if(kinds&&content){const field=kinds.closest('.us-field'),contentField=content.closest('.us-field'),label=contentField.querySelector('label'),line=document.createElement('div');line.className='hn-content-heading';if(label)line.append(label);kinds.classList.add('hn-categories');line.append(kinds);contentField.prepend(line);field.remove();}
@@ -8060,7 +8084,14 @@ fields.sourceScheduleId=f.sourceScheduleId;
   };
 
   document.addEventListener('click',e=>{const b=e.target.closest('[data-char-schedule-category]');if(!b||!us.form)return;e.preventDefault();us.form.charCategory=us.form.charCategory===b.dataset.charScheduleCategory?'':b.dataset.charScheduleCategory;us.form.kindPick=us.form.charCategory;const labels=CharacterUI.categoriesFor(charPerson(us.form.whoPerson?'MEMBER:'+us.form.assigneeMemberId:us.form.scope==='CHILD'?'CHILD:'+(us.form.childKeys||[])[0]:'FAMILY'));const idx=labels.indexOf(us.form.charCategory);us.form.category=CharacterUI.scheduleCategory(us.form.charCategory,charPerson(us.form.whoPerson?'MEMBER:'+us.form.assigneeMemberId:us.form.scope==='CHILD'?'CHILD:'+(us.form.childKeys||[])[0]:'FAMILY'));us.form.categoryLabel=us.form.charCategory;usShowForm();});
-  async function charReadPhoto(){const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=async()=>{const file=input.files[0],form=charTodoForm;if(!file||!form)return;const family=hh.hid,uid=acct.user?.uid,job={};form.ocrJob=job;form.ocrReady=false;const err=el('hn-task-error');try{const svc=capSvc();if(!svc||!svc.available())throw Error('이 브라우저에서 사진 인식을 사용할 수 없어요.');err.textContent='사진에서 글자를 읽고 있어요. 잠시 기다려 주세요.';const prepared=await svc.prepare({onProgress:()=>{}});if(prepared&&prepared.ok===false)throw Error('글자 인식 데이터를 불러오지 못했어요.');const result=await svc.recognize(file,{onProgress:()=>{}});if(!result.ok)throw Error('글자를 읽지 못했어요. 다시 선택해 주세요.');if(form.ocrJob!==job||charTodoForm!==form||form.inputMode!=='photo'||hh.hid!==family||acct.user?.uid!==uid||!el('hn-task-text'))return;form.ocrReady=true;form.ocrTruncated=String(result.text||'').length>500;form.text=String(result.text||'').slice(0,500);form.title=CharacterUI.title(form.text);charTodoRender();el('hn-task-error').textContent=form.ocrTruncated?'앞 500자만 읽은 내용에 반영했어요. 사진을 나누어 올려 누락된 부분도 확인해 주세요.':'읽은 글자를 확인·수정하고 사진 내용 분석 버튼을 눌러 주세요.';}catch(e){if(form.ocrJob===job&&charTodoForm===form&&form.inputMode==='photo'&&hh.hid===family&&acct.user?.uid===uid&&el('hn-task-text')&&el('hn-task-error'))el('hn-task-error').textContent=e.message;}};input.click();}
+  async function charSelectPhoto(form,kind){
+    const input=document.createElement('input');input.type='file';input.accept='image/*,.heic,.heif';
+    input.onchange=async()=>{if(!input.files[0])return;const job={};form.photoJob=job;
+      try{const photo=await AiParser.preparePhoto(input.files[0]);if(form.photoJob!==job||(kind==='todo'?charTodoForm:us.form)!==form)return;form.photo=photo;form.messageBatch=null;messageAnalysis=null;if(kind==='todo')charTodoRender();else usShowForm();}
+      catch(e){if((kind==='todo'?charTodoForm:us.form)!==form)return;if(kind==='todo')el('hn-task-error').textContent=e.message;else{us.messages=[e.message];usShowForm();}}
+    };input.click();
+  }
+  function charReadPhoto(){return charSelectPhoto(charTodoForm,'todo');}
   let charVoice=null;
   function charStartVoice(){if(!VOICE_INPUT_ENABLED)return;const f=charTodoForm;charVoice=CaptureVoice.create({win:window,storage:localStorage,onText:t=>{if(charTodoForm!==f)return;f.text=((f.text||'')+' '+t).trim().slice(0,500);if(!f.titleEdited)f.title=CharacterUI.title(f.text);charTodoRender();},onState:s=>{if(charTodoForm===f&&el('hn-task-error'))el('hn-task-error').textContent=s.listening?'듣고 있어요…':s.mode==='keyboard'?'키보드의 마이크로 받아쓰기해 주세요.':'인식된 글자를 확인해 주세요.';}});if(!charVoice.start()){el('hn-task-error').textContent='키보드의 마이크로 받아쓰기해 주세요.';el('hn-task-text').focus();}}
 
@@ -8092,9 +8123,9 @@ fields.sourceScheduleId=f.sourceScheduleId;
   capMenuClick=function(mode){
     if(mode==='voice'&&!VOICE_INPUT_ENABLED)return;
     if(!us.form||!el('modal-content').querySelector('.hn-shared-entry'))return charCapMenuBase(mode);
-    const form=us.form;form.capInputMode=mode;if(mode==='gallery')form.ocrReady=false;if(charScheduleVoice)charScheduleVoice.stop();usShowForm();
+    const form=us.form;form.capInputMode=mode;if(charScheduleVoice)charScheduleVoice.stop();usShowForm();
     if(mode==='gallery'){
-      const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=async()=>{if(!input.files[0])return;const family=hh.hid,uid=acct.user?.uid,job={};form.ocrJob=job;try{const svc=capSvc();if(!svc||!svc.available())throw Error('사진 인식을 사용할 수 없어요.');us.messages=['사진에서 글자를 읽고 있어요.'];usShowForm();const prepared=await svc.prepare({onProgress:()=>{}});if(prepared&&prepared.ok===false)throw Error('글자 인식 데이터를 불러오지 못했어요.');const result=await svc.recognize(input.files[0],{onProgress:()=>{}});if(!result.ok)throw Error('사진의 글자를 읽지 못했어요.');if(form.ocrJob!==job||us.form!==form||form.capInputMode!=='gallery'||hh.hid!==family||acct.user?.uid!==uid||!el('hn-schedule-content'))return;form.ocrReady=true;form.ocrTruncated=String(result.text||'').length>500;us.messages=[form.ocrTruncated?'앞 500자만 반영했어요. 사진을 나누어 올려 누락된 부분도 확인해 주세요.':'읽은 글자를 확인·수정하고 사진 내용 분석 버튼을 눌러 주세요.'];charScheduleText(form,result.text);}catch(e){if(form.ocrJob===job&&us.form===form&&form.capInputMode==='gallery'&&hh.hid===family&&acct.user?.uid===uid&&el('hn-schedule-content')){us.messages=[e.message];usShowForm();}}};input.click();
+      charSelectPhoto(form,'schedule');
     }else if(mode==='voice'){
       charScheduleVoice=CaptureVoice.create({win:window,storage:localStorage,onText:text=>charScheduleText(form,((form.charText||form.memo||form.title||'')+' '+text).trim()),onState:state=>{if(us.form===form){const errors=el('us-errors');if(errors)errors.textContent=state.listening?'듣고 있어요…':'인식된 내용을 확인해 주세요.';}}});if(!charScheduleVoice.start())el('hn-schedule-content').focus();
     }else el('hn-schedule-content').focus();
@@ -8123,25 +8154,65 @@ fields.sourceScheduleId=f.sourceScheduleId;
     if(!analysisMode)return;
     const input=el(source.kind==='todo'?'hn-task-text':'hn-schedule-content');
     if(el('hn-message-analysis'))return;
-    input.insertAdjacentHTML('afterend',`<section id="hn-message-analysis"><button type="button" class="btn-complete" data-message-analyze ${analysisMode==='photo'&&!source.form.ocrReady?'disabled':''}>${analysisMode==='photo'?'사진 내용 분석해서 채우기':'메시지에서 찾아 채우기'}</button><p class="fine-print">${analysisMode==='photo'?'읽은 글자만 외부 AI 서비스로 전송돼요. 사진 원본은 보내지 않아요.':'누르면 메시지가 외부 AI 서비스로 전송돼요.'} 분석 후 내용을 확인하고 저장해 주세요.</p><div id="hn-message-results" aria-live="polite"></div></section>`);
+    if(analysisMode==='photo'){input.hidden=true;if(source.form.photo)input.insertAdjacentHTML('beforebegin',`<p class="fine-print">${esc(source.form.photo.name)}</p><img src="${source.form.photo.image}" alt="선택한 일정 사진" style="max-width:100%;max-height:240px;object-fit:contain;border-radius:16px"/>`);}
+    input.insertAdjacentHTML('afterend',`<section id="hn-message-analysis"><button type="button" class="btn-complete" data-message-analyze ${analysisMode==='photo'&&!source.form.photo?'disabled':''}>${analysisMode==='photo'?'사진 내용 분석해서 채우기':'메시지에서 찾아 채우기'}</button><p class="fine-print">${analysisMode==='photo'?'누르면 선택한 사진이 외부 AI 서비스로 전송돼요.':'누르면 메시지가 외부 AI 서비스로 전송돼요.'} 분석 후 내용을 확인하고 저장해 주세요.</p><div id="hn-message-results" aria-live="polite"></div></section>`);
+    if(source.form.messageBatch)renderMessageBatch(source.form);
   }
+  function renderMessageBatch(form){
+    const batch=form.messageBatch,target=el('hn-message-results');if(!batch||!target)return;
+    document.querySelectorAll('[data-us-action="save"],[data-char-save]').forEach(b=>b.hidden=true);
+    target.innerHTML=ScheduleReview.html(batch.candidates);
+  }
+  document.addEventListener('input',e=>{const source=messageSource(),batch=source?.form.messageBatch;if(!batch||batch.saving)return;const i=e.target.dataset.index,c=batch.candidates[Number(i)];if(c&&!c.saved&&e.target.dataset.batchField)c[e.target.dataset.batchField]=e.target.type==='checkbox'?e.target.checked:e.target.value||null;});
+  document.addEventListener('change',e=>{const batch=messageSource()?.form.messageBatch,c=batch?.candidates[Number(e.target.dataset.batchSelect)];if(c&&!c.saved&&!batch.saving)c.selected=e.target.checked;});
+  document.addEventListener('click',async e=>{
+    const source=messageSource(),batch=source?.form.messageBatch;if(!batch)return;
+    const edit=e.target.closest('[data-batch-edit]');if(edit){const c=batch.candidates[Number(edit.dataset.batchEdit)];if(!c||c.saved||batch.saving)return;c.editing=!c.editing;renderMessageBatch(source.form);if(c.editing)el('hn-message-results').querySelector(`[data-batch-fields="${edit.dataset.batchEdit}"] input`)?.focus();return;}
+    if(!e.target.closest('[data-batch-save]')||batch.saving)return;
+    const status=el('hn-message-results').querySelector('[data-batch-status]');
+    if(hh.hid!==batch.family||acct.user?.uid!==batch.uid){status.textContent='가족 연결이 바뀌었어요. 다시 분석해 주세요.';return;}
+    const rows=ScheduleReview.selectedCandidates(batch.candidates);if(!rows.length){status.textContent='저장할 일정을 선택해 주세요.';return;}
+    const docs=[];
+    for(const c of rows){const f={...batch.base,mode:'create',title:c.title,eventDate:c.date||'',dateKind:'FIXED',startTime:c.startTime||'',endTime:c.endTime||'',allDay:!c.startTime,repeat:'NONE',byDay:[],multiDay:!!c.endDate,endDate:c.endDate||'',autoRef:null,memo:(c.memo||c.evidence||'').slice(0,500),location:c.location||'',category:ScheduleReview.categoryKey(c.category,batch.base.category),categoryLabel:c.category||batch.base.categoryLabel,charCategory:c.category||batch.base.charCategory,tags:ScheduleReview.tagsFor(c,batch.base.tags)};const prep=UserScheduleView.prepareSave(f,Date.now());if(!prep.ok){status.textContent=c.title+': '+prep.messages.join(' ');return;}const built=UserSchedule.buildCreateDoc(prep.input,Date.now());if(!built.ok){status.textContent='제목·날짜·시간을 확인해 주세요.';return;}docs.push({c,doc:built.doc});}
+    batch.saving=true;const controls=el('hn-message-results').querySelectorAll('input,button,select,textarea');controls.forEach(x=>x.disabled=true);
+    try{
+      if(batch.photo&&!batch.photoRef){status.textContent='원본 사진을 비공개 공간에 저장하고 있어요…';batch.photoRef=await SourcePhoto.save(batch.photo,{user:acct.user,familyId:batch.family});}
+      for(const {c,doc} of docs){if(hh.hid!==batch.family||acct.user?.uid!==batch.uid||source.form.messageBatch!==batch)throw Error('등록 대상이 바뀌어 저장을 중단했어요.');
+        if(batch.photoRef){doc.tags=[...(doc.tags||[]).filter(t=>!t.startsWith('원본사진:')),batch.photoRef];if(doc.tags.length>10)throw Error('태그가 많아 원본 사진을 연결하지 못했어요.');}
+        const r=await HouseholdSync.createSchedule(batch.family,doc);if(!r.ok)throw Error('저장하지 못한 일정이 있어요. 다시 저장하면 남은 일정만 등록해요.');c.saved=true;}usRefreshCalendar();status.textContent='선택한 일정을 저장했어요.';}
+    catch(e){status.textContent=e.message;}
+    finally{batch.saving=false;if(messageSource()?.form===source.form){const notice=status.textContent;renderMessageBatch(source.form);el('hn-message-results').querySelector('[data-batch-status]').textContent=notice;}}
+  });
   const messageTodoRender=charTodoRender;
   charTodoRender=function(){messageTodoRender();addMessageAnalysisUI();};
   const messageScheduleRender=usShowForm;
-  usShowForm=function(){messageScheduleRender();addMessageAnalysisUI();};
+  usShowForm=function(){messageScheduleRender();addMessageAnalysisUI();
+    if(us.form?.mode==='edit'){
+      const form=us.form,meta=ScheduleReview.metadata(form),content=el('hn-schedule-content');if(!content)return;
+      content.insertAdjacentHTML('afterend',`<section class="hn-import-meta"><label>담당(주최자)<input id="hn-import-organizer" maxlength="60" value="${esc(meta.organizerName)}"/></label><label><input type="checkbox" id="hn-import-holiday" ${meta.isHoliday?'checked':''}/> 휴일로 표시하기</label></section>`);
+      const update=()=>{form.tags=ScheduleReview.tagsFor({category:form.charCategory||form.categoryLabel,organizerName:el('hn-import-organizer').value,isHoliday:el('hn-import-holiday').checked},form.tags||[]);};
+      el('hn-import-organizer').oninput=update;el('hn-import-holiday').onchange=update;
+      if(form.multiDay||form.endDate){content.insertAdjacentHTML('afterend',`<label>종료 날짜<input type="date" id="hn-edit-end-date" value="${esc(form.endDate||'')}"/></label>`);el('hn-edit-end-date').oninput=e=>{form.endDate=e.target.value;form.multiDay=!!e.target.value;};}
+    }
+  };
   document.addEventListener('click',async e=>{
     const analyze=e.target.closest('[data-message-analyze]'),apply=e.target.closest('[data-message-apply]');
     if(analyze){
       if(analyze.disabled)return;
       const source=messageSource();if(!source)return;
-      if(AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode)==='photo'&&!source.form.ocrReady)return;
-      const family=hh.hid,uid=acct.user&&acct.user.uid,target=el('hn-message-results');
+      if(AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode)==='photo'&&!source.form.photo)return;
+      const family=hh.hid,uid=acct.user&&acct.user.uid,target=el('hn-message-results'),photo=source.form.photo,mode=AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode);
+      if(source.form.messageBatch?.saving)return;
       analyze.disabled=true;target.textContent='내용을 정리하고 있어요…';messageAnalysis=null;
-      const result=await AiParser.parseWithAI(source.text,toISODate(new Date()),{user:acct.user,familyId:family});
-      const current=messageSource();if(!current||current.form!==source.form||current.text!==source.text||hh.hid!==family||acct.user?.uid!==uid||el('hn-message-results')!==target){if(el('hn-message-results')===target){analyze.disabled=false;target.textContent='입력 내용이나 대상이 바뀌어 분석 결과를 적용하지 않았어요. 다시 분석해 주세요.';}return;}
+      const result=await AiParser.parseWithAI(source.text,toISODate(new Date()),{user:acct.user,familyId:family,image:AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode)==='photo'?source.form.photo?.image:undefined});
+      const current=messageSource();if(!current||current.form!==source.form||current.text!==source.text||current.form.photo!==photo||AiParser.analysisMode(current.kind,current.kind==='todo'?current.form.inputMode:current.form.capInputMode)!==mode||hh.hid!==family||acct.user?.uid!==uid||el('hn-message-results')!==target){if(el('hn-message-results')===target){analyze.disabled=false;target.textContent='입력 내용이나 대상이 바뀌어 분석 결과를 적용하지 않았어요. 다시 분석해 주세요.';}return;}
       analyze.disabled=false;
       if(!result.ok){target.textContent=result.message;return;}
       messageAnalysis={...source,analysisMode:AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode),family,uid,candidates:result.candidates};
+      if(source.kind==='schedule'||messageAnalysis.analysisMode==='photo'){
+        source.form.messageBatch={family,uid,photo:mode==='photo'?photo:null,base:source.kind==='schedule'?{...source.form}:{...capBaseForm(),scope:source.form.ownerKey.startsWith('CHILD:')?'CHILD':'FAMILY',childKeys:source.form.ownerKey.startsWith('CHILD:')?[source.form.ownerKey.slice(6)]:[],assigneeMemberId:source.form.ownerKey.startsWith('MEMBER:')?source.form.ownerKey.slice(7):'',whoPerson:source.form.ownerKey.startsWith('MEMBER:'),g13:true},candidates:result.candidates.map(c=>({...c,selected:true,ownerDisplay:source.kind==='todo'?charPerson(source.form.ownerKey).name:charPerson(source.form.whoPerson?'MEMBER:'+source.form.assigneeMemberId:source.form.scope==='CHILD'?'CHILD:'+(source.form.childKeys||[])[0]:'FAMILY').name}))};
+        renderMessageBatch(source.form);return;
+      }
       target.innerHTML=result.candidates.length?'<p class="fine-print">후보를 골라 폼에 채우세요. 대상·날짜·시간·반복은 저장 전 확인해 주세요.</p>'+result.candidates.map((c,i)=>`<div class="hn-message-candidate"><strong>${esc(c.title)}</strong><p>${esc(c.kind==='todo'?'할일':'일정')} · ${esc(c.date||'날짜 미확인')} · ${esc(c.startTime||'시간 미확인')} · ${esc(c.ownerName||'대상 미확인')} · ${esc(c.category||'분류 미확인')}</p><blockquote>${esc(c.evidence)}</blockquote><button type="button" data-message-apply="${i}">이 ${c.kind==='todo'?'할일':'일정'} 입력폼에 채우기</button></div>`).join(''):'찾은 일정·할일이 없어요. 원문을 유지하고 직접 입력해 주세요.';
     }
     if(apply){
@@ -8155,7 +8226,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
         charTodoRender();el('hn-task-error').textContent=notice;
       }else{
         if(current.kind!=='schedule')usOpenForm(null);
-        const f=us.form;f.messageTitleReview=true;f.charText=state.text;f.memo=state.text;f.title=candidate.title;f.titleTouched=true;f.capInputMode=state.analysisMode==='photo'?'gallery':'paste';f.ocrReady=state.analysisMode==='photo';f.eventDate=candidate.date||'';f.dateKind='FIXED';f.startTime=candidate.startTime||'';f.endTime=candidate.endTime||'';f.allDay=!candidate.startTime;f.repeat='NONE';f.byDay=[];f.multiDay=false;f.endDate='';f.twConfirmed=false;const owner=f.whoPerson?'MEMBER:'+f.assigneeMemberId:f.scope==='CHILD'?'CHILD:'+(f.childKeys||[])[0]:'FAMILY';if(candidate.category&&CharacterUI.categoriesFor(charPerson(owner)).includes(candidate.category)){f.charCategory=candidate.category;f.categoryLabel=candidate.category;f.category=CharacterUI.scheduleCategory(candidate.category,charPerson(owner));}us.messages=[notice];usShowForm();
+        const f=us.form;f.messageTitleReview=true;f.charText=state.text;f.memo=state.text;f.title=candidate.title;f.titleTouched=true;f.capInputMode=state.analysisMode==='photo'?'gallery':'paste';f.ocrReady=state.analysisMode==='photo';f.eventDate=candidate.date||'';f.dateKind='FIXED';f.startTime=candidate.startTime||'';f.endTime=candidate.endTime||'';f.allDay=!candidate.startTime;f.repeat='NONE';f.byDay=[];f.multiDay=!!candidate.endDate;f.endDate=candidate.endDate||'';f.twConfirmed=false;const owner=f.whoPerson?'MEMBER:'+f.assigneeMemberId:f.scope==='CHILD'?'CHILD:'+(f.childKeys||[])[0]:'FAMILY';if(candidate.category&&CharacterUI.categoriesFor(charPerson(owner)).includes(candidate.category)){f.charCategory=candidate.category;f.categoryLabel=candidate.category;f.category=CharacterUI.scheduleCategory(candidate.category,charPerson(owner));}us.messages=[notice];usShowForm();
       }
       messageAnalysis=null;
     }

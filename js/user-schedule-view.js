@@ -601,6 +601,11 @@
       doneLabel: done ? MSG.done : "",
       location: occ.location || "",
       memo: occ.memo || "",
+      ...((occ.tags||[]).some(t=>t.startsWith('주최:'))?{organizerText:(occ.tags||[]).find(t=>t.startsWith('주최:')).slice(3)}:{}),
+      ...((occ.tags||[]).includes('휴일')?{isHoliday:true}:{}),
+      ...((occ.tags||[]).includes('주요일정')?{isImportant:true}:{}),
+      ...((occ.tags||[]).some(t=>t.startsWith('원본사진:'))?{sourcePhotoTag:(occ.tags||[]).find(t=>t.startsWith('원본사진:'))}:{}),
+      ...(occ.endDate?{periodText:occ.date+' ~ '+occ.endDate}:{}),
       isPeriod: occ.dateKind === "PERIOD",
     };
     if (extra && extra.autoTitle && occ.autoRef) base.autoLinkText = MSG.autoLinkBadge(extra.autoTitle); // C2: 연결된 AUTO 항목 배지(앱이 제목을 줄 때만)
@@ -688,7 +693,7 @@
     const rec = c.recurring === true; // 반복 회차만 '옮김' 글자와 반복 알약이 붙는다
     const meta = [c.timeText, c.dateText, c.categoryLabel, c.tag, rec ? c.movedText : ""].filter(Boolean).map(esc).concat(c.autoLinkText ? [`<span class="us-autolink">${esc(c.autoLinkText)}</span>`] : []).join(" · ");
     const pill = c.done ? `<span class="us-done">${esc(c.doneLabel)}</span>` : c.cancelled ? `<span class="us-cancelled">${esc(c.cancelledLabel)}</span>` : "";
-    return `<button type="button" class="us-card${c.done ? " done" : ""}${c.cancelled ? " cancelled" : ""}" data-us-key="${esc(c.key)}" data-us-id="${esc(c.scheduleId)}"${rec ? ` data-us-date="${esc(c.originalDate)}"` : ""} style="--us-color:${safeColor(c.color)}">
+    return `<button type="button" class="us-card${c.isHoliday?' hn-holiday':''}${c.done ? " done" : ""}${c.cancelled ? " cancelled" : ""}" data-us-key="${esc(c.key)}" data-us-id="${esc(c.scheduleId)}"${rec ? ` data-us-date="${esc(c.originalDate)}"` : ""} style="--us-color:${safeColor(c.color)}">
       <span class="us-bar"></span>
       <span class="us-body"><span class="us-l1"><strong class="us-title">${esc(c.title)}</strong>${pill}</span>
         <span class="us-l2"><span class="us-meta">${meta}</span>${rec ? `<span class="us-tag us-repeat">${esc(c.repeatBadge)}</span>` : ""}</span>
@@ -716,7 +721,9 @@
     const v = detailView(c);
     const rows = [
       [MSG.categoryLabel, v.categoryLabel],
-      [MSG.dateLabel, v.recurring ? [v.dayLabel, v.timeText].filter(Boolean).join(" · ") : [v.dateText, v.timeText].filter(Boolean).join(" · ")],
+      ["담당(주최자)",v.organizerText],
+      ["휴일",v.isHoliday?"휴일 일정":""],
+      [v.periodText||opts&&opts.isPeriod?"기간":MSG.dateLabel, v.periodText?[v.periodText,v.timeText].filter(Boolean).join(" · "):opts&&opts.fullDate?[opts.fullDate,v.timeText].filter(Boolean).join(" · "):v.recurring ? [v.dayLabel, v.timeText].filter(Boolean).join(" · ") : [v.dateText, v.timeText].filter(Boolean).join(" · ")],
       ...(v.recurring ? [[MSG.repeatLabel, v.repeatSummary], ["", v.movedText], ["", v.adjustedText || ""]] : []),
       [MSG.targetLabel, v.targetText !== undefined ? v.targetText : v.tag, "target"],
       [MSG.locationLabel.replace(/ \(선택\)$/, ""), v.location],
@@ -727,7 +734,7 @@
       .join("");
     const badges = (v.done ? ` <span class="us-done">${esc(MSG.done)}</span>` : "") + (v.cancelled ? ` <span class="us-cancelled">${esc(v.cancelledLabel)}</span>` : "") + (v.recurring ? ` <span class="us-repeat">${esc(v.repeatBadge)}</span>` : "");
     const notice = v.recurring && v.exceptionsNotice ? `<p class="us-note">${esc(v.exceptionsNotice)}</p>` : "";
-    return `<div class="us-detail" style="--us-color:${safeColor(v.color)}"><h3>${esc(v.title)}${badges}</h3>${rows}${notice}
+    return `<div class="us-detail${v.isHoliday?' hn-holiday':''}" style="--us-color:${safeColor(v.color)}"><h3>${esc(v.title)}${badges}<button type="button" class="hn-important-toggle" data-us-action="toggle-important" aria-pressed="${!!v.isImportant}" aria-label="${v.isImportant?'주요 일정 해제':'주요 일정 등록'}">${v.isImportant?'★':'☆'}</button></h3>${rows}${notice}${opts&&opts.canViewOriginal&&v.sourcePhotoTag?'<button type="button" class="us-btn" data-us-action="view-original">원본 보기</button>':''}
       <div class="us-actions">${v.actions.map((a) => `<button type="button" class="us-btn${a.id === "toggle-done" ? " us-primary" : ""}" data-us-action="${a.id}">${esc(a.label)}</button>`).join("")}</div></div>`;
   }
   function renderDeleteConfirm() {
@@ -809,6 +816,7 @@
       : { repeat: "NONE", byDay: [], untilMode: "NONE", until: "", wasRecurring: false };
     return {
       ...repeatFields,
+      tags: (doc.tags||[]).slice(),
       mode: "edit", scheduleId: doc.id || null, title: doc.title || "", category: doc.category || "", categoryLabel: doc.categoryLabel || "", charCategory: doc.categoryLabel || "", scope: doc.scope, childKeys: (doc.childKeys || []).slice(), assigneeMemberId: typeof doc.assigneeMemberId === "string" ? doc.assigneeMemberId : "",
       dateKind: doc.dateKind, eventDate: rec ? rec.startDate || "" : doc.eventDate || "", multiDay: !!doc.endDate, endDate: doc.endDate || "", periodStart: doc.periodStart || "", periodEnd: doc.periodEnd || "",
       allDay: doc.allDay !== false, startTime: doc.startTime || "", endTime: doc.endTime || "", location: doc.location || "", memo: doc.memo || "",
@@ -819,6 +827,7 @@
   /** 폼 → UserSchedule.buildCreateDoc 입력(MANUAL). 쓰지 않는 필드는 아예 넣지 않는다. */
   function formToInput(f) {
     const input = { sourceType: "MANUAL", title: String(f.title || "").trim(), category: f.category, scope: f.scope, dateKind: f.dateKind, allDay: !!f.allDay };
+    if (Array.isArray(f.tags) && f.tags.length){input.tags=f.tags.slice();if(input.tags.some(t=>['학교','학원','체험'].includes(t)&&t!==(f.charCategory||f.categoryLabel))&&(f.charCategory||f.categoryLabel))input.tags=[...new Set(input.tags.filter(t=>!['학교','학원','체험'].includes(t)).concat(f.charCategory||f.categoryLabel))];}
     if (f.charCategory || f.categoryLabel) input.categoryLabel = f.charCategory || f.categoryLabel;
     if (f.scope === "CHILD") input.childKeys = (f.childKeys || []).slice();
     if (f.autoRef) input.autoRef = f.autoRef; // C2: 연결은 생성 때만 정해진다(수정은 PATCH_FIELDS 밖)
@@ -838,7 +847,7 @@
     }
     if (!f.allDay) {
       input.startTime = f.startTime;
-      if (f.endTime) input.endTime = f.endTime;
+      if (f.endTime && !f.endAuto) input.endTime = f.endTime;
     }
     const loc = String(f.location || "").trim();
     const memo = String(f.memo || "").trim();
@@ -912,7 +921,7 @@
     }
     return { ok: true, input, messages: [] };
   }
-  const PATCH_FIELDS = Object.freeze(["title", "category", "categoryLabel", "scope", "childKeys", "dateKind", "eventDate", "endDate", "periodStart", "periodEnd", "allDay", "startTime", "endTime", "location", "memo", "assigneeMemberId"]);
+  const PATCH_FIELDS = Object.freeze(["title", "category", "categoryLabel", "tags", "scope", "childKeys", "dateKind", "eventDate", "endDate", "periodStart", "periodEnd", "allDay", "startTime", "endTime", "location", "memo", "assigneeMemberId"]);
   /** 규칙 비교(키 순서·interval 생략 무시): 같은 규칙이면 true. Firestore 는 맵 키를 정렬해 돌려줄 수 있어 JSON 문자열 비교를 쓰지 않는다. */
   function sameRule(a, b) {
     if (!a || !b) return !a && !b;

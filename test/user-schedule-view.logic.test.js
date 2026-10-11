@@ -539,7 +539,7 @@ test("정적 확인: DOM·저장소·네트워크·Firestore·자동 일정 완�
 test("data-us-action 은 정해진 값만 쓴다", () => {
   const all = [V.renderForm(F({}), LINKS), V.renderDetail({ key: "k", scheduleId: "s", title: "t", categoryLabel: "", timeText: "", dateText: "", tag: "", color: "#ef92b4", done: false }), V.renderDetail({ key: "k", scheduleId: "s", title: "t", categoryLabel: "", timeText: "", dateText: "", tag: "", color: "#ef92b4", done: true }), V.renderDeleteConfirm(), V.renderAddButton({ enabled: true, hasHousehold: true }), V.renderFilterChips(V.filterChips(LINKS, []), { mode: "kids" })].join("");
   const acts = new Set([...all.matchAll(/data-us-action="([^"]+)"/g)].map((m) => m[1]));
-  assert.deepStrictEqual([...acts].sort(), ["add", "cancel", "cancel-delete", "close", "confirm-delete", "delete", "edit", "save", "toggle-cat-color", "toggle-done", "toggle-only-user"]);
+  assert.deepStrictEqual([...acts].sort(), ["add", "cancel", "cancel-delete", "close", "confirm-delete", "delete", "edit", "save", "toggle-cat-color", "toggle-done", "toggle-important", "toggle-only-user"]);
 });
 
 // ════════════════════════════════════════════════════════════════════════

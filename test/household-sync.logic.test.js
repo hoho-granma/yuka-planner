@@ -60,3 +60,15 @@ test('reissue does not replace the saved stable family ID with an invitation cod
 test('leaving locally removes listeners and local mirror only',async()=>{
  const f=setup();await f.hs.joinHousehold('f1',{metadataOnly:true});f.setError('unavailable');await f.hs.createTodo('f1',{title:'pending'});f.hs.startListening('f1');const before=f.calls.length,r=f.hs.leaveLocal('f1');assert.equal(r.discarded,1);assert.equal(f.calls.length,before);assert(f.listeners.every(l=>l.off));assert.equal(f.hs.getSavedCode(),null);assert(f.records.has('families/f1'));
 });
+
+test('기존 일정 수정은 제목·기간·메모·주최·별표를 서버와 재조회 폼에 함께 보존',async()=>{
+ const US=require('../js/user-schedule'),View=require('../js/user-schedule-view'),Review=require('../js/capture/schedule-review');
+ const f=setup(),created=US.buildCreateDoc({sourceType:'MANUAL',title:'여름 캠프',scope:'CHILD',childKeys:['c1'],category:'INSTITUTION',categoryLabel:'학교',dateKind:'FIXED',eventDate:'2026-08-03',endDate:'2026-08-07',allDay:true,memo:'준비물: 물통',tags:['학교','주최:MIAC','주요일정']},1);
+ assert.equal(created.ok,true);const saved=await f.hs.createSchedule('f1',created.doc),before=f.hs.getSchedules('f1')[0],form=View.formFromSchedule(before);
+ Review.applyEntryText(form,'여름 캠프 변경');form.memo='준비물: 물통과 모자';form.endDate='2026-08-08';
+ const patch=US.buildPatch(View.stripId(before),View.changesFromForm(form,View.stripId(before)),2);assert.equal(patch.ok,true);
+ assert.equal((await f.hs.patchSchedule('f1',saved.scheduleId,patch.patch)).pending,false);
+ const server=f.records.get('families/f1/schedules/'+saved.scheduleId),reopened=View.formFromSchedule(f.hs.getSchedules('f1')[0]);
+ for(const record of [server,reopened]){assert.equal(record.title,'여름 캠프 변경');assert.equal(record.memo,'준비물: 물통과 모자');assert.equal(record.endDate,'2026-08-08');assert(record.tags.includes('주최:MIAC'));assert(record.tags.includes('주요일정'));}
+ const deletion=US.softDelete(server,3);assert.equal(deletion.ok,true);await f.hs.patchSchedule('f1',saved.scheduleId,deletion.patch);assert(f.records.get('families/f1/schedules/'+saved.scheduleId).deletedAt);
+});

@@ -54,6 +54,16 @@ test("endDate 연속 일정은 걸친 모든 날 칸에 들어가고 카운트�
   assert.strictEqual(m.days.get("2026-10-18").user.length, 0);
   assert.strictEqual(m.counts.userItems, 1);
 });
+test("사진에서 등록한 월 경계 기간은 양쪽 달의 시작일부터 종료일까지 표시", () => {
+  const doc=sched({eventDate:"2026-08-31",endDate:"2026-09-04",allDay:true,startTime:undefined,title:"가을 AEP 등록"});
+  const august=model([doc],{range:{start:"2026-08-01",end:"2026-08-31"}});
+  const september=model([doc],{range:{start:"2026-09-01",end:"2026-09-30"}});
+  assert.strictEqual(august.days.get("2026-08-30").user.length,0);
+  assert.strictEqual(august.days.get("2026-08-31").user.length,1);
+  for(const day of ["01","02","03","04"])assert.strictEqual(september.days.get("2026-09-"+day).user[0].scheduleId,doc.id);
+  assert.strictEqual(september.days.get("2026-09-05").user.length,0);
+  assert.strictEqual(september.counts.userItems,1);
+});
 test("PERIOD 는 칸에 점이 없고 periodList 에만(periodEnd 오름차순, 제목순)", () => {
   const p = { dateKind: "PERIOD", eventDate: undefined, allDay: true, startTime: undefined };
   const m = model([sched({ ...p, periodStart: "2026-10-01", periodEnd: "2026-10-31", title: "나" }), sched({ ...p, periodStart: "2026-10-01", periodEnd: "2026-10-20", title: "다" }), sched({ ...p, periodStart: "2026-10-01", periodEnd: "2026-10-20", title: "가" })]);
