@@ -47,3 +47,5 @@
 .us-form #hn-edit-end-date{box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:38px;padding:8px;font:inherit;font-size:16px;border:1px solid var(--border,#e2e2dd);border-radius:8px}
 .us-form .hn-import-meta{min-width:0;gap:8px;margin:10px 0}
 .us-form .hn-import-meta input:not([type=checkbox]){box-sizing:border-box;width:100%;max-width:100%;min-width:0}
+
+.hn-batch-done #hn-message-analysis~*{display:none!important}

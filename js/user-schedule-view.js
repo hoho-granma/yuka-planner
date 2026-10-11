@@ -660,7 +660,7 @@
       return title ? { ...(recOf(o) || {}), autoTitle: title } : recOf(o);
     };
     // 취소한 반복 회차(B5 D4)는 칸 표식·집계에서는 빠지지만 그날 패널에는 흐리게 남아 되돌릴 수 있다. 맨 뒤에 둔다.
-    const cards = (day.user || []).concat(day.periodStarts || [], day.cancelled || []).map((o) => cardData(o, links, extraOf(o))); // 기간 일정은 시작일에 '날짜 미정 · 12/1~12/31' 카드로
+    const cards = (day.user || []).concat(day.periodStarts || []).map((o) => cardData(o, links, extraOf(o))); // 기간 일정은 시작일에 '날짜 미정 · 12/1~12/31' 카드로
     return {
       added: { title: MSG.groupAdded, cards },
       benefit: { title: MSG.groupBenefit, count: (day.benefit || []).length },

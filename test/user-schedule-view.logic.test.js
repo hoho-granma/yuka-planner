@@ -636,16 +636,15 @@ test("renderCard: 반복 카드는 data-us-date·반복 배지, 취소 카드는
   const single = V.renderCard(V.cardData(model([sched({})]).days.get("2026-10-06").user[0], LINKS));
   assert(!single.includes("data-us-date") && !single.includes("us-repeat") && !single.includes("cancelled") && !single.includes("us-moved"));
 });
-test("선택일 패널: 취소 회차는 일반 카드 뒤에 흐리게, 취소만 있어도 '비어 있음'이 아니다 / 취소 없는 날은 B4 와 같다", () => {
+test("선택일 패널: 취소 회차는 목록에 나오지 않는다 / 취소 없는 날은 B4 와 같다", () => {
   const d = recDoc({ exceptions: { "2026-10-08": { status: "CANCELLED" } } });
   const other = sched({ eventDate: "2026-10-08" });
   const m = occsOf([d, other]);
   const panel = V.dayPanel(m.days.get("2026-10-08"), LINKS, { docById: (id) => (id === d.id ? d : null) });
-  assert.deepStrictEqual(panel.added.cards.map((c) => c.cancelled === true), [false, true]);
-  assert.strictEqual(panel.added.cards[1].repeatSummary, "매주 화·목 · 10/6부터");
+  assert.deepStrictEqual(panel.added.cards.map((c) => c.cancelled === true), [false]);
   const onlyCancel = V.dayPanel(occsOf([d]).days.get("2026-10-08"), LINKS);
-  assert.strictEqual(onlyCancel.added.cards.length, 1);
-  assert.strictEqual(onlyCancel.emptyAdded, false);
+  assert.strictEqual(onlyCancel.added.cards.length, 0);
+  assert.strictEqual(onlyCancel.emptyAdded, true);
   const plain = V.dayPanel({ user: [], benefit: [], planned: [] }, LINKS);
   assert.deepStrictEqual([plain.added.cards.length, plain.emptyAdded], [0, true]);
 });

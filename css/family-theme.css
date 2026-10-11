@@ -92,6 +92,8 @@ body:has(#view-landing.acct-on:not(.hidden)){background:#fff!important}
 #home-body .hn-task-title,
 #home-body .hn-timeline time,
 #home-body .hn-task time,
+#selected-day-list .hn-timeline strong,
+#selected-day-list .us-card .us-title,
 #hn-family-tasks-tab .hn-section-head h3,
 #hn-family-tasks-tab .hn-task-title,
 #hn-family-tasks-tab .hn-task time {
