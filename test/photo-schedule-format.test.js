@@ -61,7 +61,7 @@ test('원본 버튼은 업로더에게만 표시하고 편집 시 원본 참조�
  assert(Schedule.buildPatch(doc,View.changesFromForm(form,doc),2).after.tags.includes(source));
 });
 
-test('사진 로딩은 스캔용 상태, 실패는 X와 직접 입력 버튼이며 오류 문구를 이스케이프',()=>{
+test('사진 로딩은 접근성 상태, 실패는 X와 직접 입력 버튼이며 오류 문구를 이스케이프',()=>{
  const busy=Review.analysisStatus('busy','photo');assert(!busy.includes('내용을 정리'));assert(busy.includes('hn-analysis-sr'));
  const error=Review.analysisStatus('error','photo','<script>');assert(error.includes('×'));assert(error.includes('data-message-manual'));assert(!error.includes('<script>'));
 });
@@ -77,13 +77,13 @@ test('주최자 접두어는 달력 제목에서 숨기고 상세 담당에는 �
 test('분석 중 사진을 추가로 만들지 않고 후보는 번호 대신 실제 제목 행으로 표시',()=>{
  assert(!Review.analysisStatus('busy','photo','','data:image/png;base64,aA==').includes('<img'));
  const html=Review.html([{title:'Summer Camp',date:'2026-08-03',endDate:'2026-08-07',category:'학교',ownerDisplay:'은찬',selected:true}]);
- assert(!html.includes('일정 1'));assert.match(html,/hn-review-head/);assert.match(html,/Summer Camp/);assert.match(html,/data-batch-select/);assert.match(html,/hn-edit-icon/);assert.match(html,/data-batch-close/);assert.match(html,/2026-08-03 ~ 2026-08-07/);
+ assert(!html.includes('일정 1'));assert.match(html,/hn-review-head/);assert.match(html,/Summer Camp/);assert.match(html,/data-batch-select/);assert(!html.includes("hn-edit-icon"));assert.match(html,/data-batch-commit/);assert.match(html,/data-batch-close/);assert.match(html,/2026-08-03 ~ 2026-08-07/);
 });
 
 test('후보 편집 순서·한줄 안내·휴일 색상·담당 사진을 유지',()=>{
  const html=Review.html([{title:'휴교',date:'2026-08-15',category:'학교',isHoliday:true,selected:true,editing:true,ownerDisplay:'은찬',ownerImage:'icons/child.png'}]);
  const fields=[...html.matchAll(/data-batch-field="([^"]+)"/g)].map(m=>m[1]);
- assert.deepEqual(fields,['title','date','endDate','startTime','endTime','category','location','organizerName','memo']);
+ assert.deepEqual(fields,['title','date','endDate','startTime','endTime','category','location','organizerName','memo','isImportant']);
  assert.match(html,/1개 · 1개 선택/);assert.match(html,/등록할 일정/);assert(!html.includes('선택·수정 후 저장해 주세요'));assert.match(html,/hn-holiday/);assert(!html.includes('hn-holiday-label'));assert(!html.includes('data-batch-field="isHoliday"'));assert.match(html,/hn-review-avatar/);assert.match(html,/src="icons\/child.png"/);assert(!html.includes('연도 미표기'));
 });
 
@@ -94,10 +94,10 @@ test('휴일도 기존 카테고리 색상을 사용하고 제목만 휴일 클�
 });
 
 
-test('주요 일정 태그가 있는 기존 일정도 후보·상세에 별표나 설정을 노출하지 않음',()=>{
+test('즐겨찾기 태그가 있는 기존 일정의 별표와 설정을 복원',()=>{
  const occ={...base,date:'2026-10-25',tags:['체험','주최:티처투어','주요일정'],isImportant:true};
  const html=Review.html([{...occ,selected:true,editing:true}])+View.renderDetail(View.cardData(occ,[]));
- assert(!html.includes('toggle-important'));assert(!html.includes('hn-important'));assert(!html.includes('data-batch-field="isImportant"'));assert(!html.includes('★'));assert(!html.includes('☆'));
+ assert(html.includes('toggle-important'));assert(html.includes('hn-important'));assert(html.includes('data-batch-field="isImportant"'));assert(html.includes('★'));assert(html.includes('즐겨찾기'));
 });
 
 test('번역된 기간 제목은 저장 후 종료일까지 동일한 제목으로 표시',()=>{
@@ -105,4 +105,17 @@ test('번역된 기간 제목은 저장 후 종료일까지 동일한 제목으�
  const model=require('../js/calendar-model').buildCalendarModel({range:{start:'2026-08-01',end:'2026-08-10'},user:{schedules:[{...doc,id:'camp'}]}});
  for(const date of ['2026-08-03','2026-08-04','2026-08-05','2026-08-06','2026-08-07']){const rows=model.days.get(date).user;assert.equal(rows.length,1);assert.equal(View.cardData(rows[0],[]).title,'여름 캠프');}
  assert.equal(model.days.get('2026-08-08').user.length,0);
+});
+
+ test('후보 수정은 저장할 때만 반영하고 닫으면 버리며 원본 연결을 유지',()=>{
+ const c={title:'원래 제목',date:'2026-08-03',endDate:'2026-08-07',selected:true,ownerColor:'#b6dfcd'};
+ Review.beginEdit(c);c.editDraft.title='닫은 수정';Review.cancelEdit(c);assert.equal(c.title,'원래 제목');
+ Review.beginEdit(c);c.editDraft.title='저장한 수정';c.editDraft.isImportant=true;Review.applyEdit(c);assert.equal(c.title,'저장한 수정');assert.equal(c.editing,false);
+ const ref='원본사진:u:'+ 'a'.repeat(64);const form=Review.candidateForm(c,{tags:[ref]});assert(form.tags.includes(ref));assert(form.tags.includes('주요일정'));assert.equal(form.endDate,'2026-08-07');
+ assert.match(Review.html([c]),/--hn-review-person:#b6dfcd/);assert(!Review.html([c]).includes('👶'));
+ });
+
+test('후보의 명시된 종료시간은 기본 폼의 자동 종료시간과 무관하게 저장',()=>{
+ const f=Review.candidateForm({title:'체험',date:'2026-10-25',startTime:'10:00',endTime:'16:00',category:'체험'},{...base,endAuto:true});
+ assert.equal(View.formToInput(f).endTime,'16:00');
 });

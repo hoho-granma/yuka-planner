@@ -6192,6 +6192,17 @@
     try{const image=await SourcePhoto.read(doc.tags,acct.user);if(acct.user?.uid!==uid||hh.hid!==family||!detail.isConnected)return;const img=document.createElement('img');img.alt='이 일정의 원본 사진';img.src=image;section.textContent='';section.append(img);}
     catch(e){if(section.isConnected)section.textContent=e.message;}
   }
+  async function usToggleImportant(id){
+        if(us.importantSaving)return;
+        const doc=usDocById(id),family=hh.hid;if(!doc)return;
+        us.importantSaving=true;const detailKey=us.detailKey;
+        try{const tags=(doc.tags||[]).includes('주요일정')?(doc.tags||[]).filter(t=>t!=='주요일정'):[...(doc.tags||[]),'주요일정'];
+          if(tags.length>10)throw Error('태그가 많아 즐겨찾기로 표시하지 못했어요.');
+          const r=UserSchedule.buildPatch(UserScheduleView.stripId(doc),{tags},Date.now());if(!r.ok)throw Error('즐겨찾기 상태를 확인해 주세요.');
+          const res=await HouseholdSync.patchSchedule(family,id,r.patch);if(!res.ok)throw Error('즐겨찾기로 저장하지 못했어요.');
+          if(hh.hid===family){usRefreshCalendar();if(us.detailId===id&&el('modal-content').querySelector('.us-detail'))usOpenDetail(id,detailKey);}
+        }catch(e){usModalNote(e.message);}finally{us.importantSaving=false;}return;
+  }
   function usOnModalClick(ev) {
     const an = ev.target.closest("[data-anniv-act]"); // 2-5 상세 시트: 이 날 일정 추가 / 끄기 / 닫기
     if (an) {
@@ -6231,6 +6242,7 @@
         else usOpenForm(id);
         return;
       }
+      if (act === "toggle-important") return usToggleImportant(id);
       if (act === "view-original") return usViewOriginal(id);
       if (act === "delete") {
         el("modal-content").innerHTML = rec ? UserScheduleView.renderDeleteScopeSheet(occ.originalDate) : UserScheduleView.renderDeleteConfirm();
@@ -8142,33 +8154,49 @@ fields.sourceScheduleId=f.sourceScheduleId;
     if(!analysisMode)return;
     const input=el(source.kind==='todo'?'hn-task-text':'hn-schedule-content');
     if(el('hn-message-analysis'))return;
-    if(analysisMode==='photo'){input.hidden=true;if(source.form.photo)input.insertAdjacentHTML('beforebegin',`<p class="fine-print">${esc(source.form.photo.name)}</p><div class="hn-photo-preview" data-photo-state="idle"><img src="${source.form.photo.image}" alt="선택한 일정 사진"/><span class="hn-photo-scan" aria-hidden="true"></span><span class="hn-photo-failed" aria-hidden="true">×</span></div>`);}
-    input.insertAdjacentHTML('afterend',`<section id="hn-message-analysis"><button type="button" class="btn-complete" data-message-analyze ${analysisMode==='photo'&&!source.form.photo?'disabled':''}>${analysisMode==='photo'?'사진 내용 분석해서 채우기':'메시지에서 찾아 채우기'}</button><p class="fine-print">${analysisMode==='photo'?'누르면 선택한 사진이 외부 AI 서비스로 전송돼요.':'누르면 메시지가 외부 AI 서비스로 전송돼요.'} 분석 후 내용을 확인하고 저장해 주세요.</p><div id="hn-message-results" aria-live="polite"></div></section>`);
+    if(analysisMode==='photo'){input.hidden=true;if(source.form.photo)input.insertAdjacentHTML('beforebegin',`<p class="fine-print">${esc(source.form.photo.name)}</p><div class="hn-photo-preview" style="--hn-review-person:${charTint(charPerson(sourceOwner(source.form)))}" data-photo-state="idle"><img src="${source.form.photo.image}" alt="선택한 일정 사진"/><span class="hn-photo-loading" role="status" aria-label="사진 분석 중"><span class="hn-photo-spinner" aria-hidden="true"></span></span><span class="hn-photo-failed" aria-hidden="true">×</span></div>`);}
+    input.insertAdjacentHTML('afterend',`<section id="hn-message-analysis"><button type="button" class="btn-complete" data-message-analyze ${analysisMode==='photo'&&!source.form.photo?'disabled':''}>${analysisMode==='photo'?'사진 내용 분석해서 채우기':'메시지에서 찾아 채우기'}</button><div id="hn-message-results" aria-live="polite"></div></section>`);
     if(source.form.messageBatch)renderMessageBatch(source.form);
   }
+  function sourceOwner(form){return form.ownerKey||(form.whoPerson?'MEMBER:'+form.assigneeMemberId:form.scope==='CHILD'?'CHILD:'+(form.childKeys||[])[0]:'FAMILY');}
   function renderMessageBatch(form){
     const batch=form.messageBatch,target=el('hn-message-results');if(!batch||!target)return;
     document.querySelectorAll('[data-us-action="save"],[data-char-save]').forEach(b=>b.hidden=true);
+    const owner=sourceOwner(form),person=charPerson(owner);
+    batch.base={...batch.base,...(form.ownerKey?{scope:owner.startsWith('CHILD:')?'CHILD':'FAMILY',childKeys:owner.startsWith('CHILD:')?[owner.slice(6)]:[],assigneeMemberId:owner.startsWith('MEMBER:')?owner.slice(7):'',whoPerson:owner.startsWith('MEMBER:')}:{scope:form.scope,childKeys:form.childKeys,assigneeMemberId:form.assigneeMemberId,whoPerson:form.whoPerson})};
+    batch.candidates.forEach(c=>Object.assign(c,{ownerImage:person.src||CharacterUI.avatar(person.role,person.gender),ownerDisplay:person.name,ownerColor:charTint(person),categoryColor:CharacterUI.categoryBadge(c.editDraft?.category||c.category,person).color}));
     target.innerHTML=ScheduleReview.html(batch.candidates);
   }
-  document.addEventListener('input',e=>{const source=messageSource(),batch=source?.form.messageBatch;if(!batch||batch.saving)return;const i=e.target.dataset.index,c=batch.candidates[Number(i)];if(c&&!c.saved&&e.target.dataset.batchField)c[e.target.dataset.batchField]=e.target.type==='checkbox'?e.target.checked:e.target.value||null;});
+  document.addEventListener('input',e=>{const source=messageSource(),batch=source?.form.messageBatch;if(!batch||batch.saving)return;const i=e.target.dataset.index,c=batch.candidates[Number(i)];if(c?.editDraft&&e.target.dataset.batchField)c.editDraft[e.target.dataset.batchField]=e.target.type==='checkbox'?e.target.checked:e.target.value||null;});
   document.addEventListener('change',e=>{const batch=messageSource()?.form.messageBatch,c=batch?.candidates[Number(e.target.dataset.batchSelect)];if(c&&!c.saved&&!batch.saving){c.selected=e.target.checked;const count=el('hn-message-results')?.querySelector('[data-review-count]');if(count)count.textContent=batch.candidates.length+'개 · '+ScheduleReview.selectedCandidates(batch.candidates).length+'개 선택';}});
   document.addEventListener('click',async e=>{
     const source=messageSource(),batch=source?.form.messageBatch;if(!batch)return;
-    const close=e.target.closest('[data-batch-close]');if(close){const c=batch.candidates[Number(close.dataset.batchClose)];if(c&&!batch.saving){c.editing=false;renderMessageBatch(source.form);el('hn-message-results').querySelector(`.hn-edit-icon[data-batch-edit="${close.dataset.batchClose}"]`)?.focus();}return;}
-    const edit=e.target.closest('[data-batch-edit]');if(edit){const c=batch.candidates[Number(edit.dataset.batchEdit)];if(!c||c.saved||batch.saving)return;c.editing=!c.editing;renderMessageBatch(source.form);if(c.editing)el('hn-message-results').querySelector(`[data-batch-fields="${edit.dataset.batchEdit}"] input`)?.focus();return;}
+    const close=e.target.closest('[data-batch-close]');if(close){const c=batch.candidates[Number(close.dataset.batchClose)];if(c&&!batch.saving){ScheduleReview.cancelEdit(c);renderMessageBatch(source.form);el('hn-message-results').querySelector(`[data-batch-edit="${close.dataset.batchClose}"]`)?.focus();}return;}
+    const edit=e.target.closest('[data-batch-edit]');if(edit){const c=batch.candidates[Number(edit.dataset.batchEdit)];if(!c||batch.saving)return;if(c.editing)ScheduleReview.cancelEdit(c);else ScheduleReview.beginEdit(c);renderMessageBatch(source.form);if(c.editing)el('hn-message-results').querySelector(`[data-batch-fields="${edit.dataset.batchEdit}"] input`)?.focus();return;}
+    const commit=e.target.closest('[data-batch-commit]');if(commit){
+      const c=batch.candidates[Number(commit.dataset.batchCommit)],status=el('hn-message-results').querySelector('[data-batch-status]');if(!c?.editDraft||batch.saving)return;
+      if(hh.hid!==batch.family||acct.user?.uid!==batch.uid){status.textContent='가족 연결이 바뀌었어요. 다시 분석해 주세요.';return;}
+      const next={...c,...c.editDraft},form=ScheduleReview.candidateForm(next,batch.base),prep=UserScheduleView.prepareSave(form,Date.now());if(!prep.ok){status.textContent=prep.messages.join(' ');return;}
+      if(!c.saved){ScheduleReview.applyEdit(c);renderMessageBatch(source.form);el('hn-message-results').querySelector('[data-batch-status]').textContent='수정 내용을 반영했어요.';return;}
+      batch.saving=true;el('hn-message-results').querySelectorAll('input,button,select,textarea').forEach(n=>n.disabled=true);
+      try{const previous=usDocById(c.scheduleId)||c.savedDoc;if(!previous||!c.scheduleId)throw Error('등록한 일정을 다시 열어 수정해 주세요.');
+        const editForm={...form,mode:'edit',tags:ScheduleReview.tagsFor(next,previous.tags||[])},patch=UserSchedule.buildPatch(UserScheduleView.stripId(previous),UserScheduleView.changesFromForm(editForm,previous),Date.now());if(!patch.ok)throw Error('수정 내용을 확인해 주세요.');
+        const result=await HouseholdSync.patchSchedule(batch.family,c.scheduleId,patch.patch);if(!result.ok)throw Error('수정하지 못했어요. 다시 시도해 주세요.');
+        c.savedDoc=patch.after;ScheduleReview.applyEdit(c);usRefreshCalendar();status.textContent='일정을 수정했어요.';
+      }catch(error){status.textContent=error.message;}finally{batch.saving=false;if(messageSource()?.form===source.form){const notice=status.textContent;renderMessageBatch(source.form);el('hn-message-results').querySelector('[data-batch-status]').textContent=notice;}}return;
+    }
     if(!e.target.closest('[data-batch-save]')||batch.saving)return;
     const status=el('hn-message-results').querySelector('[data-batch-status]');
     if(hh.hid!==batch.family||acct.user?.uid!==batch.uid){status.textContent='가족 연결이 바뀌었어요. 다시 분석해 주세요.';return;}
-    const rows=ScheduleReview.selectedCandidates(batch.candidates);if(!rows.length){status.textContent='저장할 일정을 선택해 주세요.';return;}
+    const rows=ScheduleReview.selectedCandidates(batch.candidates);if(rows.some(c=>c.editing)){status.textContent='수정 중인 일정의 저장 또는 닫기를 먼저 눌러 주세요.';return;}if(!rows.length){status.textContent='저장할 일정을 선택해 주세요.';return;}
     const docs=[];
-    for(const c of rows){const f={...batch.base,mode:'create',title:c.title,eventDate:c.date||'',dateKind:'FIXED',startTime:c.startTime||'',endTime:c.endTime||'',allDay:!c.startTime,repeat:'NONE',byDay:[],multiDay:!!c.endDate,endDate:c.endDate||'',autoRef:null,memo:(c.memo||c.evidence||'').slice(0,500),location:c.location||'',category:ScheduleReview.categoryKey(c.category,batch.base.category),categoryLabel:c.category||batch.base.categoryLabel,charCategory:c.category||batch.base.charCategory,tags:ScheduleReview.tagsFor(c,batch.base.tags)};const prep=UserScheduleView.prepareSave(f,Date.now());if(!prep.ok){status.textContent=c.title+': '+prep.messages.join(' ');return;}const built=UserSchedule.buildCreateDoc(prep.input,Date.now());if(!built.ok){status.textContent='제목·날짜·시간을 확인해 주세요.';return;}docs.push({c,doc:built.doc});}
+    for(const c of rows){const f=ScheduleReview.candidateForm(c,batch.base);const prep=UserScheduleView.prepareSave(f,Date.now());if(!prep.ok){status.textContent=c.title+': '+prep.messages.join(' ');return;}const built=UserSchedule.buildCreateDoc(prep.input,Date.now());if(!built.ok){status.textContent='제목·날짜·시간을 확인해 주세요.';return;}docs.push({c,doc:built.doc});}
     batch.saving=true;const controls=el('hn-message-results').querySelectorAll('input,button,select,textarea');controls.forEach(x=>x.disabled=true);
     try{
       if(batch.photo&&!batch.photoRef){status.textContent='원본 사진을 비공개 공간에 저장하고 있어요…';batch.photoRef=await SourcePhoto.save(batch.photo,{user:acct.user,familyId:batch.family});}
       for(const {c,doc} of docs){if(hh.hid!==batch.family||acct.user?.uid!==batch.uid||source.form.messageBatch!==batch)throw Error('등록 대상이 바뀌어 저장을 중단했어요.');
         if(batch.photoRef){doc.tags=[...(doc.tags||[]).filter(t=>!t.startsWith('원본사진:')),batch.photoRef];if(doc.tags.length>10)throw Error('태그가 많아 원본 사진을 연결하지 못했어요.');}
-        const r=await HouseholdSync.createSchedule(batch.family,doc);if(!r.ok)throw Error('저장하지 못한 일정이 있어요. 다시 저장하면 남은 일정만 등록해요.');c.saved=true;}usRefreshCalendar();status.textContent='선택한 일정을 저장했어요.';}
+        const r=await HouseholdSync.createSchedule(batch.family,doc);if(!r.ok)throw Error('저장하지 못한 일정이 있어요. 다시 저장하면 남은 일정만 등록해요.');c.saved=true;c.scheduleId=r.scheduleId;c.savedDoc=doc;}usRefreshCalendar();status.textContent='선택한 일정을 저장했어요.';}
     catch(e){status.textContent=e.message;}
     finally{batch.saving=false;if(messageSource()?.form===source.form){const notice=status.textContent;renderMessageBatch(source.form);el('hn-message-results').querySelector('[data-batch-status]').textContent=notice;}}
   });
