@@ -79,3 +79,10 @@ test('분석 중 사진을 추가로 만들지 않고 후보는 번호 대신 �
  const html=Review.html([{title:'Summer Camp',date:'2026-08-03',endDate:'2026-08-07',category:'학교',ownerDisplay:'은찬',selected:true}]);
  assert(!html.includes('일정 1'));assert.match(html,/hn-review-head/);assert.match(html,/Summer Camp/);assert.match(html,/data-batch-select/);assert.match(html,/hn-edit-icon/);assert.match(html,/data-batch-close/);assert.match(html,/2026-08-03 ~ 2026-08-07/);
 });
+
+test('후보 편집 순서·한줄 안내·휴일 색상·담당 사진을 유지',()=>{
+ const html=Review.html([{title:'휴교',date:'2026-08-15',category:'학교',isHoliday:true,selected:true,editing:true,ownerDisplay:'은찬',ownerImage:'icons/child.png'}]);
+ const fields=[...html.matchAll(/data-batch-field="([^"]+)"/g)].map(m=>m[1]);
+ assert.deepEqual(fields,['title','date','endDate','startTime','endTime','category','location','organizerName','memo','isImportant']);
+ assert.match(html,/1개 · 1개 선택/);assert.match(html,/선택·수정 후 저장해 주세요/);assert.match(html,/hn-holiday/);assert(!html.includes('hn-holiday-label'));assert(!html.includes('data-batch-field="isHoliday"'));assert.match(html,/hn-review-avatar/);assert.match(html,/src="icons\/child.png"/);assert(!html.includes('연도 미표기'));
+});

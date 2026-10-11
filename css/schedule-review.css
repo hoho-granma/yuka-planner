@@ -22,3 +22,9 @@
 :is(#hn-message-results,.hn-saved-review) .hn-message-candidate [hidden]{display:none!important}
 
 :is(#hn-message-results,.hn-saved-review) .hn-review-close{grid-column:1/-1;justify-self:end;border:1px solid var(--border,#e2e2dd);background:transparent;border-radius:10px;padding:9px 18px;margin:0;font:inherit;font-size:13px;color:var(--text,#24252a)}
+
+:is(#hn-message-results,.hn-saved-review) .hn-review-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;white-space:nowrap;margin:16px 0 6px;font-size:14px}
+:is(#hn-message-results,.hn-saved-review) .hn-review-heading span{font-size:12px;color:var(--text-muted,#787974)}
+:is(#hn-message-results,.hn-saved-review) .hn-review-help{white-space:nowrap;margin:0 0 12px}
+:is(#hn-message-results,.hn-saved-review) .hn-review-avatar{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;object-fit:cover;font-size:20px}
+:is(#hn-message-results,.hn-saved-review) [data-batch-fields] label:has([data-batch-field="memo"]),:is(#hn-message-results,.hn-saved-review) [data-batch-fields] label:has([data-batch-field="title"]){grid-column:1/-1}
