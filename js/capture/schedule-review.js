@@ -13,6 +13,10 @@
  }
  function entryText(form){return form.mode==='edit'?form.title||'':form.charText||form.memo||form.title||'';}
  function applyEntryText(form,text,titleFn){form.charText=text;form.title=typeof titleFn==='function'?titleFn(text):String(text||'').split(/\n/).map(s=>s.trim()).find(Boolean)?.slice(0,100)||'';form.titleTouched=true;if(form.mode!=='edit')form.memo=text;return form;}
+ function analysisStatus(state,mode,message=''){
+  if(state==='busy')return mode==='photo'?'<span class="hn-analysis-sr" role="status">사진 분석 중</span>':'<p role="status">내용을 정리하고 있어요…</p>';
+  return `<div class="hn-analysis-error" role="alert"><span aria-hidden="true">×</span><p>${esc(message||'사진을 분석하지 못했어요. 직접 입력해 주세요.')}</p><button type="button" class="btn-complete" data-message-manual>직접 입력하기</button></div>`;
+ }
  function selectedCandidates(candidates){return candidates.filter(c=>c.selected===true&&!c.saved);}
- return {selectedCandidates,entryText,applyEntryText,html,timeline,metadata,tagsFor,categoryKey};
+ return {analysisStatus,selectedCandidates,entryText,applyEntryText,html,timeline,metadata,tagsFor,categoryKey};
 });

@@ -60,3 +60,8 @@ test('원본 버튼은 업로더에게만 표시하고 편집 시 원본 참조�
  const form=View.formFromSchedule(doc);Review.applyEntryText(form,'수정한 제목');
  assert(Schedule.buildPatch(doc,View.changesFromForm(form,doc),2).after.tags.includes(source));
 });
+
+test('사진 로딩은 스캔용 상태, 실패는 X와 직접 입력 버튼이며 오류 문구를 이스케이프',()=>{
+ const busy=Review.analysisStatus('busy','photo');assert(!busy.includes('내용을 정리'));assert(busy.includes('hn-analysis-sr'));
+ const error=Review.analysisStatus('error','photo','<script>');assert(error.includes('×'));assert(error.includes('data-message-manual'));assert(!error.includes('<script>'));
+});

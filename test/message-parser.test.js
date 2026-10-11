@@ -10,10 +10,10 @@ test('연도 없는 날짜는 기준일의 올해로, 상대 날짜와 명시된
  assert.equal(validate({candidates:[candidate({date:'2025-10-12',evidence:'10월 12일 미술'})]},'10월 12일 미술',false,'2026-10-11')[0].date,'2026-10-12');
  assert.equal(validate({candidates:[candidate({evidence:'내일 미술'})]},'내일 미술')[0].date,'2026-10-12');
 });
-function fixture({family='family',deleted=false,accessStatus='ACTIVE',permission='MEMBER',count=0,finish='stop',content,error=false}={}){
+function fixture({family='family',deleted=false,accessStatus='ACTIVE',permission='MEMBER',count=0,finish='stop',content,error=false,status=503}={}){
  let calls=0,writes=0,request;
  const db={doc:p=>({p,get:async()=>({data:()=>p.startsWith('familyAccess/')?{status:accessStatus,permission,memberId:'member',role:'MOM'}:p.startsWith('accounts/')?{householdId:family,memberId:'member'}:{uid:'u',deletedAt:deleted?1:null}})}),runTransaction:async fn=>fn({get:async()=>({data:()=>({day:'2026-10-08',count})}),set:()=>writes++})};
- const parse=createMessageParser({db,key:'test-only',now:()=>Date.parse('2026-10-08T00:00:00Z'),fetchImpl:async(url,opts)=>{calls++;assert.equal(url,'https://openrouter.ai/api/v1/chat/completions');request=JSON.parse(opts.body);return {ok:!error,json:async()=>({choices:[{finish_reason:finish,message:{content:content===undefined?JSON.stringify({candidates:[candidate()]}):content}}]})};}});
+ const parse=createMessageParser({db,key:'sk-or-v1-test-only',now:()=>Date.parse('2026-10-08T00:00:00Z'),fetchImpl:async(url,opts)=>{calls++;assert.equal(url,'https://openrouter.ai/api/v1/chat/completions');request=JSON.parse(opts.body);return {ok:!error,status,json:async()=>({choices:[{finish_reason:finish,message:{content:content===undefined?JSON.stringify({candidates:[candidate()]}):content}}]})};}});
  return {parse,stats:()=>({calls,writes,request})};
 }
 const input={familyId:'family',baseDate:'2026-10-08',text:'2026년 10월 12일 미술'};
@@ -63,4 +63,17 @@ test('주최자·카테고리·휴일 의미 추출 지시는 모델에 함께 �
  for(const term of ['organizerName','티처투어','학교','학원','체험','School Closed','isHoliday'])assert(instructions.includes(term),term);
  assert.throws(()=>validate({candidates:[candidate({organizerName:'원문에 없는 주최자'})]},input.text));
  assert.throws(()=>validate({candidates:[candidate({isHoliday:'red'})]},input.text));
+});
+
+test('잘못된 서버 API 키는 사진·사용량 기록 전에 감지',async()=>{
+ let touched=false,event;
+ const parse=createMessageParser({db:{doc:()=>{touched=true;}},key:'invalid',reportFailure:e=>event=e});
+ await assert.rejects(parse('u',input),e=>e.code==='failed-precondition');
+ assert.equal(touched,false);assert.deepEqual(event,{stage:'configuration',reason:'invalid-key-format'});
+ assert(!JSON.stringify(event).includes('invalid"'));
+});
+test('공급자 인증 실패와 요청 한도를 구분하여 직접 입력을 안내',async()=>{
+ for(const [status,code] of [[401,'failed-precondition'],[403,'failed-precondition'],[429,'resource-exhausted'],[503,'unavailable']]){
+  const f=fixture({error:true,status});await assert.rejects(f.parse('u',input),e=>e.code===code&&e.message.includes('직접 입력'));
+ }
 });

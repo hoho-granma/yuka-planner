@@ -8154,7 +8154,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
     if(!analysisMode)return;
     const input=el(source.kind==='todo'?'hn-task-text':'hn-schedule-content');
     if(el('hn-message-analysis'))return;
-    if(analysisMode==='photo'){input.hidden=true;if(source.form.photo)input.insertAdjacentHTML('beforebegin',`<p class="fine-print">${esc(source.form.photo.name)}</p><img src="${source.form.photo.image}" alt="선택한 일정 사진" style="max-width:100%;max-height:240px;object-fit:contain;border-radius:16px"/>`);}
+    if(analysisMode==='photo'){input.hidden=true;if(source.form.photo)input.insertAdjacentHTML('beforebegin',`<p class="fine-print">${esc(source.form.photo.name)}</p><div class="hn-photo-preview" data-photo-state="idle"><img src="${source.form.photo.image}" alt="선택한 일정 사진"/><span class="hn-photo-scan" aria-hidden="true"></span><span class="hn-photo-failed" aria-hidden="true">×</span></div>`);}
     input.insertAdjacentHTML('afterend',`<section id="hn-message-analysis"><button type="button" class="btn-complete" data-message-analyze ${analysisMode==='photo'&&!source.form.photo?'disabled':''}>${analysisMode==='photo'?'사진 내용 분석해서 채우기':'메시지에서 찾아 채우기'}</button><p class="fine-print">${analysisMode==='photo'?'누르면 선택한 사진이 외부 AI 서비스로 전송돼요.':'누르면 메시지가 외부 AI 서비스로 전송돼요.'} 분석 후 내용을 확인하고 저장해 주세요.</p><div id="hn-message-results" aria-live="polite"></div></section>`);
     if(source.form.messageBatch)renderMessageBatch(source.form);
   }
@@ -8196,6 +8196,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
     }
   };
   document.addEventListener('click',async e=>{
+    if(e.target.closest('[data-message-manual]')){const source=messageSource();if(!source)return;source.form.messageBatch=null;messageAnalysis=null;if(source.kind==='todo'){source.form.inputMode='direct';charTodoRender();el('hn-task-text')?.focus();}else{source.form.capInputMode='direct';usShowForm();el('hn-schedule-content')?.focus();}return;}
     const analyze=e.target.closest('[data-message-analyze]'),apply=e.target.closest('[data-message-apply]');
     if(analyze){
       if(analyze.disabled)return;
@@ -8203,11 +8204,11 @@ fields.sourceScheduleId=f.sourceScheduleId;
       if(AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode)==='photo'&&!source.form.photo)return;
       const family=hh.hid,uid=acct.user&&acct.user.uid,target=el('hn-message-results'),photo=source.form.photo,mode=AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode);
       if(source.form.messageBatch?.saving)return;
-      analyze.disabled=true;target.textContent='내용을 정리하고 있어요…';messageAnalysis=null;
+      analyze.disabled=true;target.innerHTML=ScheduleReview.analysisStatus('busy',mode);const preview=el('modal-content').querySelector('.hn-photo-preview');if(preview)preview.dataset.photoState='busy';target.setAttribute('aria-busy','true');messageAnalysis=null;
       const result=await AiParser.parseWithAI(source.text,toISODate(new Date()),{user:acct.user,familyId:family,image:AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode)==='photo'?source.form.photo?.image:undefined});
-      const current=messageSource();if(!current||current.form!==source.form||current.text!==source.text||current.form.photo!==photo||AiParser.analysisMode(current.kind,current.kind==='todo'?current.form.inputMode:current.form.capInputMode)!==mode||hh.hid!==family||acct.user?.uid!==uid||el('hn-message-results')!==target){if(el('hn-message-results')===target){analyze.disabled=false;target.textContent='입력 내용이나 대상이 바뀌어 분석 결과를 적용하지 않았어요. 다시 분석해 주세요.';}return;}
-      analyze.disabled=false;
-      if(!result.ok){target.textContent=result.message;return;}
+      const current=messageSource();if(!current||current.form!==source.form||current.text!==source.text||current.form.photo!==photo||AiParser.analysisMode(current.kind,current.kind==='todo'?current.form.inputMode:current.form.capInputMode)!==mode||hh.hid!==family||acct.user?.uid!==uid||el('hn-message-results')!==target){if(el('hn-message-results')===target){analyze.disabled=false;target.setAttribute('aria-busy','false');if(preview)preview.dataset.photoState='idle';target.textContent='입력 내용이나 대상이 바뀌어 분석 결과를 적용하지 않았어요. 다시 분석해 주세요.';}return;}
+      analyze.disabled=false;target.setAttribute('aria-busy','false');if(preview)preview.dataset.photoState=result.ok?'idle':'error';
+      if(!result.ok){source.form.messageBatch=null;target.innerHTML=ScheduleReview.analysisStatus('error',mode,result.message);document.querySelectorAll('[data-us-action="save"],[data-char-save]').forEach(b=>b.hidden=false);return;}
       messageAnalysis={...source,analysisMode:AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode),family,uid,candidates:result.candidates};
       if(source.kind==='schedule'||messageAnalysis.analysisMode==='photo'){
         source.form.messageBatch={family,uid,photo:mode==='photo'?photo:null,base:source.kind==='schedule'?{...source.form}:{...capBaseForm(),scope:source.form.ownerKey.startsWith('CHILD:')?'CHILD':'FAMILY',childKeys:source.form.ownerKey.startsWith('CHILD:')?[source.form.ownerKey.slice(6)]:[],assigneeMemberId:source.form.ownerKey.startsWith('MEMBER:')?source.form.ownerKey.slice(7):'',whoPerson:source.form.ownerKey.startsWith('MEMBER:'),g13:true},candidates:result.candidates.map(c=>({...c,selected:true,ownerDisplay:source.kind==='todo'?charPerson(source.form.ownerKey).name:charPerson(source.form.whoPerson?'MEMBER:'+source.form.assigneeMemberId:source.form.scope==='CHILD'?'CHILD:'+(source.form.childKeys||[])[0]:'FAMILY').name}))};
