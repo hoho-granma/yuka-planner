@@ -106,4 +106,4 @@ body:has(#view-landing.acct-on:not(.hidden)){background:#fff!important}
 
 /* Keep selected calendar list readable with the same system font as headings. */
 #selected-day-list .hn-timeline{font-family:var(--hn-family-list-font-family)!important}
-#selected-day-list .hn-timeline time{font-size:14px!important}
+#selected-day-list .hn-timeline time{font-size:var(--hn-family-list-font-size)!important}

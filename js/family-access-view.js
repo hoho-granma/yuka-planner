@@ -46,9 +46,9 @@
         }
         else model=await onRefresh();
         render();
-        root.querySelector('[data-fa-notice]').textContent=action==='issueInvite'?`초대코드: ${result.code} · 승인 후 함께 볼 수 있어요.`:'처리했어요.';
+        root.querySelector('[data-fa-notice]').textContent=action==='issueInvite'?'24시간 안에 가족이 이 코드로 가입하면, 승인 후 함께 볼 수 있어요.':'처리했어요.';
         if(action==='issueInvite'){
-          inviteCode=result.code;const copy=document.createElement('button');copy.type='button';copy.dataset.faAction='copyInvite';copy.textContent='초대코드 복사';root.querySelector('[data-fa-notice]').after(copy);
+          inviteCode=result.code;const big=document.createElement('p');big.className='fa-code';big.textContent=result.code;root.querySelector('[data-fa-notice]').before(big);const copy=document.createElement('button');copy.type='button';copy.dataset.faAction='copyInvite';copy.textContent='초대코드 복사';root.querySelector('[data-fa-notice]').after(copy);
         }
       } catch(e) {if(!disposed)root.querySelector('[data-fa-notice]').textContent=e.message||'처리하지 못했어요.';}
       finally {busy=false;if(!disposed)root.querySelectorAll('button').forEach(b=>b.disabled=false);}

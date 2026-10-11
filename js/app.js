@@ -7528,7 +7528,7 @@
     const radio = ev.target.closest("[data-acct-radio]");
     if (radio) {
       acct.form[radio.getAttribute("data-acct-radio")] = radio.getAttribute("data-value");
-      AccountView.syncForm(acct.form, regionsData && regionsData.provinces); // 자녀 유무가 바뀌면 맞지 않는 역할 선택을 지운다
+      if (acct.mode !== "recover" && acct.mode !== "role") AccountView.syncForm(acct.form, regionsData && regionsData.provinces); // 자녀 유무가 바뀌면 맞지 않는 역할 선택을 지운다(복구·역할 선택 시트는 자녀 유무가 없어 모든 역할을 허용)
       return acctShowSheet();
     }
     const b = ev.target.closest("[data-acct-action]");

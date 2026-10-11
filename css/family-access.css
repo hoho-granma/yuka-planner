@@ -9,3 +9,5 @@
 .fa-card button:disabled { opacity:.5; cursor:wait; }
 .fa-card label { display:block; }
 [data-fa-notice] { overflow-wrap:anywhere; font-size:16px; }
+
+.fa-code { margin:12px 0; padding:16px; border-radius:16px; background:#ffe2d0; color:#24252a; font-size:32px; font-weight:800; letter-spacing:.2em; text-align:center; user-select:all; }
