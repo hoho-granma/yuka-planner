@@ -2014,7 +2014,7 @@
     return { inCalendar: MonthTiers.inCalendarOf({ policy: curationPolicy, today: new Date(), state: {}, startOf: (e) => e.windowStart }) };
   }
   function computeCalendarDays() {
-    calDisplayDays = HNLogic.assignDisplayDays(calendarDotSchedule(), { birthDate: profile.birthDate, monthKeysOf, ...calendarTierOpts() });
+    calDisplayDays = HNLogic.assignDisplayDays(profile ? calendarDotSchedule() : [], { birthDate: profile ? profile.birthDate : null, monthKeysOf, ...calendarTierOpts() });
   }
 
   /** 그 날짜에 달력에 표시할 항목: 지원금 신청 시작(fixed) + 그날로 추천된 항목. */
@@ -6721,7 +6721,7 @@
         }
         acctApprovalGate(state.status);return;
       }
-      acctOwnerSync(u);
+      try {acctOwnerSync(u);} catch(syncError) {console.error("다른 계정 로컬 데이터 정리 중 오류(연결 확인은 계속)",syncError&&syncError.stack||syncError);} // 화면 정리 오류가 가족 연결 확인을 막지 않게 한다
       const [result,joined]=await Promise.all([
         acct.sync.restore(uid,u.email),
         HouseholdSync.joinHousehold(state.householdId,{metadataOnly:true,isCurrent:valid})
@@ -7369,7 +7369,8 @@
     if(acctApprovalEnabled() && acct.approvalState!=="ACTIVE")return;
     if (!acctEnabled() || !acct.user || newChildMode || (typeof acctIntro !== "undefined" && acctIntro === true)) return; // D71: 소개 화면을 보는 중이면 홈으로 보내지 않는다
     const lv = el("view-landing");
-    if (!lv || !lv.classList || typeof lv.classList.contains !== "function" || lv.classList.contains("hidden")) return;
+    if (!lv || !lv.classList || typeof lv.classList.contains !== "function") return;
+    if (lv.classList.contains("hidden") && (profile || emptyHome)) return; // 첫 화면이 이미 치워졌어도, 아이가 없는데 빈 홈이 안 그려졌다면(그리다 오류가 난 경우) 다시 그린다
     if (profile) {
       await buildAndRender();
       hideEmptyHome();

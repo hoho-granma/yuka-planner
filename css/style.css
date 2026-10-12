@@ -2149,3 +2149,6 @@ body.acct-design .acct-cs:has(.date-popup:not(.hidden)) .acct-cs-foot { position
 .hh-input.hh-input-plain { letter-spacing: normal; text-transform: none; }
 .hh-region { display: flex; gap: 8px; }
 .hh-region .hh-input { flex: 1 1 0; min-width: 0; }
+
+/* 로그인 시트: '비밀번호를 잊으셨나요?'·'처음이세요? 회원가입'은 보조 링크라 주황 대신 회색 */
+[data-acct-form="login"] [data-acct-action="reset-password"], [data-acct-form="login"] [data-acct-action="open-signup"] { color: var(--text-muted); }
