@@ -88,7 +88,6 @@ body:has(#view-landing.acct-on:not(.hidden)){background:#fff!important}
 #home-body .hn-schedule-date,
 #home-body .hn-timeline,
 #home-body .hn-timeline strong,
-#home-body .hn-duration,
 #home-body .hn-task-title,
 #home-body .hn-timeline time,
 #home-body .hn-task time,
@@ -107,3 +106,6 @@ body:has(#view-landing.acct-on:not(.hidden)){background:#fff!important}
 /* Keep selected calendar list readable with the same system font as headings. */
 #selected-day-list .hn-timeline{font-family:var(--hn-family-list-font-family)!important}
 #selected-day-list .hn-timeline time{font-size:var(--hn-family-list-font-size)!important}
+
+/* (2시간) 같은 소요 시간만 작게: 홈·달력 목록의 나머지 글자는 모두 --hn-family-list-font-size(15px). */
+#home-body .hn-duration, #selected-day-list .hn-duration, :is(#hn-message-results,.hn-saved-review) .hn-duration { font-size:12px !important; font-weight:500 !important; }
