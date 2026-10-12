@@ -2033,7 +2033,7 @@ body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-save { backg
 body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-foot { background: linear-gradient(rgba(240, 241, 255, 0), var(--nd-soft) 14px); }
 
 /* v1.12.97 보정: 임신 정보 수정·아이 정보 수정 시트(#ep-save) — docs/한눈육아-디자인명세-임신정보수정시트.md. --nd-* 변수만 쓴다 */
-.modal-panel:has(#ep-save) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); background: var(--nd-soft); }
+.modal-panel:has(#ep-save) { --accent: var(--nd-indigo); --accent-dark: var(--nd-indigo); --c-primary: var(--nd-indigo); }
 .modal-panel:has(#ep-save) h3 { color: var(--nd-ink); }
 .modal-panel:has(#ep-save) #ep-name { background: #fff; border: 1.5px solid var(--nd-yellow-line); border-radius: 12px; padding-left: 14px; padding-right: 14px; }
 .modal-panel:has(#ep-save) .date-picker-trigger { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding-left: 14px; padding-right: 14px; }
@@ -2043,8 +2043,8 @@ body.acct-design .modal-panel:has([data-acct-child-sheet]) .acct-cs-foot { backg
 /* v1.12.100: ID 선택자(#ep-name)·버튼형 날짜 칸이 포커스 규칙을 덮던 것을 같은 강도로 맞춘다 — 포커스 = 인디고 2px */
 .modal-panel:has(#ep-save) #ep-name:focus-visible, .modal-panel:has(#ep-save) .date-picker-trigger:focus-visible, .modal-panel:has(#ep-save) .date-picker-trigger:focus { border: 2px solid var(--nd-indigo); outline: none; }
 .modal-panel:has(#ep-save) #ep-save:focus-visible, .modal-panel:has(#ep-save) #ep-cancel:focus-visible { outline: 2px solid var(--nd-indigo); outline-offset: 2px; }
-.modal-panel:has(#ep-save) #ep-save { background: var(--nd-indigo); color: var(--on-accent); border: 0; border-radius: 13px; min-height: 52px; font-weight: 800; box-shadow: none; }
-.modal-panel:has(#ep-save) #ep-cancel { background: #fff; border: 1.5px solid var(--line); border-radius: 13px; color: var(--nd-ink); }
+/* (내 프로필 수정 폼과 같은 .hh-btn 모양을 쓰므로 개별 버튼 색 규칙은 뺀다) */
+
 /* v1.12.100 (hn_design QA): 아이 없는 홈을 등록 후 홈과 맞춘다 — 배너 면은 홈 계열 소프트색, 내 카드 아바타·핀 색은 등록 후 홈(--c-badge-auto 살구·빨간 핀) */
 :is(#tab-home, #empty-panel) .acct-nc-ban { background: var(--nd-soft); }
 body.acct-design :is(#tab-home, #empty-panel) .acct-nc-me .acct-nc-av { background: var(--c-badge-auto); color: var(--text); }

@@ -268,3 +268,14 @@ body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,
 
 /* 캘린더 맨 위 프로필 줄 오른쪽의 일정 추가(+) — 홈 '우리 가족 할일'의 + 버튼과 같은 모양 */
 .hn-calendar-head{display:flex;align-items:center;gap:10px}.hn-calendar-head .hn-calendar-people{flex:1;min-width:0}.hn-calendar-head .hn-add-round{margin-left:auto}
+
+/* 캘린더 맨 위 프로필 줄: 영역·아이콘을 조금 줄이고, 일정 추가(+)는 아이콘 줄 높이에 맞춰 위로 */
+.hn-calendar-head{align-items:flex-start}
+.hn-calendar-people{gap:4px!important;padding:2px 0 6px!important}
+.hn-calendar-people button{min-width:42px!important;padding:2px 1px!important}
+.hn-calendar-people .hn-face{width:34px;height:34px}
+.hn-calendar-people button span{font-size:10px;margin-top:3px}
+.hn-calendar-head .hn-add-round{margin-top:3px}
+/* 카테고리가 7개 이상(아이 8개)이면 한 줄에 맞게 글자를 줄인다 */
+.hn-categories.hn-cats-many,.hn-content-heading .hn-categories.hn-cats-many{flex-wrap:nowrap;gap:4px;--hn-option-font-size:12px}
+.hn-categories.hn-cats-many button{padding-left:1px!important;padding-right:1px!important;letter-spacing:-.6px}
