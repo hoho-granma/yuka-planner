@@ -305,9 +305,9 @@ body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,
 @media(prefers-reduced-motion:reduce){.hn-hide-done i,.hn-hide-done i::after{transition:none}}
 .hn-hday-tabs+.hn-timeline,.hn-hday-tabs+.fine-print{border-top:0}
 
-/* 홈 카드별 등록 버튼(둥근 네모 윤곽 +): 일정 보라 · 할일 파랑 · 성장기록 초록 */
-.hn-reg-btn{width:30px;height:30px;border-radius:10px;background:#fff;font:inherit;font-size:20px;font-weight:600;line-height:26px;padding:0;border:1.5px solid;flex:none;cursor:pointer;display:inline-grid;place-items:center}
-.hn-reg-p{color:#715697;border-color:#715697}.hn-reg-t{color:#2f6fa5;border-color:#2f6fa5}.hn-reg-g{color:#2f6b4f;border-color:#2f6b4f}
-.gr-home-row{display:flex;align-items:center;gap:10px;padding:12px 14px 12px 16px!important}
-.gr-home-row .gr-home-main{flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:10px;background:none;border:0;padding:4px 0;font:inherit;text-align:left;color:inherit;cursor:pointer}
-.gr-home-row .gr-home-main strong{font-size:15px}
+/* 홈 카드별 등록 버튼: 연보라 둥근 네모 + (18px, 세 카드 같은 색). 눈에는 작게, 누르는 범위는 ::after 로 넓힌다 */
+.hn-reg-btn{position:relative;width:18px;height:18px;border-radius:6px;background:#ece4f7;color:#715697;border:0;font:inherit;font-size:14px;font-weight:700;line-height:17px;padding:0;flex:none;cursor:pointer;display:inline-grid;place-items:center}
+.hn-reg-btn::after{content:"";position:absolute;inset:-12px}
+/* 홈 성장기록 카드: 다른 카드와 같은 흰 배경 + 저장된 기록 건수 */
+.gr-home-card .hn-section-head{margin-bottom:6px}
+.gr-home-count{display:block;width:100%;background:none;border:0;padding:6px 0 2px;margin:0;font:inherit;font-size:13px;color:#7a7488;text-align:left;cursor:pointer}

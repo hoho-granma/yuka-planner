@@ -178,5 +178,7 @@
     }
     load();
   }
-  return { GROUPS, eligible, prepare, list, activities, linkedActivities, treeMarkup, mount, unmount: () => { if(dispose) dispose(); } };
+  // 홈 카드의 '총 N건' — 서버(backend)가 있으면 사진 없이 목록만 읽고, 없으면 이 기기 저장소를 센다.
+  async function count(scope, backend) { const rows = backend ? await backend.read(scope, { attachments: false }) : await read(scope); return rows.filter((r) => !r.deletedAt).length; }
+  return { GROUPS, eligible, prepare, list, activities, linkedActivities, treeMarkup, mount, count, unmount: () => { if(dispose) dispose(); } };
 });

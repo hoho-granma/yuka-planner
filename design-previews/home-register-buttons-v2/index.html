@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>시안 · 홈 등록 버튼 (같은 색 · 작게) 5안</title>
+<style>
+:root{--bg:#f4f2f7;--ink:#302c3c;--muted:#7a7488;--line:#ece8f2;--accent:#715697}
+*{box-sizing:border-box}body{margin:0;background:#ebe8f1;color:var(--ink);font-family:-apple-system,"Apple SD Gothic Neo",Pretendard,system-ui,sans-serif}
+.wrap{max-width:1380px;margin:0 auto;padding:22px 16px 70px}h1{font-size:20px;margin:0 0 4px}.sub{color:var(--muted);font-size:13px;margin:0 0 14px;line-height:1.6}
+.vs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}@media(max-width:1300px){.vs{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:900px){.vs{grid-template-columns:1fr 1fr}}@media(max-width:560px){.vs{grid-template-columns:1fr}}
+.cap{font-size:13px;font-weight:800;text-align:center;margin:0 0 2px}.capsub{font-size:11px;color:var(--muted);text-align:center;margin:0 0 8px;min-height:44px;line-height:1.4}
+.phone{background:var(--bg);border-radius:24px;border:7px solid #1e1b26;overflow:hidden;height:640px;display:flex;flex-direction:column;position:relative}
+.status{height:20px;font-size:9px;color:var(--muted);display:flex;justify-content:space-between;padding:5px 14px 0}.scroll{flex:1;overflow:auto;padding:8px 10px 70px}
+.tabbar{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:7px 0 9px;font-size:10px;color:var(--muted)}.tabbar b{color:var(--accent)}
+.line{font-size:12px;color:var(--muted);margin:2px 4px 8px}.line b{color:var(--ink);font-size:13px}
+.card{background:#fff;border-radius:16px;padding:12px 12px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;min-height:28px}.head h3{margin:0;font-size:14px}.head h3 span{color:var(--accent)}
+.tabs{display:flex;border-bottom:1px solid var(--line);margin:2px 0 4px}.tabs button{flex:1;border:0;background:none;padding:8px 0 9px;font:inherit;font-size:13px;font-weight:700;color:var(--muted);position:relative}.tabs button.on{color:var(--ink)}.tabs button.on:after{content:"";position:absolute;left:22%;right:22%;bottom:-1px;height:3px;border-radius:3px;background:var(--accent)}
+.sr{display:flex;align-items:center;gap:7px;padding:8px 0;font-size:12.5px}.sr time{font-size:10.5px;font-weight:700;min-width:36px}.sr strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.face{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;flex:none}.c{background:#f7e8c9}.m{background:#f8d7c0}
+.tag{display:inline-block;font-size:10.5px;font-weight:650;padding:3px 7px;border-radius:7px;white-space:nowrap}.k0{background:#f0ccdc;color:#40374b}.k1{background:#cadcf0;color:#40374b}.m4{background:#c04a7c;color:#fff}
+.todo{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:12.5px}.todo:first-of-type{border-top:0}.todo .ck{width:24px;height:24px;border:2px solid #b8b0c8;border-radius:8px;flex:none}.todo span.t{flex:1;font-weight:650}
+.rec{display:flex;gap:9px;align-items:center;padding:6px 0;font-size:12.5px;cursor:pointer}.rec .dot{width:36px;height:36px;border-radius:11px;background:#e4f1e9;display:grid;place-items:center;font-size:17px;flex:none}.rec small{display:block;color:var(--muted);font-size:10.5px;margin-top:1px}.rec strong{font-weight:650}.rec .arrow{margin-left:auto;color:var(--muted)}
+button{font-family:inherit;cursor:pointer}
+/* v1 작은 둥근 네모 윤곽 */
+.v1 .b{width:24px;height:24px;border-radius:8px;background:#fff;color:var(--accent);border:1.5px solid var(--accent);font-size:17px;line-height:20px;padding:0;font-weight:600}
+/* v2 작은 원형 채움 */
+.v2 .b{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;border:0;font-size:18px;line-height:22px;padding:0;font-weight:600}
+/* v3 텍스트 링크 */
+.v3 .b{border:0;background:none;color:var(--accent);font-size:12.5px;font-weight:800;padding:4px 0}
+/* v4 연보라 네모(윤곽 없음) */
+.v4 .b{width:24px;height:24px;border-radius:8px;background:#ece4f7;color:var(--accent);border:0;font-size:17px;line-height:22px;padding:0;font-weight:700}
+/* v5 연보라 알약 */
+.v5 .b{border:0;border-radius:99px;background:#ece4f7;color:var(--accent);font-size:11.5px;font-weight:800;padding:5px 10px}
+</style></head><body><div class="wrap">
+<h1>시안 · 홈 등록 버튼 (같은 색 · 작게) 5안</h1>
+<p class="sub">세 카드(우리 가족 일정 · 우리 가족 할일 · 수아의 성장기록)의 등록 버튼을 <b>같은 보라색 하나</b>로 통일하고 크기를 줄였어요(30px → 24px). 수아의 성장기록 카드도 다른 카드와 같은 <b>흰 배경</b>입니다. 성장기록 카드는 최근 기록을 누르면 성장기록 화면으로, 오른쪽 등록 버튼은 "오늘의 성장 남기기" 폼으로 연결돼요.</p>
+<div class="vs" id="vs"></div></div>
+<script>
+const sr=(t,w,n,tag,k)=>`<div class="sr"><time>${t}</time><span class="face ${w}">${w==='c'?'👧':'👩'}</span><strong>${n}</strong><span class="tag ${k}">${tag}</span></div>`;
+const btn=(v,label)=>v===3?`<button class="b">+ ${label}</button>`:v===5?`<button class="b">+ ${label}</button>`:`<button class="b" aria-label="${label}">+</button>`;
+const card=v=>`<p class="line"><b>수아</b> · 초3</p>
+<div class="card"><div class="head"><h3><span>10/12(월)</span> 우리 가족 일정</h3>${btn(v,'일정')}</div><div class="tabs"><button class="on">오늘</button><button>내일</button><button>모레</button></div>${sr('09:00','c','학교 현장학습','학교','k0')}${sr('16:00','c','수학 학원','학원','k1')}${sr('18:00','m','퇴근 후 장보기','기타','m4')}</div>
+<div class="card"><div class="head"><h3>우리 가족 할일</h3>${btn(v,'할일')}</div><div class="todo"><span class="ck"></span><span class="t">준비물 챙기기</span><span class="tag k0">학교</span></div><div class="todo"><span class="ck"></span><span class="t">학원 숙제</span><span class="tag k1">학원</span></div></div>
+<div class="card"><div class="head"><h3>🌱 수아의 성장기록</h3>${btn(v,'기록')}</div><div class="rec"><span class="dot">🏫</span><span><strong>현장학습 다녀왔어요</strong><small>10/10 · 학교 · 사진 2장</small></span><span class="arrow">›</span></div></div>`;
+const M={1:['1 · 작은 둥근 네모 윤곽','지금 쓰는 모양을 24px로 줄이고 보라 한 가지로 통일. 할일 체크 박스와 어울림'],2:['2 · 작은 원형 채움','보라로 채운 작은 원. 가장 눈에 잘 띄고, 일정 탭의 보라 밑줄과 같은 색'],3:['3 · "+ 일정" 텍스트 링크','배경 없이 보라 글씨만. 가장 가볍고 어떤 버튼인지 글자로 알려 줌'],4:['4 · 연보라 네모(윤곽 없음)','연한 보라 배경에 보라 +. 윤곽선보다 부드럽고 화면이 조용함'],5:['5 · 연보라 "+ 일정" 알약','작은 알약 안에 글자. 버튼인 게 분명하고 크기도 작음']};
+document.getElementById('vs').innerHTML=[1,2,3,4,5].map(v=>`<section class="v${v}"><p class="cap">${M[v][0]}</p><p class="capsub">${M[v][1]}</p><div class="phone"><div class="status"><span>9:41</span><span>LTE</span></div><div class="scroll">${card(v)}</div><div class="tabbar"><b>홈</b><span>캘린더</span><span>할일</span><span>교육정보</span></div></div></section>`).join('');
+</script></body></html>
