@@ -77,11 +77,16 @@ body.theme-forest {
 }
 
 
+/* Pretendard(SIL OFL 1.1, fonts/Pretendard-LICENSE.txt) — 안드로이드·아이폰이 같은 글씨체가 되도록 앱에 포함한다. KS X 1001 한글 2,350자 + 영문·숫자·기호 서브셋이라 없는 글자는 아래 시스템 글꼴로 대체된다. 800·900 굵기는 Bold 로 표시된다. */
+@font-face { font-family: "Pretendard"; font-weight: 400; font-style: normal; font-display: swap; src: url("../fonts/Pretendard-Regular.subset.woff2") format("woff2"); }
+@font-face { font-family: "Pretendard"; font-weight: 500; font-style: normal; font-display: swap; src: url("../fonts/Pretendard-Medium.subset.woff2") format("woff2"); }
+@font-face { font-family: "Pretendard"; font-weight: 600; font-style: normal; font-display: swap; src: url("../fonts/Pretendard-SemiBold.subset.woff2") format("woff2"); }
+@font-face { font-family: "Pretendard"; font-weight: 700; font-style: normal; font-display: swap; src: url("../fonts/Pretendard-Bold.subset.woff2") format("woff2"); }
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
@@ -576,6 +581,7 @@ select:disabled { background: var(--bg); color: var(--text-muted); }
 }
 
 /* ── 모바일 최적화 ── */
+button, input, select, textarea { font-family: inherit; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
 body { word-break: keep-all; overflow-wrap: break-word; -webkit-font-smoothing: antialiased; overscroll-behavior-y: none; }
 button, .stage-btn, .order-chip, .region-chip, .day-cell, .seg-tab, .nav-item { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
@@ -2136,3 +2142,10 @@ body.acct-design .acct-cs:has(.date-popup:not(.hidden)) .acct-cs-foot { position
 .hn-message-candidate{padding:12px;margin:8px 0;border:1px solid var(--border,#dedbe3);border-radius:10px;background:var(--card,#fff);overflow-wrap:anywhere}
 .hn-message-candidate p,.hn-message-candidate blockquote{margin:6px 0;font-size:14px}
 .hn-message-candidate blockquote{padding-left:8px;border-left:2px solid var(--border,#dedbe3);color:var(--muted,#666)}
+
+/* 구성원 수정 폼: 역할 칩 5개를 한 줄로, 내 프로필의 이메일·지역 칸은 일반 입력 스타일 */
+.hh-chips.hh-chips-row { flex-wrap: nowrap; }
+.hh-chips.hh-chips-row .hh-chip { flex: 1 1 0; min-width: 0; padding-left: 4px; padding-right: 4px; text-align: center; white-space: nowrap; }
+.hh-input.hh-input-plain { letter-spacing: normal; text-transform: none; }
+.hh-region { display: flex; gap: 8px; }
+.hh-region .hh-input { flex: 1 1 0; min-width: 0; }
