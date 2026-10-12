@@ -123,6 +123,7 @@
       opts.onRendered?.(host, {records:all,loading,failed});
     }
     function editor(record) {
+      if (opts.onOpenForm) { opts.onOpenForm(record || null, { group: selected, activity }); return; } // 입력 폼을 메뉴 위 창으로 띄우는 화면(앱)에서는 안쪽 폼을 열지 않는다
       buildForm(host.querySelector(".gr-editor-slot"), { record, group: selected, activity, scope, backend, lessons: opts.lessons, urls, getRecords: () => records, isAlive: () => alive,
         onSaved: (item, saved) => { records = records.filter((x) => x.id !== item.id).concat(saved || item); if (opts.backend) recordCache.set(scope + "|" + (opts.familyId || ""), records); selected = item.group; activity = item.activity; recordsOpen = true; render(); host.querySelector(".gr-records").scrollIntoView({ block: "start" }); } });
     }
@@ -191,7 +192,7 @@
     host.innerHTML = '<div class="gr-editor-slot"></div>';
     const dispose = () => { alive = false; urls.forEach((u) => URL.revokeObjectURL(u)); urls.length = 0; };
     if (!records.length) Promise.resolve().then(() => backend.read(o.scope, { attachments: false })).then((rows) => { if (alive) records = rows; }).catch(() => {}); // 활동 이름 제안용(실패해도 입력에는 영향 없음)
-    buildForm(host.querySelector(".gr-editor-slot"), { record: null, group: "academy", activity: "", scope: o.scope, backend, lessons: o.lessons || [], urls, getRecords: () => records, isAlive: () => alive,
+    buildForm(host.querySelector(".gr-editor-slot"), { record: o.record || null, group: o.group || "academy", activity: o.activity || "", scope: o.scope, backend, lessons: o.lessons || [], urls, getRecords: () => records, isAlive: () => alive,
       onCancel: () => { dispose(); if (o.onClose) o.onClose(); },
       onSaved: (item, saved) => { recordCache.delete(key); dispose(); if (o.onSaved) o.onSaved(saved || item); } });
     return dispose;

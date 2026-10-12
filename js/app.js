@@ -3563,7 +3563,8 @@
     const mountGrowth=typeof GrowthLearningView!=="undefined"?GrowthLearningView.mount:GrowthRecords.mount;
     mountGrowth(el("growth-body"), { backend, name: childDisplayName(), scope, familyId: hh.hid || null, grade:EduTrend.gradeOf(profile.birthDate,new Date(),{policy:schoolPolicy,enrollmentYearOverride:profile.enrollmentYearOverride}), semester:new Date().getMonth()<7?1:2, months: ChildTimeline.completedMonths(profile.birthDate,new Date()), initialView:growthRequestedView, lessons,
       isCurrent:()=>currentTab==="growth" && currentFamily===hh.hid && scope===JSON.stringify([acct.user&&acct.user.uid||"local",familyCode||usActiveChildKey()]),
-      onEducation:(subject)=>{educationRequestedSubject=subject||"";switchTab("trend");},onCalendar: () => switchTab("calendar") });
+      onEducation:(subject)=>{educationRequestedSubject=subject||"";switchTab("trend");},onCalendar: () => switchTab("calendar"),
+      onOpenForm:(record,d)=>hnOpenGrowthForm(record,d),onOpenPaper:(subject,url)=>hnOpenFrameSheet(subject+" 문제지",url),onOpenCurriculum:(url)=>hnOpenFrameSheet("학기별 배우는 내용",url) });
     growthRequestedView="history";
   }
   document.addEventListener("click", (e) => { if (e.target.closest("[data-growth-home]")) switchTab("growth"); });
@@ -3588,28 +3589,40 @@
     const box = el("gr-home-count");
     if (box && growthHomeScope() === scope) box.textContent = growthHomeCountText();
   }
-  // 홈의 '+ 기록': 성장기록 탭으로 가지 않고, 같은 입력 폼(오늘의 성장 남기기)을 홈 위 창으로 바로 연다. 저장하면 창을 닫고 홈의 건수를 바로 올린다.
-  let growthHomeForm = null;
-  document.addEventListener("click", (e) => {
-    if (!e.target.closest("[data-growth-add]")) return;
+  // ── 메뉴 위로 뜨는 창(할일 입력창과 같은 틀): 제목 줄 배경 = 아이 대표색. 성장기록 입력·결과 등록·문제지·학기별 배우는 내용이 모두 이 창으로 뜬다. ──
+  let hnSheetDispose = null;
+  function hnOpenSheet(title, bodyHtml, o) {
+    if (hnSheetDispose) { hnSheetDispose(); hnSheetDispose = null; }
+    const key = usActiveChildKey(), tint = key && typeof charPerson === "function" ? charTint(charPerson("CHILD:" + key)) : "#eddfcf";
+    modalMode = "profile";
+    el("modal-content").innerHTML = `<div class="hn-entry hn-task-entry hn-sheet${o && o.frame ? " hn-sheet-frame" : ""}" style="--hn-person-bg:${tint}"><div class="hn-section-head"><h3>${esc(title)}</h3><button type="button" class="hn-sheet-close" data-hn-sheet-close aria-label="닫기">✕</button></div><div class="hn-sheet-body">${bodyHtml || ""}</div></div>`;
+    el("detail-modal").classList.remove("hidden");
+    return el("modal-content").querySelector(".hn-sheet-body");
+  }
+  function hnCloseSheet() { if (hnSheetDispose) { hnSheetDispose(); hnSheetDispose = null; } closeDetail(); }
+  document.addEventListener("click", (e) => { if (e.target.closest("[data-hn-sheet-close]")) hnCloseSheet(); });
+  function hnOpenFrameSheet(title, url) { hnOpenSheet(title, `<iframe class="hn-sheet-iframe" src="${esc(url)}" title="${esc(title)}"></iframe>`, { frame: true }); }
+  // 성장기록 입력 폼(오늘의 성장 남기기 · 결과 등록 · 수정)을 창으로 연다. 저장하면 창을 닫고 홈 건수를 올리며, 성장기록 탭이 열려 있으면 다시 불러온다.
+  function hnOpenGrowthForm(record, defaults) {
     const scope = growthHomeScope();
     if (!scope || typeof GrowthRecords === "undefined" || !GrowthRecords.openForm) return;
-    if (growthHomeForm) { growthHomeForm(); growthHomeForm = null; }
-    modalMode = "profile";
-    el("modal-content").innerHTML = '<div id="gr-home-form"></div>';
-    el("detail-modal").classList.remove("hidden");
-    growthHomeForm = GrowthRecords.openForm(el("gr-home-form"), {
-      backend: activeGrowthBackend(), scope, familyId: hh.hid || null, lessons: growthLessonRows(),
-      onClose: () => { growthHomeForm = null; closeDetail(); },
+    const editing = !!(record && record.id);
+    const body = hnOpenSheet(editing ? "성장기록 수정" : "성장기록 남기기", "");
+    hnSheetDispose = GrowthRecords.openForm(body, {
+      backend: activeGrowthBackend(), scope, familyId: hh.hid || null, lessons: growthLessonRows(), record: record || null, group: defaults && defaults.group, activity: defaults && defaults.activity,
+      onClose: () => hnCloseSheet(),
       onSaved: () => {
-        growthHomeForm = null; closeDetail();
-        const c = growthHomeCountCache;
+        hnSheetDispose = null; closeDetail();
         growthRenderScope = ""; // 성장기록 탭은 다음에 열 때 새로 불러온다
-        growthHomeCountCache = { scope, n: c && c.scope === scope && c.n != null ? c.n + 1 : null, at: 0 }; // 저장한 1건을 바로 더해 보여 주고, 곧 서버 건수로 다시 맞춘다
+        const c = growthHomeCountCache;
+        growthHomeCountCache = { scope, n: c && c.scope === scope && c.n != null ? c.n + (editing ? 0 : 1) : null, at: 0 }; // 저장한 1건을 바로 더해 보여 주고, 곧 서버 건수로 다시 맞춘다
         const box = el("gr-home-count"); if (box) box.textContent = growthHomeCountText();
         growthHomeLoadCount();
+        if (currentTab === "growth") renderGrowthTab();
       } });
-  });
+  }
+  // 홈의 '+ 기록': 성장기록 탭으로 가지 않고 같은 입력 폼을 메뉴 위 창으로 바로 연다.
+  document.addEventListener("click", (e) => { if (e.target.closest("[data-growth-add]")) hnOpenGrowthForm(null, null); });
   // ── E(2-1·2-2) 하단 탭 교체: 가구·계정 기능이 켜졌을 때만 '기록' 탭 자리에 '어디갈까'. 기록은 프로필 시트의 '기록 보기'로 연다(기존 기록 패널 그대로). ──
   const tabLayoutOn = () => hhEnabled();
   /** 1-8(D8): 임신 중(아이 프로필이 임신이거나 아이 없이 임신 예정 계정)에는 어디갈까 탭을 숨긴다 — 출생 후부터 보인다. 36개월 미만·이상 아이에는 영향 없음. */
@@ -8145,7 +8158,7 @@
   updateBrandText=function(){charBrandBase();const b=el('brand-text');if(b&&profile)b.innerHTML=`한눈육아<span class="hn-family-name"><span class="hn-brand-dot">·</span>${esc(childDisplayName())}네집</span>`;};
   function charHeader(){const head=document.querySelector('.app-header');if(!head||!acctEnabled())return;let b=el('hn-profile');if(!b){b=document.createElement('button');b.id='hn-profile';b.className='hn-profile';b.setAttribute('aria-label','내 프로필');b.onclick=()=>acctProfileSheet();head.appendChild(b);}const m=charPeople(true).find(p=>p.key===localStorage.getItem('hn_selected_profile'))||charPeople(true).find(p=>p.key==='MEMBER:'+usMeId())||{role:'MOM',name:'내 프로필'};b.innerHTML=charImage(m);}
   let hnHomeDay=0; // 홈 우리 가족 일정 탭: 0 오늘 · 1 내일 · 2 모레(이 기기에서만 기억, 저장 안 함)
-  usHomeCardHtml=function(){if(!usActive())return '';const base=new Date(),dates=[0,1,2].map(n=>toISODate(new Date(base.getFullYear(),base.getMonth(),base.getDate()+n))),model=usBuildModel(dates[0],dates[2],{scope:'ALL',showAuto:false}),names=['오늘','내일','모레'],sel=Math.min(2,Math.max(0,hnHomeDay)),perDay=dates.map(d=>{const day=model.days.get(d);return day?day.user:[];}),dt=new Date(base.getFullYear(),base.getMonth(),base.getDate()+sel);return `<section class="card hn-schedules"><div class="hn-section-head"><h3><span class="hn-schedule-date">${dt.getMonth()+1}/${dt.getDate()}(${['일','월','화','수','목','금','토'][dt.getDay()]})</span> 가족 캘린더</h3><button type="button" class="hn-reg-link" data-hn-hadd aria-label="일정 등록">+ 일정</button></div><div class="hn-hday-tabs" role="tablist">${names.map((n,i)=>`<button type="button" role="tab" aria-selected="${i===sel}" data-hn-hday="${i}" class="${i===sel?'on':''}">${n}</button>`).join('')}</div>${perDay[sel].map(charRow).join('')||`<p class="fine-print">${names[sel]} 등록된 일정이 없어요.</p>`}${sel===2?'<button type="button" class="hn-hday-more" data-char-calendar>이후 일정은 가족캘린더 보기 →</button>':''}</section>`;};
+  usHomeCardHtml=function(){if(!usActive())return '';const base=new Date(),dates=[0,1,2].map(n=>toISODate(new Date(base.getFullYear(),base.getMonth(),base.getDate()+n))),model=usBuildModel(dates[0],dates[2],{scope:'ALL',showAuto:false}),names=['오늘','내일','모레'],sel=Math.min(2,Math.max(0,hnHomeDay)),perDay=dates.map(d=>{const day=model.days.get(d);return day?day.user:[];}),dt=new Date(base.getFullYear(),base.getMonth(),base.getDate()+sel);return `<section class="card hn-schedules"><div class="hn-section-head"><h3><span class="hn-schedule-date">${dt.getMonth()+1}/${dt.getDate()}(${['일','월','화','수','목','금','토'][dt.getDay()]})</span> 가족 캘린더</h3>${sel===2?'':'<button type="button" class="hn-reg-link" data-hn-hadd aria-label="일정 등록">+ 일정</button>'}</div><div class="hn-hday-tabs" role="tablist">${names.map((n,i)=>`<button type="button" role="tab" aria-selected="${i===sel}" data-hn-hday="${i}" class="${i===sel?'on':''}">${n}</button>`).join('')}</div>${perDay[sel].map(charRow).join('')||`<p class="fine-print">${names[sel]} 등록된 일정이 없어요.</p>`}${sel===2?'<button type="button" class="hn-hday-more" data-char-calendar>이후 일정은 가족캘린더 보기 →</button>':''}</section>`;};
   document.addEventListener('click',e=>{const b=e.target.closest('[data-hn-hday]');if(!b)return;hnHomeDay=Number(b.dataset.hnHday)||0;const card=b.closest('.hn-schedules'),box=document.createElement('div');box.innerHTML=usHomeCardHtml();const next=box.firstElementChild;if(card&&next)card.replaceWith(next);else renderHome();}); // 일정 카드만 다시 그린다(홈 전체를 새로 그리지 않는다)
   document.addEventListener('click',e=>{if(!e.target.closest('[data-hn-hadd]'))return;const d=new Date();usOpenForm(null,toISODate(new Date(d.getFullYear(),d.getMonth(),d.getDate()+Math.min(2,Math.max(0,hnHomeDay)))));}); // 선택한 탭의 날짜로 일정 등록
   const charChecklistBase=renderChecklistTab;

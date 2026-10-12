@@ -315,3 +315,17 @@ body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,
 /* 홈 카드 등록 버튼(A안): 배경 없는 보라 텍스트 링크 — + 일정 · + 할일 · + 기록 */
 .hn-reg-link{position:relative;border:0;background:none;color:#715697;font:inherit;font-size:13px;font-weight:800;line-height:1.2;padding:4px 0;margin:0;cursor:pointer;white-space:nowrap;flex:none}
 .hn-reg-link::after{content:"";position:absolute;inset:-8px -8px -8px -10px}
+
+/* 메뉴 위로 뜨는 창(성장기록 입력·결과 등록·문제지·학기별 배우는 내용): 할일 입력창과 같은 틀, 제목 줄 배경은 아이 대표색 */
+.hn-sheet>.hn-section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:0;background:var(--hn-person-bg)}
+.hn-sheet>.hn-section-head h3{margin:0;font-size:20px;color:#302c3c}
+.hn-sheet-close{flex:none;width:32px;height:32px;border:0;border-radius:50%;background:rgba(255,255,255,.65);color:#302c3c;font-size:15px;line-height:1;cursor:pointer}
+.hn-sheet-body{padding:4px 0 14px}
+.hn-sheet .gr-editor{border:0;background:none;padding:0;margin:0;border-radius:0}
+.hn-sheet .gr-editor .gr-section-head{display:none}
+.hn-sheet .gr-editor label{display:block;font-size:13px;font-weight:700;margin:16px 0 6px;color:#302c3c}
+.hn-sheet .gr-editor input,.hn-sheet .gr-editor select,.hn-sheet .gr-editor textarea{width:100%;box-sizing:border-box;border:1px solid #e3ddee;border-radius:12px;background:#fff;padding:12px;font:inherit;font-size:15px}
+.hn-sheet .gr-editor .gr-form-note{font-size:12px;color:#7a7488;margin:6px 0 0}
+.hn-sheet .gr-editor .gr-primary{margin-top:18px;border:0;border-radius:12px;background:var(--hn-person-bg);color:#302c3c;font-weight:800}
+.hn-task-entry.hn-sheet-frame>.hn-sheet-body{margin-left:0!important;margin-right:0!important;padding:0}
+.hn-sheet-iframe{display:block;width:100%;height:78dvh;min-height:420px;border:0;background:#fff}
