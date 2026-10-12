@@ -37,6 +37,7 @@ test("로그인 시트: 보조 링크 둘은 같은 클래스(회색·가운데�
   assert.equal((html.match(/acct-sub-link/g) || []).length, 2);
   assert.ok(html.includes('data-acct-action="reset-password"') && html.includes('data-acct-action="open-signup"'));
   assert.ok(!html.includes('data-acct-action="close"'));
+  assert.ok(html.indexOf('data-acct-action="open-signup"') < html.indexOf('data-acct-action="reset-password"'), '회원가입 링크가 먼저, 비밀번호 링크가 그 다음 줄');
   assert.match(css, /\.acct-form \.acct-sub-link\s*\{[^}]*display:\s*block[^}]*text-align:\s*center[^}]*color:\s*var\(--text-muted\)/);
 });
 test("가입 폼의 '이미 계정이 있어요 · 로그인'도 같은 보조 링크 스타일이다", () => {

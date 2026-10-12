@@ -597,8 +597,8 @@
       ${input("password", MSG.passwordLabel, "password", f.password || "", 'autocomplete="current-password"')}${err(e, "password")}
       ${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}
       <button type="button" class="btn-complete" data-acct-action="submit-login"${s.busy ? " disabled" : ""}>${esc(s.busy ? MSG.loggingIn : MSG.submitLogin)}</button>
-      <button type="button" class="acct-link acct-sub-link" data-acct-action="reset-password"${s.busy ? " disabled" : ""}>${esc(MSG.forgot)}</button>
-      <button type="button" class="acct-link acct-sub-link ob-switch" data-acct-action="open-signup"${s.busy ? " disabled" : ""}>${esc(MSG.switchToSignup)}</button></div>`;
+      <button type="button" class="acct-link acct-sub-link ob-switch" data-acct-action="open-signup"${s.busy ? " disabled" : ""}>${esc(MSG.switchToSignup)}</button>
+      <button type="button" class="acct-link acct-sub-link" data-acct-action="reset-password"${s.busy ? " disabled" : ""}>${esc(MSG.forgot)}</button></div>`;
   }
   // ── Q3 초대: 역할 3종·링크·문구(순수) ───────────────────────────────────────────────────────
   const INVITE_BASE = "https://hoho-granma.github.io/yuka-planner/";
