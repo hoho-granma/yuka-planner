@@ -8151,7 +8151,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
     const owner=us.form.whoPerson?'MEMBER:'+us.form.assigneeMemberId:us.form.scope==='CHILD'?'CHILD:'+(us.form.childKeys||[])[0]:'FAMILY',person=charPerson(owner);
     const tint=charTint(person);
     sheet.style.setProperty('--hn-person-bg',tint);
-    const head=sheet.querySelector('.us-fx-head');if(head)head.style.background=tint;
+    const head=sheet.querySelector('.us-fx-head');if(head){head.style.background=tint;head.querySelector('.us-fx-who')?.remove();}
     sheet.querySelectorAll('.us-field').forEach(field=>{if(field.querySelector('#usd-date')){const label=field.querySelector('label');if(label)label.hidden=true;}});
 
     if(menu){if(head)head.after(menu);menu.innerHTML=[['direct','직접 입력'],['gallery','사진'],['paste','메시지'],['voice','음성 입력']].filter(([mode])=>mode!=='voice'||VOICE_INPUT_ENABLED).map(([mode,label])=>`<button type="button" data-cap-menu="${mode}" class="${(us.form.capInputMode||'gallery')===mode?'active':''}">${label}</button>`).join('');}
@@ -8228,6 +8228,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
     const source=messageSource();if(!source)return;
     if(source.form.messageTitleReview){const input=el(source.kind==='todo'?'hn-task-text':'hn-schedule-content');input.insertAdjacentHTML('beforebegin',`<label for="hn-message-title">제목 확인</label><input id="hn-message-title" maxlength="60" value="${esc(source.form.title||'')}"/>`);el('hn-message-title').oninput=e=>{source.form.title=e.target.value;source.form.titleEdited=true;source.form.titleTouched=true;const title=el('us-title');if(title)title.value=e.target.value;};}
     const analysisMode=AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode);
+    el('modal-content').classList.toggle('hn-photo-mode',analysisMode==='photo');
     if(!analysisMode)return;
     const input=el(source.kind==='todo'?'hn-task-text':'hn-schedule-content');
     if(el('hn-message-analysis'))return;
@@ -8283,8 +8284,10 @@ fields.sourceScheduleId=f.sourceScheduleId;
         if(sync&&sync.pending>0){status.textContent='일정은 이 기기에 저장됐지만 서버에는 아직 올라가지 않았어요'+(sync.permissionDenied?' (가족 권한을 확인해 주세요)':' (인터넷 연결을 확인해 주세요)')+'. 연결되면 자동으로 올라가요.';}
         else{
           batch.done=true;closeDetail();
+          // 켜 둔 대상 칩(예: 아이만) 때문에 방금 저장한 내 일정이 안 보이면 저장이 안 된 것처럼 보이므로 전체 보기로 돌린다.
           // 사진에서 읽은 일정은 오늘이 아닌 날짜에 들어가므로, 저장한 일정 중 가장 이른 날짜로 달력을 옮겨 바로 보이게 한다(안 옮기면 오늘 칸이 비어 저장이 안 된 것처럼 보인다).
           const first=docs.map(x=>x.doc.eventDate||(x.doc.recurrence&&x.doc.recurrence.startDate)).filter(Boolean).sort()[0];
+          if(UserScheduleView.normalizeSelection(usSel(),usLinks(),usMembers(),usSelOpts()).length)us.selection=[];
           if(first){const d=new Date(first+'T00:00:00');viewMonth=new Date(d.getFullYear(),d.getMonth(),1);selectedCalendarDate=d;switchTab('calendar');renderCalendar();renderSelectedDayPanel();attachListHandlers();}
         }}
     catch(e){status.textContent=e.message;}
