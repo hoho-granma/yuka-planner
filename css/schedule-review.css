@@ -49,3 +49,4 @@
 .us-form .hn-import-meta input:not([type=checkbox]){box-sizing:border-box;width:100%;max-width:100%;min-width:0}
 
 .hn-batch-done #hn-message-analysis~*{display:none!important}
+.hn-photo-mode #hn-message-analysis~*{display:none!important}

@@ -33,6 +33,21 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
     if(!active(m)||m.permission!=='ADMIN')fail('permission-denied','가족 관리자만 할 수 있어요.');
     return m;
   }
+  // 예전(승인 전) 가입자: accounts 의 householdId·memberId 와 families/{hid}/members/{memberId}.uid 는 모두 서버만 쓰는 값이라
+  // 둘이 일치하면 그 계정이 그 가족의 구성원이었다는 증거가 된다. 승인 문서(familyAccess)만 아직 없는 경우를 찾는다.
+  async function legacyEvidence(tx,uid,a) {
+    if(!a?.householdId||!a?.memberId||!/^[A-Za-z0-9_-]{1,128}$/.test(a.householdId)||!/^[A-Za-z0-9_-]{1,128}$/.test(a.memberId))return null;
+    const family=await get(tx,'families/'+a.householdId),member=await get(tx,`families/${a.householdId}/members/${a.memberId}`);
+    if(!family||!member||member.uid!==uid||member.deletedAt)return null;
+    return {householdId:a.householdId,memberId:a.memberId,role:ROLES.includes(member.role)?member.role:(ROLES.includes(a.role)?a.role:'OTHER'),admin:family.createdByUid===uid};
+  }
+  // 새 가족 만들기·초대 합류를 막아야 하는 "이미 연결된 계정"인가. 승인 문서가 없고 예전 구성원 증거도 없는 계정(고아)은 막지 않는다.
+  async function stillLinked(tx,uid,a) {
+    if(!a?.householdId)return false;
+    const access=await get(tx,accessPath(a.householdId,uid));
+    if(access)return active(access);
+    return !!(await legacyEvidence(tx,uid,a));
+  }
   // Counts commit before the operation, so failed code guesses consume quota too.
   async function throttle(uid,ip) {
     const t=now(), window=Math.floor(t/600000);
@@ -59,8 +74,9 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
       const a=await get(tx,'accounts/'+uid);
       if(a?.householdId) {
         const m=await get(tx,accessPath(a.householdId,uid));
-        if(!active(m))fail('failed-precondition','기존 가족 연결을 먼저 확인해 주세요.');
-        return {ok:true,householdId:a.householdId,memberId:m.memberId,created:false};
+        if(active(m))return {ok:true,householdId:a.householdId,memberId:m.memberId,created:false};
+        // 끊긴(REVOKED) 계정이나 예전 구성원(복구 가능)은 새 가족을 만들지 못한다. 복구 증거가 없는 고아 계정만 새 가족을 만든다.
+        if(m||await legacyEvidence(tx,uid,a))fail('failed-precondition','기존 가족 연결을 먼저 확인해 주세요.');
       }
       const t=now(),memberId=uid;
       tx.set(ref('families/'+hid),{v:1,createdAt:t,updatedAt:t,createdByUid:uid});
@@ -92,13 +108,12 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
   async function requestJoin(uid,data,ip) {
     await throttle(uid,ip||'unknown');
     const code=String(data.code||'').trim().toUpperCase();
-    if(!/^[A-Z0-9]{8}$/.test(code))fail('not-found','사용할 수 없는 초대코드예요.');
+    if(!/^[A-Z0-9]{8}$/.test(code))fail('not-found','초대코드가 없거나 만료됐어요. 예전 가족코드는 쓸 수 없어요. 가족 관리자에게 새 초대코드(24시간 유효)를 받아 주세요.');
     const name=label(data.displayName),key=hash(code);
     return db.runTransaction(async tx=>{
       const inv=await get(tx,'privateFamilyInvites/'+key),a=await get(tx,'accounts/'+uid),previous=await get(tx,'familyJoinRequests/'+uid);
-      if(!inv || inv.status!=='ACTIVE'||inv.expiresAt<=now())fail('not-found','사용할 수 없는 초대코드예요.');
-      const oldAccess=a?.householdId?await get(tx,accessPath(a.householdId,uid)):null;
-      if(a?.householdId&&(!oldAccess||active(oldAccess)))fail('failed-precondition','이미 연결된 가족이 있어요.');
+      if(!inv || inv.status!=='ACTIVE'||inv.expiresAt<=now())fail('not-found','초대코드가 없거나 만료됐어요. 예전 가족코드는 쓸 수 없어요. 가족 관리자에게 새 초대코드(24시간 유효)를 받아 주세요.');
+      if(await stillLinked(tx,uid,a))fail('failed-precondition','이미 연결된 가족이 있어요.');
       const previousInvite=previous?.status==='PENDING'?await get(tx,'privateFamilyInvites/'+previous.inviteHash):null;
       if(previous?.status==='PENDING' && previous.inviteHash!==key && previousInvite?.status==='ACTIVE' && previousInvite.expiresAt>now())fail('failed-precondition','기존 참여 요청을 먼저 취소해 주세요.');
       if(previous?.status==='PENDING' && previous.inviteHash===key)return {ok:true,status:'PENDING'};
@@ -117,11 +132,11 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
       const inv=await get(tx,'privateFamilyInvites/'+req.inviteHash),a=await get(tx,'accounts/'+target);
       const members=await tx.get(db.collection(`families/${hid}/members`));
       const existing=await get(tx,accessPath(hid,target));
-      const previousAccess=a?.householdId?await get(tx,accessPath(a.householdId,target)):null;
+      const stillLinkedTarget=await stillLinked(tx,target,a);
       const slot=inv?.slotMemberId?members.docs.find(d=>d.id===inv.slotMemberId):null;
       if(approve && inv?.slotMemberId && (!slot||slot.data().uid||slot.data().deletedAt))fail('failed-precondition','초대된 자리가 변경됐어요. 새로 초대해 주세요.');
       if(approve && (!inv||inv.status!=='ACTIVE'||inv.expiresAt<=now()))fail('failed-precondition','초대가 만료됐어요. 다시 초대해 주세요.');
-      if(approve && ((a?.householdId&&(!previousAccess||active(previousAccess))) || active(existing)))fail('failed-precondition','이미 가족에 연결된 계정이에요.');
+      if(approve && (stillLinkedTarget || active(existing)))fail('failed-precondition','이미 가족에 연결된 계정이에요.');
       if(approve && !slot && members.docs.filter(d=>!d.data().deletedAt).length>=10)fail('resource-exhausted','가족 구성원 수를 확인해 주세요.');
       const t=now();
       if(approve) {
@@ -140,6 +155,20 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
       }
       tx.update(ref('familyJoinRequests/'+target),{status:approve?'APPROVED':'REJECTED',decidedByUid:uid,decidedAt:t,purgeAt:new Date(t+RETENTION_MS)});
       return {ok:true};
+    });
+  }
+  /** 승인 방식 이전에 가입한 구성원을 승인 문서로 옮긴다(로그인 때 앱이 호출). 증거가 없거나 이미 끊긴 계정은 건드리지 않는다. */
+  async function claimLegacy(uid) {
+    return db.runTransaction(async tx=>{
+      const a=await get(tx,'accounts/'+uid);
+      if(!a?.householdId)return {ok:true,claimed:false,reason:'no-link'};
+      const current=await get(tx,accessPath(a.householdId,uid));
+      if(active(current))return {ok:true,claimed:false,reason:'already-active'};
+      if(current)return {ok:true,claimed:false,reason:'revoked'};   // 관리자가 끊은 계정은 되살리지 않는다
+      const e=await legacyEvidence(tx,uid,a);
+      if(!e)return {ok:true,claimed:false,reason:'no-evidence'};
+      tx.set(ref(accessPath(e.householdId,uid)),{status:'ACTIVE',permission:e.admin?'ADMIN':'MEMBER',role:e.role,memberId:e.memberId,approvedByUid:uid,approvedAt:now(),migratedFromLegacy:true});
+      return {ok:true,claimed:true,householdId:e.householdId,permission:e.admin?'ADMIN':'MEMBER'};
     });
   }
   async function status(uid) {
@@ -277,6 +306,6 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
       return {ok:true};
     });
   }
-  return {createFamily,issueInvite,requestJoin,decideJoin,status,cancelJoin,revokeInvite,removeMember,transferAdmin,listRequests,createChild,removeChild,resolveChild,updateMember};
+  return {createFamily,issueInvite,requestJoin,decideJoin,claimLegacy,status,cancelJoin,revokeInvite,removeMember,transferAdmin,listRequests,createChild,removeChild,resolveChild,updateMember};
 }
 module.exports={createService,newCode,hash};

@@ -34,7 +34,7 @@
       await ensureAppCheck(fb);
       return (await fb.app().functions("asia-northeast3").httpsCallable("familyAccess")({action,...data})).data;
     }
-    return Object.fromEntries(["createFamily","issueInvite","requestJoin","decideJoin","status","cancelJoin","revokeInvite","removeMember","transferAdmin","listRequests","createChild","removeChild","resolveChild","updateMember"].map(action=>[action,data=>call(action,data)]));
+    return Object.fromEntries(["createFamily","claimLegacy","issueInvite","requestJoin","decideJoin","status","cancelJoin","revokeInvite","removeMember","transferAdmin","listRequests","createChild","removeChild","resolveChild","updateMember"].map(action=>[action,data=>call(action,data)]));
   }
   return {create};
 });

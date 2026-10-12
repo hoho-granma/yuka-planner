@@ -1062,7 +1062,7 @@
   /** D75 폼 변형 B: 시트 머리 = 선택한 '누구' 색 면 + 제목 + 선택 칩 라벨 알약(새 문구 없음). 색은 폼 루트 변수(--us-fx*)가 준다. */
   function fxLabel(f, links, members, meId) {
     const m = f.whoPerson && f.assigneeMemberId ? (members || []).find((x) => x && x.memberId === f.assigneeMemberId) : null;
-    if (m) return m.memberId === meId ? MSG.g13WhoMe : m.label || "";
+    if (m) return m.memberId === meId ? "" : m.label || ""; // 내 일정은 '나' 알약을 달지 않는다
     if (f.scope === "CHILD" && (f.childKeys || []).length) {
       const by = {};
       activeLinks(links).forEach((l) => (by[linkKey(l)] = l.displayName || ""));

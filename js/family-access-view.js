@@ -4,7 +4,7 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const relation={MOM:'엄마',DAD:'아빠',GRANDPARENT:'조부모',CAREGIVER:'보호자',OTHER:'가족',CHILD:'아이'};
   function pending(status) {
-    const text={PENDING:'가족에게 참여 승인을 요청했어요.',UNKNOWN:'가족 연결을 확인하지 못했어요. 인터넷 연결 후 다시 확인해 주세요.',EXPIRED:'초대가 만료됐어요. 가족에게 새 초대를 받아 주세요.',REJECTED:'참여 요청이 승인되지 않았어요.',REVOKED:'가족 연결이 해제됐어요.',CANCELLED:'참여 요청을 취소했어요.'};
+    const text={PENDING:'가족에게 참여 승인을 요청했어요.',UNKNOWN:'가족 연결을 확인하지 못했어요. 인터넷 연결 후 다시 확인해 주세요.',EXPIRED:'초대가 만료됐어요. 가족에게 새 초대를 받아 주세요.',REJECTED:'참여 요청이 승인되지 않았어요.',REVOKED:'가족 연결을 확인하지 못했어요. 가족 관리자에게 새 초대코드를 받아 \'가족 연결 다시 하기\'에서 입력해 주세요.',CANCELLED:'참여 요청을 취소했어요.'};
     return `<section class="fa-card"><h2>가족과 함께하기</h2><p>${esc(text[status]||'가족에게 초대를 받아 주세요.')}</p><p>승인 후 가족 캘린더를 함께 볼 수 있어요.</p><button data-fa-action="status">상태 확인</button>${status==='PENDING'?'<button data-fa-action="cancelJoin">요청 취소</button>':''}</section>`;
   }
   function management({requests=[],members=[],children=[]}={}) {

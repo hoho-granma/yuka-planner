@@ -1099,17 +1099,19 @@
   }
   function famCardData(sel) {
     const HM = HouseholdView.MSG, AM = AccountView.MSG;
+    // 가족 카드 공통 항목(역할·이메일·거주 지역): 값이 없어도 칸은 남긴다(세 번째 값 true). 이메일은 본인 것만 알 수 있어 다른 구성원·아이는 공란.
+    const famRegion = () => { const a = acct.account || {}; return a.province ? `${a.province} ${a.district || ""}`.trim() : profile ? `${profile.province || ""} ${profile.district || ""}`.trim() : ""; };
+    const baseRows = (role, email) => [["역할", role, true], [AM.emailLabel || "이메일", email || "", true], ["거주 지역", famRegion(), true]];
     if (sel.kind === "member") {
       const m = HouseholdView.visibleMembers(usMembers()).find((x) => x.memberId === sel.id);
       if (!m) return null;
       const isMe = !!sel.id && sel.id === usMeId();
       const acc = acct.account || {};
-      const region = acc.province ? `${acc.province} ${acc.district || ""}`.trim() : profile ? `${profile.province} ${profile.district}` : "";
       const name = isMe && (acctIdentity() || {}).name ? (acctIdentity() || {}).name : m.label;
       const edit = { label: HM.memEdit, attrs: `data-mem-action="edit" data-member-id="${esc(m.memberId)}"` };
       return {
-        kind: isMe ? "me" : "member", color: UserScheduleView.memberColor(m), name: isMe ? `${name} (${AM.meShort})` : name, sub: HouseholdView.roleLabelOf(m),
-        rows: isMe ? [[AM.emailLabel || "이메일", acct.user && acct.user.email], ["거주 지역", region]] : [],
+        kind: isMe ? "me" : "member", color: UserScheduleView.memberColor(m), name: isMe ? `${name} (${AM.meShort})` : name, sub: "",
+        rows: baseRows(HouseholdView.roleLabelOf(m), isMe ? acct.user && acct.user.email : ""),
         actions: isMe ? [edit, { label: AM.logout, attrs: 'data-acct-action="logout"' }] : [edit, { label: HM.memDelete, attrs: `data-mem-action="ask-delete" data-member-id="${esc(m.memberId)}"`, danger: true }],
       };
     }
@@ -1118,22 +1120,20 @@
     const color = UserScheduleView.childColor(l);
     const current = !!profile && l.familyCode === familyCode;
     const actions = [];
-    const rows = [];
+    const rows = baseRows("자녀", "");
     let extraHtml = "", sub = "", photo = "";
     if (current) {
       const today = new Date();
       const preg = isPregnant();
-      sub = preg ? `임신 ${pregnancyInfo(profile.birthDate, today).weeks}주` : ChildTimeline.ageLabelAt(profile.birthDate, today);
-      rows.push([preg ? "출산 예정일" : "생년월일", formatDateKR(profile.birthDate)]);
+      rows.push([preg ? "출산 예정일" : "생년월일", formatDateKR(profile.birthDate), true]);
+      rows.push(["나이", preg ? `임신 ${pregnancyInfo(profile.birthDate, today).weeks}주` : ChildTimeline.ageLabelAt(profile.birthDate, today), true]);
       if (preg && pregConfirmIso()) rows.push([PregnancyBasis.MSG.confirmDate, formatDateKR(new Date(pregConfirmIso() + "T00:00:00"))]);
-      rows.push(["거주 지역", `${profile.province} ${profile.district}`]);
       extraHtml = enrollmentRowHtml();
       photo = profile.photoDataUrl || "";
       actions.push({ label: preg ? "임신 정보 수정" : "아이 정보 수정", attrs: 'data-fam-act="child-edit"' }, { label: "사진", attrs: 'data-fam-act="child-photo"' });
       if (preg) actions.push({ label: "아이가 태어났어요", attrs: 'data-fam-act="child-born"' });
     } else {
-      const ageText = acct36AgeText(l.familyCode);
-      if (ageText) sub = ageText;
+      rows.push(["생년월일", "", true], ["나이", acct36AgeText(l.familyCode) || "", true]); // 이 기기에 불러오지 않은 아이는 생년월일을 알 수 없어 공란
     }
     actions.push({ label: HM.memChildRemove, attrs: `data-mem-action="ask-remove-child" data-member-id="${esc(l.childKey)}"`, danger: true });
     if (usIsOwnChild(l)) actions.push({ label: HM.memChildDelete, attrs: `data-mem-action="ask-delete-child" data-member-id="${esc(l.childKey)}"`, danger: true });
@@ -6667,6 +6667,14 @@
       const state=await approvalApi().status();
       if(!valid())return; // A previous login must not restore into the next account.
       acct.approvalState=state.status;
+      if(state.status==="REVOKED"||state.status==="NONE") {
+        // 승인 방식 이전에 가입한 구성원은 서버가 예전 가입 기록을 확인해 승인 문서로 옮겨 준다(되살리는 것이 아니라 이전). 실패해도 아래 기존 흐름으로 간다.
+        try {
+          const moved=await approvalApi().claimLegacy();
+          if(!valid())return;
+          if(moved&&moved.claimed){const again=await approvalApi().status();if(!valid())return;state.status=again.status;state.householdId=again.householdId;state.permission=again.permission;state.memberId=again.memberId;acct.approvalState=again.status;}
+        } catch(e) {}
+      }
       if(state.status!=="ACTIVE") {
         if(state.status==="REVOKED")acctApprovalQuarantine();
         if(state.status==="NONE") {
@@ -8001,8 +8009,8 @@
   function charPerson(key){return charPeople(true).find(p=>p.key===key)||{key,role:'OTHER',name:'가족'};}
   function charOccOwner(o){const d=usDocById(o.scheduleId)||o;return d.scope==='CHILD'&&d.childKeys&&d.childKeys.length?'CHILD:'+d.childKeys[0]:d.assigneeMemberId?'MEMBER:'+d.assigneeMemberId:'FAMILY';}
   function charRow(o){const doc=usDocById(o.scheduleId)||o,person=charPerson(charOccOwner(o)),badge=CharacterUI.categoryBadge(doc.categoryLabel||doc.category,person);return ScheduleReview.timeline({...o,tags:doc.tags||[],categoryLabel:currentTab==='calendar'?badge.label:'' ,category:''},{ownerHtml:charImage(person),categoryColor:badge.color,attributes:`data-char-schedule="${esc(o.scheduleId)}" data-us-id="${esc(o.scheduleId)}" data-us-key="${esc(o.key||'')}"`});}
-  function charTodoRows(home){if(!usActive())return '';const now=toISODate(new Date()), people=charPeople(false);return CharacterUI.list(HouseholdSync.getTodos(hh.hid).map(t=>{const l=usLinks().find(l=>l.familyCode===t.childKey);return !t.ownerKey&&l?{...t,ownerKey:'CHILD:'+l.childKey}:t;}),people,now,home).filter(t=>{if(!home||!t.dueDate)return true;const lim=new Date();lim.setDate(lim.getDate()+7);return t.dueDate<=toISODate(lim);}).map(t=>{const dl=CharacterUI.deadline(t.dueDate,now);return `<div class="hn-task${t.done?' done':''}"><button class="hn-check" data-char-toggle="${esc(t.id)}" aria-label="${t.done?'완료 취소':'완료'}">${t.done?'✓':''}</button>${charImage(charPerson(CharacterUI.owner(t)))}${dl.text?`<time>${esc(dl.text)}</time>`:''}<button class="hn-task-title" data-char-edit="${esc(t.id)}">${esc(t.title)}</button>${dl.tomorrow?'<b class="hn-d1">D-1</b>':''}${t.category?`<span class="hn-category" style="background:${CharacterUI.colors[(CharacterUI.categories[charPerson(CharacterUI.owner(t)).role]||CharacterUI.categories.OTHER).indexOf(t.category)>=0?(CharacterUI.categories[charPerson(CharacterUI.owner(t)).role]||CharacterUI.categories.OTHER).indexOf(t.category):4]}">${esc(t.category)}</span>`:''}</div>`;}).join('');}
-  function charTodoSection(home){return `<section class="card hn-tasks" id="hn-family-tasks${home?'':'-tab'}"><div class="hn-section-head"><h3>우리 가족 할일${home?' (D+7일)':''}</h3><button class="hn-add-round" data-char-add aria-label="할일 추가">+</button></div>${charTodoRows(home)||'<p class="fine-print">등록된 할일이 없어요.</p>'}</section>`;}
+  function charTodoRows(home){if(!usActive())return '';const now=toISODate(new Date()), people=charPeople(false);return CharacterUI.list(HouseholdSync.getTodos(hh.hid).map(t=>{const l=usLinks().find(l=>l.familyCode===t.childKey);return !t.ownerKey&&l?{...t,ownerKey:'CHILD:'+l.childKey}:t;}),people,now,home).map(t=>{const dl=CharacterUI.deadline(t.dueDate,now);return `<div class="hn-task${t.done?' done':''}"><button class="hn-check" data-char-toggle="${esc(t.id)}" aria-label="${t.done?'완료 취소':'완료'}">${t.done?'✓':''}</button>${charImage(charPerson(CharacterUI.owner(t)))}${dl.text?`<time>${esc(dl.text)}</time>`:''}<button class="hn-task-title" data-char-edit="${esc(t.id)}">${esc(t.title)}</button>${dl.tomorrow?'<b class="hn-d1">D-1</b>':''}${t.category?`<span class="hn-category" style="background:${CharacterUI.colors[(CharacterUI.categories[charPerson(CharacterUI.owner(t)).role]||CharacterUI.categories.OTHER).indexOf(t.category)>=0?(CharacterUI.categories[charPerson(CharacterUI.owner(t)).role]||CharacterUI.categories.OTHER).indexOf(t.category):4]}">${esc(t.category)}</span>`:''}</div>`;}).join('');}
+  function charTodoSection(home){return `<section class="card hn-tasks" id="hn-family-tasks${home?'':'-tab'}"><div class="hn-section-head"><h3>우리 가족 할일</h3><button class="hn-add-round" data-char-add aria-label="할일 추가">+</button></div>${charTodoRows(home)||'<p class="fine-print">등록된 할일이 없어요.</p>'}</section>`;}
   const charHomeBase=renderHome;
   renderHome=function(){charHomeBase();if(!profile||!acctEnabled())return;updateBrandText();const wrap=el('home-body');if(!wrap)return;wrap.querySelectorAll('#a36-home-todo').forEach(n=>n.remove());let block=wrap.querySelector('#hn-family-tasks');if(block)block.remove();if(acct36Active())wrap.insertAdjacentHTML('beforeend',charTodoSection(true));const growth=wrap.querySelector('.gr-home-link');if(growth)wrap.appendChild(growth);wrap.querySelectorAll('#ns-banner').forEach(n=>n.remove());wrap.querySelectorAll('.home-child-line').forEach(n=>n.remove());wrap.querySelectorAll('.hn-home-date').forEach(n=>n.remove());if(!acct36Active()){const family=wrap.querySelector('.hn-schedules');if(family)wrap.prepend(family);}charHeader();};
   const charBrandBase=updateBrandText;
@@ -8165,6 +8173,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
     if(!analysisMode)return;
     const input=el(source.kind==='todo'?'hn-task-text':'hn-schedule-content');
     if(el('hn-message-analysis'))return;
+    el('modal-content').classList.toggle('hn-photo-mode',analysisMode==='photo'); // 사진으로 채울 때는 날짜·반복·종일·할일 리스트·취소 줄을 숨긴다(날짜는 사진에서 읽는다)
     if(analysisMode==='photo'){input.hidden=true;if(source.form.photo)input.insertAdjacentHTML('beforebegin',`<p class="fine-print">${esc(source.form.photo.name)}</p><div class="hn-photo-preview" style="--hn-review-person:${charTint(charPerson(sourceOwner(source.form)))}" data-photo-state="idle"><img src="${source.form.photo.image}" alt="선택한 일정 사진"/><span class="hn-photo-loading" role="status" aria-label="사진 분석 중"><span class="hn-photo-spinner" aria-hidden="true"></span></span><span class="hn-photo-failed" aria-hidden="true">×</span></div>`);}
     input.insertAdjacentHTML('afterend',`<section id="hn-message-analysis"><button type="button" class="btn-complete" data-message-analyze ${analysisMode==='photo'&&!source.form.photo?'disabled':''}>${analysisMode==='photo'?'사진 내용 분석해서 채우기':'메시지에서 찾아 채우기'}</button><div id="hn-message-results" aria-live="polite"></div></section>`);
     if(source.form.messageBatch)renderMessageBatch(source.form);
@@ -8206,10 +8215,15 @@ fields.sourceScheduleId=f.sourceScheduleId;
     for(const c of rows){const f=ScheduleReview.candidateForm(c,batch.base);const prep=UserScheduleView.prepareSave(f,Date.now());if(!prep.ok){status.textContent=c.title+': '+prep.messages.join(' ');return;}const built=UserSchedule.buildCreateDoc(prep.input,Date.now());if(!built.ok){status.textContent='제목·날짜·시간을 확인해 주세요.';return;}docs.push({c,doc:built.doc});}
     batch.saving=true;const controls=el('hn-message-results').querySelectorAll('input,button,select,textarea');controls.forEach(x=>x.disabled=true);
     try{
-      if(batch.photo&&!batch.photoRef){batch.photoRef=await SourcePhoto.save(batch.photo,{user:acct.user,familyId:batch.family});}
+      // 원본 사진 보관은 부가 기능이다: 서버가 느리거나 실패해도 일정 저장은 막지 않는다(사진 연결만 빠진다).
+      if(batch.photo&&!batch.photoRef){try{batch.photoRef=await Promise.race([SourcePhoto.save(batch.photo,{user:acct.user,familyId:batch.family}),new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),15000))]);}catch(photoError){console.warn('원본 사진 보관 실패 — 일정만 저장합니다',photoError&&photoError.message);}}
       for(const {c,doc} of docs){if(hh.hid!==batch.family||acct.user?.uid!==batch.uid||source.form.messageBatch!==batch)throw Error('등록 대상이 바뀌어 저장을 중단했어요.');
         if(batch.photoRef){doc.tags=[...(doc.tags||[]).filter(t=>!t.startsWith('원본사진:')),batch.photoRef];if(doc.tags.length>10)throw Error('태그가 많아 원본 사진을 연결하지 못했어요.');}
-        const r=await HouseholdSync.createSchedule(batch.family,doc);if(!r.ok)throw Error('저장하지 못한 일정이 있어요. 다시 저장하면 남은 일정만 등록해요.');c.saved=true;c.scheduleId=r.scheduleId;c.savedDoc=doc;}usRefreshCalendar();batch.done=true;status.textContent='';}
+        const r=await HouseholdSync.createSchedule(batch.family,doc);if(!r.ok)throw Error('저장하지 못한 일정이 있어요. 다시 저장하면 남은 일정만 등록해요.');c.saved=true;c.scheduleId=r.scheduleId;c.savedDoc=doc;}usRefreshCalendar();
+        // 쓰기는 서버 실패 시 이 기기 대기열에 쌓이고 성공처럼 돌아온다. 대기열이 남았으면(연결·권한 문제) 창을 닫지 않고 알린다.
+        const sync=typeof HouseholdSync.getStatus==='function'?HouseholdSync.getStatus(batch.family):null;
+        if(sync&&sync.pending>0){status.textContent='일정은 이 기기에 저장됐지만 서버에는 아직 올라가지 않았어요'+(sync.permissionDenied?' (가족 권한을 확인해 주세요)':' (인터넷 연결을 확인해 주세요)')+'. 연결되면 자동으로 올라가요.';}
+        else{batch.done=true;closeDetail();}}
     catch(e){status.textContent=e.message;}
     finally{batch.saving=false;if(messageSource()?.form===source.form){const notice=status.textContent;renderMessageBatch(source.form);el('hn-message-results').querySelector('[data-batch-status]').textContent=notice;}}
   });
@@ -8219,7 +8233,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
   usShowForm=function(){messageScheduleRender();addMessageAnalysisUI();
     if(us.form?.mode==='edit'){
       const form=us.form,meta=ScheduleReview.metadata(form),content=el('hn-schedule-content');if(!content)return;
-      content.insertAdjacentHTML('afterend',`<section class="hn-import-meta"><label>담당(주최자)<input id="hn-import-organizer" maxlength="60" value="${esc(meta.organizerName)}"/></label><label><input type="checkbox" id="hn-import-holiday" ${meta.isHoliday?'checked':''}/> 휴일로 표시하기</label></section>`);
+      const actionsBar=el('modal-content').querySelector('.us-actions');(actionsBar?actionsBar.insertAdjacentHTML.bind(actionsBar,'beforebegin'):content.insertAdjacentHTML.bind(content,'afterend'))(`<section class="hn-import-meta"><label>담당(주최자)<input id="hn-import-organizer" maxlength="60" value="${esc(meta.organizerName)}"/></label><label><input type="checkbox" id="hn-import-holiday" ${meta.isHoliday?'checked':''}/> 휴일로 표시하기</label></section>`);
       const update=()=>{form.tags=ScheduleReview.tagsFor({category:form.charCategory||form.categoryLabel,organizerName:el('hn-import-organizer').value,isHoliday:el('hn-import-holiday').checked},form.tags||[]);};
       el('hn-import-organizer').oninput=update;el('hn-import-holiday').onchange=update;
       if(form.multiDay||form.endDate){content.insertAdjacentHTML('afterend',`<label>종료 날짜<input type="date" id="hn-edit-end-date" value="${esc(form.endDate||'')}"/></label>`);el('hn-edit-end-date').oninput=e=>{form.endDate=e.target.value;form.multiDay=!!e.target.value;};}

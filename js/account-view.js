@@ -424,7 +424,7 @@
    */
   function renderFamCard(c) {
     if (!c) return "";
-    const rows = (c.rows || []).filter((r) => r && r[1]).map(([k, v]) => `<div class="fam-row"><span class="fam-k">${esc(k)}</span><span class="fam-v">${esc(v)}</span></div>`).join("");
+    const rows = (c.rows || []).filter((r) => r && (r[1] || r[2])).map(([k, v]) => `<div class="fam-row"><span class="fam-k">${esc(k)}</span><span class="fam-v">${esc(v)}</span></div>`).join("");
     const notes = (c.notes || []).filter(Boolean).map((n) => `<p class="fine-print">${esc(n)}</p>`).join("");
     const btn = (a) => `<button type="button" class="hh-btn hh-small${a.danger ? " hh-danger" : ""}" ${a.attrs}>${esc(a.label)}</button>`;
     const logout=(c.actions||[]).filter(a=>a.attrs.includes('logout')).map(btn).join('');
