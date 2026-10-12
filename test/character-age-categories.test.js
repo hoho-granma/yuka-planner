@@ -21,3 +21,14 @@ test('입력 폼 카테고리는 역할별 고정 목록 — 다른 프로필의
   assert.equal(kid.length, 8);
   assert.deepEqual(C.categoriesFor({ role: 'CHILD', birthDate: '2017-01-01' }), kid);
 });
+
+test('확정 색: 아이는 파스텔+어두운 글씨, 어른은 진한 색+흰 글씨', () => {
+  const C = require('../js/character-ui');
+  const kid = { role: 'CHILD', birthDate: '2017-01-01' };
+  assert.deepEqual(C.paletteFor(kid), ['#f0ccdc', '#cadcf0', '#c9e4d7', '#efddba', '#E8C6C8', '#D2C9E4', '#c8e3e6', '#E2E2E5']);
+  assert.deepEqual(C.paletteFor({ role: 'MOM' }), ['#7c5cc4', '#2a6fb0', '#2b8a5e', '#b06a12', '#c04a7c', '#5d5a68']);
+  assert.equal(C.categoryBadge('학교', kid).color, '#f0ccdc');
+  assert.equal(C.categoryBadge('학교', kid).ink, '#40374b');
+  assert.equal(C.categoryBadge('회사', { role: 'MOM' }).color, '#7c5cc4');
+  assert.equal(C.categoryBadge('회사', { role: 'MOM' }).ink, '#ffffff');
+});

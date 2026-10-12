@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>태그 색상 시안 · 홈 / 캘린더 / 할일</title>
+<style>
+:root{--bg:#f4f2f7;--ink:#302c3c;--muted:#7a7488;--line:#e6e1ee;--accent:#715697;--card:#fff;--tagink:#40374b}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo","Pretendard",system-ui,sans-serif;background:#ebe8f1;color:var(--ink)}
+.wrap{max-width:1320px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:20px;margin:0 0 4px}.sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+.layout{display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start}
+@media(max-width:980px){.layout{grid-template-columns:1fr}}
+.panel{background:#fff;border-radius:16px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);position:sticky;top:12px}
+.panel h2{font-size:14px;margin:0 0 10px}
+.seg{display:flex;gap:6px;margin-bottom:12px}.seg button{flex:1;padding:9px 6px;border:1px solid var(--line);background:#fff;border-radius:10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.seg button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.crow{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f1eef6}
+.crow .chip{min-width:74px;text-align:center}.crow input[type=color]{width:38px;height:30px;border:1px solid var(--line);border-radius:8px;padding:2px;background:#fff;cursor:pointer}
+.crow input[type=text]{width:84px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:12px}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}.tools button{padding:7px 10px;border:1px solid var(--line);background:#fff;border-radius:9px;font:inherit;font-size:12px;cursor:pointer}
+.note{font-size:11.5px;color:var(--muted);line-height:1.5;margin:10px 0 0}
+.screens{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media(max-width:1200px){.screens{grid-template-columns:1fr 1fr}}@media(max-width:760px){.screens{grid-template-columns:1fr}}
+.cap{font-size:12px;font-weight:700;color:var(--muted);margin:0 0 6px;text-align:center}
+.phone{background:var(--bg);border-radius:26px;border:8px solid #1e1b26;overflow:hidden;height:660px;display:flex;flex-direction:column;position:relative}
+.status{height:22px;background:var(--bg);font-size:10px;color:var(--muted);display:flex;justify-content:space-between;padding:6px 16px 0}
+.scroll{overflow:auto;flex:1;padding:10px 12px 70px}
+.tabbar{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 0 10px;font-size:10.5px;color:var(--muted)}.tabbar b{color:var(--accent)}
+.card{background:var(--card);border-radius:16px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}.head h3{margin:0;font-size:14px}
+.add{width:28px;height:28px;border:0;border-radius:50%;background:#715697;color:#fff;font-size:21px;line-height:28px;padding:0}
+.tag{display:inline-block;font-size:10.5px;font-weight:650;padding:3px 7px;border-radius:7px;color:var(--tagink);white-space:nowrap}
+.chip{display:inline-block;font-size:12px;font-weight:650;padding:6px 9px;border-radius:20px;border:1px solid;background:transparent}
+.chip.on{color:var(--tagink)}
+.face{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:17px;flex:none}
+.people{display:flex;align-items:flex-start;gap:4px}.people .grow{display:flex;gap:4px;flex:1}
+.pbtn{border:0;background:none;text-align:center;font-size:10px;padding:2px 1px;min-width:42px;font-family:inherit;color:inherit;cursor:pointer}.pbtn .face{margin:0 auto 3px;outline:0}.pbtn.on .face{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid #f1eef6;font-size:13px}.row:first-of-type{border-top:0}
+.row .t{flex:1;min-width:0;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.row time{font-size:10.5px;color:var(--muted);font-weight:650;min-width:38px}
+.chk{width:18px;height:18px;border:1.5px solid #cfc8dc;border-radius:50%;flex:none}.d1{font-size:10px;background:#ef7e6a;color:#fff;border-radius:6px;padding:2px 5px;font-weight:700}
+.cal-head{text-align:center;font-weight:800;margin:6px 0}.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px}
+.dow{text-align:center;color:var(--muted);padding:2px 0}.cell{min-height:58px;background:#fff;border-radius:7px;padding:2px;overflow:hidden}.cell.today{outline:2px solid var(--accent)}.cell.sel{background:#efe9f8}
+.cell .n{font-size:10px;font-weight:700;padding:0 2px}.cell.o{opacity:.35}
+.bar{display:block;height:12px;line-height:12px;font-size:8.5px;border-radius:4px;padding:0 3px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tagink)}
+.more{font-size:8px;color:var(--muted)}
+.sched{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #f1eef6;font-size:13px}.sched:first-child{border-top:0}.sched strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sched time{font-size:11px;font-weight:700;min-width:38px}
+.form{background:#fff;border-radius:16px;padding:12px 14px;margin-top:10px}.form .lab{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px}.chips{display:flex;gap:4px;flex-wrap:nowrap}.chips .chip{flex:1 1 auto;min-width:0;text-align:center;padding:7px 1px;font-size:11.5px;letter-spacing:-.5px}
+</style></head><body>
+<div class="wrap">
+<h1>태그 색상 시안</h1>
+<p class="sub">왼쪽에서 프로필별 카테고리 색을 바꾸면 홈 · 캘린더 · 할일 · 입력 폼에 바로 반영됩니다. 값은 이 브라우저에만 저장돼요(앱에는 아직 반영 안 됨).</p>
+<div class="layout">
+<aside class="panel">
+<h2>프로필</h2>
+<div class="seg" id="roleSeg"><button data-r="CHILD" class="on">아이 · 수아</button><button data-r="MOM">엄마 · 주연</button></div>
+<h2>카테고리 색 <span style="font-weight:500;color:var(--muted)">(입력 폼 칩 = 홈·캘린더·할일 태그)</span></h2>
+<div id="editor"></div>
+<div class="tools" id="tools"><button id="pA">A · 딥 라벤더 믹스</button><button id="pB">B · 차분한 딥</button><button id="pC">C · 또렷한 딥</button><button id="reset">C(확정)로 되돌리기</button></div>
+<p class="note"><b>아이</b>: 확정 색(파스텔 + 어두운 글씨) 고정. <b>엄마·부모</b>: 진한 색 + 흰 글씨. 추천 세 가지(A/B/C)를 눌러 비교하고, 칸마다 직접 바꿀 수도 있어요. "대비"는 흰 글씨 기준이며 4.5 이상이면 읽기 좋습니다.</p>
+</aside>
+<main>
+<div class="people" style="max-width:360px;margin:0 0 10px"></div>
+<div class="screens">
+<section><p class="cap">홈</p><div class="phone"><div class="status"><span>9:41</span><span>LTE</span></div><div class="scroll" id="home"></div><div class="tabbar"><b>홈</b><span>캘린더</span><span>할일</span><span>혜택</span></div></div></section>
+<section><p class="cap">캘린더</p><div class="phone"><div class="status"><span>9:41</span><span>LTE</span></div><div class="scroll" id="cal"></div><div class="tabbar"><span>홈</span><b>캘린더</b><span>할일</span><span>혜택</span></div></div></section>
+<section><p class="cap">할일 · 입력 폼</p><div class="phone"><div class="status"><span>9:41</span><span>LTE</span></div><div class="scroll" id="todo"></div><div class="tabbar"><span>홈</span><span>캘린더</span><b>할일</b><span>혜택</span></div></div></section>
+</div></main></div></div>
+<script>
+const CATS={CHILD:['학교','학원','방과후','운동','친구','체험','병원','기타'],MOM:['회사','모임','운동','병원','자기계발','기타']};
+// 아이 색은 확정(고정). 엄마·부모는 진한 색 + 흰 글씨 — 아래 세 안 중 고르기
+const CHILD_FIXED=['#f0ccdc','#cadcf0','#c9e4d7','#efddba','#E8C6C8','#D2C9E4','#c8e3e6','#E2E2E5'];
+const PARENT={
+ A:{name:'A · 딥 라벤더 믹스',v:['#5b4a8a','#3f6f9b','#3d7a5c','#a2692b','#a64b73','#6b6678']},
+ B:{name:'B · 차분한 딥',v:['#6a4fa0','#2f6e8a','#3a7d63','#9a6a1f','#a8486f','#625c70']},
+ C:{name:'C · 또렷한 딥',v:['#7c5cc4','#2a6fb0','#2b8a5e','#b06a12','#c04a7c','#5d5a68']}};
+const INK={CHILD:'#40374b',MOM:'#ffffff'};
+const NAME={CHILD:'수아',MOM:'주연'},EMO={CHILD:'👧',MOM:'👩'},BG={CHILD:'#f7e8c9',MOM:'#f8d7c0'};
+let role=new URLSearchParams(location.search).get('role')==='MOM'?'MOM':'CHILD';document.querySelectorAll('#roleSeg button').forEach(x=>x.classList.toggle('on',x.dataset.r===role));
+const key=r=>'tagcolor2:'+r;
+function colors(r){if(r==='CHILD')return CHILD_FIXED.slice();try{const v=JSON.parse(localStorage.getItem(key(r)));if(v&&v.length===CATS[r].length)return v}catch(e){}return PARENT.C.v.slice()}
+function save(r,v){try{localStorage.setItem(key(r),JSON.stringify(v))}catch(e){}}
+const col=(r,c)=>colors(r)[CATS[r].indexOf(c)]||'#ddd';
+const tag=(r,c)=>`<span class="tag" style="background:${col(r,c)};color:${INK[r]}">${c}</span>`;
+const TODOS=[
+['CHILD','준비물 챙기기','학교','내일',1],['CHILD','수학 학원 숙제','학원','10/14'],['CHILD','방과후 신청서','방과후','10/15'],['CHILD','축구 교실 간식','운동','10/16'],['CHILD','친구 생일선물 사기','친구','10/17'],['CHILD','현장체험 동의서','체험','10/18'],['CHILD','소아과 정기 방문','병원','10/20'],['CHILD','서류 스캔해서 보내기','기타','10/22'],
+['MOM','분기 보고서 제출','회사','내일',1],['MOM','학부모 모임 장소 정하기','모임','10/15'],['MOM','요가 수업 예약','운동','10/16'],['MOM','건강검진 예약','병원','10/19'],['MOM','영어 인강 듣기','자기계발','10/21'],['MOM','은행 업무','기타','10/23']];
+const EVENTS={13:[['CHILD','학교','학교 현장학습','09:00']],14:[['MOM','회사','팀 회의','10:00'],['CHILD','학원','영어 학원','16:00']],15:[['CHILD','방과후','방과후 로봇','15:00'],['MOM','모임','학부모 모임','19:00']],16:[['CHILD','운동','축구 교실','17:00'],['MOM','운동','요가','07:30']],17:[['CHILD','친구','민준이 생일','14:00']],18:[['CHILD','체험','과학관 체험','10:00'],['MOM','병원','치과','15:00'],['CHILD','병원','소아과','16:30']],20:[['CHILD','병원','예방접종','10:00']],21:[['MOM','자기계발','독서 모임','20:00']],22:[['CHILD','기타','서류 제출','12:00'],['MOM','기타','관공서','11:00']],12:[['CHILD','학원','수학 학원','16:00'],['MOM','회사','야근 없음 · 퇴근','18:00']]};
+function lum(h){const c=[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255).map(v=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4));return .2126*c[0]+.7152*c[1]+.0722*c[2]}
+function contrast(a,b){const x=lum(a),y=lum(b);return ((Math.max(x,y)+.05)/(Math.min(x,y)+.05))}
+function editor(){if(role==='CHILD'){const c=colors('CHILD');document.getElementById('editor').innerHTML='<p class="note" style="margin:0 0 8px"><b>아이 색 확정</b> — 수정할 수 없어요. 어두운 글씨(#40374b)를 씁니다.</p>'+CATS.CHILD.map((n,i)=>`<div class="crow"><span class="chip on" style="background:${c[i]};border-color:${c[i]};color:${INK.CHILD}">${n}</span><code style="font-size:12px">${c[i]}</code><span class="note" style="margin:0 0 0 auto">대비 ${contrast(c[i],INK.CHILD).toFixed(1)}</span></div>`).join('');return}const r=role,c=colors(r);document.getElementById('editor').innerHTML=CATS[r].map((n,i)=>`<div class="crow"><span class="chip on" style="background:${c[i]};border-color:${c[i]};color:#fff">${n}</span><input type="color" value="${c[i]}" data-i="${i}"><input type="text" value="${c[i]}" data-t="${i}"><span class="note" style="margin:0 0 0 auto" title="흰 글씨 대비(4.5 이상 권장)">대비 ${contrast(c[i],'#ffffff').toFixed(1)}</span></div>`).join('');
+ document.querySelectorAll('#editor input[type=color]').forEach(el=>el.oninput=()=>{const v=colors(r);v[el.dataset.i]=el.value;save(r,v);render(true)});
+ document.querySelectorAll('#editor input[type=text]').forEach(el=>el.onchange=()=>{if(/^#[0-9a-f]{6}$/i.test(el.value)){const v=colors(r);v[el.dataset.t]=el.value;save(r,v);render(true)}})}
+function people(sel){return `<div class="people"><div class="grow"><button class="pbtn on"><div class="face" style="background:${BG.CHILD}">${EMO.CHILD}</div>수아</button><button class="pbtn on"><div class="face" style="background:${BG.MOM}">${EMO.MOM}</div>주연</button></div><button class="add">+</button></div>`}
+function todoRows(list,showDue=true){return list.map(t=>`<div class="row"><span class="chk"></span><div class="face" style="width:26px;height:26px;font-size:13px;background:${BG[t[0]]}">${EMO[t[0]]}</div><time>${t[3]}</time><span class="t">${t[1]}</span>${t[4]?'<b class="d1">D-1</b>':''}${tag(t[0],t[2])}</div>`).join('')}
+function home(){document.getElementById('home').innerHTML=`<div class="card"><div class="head"><h3>우리 가족 할일</h3><button class="add">+</button></div>${todoRows(TODOS.filter((t,i)=>[0,8,1,9,2,10].includes(i)))}</div>
+<div class="card"><div class="head"><h3>앞으로 7일 가족 일정</h3></div>${Object.entries(EVENTS).filter(([d])=>d>=12&&d<=16).flatMap(([d,e])=>e.map(x=>({d,x}))).slice(0,6).map(({d,x})=>`<div class="sched"><time>10/${d}</time><div class="face" style="width:26px;height:26px;font-size:13px;background:${BG[x[0]]}">${EMO[x[0]]}</div><strong>${x[2]}</strong>${tag(x[0],x[1])}</div>`).join('')}</div>`}
+function cal(){const first=4;const cells=[];for(let i=0;i<first;i++)cells.push('<div class="cell o"><span class="n">'+(27+i)+'</span></div>');
+ for(let d=1;d<=31;d++){const ev=EVENTS[d]||[];cells.push(`<div class="cell${d===12?' today':''}${d===18?' sel':''}"><span class="n">${d}</span>${ev.slice(0,2).map(e=>`<span class="bar" style="background:${col(e[0],e[1])};color:${INK[e[0]]}">${e[2]}</span>`).join('')}${ev.length>2?'<span class="more">+'+(ev.length-2)+'</span>':''}</div>`)}
+ const selEv=EVENTS[18];
+ document.getElementById('cal').innerHTML=`${people()}<div class="cal-head">◀ 2026년 10월 ▶</div><div class="grid">${['일','월','화','수','목','금','토'].map(x=>`<div class="dow">${x}</div>`).join('')}${cells.join('')}</div>
+ <div class="card" style="margin-top:10px"><div class="head"><h3>10월 18일</h3></div>${selEv.map(x=>`<div class="sched"><time>${x[3]}</time><div class="face" style="width:26px;height:26px;font-size:13px;background:${BG[x[0]]}">${EMO[x[0]]}</div><strong>${x[2]}</strong>${tag(x[0],x[1])}</div>`).join('')}</div>`}
+function todo(){const r=role,c=colors(r);
+ document.getElementById('todo').innerHTML=`<div class="card"><div class="head"><h3>우리 가족 할일</h3><button class="add">+</button></div>${todoRows(TODOS)}</div>
+ <div class="form"><div class="lab">입력 폼 · ${NAME[r]} 카테고리</div><div class="chips">${CATS[r].map((n,i)=>`<span class="chip${i===0?' on':''}" style="border-color:${c[i]};color:${i===0?INK[r]:(r==='MOM'?c[i]:'#665873')};background:${i===0?c[i]:'transparent'}">${n}</span>`).join('')}</div><div class="lab" style="margin-top:8px">선택된 칩은 색이 채워지고, 나머지는 테두리만 같은 색이에요.</div></div>`}
+function render(keep){if(!keep)editor();toolsVis();home();cal();todo()}
+document.querySelectorAll('#roleSeg button').forEach(b=>b.onclick=()=>{role=b.dataset.r;document.querySelectorAll('#roleSeg button').forEach(x=>x.classList.toggle('on',x===b));render()});
+function toolsVis(){document.getElementById('tools').style.display=role==='MOM'?'flex':'none'}
+['A','B','C'].forEach(k=>document.getElementById('p'+k).onclick=()=>{save('MOM',PARENT[k].v.slice());render()});
+document.getElementById('reset').onclick=()=>{save('MOM',PARENT.C.v.slice());render()};
+render();
+</script></body></html>
