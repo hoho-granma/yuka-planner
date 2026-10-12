@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>시안 · 할일 완료 숨기기 / 홈 가족 일정 4일</title>
+<style>
+:root{--bg:#f4f2f7;--ink:#302c3c;--muted:#7a7488;--line:#ece8f2;--accent:#715697}
+*{box-sizing:border-box}body{margin:0;background:#ebe8f1;color:var(--ink);font-family:-apple-system,"Apple SD Gothic Neo",Pretendard,system-ui,sans-serif}
+.wrap{max-width:1240px;margin:0 auto;padding:22px 16px 70px}h1{font-size:20px;margin:0 0 4px}h2{font-size:16px;margin:34px 0 4px}.sub{color:var(--muted);font-size:13px;margin:0 0 12px;line-height:1.55}
+.vs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}@media(max-width:1000px){.vs{grid-template-columns:1fr}}
+.cap{font-size:13px;font-weight:800;text-align:center;margin:0 0 4px}.capsub{font-size:11.5px;color:var(--muted);text-align:center;margin:0 0 8px;min-height:30px;line-height:1.4}
+.phone{background:var(--bg);border-radius:26px;border:8px solid #1e1b26;overflow:hidden;height:600px;display:flex;flex-direction:column}
+.status{height:22px;font-size:10px;color:var(--muted);display:flex;justify-content:space-between;padding:6px 16px 0}.scroll{flex:1;overflow:auto;padding:10px 12px 20px}
+.card{background:#fff;border-radius:16px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.head h3{margin:0;font-size:14px}
+.add{width:30px;height:30px;border:0;border-radius:50%;background:#715697;color:#fff;font-size:22px;line-height:30px;padding:0}
+.face{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;flex:none}.c{background:#f7e8c9}.m{background:#f8d7c0}
+.tag{display:inline-block;font-size:10.5px;font-weight:650;padding:3px 7px;border-radius:7px;white-space:nowrap}
+.k0{background:#f0ccdc;color:#40374b}.k1{background:#cadcf0;color:#40374b}.k2{background:#c9e4d7;color:#40374b}.k3{background:#efddba;color:#40374b}.k5{background:#D2C9E4;color:#40374b}.k6{background:#c8e3e6;color:#40374b}
+.m0{background:#7c5cc4;color:#fff}.m1{background:#2a6fb0;color:#fff}.m2{background:#2b8a5e;color:#fff}.m3{background:#b06a12;color:#fff}.m4{background:#c04a7c;color:#fff}
+.row{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}.row:first-of-type{border-top:0}
+.row .t{flex:1;min-width:0;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.row time{font-size:10.5px;color:#747969;font-weight:650;min-width:36px}.d1{font-size:10px;background:#ef7e6a;color:#fff;border-radius:6px;padding:2px 5px;font-weight:700}
+.row.done{background:#efedf2;border-radius:12px;padding-left:10px;padding-right:10px;margin:0 -10px;border-top-color:transparent}.row.done>*:not(.chk){opacity:.55;filter:grayscale(1)}.row.done .t,.row.done time{text-decoration:line-through;text-decoration-thickness:1.5px}
+/* 체크 */
+.chk{flex:none;border:2px solid #b8b0c8;background:#fff;color:#fff;display:grid;place-items:center;font-weight:800;cursor:pointer;padding:0}
+.done .chk{background:#9d97a8;border-color:#9d97a8}
+.chk.s1{width:26px;height:26px;border-radius:50%;font-size:14px}.chk.s2{width:28px;height:28px;border-radius:9px;font-size:16px}.chk.s3{width:30px;height:30px;border-radius:50%;font-size:17px;border-width:2.5px;box-shadow:0 0 0 3px #f1edf8}
+/* 숨기기 컨트롤 */
+.sw{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;user-select:none}.sw i{width:36px;height:21px;border-radius:99px;background:#d6d0e0;position:relative;transition:.2s}.sw i:after{content:"";position:absolute;left:2px;top:2px;width:17px;height:17px;border-radius:50%;background:#fff;transition:.2s}.sw.on i{background:var(--accent)}.sw.on i:after{left:17px}
+.seg{display:flex;background:#f0ecf6;border-radius:10px;padding:3px;margin:2px 0 8px}.seg button{flex:1;border:0;background:none;border-radius:8px;padding:7px 4px;font:inherit;font-size:12px;font-weight:700;color:var(--muted)}.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.stat{display:flex;gap:6px;font-size:12px;color:var(--muted);margin-bottom:4px}.stat b{color:var(--ink)}
+.foot{display:block;width:100%;margin-top:6px;border:1px dashed #cfc7dd;background:#faf8fd;border-radius:12px;padding:10px;font:inherit;font-size:12.5px;font-weight:700;color:var(--accent);cursor:pointer}
+/* 홈 일정 */
+.dg{margin-top:8px}.dg:first-of-type{margin-top:2px}.dh{display:flex;align-items:baseline;gap:6px;font-size:12px;font-weight:800;margin:10px 0 2px}.dh em{font-style:normal;font-size:10.5px;color:var(--muted);font-weight:600}.dh.today{color:var(--accent)}.empty{font-size:12px;color:#aaa3b8;padding:4px 0 2px}
+.sr{display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13px}.sr time{font-size:11px;font-weight:700;min-width:38px}.sr strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl{position:relative;padding-left:54px}.tl:before{content:"";position:absolute;left:21px;top:6px;bottom:6px;width:2px;background:#e6e0ef}.tl .dayp{position:absolute;left:2px;width:40px;text-align:center;font-size:10.5px;font-weight:800;background:var(--accent);color:#fff;padding:3px 0;border-radius:99px;line-height:1.2}.tl .blk{position:relative;padding:4px 0 6px}
+.tabs{display:flex;gap:6px;margin:4px 0 8px}.tabs button{flex:1;border:1px solid #e3ddee;background:#fff;border-radius:12px;padding:7px 2px;font:inherit;font-size:11.5px;font-weight:700;color:var(--muted)}.tabs button small{display:block;font-size:10px;font-weight:600}.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}.tabs button .n{display:inline-block;background:#ef7e6a;color:#fff;border-radius:99px;font-size:9.5px;padding:0 5px;margin-left:3px}
+.texl{font-size:12px;color:var(--accent);font-weight:700;background:none;border:0;padding:0}
+</style></head><body><div class="wrap">
+<h1>시안 · 할일 완료 숨기기 / 홈 가족 일정 4일</h1>
+<p class="sub">색은 확정 팔레트(아이 파스텔 + 어두운 글씨, 엄마 진한 색 + 흰 글씨)를 그대로 썼어요. 각 시안은 눌러 볼 수 있습니다(체크, 완료 숨기기, 날짜 탭).</p>
+
+<h2>① 할일 — 큰 체크 + 완료 숨기기</h2>
+<p class="sub">체크 크기 26 → 30px로 키우고, "완료 숨기기" 버튼 위치·모양을 세 가지로 제안합니다. 완료 줄은 회색 음영 + 취소선(이미 반영된 디자인).</p>
+<div class="vs" id="todoVs"></div>
+
+<h2>② 홈 — 우리 가족 일정: 오늘 ~ D+3, 그 다음은 가족캘린더 보기</h2>
+<p class="sub">오늘 · 내일 · 모레 · 글피(D+3)까지 홈에서 보여 주고, 그 뒤는 맨 아래 "가족캘린더 보기 →"로 이어집니다. (오늘 기준 +3일까지로 이해했어요. 모레까지(3일)만이면 알려 주세요.) 윗줄의 "가족캘린더 보기 →" 링크는 시안 3에서만 위에 남겨 뒀어요.</p>
+<div class="vs" id="homeVs"></div>
+</div>
+<script>
+const T=[
+ ['c','내일','준비물 챙기기','학교','k0',1,0],['c','10/14','수학 학원 숙제','학원','k1',0,1],['c','10/15','방과후 신청서','방과후','k2',0,0],['c','10/16','축구 교실 간식','운동','k3',0,1],
+ ['m','내일','분기 보고서 제출','회사','m0',1,0],['m','10/15','학부모 모임 장소','모임','m1',0,0],['m','10/16','요가 수업 예약','운동','m2',0,1],['m','10/19','건강검진 예약','병원','m3',0,0]];
+const state={};
+function rows(v,sz){return T.filter(t=>!(state[v].hide&&state[v].done[T.indexOf(t)])).map(t=>{const i=T.indexOf(t),d=state[v].done[i];return `<div class="row${d?' done':''}"><button class="chk ${sz}" data-i="${i}">${d?'✓':''}</button><span class="face ${t[0]}">${t[0]==='c'?'👧':'👩'}</span><time>${t[1]}</time><span class="t">${t[2]}</span>${t[5]?'<b class="d1">D-1</b>':''}<span class="tag ${t[4]}">${t[3]}</span></div>`}).join('')}
+function todoV(v){const s=state[v],n=T.length,dn=Object.values(s.done).filter(Boolean).length;let top='',bot='';
+ if(v==='a')top=`<div class="head"><h3>우리 가족 할일</h3><div style="display:flex;align-items:center;gap:10px"><label class="sw${s.hide?' on':''}" data-hide><i></i>완료 숨기기</label><button class="add">+</button></div></div>`;
+ if(v==='b')top=`<div class="head"><h3>우리 가족 할일</h3><button class="add">+</button></div><div class="seg"><button data-hide="0" class="${s.hide?'':'on'}">전체 ${n}</button><button data-hide="1" class="${s.hide?'on':''}">남은 것만 ${n-dn}</button></div>`;
+ if(v==='c'){top=`<div class="head"><h3>우리 가족 할일</h3><button class="add">+</button></div><div class="stat"><span>남은 <b>${n-dn}</b></span><span>·</span><span>완료 <b>${dn}</b></span></div>`;bot=`<button class="foot" data-hide>${s.hide?'완료한 할일 '+dn+'개 다시 보기':'완료한 할일 '+dn+'개 숨기기'}</button>`}
+ return `<div class="card">${top}${rows(v,v==='a'?'s1':v==='b'?'s2':'s3')||'<p class="empty">남은 할일이 없어요 🎉</p>'}${bot}</div>`}
+const names={a:['A · 헤더 오른쪽 스위치','제목 줄 옆 토글. 한 번에 켜고 끄기 · 체크 26→30px(원형)'],b:['B · 전체 / 남은 것만 분할 탭','목록 위 분할 탭에 개수 표시 · 체크 28px(둥근 네모)'],c:['C · 요약 + 하단 숨기기 버튼','남은/완료 개수 요약, 목록 끝 버튼으로 숨기기 · 체크 30px(링)']};
+function renderTodo(){document.getElementById('todoVs').innerHTML=['a','b','c'].map(v=>`<section data-v="${v}"><p class="cap">${names[v][0]}</p><p class="capsub">${names[v][1]}</p><div class="phone"><div class="status"><span>9:41</span><span>LTE</span></div><div class="scroll">${todoV(v)}</div></div></section>`).join('')}
+['a','b','c'].forEach(v=>state[v]={hide:false,done:{1:true,6:true,3:true}});
+document.getElementById('todoVs').addEventListener('click',e=>{const sec=e.target.closest('section');if(!sec)return;const v=sec.dataset.v,s=state[v];const c=e.target.closest('.chk');if(c){const i=c.dataset.i;s.done[i]=!s.done[i];renderTodo();return}const h=e.target.closest('[data-hide]');if(h){const val=h.getAttribute('data-hide');s.hide=val===''||val===null?!s.hide:val==='1';renderTodo()}});
+renderTodo();
+/* 홈 */
+const D=[['오늘','10/12(월)',[['09:00','c','학교 현장학습','학교','k0'],['16:00','c','수학 학원','학원','k1'],['18:00','m','퇴근 후 장보기','기타','m4']]],['내일','10/13(화)',[['10:00','m','팀 회의','회사','m0']]],['모레','10/14(수)',[]],['글피 · D+3','10/15(목)',[['15:00','c','방과후 로봇','방과후','k2'],['19:00','m','학부모 모임','모임','m1']]]];
+const sr=e=>`<div class="sr"><time>${e[0]}</time><span class="face ${e[1]}">${e[1]==='c'?'👧':'👩'}</span><strong>${e[2]}</strong><span class="tag ${e[4]}">${e[3]}</span></div>`;
+let tab=0;
+function homeA(){return `<div class="card"><div class="head"><h3>우리 가족 일정</h3></div>${D.map((d,i)=>`<div class="dh${i===0?' today':''}">${d[0]}<em>${d[1]}</em></div>${d[2].length?d[2].map(sr).join(''):'<div class="empty">일정 없음</div>'}`).join('')}<button class="foot">가족캘린더 보기 →</button></div>`}
+function homeB(){return `<div class="card"><div class="head"><h3>우리 가족 일정</h3><span style="font-size:11px;color:var(--muted)">오늘~D+3</span></div><div class="tl">${D.map((d,i)=>`<div class="blk"><span class="dayp" style="top:6px">${d[0].split(' ')[0]}</span><div class="dh" style="margin:0 0 2px;font-size:11px;color:var(--muted)">${d[1]}</div>${d[2].length?d[2].map(sr).join(''):'<div class="empty">일정 없음</div>'}</div>`).join('')}</div><button class="foot">가족캘린더 보기 →</button></div>`}
+function homeC(){const d=D[tab];return `<div class="card"><div class="head"><h3>우리 가족 일정</h3><button class="texl">가족캘린더 보기 →</button></div><div class="tabs" data-tabs>${D.map((x,i)=>`<button data-t="${i}" class="${i===tab?'on':''}">${x[0].split(' ')[0]}<small>${x[1].slice(0,5)}</small>${x[2].length&&i!==tab?'<span class="n">'+x[2].length+'</span>':''}</button>`).join('')}</div>${d[2].length?d[2].map(sr).join(''):'<div class="empty" style="padding:10px 0">이 날은 일정이 없어요</div>'}<button class="foot">이후 일정은 가족캘린더 보기 →</button></div>`}
+const hn={a:['A · 날짜별 묶음','오늘/내일/모레/글피를 소제목으로, 빈 날은 "일정 없음" 한 줄'],b:['B · 세로 타임라인','왼쪽에 날짜 점선, 일정이 시간순으로 이어짐'],c:['C · 날짜 탭','4일을 탭으로 전환, 일정 있는 날은 개수 뱃지 · 윗줄 링크 유지']};
+function renderHome(){document.getElementById('homeVs').innerHTML=[['a',homeA()],['b',homeB()],['c',homeC()]].map(([v,h])=>`<section><p class="cap">${hn[v][0]}</p><p class="capsub">${hn[v][1]}</p><div class="phone"><div class="status"><span>9:41</span><span>LTE</span></div><div class="scroll">${h}</div></div></section>`).join('')}
+document.getElementById('homeVs').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b){tab=+b.dataset.t;renderHome()}});
+renderHome();
+</script></body></html>

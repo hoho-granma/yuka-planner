@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>시안 · 홈 우리 가족 일정 날짜 탭 5안</title>
+<style>
+:root{--bg:#f4f2f7;--ink:#302c3c;--muted:#7a7488;--line:#ece8f2;--accent:#715697}
+*{box-sizing:border-box}body{margin:0;background:#ebe8f1;color:var(--ink);font-family:-apple-system,"Apple SD Gothic Neo",Pretendard,system-ui,sans-serif}
+.wrap{max-width:1360px;margin:0 auto;padding:22px 16px 70px}h1{font-size:20px;margin:0 0 4px}.sub{color:var(--muted);font-size:13px;margin:0 0 14px;line-height:1.55}
+.vs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}@media(max-width:1300px){.vs{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:900px){.vs{grid-template-columns:1fr 1fr}}@media(max-width:560px){.vs{grid-template-columns:1fr}}
+.cap{font-size:13px;font-weight:800;text-align:center;margin:0 0 2px}.capsub{font-size:11px;color:var(--muted);text-align:center;margin:0 0 8px;min-height:30px;line-height:1.4}
+.phone{background:var(--bg);border-radius:24px;border:7px solid #1e1b26;overflow:hidden;height:470px;display:flex;flex-direction:column}
+.status{height:20px;font-size:9px;color:var(--muted);display:flex;justify-content:space-between;padding:5px 14px 0}.scroll{flex:1;overflow:auto;padding:8px 10px}
+.card{background:#fff;border-radius:16px;padding:12px 12px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.head h3{margin:0;font-size:14px}.head .dt{font-size:11px;color:var(--muted);font-weight:700}
+.face{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;flex:none}.c{background:#f7e8c9}.m{background:#f8d7c0}
+.tag{display:inline-block;font-size:10.5px;font-weight:650;padding:3px 7px;border-radius:7px;white-space:nowrap}
+.k0{background:#f0ccdc;color:#40374b}.k1{background:#cadcf0;color:#40374b}.k2{background:#c9e4d7;color:#40374b}.m0{background:#7c5cc4;color:#fff}.m1{background:#2a6fb0;color:#fff}.m4{background:#c04a7c;color:#fff}
+.sr{display:flex;align-items:center;gap:7px;padding:8px 0;border-top:1px solid var(--line);font-size:12.5px}.sr:first-of-type{border-top:0}.sr time{font-size:10.5px;font-weight:700;min-width:36px}.sr strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{font-size:12px;color:#aaa3b8;padding:14px 0;text-align:center}
+.foot{display:block;width:100%;margin-top:8px;border:1px dashed #cfc7dd;background:#faf8fd;border-radius:12px;padding:10px;font:inherit;font-size:12px;font-weight:700;color:var(--accent);cursor:pointer}
+.badge{display:inline-block;background:#ef7e6a;color:#fff;border-radius:99px;font-size:9px;font-weight:800;padding:0 5px;line-height:15px;min-width:15px;text-align:center}
+.t{display:flex}.t button{font:inherit;cursor:pointer;color:var(--muted)}
+/* 1 알약 */
+.v1 .t{gap:5px;margin-bottom:8px}.v1 .t button{flex:1;border:1px solid #e3ddee;background:#fff;border-radius:12px;padding:6px 0;font-size:11.5px;font-weight:700}.v1 .t button small{display:block;font-size:9.5px;font-weight:600}.v1 .t button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+/* 2 밑줄 */
+.v2 .t{border-bottom:1px solid var(--line);margin-bottom:6px}.v2 .t button{flex:1;border:0;background:none;padding:8px 0 9px;font-size:12px;font-weight:700;position:relative}.v2 .t button.on{color:var(--ink)}.v2 .t button.on:after{content:"";position:absolute;left:18%;right:18%;bottom:-1px;height:3px;border-radius:3px;background:var(--accent)}.v2 .t button .badge{margin-left:3px;vertical-align:1px}
+/* 3 날짜 카드 */
+.v3 .t{gap:5px;margin-bottom:8px}.v3 .t button{flex:1;border:0;background:#f5f2fa;border-radius:14px;padding:7px 0 6px;font-size:10px;font-weight:700}.v3 .t button b{display:block;font-size:17px;color:var(--ink);line-height:1.2;margin-top:1px}.v3 .t button i{display:block;width:5px;height:5px;border-radius:50%;margin:3px auto 0;background:transparent}.v3 .t button i.has{background:var(--accent)}.v3 .t button.on{background:var(--accent);color:#e9e0f6}.v3 .t button.on b{color:#fff}.v3 .t button.on i.has{background:#fff}
+/* 4 프로필 점 스트립 */
+.v4 .t{gap:4px;margin-bottom:8px}.v4 .t button{flex:1;border:1.5px solid transparent;background:none;border-radius:12px;padding:5px 0 6px;font-size:10px;font-weight:700}.v4 .t button b{display:block;font-size:14px;color:var(--ink);margin:1px 0 4px}.v4 .t button .dots{display:flex;gap:3px;justify-content:center;min-height:8px}.v4 .dots u{width:8px;height:8px;border-radius:50%;display:block}.v4 .t button.on{border-color:var(--accent);background:#f5f0fb}
+/* 5 분할 세그먼트 */
+.v5 .t{background:#f0ecf6;border-radius:12px;padding:3px;margin-bottom:8px}.v5 .t button{flex:1;border:0;background:none;border-radius:9px;padding:7px 0;font-size:12px;font-weight:800;line-height:1.25}.v5 .t button small{display:block;font-size:9.5px;font-weight:600;opacity:.8}.v5 .t button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}.v5 .t button .badge{margin-left:2px}
+</style></head><body><div class="wrap">
+<h1>시안 · 홈 우리 가족 일정 — 날짜 탭 5안</h1>
+<p class="sub">오늘 · 내일 · 모레 · 글피(D+3) 4일을 탭으로 보고, 맨 아래 "이후 일정은 가족캘린더 보기 →"로 이어집니다. 윗줄 "가족캘린더 보기" 링크는 뺐어요. 탭은 눌러 볼 수 있어요(샘플: 모레는 일정 없음).</p>
+<div class="vs" id="vs"></div></div>
+<script>
+const D=[['오늘','월',12,[['09:00','c','학교 현장학습','학교','k0'],['16:00','c','수학 학원','학원','k1'],['18:00','m','퇴근 후 장보기','기타','m4']]],['내일','화',13,[['10:00','m','팀 회의','회사','m0']]],['모레','수',14,[]],['글피','목',15,[['15:00','c','방과후 로봇','방과후','k2'],['19:00','m','학부모 모임','모임','m1']]]];
+const KC={k0:'#f0ccdc',k1:'#cadcf0',k2:'#c9e4d7',m0:'#7c5cc4',m1:'#2a6fb0',m4:'#c04a7c'};
+const sr=e=>`<div class="sr"><time>${e[0]}</time><span class="face ${e[1]}">${e[1]==='c'?'👧':'👩'}</span><strong>${e[2]}</strong><span class="tag ${e[4]}">${e[3]}</span></div>`;
+const sel={1:0,2:0,3:0,4:0,5:0};
+const meta={1:['1 · 알약 탭(채움)','라벨 + 날짜, 선택은 보라 채움, 일정 있는 날 개수 뱃지'],2:['2 · 밑줄 탭','가장 가벼운 텍스트 탭, 선택은 보라 밑줄 · 개수 뱃지'],3:['3 · 날짜 카드(캘린더 스트립)','요일 + 큰 날짜 숫자, 일정 있는 날은 점'],4:['4 · 프로필 색 점 스트립','날짜 아래에 누구 일정인지 색 점(아이 파스텔·엄마 진한색)'],5:['5 · 분할 세그먼트','iOS식 분할 컨트롤, 오늘 N처럼 개수를 라벨에 표시']};
+function tabs(v){const s=sel[v];return `<div class="t">${D.map((d,i)=>{const n=d[3].length,on=i===s?' on':'';
+ if(v===1)return `<button data-i="${i}" class="${on}">${d[0]}<small>${d[2]}일</small>${n&&!on?`<span class="badge">${n}</span>`:''}</button>`;
+ if(v===2)return `<button data-i="${i}" class="${on}">${d[0]}${n?`<span class="badge">${n}</span>`:''}</button>`;
+ if(v===3)return `<button data-i="${i}" class="${on}">${d[1]}<b>${d[2]}</b><i class="${n?'has':''}"></i></button>`;
+ if(v===4)return `<button data-i="${i}" class="${on}">${d[0]}<b>${d[2]}</b><span class="dots">${[...new Set(d[3].map(e=>e[4]))].map(k=>`<u style="background:${KC[k]};${k[0]==='k'?'box-shadow:0 0 0 1px #d8cfe4':''}"></u>`).join('')}</span></button>`;
+ return `<button data-i="${i}" class="${on}">${d[0]}${n?`<span class="badge">${n}</span>`:''}<small>${d[2]}일(${d[1]})</small></button>`}).join('')}</div>`}
+function phone(v){const d=D[sel[v]];return `<section data-v="${v}" class="v${v}"><p class="cap">${meta[v][0]}</p><p class="capsub">${meta[v][1]}</p><div class="phone"><div class="status"><span>9:41</span><span>LTE</span></div><div class="scroll"><div class="card"><div class="head"><h3>우리 가족 일정</h3><span class="dt">${d[0]} · 10/${d[2]}</span></div>${tabs(v)}${d[3].length?d[3].map(sr).join(''):'<div class="empty">이 날은 일정이 없어요</div>'}<button class="foot">이후 일정은 가족캘린더 보기 →</button></div></div></div></section>`}
+function render(){document.getElementById('vs').innerHTML=[1,2,3,4,5].map(phone).join('')}
+document.getElementById('vs').addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(!b)return;sel[b.closest('section').dataset.v]=+b.dataset.i;render()});
+render();
+</script></body></html>

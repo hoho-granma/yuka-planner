@@ -279,3 +279,27 @@ body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,
 /* 카테고리가 7개 이상(아이 8개)이면 한 줄에 맞게 글자를 줄인다 */
 .hn-categories.hn-cats-many,.hn-content-heading .hn-categories.hn-cats-many{flex-wrap:nowrap;gap:4px;--hn-option-font-size:12px}
 .hn-categories.hn-cats-many button{padding-left:1px!important;padding-right:1px!important;letter-spacing:-.6px}
+
+/* 할일 완료: 제목뿐 아니라 줄 전체를 회색 음영 + 취소선으로 */
+.hn-task.done{background:#efedf2;border-radius:12px;padding-left:10px!important;padding-right:10px!important;margin-left:-10px;margin-right:-10px}
+.hn-task.done>*:not(.hn-check){opacity:.55;filter:grayscale(1)}
+.hn-task.done .hn-task-title,.hn-task.done time{text-decoration:line-through;text-decoration-thickness:1.5px}
+.hn-task.done .hn-check{background:#9d97a8;border-color:#9d97a8;color:#fff}
+
+/* 홈 우리 가족 일정: 오늘 · 내일 · 모레 밑줄 탭 + 모레 탭의 '이후 일정' 버튼 */
+.hn-hday-tabs{display:flex;border-bottom:1px solid #ece8f2;margin:2px 0 6px}
+.hn-hday-tabs button{flex:1;border:0;background:none;padding:9px 0 10px;font:inherit;font-size:14px;font-weight:700;color:#7a7488;position:relative;cursor:pointer}
+.hn-hday-tabs button.on{color:#302c3c}
+.hn-hday-tabs button.on::after{content:"";position:absolute;left:22%;right:22%;bottom:-1px;height:3px;border-radius:3px;background:#715697}
+.hn-hday-badge{display:inline-block;margin-left:4px;min-width:16px;padding:0 5px;border-radius:99px;background:#ef7e6a;color:#fff;font-size:10px;font-weight:800;line-height:16px;vertical-align:1px}
+.hn-hday-more{display:block;width:100%;margin-top:10px;border:1px dashed #cfc7dd;background:#faf8fd;border-radius:12px;padding:11px;font:inherit;font-size:13px;font-weight:700;color:#715697;cursor:pointer}
+
+/* 할일 체크: 둥근 네모 28px(터치하기 쉽게 키움) + 헤더의 '완료 숨기기' 스위치 */
+.hn-task .hn-check{width:28px;height:28px;border:2px solid #b8b0c8;border-radius:9px;background:#fff;color:#fff;font-size:16px;font-weight:800;line-height:1;padding:0;display:inline-grid;place-items:center}
+.hn-task.done .hn-check{background:#9d97a8;border-color:#9d97a8;color:#fff}
+.hn-head-actions{display:flex;align-items:center;gap:10px}
+.hn-hide-done{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#7a7488;cursor:pointer;user-select:none;-webkit-user-select:none}
+.hn-hide-done i{width:36px;height:21px;border-radius:99px;background:#d6d0e0;position:relative;transition:background .2s;flex:none}
+.hn-hide-done i::after{content:"";position:absolute;left:2px;top:2px;width:17px;height:17px;border-radius:50%;background:#fff;transition:left .2s}
+.hn-hide-done.on i{background:#715697}.hn-hide-done.on i::after{left:17px}
+@media(prefers-reduced-motion:reduce){.hn-hide-done i,.hn-hide-done i::after{transition:none}}
