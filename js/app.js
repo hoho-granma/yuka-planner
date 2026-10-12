@@ -8234,11 +8234,11 @@ fields.sourceScheduleId=f.sourceScheduleId;
     const source=messageSource();if(!source)return;
     if(source.form.messageTitleReview){const input=el(source.kind==='todo'?'hn-task-text':'hn-schedule-content');input.insertAdjacentHTML('beforebegin',`<label for="hn-message-title">제목 확인</label><input id="hn-message-title" maxlength="60" value="${esc(source.form.title||'')}"/>`);el('hn-message-title').oninput=e=>{source.form.title=e.target.value;source.form.titleEdited=true;source.form.titleTouched=true;const title=el('us-title');if(title)title.value=e.target.value;};}
     const analysisMode=AiParser.analysisMode(source.kind,source.kind==='todo'?source.form.inputMode:source.form.capInputMode);
-    el('modal-content').classList.toggle('hn-photo-mode',analysisMode==='photo');
+    el('modal-content').classList.toggle('hn-photo-mode',!!analysisMode);
     if(!analysisMode)return;
     const input=el(source.kind==='todo'?'hn-task-text':'hn-schedule-content');
     if(el('hn-message-analysis'))return;
-    el('modal-content').classList.toggle('hn-photo-mode',analysisMode==='photo'); // 사진으로 채울 때는 날짜·반복·종일·할일 리스트·취소 줄을 숨긴다(날짜는 사진에서 읽는다)
+    el('modal-content').classList.toggle('hn-photo-mode',!!analysisMode); // 사진·메시지로 채울 때는 날짜·반복·종일·할일 리스트·취소 줄을 숨긴다(날짜는 사진에서 읽는다)
     if(analysisMode==='photo'){input.hidden=true;if(source.form.photo)input.insertAdjacentHTML('beforebegin',`<p class="fine-print">${esc(source.form.photo.name)}</p><div class="hn-photo-preview" style="--hn-review-person:${charTint(charPerson(sourceOwner(source.form)))}" data-photo-state="idle"><img src="${source.form.photo.image}" alt="선택한 일정 사진"/><span class="hn-photo-loading" role="status" aria-label="사진 분석 중"><span class="hn-photo-spinner" aria-hidden="true"></span></span><span class="hn-photo-failed" aria-hidden="true">×</span></div>`);}
     input.insertAdjacentHTML('afterend',`<section id="hn-message-analysis"><button type="button" class="btn-complete" data-message-analyze ${analysisMode==='photo'&&!source.form.photo?'disabled':''}>${analysisMode==='photo'?'사진 내용 분석해서 채우기':'메시지에서 찾아 채우기'}</button><div id="hn-message-results" aria-live="polite"></div></section>`);
     if(source.form.messageBatch)renderMessageBatch(source.form);
