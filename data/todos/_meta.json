@@ -2,7 +2,7 @@
   "설명": "docs/0-36개월-Todo-Master-설계.md(73개 확정 Todo) + docs/Todo-데이터모델-설계.md v2 스키마를 그대로 옮긴 TodoDefinition 마스터 데이터. 새로운 육아 사실/Todo를 추가하지 않았고, 기존 문서에 없던 파라미터(끝월령, event 이름 등)는 '엔진 구현상 필요해서 보수적으로 채운 값'이며 report에 명시한다.",
   "source": "/Users/hhhhp/Downloads/육아_액션_대표월령_수정본.json (사용자 제공 대표월령 수정본) — 이 파일을 todo_list 기준파일로 채택",
   "verifiedAt": "2026-09-28",
-  "count": 75,
+  "count": 76,
   "displayMonthPolicy": "displayMonth는 부모가 해당 행동을 준비·실행하기 좋은 대표 월령이다. 원래 trigger/occurrences/variants는 보존했다. 발달 신호·상대 일정·참고 항목은 월령을 임의로 고정하지 않고 displayMonth=null로 두었다. displayMonth는 실제 적용 기간을 대체하지 않는다.",
   "displayMonthRevision": "대표 월령 2차 개선본 — 0개월 일괄노출 완화, 지속관리/필요시확인 라벨 정리 (todo-definitions.v2.json 기준, 원본 보존)",
   "categoryGroupPolicy": "달력·체크리스트 화면에 쓰는 6개 상위 카테고리(발달관찰/예방접종/영유아검진/생활·수유/안전·돌봄/행정·지원금)를 각 Todo의 10개 세부 category 코드(HC/VX/DV/FD/OR/SL/LF/SF/CR/SB)에서 categoryGroup 필드로 매핑해 추가했다. 기존에는 화면 표시용 4개 그룹(건강·접종/발달·생활/보육/지원금·제도)과 달력 범례용 6개 그룹이 서로 달라 불일치했던 것을 이 categoryGroup 하나로 통일한다.",

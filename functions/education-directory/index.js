@@ -10,7 +10,7 @@ exports.educationDirectory=onCall({region:'asia-northeast3',secrets:[key],maxIns
  const account=await getFirestore().doc('accounts/'+request.auth.uid).get();
  if(!account.exists)throw new HttpsError('permission-denied','가입 정보를 확인해 주세요.');
  if(!read)read=createDirectory({key:key.value()});
- try{return await read();}catch(e){throw new HttpsError(['failed-precondition','unavailable'].includes(e.code)?e.code:'unavailable',e.code==='failed-precondition'?'나이스 인증키 설정을 확인해야 해요.':'기관 목록을 불러오지 못했어요. 잠시 후 다시 시도하세요.');}
+ try{const [directory,research]=await Promise.all([read(),getFirestore().collection('educationResearch').get()]);return {...directory,research:{items:research.docs.map(d=>d.data())}};}catch(e){throw new HttpsError(['failed-precondition','unavailable'].includes(e.code)?e.code:'unavailable',e.code==='failed-precondition'?'나이스 인증키 설정을 확인해야 해요.':'기관 목록을 불러오지 못했어요. 잠시 후 다시 시도하세요.');}
 });
 
 const {createPublicPrograms}=require('./public-programs');
