@@ -23,7 +23,9 @@ function newCode() {
   }
   return code;
 }
-function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
+// emailOf(uid): 로그인 계정(Firebase Auth)의 이메일. 가족 구성원 문서에 남겨 가족끼리 서로 볼 수 있게 한다(서버만 쓴다).
+function createService(db, {now=Date.now, codeGenerator=newCode, emailOf=async()=>''}={}) {
+  const emailFor=async uid=>{try{return String(await emailOf(uid)||'').trim().toLowerCase().slice(0,254);}catch(e){return '';}};
   const ref=p=>db.doc(p);
   const get=async(tx,p)=>(await tx.get(ref(p))).data();
   const accessPath=(hid,uid)=>`familyAccess/${hid}/members/${uid}`;
@@ -70,6 +72,7 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
     const name=label(data.displayName),role=relation(data.role);
     if(role==='CHILD')fail('permission-denied','보호자가 만든 가족에 초대받아 주세요.');
     const hid=ref('families/'+randomBytes(16).toString('hex')).id;
+    const email=await emailFor(uid);
     return db.runTransaction(async tx=>{
       const a=await get(tx,'accounts/'+uid);
       if(a?.householdId) {
@@ -80,7 +83,7 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
       }
       const t=now(),memberId=uid;
       tx.set(ref('families/'+hid),{v:1,createdAt:t,updatedAt:t,createdByUid:uid});
-      tx.set(ref(`families/${hid}/members/${memberId}`),{v:1,uid,role,label:name,order:1,createdAt:t,updatedAt:t});
+      tx.set(ref(`families/${hid}/members/${memberId}`),{v:1,uid,role,label:name,order:1,createdAt:t,updatedAt:t,...(email?{email}:{})});
       tx.set(ref(accessPath(hid,uid)),{status:'ACTIVE',permission:'ADMIN',memberId,role,approvedByUid:uid,approvedAt:t});
       tx.set(ref('accounts/'+uid),{v:1,displayName:name,role,householdId:hid,memberId,createdAt:a?.createdAt||t,updatedAt:t,...profileFields(data)},{merge:true});
       return {ok:true,householdId:hid,memberId,created:true};
@@ -125,6 +128,7 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
   async function decideJoin(uid,data) {
     const hid=id(data.householdId),target=id(data.targetUid),approve=data.approve;
     if(typeof approve!=='boolean')fail('invalid-argument','승인 여부를 확인해 주세요.');
+    const targetEmail=approve?await emailFor(target):'';
     return db.runTransaction(async tx=>{
       await manager(tx,hid,uid);
       const req=await get(tx,'familyJoinRequests/'+target);
@@ -148,7 +152,7 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
         // Relation is chosen by the issuer. Approval never grants administrator rights.
         const old=slot?.data(),memberId=slot?.id||existing?.memberId||target;
         const order=old?.order||Math.max(0,...members.docs.map(d=>d.data().order||0))+1;
-        tx.set(ref(`families/${hid}/members/${memberId}`),{v:1,uid:target,role,label:req.label,order,createdAt:old?.createdAt||t,updatedAt:t,...(old?.colorKey?{colorKey:old.colorKey}:{}),...(childKey?{childKey}:{})});
+        tx.set(ref(`families/${hid}/members/${memberId}`),{v:1,uid:target,role,label:req.label,order,createdAt:old?.createdAt||t,updatedAt:t,...(targetEmail?{email:targetEmail}:{}),...(old?.colorKey?{colorKey:old.colorKey}:{}),...(childKey?{childKey}:{})});
         tx.set(ref(accessPath(hid,target)),{status:'ACTIVE',permission:'MEMBER',role,memberId,approvedByUid:uid,approvedAt:t,...(childKey?{childKey}:{})});
         tx.set(ref('accounts/'+target),{v:1,displayName:req.label,role,householdId:hid,memberId,createdAt:a?.createdAt||t,updatedAt:t},{merge:true});
         tx.update(ref('privateFamilyInvites/'+req.inviteHash),{status:'USED',usedByUid:target,usedAt:t});
@@ -306,6 +310,22 @@ function createService(db, {now=Date.now, codeGenerator=newCode}={}) {
       return {ok:true};
     });
   }
-  return {createFamily,issueInvite,requestJoin,decideJoin,claimLegacy,status,cancelJoin,revokeInvite,removeMember,transferAdmin,listRequests,createChild,removeChild,resolveChild,updateMember};
+  /** 내 로그인 이메일을 내 구성원 문서·계정 문서에 맞춘다(로그인 때 앱이 부른다 — 옛 구성원 채우기, 이메일을 바꾼 뒤 반영). 클라이언트 값은 믿지 않고 Auth 에서 읽는다. */
+  async function syncMyEmail(uid) {
+    const email=await emailFor(uid);
+    if(!email)return {ok:true,email:'',synced:false};
+    return db.runTransaction(async tx=>{
+      const a=await get(tx,'accounts/'+uid);
+      if(!a?.householdId||!a?.memberId)return {ok:true,email,synced:false};
+      const access=await get(tx,accessPath(a.householdId,uid));
+      if(!active(access))return {ok:true,email,synced:false};
+      const mref=ref(`families/${a.householdId}/members/${a.memberId}`),m=await get(tx,mref.path);
+      if(!m||m.deletedAt||m.uid!==uid)return {ok:true,email,synced:false};
+      if(m.email!==email)tx.update(mref,{email,updatedAt:now()});
+      if(a.email!==email)tx.update(ref('accounts/'+uid),{email,updatedAt:now()});
+      return {ok:true,email,synced:m.email!==email};
+    });
+  }
+  return {syncMyEmail,createFamily,issueInvite,requestJoin,decideJoin,claimLegacy,status,cancelJoin,revokeInvite,removeMember,transferAdmin,listRequests,createChild,removeChild,resolveChild,updateMember};
 }
 module.exports={createService,newCode,hash};

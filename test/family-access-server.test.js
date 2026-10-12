@@ -32,6 +32,24 @@ const denied=(fn,code)=>assert.rejects(fn,e=>e.code===code);
  assert.equal((await db.doc('childAccess/'+child.code).get()).data().householdId,hid);
  await s.removeChild('svc-mom',{householdId:hid,code:child.code});
  assert((await db.doc(`families/${hid}/childLinks/${child.code}`).get()).data().removedAt);
+ // 가족이 서로 볼 수 있는 이메일: 서버가 Auth 에서 읽어 구성원 문서에 남긴다(클라이언트 값은 받지 않는다)
+ const emails={'em-mom':'Mom@Example.com','em-dad':'dad@example.com'};
+ const se=createService(db,{emailOf:async uid=>emails[uid]||''});
+ const ea=await se.createFamily('em-mom',{displayName:'엄마',role:'MOM',email:'forged@evil.com'}),eh=ea.householdId;
+ assert.equal((await db.doc(`families/${eh}/members/${ea.memberId}`).get()).data().email,'mom@example.com');
+ const einv=await se.issueInvite('em-mom',{householdId:eh,role:'DAD'});
+ await se.requestJoin('em-dad',{code:einv.code,displayName:'아빠'},'127.0.0.1');
+ await se.decideJoin('em-mom',{householdId:eh,targetUid:'em-dad',approve:true});
+ const dadMid=(await db.doc('accounts/em-dad').get()).data().memberId;
+ assert.equal((await db.doc(`families/${eh}/members/${dadMid}`).get()).data().email,'dad@example.com');
+ emails['em-dad']='dad2@example.com'; // 인증 메일로 이메일을 바꾼 뒤 로그인
+ assert.equal((await se.syncMyEmail('em-dad')).synced,true);
+ assert.equal((await db.doc(`families/${eh}/members/${dadMid}`).get()).data().email,'dad2@example.com');
+ assert.equal((await db.doc('accounts/em-dad').get()).data().email,'dad2@example.com');
+ assert.equal((await se.syncMyEmail('em-dad')).synced,false);
+ assert.equal((await se.syncMyEmail('em-nobody')).synced,false);
+ await se.updateMember('em-mom',{householdId:eh,memberId:dadMid,label:'아빠2',role:'DAD',order:2});
+ assert.equal((await db.doc(`families/${eh}/members/${dadMid}`).get()).data().email,'dad2@example.com','이름 수정이 이메일을 지우지 않는다');
  console.log('Real Firestore server transactions: PASS (concurrent one-use approval, quota, revocation, child ownership)');
  await db.terminate();
 })().catch(e=>{console.error(e);process.exitCode=1;});

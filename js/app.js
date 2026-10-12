@@ -1111,7 +1111,7 @@
       const edit = { label: HM.memEdit, attrs: `data-mem-action="edit" data-member-id="${esc(m.memberId)}"` };
       return {
         kind: isMe ? "me" : "member", color: UserScheduleView.memberColor(m), name: isMe ? `${name} (${AM.meShort})` : name, sub: "",
-        rows: baseRows(HouseholdView.roleLabelOf(m), isMe ? acct.user && acct.user.email : ""),
+        rows: baseRows(HouseholdView.roleLabelOf(m), isMe ? acct.user && acct.user.email : m.email || ""),
         actions: isMe ? [edit, { label: AM.logout, attrs: 'data-acct-action="logout"' }] : [edit, { label: HM.memDelete, attrs: `data-mem-action="ask-delete" data-member-id="${esc(m.memberId)}"`, danger: true }],
       };
     }
@@ -4592,6 +4592,11 @@
   function memReadLabel() {
     const slot = el("fam-card") || el("members-slot");
     const inp = slot && slot.querySelector('[data-mem-input="label"]');
+    if (mem.form && slot) { // 이메일·비밀번호 칸도 같이 기억한다(다시 그려도 입력 중이던 값 유지)
+      const em = slot.querySelector('[data-mem-input="email"]'), pw = slot.querySelector('[data-mem-input="emailPassword"]');
+      if (em) mem.form.emailNew = em.value;
+      if (pw) mem.form.emailPassword = pw.value;
+    }
     return inp ? inp.value : mem.form ? mem.form.label : "";
   }
   /** 내 프로필 수정 폼의 시·도/시·군구 선택 — 시·도를 바꾸면 시·군구를 비우고 목록을 다시 그린다. */
@@ -4656,8 +4661,15 @@
         if (!form || mem.saving) return; // 저장 중에는 두 번째 클릭을 무시한다
         form.label = memReadLabel();
         const v = HouseholdView.validateMemberForm(form, { accounts: acctEnabled() });
+        const newEmail = form.self ? String(form.emailNew == null ? form.email || "" : form.emailNew).trim() : "";
+        const emailChanged = !!newEmail && newEmail.toLowerCase() !== String(form.email || "").toLowerCase();
+        form.notice = null;
         if (v.ok && form.self && !!form.province !== !!form.district) {
           form.error = AccountView.MSG.errRegion; // 시·도만 고르고 시·군·구를 비워 두면 저장하지 않는다
+        } else if (v.ok && emailChanged && !AuthService.validateCredentials(newEmail, "x".repeat(AuthService.PASSWORD_MIN)).ok) {
+          form.error = AuthService.MSG.invalidEmail;
+        } else if (v.ok && emailChanged && !form.emailPassword) {
+          form.error = "이메일을 바꾸려면 현재 비밀번호를 입력해 주세요.";
         } else if (!v.ok) {
           form.error = v.error;
         } else if (!form.memberId && visible.length >= HouseholdView.MEMBER_MAX) {
@@ -4676,7 +4688,12 @@
               const u = await acct.sync.updateProfile(acct.user.uid, { displayName: v.label, role: v.role, ...(form.self && form.province && form.district ? { province: form.province, district: form.district } : {}) });
               if (u && u.ok && acct.account) Object.assign(acct.account, { displayName: u.patch.displayName || acct.account.displayName, role: u.patch.role || acct.account.role, ...(u.patch.province ? { province: u.patch.province, district: u.patch.district } : {}) });
             }
-            mem.view = "list"; mem.form = null;
+            if (emailChanged) { // 이름·역할·지역 저장 뒤 이메일 변경 요청 — 인증 메일의 링크를 눌러야 실제로 바뀐다
+              const c = acct.svc ? await acct.svc.changeEmail({ newEmail, password: form.emailPassword }) : { ok: false, message: AuthService.MSG.notReady };
+              form.emailPassword = "";
+              if (!c.ok) form.error = c.message;
+              else { form.notice = c.message; form.emailNew = null; } // 인증 전에는 화면의 이메일도 그대로 둔다 — 폼을 열어 둔 채 안내만 보여 준다
+            } else { mem.view = "list"; mem.form = null; }
           } catch (e) {
             console.error("구성원 저장 실패", e);
             form.error = HouseholdView.MSG.failNetwork;
@@ -6718,6 +6735,7 @@
       acctClearIntent();
       hhSetJoined(state.householdId,state.householdId);
       linkConfirmed=true; // 서버가 이 계정의 가족 연결(ACTIVE)을 확인했다. 아래 화면 준비 오류는 '연결 확인 실패'가 아니다.
+      approvalApi().syncMyEmail().catch(() => {}); // 내 이메일을 가족이 볼 수 있게 구성원 문서에 맞춘다(서버가 Auth 에서 읽음, 실패해도 무시)
       try {
         if(profile&&familyCode) {
           const linked=Object.values(joined.mirror.children||{}).some(c=>c.familyCode===familyCode&&!c.removedAt);

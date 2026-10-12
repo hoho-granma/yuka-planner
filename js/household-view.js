@@ -371,7 +371,7 @@
     const regions = Array.isArray(state.regions) ? state.regions : [];
     const prov = regions.find((p) => p.code === f.province);
     const opt = (v, cur) => `<option value="${esc(v)}"${cur === v ? " selected" : ""}>${esc(v)}</option>`;
-    const email = `<div class="hh-field"><label>이메일</label><input type="email" class="hh-input hh-input-plain" value="${esc(f.email || "")}" disabled aria-label="이메일" /></div>`;
+    const email = `<div class="hh-field"><label>이메일</label><input type="email" class="hh-input hh-input-plain" data-mem-input="email" value="${esc(f.emailNew != null ? f.emailNew : f.email || "")}" autocomplete="email" aria-label="이메일" /><input type="password" class="hh-input hh-input-plain" data-mem-input="emailPassword" value="${esc(f.emailPassword || "")}" autocomplete="current-password" placeholder="이메일을 바꿀 때만 현재 비밀번호" aria-label="현재 비밀번호" /></div>`;
     const region = regions.length
       ? `<div class="hh-field"><label>거주 지역</label><div class="hh-region"><select class="hh-input hh-input-plain" data-mem-region="province" aria-label="시·도"><option value="">시·도</option>${regions.map((p) => opt(p.code, f.province)).join("")}</select><select class="hh-input hh-input-plain" data-mem-region="district" aria-label="시·군·구"${prov ? "" : " disabled"}><option value="">시·군·구</option>${prov ? prov.districts.map((d) => opt(d, f.district)).join("") : ""}</select></div></div>`
       : "";
@@ -414,7 +414,7 @@
       const f = state.form;
       body = `<div class="hh-field"><label>${esc(MSG.memNameLabel)}</label><input type="text" class="hh-input" data-mem-input="label" maxlength="${MEMBER_NAME_MAX}" placeholder="${esc(acctMode ? MSG.memNamePlaceholderAcct : MSG.memNamePlaceholder)}" value="${esc(f.label || "")}" /></div>
           <div class="hh-field"><label>${esc(MSG.memRoleLabel)}</label><div class="hh-chips${acctMode ? " hh-chips-row" : ""}">${(acctMode ? FORM_ROLE_CHIPS : ROLES.map((r) => [r, ROLE_NAMES[r]])).map(([k, n]) => mchip(`data-mem-role="${k}"`, n, f.role === k)).join("")}</div></div>
-          ${selfFields(state, f)}${f.error ? `<p class="hh-note hh-warn">${esc(f.error)}</p>` : ""}
+          ${selfFields(state, f)}${f.notice ? `<p class="hh-note">${esc(f.notice)}</p>` : ""}${f.error ? `<p class="hh-note hh-warn">${esc(f.error)}</p>` : ""}
           <div class="hh-actions"><button type="button" class="hh-btn hh-primary" data-mem-action="save"${state.saving === true ? " disabled" : ""}>${esc(MSG.memSave)}</button><button type="button" class="hh-btn" data-mem-action="cancel">${esc(MSG.memCancel)}</button></div>`;
     } else {
       const device = acctMode ? "" : `<div class="hh-field"><label>${esc(MSG.deviceUserLabel)}</label><div class="hh-chips">${list.map((m) => mchip(`data-mem-action="set-active" data-member-id="${esc(m.memberId)}"`, m.label, m.memberId === activeId)).join("")}${mchip('data-mem-action="clear-active"', MSG.deviceUserNone, !activeId)}</div>${note(MSG.deviceUserNote)}</div>`;

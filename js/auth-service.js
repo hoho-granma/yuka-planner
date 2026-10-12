@@ -25,6 +25,9 @@
     linkFailed: "가족 캘린더를 연결하지 못했어요. 인터넷 연결을 확인하고 다시 로그인해 주세요.",
     generic: "처리하지 못했어요. 잠시 후 다시 시도해 주세요.",
     resetSent: "비밀번호 재설정 메일을 보냈어요. 메일함을 확인해 주세요.",
+    emailChangeSent: "새 이메일로 인증 메일을 보냈어요. 메일의 링크를 누르면 이메일이 바뀌어요.",
+    wrongPassword: "현재 비밀번호가 맞지 않아요.",
+    needRecentLogin: "보안을 위해 다시 로그인한 뒤 시도해 주세요.",
   });
 
   const CODE_TO_MSG = Object.freeze({
@@ -37,6 +40,7 @@
     "auth/invalid-login-credentials": MSG.wrongCredential,
     "auth/user-not-found": MSG.wrongCredential,
     "auth/user-disabled": MSG.wrongCredential,
+    "auth/requires-recent-login": MSG.needRecentLogin,
     "auth/network-request-failed": MSG.network,
     "auth/too-many-requests": MSG.tooMany,
     "auth/operation-not-allowed": MSG.notReady,
@@ -66,6 +70,12 @@
       async signIn(email, password) { return pick((await auth.signInWithEmailAndPassword(email, password)).user); },
       async signOut() { await auth.signOut(); },
       async deleteUser() { if (auth.currentUser) await auth.currentUser.delete(); },
+      async changeEmail(newEmail, password) { // 현재 비밀번호로 다시 확인한 뒤, 새 이메일로 인증 메일을 보낸다(인증 링크를 눌러야 실제로 바뀐다)
+        const cu = auth.currentUser;
+        if (!cu || !cu.email) throw { code: "auth/user-not-found" };
+        await cu.reauthenticateWithCredential(fb.auth.EmailAuthProvider.credential(cu.email, password));
+        await cu.verifyBeforeUpdateEmail(newEmail);
+      },
       async sendReset(email) { await auth.sendPasswordResetEmail(email); },
       async updateDisplayName(user, name) { if (auth.currentUser) await auth.currentUser.updateProfile({ displayName: name }); return { ...user, displayName: name }; },
       onChange(cb) { return auth.onAuthStateChanged((u) => cb(pick(u))); },
@@ -155,6 +165,19 @@
         return { ok: true, message: MSG.resetSent };
       });
     }
+    /** 이메일 변경 요청: 현재 비밀번호 확인 → 새 이메일로 인증 메일 발송. 인증 전에는 이메일이 바뀌지 않는다. */
+    function changeEmail({ newEmail, password } = {}) {
+      if (!enabled()) return Promise.resolve(DISABLED);
+      if (!EMAIL_RE.test(normEmail(newEmail))) return Promise.resolve({ ok: false, code: "auth/invalid-email", message: MSG.invalidEmail });
+      if (!password) return Promise.resolve({ ok: false, code: "auth/wrong-password", message: MSG.wrongPassword });
+      return run(async (a) => {
+        try { await a.changeEmail(normEmail(newEmail), password); } catch (e) {
+          if (e && (e.code === "auth/wrong-password" || e.code === "auth/invalid-credential" || e.code === "auth/invalid-login-credentials")) return { ok: false, code: e.code, message: MSG.wrongPassword };
+          throw e;
+        }
+        return { ok: true, message: MSG.emailChangeSent };
+      });
+    }
     /** 로그인 상태 구독. 꺼져 있으면 아무것도 하지 않고 no-op 해제 함수를 돌려준다. */
     function onChange(cb) {
       if (!enabled()) return () => {};
@@ -165,7 +188,7 @@
       }).catch(() => cb(null, { unknown: true })); // SDK 로드 실패·확인 불가는 '로그아웃됨'이 아니다(두 번째 인자로 구분)
       return () => { dead = true; if (off) off(); };
     }
-    return { isEnabled: enabled, signUp, signIn, signOut, deleteCurrentUser, sendPasswordReset, onChange, currentUser: () => user };
+    return { isEnabled: enabled, signUp, signIn, signOut, deleteCurrentUser, sendPasswordReset, changeEmail, onChange, currentUser: () => user };
   }
 
   return { create, errorMessage, validateCredentials, firebaseAdapter, MSG, PASSWORD_MIN, SDK_URL };

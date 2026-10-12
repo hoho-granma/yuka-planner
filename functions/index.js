@@ -7,7 +7,8 @@ const {defineSecret,defineString}=require('firebase-functions/params');
 // Enable together with client App Check configuration before release.
 const appCheckEnforced=process.env.APP_CHECK_ENFORCED === 'true';
 initializeApp();
-const service=createService(getFirestore());
+const {getAuth}=require('firebase-admin/auth');
+const service=createService(getFirestore(),{emailOf:async uid=>(await getAuth().getUser(uid)).email});
 exports.familyAccess=onCall({region:'asia-northeast3',enforceAppCheck:appCheckEnforced,maxInstances:5},async request=>{
   if(!request.auth)throw new HttpsError('unauthenticated','로그인이 필요해요.');
   const {action,...data}=request.data||{};

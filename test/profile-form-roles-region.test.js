@@ -14,9 +14,9 @@ test("계정 모드 역할 칩은 엄마·아빠·아이·돌봄·기타 5개이
   assert.ok(html.includes("hh-chips hh-chips-row"));
   assert.ok(/\.hh-chips\.hh-chips-row\s*\{\s*flex-wrap:\s*nowrap/.test(css));
 });
-test("내 프로필 수정에는 이메일(읽기)·거주 지역이 나오고, 다른 구성원 폼에는 나오지 않는다", () => {
+test("내 프로필 수정에는 이메일(수정 가능, 바꿀 때 비밀번호)·거주 지역이 나오고, 다른 구성원 폼에는 나오지 않는다", () => {
   const me = HV.renderMembers({ ...base, form: { memberId: "m1", role: "MOM", label: "주연", self: true, email: "a@b.com", province: "경기도", district: "성남시" } });
-  assert.ok(me.includes('value="a@b.com"') && me.includes("disabled") && me.includes('data-mem-region="province"') && me.includes('<option value="성남시" selected>'));
+  assert.ok(me.includes('value="a@b.com"') && me.includes('data-mem-input="email"') && me.includes('data-mem-input="emailPassword"') && me.includes('data-mem-region="province"') && me.includes('<option value="성남시" selected>'));
   const other = HV.renderMembers({ ...base, form: { memberId: "m2", role: "DAD", label: "아빠" } });
   assert.ok(!other.includes("data-mem-region") && !other.includes('type="email"'));
 });
@@ -29,4 +29,8 @@ test("교육 선택: '성남시' 라벨 span 이 없고 첫 버튼이 소속 지
   assert.ok(!html.includes("<span>성남시</span>"));
   assert.match(html, /data-district="" aria-pressed="true">성남시</);
   assert.ok(!/data-district="">전체</.test(html));
+});
+test("이메일 변경 안내·입력 중이던 값은 폼에 유지된다", () => {
+  const html = HV.renderMembers({ ...base, form: { memberId: "m1", role: "MOM", label: "주연", self: true, email: "a@b.com", emailNew: "new@b.com", notice: "인증 메일을 보냈어요." } });
+  assert.ok(html.includes('value="new@b.com"') && html.includes("인증 메일을 보냈어요."));
 });
