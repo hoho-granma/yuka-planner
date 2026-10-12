@@ -87,11 +87,12 @@
     }
 
     /** 내 구성원의 이름·역할을 바꿨을 때 계정 문서도 같이 갱신한다(role 은 규칙이 허용하는 4종으로 변환). */
-    async function updateProfile(uid, { displayName, role }) {
+    async function updateProfile(uid, { displayName, role, province, district }) {
       try {
         const patch = { updatedAt: now() };
         if (displayName) patch.displayName = String(displayName).slice(0, 20);
         if (role) patch.role = accountRoleOf(role);
+        if (province && district) { patch.province = String(province).slice(0, 20); patch.district = String(district).slice(0, 20); }
         await adapter.set(pathOf(uid), patch, { merge: true });
         return { ok: true, patch };
       } catch (e) {

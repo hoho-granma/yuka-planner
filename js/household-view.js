@@ -130,6 +130,8 @@
   const ROLES = Object.freeze(Object.keys(ROLE_NAMES));
   // 계정 모드(H2) 구성원 추가 폼의 역할 선택지. 화면 키 → 저장 role(+기본 이름). 할머니·할아버지는 둘 다 GRANDPARENT 이고 label 로 구분한다.
   const FORM_ROLES = Object.freeze([["MOM", "엄마", "MOM"], ["DAD", "아빠", "DAD"], ["CHILD", "아이(자녀)", "CHILD"], ["CAREGIVER", "이모님·돌봄", "CAREGIVER"], ["GRANDMA", "할머니", "GRANDPARENT"], ["GRANDPA", "할아버지", "GRANDPARENT"], ["OTHER", "기타", "OTHER"]]);
+  // 계정 모드 폼에 보이는 역할 칩: 한 줄 5개. FORM_ROLES 의 할머니·할아버지는 이미 저장된 구성원을 읽기 위한 키라 칩에서는 뺀다.
+  const FORM_ROLE_CHIPS = Object.freeze([["MOM", "엄마"], ["DAD", "아빠"], ["CHILD", "아이"], ["CAREGIVER", "돌봄"], ["OTHER", "기타"]]);
   const DEFAULT_LABEL = Object.freeze({ MOM: "엄마", DAD: "아빠", CHILD: "아이", CAREGIVER: "이모님", GRANDMA: "할머니", GRANDPA: "할아버지", OTHER: "가족" });
   /** 이름에서 역할 추정(역할을 아직 고르지 않았을 때): 할머니·할아버지·엄마·아빠·이모·아이 등. 못 정하면 "". */
   function inferRoleFromName(name) {
@@ -363,6 +365,18 @@
     if (!role) return { ok: false, label, role, error: MSG.failNetwork };
     return { ok: true, label, role, error: null };
   }
+  /** 내 프로필 수정 폼의 추가 칸(이메일·거주 지역). 이메일은 로그인 계정이라 읽기만 한다. f.self 일 때만 그린다. */
+  function selfFields(state, f) {
+    if (!f.self) return "";
+    const regions = Array.isArray(state.regions) ? state.regions : [];
+    const prov = regions.find((p) => p.code === f.province);
+    const opt = (v, cur) => `<option value="${esc(v)}"${cur === v ? " selected" : ""}>${esc(v)}</option>`;
+    const email = `<div class="hh-field"><label>이메일</label><input type="email" class="hh-input hh-input-plain" value="${esc(f.email || "")}" disabled aria-label="이메일" /></div>`;
+    const region = regions.length
+      ? `<div class="hh-field"><label>거주 지역</label><div class="hh-region"><select class="hh-input hh-input-plain" data-mem-region="province" aria-label="시·도"><option value="">시·도</option>${regions.map((p) => opt(p.code, f.province)).join("")}</select><select class="hh-input hh-input-plain" data-mem-region="district" aria-label="시·군·구"${prov ? "" : " disabled"}><option value="">시·군·구</option>${prov ? prov.districts.map((d) => opt(d, f.district)).join("") : ""}</select></div></div>`
+      : "";
+    return email + region;
+  }
   const mchip = (attrs, label, active) => `<button type="button" class="hh-chip${active ? " active" : ""}" ${attrs}>${esc(label)}</button>`;
 
   /** 이 기기에만 있는 아이(가구에 연결 안 됨) 영역: [연결]·[삭제]. 계정 모드에서 있을 때만 — D72b: 우리 가족 시트 카드 아래 별도 구역으로도 쓴다. */
@@ -399,8 +413,8 @@
     } else if (state.view === "form" && state.form) {
       const f = state.form;
       body = `<div class="hh-field"><label>${esc(MSG.memNameLabel)}</label><input type="text" class="hh-input" data-mem-input="label" maxlength="${MEMBER_NAME_MAX}" placeholder="${esc(acctMode ? MSG.memNamePlaceholderAcct : MSG.memNamePlaceholder)}" value="${esc(f.label || "")}" /></div>
-          <div class="hh-field"><label>${esc(MSG.memRoleLabel)}</label><div class="hh-chips">${(acctMode ? FORM_ROLES.map((r) => [r[0], r[1]]) : ROLES.map((r) => [r, ROLE_NAMES[r]])).map(([k, n]) => mchip(`data-mem-role="${k}"`, n, f.role === k)).join("")}</div></div>
-          ${f.error ? `<p class="hh-note hh-warn">${esc(f.error)}</p>` : ""}
+          <div class="hh-field"><label>${esc(MSG.memRoleLabel)}</label><div class="hh-chips${acctMode ? " hh-chips-row" : ""}">${(acctMode ? FORM_ROLE_CHIPS : ROLES.map((r) => [r, ROLE_NAMES[r]])).map(([k, n]) => mchip(`data-mem-role="${k}"`, n, f.role === k)).join("")}</div></div>
+          ${selfFields(state, f)}${f.error ? `<p class="hh-note hh-warn">${esc(f.error)}</p>` : ""}
           <div class="hh-actions"><button type="button" class="hh-btn hh-primary" data-mem-action="save"${state.saving === true ? " disabled" : ""}>${esc(MSG.memSave)}</button><button type="button" class="hh-btn" data-mem-action="cancel">${esc(MSG.memCancel)}</button></div>`;
     } else {
       const device = acctMode ? "" : `<div class="hh-field"><label>${esc(MSG.deviceUserLabel)}</label><div class="hh-chips">${list.map((m) => mchip(`data-mem-action="set-active" data-member-id="${esc(m.memberId)}"`, m.label, m.memberId === activeId)).join("")}${mchip('data-mem-action="clear-active"', MSG.deviceUserNone, !activeId)}</div>${note(MSG.deviceUserNote)}</div>`;

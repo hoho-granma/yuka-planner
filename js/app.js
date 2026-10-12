@@ -1194,6 +1194,7 @@
     if (hhEnabled()) hhOpenSection();
     else famRender();
     el("fam-card").addEventListener("click", famOnClick);
+    el("fam-card").addEventListener("change", memOnChange);
     el("fam-orphans").addEventListener("click", memOnClick);
     famRender();
   }
@@ -4433,7 +4434,7 @@
     const slot = el("hh-slot");
     if (slot) slot.addEventListener("click", hhOnClick);
     const mslot = el("members-slot");
-    if (mslot) mslot.addEventListener("click", memOnClick);
+    if (mslot) { mslot.addEventListener("click", memOnClick); mslot.addEventListener("change", memOnChange); }
   }
   /** 쓰기 없는 읽기 탐지: 규칙이 배포돼 있으면 없는 코드도 not-found 로 돌아오고, 미배포면 permission-denied 로 막힌다. */
   async function hhProbeRules() {
@@ -4579,7 +4580,7 @@
       console.warn("이 기기 사용자를 저장하지 못했어요(저장소 사용 불가).", e);
     }
   }
-  const memState = () => ({ acctMode: acctEnabled(), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt), ownChildKeys: usLinks().filter((l) => !l.removedAt && usIsOwnChild(l)).map((l) => l.childKey), orphanChildren: usOrphanChildren(), enabled: hhEnabled(), hasHousehold: !!(hh.hid && hh.code), members: usMembers(), activeMemberId: memActiveId(), view: mem.view, form: mem.form, deleteId: mem.deleteId, saving: mem.saving });
+  const memState = () => ({ acctMode: acctEnabled(), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt), ownChildKeys: usLinks().filter((l) => !l.removedAt && usIsOwnChild(l)).map((l) => l.childKey), orphanChildren: usOrphanChildren(), enabled: hhEnabled(), hasHousehold: !!(hh.hid && hh.code), members: usMembers(), activeMemberId: memActiveId(), view: mem.view, form: mem.form, deleteId: mem.deleteId, saving: mem.saving, regions: regionsData ? regionsData.provinces : [] });
   function memRender() {
     if (el("fam-card")) return famRender(); // D72b: 우리 가족 시트에서는 선택 카드 안에 그린다
     const slot = el("members-slot");
@@ -4592,6 +4593,15 @@
     const slot = el("fam-card") || el("members-slot");
     const inp = slot && slot.querySelector('[data-mem-input="label"]');
     return inp ? inp.value : mem.form ? mem.form.label : "";
+  }
+  /** 내 프로필 수정 폼의 시·도/시·군구 선택 — 시·도를 바꾸면 시·군구를 비우고 목록을 다시 그린다. */
+  function memOnChange(ev) {
+    const sel = ev.target.closest && ev.target.closest("[data-mem-region]");
+    if (!sel || !mem.form || mem.saving) return;
+    mem.form.label = memReadLabel();
+    if (sel.getAttribute("data-mem-region") === "province") { mem.form.province = sel.value; mem.form.district = ""; } else mem.form.district = sel.value;
+    mem.form.error = null;
+    memRender();
   }
   async function memOnClick(ev) {
     const roleBtn = ev.target.closest("[data-mem-role]");
@@ -4622,6 +4632,10 @@
         const m = visible.find((x) => x.memberId === id);
         if (!m) return;
         mem.form = { memberId: id, role: acctEnabled() ? HouseholdView.formRoleOf(m) : m.role, label: m.label, error: null };
+        if (acctEnabled() && id === usMeId()) { // 내 프로필 수정: 이메일(읽기)·거주 지역도 같이 보여 준다
+          const a = acct.account || {};
+          Object.assign(mem.form, { self: true, email: (acct.user && acct.user.email) || a.email || "", province: a.province || "", district: a.district || "" });
+        }
         mem.view = "form";
       } else if (action === "ask-delete") {
         if (acctEnabled() && id === usMeId()) return; // 나 자신은 지울 수 없다
@@ -4642,7 +4656,9 @@
         if (!form || mem.saving) return; // 저장 중에는 두 번째 클릭을 무시한다
         form.label = memReadLabel();
         const v = HouseholdView.validateMemberForm(form, { accounts: acctEnabled() });
-        if (!v.ok) {
+        if (v.ok && form.self && !!form.province !== !!form.district) {
+          form.error = AccountView.MSG.errRegion; // 시·도만 고르고 시·군·구를 비워 두면 저장하지 않는다
+        } else if (!v.ok) {
           form.error = v.error;
         } else if (!form.memberId && visible.length >= HouseholdView.MEMBER_MAX) {
           form.error = HouseholdView.MSG.memMax;
@@ -4657,8 +4673,8 @@
             if (!r || !r.ok) throw new Error((r && r.reason) || "member-save-failed");
             // H2: 내 구성원의 이름·역할을 바꾸면 계정 문서도 같이 갱신한다(role 은 규칙 허용 4종으로 변환)
             if (acctEnabled() && form.memberId && form.memberId === usMeId() && acct.sync && acct.user) {
-              const u = await acct.sync.updateProfile(acct.user.uid, { displayName: v.label, role: v.role });
-              if (u && u.ok && acct.account) Object.assign(acct.account, { displayName: u.patch.displayName || acct.account.displayName, role: u.patch.role || acct.account.role });
+              const u = await acct.sync.updateProfile(acct.user.uid, { displayName: v.label, role: v.role, ...(form.self && form.province && form.district ? { province: form.province, district: form.district } : {}) });
+              if (u && u.ok && acct.account) Object.assign(acct.account, { displayName: u.patch.displayName || acct.account.displayName, role: u.patch.role || acct.account.role, ...(u.patch.province ? { province: u.patch.province, district: u.patch.district } : {}) });
             }
             mem.view = "list"; mem.form = null;
           } catch (e) {
