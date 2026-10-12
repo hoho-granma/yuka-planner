@@ -1,6 +1,6 @@
 'use strict';
 // 홈·달력 목록·할일 글자 크기 고정(15px) 회귀 검사. 실제 CSS(index.html 의 로드 순서)를 헤드리스 Chrome 에 올려 계산된 크기를 잰다.
-// 15px: 섹션 제목. 14px: 일정·할일 제목·시간·기한. 10px: 홈 카테고리 태그. 작게 두는 것: (2시간) 같은 소요 시간(.hn-duration)만 12px.
+// 15px: 섹션 제목. 14px: 일정·할일 제목·시간·기한. 10px: 카테고리 태그(홈·캘린더 목록·할일 탭). 작게 두는 것: (2시간) 같은 소요 시간(.hn-duration)만 12px.
 // Chrome 이 없으면 건너뛴다. 사용: node test/font-size-lock.test.js
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),cp=require('node:child_process');
 const CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -14,9 +14,9 @@ const task='<div class="hn-task"><button class="hn-check"></button><img class="h
 const head='<div class="hn-section-head"><h3>우리 가족 할일</h3></div>';
 const expect=[
  ['#home-body .hn-section-head h3',15],['#home-body .hn-task-title',14],['#home-body .hn-task time',14],
- ['#home-body .hn-timeline time',14],['#home-body .hn-timeline strong',14],['#home-body .hn-duration',12],['#home-body .hn-category',10],
+ ['#home-body .hn-timeline time',14],['#home-body .hn-timeline strong',14],['#home-body .hn-duration',12],['#home-body .hn-category',10],['#selected-day-list .hn-category',10],
  ['#selected-day-list .hn-timeline time',14],['#selected-day-list .hn-timeline strong',14],['#selected-day-list .hn-duration',12],
- ['#hn-family-tasks-tab .hn-section-head h3',15],['#hn-family-tasks-tab .hn-task-title',14],['#hn-family-tasks-tab .hn-task time',14],
+ ['#hn-family-tasks-tab .hn-section-head h3',15],['#hn-family-tasks-tab .hn-task-title',14],['#hn-family-tasks-tab .hn-task time',14],['#hn-family-tasks-tab .hn-category',10],
 ];
 const inline=(index.match(/<style id="hn-typography-lock">[\s\S]*?<\/style>/)||[''])[0];   // index.html 끝의 최종 잠금 블록(외부 CSS 뒤에 온다)
 if(!inline){console.error('FAIL: index.html 에 hn-typography-lock 블록이 없음');process.exit(1);}

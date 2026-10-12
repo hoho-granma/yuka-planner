@@ -281,7 +281,7 @@
   <script src="js/account-view.js?v=40"></script>
   <script src="js/account-sync.js?v=8"></script>
   <script src="js/app-access.js?v=1"></script>
-  <script src="js/version.js?v=8"></script>
+  <script src="js/version.js?v=9"></script>
   <script src="js/date-calc.js?v=1"></script>
   <script src="js/child-timeline.js?v=10"></script>
   <script src="js/school-policy.js?v=1"></script>
@@ -348,21 +348,21 @@
   <script src="js/growth-learning-view.js?v=5"></script>
   <script src="js/character-ui.js?v=11"></script>
   <link rel="stylesheet" href="css/character-ui.css?v=41"/>
-  <link rel="stylesheet" href="css/family-theme.css?v=16"/>
+  <link rel="stylesheet" href="css/family-theme.css?v=17"/>
   <script src="js/family-theme.js?v=11"></script>
   <script src="js/capture/source-photo.js?v=1"></script>
   <script src="js/capture/schedule-review.js?v=14"></script>
   <link rel="stylesheet" href="css/schedule-review.css?v=14"/>
   <script src="js/app.js?v=239"></script>
   <!-- 글자 크기 고정(최종 값). 외부 CSS 여러 개가 같은 글자에 서로 다른 크기를 !important 로 정해 두고 있어서, 기기·캐시 상태에 따라 앞선 파일의 값이 이길 수 있다(특히 iOS 웹킷의 HTTP 캐시·홈 화면 앱). HTML 은 항상 새로 받으므로 마지막 값만 여기에 한 번 더 둔다.
-       15px: 카드(섹션) 제목 / 14px: 일정·할일 제목·시간·기한 / 12px: (2시간) 같은 소요 시간 / 10px: 홈 카테고리 태그. 바꿀 때는 css/family-theme.css 의 --hn-family-list-font-size 와 함께 고친다(test/font-size-lock.test.js 가 둘을 같이 잰다). -->
+       15px: 카드(섹션) 제목 / 14px: 일정·할일 제목·시간·기한 / 12px: (2시간) 같은 소요 시간 / 10px: 카테고리 태그(홈·캘린더 목록·할일 탭). 바꿀 때는 css/family-theme.css 의 --hn-family-list-font-size 와 함께 고친다(test/font-size-lock.test.js 가 둘을 같이 잰다). -->
   <style id="hn-typography-lock">
     html, body { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     #home-body .hn-section-head h3, #hn-family-tasks-tab .hn-section-head h3, #home-body .hn-schedule-date,
     #home-body .hn-timeline, #selected-day-list .hn-timeline { font-size: 15px !important; }
     #home-body .hn-timeline strong, #home-body .hn-task-title, #selected-day-list .hn-timeline strong, #hn-family-tasks-tab .hn-task-title,
     #home-body .hn-timeline time, #home-body .hn-task time, #selected-day-list .hn-timeline time, #hn-family-tasks-tab .hn-task time { font-size: 14px !important; }
-    #home-body .hn-category { font-size: 10px !important; }
+    #home-body .hn-category, #selected-day-list .hn-category, #hn-family-tasks-tab .hn-category { font-size: 10px !important; }
     #home-body .hn-duration, #selected-day-list .hn-duration { font-size: 12px !important; }
   </style>
   <script>

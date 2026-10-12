@@ -109,12 +109,12 @@ body:has(#view-landing.acct-on:not(.hidden)){background:#fff!important}
 #selected-day-list .hn-timeline strong,
 #selected-day-list .us-card .us-title,
 #hn-family-tasks-tab .hn-task-title { font-size:var(--hn-family-title-font-size)!important; }
-/* 시간·기한도 제목과 같은 14px, 홈 카테고리 태그는 10px */
+/* 시간·기한도 제목과 같은 14px, 카테고리 태그(홈·캘린더 목록·할일 탭)는 10px */
 #home-body .hn-timeline time,
 #home-body .hn-task time,
 #selected-day-list .hn-timeline time,
 #hn-family-tasks-tab .hn-task time { font-size:var(--hn-family-title-font-size)!important; }
-#home-body .hn-category { font-size:10px!important; }
+#home-body .hn-category, #selected-day-list .hn-category, #hn-family-tasks-tab .hn-category { font-size:10px!important; }
 
 /* Keep selected calendar list readable with the same system font as headings. */
 #selected-day-list .hn-timeline{font-family:var(--hn-family-list-font-family)!important}
