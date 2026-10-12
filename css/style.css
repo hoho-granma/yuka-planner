@@ -2156,3 +2156,6 @@ body.acct-design .acct-cs:has(.date-popup:not(.hidden)) .acct-cs-foot { position
 .acct-form .acct-sub-link { display: block; width: 100%; align-self: stretch; text-align: center; color: var(--text-muted); font-size: 14px; font-weight: 600; }
 .hh-region { flex-wrap: wrap; }
 .hh-region .hh-input { flex: 1 1 30%; }
+
+/* 번들 폰트를 못 불러온 기기에서만 버전 표시 옆에 알린다(js/app.js 의 폰트 확인) */
+html[data-font="fallback"] .acct-ver::after, html[data-font="fallback"] #app-version-text::after { content: " · 폰트 미적용"; }

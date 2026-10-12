@@ -213,7 +213,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
   await test("계정 SDK는 동적 로드하며 HTML에 계정 입력 폼을 정적으로 만들지 않는다", () => {
     const html = read("index.html");
     assert.ok(!/firebase-auth-compat/.test(html) && !/<(?:input|form)[^>]*data-acct-/.test(html));
-    assert.ok(html.includes('<script src="js/auth-service.js?v=4"></script>') && /<script src="js\/account-view\.js\?v=\d+"><\/script>/.test(html));
+    assert.ok(/<script src="js\/auth-service\.js\?v=\d+"><\/script>/.test(html) && /<script src="js\/account-view\.js\?v=\d+"><\/script>/.test(html));
     const sw = read("sw.js");
     assert.ok(sw.includes('"./js/auth-service.js"') && sw.includes('"./js/account-view.js"') && !sw.includes("firebase-auth-compat"));
     assert.ok(AS.SDK_URL === "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js");

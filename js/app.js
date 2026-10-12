@@ -4199,6 +4199,8 @@
   // 홈 화면(PWA)으로 연 앱은 껐다 켜도 옛 화면이 메모리에 남을 수 있다. 헤더에 실행 중인 버전을
   // 보여주고, 서버의 최신 버전(js/version.js)과 다르면 버튼이 강조된다. 버튼을 누르면 링크로
   // 새로 여는 것과 같게 캐시·서비스워커를 비우고 다시 불러온다(입력한 정보는 그대로 유지).
+  // 번들 폰트(Pretendard)가 이 기기에서 실제로 불러와졌는지 확인한다 — 못 불러오면 버전 표시 옆에 '폰트 미적용'이 붙는다(css/style.css 의 html[data-font="fallback"]).
+  try { if (document.fonts && document.fonts.load) document.fonts.load('400 16px Pretendard', "한눈육아").then((r) => document.documentElement.setAttribute("data-font", r && r.length && r[0].status === "loaded" ? "pretendard" : "fallback")).catch(() => document.documentElement.setAttribute("data-font", "fallback")); } catch (e) {}
   const RUNNING_VERSION = self.APP_VERSION || "";
 
   async function fetchLatestVersion() {
@@ -4400,7 +4402,7 @@
   }
   function hhStart() {
     if (!hh.hid) return;
-    HouseholdSync.startListening(hh.hid, hhAfterSync);
+    HouseholdSync.startListening(hh.hid, () => { try { hhAfterSync(); } catch (e) { console.error("가구 데이터 반영 중 화면 갱신 오류(연결에는 영향 없음)", e && e.stack || e); } }); // 화면 갱신 오류가 가족 연결 확인을 실패시키지 않게 한다
     hhAttachLifecycle();
   }
   function hhSetJoined(hid, code) {
@@ -8211,7 +8213,7 @@ fields.sourceScheduleId=f.sourceScheduleId;
   const charRefreshHomeBase = usRefreshHome;
   usRefreshHome = function () {
     charRefreshHomeBase();
-    if (!usActive() || !acctEnabled()) return;
+    if (!profile || !usActive() || !acctEnabled()) return; // 아이가 없는 계정은 renderHome 이 profile.birthDate 를 읽다 던진다 — 가족 연결 확인 중에 이 갱신이 먼저 돌아 로그인이 실패하던 원인
     const signature = hh.hid + JSON.stringify(HouseholdSync.getTodos(hh.hid));
     if (signature !== charTodoSignature) {
       charTodoSignature = signature;
