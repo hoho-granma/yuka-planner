@@ -126,3 +126,10 @@ test('기존 목록에 없던 새 분류(상담 등)도 기타 + 분류 태그�
  const prepared=View.prepareSave(form,1);assert.equal(prepared.ok,true);
  const doc=Schedule.buildCreateDoc(prepared.input,1).doc;assert.equal(doc.category,'ETC');assert.equal(doc.categoryLabel,'상담');assert.deepEqual(doc.tags,['상담']);
 });
+
+test('연도가 없어 채운 일정에만 안내를 보이고, 날짜를 고치면 안내를 거둠',()=>{
+ const c={title:'상담',date:'2026-01-04',startTime:'15:00',yearAssumed:true,selected:true};
+ assert.match(Review.html([c]),/원본에 연도가 없어 2026년으로 채웠어요/);
+ assert(!Review.html([{...c,yearAssumed:false}]).includes('연도가 없어'));
+ Review.beginEdit(c);c.editDraft.date='2027-01-04';Review.applyEdit(c);assert.equal(c.yearAssumed,false);assert(!Review.html([c]).includes('연도가 없어'));
+});

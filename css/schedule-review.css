@@ -52,3 +52,5 @@
 /* 사진으로 채우기: 분석 영역 안의 제목칸·메모·날짜(캘린더)·반복·종일·할일 리스트·저장/취소 줄은 가린다(자리는 유지). 머리·누구·종류·입력 방식 메뉴·분석 영역만 보인다(날짜는 사진에서 읽는다). */
 .hn-photo-mode .us-form>:not(.us-fx-head):not(.cap-menu):not(.us-field:has([data-us-who])):not(.us-field:has([data-us-kinds])):not(.us-field:has(#hn-message-analysis)){visibility:hidden!important;pointer-events:none!important} /* 숨겨도 자리는 남긴다 — 직접 입력과 같은 높이라 폼이 아래로 밀리지 않는다 */
 .hn-photo-mode .us-field:has(#hn-message-analysis)>:is(label,#us-title){display:none!important}
+
+.hn-review-yearnote{margin:4px 0 0 40px;font-size:12px;line-height:1.45;color:#9a6b12}
