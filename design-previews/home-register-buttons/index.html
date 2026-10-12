@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>시안 · 홈 카드별 등록 버튼 5안</title>
+<style>
+:root{--bg:#f4f2f7;--ink:#302c3c;--muted:#7a7488;--line:#ece8f2;--accent:#715697;--blue:#2f6fa5;--green:#2f6b4f}
+*{box-sizing:border-box}body{margin:0;background:#ebe8f1;color:var(--ink);font-family:-apple-system,"Apple SD Gothic Neo",Pretendard,system-ui,sans-serif}
+.wrap{max-width:1380px;margin:0 auto;padding:22px 16px 70px}h1{font-size:20px;margin:0 0 4px}.sub{color:var(--muted);font-size:13px;margin:0 0 14px;line-height:1.6}
+.vs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}@media(max-width:1300px){.vs{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:900px){.vs{grid-template-columns:1fr 1fr}}@media(max-width:560px){.vs{grid-template-columns:1fr}}
+.cap{font-size:13px;font-weight:800;text-align:center;margin:0 0 2px}.capsub{font-size:11px;color:var(--muted);text-align:center;margin:0 0 8px;min-height:44px;line-height:1.4}
+.phone{background:var(--bg);border-radius:24px;border:7px solid #1e1b26;overflow:hidden;height:660px;display:flex;flex-direction:column;position:relative}
+.status{height:20px;font-size:9px;color:var(--muted);display:flex;justify-content:space-between;padding:5px 14px 0}.scroll{flex:1;overflow:auto;padding:8px 10px 70px}
+.tabbar{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:7px 0 9px;font-size:10px;color:var(--muted)}.tabbar b{color:var(--accent)}
+.line{font-size:12px;color:var(--muted);margin:2px 4px 8px}.line b{color:var(--ink);font-size:13px}
+.card{background:#fff;border-radius:16px;padding:12px 12px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;min-height:32px}.head h3{margin:0;font-size:14px}.head h3 span{color:var(--accent)}
+.tabs{display:flex;border-bottom:1px solid var(--line);margin:2px 0 4px}.tabs button{flex:1;border:0;background:none;padding:8px 0 9px;font:inherit;font-size:13px;font-weight:700;color:var(--muted);position:relative}.tabs button.on{color:var(--ink)}.tabs button.on:after{content:"";position:absolute;left:22%;right:22%;bottom:-1px;height:3px;border-radius:3px;background:var(--accent)}
+.sr{display:flex;align-items:center;gap:7px;padding:8px 0;font-size:12.5px}.sr time{font-size:10.5px;font-weight:700;min-width:36px}.sr strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.face{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;flex:none}.c{background:#f7e8c9}.m{background:#f8d7c0}
+.tag{display:inline-block;font-size:10.5px;font-weight:650;padding:3px 7px;border-radius:7px;white-space:nowrap}.k0{background:#f0ccdc;color:#40374b}.k1{background:#cadcf0;color:#40374b}.m4{background:#c04a7c;color:#fff}
+.todo{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:12.5px}.todo:first-of-type{border-top:0}.todo .ck{width:24px;height:24px;border:2px solid #b8b0c8;border-radius:8px;flex:none}.todo span.t{flex:1;font-weight:650}
+.rec{display:flex;gap:9px;align-items:center;padding:6px 0;font-size:12.5px}.rec .dot{width:36px;height:36px;border-radius:11px;background:#e4f1e9;display:grid;place-items:center;font-size:17px;flex:none}.rec small{display:block;color:var(--muted);font-size:10.5px;margin-top:1px}.rec strong{font-weight:650}
+/* 버튼 공통 */
+button{font-family:inherit}
+/* v1 원형 + (채움, 카드별 포인트색) */
+.v1 .b{width:30px;height:30px;border:0;border-radius:50%;color:#fff;font-size:22px;line-height:30px;padding:0}.v1 .b.p{background:var(--accent)}.v1 .b.t{background:var(--blue)}.v1 .b.g{background:var(--green)}
+/* v2 알약 "+ 등록" */
+.v2 .b{border:0;border-radius:99px;padding:7px 12px;font-size:12px;font-weight:800}.v2 .b.p{background:#ece4f7;color:var(--accent)}.v2 .b.t{background:#dfeaf6;color:var(--blue)}.v2 .b.g{background:#dff0e6;color:var(--green)}
+/* v3 둥근 네모 윤곽 + */
+.v3 .b{width:30px;height:30px;border-radius:10px;background:#fff;font-size:20px;line-height:26px;padding:0;border:1.5px solid}.v3 .b.p{color:var(--accent);border-color:var(--accent)}.v3 .b.t{color:var(--blue);border-color:var(--blue)}.v3 .b.g{color:var(--green);border-color:var(--green)}
+/* v4 하단 전폭 점선 행 */
+.v4 .foot{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:6px;border:1px dashed #cfc7dd;background:#faf8fd;border-radius:12px;padding:10px;font-size:12.5px;font-weight:800;color:var(--accent)}.v4 .foot.t{color:var(--blue);background:#f6f9fd;border-color:#c8d8ea}.v4 .foot.g{color:var(--green);background:#f5faf7;border-color:#c5dccf}
+/* v5 아이콘 + 라벨 고스트(연한 배경) */
+.v5 .b{display:flex;align-items:center;gap:5px;border:0;background:#f3f0f8;border-radius:10px;padding:6px 10px 6px 8px;font-size:12px;font-weight:800;color:var(--ink)}.v5 .b i{font-style:normal;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:14px;line-height:1}.v5 .b.p i{background:var(--accent)}.v5 .b.t i{background:var(--blue)}.v5 .b.g i{background:var(--green)}
+.v5 .b{white-space:nowrap}.v5 .head h3 span{display:block;font-size:10.5px;color:var(--muted);font-weight:600;line-height:1.2}.v5 .head h3{line-height:1.25}
+.hide{display:none}
+</style></head><body><div class="wrap">
+<h1>시안 · 홈 카드별 등록 버튼 5안</h1>
+<p class="sub">홈의 <b>우리 가족 일정 · 우리 가족 할일 · 성장기록</b> 세 카드에 각각 자기 등록 버튼을 둡니다(플로팅 메뉴 없음). 5가지 모양 모두 세 카드가 같은 규칙으로 보이게 했고, 우리 가족 할일에도 버튼이 생겨요. 색: 일정 보라 · 할일 파랑 · 성장기록 초록(시안 4·5의 색 구분은 취향에 따라 한 가지 색으로 통일 가능).</p>
+<div class="vs" id="vs"></div></div>
+<script>
+const sr=(t,w,n,tag,k)=>`<div class="sr"><time>${t}</time><span class="face ${w}">${w==='c'?'👧':'👩'}</span><strong>${n}</strong><span class="tag ${k}">${tag}</span></div>`;
+const btn=(v,k,label)=>{ // k: p 일정 · t 할일 · g 성장기록
+ if(v===1)return `<button class="b ${k}" aria-label="${label}">+</button>`;
+ if(v===2)return `<button class="b ${k}">+ 등록</button>`;
+ if(v===3)return `<button class="b ${k}" aria-label="${label}">+</button>`;
+ if(v===5)return `<button class="b ${k}"><i>+</i>${label}</button>`;
+ return ''};
+const foot=(v,k,label)=>v===4?`<button class="foot ${k}">+ ${label}</button>`:'';
+const card=(v)=>{
+ const s=`<div class="card"><div class="head"><h3><span>10/12(월)</span> 우리 가족 일정</h3>${btn(v,'p','일정')}</div><div class="tabs"><button class="on">오늘</button><button>내일</button><button>모레</button></div>${sr('09:00','c','학교 현장학습','학교','k0')}${sr('16:00','c','수학 학원','학원','k1')}${sr('18:00','m','퇴근 후 장보기','기타','m4')}${foot(v,'p','일정 등록')}</div>`;
+ const t=`<div class="card"><div class="head"><h3>우리 가족 할일</h3>${btn(v,'t','할일')}</div><div class="todo"><span class="ck"></span><span class="t">준비물 챙기기</span><span class="tag k0">학교</span></div><div class="todo"><span class="ck"></span><span class="t">학원 숙제</span><span class="tag k1">학원</span></div>${foot(v,'t','할일 등록')}</div>`;
+ const g=`<div class="card"><div class="head"><h3>🌱 수아의 성장기록</h3>${btn(v,'g','기록')}</div><div class="rec"><span class="dot">🏫</span><span><strong>현장학습 다녀왔어요</strong><small>10/10 · 학교 · 사진 2장</small></span></div>${foot(v,'g','성장기록 등록')}</div>`;
+ return `<p class="line"><b>수아</b> · 초3</p>${s}${t}${g}`};
+const M={1:['1 · 원형 + (색 구분)','카드 제목 오른쪽 원형 +. 일정 보라 · 할일 파랑 · 성장기록 초록. 지금 앱의 + 버튼과 가장 비슷'],2:['2 · "+ 등록" 알약','글자가 있어 무슨 버튼인지 분명. 연한 색 배경 + 진한 글씨, 가장 부드러운 인상'],3:['3 · 둥근 네모 윤곽 +','채우지 않고 윤곽만. 화면이 가장 가볍고 깔끔 · 할일 체크 박스와 모양 통일'],4:['4 · 카드 하단 점선 버튼','제목줄은 비우고 카드 맨 아래 전폭 "+ 일정 등록". 누르기 가장 쉽고, 헤더가 깔끔'],5:['5 · 아이콘 + 라벨','작은 원형 + 와 "일정/할일/기록" 글자를 한 덩어리로. 각 카드가 무엇을 등록하는지 한눈에']};
+document.getElementById('vs').innerHTML=[1,2,3,4,5].map(v=>`<section class="v${v}"><p class="cap">${M[v][0]}</p><p class="capsub">${M[v][1]}</p><div class="phone"><div class="status"><span>9:41</span><span>LTE</span></div><div class="scroll">${card(v)}</div><div class="tabbar"><b>홈</b><span>캘린더</span><span>할일</span><span>교육정보</span></div></div></section>`).join('');
+</script></body></html>

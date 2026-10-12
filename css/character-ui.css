@@ -303,3 +303,11 @@ body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,
 .hn-hide-done i::after{content:"";position:absolute;left:2px;top:2px;width:17px;height:17px;border-radius:50%;background:#fff;transition:left .2s}
 .hn-hide-done.on i{background:#715697}.hn-hide-done.on i::after{left:17px}
 @media(prefers-reduced-motion:reduce){.hn-hide-done i,.hn-hide-done i::after{transition:none}}
+.hn-hday-tabs+.hn-timeline,.hn-hday-tabs+.fine-print{border-top:0}
+
+/* 홈 카드별 등록 버튼(둥근 네모 윤곽 +): 일정 보라 · 할일 파랑 · 성장기록 초록 */
+.hn-reg-btn{width:30px;height:30px;border-radius:10px;background:#fff;font:inherit;font-size:20px;font-weight:600;line-height:26px;padding:0;border:1.5px solid;flex:none;cursor:pointer;display:inline-grid;place-items:center}
+.hn-reg-p{color:#715697;border-color:#715697}.hn-reg-t{color:#2f6fa5;border-color:#2f6fa5}.hn-reg-g{color:#2f6b4f;border-color:#2f6b4f}
+.gr-home-row{display:flex;align-items:center;gap:10px;padding:12px 14px 12px 16px!important}
+.gr-home-row .gr-home-main{flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:10px;background:none;border:0;padding:4px 0;font:inherit;text-align:left;color:inherit;cursor:pointer}
+.gr-home-row .gr-home-main strong{font-size:15px}
