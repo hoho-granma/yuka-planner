@@ -260,3 +260,6 @@ body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,
 
 /* 사진·메시지 분석 결과의 '선택한 일정 저장' — 직접 저장 버튼처럼 선택한 프로필의 대표색 */
 .hn-shared-entry #hn-message-results [data-batch-save]:not(:disabled){background:var(--hn-person-bg)!important;border-color:var(--hn-person-bg)!important;color:#302c3c!important}
+
+/* 할일 '언제까지' 날짜칸 — 위 스위치 줄과 같은 너비·높이로 영역 안에 맞춘다 */
+.hn-task-entry>#hn-task-due:not([hidden]){display:block;box-sizing:border-box;width:calc(100% - 32px)!important;max-width:calc(100% - 32px);min-width:0;min-height:48px;margin-top:-8px!important;margin-bottom:18px!important;padding:0 13px;background:#f5f4ef;border:0;border-radius:12px;font:inherit;font-size:13px;font-weight:600;color:inherit;-webkit-appearance:none;appearance:none;text-align:left}
