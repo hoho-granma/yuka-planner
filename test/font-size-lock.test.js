@@ -18,7 +18,9 @@ const expect=[
  ['#selected-day-list .hn-timeline time',15],['#selected-day-list .hn-timeline strong',15],['#selected-day-list .hn-duration',12],
  ['#hn-family-tasks-tab .hn-section-head h3',15],['#hn-family-tasks-tab .hn-task-title',15],['#hn-family-tasks-tab .hn-task time',15],
 ];
-const html='<!doctype html><meta charset=utf8>'+css.map(f=>`<link rel=stylesheet href="file://${path.join(root,f)}">`).join('')+
+const inline=(index.match(/<style id="hn-typography-lock">[\s\S]*?<\/style>/)||[''])[0];   // index.html 끝의 최종 잠금 블록(외부 CSS 뒤에 온다)
+if(!inline){console.error('FAIL: index.html 에 hn-typography-lock 블록이 없음');process.exit(1);}
+const html='<!doctype html><meta charset=utf8>'+css.map(f=>`<link rel=stylesheet href="file://${path.join(root,f)}">`).join('')+inline+
  `<body class="acct-design theme-warm"><div id="home-body"><section class="card hn-tasks">${head}${task}</section>${tl}</div><div id="selected-day-list">${tl}</div><div id="tab-checklist"><section id="hn-family-tasks-tab" class="card hn-tasks">${head}${task}</section></div>`+
  `<script>setTimeout(function(){var q=${JSON.stringify(expect.map(e=>e[0]))};document.body.insertAdjacentHTML('afterbegin','<pre id=res>'+q.map(function(s){var e=document.querySelector(s);return e?getComputedStyle(e).fontSize:'-'}).join(',')+'</pre>')},300)</script>`;
 const file=path.join(os.tmpdir(),'font-size-lock.html');fs.writeFileSync(file,html);

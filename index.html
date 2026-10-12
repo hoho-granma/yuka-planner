@@ -350,6 +350,16 @@
   <script src="js/capture/schedule-review.js?v=12"></script>
   <link rel="stylesheet" href="css/schedule-review.css?v=12"/>
   <script src="js/app.js?v=219"></script>
+  <!-- 글자 크기 고정(최종 값). 외부 CSS 여러 개가 같은 글자에 서로 다른 크기를 !important 로 정해 두고 있어서, 기기·캐시 상태에 따라 앞선 파일의 값이 이길 수 있다(특히 iOS 웹킷의 HTTP 캐시·홈 화면 앱). HTML 은 항상 새로 받으므로 마지막 값만 여기에 한 번 더 둔다.
+       15px: 홈·달력 목록·할일의 제목·시간·기한·섹션 제목 / 12px: (2시간) 같은 소요 시간. 바꿀 때는 css/family-theme.css 의 --hn-family-list-font-size 와 함께 고친다(test/font-size-lock.test.js 가 둘을 같이 잰다). -->
+  <style id="hn-typography-lock">
+    html, body { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    #home-body .hn-section-head h3, #hn-family-tasks-tab .hn-section-head h3, #home-body .hn-schedule-date,
+    #home-body .hn-timeline, #home-body .hn-timeline strong, #home-body .hn-timeline time, #home-body .hn-task-title, #home-body .hn-task time,
+    #selected-day-list .hn-timeline, #selected-day-list .hn-timeline strong, #selected-day-list .hn-timeline time,
+    #hn-family-tasks-tab .hn-task-title, #hn-family-tasks-tab .hn-task time { font-size: 15px !important; }
+    #home-body .hn-duration, #selected-day-list .hn-duration { font-size: 12px !important; }
+  </style>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
