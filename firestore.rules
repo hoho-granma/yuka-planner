@@ -78,7 +78,7 @@ service cloud.firestore {
       allow get: if signedIn() && request.auth.uid == uid;
       allow list, create, delete: if false;
       allow update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','email','institution','situation','province','district','updatedAt'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','email','institution','situation','province','district','subdistrict','updatedAt'])
         && request.resource.data.displayName is string && request.resource.data.displayName.size() >= 1 && request.resource.data.displayName.size() <= 20
         && (!('email' in request.resource.data) || request.resource.data.email == request.auth.token.get('email',null));
     }

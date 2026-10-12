@@ -199,8 +199,9 @@
   const capPhotoOn = () => { try { return localStorage.getItem("hannun_feature_photoinput") !== "0" && !(!!window.FEATURES && window.FEATURES.photoInput === false); } catch (e) { return true; } };
   const FEATURES_CURATION_ON = () => false; // D72a: 새 홈 미리보기를 삭제했다 — 월령 두 층·지원 3단·마감 칩(MonthTiers·SubsidyTiers)은 영구 OFF 죽은 코드로 보존
   async function loadAll() {
-    const [regions, reform, policy, allow36, pregTiming, nsRaw, reappearRaw, infoRaw, eduLinksRaw, curationRaw, ...categoryFiles] = await Promise.all([
+    const [regions, subdistrictsRaw, reform, policy, allow36, pregTiming, nsRaw, reappearRaw, infoRaw, eduLinksRaw, curationRaw, ...categoryFiles] = await Promise.all([
       loadJson("data/regions.json"),
+      loadJsonOrNull("data/subdistricts.json"), // 일반구(성남시 분당구 등) — 못 읽으면 시·군·구까지만
       loadJsonOrNull("data/subsidies/reform-2027.json"),
       loadSchoolPolicy(),
       typeof AutoAfter36 === "undefined" ? null : AutoAfter36.load(fetch),
@@ -213,6 +214,7 @@
       ...TODO_CATEGORY_FILES.map(loadJson),
     ]);
     regionsData = regions;
+    if (regionsData && Array.isArray(regionsData.provinces)) regionsData.provinces.forEach((p) => { p.subdistricts = (subdistrictsRaw && subdistrictsRaw[p.code]) || {}; });
     homeReappearDays = reappearRaw && Number.isInteger(reappearRaw.reappearDaysBefore) && reappearRaw.reappearDaysBefore >= 0 ? reappearRaw.reappearDaysBefore : 7; // 홈 카드 재등장 창(data/policy/home-reappear.json)
     eduLinks = eduLinksRaw && Array.isArray(eduLinksRaw.links) ? eduLinksRaw : null;
     infoActions = typeof AutoSteps === "undefined" ? {} : AutoSteps.normalizeInfoActions(infoRaw);
@@ -1100,7 +1102,7 @@
   function famCardData(sel) {
     const HM = HouseholdView.MSG, AM = AccountView.MSG;
     // 가족 카드 공통 항목(역할·이메일·거주 지역): 값이 없어도 칸은 남긴다(세 번째 값 true). 이메일은 본인 것만 알 수 있어 다른 구성원·아이는 공란.
-    const famRegion = () => { const a = acct.account || {}; return a.province ? `${a.province} ${a.district || ""}`.trim() : profile ? `${profile.province || ""} ${profile.district || ""}`.trim() : ""; };
+    const famRegion = () => { const a = acct.account || {}; return a.province ? `${a.province} ${a.district || ""} ${a.subdistrict || ""}`.replace(/\s+/g, " ").trim() : profile ? `${profile.province || ""} ${profile.district || ""}`.trim() : ""; };
     const baseRows = (role, email) => [["역할", role, true], [AM.emailLabel || "이메일", email || "", true], ["거주 지역", famRegion(), true]];
     if (sel.kind === "member") {
       const m = HouseholdView.visibleMembers(usMembers()).find((x) => x.memberId === sel.id);
@@ -4604,7 +4606,10 @@
     const sel = ev.target.closest && ev.target.closest("[data-mem-region]");
     if (!sel || !mem.form || mem.saving) return;
     mem.form.label = memReadLabel();
-    if (sel.getAttribute("data-mem-region") === "province") { mem.form.province = sel.value; mem.form.district = ""; } else mem.form.district = sel.value;
+    const level = sel.getAttribute("data-mem-region");
+    if (level === "province") { mem.form.province = sel.value; mem.form.district = ""; mem.form.subdistrict = ""; }
+    else if (level === "district") { mem.form.district = sel.value; mem.form.subdistrict = ""; }
+    else mem.form.subdistrict = sel.value;
     mem.form.error = null;
     memRender();
   }
@@ -4639,7 +4644,7 @@
         mem.form = { memberId: id, role: acctEnabled() ? HouseholdView.formRoleOf(m) : m.role, label: m.label, error: null };
         if (acctEnabled() && id === usMeId()) { // 내 프로필 수정: 이메일(읽기)·거주 지역도 같이 보여 준다
           const a = acct.account || {};
-          Object.assign(mem.form, { self: true, email: (acct.user && acct.user.email) || a.email || "", province: a.province || "", district: a.district || "" });
+          Object.assign(mem.form, { self: true, email: (acct.user && acct.user.email) || a.email || "", province: a.province || "", district: a.district || "", subdistrict: a.subdistrict || "" });
         }
         mem.view = "form";
       } else if (action === "ask-delete") {
@@ -4664,8 +4669,11 @@
         const newEmail = form.self ? String(form.emailNew == null ? form.email || "" : form.emailNew).trim() : "";
         const emailChanged = !!newEmail && newEmail.toLowerCase() !== String(form.email || "").toLowerCase();
         form.notice = null;
+        const formSubs = form.self && form.province && form.district ? AccountView.subdistrictsOf((regionsData && regionsData.provinces || []).find((p) => p.code === form.province), form.district) : [];
         if (v.ok && form.self && !!form.province !== !!form.district) {
           form.error = AccountView.MSG.errRegion; // 시·도만 고르고 시·군·구를 비워 두면 저장하지 않는다
+        } else if (v.ok && formSubs.length && !formSubs.includes(form.subdistrict)) {
+          form.error = AccountView.MSG.errSubdistrict; // 일반구가 있는 시는 구까지 고른다
         } else if (v.ok && emailChanged && !AuthService.validateCredentials(newEmail, "x".repeat(AuthService.PASSWORD_MIN)).ok) {
           form.error = AuthService.MSG.invalidEmail;
         } else if (v.ok && emailChanged && !form.emailPassword) {
@@ -4685,8 +4693,8 @@
             if (!r || !r.ok) throw new Error((r && r.reason) || "member-save-failed");
             // H2: 내 구성원의 이름·역할을 바꾸면 계정 문서도 같이 갱신한다(role 은 규칙 허용 4종으로 변환)
             if (acctEnabled() && form.memberId && form.memberId === usMeId() && acct.sync && acct.user) {
-              const u = await acct.sync.updateProfile(acct.user.uid, { displayName: v.label, role: v.role, ...(form.self && form.province && form.district ? { province: form.province, district: form.district } : {}) });
-              if (u && u.ok && acct.account) Object.assign(acct.account, { displayName: u.patch.displayName || acct.account.displayName, role: u.patch.role || acct.account.role, ...(u.patch.province ? { province: u.patch.province, district: u.patch.district } : {}) });
+              const u = await acct.sync.updateProfile(acct.user.uid, { displayName: v.label, role: v.role, ...(form.self && form.province && form.district ? { province: form.province, district: form.district, subdistrict: formSubs.length ? form.subdistrict : "" } : {}) });
+              if (u && u.ok && acct.account) Object.assign(acct.account, { displayName: u.patch.displayName || acct.account.displayName, role: u.patch.role || acct.account.role, ...(u.patch.province ? { province: u.patch.province, district: u.patch.district, subdistrict: u.patch.subdistrict || "" } : {}) });
             }
             if (emailChanged) { // 이름·역할·지역 저장 뒤 이메일 변경 요청 — 인증 메일의 링크를 눌러야 실제로 바뀐다
               const c = acct.svc ? await acct.svc.changeEmail({ newEmail, password: form.emailPassword }) : { ok: false, message: AuthService.MSG.notReady };
@@ -7069,6 +7077,11 @@
       acct.form[k] = ev.target.value;
       if (k === "province") {
         acct.form.district = ""; // 시·도가 바뀌면 시·군·구를 다시 고르게 한다
+        acct.form.subdistrict = "";
+        return acctShowSheet();
+      }
+      if (k === "district") { // 시·군이 바뀌면 구를 다시 고르게 하고, 일반구가 있는 시면 구 선택칸이 나온다
+        acct.form.subdistrict = "";
         return acctShowSheet();
       }
       // 가족 코드 입력 여부가 바뀌면(신규↔합류) 아래 항목이 달라지므로 다시 그리고 입력 위치를 되돌린다.
@@ -7230,7 +7243,7 @@
       acctClearIntent();acct.account=null;acctApprovalGate("PENDING");acctSplashRelease();return {ok:true,pending:true};
     }
     if(acctApprovalEnabled()) {acct.approvalState="ACTIVE";acct.ownerReady=true;}
-    acct.account = { displayName: intent.displayName, role: intent.role, memberId: res.memberId, householdId: res.householdId, householdCode: res.householdCode, ...(intent.situation ? { situation: intent.situation } : {}), ...(intent.province ? { province: intent.province, district: intent.district } : {}) };
+    acct.account = { displayName: intent.displayName, role: intent.role, memberId: res.memberId, householdId: res.householdId, householdCode: res.householdCode, ...(intent.situation ? { situation: intent.situation } : {}), ...(intent.province ? { province: intent.province, district: intent.district, ...(intent.subdistrict ? { subdistrict: intent.subdistrict } : {}) } : {}) };
     acct.accessLog?.record("app_open");
     if (hh.code && hh.code !== res.householdCode) {
       // 이 기기에 다른 가구가 연결돼 있다: 사용자가 고르기 전에는 바꾸지 않는다(선택 시트 — 계정 가족 쓰기 / 이 기기 아이를 가족에 추가).

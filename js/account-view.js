@@ -86,6 +86,8 @@
     regionLabel: "사는 지역 (선택)",
     provincePlaceholder: "시·도",
     districtPlaceholder: "시·군·구",
+    subdistrictPlaceholder: "구",
+    errSubdistrict: "구까지 골라 주세요.",
     regionHint: "📍 사는 지역(시·도, 시·군·구)을 알려 주시면 우리 동네 육아 지원금·혜택을 자동으로 찾아 캘린더에 표시해 신청 기한을 놓치지 않게 도와드려요. 선택 사항이고, 상세 주소는 받지 않아요.",
     errRegion: "시·도와 시·군·구를 함께 골라 주세요.",
     // D5: 아이가 없는 홈
@@ -254,6 +256,11 @@
     return f.situation === "HAS_CHILD" ? ROLES_HAS_CHILD : f.situation === "EXPECTING" ? ROLES_EXPECTING : [];
   }
   /** 폼의 서로 의존하는 값을 맞춘다(선택지에 없는 역할 지움, 합류면 자녀 유무·지역 지움, 시·도가 바뀌면 시·군·구 지움). 같은 객체를 돌려준다. */
+  /** 시·도 항목 p 의 시(district)에 딸린 일반구 목록(없으면 빈 배열). data/subdistricts.json 을 앱이 provinces[].subdistricts 로 붙인다. */
+  function subdistrictsOf(p, district) {
+    const m = p && p.subdistricts;
+    return m && Array.isArray(m[district]) ? m[district] : [];
+  }
   function syncForm(form, regions) {
     const f = form;
     if (!roleOptions(f).some(([k]) => k === f.role)) f.role = "";
@@ -261,6 +268,10 @@
     if (f.district && regions) {
       const p = regions.find((x) => x.code === f.province);
       if (!p || !p.districts.includes(f.district)) f.district = "";
+    }
+    if (f.subdistrict) {
+      const p = regions && regions.find((x) => x.code === f.province);
+      if (!f.district || !subdistrictsOf(p, f.district).includes(f.subdistrict)) f.subdistrict = "";
     }
     return f;
   }
@@ -283,7 +294,7 @@
     if (joining && !CODE_RE.test(code)) errors.familyCode = f.join === true && code === "" ? MSG.onboard.errJoinCode : MSG.errCode;
     if (!joining && f.situation !== "HAS_CHILD" && f.situation !== "EXPECTING") errors.situation = MSG.errSituation;
     if ((!joining || f.fromLink === true) && !roleOptions(f).some(([k]) => k === f.role)) errors.role = MSG.errRole; // H2: 합류는 자리를 고르면 역할이 정해지므로 가입 폼에서 묻지 않는다
-    let province = "", district = "";
+    let province = "", district = "", subdistrict = "";
     if (!joining) {
       province = String(f.province || "").trim();
       district = String(f.district || "").trim();
@@ -291,10 +302,16 @@
         const p = regions ? regions.find((x) => x.code === province) : null;
         const known = regions ? !!p && p.districts.includes(district) : province.length <= REGION_MAX && district.length <= REGION_MAX;
         if (!province || !district || !known) errors.region = MSG.errRegion;
+        else {
+          const subs = subdistrictsOf(p, district); // 성남시처럼 일반구가 있으면 구까지 고르게 한다
+          subdistrict = String(f.subdistrict || "").trim();
+          if (subs.length && !subs.includes(subdistrict)) errors.region = MSG.errSubdistrict;
+          if (!subs.length) subdistrict = "";
+        }
       }
     }
     const ok = Object.keys(errors).length === 0;
-    const intent = ok ? { email, displayName: name, role: f.fromLink === true ? ACCOUNT_ROLE_OF(f.role) : f.role || null, ...(f.fromLink === true ? { memberRole: f.role, ...(f.from ? { invitedFrom: f.from } : {}) } : {}), joiningCode: joining ? code : null, ...(joining ? {} : { situation: f.situation, ...(province ? { province, district } : {}) }) } : null;
+    const intent = ok ? { email, displayName: name, role: f.fromLink === true ? ACCOUNT_ROLE_OF(f.role) : f.role || null, ...(f.fromLink === true ? { memberRole: f.role, ...(f.from ? { invitedFrom: f.from } : {}) } : {}), joiningCode: joining ? code : null, ...(joining ? {} : { situation: f.situation, ...(province ? { province, district, ...(subdistrict ? { subdistrict } : {}) } : {}) }) } : null;
     return { ok, errors, intent };
   }
   /** 연결 복구 폼 검증: 역할·표시 이름 필수, 합류(joining)면 8자리 코드 필수. intent 는 가입 의도와 같은 모양(상황·기관 없음). */
@@ -490,12 +507,12 @@
     const situation = joining ? "" : radios("situation", MSG.situationLabel, SITUATIONS, f.situation, e);
     const roles = roleOptions(f);
     const role = roles.length && (!joining || f.fromLink === true) ? radios("role", MSG.roleLabel, roles, f.role, e) : "";
-    const region = joining || !regions.length ? "" : `<div class="acct-field"><label>${esc(MSG.regionLabel)}</label>${select("province", MSG.provincePlaceholder, regions.map((p) => [p.code, p.name]), f.province || "")}${select("district", MSG.districtPlaceholder, (prov ? prov.districts : []).map((d) => [d, d]), f.district || "", !prov)}${err(e, "region")}<p class="fine-print acct-region-hint">${esc(MSG.regionHint)}</p></div>`;
+    const region = joining || !regions.length ? "" : `<div class="acct-field"><label>${esc(MSG.regionLabel)}</label>${select("province", MSG.provincePlaceholder, regions.map((p) => [p.code, p.name]), f.province || "")}${select("district", MSG.districtPlaceholder, (prov ? prov.districts : []).map((d) => [d, d]), f.district || "", !prov)}${subdistrictsOf(prov, f.district).length ? select("subdistrict", MSG.subdistrictPlaceholder, subdistrictsOf(prov, f.district).map((d) => [d, d]), f.subdistrict || "") : ""}${err(e, "region")}<p class="fine-print acct-region-hint">${esc(MSG.regionHint)}</p></div>`;
     const codeField = `<div class="acct-field"><label>${esc(join ? MSG.onboard.joinTitle : MSG.codeLabel)}</label><input type="text" class="acct-input acct-code" data-acct-input="familyCode" maxlength="8" placeholder="${esc(MSG.codePlaceholder)}" value="${esc(f.familyCode || "")}" autocapitalize="characters" autocomplete="off" spellcheck="false" />${join ? "" : `<p class="fine-print">${esc(MSG.codeHint)}</p>`}${err(e, "familyCode")}</div>`;
     const account = `${input("email", MSG.emailLabel, "email", f.email || "", 'inputmode="email" autocapitalize="off"')}${err(e, "email")}
       ${input("password", MSG.passwordLabel, "password", f.password || "", 'autocomplete="new-password"')}${err(e, "password")}
       ${input("displayName", MSG.nameLabel, "text", f.displayName || "", 'maxlength="20"')}${err(e, "displayName")}`;
-    if(s.unified===true){return `<div class="acct-form acct-signup-unified" data-acct-form="signup"><h3>${esc(MSG.signupTitle||'회원가입')}</h3>${f.fromLink===true?`<p class="fine-print">${esc(MSG.joinLinkLead)}</p>`:''}${account}${situation}${role}${codeField}${region}${s.error?`<p class="acct-err">${esc(s.error)}</p>`:''}${join?`<button type="button" class="acct-link" data-acct-action="join-off">${esc(MSG.onboard.joinOff)}</button>`:''}<button type="button" class="acct-btn-primary" data-acct-action="submit-signup"${s.busy?' disabled':''}>${esc(s.busy?MSG.signingUp:MSG.submitSignup)}</button><button type="button" class="acct-link" data-acct-action="open-login">${esc(MSG.switchToLogin)}</button></div>`;}
+    if(s.unified===true){return `<div class="acct-form acct-signup-unified" data-acct-form="signup"><h3>${esc(MSG.signupTitle||'회원가입')}</h3>${f.fromLink===true?`<p class="fine-print">${esc(MSG.joinLinkLead)}</p>`:''}${account}${situation}${role}${codeField}${region}${s.error?`<p class="acct-err">${esc(s.error)}</p>`:''}${join?`<button type="button" class="acct-link" data-acct-action="join-off">${esc(MSG.onboard.joinOff)}</button>`:''}<button type="button" class="acct-btn-primary" data-acct-action="submit-signup"${s.busy?' disabled':''}>${esc(s.busy?MSG.signingUp:MSG.submitSignup)}</button><button type="button" class="acct-link acct-sub-link" data-acct-action="open-login">${esc(MSG.switchToLogin)}</button></div>`;}
     const q = step === 1 ? MSG.stepQ1 : step === 2 ? (joining ? MSG.stepQ2Join : MSG.stepQ2) : MSG.stepQ3;
     const lead = step === 1 ? (f.fromLink === true ? MSG.joinLinkLead : joining ? "" : MSG.signupLead) : step === 2 && join && f.fromLink !== true ? MSG.onboard.joinSheetLead : "";
     const body = step === 1 ? account : step === 2 ? `${situation}${role}${codeField}` : region;
@@ -511,7 +528,7 @@
       ${body}
       ${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}
       ${join && last ? `<button type="button" class="acct-link" data-acct-action="join-off"${dis}>${esc(MSG.onboard.joinOff)}</button>` : ""}
-      ${step === 1 ? `<button type="button" class="acct-link ob-switch" data-acct-action="open-login"${dis}>${esc(MSG.switchToLogin)}</button>` : ""}
+      ${step === 1 ? `<button type="button" class="acct-link acct-sub-link ob-switch" data-acct-action="open-login"${dis}>${esc(MSG.switchToLogin)}</button>` : ""}
       <div class="acct-step-foot">${back}${go}</div></div>`;
   }
   /** 내 정보 시트(아이가 없는 홈에서 열린다): 계정 슬롯 + 가족 캘린더 코드(있으면) + 닫기. */
@@ -580,9 +597,8 @@
       ${input("password", MSG.passwordLabel, "password", f.password || "", 'autocomplete="current-password"')}${err(e, "password")}
       ${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}
       <button type="button" class="btn-complete" data-acct-action="submit-login"${s.busy ? " disabled" : ""}>${esc(s.busy ? MSG.loggingIn : MSG.submitLogin)}</button>
-      <button type="button" class="btn-text" data-acct-action="reset-password"${s.busy ? " disabled" : ""}>${esc(MSG.forgot)}</button>
-      <button type="button" class="acct-link ob-switch" data-acct-action="open-signup"${s.busy ? " disabled" : ""}>${esc(MSG.switchToSignup)}</button>
-      <button type="button" class="btn-close" data-acct-action="close"${s.busy ? " disabled" : ""}>${esc(MSG.cancel)}</button></div>`;
+      <button type="button" class="acct-link acct-sub-link" data-acct-action="reset-password"${s.busy ? " disabled" : ""}>${esc(MSG.forgot)}</button>
+      <button type="button" class="acct-link acct-sub-link ob-switch" data-acct-action="open-signup"${s.busy ? " disabled" : ""}>${esc(MSG.switchToSignup)}</button></div>`;
   }
   // ── Q3 초대: 역할 3종·링크·문구(순수) ───────────────────────────────────────────────────────
   const INVITE_BASE = "https://hoho-granma.github.io/yuka-planner/";
@@ -662,5 +678,5 @@
       <button type="button" class="btn-complete" data-acct-action="confirm-logout">${esc(MSG.logout)}</button><button type="button" class="btn-close" data-acct-action="close">${esc(MSG.cancel)}</button></div>`;
   }
 
-  return { MSG, renderFamCard, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, signupTotal, signupStep, signupStepKeys, firstErrorStep, INVITE_ROLES, INVITE_LABEL, inviteLink, inviteText, parseJoinParams, renderLanding, slideIndex, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderFamilySlot, renderMyCard, renderSlotPick, renderRolePick, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderAddTiles, renderAddMenu, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderNoChildBanner, renderNoChildHome, renderNoChildTab, renderChildSheet, renderMe, roleOptions, syncForm, SITUATIONS, esc };
+  return { subdistrictsOf, MSG, renderFamCard, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, signupTotal, signupStep, signupStepKeys, firstErrorStep, INVITE_ROLES, INVITE_LABEL, inviteLink, inviteText, parseJoinParams, renderLanding, slideIndex, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderFamilySlot, renderMyCard, renderSlotPick, renderRolePick, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderAddTiles, renderAddMenu, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderNoChildBanner, renderNoChildHome, renderNoChildTab, renderChildSheet, renderMe, roleOptions, syncForm, SITUATIONS, esc };
 });

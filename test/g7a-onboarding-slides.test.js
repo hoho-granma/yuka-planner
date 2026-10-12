@@ -39,8 +39,8 @@ test("D41 온보딩 첫 화면: 로고 왼쪽 위 32px·원 2개 변수색(196/1
   assert.ok(/\.acct-ob1-top \{[^}]*flex: 1 1 auto[^}]*justify-content: center; align-items: center; text-align: center; padding: 0 24px/.test(blk));
   assert.ok(/\.acct-cta \{[^}]*border: 0/.test(blk) && /open-login"\] \{[^}]*min-height: 52px[^}]*var\(--nd-indigo\)/.test(blk) && /open-signup"\] \{[^}]*min-height: 48px[^}]*background: transparent/.test(blk));
   const lg = AV.renderLogin({}), su = AV.renderSignup({ form: {} });
-  assert.ok(lg.includes('class="acct-link ob-switch" data-acct-action="open-signup">처음이세요? 회원가입') && lg.indexOf("ob-switch") < lg.indexOf('data-acct-action="close"'));
-  assert.ok(su.includes('class="acct-link ob-switch" data-acct-action="open-login">이미 계정이 있어요 · 로그인') && su.indexOf("ob-switch") < su.indexOf("acct-step-foot"));
+  assert.ok(lg.includes('class="acct-link acct-sub-link ob-switch" data-acct-action="open-signup">처음이세요? 회원가입') && !lg.includes('data-acct-action="close"'), "로그인 시트: 보조 링크는 회색 공통 클래스, 맨 밑 취소 버튼 없음");
+  assert.ok(su.includes('class="acct-link acct-sub-link ob-switch" data-acct-action="open-login">이미 계정이 있어요 · 로그인') && su.indexOf("ob-switch") < su.indexOf("acct-step-foot"));
   assert.ok(!AV.renderSignup({ form: { step: 2 } }).includes("ob-switch"), "2단계 이후엔 전환 링크 없음");
 });
 test("D41 폼 시트 회귀 방지: 시트(.modal)가 첫 화면 카피 층보다 위·시트 면 불투명·폼 안에 카피 없음·D47 가운데 카드 + 아래·위 정렬 아님", () => {

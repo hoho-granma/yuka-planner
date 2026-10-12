@@ -370,10 +370,11 @@
     if (!f.self) return "";
     const regions = Array.isArray(state.regions) ? state.regions : [];
     const prov = regions.find((p) => p.code === f.province);
+    const subs = prov && prov.subdistricts && Array.isArray(prov.subdistricts[f.district]) ? prov.subdistricts[f.district] : [];
     const opt = (v, cur) => `<option value="${esc(v)}"${cur === v ? " selected" : ""}>${esc(v)}</option>`;
     const email = `<div class="hh-field"><label>이메일</label><input type="email" class="hh-input hh-input-plain" data-mem-input="email" value="${esc(f.emailNew != null ? f.emailNew : f.email || "")}" autocomplete="email" aria-label="이메일" /><input type="password" class="hh-input hh-input-plain" data-mem-input="emailPassword" value="${esc(f.emailPassword || "")}" autocomplete="current-password" placeholder="이메일을 바꿀 때만 현재 비밀번호" aria-label="현재 비밀번호" /></div>`;
     const region = regions.length
-      ? `<div class="hh-field"><label>거주 지역</label><div class="hh-region"><select class="hh-input hh-input-plain" data-mem-region="province" aria-label="시·도"><option value="">시·도</option>${regions.map((p) => opt(p.code, f.province)).join("")}</select><select class="hh-input hh-input-plain" data-mem-region="district" aria-label="시·군·구"${prov ? "" : " disabled"}><option value="">시·군·구</option>${prov ? prov.districts.map((d) => opt(d, f.district)).join("") : ""}</select></div></div>`
+      ? `<div class="hh-field"><label>거주 지역</label><div class="hh-region"><select class="hh-input hh-input-plain" data-mem-region="province" aria-label="시·도"><option value="">시·도</option>${regions.map((p) => opt(p.code, f.province)).join("")}</select><select class="hh-input hh-input-plain" data-mem-region="district" aria-label="시·군·구"${prov ? "" : " disabled"}><option value="">시·군·구</option>${prov ? prov.districts.map((d) => opt(d, f.district)).join("") : ""}</select>${subs.length ? `<select class="hh-input hh-input-plain" data-mem-region="subdistrict" aria-label="구"><option value="">구</option>${subs.map((d) => opt(d, f.subdistrict)).join("")}</select>` : ""}</div></div>`
       : "";
     return email + region;
   }

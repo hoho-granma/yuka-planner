@@ -63,7 +63,7 @@ function createService(db, {now=Date.now, codeGenerator=newCode, emailOf=async()
   }
   function profileFields(data) {
     const out={};
-    for(const k of ['province','district'])if(typeof data[k]==='string'&&data[k].length<=30)out[k]=data[k];
+    for(const k of ['province','district','subdistrict'])if(typeof data[k]==='string'&&data[k].length<=30)out[k]=data[k];
     if(['HAS_CHILD','EXPECTING'].includes(data.situation))out.situation=data.situation;
     if(['DAYCARE','KINDERGARTEN','ELEMENTARY','NONE'].includes(data.institution))out.institution=data.institution;
     return out;
