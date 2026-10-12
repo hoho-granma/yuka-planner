@@ -4,7 +4,8 @@
 @media print{.page-close{display:none}}
 main>h1{padding-right:42px}
 .framed .page-close{display:none}.framed main>h1{padding-right:0}
-</style></head>
+.embed .page-close,.embed #close{display:none!important}
+</style><script>if(/[?&]embed=1/.test(location.search))document.documentElement.classList.add("embed")</script></head>
 <body><button type="button" class="page-close" aria-label="닫기" onclick="window.close();setTimeout(function(){if(!window.closed)location.href='index.html';},150)">×</button><main><h1 id="title">학기별 배우는 내용</h1><p class="note" id="meta"></p>
 <div class="bar" id="terms" role="group" aria-label="학기"></div>
 <p class="guide"><b>1</b> 동그라미 표시는 교과 이해확인 문제지에 관련 문항이 있는 단원이에요. 단원 전체를 확인한다는 뜻은 아니에요. 오른쪽 태그는 그 단원에서 배우는 내용이에요.</p><p class="note" id="gnote"></p><div id="out"></div>

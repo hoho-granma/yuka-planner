@@ -329,3 +329,13 @@ body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,
 .hn-sheet .gr-editor .gr-primary{margin-top:18px;border:0;border-radius:12px;background:var(--hn-person-bg);color:#302c3c;font-weight:800}
 .hn-task-entry.hn-sheet-frame>.hn-sheet-body{margin-left:0!important;margin-right:0!important;padding:0}
 .hn-sheet-iframe{display:block;width:100%;height:78dvh;min-height:420px;border:0;background:#fff}
+
+/* 창 레이아웃: 제목 줄은 고정, 내용 영역만 안에서 스크롤(할일 입력창처럼 영역이 움직이지 않는다) */
+.modal-panel:has(.hn-sheet){display:flex!important;flex-direction:column;height:min(92dvh,780px);max-height:92dvh;overflow:hidden!important;padding:0!important}
+.hn-sheet{display:flex;flex-direction:column;flex:1;min-height:0;width:100%}
+.hn-sheet>.hn-section-head{flex:none}
+.hn-sheet>.hn-sheet-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.hn-task-entry.hn-sheet-frame>.hn-sheet-body{overflow:hidden;padding:0}
+.hn-sheet-iframe{height:100%;min-height:0}
+/* 할일 탭: 맨 아래 넓은 '할일 추가하기' 버튼 */
+.hn-todo-add-wide{display:block;width:100%;margin-top:10px;border:1px dashed #cfc7dd;background:#faf8fd;border-radius:12px;padding:13px;font:inherit;font-size:14px;font-weight:800;color:#715697;cursor:pointer}

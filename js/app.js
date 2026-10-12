@@ -3583,7 +3583,7 @@
     const c = growthHomeCountCache;
     if (c && c.scope === scope && c.n != null && Date.now() - c.at < 60000) return;
     try {
-      const n = await GrowthRecords.count(scope, activeGrowthBackend());
+      const n = await GrowthRecords.count(scope, activeGrowthBackend(), hh.hid || null);
       growthHomeCountCache = { scope, n, at: Date.now() };
     } catch (e) { if (!growthHomeCountCache || growthHomeCountCache.scope !== scope) growthHomeCountCache = { scope, n: null, failed: true, at: Date.now() }; }
     const box = el("gr-home-count");
@@ -3595,13 +3595,13 @@
     if (hnSheetDispose) { hnSheetDispose(); hnSheetDispose = null; }
     const key = usActiveChildKey(), tint = key && typeof charPerson === "function" ? charTint(charPerson("CHILD:" + key)) : "#eddfcf";
     modalMode = "profile";
-    el("modal-content").innerHTML = `<div class="hn-entry hn-task-entry hn-sheet${o && o.frame ? " hn-sheet-frame" : ""}" style="--hn-person-bg:${tint}"><div class="hn-section-head"><h3>${esc(title)}</h3><button type="button" class="hn-sheet-close" data-hn-sheet-close aria-label="닫기">✕</button></div><div class="hn-sheet-body">${bodyHtml || ""}</div></div>`;
+    el("modal-content").innerHTML = `<div class="hn-entry hn-task-entry hn-sheet${o && o.frame ? " hn-sheet-frame" : ""}" style="--hn-person-bg:${tint}"><div class="hn-section-head"><h3>${esc(title)}</h3></div><div class="hn-sheet-body">${bodyHtml || ""}</div></div>`;
     el("detail-modal").classList.remove("hidden");
     return el("modal-content").querySelector(".hn-sheet-body");
   }
   function hnCloseSheet() { if (hnSheetDispose) { hnSheetDispose(); hnSheetDispose = null; } closeDetail(); }
   document.addEventListener("click", (e) => { if (e.target.closest("[data-hn-sheet-close]")) hnCloseSheet(); });
-  function hnOpenFrameSheet(title, url) { hnOpenSheet(title, `<iframe class="hn-sheet-iframe" src="${esc(url)}" title="${esc(title)}"></iframe>`, { frame: true }); }
+  function hnOpenFrameSheet(title, url) { url += (url.includes("?") ? "&" : "?") + "embed=1"; hnOpenSheet(title, `<iframe class="hn-sheet-iframe" src="${esc(url)}" title="${esc(title)}"></iframe>`, { frame: true }); }
   // 성장기록 입력 폼(오늘의 성장 남기기 · 결과 등록 · 수정)을 창으로 연다. 저장하면 창을 닫고 홈 건수를 올리며, 성장기록 탭이 열려 있으면 다시 불러온다.
   function hnOpenGrowthForm(record, defaults) {
     const scope = growthHomeScope();
@@ -8148,7 +8148,7 @@
   function charRow(o){const doc=usDocById(o.scheduleId)||o,person=charPerson(charOccOwner(o)),badge=CharacterUI.categoryBadge(doc.categoryLabel||doc.category,person);return ScheduleReview.timeline({...o,tags:doc.tags||[],categoryLabel:badge.label ,category:''},{ownerHtml:charImage(person),categoryColor:badge.color,attributes:`data-char-schedule="${esc(o.scheduleId)}" data-us-id="${esc(o.scheduleId)}" data-us-key="${esc(o.key||'')}"`});}
   let hnTodoHideDone=false;try{hnTodoHideDone=localStorage.getItem('hn_todo_hide_done')==='1';}catch(e){} // 할일 페이지의 '완료 숨기기'(이 기기에서만 기억)
   function charTodoRows(home){if(!usActive())return '';const now=toISODate(new Date()), people=charPeople(false);return CharacterUI.list(HouseholdSync.getTodos(hh.hid).map(t=>{const l=usLinks().find(l=>l.familyCode===t.childKey);return !t.ownerKey&&l?{...t,ownerKey:'CHILD:'+l.childKey}:t;}),people,now,home).filter(t=>home||!hnTodoHideDone||!t.done).map(t=>{const dl=CharacterUI.deadline(t.dueDate,now);return `<div class="hn-task${t.done?' done':''}"><button class="hn-check" data-char-toggle="${esc(t.id)}" aria-label="${t.done?'완료 취소':'완료'}">${t.done?'✓':''}</button>${charImage(charPerson(CharacterUI.owner(t)))}${dl.text?`<time>${esc(dl.text)}</time>`:''}<button class="hn-task-title" data-char-edit="${esc(t.id)}">${esc(t.title)}</button>${dl.tomorrow?'<b class="hn-d1">D-1</b>':''}${t.category?`<span class="hn-category" style="background:${CharacterUI.categoryBadge(t.category,charPerson(CharacterUI.owner(t))).color}">${esc(t.category)}</span>`:''}</div>`;}).join('');}
-  function charTodoSection(home){const actions=home?'':`<label class="hn-hide-done${hnTodoHideDone?' on':''}" role="switch" aria-checked="${hnTodoHideDone}" tabindex="0" data-hn-hidedone><i aria-hidden="true"></i>완료 숨기기</label>`;return `<section class="card hn-tasks" id="hn-family-tasks${home?'':'-tab'}"><div class="hn-section-head"><h3>챙길 것</h3><div class="hn-head-actions">${actions}<button class="hn-reg-link" data-char-add aria-label="할일 등록">+ 할일</button></div></div>${charTodoRows(home)||`<p class="fine-print">${!home&&hnTodoHideDone?'남은 할일이 없어요.':'등록된 할일이 없어요.'}</p>`}</section>`;}
+  function charTodoSection(home){const actions=home?'':`<label class="hn-hide-done${hnTodoHideDone?' on':''}" role="switch" aria-checked="${hnTodoHideDone}" tabindex="0" data-hn-hidedone><i aria-hidden="true"></i>완료 숨기기</label>`;const addTop=home?'<button class="hn-reg-link" data-char-add aria-label="할일 등록">+ 할일</button>':'';const addWide=home?'':'<button type="button" class="hn-todo-add-wide" data-char-add>+ 할일 추가하기</button>';return `<section class="card hn-tasks" id="hn-family-tasks${home?'':'-tab'}"><div class="hn-section-head"><h3>챙길 것</h3><div class="hn-head-actions">${actions}${addTop}</div></div>${charTodoRows(home)||`<p class="fine-print">${!home&&hnTodoHideDone?'남은 할일이 없어요.':'등록된 할일이 없어요.'}</p>`}${addWide}</section>`;}
   const hnToggleHideDone=()=>{hnTodoHideDone=!hnTodoHideDone;try{localStorage.setItem('hn_todo_hide_done',hnTodoHideDone?'1':'0');}catch(e){}renderChecklistTab();};
   document.addEventListener('click',e=>{if(e.target.closest('[data-hn-hidedone]'))hnToggleHideDone();});
   document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.closest&&e.target.closest('[data-hn-hidedone]')){e.preventDefault();hnToggleHideDone();}});
