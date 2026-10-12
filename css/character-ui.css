@@ -257,3 +257,6 @@ body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,
 .calendar-weekdays>span:first-child, #calendar-grid .is-sunday .num, #calendar-grid .is-sunday .wk-num {color:#d94b40}
 .calendar-weekdays>span:last-child, #calendar-grid .is-saturday:not(.is-holiday) .num, #calendar-grid .is-saturday:not(.is-holiday) .wk-num {color:#3974bd}
 #selected-day-list .hn-timeline strong {font-size:14px!important;font-weight:650;line-height:1.5}
+
+/* 사진·메시지 분석 결과의 '선택한 일정 저장' — 직접 저장 버튼처럼 선택한 프로필의 대표색 */
+.hn-shared-entry #hn-message-results [data-batch-save]:not(:disabled){background:var(--hn-person-bg)!important;border-color:var(--hn-person-bg)!important;color:#302c3c!important}

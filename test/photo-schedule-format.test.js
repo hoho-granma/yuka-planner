@@ -119,3 +119,10 @@ test('후보의 명시된 종료시간은 기본 폼의 자동 종료시간과 �
  const f=Review.candidateForm({title:'체험',date:'2026-10-25',startTime:'10:00',endTime:'16:00',category:'체험'},{...base,endAuto:true});
  assert.equal(View.formToInput(f).endTime,'16:00');
 });
+
+test('기존 목록에 없던 새 분류(상담 등)도 기타 + 분류 태그로 저장됨',()=>{
+ assert.equal(Review.categoryKey('상담'),'ETC');assert.equal(Review.categoryKey('상담','MEDICAL'),'MEDICAL');assert.equal(Review.categoryKey('상담','잘못된값'),'ETC');
+ const form=Review.candidateForm({title:'전화 상담 예약',date:'2026-01-04',startTime:'15:00',category:'상담'},{...base,category:'',tags:[]});
+ const prepared=View.prepareSave(form,1);assert.equal(prepared.ok,true);
+ const doc=Schedule.buildCreateDoc(prepared.input,1).doc;assert.equal(doc.category,'ETC');assert.equal(doc.categoryLabel,'상담');assert.deepEqual(doc.tags,['상담']);
+});
