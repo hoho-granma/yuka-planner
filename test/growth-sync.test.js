@@ -19,3 +19,14 @@ test('list read skips photo download; loadImage fetches one photo on demand',asy
 test('pendingLocal reuses the list from the preceding read, then re-queries',async()=>{let lists=0;const f=fixture(),r=record();await f.api.importLocal([r],r.scope);
  const api=create({getContext:()=>({uid:'u1',familyId:'h1',childKey:'c1',childCode:'ABC123'}),hash,adapter:{list:async(p,k)=>{lists++;return[]}}});
  await api.read(r.scope,{attachments:false});await api.pendingLocal([r],r.scope);assert.equal(lists,1);await api.pendingLocal([r],r.scope);assert.equal(lists,2);assert.deepEqual(await api.pendingLocal([],r.scope),[]);});
+test('thumbnail is uploaded beside the photo; list loads the thumb, full loads the original; thumb failure never blocks save',async()=>{
+ const store=new Map(),docs=new Map();let ctx={uid:'u1',familyId:'h1',childKey:'c1'},thumbFail=false;
+ const adapter={list:async(p,k)=>[...docs].filter(([x,d])=>x.startsWith(p+'/')&&d.childKey===k).map(([x,d])=>({id:x.split('/').at(-1),...d})),transaction:async(p,f)=>{const d=f(docs.get(p)||null);if(d)docs.set(p,d);return d||docs.get(p);},
+  upload:async(p,b)=>{if(thumbFail&&/thumb_/.test(p))throw Error('rules');store.set(p,b);},image:async p=>store.get(p),thumbnail:async()=>new Blob(['t'],{type:'image/jpeg'})};
+ const api=create({getContext:()=>ctx,adapter,hash,now:()=>10});
+ const s=await api.save(record({image:new Blob(['image'],{type:'image/png'})}));
+ assert.match(s.attachment.thumbPath,/\/thumb_[a-f0-9]{64}$/);assert.equal(store.size,2);
+ const rows=await api.read(s.scope,{attachments:false});const t=await api.loadImage(rows[0]);assert.equal(t.thumb.size,1);assert.equal(t.image,null);
+ const f=await api.loadImage(rows[0],{full:true});assert.equal(f.image.size,5);
+ thumbFail=true;const s2=await api.save(record({id:'r2',image:new Blob(['img2'],{type:'image/png'})}));assert.equal(s2.attachment.thumbPath,undefined);assert.equal(s2.image.size,4);
+ const edited=await api.save({...rows[0],title:'새 제목'});assert.equal(edited.attachment.thumbPath,s.attachment.thumbPath);});

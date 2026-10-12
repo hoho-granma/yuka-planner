@@ -251,12 +251,14 @@ service cloud.firestore {
           && d.createdByUid is string && d.updatedByUid == request.auth.uid
           && d.createdAt is int && d.updatedAt is int && d.revision is int
           && (d.attachment == null || (d.attachment is map
-            && d.attachment.keys().hasOnly(['storagePath','contentType','size','hash'])
+            && d.attachment.keys().hasOnly(['storagePath','contentType','size','hash','thumbPath'])
             && d.attachment.storagePath is string
             && d.attachment.storagePath.matches('^families/' + householdId + '/growthRecords/' + recordId + '/image_[a-f0-9]{64}$')
             && d.attachment.contentType is string && d.attachment.contentType.matches('^image/.*')
             && d.attachment.size is int && d.attachment.size > 0 && d.attachment.size <= 15728640
-            && d.attachment.hash is string && d.attachment.hash.matches('^[a-f0-9]{64}$')))
+            && d.attachment.hash is string && d.attachment.hash.matches('^[a-f0-9]{64}$')
+            && (!('thumbPath' in d.attachment) || (d.attachment.thumbPath is string
+              && d.attachment.thumbPath.matches('^families/' + householdId + '/growthRecords/' + recordId + '/thumb_[a-f0-9]{64}$')))))
           && (!('importKey' in d) || (d.importKey == recordId && d.importFingerprint is string && d.importFingerprint.matches('^[a-f0-9]{64}$') && d.legacyCreatedAt is int))
           && (!('deletedAt' in d) || d.deletedAt is int);
       }

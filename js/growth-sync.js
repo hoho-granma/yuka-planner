@@ -32,6 +32,15 @@
       async transaction(path,update){return db.runTransaction(async tx=>{const doc=db.doc(path),s=await tx.get(doc);const next=update(s.exists?s.data():null);if(next)tx.set(doc,next);return next||s.data();});},
       async upload(path,image,childKey){const x=await ref(path);try{await x.sdk.getMetadata(x.ref);return;}catch(e){if(e.code!=='storage/object-not-found')throw e;}await x.sdk.uploadBytes(x.ref,image,{contentType:image.type,customMetadata:{childKey}});},
       async image(path){const x=await ref(path);return x.sdk.getBlob(x.ref,15*1024*1024);},
+      // 목록용 작은 사진(긴 변 480px JPEG). 만들지 못하면 null — 썸네일은 없어도 저장은 된다.
+      async thumbnail(image){
+        try{
+          const bmp=await createImageBitmap(image),k=Math.min(1,480/Math.max(bmp.width,bmp.height)),cv=document.createElement('canvas');
+          cv.width=Math.max(1,Math.round(bmp.width*k));cv.height=Math.max(1,Math.round(bmp.height*k));
+          const g=cv.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,cv.width,cv.height);g.drawImage(bmp,0,0,cv.width,cv.height);if(bmp.close)bmp.close();
+          return await new Promise(r=>cv.toBlob(r,'image/jpeg',0.75));
+        }catch(e){return null;}
+      },
     };
   }
   function create({getContext,adapter,now=()=>Date.now(),hash=digest,structuredWrites=false}){
@@ -51,11 +60,14 @@
     let lastRows=null;
     async function read(scope,options={}){const ctx=c(),rows=await a().list(recordsPath(ctx),ctx.childKey);same(ctx);lastRows={ctx:JSON.stringify([ctx.uid,ctx.familyId,ctx.childKey]),rows};return Promise.all(rows.filter(d=>!d.deletedAt).map(d=>hydrate(d,ctx,scope,options.attachments!==false)));}
     // 첨부 사진 하나만 따로 받는다. 목록은 사진 없이 먼저 그리고 사진은 이 함수로 채운다.
-    async function loadImage(record){
+    async function loadImage(record,options={}){
       const ctx=c();
-      if(!record||!record.attachment)return {image:null,imageError:false,attachmentStatus:'none'};
-      try{const image=await a().image(record.attachment.storagePath);same(ctx);return {image,imageError:false,attachmentStatus:'ok'};}
-      catch(e){return {image:null,imageError:true,attachmentStatus:/unauthorized|permission-denied/.test(e.code||'')?'permission_denied':'failed'};}
+      if(!record||!record.attachment)return {image:null,thumb:null,imageError:false,attachmentStatus:'none'};
+      const useThumb=!options.full&&record.attachment.thumbPath;
+      try{
+        const blob=await a().image(useThumb?record.attachment.thumbPath:record.attachment.storagePath);same(ctx);
+        return useThumb?{image:null,thumb:blob,imageError:false,attachmentStatus:'thumb'}:{image:blob,thumb:null,imageError:false,attachmentStatus:'ok'};
+      }catch(e){return {image:null,thumb:null,imageError:true,attachmentStatus:/unauthorized|permission-denied/.test(e.code||'')?'permission_denied':'failed'};}
     }
     async function fingerprintOf(record){
       const imageHash=record.image?await hash(new Uint8Array(await record.image.arrayBuffer())):'';
@@ -86,6 +98,8 @@
         const check=await a().image(storagePath);
         if(check.size!==record.image.size||await hash(new Uint8Array(await check.arrayBuffer()))!==imageHash)throw Error('사진 업로드 확인에 실패했어요. 다시 시도해 주세요.');
         attachment={storagePath,contentType:record.image.type,size:record.image.size,hash:imageHash};
+        // 목록용 썸네일은 덤이다. 만들거나 올리지 못해도 원본 저장은 그대로 진행한다.
+        if(a().thumbnail){try{const t=await a().thumbnail(record.image);if(t&&t.size>0&&t.size<=1048576){const thumbPath=root(ctx)+'/growthRecords/'+id+'/thumb_'+imageHash;same(ctx);await a().upload(thumbPath,t,ctx.childKey);attachment.thumbPath=thumbPath;}}catch(e){}}
       }
       same(ctx);
       const saved=await a().transaction(path,existing=>{

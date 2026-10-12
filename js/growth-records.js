@@ -64,20 +64,21 @@
     dispose = () => { alive = false; clearUrls(); };
     function imageMarkup(r) {
       if (r.image) { const u = URL.createObjectURL(r.image); urls.push(u); return `<a href="${u}" target="_blank" rel="noopener" class="gr-image-link"><img src="${u}" alt="${esc(r.title)} 첨부 이미지" loading="lazy"><span>캡처 크게 보기 ↗</span></a>`; }
+      if (r.thumb) { const u = URL.createObjectURL(r.thumb); urls.push(u); return `<a href="#" class="gr-image-link" data-gr-full="${esc(r.id)}"><img src="${u}" alt="${esc(r.title)} 첨부 이미지" loading="lazy"><span>캡처 크게 보기 ↗</span></a>`; }
       if (r.attachment && !r.imageError && opts.backend && opts.backend.loadImage) return `<p class="gr-image-pending" data-gr-img="${esc(r.id)}">사진을 불러오고 있어요.</p>`;
       return "";
     }
     // 목록은 사진 없이 먼저 그리고, 사진은 3장씩 받아 그 자리만 바꾼다(열려 있는 입력창을 건드리지 않는다).
     async function hydrateImages(gen) {
       if (!opts.backend || !opts.backend.loadImage) return;
-      const queue = list(records, scope, selected, activity).concat(records).filter((r, i, a) => r.attachment && !r.image && !r.imageError && a.indexOf(r) === i);
+      const queue = list(records, scope, selected, activity).concat(records).filter((r, i, a) => r.attachment && !r.image && !r.thumb && !r.imageError && a.indexOf(r) === i);
       async function worker() {
         while (queue.length) {
           const r = queue.shift(); const got = await opts.backend.loadImage(r);
           if (!alive || gen !== loadGen) return;
           Object.assign(r, got);
           const slot = Array.from(host.querySelectorAll("[data-gr-img]")).find((n) => n.dataset.grImg === r.id);
-          if (slot) { const tpl = document.createElement("template"); tpl.innerHTML = r.image ? imageMarkup(r) : '<p class="gr-error">사진을 불러오지 못했어요.</p><button type="button" class="gr-edit" data-gr-retry>사진 다시 불러오기</button>'; slot.replaceWith(tpl.content); }
+          if (slot) { const tpl = document.createElement("template"); tpl.innerHTML = (r.image || r.thumb) ? imageMarkup(r) : '<p class="gr-error">사진을 불러오지 못했어요.</p><button type="button" class="gr-edit" data-gr-retry>사진 다시 불러오기</button>'; slot.replaceWith(tpl.content); }
         }
       }
       await Promise.all([worker(), worker(), worker()]);
@@ -120,6 +121,8 @@
       slot.scrollIntoView({ block: "start" }); form.elements.activity.focus();
     }
     host.onclick = (e) => {
+      const full = e.target.closest && e.target.closest("[data-gr-full]");
+      if (full) { e.preventDefault(); openFull(records.find((r) => r.id === full.dataset.grFull)); return; }
       const b = e.target.closest("button,[data-gr-group],[data-gr-activity]"); if (!b || !alive) return;
       if (b.hasAttribute("data-gr-toggle")) { recordsOpen = !recordsOpen; render(); }
       else if (b.hasAttribute("data-gr-paper-record")) { if (!loading && !failed) editor({group:"home",activity:b.dataset.grPaperRecord + " 교과 이해 확인",date:today(),title:b.dataset.grPaperRecord + " 종이 답안",text:""}); }
@@ -135,8 +138,17 @@
     host.onkeydown = (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.matches(".gr-svg-leaf")) { e.preventDefault(); e.target.dispatchEvent(new MouseEvent("click", { bubbles: true })); } };
     // 사진이 아직 안 내려온 기록은 사진을 받은 뒤에 열어야 저장할 때 첨부가 지워지지 않는다.
     async function openEditor(r) {
-      if (r && r.attachment && !r.image && opts.backend && opts.backend.loadImage) { Object.assign(r, await opts.backend.loadImage(r)); if (!alive) return; }
+      if (r && r.attachment && !r.image && opts.backend && opts.backend.loadImage) { Object.assign(r, await opts.backend.loadImage(r, { full: true })); if (!alive) return; }
       editor(r);
+    }
+    // 목록에는 썸네일만 있다. 크게 보기를 누르면 원본을 받아 새 탭에 연다(팝업 차단을 피하려고 탭을 먼저 연다).
+    async function openFull(r) {
+      if (!r) return;
+      if (r.image) { window.open(URL.createObjectURL(r.image), "_blank"); return; }
+      const tab = window.open("", "_blank");
+      const got = await opts.backend.loadImage(r, { full: true });
+      if (got.image) { r.image = got.image; const u = URL.createObjectURL(got.image); if (tab) tab.location.href = u; else window.open(u, "_blank"); }
+      else if (tab) { tab.close(); }
     }
     async function importRecords() {
       if(importing||!opts.backend)return;
@@ -153,7 +165,7 @@
       try {
         const result = await backend.read(scope, { attachments: false });
         if (!alive || gen !== loadGen) return;
-        if (cached) result.forEach((r) => { const old = cached.find((c) => c.id === r.id); if (old && old.image && r.attachment && old.attachment && old.attachment.storagePath === r.attachment.storagePath) { r.image = old.image; r.imageError = false; r.attachmentStatus = "ok"; } });
+        if (cached) result.forEach((r) => { const old = cached.find((c) => c.id === r.id); if (old && (old.image || old.thumb) && r.attachment && old.attachment && old.attachment.storagePath === r.attachment.storagePath && (old.attachment.thumbPath || "") === (r.attachment.thumbPath || "")) { r.image = old.image || null; r.thumb = old.thumb || null; r.imageError = false; r.attachmentStatus = old.attachmentStatus; } });
         records = result; loading = false; if (key) recordCache.set(key, result);
         if (!cached || !host.querySelector(".gr-editor")) render();
       } catch (e) { if (alive && gen === loadGen && !cached) { loading = false; failed = true; render(); } if (!cached) return; }
