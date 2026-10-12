@@ -52,6 +52,29 @@
   async function read(scope) { const database = await db(); return new Promise((resolve, reject) => { const req = database.transaction("records").objectStore("records").index("scope").getAll(scope); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
   async function save(record) { const database = await db(); return new Promise((resolve, reject) => { const tx = database.transaction("records", "readwrite"); tx.objectStore("records").put(record); tx.oncomplete = () => resolve(); tx.onerror = tx.onabort = () => reject(tx.error || new Error("저장 실패")); }); }
   const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+  // 기록 입력 폼(성장기록 탭과 홈이 함께 쓴다). slot 안에 그리고, 저장하면 c.onSaved(item, saved)를 부른다.
+  function buildForm(slot, c) {
+    const record = c.record;
+      const editing = !!record?.id;
+      const paper = !!record?.activity?.endsWith(" 교과 이해 확인");
+      const r = record || { group: c.group || "academy", activity: c.activity || "", date: today(), title: "", text: "" };
+      slot.innerHTML = `<form class="gr-editor"><div class="gr-section-head"><h3>${editing ? "성장기록 수정" : "성장기록 남기기"}</h3><button type="button" class="gr-edit" data-gr-cancel>닫기</button></div><label for="gr-group">활동 종류</label><select id="gr-group" name="group">${GROUPS.map((g) => `<option value="${g.id}"${r.group === g.id ? " selected" : ""}>${g.label}</option>`).join("")}</select><label for="gr-activity">활동 이름</label><input id="gr-activity" name="activity" maxlength="60" required placeholder="예: 피아노, 학교생활, 숲 체험" value="${esc(r.activity)}"><label for="gr-date">기록 날짜</label><input id="gr-date" name="date" type="date" required value="${esc(r.date)}"><label for="gr-file">캡처·사진 넣기</label><input id="gr-file" name="image" type="file" accept="image/*"><p class="gr-form-note">${r.image ? "저장된 이미지가 있어요. 새 이미지를 고르면 교체돼요." : "안내문 캡처나 활동 사진을 넣어 주세요."} 이미지의 글자는 자동으로 해석하지 않아요.</p><div class="gr-preview"></div><label for="gr-text">선생님 메시지·부모 메모</label><textarea id="gr-text" name="text" maxlength="10000" rows="5" placeholder="${paper ? "실제 답·풀이와 받은 도움을 짧게 남겨요. 예: 문제를 읽어줌 / 처음 본 용어 / 확인하지 못함" : "받은 메시지를 그대로 붙여넣어도 좋아요."}">${esc(r.text)}</textarea><label for="gr-title">기억할 순간</label><input id="gr-title" name="title" maxlength="100" required placeholder="예: 두 손으로 끝까지 연주했어요" value="${esc(r.title)}"><p class="gr-error" role="alert"></p><button type="submit" class="gr-primary">${editing ? "수정 저장" : "기록 저장"}</button></form>`;
+      const form = slot.querySelector("form");
+      const activityField = form.elements.activity;
+      activityField.setAttribute("list", "gr-known-activities");
+      const choices = document.createElement("datalist"); choices.id = "gr-known-activities"; form.appendChild(choices);
+      const updateChoices = () => { choices.innerHTML = linkedActivities(c.getRecords(), c.scope, form.elements.group.value, c.lessons).map((a) => `<option value="${esc(a)}"></option>`).join(""); };
+      updateChoices(); form.elements.group.addEventListener("change", updateChoices);
+      form.querySelector('[name="text"]').addEventListener("blur", () => { const title = form.elements.title; if (!title.value.trim()) title.value = form.elements.text.value.trim().split(/\n/)[0].slice(0, 100); });
+      form.elements.image.addEventListener("change", () => { const f = form.elements.image.files[0]; const box = form.querySelector(".gr-preview"); box.innerHTML = ""; if (f && /^image\//.test(f.type)) { const u = URL.createObjectURL(f); c.urls.push(u); box.innerHTML = `<img src="${u}" alt="첨부 이미지 미리보기">`; } });
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault(); const button = form.querySelector('[type="submit"]'); const error = form.querySelector(".gr-error");
+        try { const data = new FormData(form); const item = { ...r, ...prepare({ id: r.id, group: data.get("group"), activity: data.get("activity"), date: data.get("date"), title: data.get("title"), text: data.get("text"), image: form.elements.image.files[0] || r.image }, c.scope, r.createdAt || Date.now()), imageChanged: !!form.elements.image.files[0] }; button.disabled = true; error.textContent = ""; const saved = await c.backend.save(item); if (!c.isAlive()) return; c.onSaved(item, saved); }
+        catch (err) { if (c.isAlive()) { error.textContent = err.name === "QuotaExceededError" ? "기기 저장 공간이 부족해요. 더 작은 이미지를 골라 주세요." : err.message || "기록을 저장하지 못했어요. 다시 시도해 주세요."; button.disabled = false; } }
+      });
+      if (c.onCancel) { const x = form.querySelector("[data-gr-cancel]"); if (x) x.addEventListener("click", (e) => { e.preventDefault(); c.onCancel(); }); }
+      slot.scrollIntoView({ block: "start" }); form.elements.activity.focus();
+  }
   let dispose = null;
   const recordCache = new Map();
   function mount(host, opts) {
@@ -100,25 +123,8 @@
       opts.onRendered?.(host, {records:all,loading,failed});
     }
     function editor(record) {
-      const editing = !!record?.id;
-      const paper = !!record?.activity?.endsWith(" 교과 이해 확인");
-      const r = record || { group: selected, activity, date: today(), title: "", text: "" };
-      const slot = host.querySelector(".gr-editor-slot");
-      slot.innerHTML = `<form class="gr-editor"><div class="gr-section-head"><h3>${editing ? "성장기록 수정" : "성장기록 남기기"}</h3><button type="button" class="gr-edit" data-gr-cancel>닫기</button></div><label for="gr-group">활동 종류</label><select id="gr-group" name="group">${GROUPS.map((g) => `<option value="${g.id}"${r.group === g.id ? " selected" : ""}>${g.label}</option>`).join("")}</select><label for="gr-activity">활동 이름</label><input id="gr-activity" name="activity" maxlength="60" required placeholder="예: 피아노, 학교생활, 숲 체험" value="${esc(r.activity)}"><label for="gr-date">기록 날짜</label><input id="gr-date" name="date" type="date" required value="${esc(r.date)}"><label for="gr-file">캡처·사진 넣기</label><input id="gr-file" name="image" type="file" accept="image/*"><p class="gr-form-note">${r.image ? "저장된 이미지가 있어요. 새 이미지를 고르면 교체돼요." : "안내문 캡처나 활동 사진을 넣어 주세요."} 이미지의 글자는 자동으로 해석하지 않아요.</p><div class="gr-preview"></div><label for="gr-text">선생님 메시지·부모 메모</label><textarea id="gr-text" name="text" maxlength="10000" rows="5" placeholder="${paper ? "실제 답·풀이와 받은 도움을 짧게 남겨요. 예: 문제를 읽어줌 / 처음 본 용어 / 확인하지 못함" : "받은 메시지를 그대로 붙여넣어도 좋아요."}">${esc(r.text)}</textarea><label for="gr-title">기억할 순간</label><input id="gr-title" name="title" maxlength="100" required placeholder="예: 두 손으로 끝까지 연주했어요" value="${esc(r.title)}"><p class="gr-error" role="alert"></p><button type="submit" class="gr-primary">${editing ? "수정 저장" : "기록 저장"}</button></form>`;
-      const form = slot.querySelector("form");
-      const activityField = form.elements.activity;
-      activityField.setAttribute("list", "gr-known-activities");
-      const choices = document.createElement("datalist"); choices.id = "gr-known-activities"; form.appendChild(choices);
-      const updateChoices = () => { choices.innerHTML = linkedActivities(records, scope, form.elements.group.value, opts.lessons).map((a) => `<option value="${esc(a)}"></option>`).join(""); };
-      updateChoices(); form.elements.group.addEventListener("change", updateChoices);
-      form.querySelector('[name="text"]').addEventListener("blur", () => { const title = form.elements.title; if (!title.value.trim()) title.value = form.elements.text.value.trim().split(/\n/)[0].slice(0, 100); });
-      form.elements.image.addEventListener("change", () => { const f = form.elements.image.files[0]; const box = form.querySelector(".gr-preview"); box.innerHTML = ""; if (f && /^image\//.test(f.type)) { const u = URL.createObjectURL(f); urls.push(u); box.innerHTML = `<img src="${u}" alt="첨부 이미지 미리보기">`; } });
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault(); const button = form.querySelector('[type="submit"]'); const error = form.querySelector(".gr-error");
-        try { const data = new FormData(form); const item = { ...r, ...prepare({ id: r.id, group: data.get("group"), activity: data.get("activity"), date: data.get("date"), title: data.get("title"), text: data.get("text"), image: form.elements.image.files[0] || r.image }, scope, r.createdAt || Date.now()), imageChanged: !!form.elements.image.files[0] }; button.disabled = true; error.textContent = ""; const saved = await backend.save(item); if (!alive) return; records = records.filter((x) => x.id !== item.id).concat(saved || item); if (opts.backend) recordCache.set(scope + "|" + (opts.familyId || ""), records); selected = item.group; activity = item.activity; recordsOpen = true; render(); host.querySelector(".gr-records").scrollIntoView({ block: "start" }); }
-        catch (err) { if (alive) { error.textContent = err.name === "QuotaExceededError" ? "기기 저장 공간이 부족해요. 더 작은 이미지를 골라 주세요." : err.message || "기록을 저장하지 못했어요. 다시 시도해 주세요."; button.disabled = false; } }
-      });
-      slot.scrollIntoView({ block: "start" }); form.elements.activity.focus();
+      buildForm(host.querySelector(".gr-editor-slot"), { record, group: selected, activity, scope, backend, lessons: opts.lessons, urls, getRecords: () => records, isAlive: () => alive,
+        onSaved: (item, saved) => { records = records.filter((x) => x.id !== item.id).concat(saved || item); if (opts.backend) recordCache.set(scope + "|" + (opts.familyId || ""), records); selected = item.group; activity = item.activity; recordsOpen = true; render(); host.querySelector(".gr-records").scrollIntoView({ block: "start" }); } });
     }
     host.onclick = (e) => {
       const full = e.target.closest && e.target.closest("[data-gr-full]");
@@ -179,6 +185,17 @@
     load();
   }
   // 홈 카드의 '총 N건' — 서버(backend)가 있으면 사진 없이 목록만 읽고, 없으면 이 기기 저장소를 센다.
+  // 홈에서 바로 여는 '오늘의 성장 남기기' 폼 — 성장기록 탭을 거치지 않는다. o: { backend, scope, familyId, lessons, onSaved(record), onClose() }. 닫기 함수를 돌려준다.
+  function openForm(host, o) {
+    let alive = true; const urls = [], backend = o.backend || { read, save }, key = o.scope + "|" + (o.familyId || ""); let records = recordCache.get(key) || [];
+    host.innerHTML = '<div class="gr-editor-slot"></div>';
+    const dispose = () => { alive = false; urls.forEach((u) => URL.revokeObjectURL(u)); urls.length = 0; };
+    if (!records.length) Promise.resolve().then(() => backend.read(o.scope, { attachments: false })).then((rows) => { if (alive) records = rows; }).catch(() => {}); // 활동 이름 제안용(실패해도 입력에는 영향 없음)
+    buildForm(host.querySelector(".gr-editor-slot"), { record: null, group: "academy", activity: "", scope: o.scope, backend, lessons: o.lessons || [], urls, getRecords: () => records, isAlive: () => alive,
+      onCancel: () => { dispose(); if (o.onClose) o.onClose(); },
+      onSaved: (item, saved) => { recordCache.delete(key); dispose(); if (o.onSaved) o.onSaved(saved || item); } });
+    return dispose;
+  }
   async function count(scope, backend) { const rows = backend ? await backend.read(scope, { attachments: false }) : await read(scope); return rows.filter((r) => !r.deletedAt).length; }
-  return { GROUPS, eligible, prepare, list, activities, linkedActivities, treeMarkup, mount, count, unmount: () => { if(dispose) dispose(); } };
+  return { GROUPS, eligible, prepare, list, activities, linkedActivities, treeMarkup, mount, openForm, count, unmount: () => { if(dispose) dispose(); } };
 });

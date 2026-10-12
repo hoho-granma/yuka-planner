@@ -311,3 +311,7 @@ body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,
 /* 홈 성장기록 카드: 다른 카드와 같은 흰 배경 + 저장된 기록 건수 */
 .gr-home-card .hn-section-head{margin-bottom:6px}
 .gr-home-count{display:block;width:100%;background:none;border:0;padding:6px 0 2px;margin:0;font:inherit;font-size:13px;color:#7a7488;text-align:left;cursor:pointer}
+
+/* 홈 카드 등록 버튼(A안): 배경 없는 보라 텍스트 링크 — + 일정 · + 할일 · + 기록 */
+.hn-reg-link{position:relative;border:0;background:none;color:#715697;font:inherit;font-size:13px;font-weight:800;line-height:1.2;padding:4px 0;margin:0;cursor:pointer;white-space:nowrap;flex:none}
+.hn-reg-link::after{content:"";position:absolute;inset:-8px -8px -8px -10px}

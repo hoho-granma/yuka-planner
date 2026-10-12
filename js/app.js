@@ -1543,7 +1543,7 @@
     else acct36RenderHome();
     nsSync(); // W5: 다음 단계 안내 한 줄 배너(홈 맨 아래, 계정 모드)
     const home = el("home-body");
-    if (home && growthActive()) home.insertAdjacentHTML("beforeend", `<section class="card gr-home-card" id="gr-home-card"><div class="hn-section-head"><h3>🌱 ${esc(childDisplayName())}의 성장기록</h3><button type="button" class="hn-reg-btn" data-growth-add aria-label="성장기록 등록">+</button></div><button type="button" class="gr-home-count" id="gr-home-count" data-growth-home>${esc(growthHomeCountText())}</button></section>`);
+    if (home && growthActive()) home.insertAdjacentHTML("beforeend", `<section class="card gr-home-card" id="gr-home-card"><div class="hn-section-head"><h3>🌱 ${esc(childDisplayName())}의 성장 이야기</h3><button type="button" class="hn-reg-link" data-growth-add aria-label="성장기록 등록">+ 기록</button></div><button type="button" class="gr-home-count" id="gr-home-count" data-growth-home>${esc(growthHomeCountText())}</button></section>`);
     growthHomeLoadCount();
   };
   const renderChecklistTabBase = renderChecklistTab;
@@ -3588,18 +3588,27 @@
     const box = el("gr-home-count");
     if (box && growthHomeScope() === scope) box.textContent = growthHomeCountText();
   }
-  // 홈의 성장기록 + : 성장기록 탭으로 가서 '오늘의 성장 남기기' 폼을 바로 연다(기록을 불러와 버튼이 켜지면 한 번 누른다). 저장하면 성장기록 탭에 기록이 보인다.
+  // 홈의 '+ 기록': 성장기록 탭으로 가지 않고, 같은 입력 폼(오늘의 성장 남기기)을 홈 위 창으로 바로 연다. 저장하면 창을 닫고 홈의 건수를 바로 올린다.
+  let growthHomeForm = null;
   document.addEventListener("click", (e) => {
     if (!e.target.closest("[data-growth-add]")) return;
-    growthRequestedView = "history";
-    switchTab("growth");
-    let tries = 0;
-    const open = () => {
-      const b = el("growth-body") && el("growth-body").querySelector("[data-gr-add]:not([disabled])");
-      if (b) { b.click(); return; }
-      if (++tries < 50) setTimeout(open, 100);
-    };
-    setTimeout(open, 80);
+    const scope = growthHomeScope();
+    if (!scope || typeof GrowthRecords === "undefined" || !GrowthRecords.openForm) return;
+    if (growthHomeForm) { growthHomeForm(); growthHomeForm = null; }
+    modalMode = "profile";
+    el("modal-content").innerHTML = '<div id="gr-home-form"></div>';
+    el("detail-modal").classList.remove("hidden");
+    growthHomeForm = GrowthRecords.openForm(el("gr-home-form"), {
+      backend: activeGrowthBackend(), scope, familyId: hh.hid || null, lessons: growthLessonRows(),
+      onClose: () => { growthHomeForm = null; closeDetail(); },
+      onSaved: () => {
+        growthHomeForm = null; closeDetail();
+        const c = growthHomeCountCache;
+        growthRenderScope = ""; // 성장기록 탭은 다음에 열 때 새로 불러온다
+        growthHomeCountCache = { scope, n: c && c.scope === scope && c.n != null ? c.n + 1 : null, at: 0 }; // 저장한 1건을 바로 더해 보여 주고, 곧 서버 건수로 다시 맞춘다
+        const box = el("gr-home-count"); if (box) box.textContent = growthHomeCountText();
+        growthHomeLoadCount();
+      } });
   });
   // ── E(2-1·2-2) 하단 탭 교체: 가구·계정 기능이 켜졌을 때만 '기록' 탭 자리에 '어디갈까'. 기록은 프로필 시트의 '기록 보기'로 연다(기존 기록 패널 그대로). ──
   const tabLayoutOn = () => hhEnabled();
@@ -8126,7 +8135,7 @@
   function charRow(o){const doc=usDocById(o.scheduleId)||o,person=charPerson(charOccOwner(o)),badge=CharacterUI.categoryBadge(doc.categoryLabel||doc.category,person);return ScheduleReview.timeline({...o,tags:doc.tags||[],categoryLabel:badge.label ,category:''},{ownerHtml:charImage(person),categoryColor:badge.color,attributes:`data-char-schedule="${esc(o.scheduleId)}" data-us-id="${esc(o.scheduleId)}" data-us-key="${esc(o.key||'')}"`});}
   let hnTodoHideDone=false;try{hnTodoHideDone=localStorage.getItem('hn_todo_hide_done')==='1';}catch(e){} // 할일 페이지의 '완료 숨기기'(이 기기에서만 기억)
   function charTodoRows(home){if(!usActive())return '';const now=toISODate(new Date()), people=charPeople(false);return CharacterUI.list(HouseholdSync.getTodos(hh.hid).map(t=>{const l=usLinks().find(l=>l.familyCode===t.childKey);return !t.ownerKey&&l?{...t,ownerKey:'CHILD:'+l.childKey}:t;}),people,now,home).filter(t=>home||!hnTodoHideDone||!t.done).map(t=>{const dl=CharacterUI.deadline(t.dueDate,now);return `<div class="hn-task${t.done?' done':''}"><button class="hn-check" data-char-toggle="${esc(t.id)}" aria-label="${t.done?'완료 취소':'완료'}">${t.done?'✓':''}</button>${charImage(charPerson(CharacterUI.owner(t)))}${dl.text?`<time>${esc(dl.text)}</time>`:''}<button class="hn-task-title" data-char-edit="${esc(t.id)}">${esc(t.title)}</button>${dl.tomorrow?'<b class="hn-d1">D-1</b>':''}${t.category?`<span class="hn-category" style="background:${CharacterUI.categoryBadge(t.category,charPerson(CharacterUI.owner(t))).color}">${esc(t.category)}</span>`:''}</div>`;}).join('');}
-  function charTodoSection(home){const actions=home?'':`<label class="hn-hide-done${hnTodoHideDone?' on':''}" role="switch" aria-checked="${hnTodoHideDone}" tabindex="0" data-hn-hidedone><i aria-hidden="true"></i>완료 숨기기</label>`;return `<section class="card hn-tasks" id="hn-family-tasks${home?'':'-tab'}"><div class="hn-section-head"><h3>우리 가족 할일</h3><div class="hn-head-actions">${actions}<button class="hn-reg-btn" data-char-add aria-label="할일 등록">+</button></div></div>${charTodoRows(home)||`<p class="fine-print">${!home&&hnTodoHideDone?'남은 할일이 없어요.':'등록된 할일이 없어요.'}</p>`}</section>`;}
+  function charTodoSection(home){const actions=home?'':`<label class="hn-hide-done${hnTodoHideDone?' on':''}" role="switch" aria-checked="${hnTodoHideDone}" tabindex="0" data-hn-hidedone><i aria-hidden="true"></i>완료 숨기기</label>`;return `<section class="card hn-tasks" id="hn-family-tasks${home?'':'-tab'}"><div class="hn-section-head"><h3>챙길 것</h3><div class="hn-head-actions">${actions}<button class="hn-reg-link" data-char-add aria-label="할일 등록">+ 할일</button></div></div>${charTodoRows(home)||`<p class="fine-print">${!home&&hnTodoHideDone?'남은 할일이 없어요.':'등록된 할일이 없어요.'}</p>`}</section>`;}
   const hnToggleHideDone=()=>{hnTodoHideDone=!hnTodoHideDone;try{localStorage.setItem('hn_todo_hide_done',hnTodoHideDone?'1':'0');}catch(e){}renderChecklistTab();};
   document.addEventListener('click',e=>{if(e.target.closest('[data-hn-hidedone]'))hnToggleHideDone();});
   document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.closest&&e.target.closest('[data-hn-hidedone]')){e.preventDefault();hnToggleHideDone();}});
@@ -8136,7 +8145,7 @@
   updateBrandText=function(){charBrandBase();const b=el('brand-text');if(b&&profile)b.innerHTML=`한눈육아<span class="hn-family-name"><span class="hn-brand-dot">·</span>${esc(childDisplayName())}네집</span>`;};
   function charHeader(){const head=document.querySelector('.app-header');if(!head||!acctEnabled())return;let b=el('hn-profile');if(!b){b=document.createElement('button');b.id='hn-profile';b.className='hn-profile';b.setAttribute('aria-label','내 프로필');b.onclick=()=>acctProfileSheet();head.appendChild(b);}const m=charPeople(true).find(p=>p.key===localStorage.getItem('hn_selected_profile'))||charPeople(true).find(p=>p.key==='MEMBER:'+usMeId())||{role:'MOM',name:'내 프로필'};b.innerHTML=charImage(m);}
   let hnHomeDay=0; // 홈 우리 가족 일정 탭: 0 오늘 · 1 내일 · 2 모레(이 기기에서만 기억, 저장 안 함)
-  usHomeCardHtml=function(){if(!usActive())return '';const base=new Date(),dates=[0,1,2].map(n=>toISODate(new Date(base.getFullYear(),base.getMonth(),base.getDate()+n))),model=usBuildModel(dates[0],dates[2],{scope:'ALL',showAuto:false}),names=['오늘','내일','모레'],sel=Math.min(2,Math.max(0,hnHomeDay)),perDay=dates.map(d=>{const day=model.days.get(d);return day?day.user:[];}),dt=new Date(base.getFullYear(),base.getMonth(),base.getDate()+sel);return `<section class="card hn-schedules"><div class="hn-section-head"><h3><span class="hn-schedule-date">${dt.getMonth()+1}/${dt.getDate()}(${['일','월','화','수','목','금','토'][dt.getDay()]})</span> 우리 가족 일정</h3><button type="button" class="hn-reg-btn" data-hn-hadd aria-label="일정 등록">+</button></div><div class="hn-hday-tabs" role="tablist">${names.map((n,i)=>`<button type="button" role="tab" aria-selected="${i===sel}" data-hn-hday="${i}" class="${i===sel?'on':''}">${n}</button>`).join('')}</div>${perDay[sel].map(charRow).join('')||`<p class="fine-print">${names[sel]} 등록된 일정이 없어요.</p>`}${sel===2?'<button type="button" class="hn-hday-more" data-char-calendar>이후 일정은 가족캘린더 보기 →</button>':''}</section>`;};
+  usHomeCardHtml=function(){if(!usActive())return '';const base=new Date(),dates=[0,1,2].map(n=>toISODate(new Date(base.getFullYear(),base.getMonth(),base.getDate()+n))),model=usBuildModel(dates[0],dates[2],{scope:'ALL',showAuto:false}),names=['오늘','내일','모레'],sel=Math.min(2,Math.max(0,hnHomeDay)),perDay=dates.map(d=>{const day=model.days.get(d);return day?day.user:[];}),dt=new Date(base.getFullYear(),base.getMonth(),base.getDate()+sel);return `<section class="card hn-schedules"><div class="hn-section-head"><h3><span class="hn-schedule-date">${dt.getMonth()+1}/${dt.getDate()}(${['일','월','화','수','목','금','토'][dt.getDay()]})</span> 가족 캘린더</h3><button type="button" class="hn-reg-link" data-hn-hadd aria-label="일정 등록">+ 일정</button></div><div class="hn-hday-tabs" role="tablist">${names.map((n,i)=>`<button type="button" role="tab" aria-selected="${i===sel}" data-hn-hday="${i}" class="${i===sel?'on':''}">${n}</button>`).join('')}</div>${perDay[sel].map(charRow).join('')||`<p class="fine-print">${names[sel]} 등록된 일정이 없어요.</p>`}${sel===2?'<button type="button" class="hn-hday-more" data-char-calendar>이후 일정은 가족캘린더 보기 →</button>':''}</section>`;};
   document.addEventListener('click',e=>{const b=e.target.closest('[data-hn-hday]');if(!b)return;hnHomeDay=Number(b.dataset.hnHday)||0;const card=b.closest('.hn-schedules'),box=document.createElement('div');box.innerHTML=usHomeCardHtml();const next=box.firstElementChild;if(card&&next)card.replaceWith(next);else renderHome();}); // 일정 카드만 다시 그린다(홈 전체를 새로 그리지 않는다)
   document.addEventListener('click',e=>{if(!e.target.closest('[data-hn-hadd]'))return;const d=new Date();usOpenForm(null,toISODate(new Date(d.getFullYear(),d.getMonth(),d.getDate()+Math.min(2,Math.max(0,hnHomeDay)))));}); // 선택한 탭의 날짜로 일정 등록
   const charChecklistBase=renderChecklistTab;
