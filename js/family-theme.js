@@ -10,8 +10,9 @@ const brand=d.getElementById('brand-text');if(brand&&!brand.querySelector('.hn-h
   const selectable=n.matches('.cat-chip,.hn-categories button,.hn-schedule-category'),active=n.classList.contains('active')||n.classList.contains('on')||n.getAttribute('aria-pressed')==='true';
   n.style.setProperty('background',selectable&&!active?'transparent':color,'important');n.style.setProperty('color',selectable&&!active?color:'#fff','important');n.style.setProperty('border-color',color,'important');
  });
- d.querySelectorAll('.hn-category').forEach(n=>{n.style.setProperty('color','#40374b','important');}); // 뱃지 색은 앱이 칸 번호로 정한다(입력 폼과 같은 색) — 글자만 어둡게
+ // 뱃지 색은 앱이 칸 번호로 정한다(입력 폼과 같은 색) — 글자만 어둡게
  const peach=['#d9cdef','#cadcf0','#c9e4d7','#efddba','#f0ccdc','#d8d4e4','#c8e3e6','#e6d9c5'];
+ d.querySelectorAll('.hn-category').forEach(n=>{let c=n.style.backgroundColor;if(!c){const name=n.textContent.trim();let index=semantic.findIndex(t=>name.includes(t));if(index<0){index=0;for(const ch of name)index=(index+ch.charCodeAt(0))%labels.length;}c=peach[index%peach.length];}n.style.setProperty('--review-category',c);n.style.setProperty('background',c,'important');n.style.setProperty('color','#40374b','important');});
  d.querySelectorAll('.hn-entry .hn-categories').forEach(group=>group.querySelectorAll('button').forEach((n,i)=>{const color=peach[i%peach.length],active=n.classList.contains('on')||n.classList.contains('active');n.style.setProperty('--category',color);n.style.setProperty('background',active?color:'transparent','important');n.style.setProperty('color',active?'#40374b':'#665873','important');n.style.setProperty('border-color',color,'important');}));
  d.querySelectorAll('.hn-category-bar').forEach(n=>{const slot=Number(n.dataset.hnSlot),i=Number.isFinite(slot)&&n.dataset.hnSlot!==undefined?slot:Math.max(0,['INSTITUTION','LESSON','MEDICAL','FAMILY','ETC'].indexOf(n.dataset.hnCategory));n.style.setProperty('background',peach[i%peach.length],'important');});
 

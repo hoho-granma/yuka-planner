@@ -1920,8 +1920,7 @@
         .join("")}</div></div>
       <div class="hh-field"><label>거주 지역</label><div class="hh-region"><select id="ep-province" class="hh-input hh-input-plain ep-select" aria-label="시·도">${regionsData.provinces
         .map((pv) => `<option value="${esc(pv.code)}" ${pv.code === profile.province ? "selected" : ""}>${esc(pv.name)}</option>`)
-        .join("")}</select><select id="ep-district" class="hh-input hh-input-plain ep-select" aria-label="시·군·구"></select></div></div>
-      <div class="hh-field"><label for="ep-dong">읍·면·동</label><input id="ep-dong" class="hh-input hh-input-plain" maxlength="30" value="${esc(profile.dong || "")}"/><p class="hh-note">거주지 기준으로 받을 수 있는 지원금, 혜택, 교육 정보를 같이 챙겨드려요.</p></div>
+        .join("")}</select><select id="ep-district" class="hh-input hh-input-plain ep-select" aria-label="시·군·구"></select><select id="ep-dong" class="hh-input hh-input-plain ep-select" aria-label="구"></select></div><p class="hh-note">거주지 기준으로 받을 수 있는 지원금, 혜택, 교육 정보를 같이 챙겨드려요.</p></div>
       <div class="hh-field"><label for="ep-gender">성별</label><select id="ep-gender" class="hh-input hh-input-plain"><option value="">선택</option><option value="male" ${CharacterUI.normalizeGender(profile.gender) === "male" ? "selected" : ""}>남아</option><option value="female" ${CharacterUI.normalizeGender(profile.gender) === "female" ? "selected" : ""}>여아</option></select></div>
       <p id="ep-error" class="hh-note hh-warn hidden">이름과 날짜를 입력해 주세요.</p>
       <div class="hh-actions"><button type="button" class="hh-btn hh-primary" id="ep-save">저장</button><button type="button" class="hh-btn" id="ep-cancel">취소</button></div>
@@ -1935,8 +1934,17 @@
         .map((d) => `<option value="${esc(d)}" ${d === selected ? "selected" : ""}>${esc(d)}</option>`)
         .join("");
     };
+    // 구(읍·면·동 자리): 시·군을 바꾸면 그 시의 구 목록으로 다시 채운다. 기존에 저장된 값이 목록에 없어도 잃지 않게 한 칸으로 남긴다.
+    const fillDongs = (selected) => {
+      const pv = regionsData.provinces.find((x) => x.code === el("ep-province").value);
+      const subs = AccountView.subdistrictsOf(pv, el("ep-district").value).slice();
+      if (selected && !subs.includes(selected)) subs.push(selected);
+      el("ep-dong").innerHTML = `<option value="">구</option>` + subs.map((d) => `<option value="${esc(d)}" ${d === selected ? "selected" : ""}>${esc(d)}</option>`).join("");
+    };
     fillDistricts(profile.district);
-    el("ep-province").addEventListener("change", () => fillDistricts(null));
+    fillDongs(profile.dong || "");
+    el("ep-province").addEventListener("change", () => { fillDistricts(null); fillDongs(""); });
+    el("ep-district").addEventListener("change", () => fillDongs(""));
     el("ep-orders").querySelectorAll(".hh-chip").forEach((b) =>
       b.addEventListener("click", () => {
         order = b.dataset.v;
@@ -1967,7 +1975,7 @@
         province: el("ep-province").value,
         district: el("ep-district").value,
         gender: el("ep-gender").value || null,
-        dong: el("ep-dong").value.trim(),
+        dong: el("ep-dong").value,
       };
       saveProfile(profile);
       if (familyCode) {
