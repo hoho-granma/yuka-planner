@@ -96,7 +96,7 @@ test("신청 링크(W4 조사 반영): SC-01·SC-12·PG-01·PG-02·SB-08·NAT-02
 
 test("완료한 사람 기록은 규칙 변경 없이 된다: completed 는 맵 필드(항목 모양을 규칙이 보지 않음), 일정의 assigneeMemberId 는 허용 필드 / firestore.rules 는 이번 변경에서 손대지 않았다", () => {
   const rules = read("firestore.rules");
-  assert.ok(/hasOnly\(\['profile', 'completed', 'records', 'updatedAt'/.test(rules), "families 업데이트는 completed 맵 전체만 보고 항목 안은 보지 않는다");
+  assert.ok(/hasOnly\(\['profile',\s*'completed',\s*'records',\s*'updatedAt'/.test(rules), "families 업데이트는 completed 맵 전체만 보고 항목 안은 보지 않는다");
   assert.ok(/'recurrence', 'exceptions', 'assigneeMemberId'/.test(rules) && /d\.assigneeMemberId is string/.test(rules));
   const APP = read("js/app.js");
   assert.ok(/completed\[id\] = \{ done: true, todo_id: todoId, occurrenceKey, recordType: "TODO_COMPLETED", recordedAt: nowIso, \.\.\.\(typeof usCompletedByField/.test(APP));
