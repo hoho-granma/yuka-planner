@@ -430,7 +430,7 @@
       if (!data || !data.profile) return;
       // 사진만 바뀐 경우엔 일정을 다시 계산(=홈으로 이동)하지 않고 화면의 사진만 갱신한다.
       const noPhoto = (p) => ({ ...profileToPlain(p), photoDataUrl: null });
-      const profileChanged = JSON.stringify(noPhoto(profileFromPlain(data.profile))) !== JSON.stringify(noPhoto(profile));
+      const profileChanged = !profile || JSON.stringify(noPhoto(profileFromPlain(data.profile))) !== JSON.stringify(noPhoto(profile));
       profile = profileFromPlain(data.profile);
       completed = data.completed || {};
       saveProfile(profile);
@@ -4017,6 +4017,7 @@
       }
       gone.forEach((k) => localStorage.removeItem(k));
     } catch (e) {}
+    if (typeof unsubscribeFamily === "function") { try { unsubscribeFamily(); } catch (e) {} unsubscribeFamily = null; } // 비운 뒤에 옛 아이의 변경 알림이 와서 빈 프로필을 읽지 않게
     profile = null;
     familyCode = null;
     completed = {};
@@ -6629,6 +6630,7 @@
         if(result.status==="ACTIVE"){if(approvalViewDispose){approvalViewDispose();approvalViewDispose=null;}await acctApprovalRestore(acct.user);}
       }});
     if(message)host.querySelector("[data-fa-notice]").textContent=message;
+    host.querySelectorAll("[data-acct-action=\"logout\"],[data-acct-action=\"recover-join-open\"]").forEach(b=>b.remove()); // 게이트를 다시 그릴 때마다 버튼이 쌓이지 않게
     const logout=document.createElement("button"); logout.type="button";logout.textContent="로그아웃";
     logout.setAttribute("data-acct-action","logout");host.appendChild(logout);
     const retry=document.createElement("button");retry.type="button";retry.textContent="가족 연결 다시 하기";
@@ -6661,6 +6663,7 @@
   async function acctApprovalRestore(u) {
     if(!u || acct.busy || acct.completing || acct.restoring)return;
     acct.restoring=true;
+    let linkConfirmed=false;
     const uid=u.uid,epoch=acct.approvalEpoch;
     const valid=()=>acct.user?.uid===uid&&acct.approvalEpoch===epoch;
     try {
@@ -6698,12 +6701,15 @@
       acct.accessLog?.record("app_open");
       acctClearIntent();
       hhSetJoined(state.householdId,state.householdId);
-      if(profile&&familyCode) {
-        const linked=Object.values(joined.mirror.children||{}).some(c=>c.familyCode===familyCode&&!c.removedAt);
-        if(!linked)acctWipeLocalChild();
-        else {const data=await FamilySync.fetchFamily(familyCode);if(!valid())return;if(data?.profile){profile=profileFromPlain(data.profile);completed=data.completed||{};saveProfile(profile);saveCompleted();startListeningFamily();}}
-      }
-      await acctAfterHousehold({}, {created:false,householdId:state.householdId});
+      linkConfirmed=true; // 서버가 이 계정의 가족 연결(ACTIVE)을 확인했다. 아래 화면 준비 오류는 '연결 확인 실패'가 아니다.
+      try {
+        if(profile&&familyCode) {
+          const linked=Object.values(joined.mirror.children||{}).some(c=>c.familyCode===familyCode&&!c.removedAt);
+          if(!linked)acctWipeLocalChild();
+          else {const data=await FamilySync.fetchFamily(familyCode);if(!valid())return;if(data?.profile){profile=profileFromPlain(data.profile);completed=data.completed||{};saveProfile(profile);saveCompleted();startListeningFamily();}}
+        }
+        await acctAfterHousehold({}, {created:false,householdId:state.householdId});
+      } catch(prepError) {console.error("가족 화면 준비 중 오류(연결은 확인됨)",prepError&&prepError.stack||prepError);}
       if(!valid())return;
       if(approvalUnsubscribe)approvalUnsubscribe();
       approvalUnsubscribe=firebase.firestore().doc(`familyAccess/${state.householdId}/members/${uid}`).onSnapshot(snapshot=>{
@@ -6713,9 +6719,11 @@
         } else acct.account.permission=snapshot.data().permission;
       },()=>{if(valid())acctApprovalGate("UNKNOWN","인터넷 연결을 확인하고 상태 확인을 눌러 주세요.");});
       if(approvalViewDispose){approvalViewDispose();approvalViewDispose=null;}
-      await acctGoHome();
+      try {await acctGoHome();} catch(homeError) {console.error("홈 화면 준비 중 오류(연결은 확인됨)",homeError&&homeError.stack||homeError);try{showEmptyHome();}catch(e2){console.error(e2);}}
     } catch(e) {
-      if(valid())acctApprovalGate("UNKNOWN",e.message||"가족 연결을 확인하지 못했어요.");
+      console.error("가족 연결 복원 오류",e&&e.stack||e);
+      if(valid()&&linkConfirmed){try{await acctGoHome();}catch(e3){try{showEmptyHome();}catch(e4){}}}
+      else if(valid())acctApprovalGate("UNKNOWN",e.message||"가족 연결을 확인하지 못했어요.");
     } finally {if(valid()){acct.restoring=false;acctSplashRelease();}}
   }
   async function acctApprovalOpenManage() {
