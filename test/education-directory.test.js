@@ -1,5 +1,20 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const {createDirectory}=require('../functions/education-directory/directory');const C=require('../js/education-directory');
 const row=(i,status='개원')=>({ATPT_OFCDC_SC_CODE:'J10',ADMST_ZONE_NM:'성남시',ACA_ASNUM:String(i),ACA_NM:'학원'+i,REG_STTUS_NM:status,FA_RDNMA:'성남시 분당구 판교로',LE_CRSE_NM:'보습'});
+test('Korean composition survives input and asynchronous directory completion',async()=>{
+ const E=require('../js/education-info');let resolve,writes=0,html='',selection;
+ const input={dataset:{eiField:'query'},value:'',selectionStart:0,selectionEnd:0,focus(){},setSelectionRange(a,b){selection=[a,b];}};
+ const host={get innerHTML(){return html;},set innerHTML(v){writes++;html=v;},querySelector:()=>input};
+ E.mount(host,{provinceName:'서울특별시',district:'구로구',birthDate:'2026-06-20',directoryReader:()=>new Promise(r=>resolve=r)});
+ const click=dataset=>host.onclick({target:{closest:()=>({dataset})}});
+ const pending=click({ei:'tab',tab:'choice'});await click({ei:'filter-search'});
+ host.oncompositionstart({target:input});const before=writes;
+ for(const value of ['ㅇ','에','에이프릴']){input.value=value;host.oninput({target:input,isComposing:true});assert.equal(writes,before);}
+ resolve({items:[{id:'J10:100',name:'에이프릴',address:'성남시 분당구'}]});await pending;assert.equal(writes,before);
+ input.selectionStart=input.selectionEnd=4;host.oncompositionend({target:input});
+ assert.ok(writes>before);assert.match(html,/value="에이프릴"/);assert.match(html,/1곳 · 에이프릴/);assert.deepEqual(selection,[4,4]);
+ input.value='없는기관';host.oninput({target:input,isComposing:false});assert.match(html,/0곳 · 없는기관/);
+ E.unmount();assert.equal(host.oncompositionstart,null);assert.equal(host.oncompositionend,null);
+});
 function response(total,rows){return {ok:true,json:async()=>({acaInsTiInfo:[{head:[{list_total_count:total},{RESULT:{CODE:'INFO-000'}}]},{row:rows}]})};}
 test('all official pages are collected, closed entries excluded, IDs deduplicated and calls cached',async()=>{
  let calls=0;const read=createDirectory({key:'TEST_ONLY',fetchImpl:async u=>{calls++;const p=Number(new URL(u).searchParams.get('pIndex'));return p===1?response(102,Array.from({length:100},(_,i)=>row(i))):response(102,[row(0),row(101,'폐원')]);}});

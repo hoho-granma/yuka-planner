@@ -15,7 +15,8 @@
  let stop=()=>{};
  function mount(host,opts){
   stop();let alive=true,tab='trend',chosenSubject=opts.subject||'국어',related='',relatedLoading=false,relatedError='',requestSequence=0;
-  const cleanup=()=>{alive=false;host.onclick=null;host.onchange=null;host.oninput=null;};stop=cleanup;
+  let queryComposing=false;
+  const cleanup=()=>{alive=false;host.onclick=null;host.onchange=null;host.oninput=null;host.oncompositionstart=null;host.oncompositionend=null;};stop=cleanup;
   const localCatalogue=opts.provinceName==='경기도'&&/성남시/.test(opts.district||'');
   const referenceState={region:opts.provinceName==='경기도'?'gyeonggi':'national',grade:Number.isInteger(Number(opts.grade))&&Number(opts.grade)>=1&&Number(opts.grade)<=6?String(opts.grade):'',browse:'seongnam',subject:'',institutionType:Number(opts.grade)===3?'학원':'',district:'분당구',query:'',compared:[],notice:''};
   let storage;try{storage=opts.storage||globalThis.localStorage;}catch(e){}
@@ -25,6 +26,9 @@
   let directory=null,directoryLoading=false,directoryError='',directoryLimit=20,directorySequence=0;
   const bank=opts.bank||globalThis.LearningCheckBank;
   function render(){if(!alive||opts.isCurrent&&!opts.isCurrent()){host.innerHTML="";return;}
+   // Replacing the input during IME composition splits Korean syllables.
+   // Also defer asynchronous directory/program renders until composition ends.
+   if(queryComposing)return;
    const head=`<div class="ei-tabs" role="group" aria-label="교육정보 종류">${[['trend','또래·지역'],['choice','교육 선택']].map(([k,l])=>`<button type="button" data-ei="tab" data-tab="${k}" aria-pressed="${tab===k}">${l}</button>`).join('')}</div>`;
    let body='';
    if(tab==='child'){
@@ -80,7 +84,10 @@
    if(!['region','grade','browse','subject','district','query','institutionType'].includes(key))return;
    referenceState[key]=e.target.value;referenceState.notice='';directoryLimit=20;render();if(key==='browse'&&referenceState.browse==='seongnam'&&!directory&&!directoryLoading)loadDirectory();
   };
-  host.oninput=e=>{if(!alive||opts.isCurrent&&!opts.isCurrent()||e.target.dataset.eiField!=='query')return;const position=e.target.selectionStart;referenceState.query=e.target.value;render();const input=host.querySelector('[data-ei-field="query"]');if(input){input.focus();input.setSelectionRange(position,position);}};
+  function updateQuery(e){if(!alive||opts.isCurrent&&!opts.isCurrent()||e.target.dataset.eiField!=='query')return;referenceState.query=e.target.value;if(queryComposing||e.isComposing)return;const start=e.target.selectionStart,end=e.target.selectionEnd;directoryLimit=20;render();const input=host.querySelector('[data-ei-field="query"]');if(input){input.focus();input.setSelectionRange(start,end);}}
+  host.oncompositionstart=e=>{if(e.target.dataset.eiField==='query')queryComposing=true;};
+  host.oncompositionend=e=>{if(e.target.dataset.eiField!=='query')return;queryComposing=false;updateQuery(e);};
+  host.oninput=updateQuery;
   render();
   if(!opts.directoryReader&&globalThis.firebase?.auth().currentUser?.uid)globalThis.EducationDirectory?.read().catch(()=>{});
   return cleanup;
