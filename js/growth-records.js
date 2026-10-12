@@ -53,14 +53,35 @@
   async function save(record) { const database = await db(); return new Promise((resolve, reject) => { const tx = database.transaction("records", "readwrite"); tx.objectStore("records").put(record); tx.oncomplete = () => resolve(); tx.onerror = tx.onabort = () => reject(tx.error || new Error("저장 실패")); }); }
   const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
   let dispose = null;
+  const recordCache = new Map();
   function mount(host, opts) {
     if (dispose) dispose();
     let alive = true, records = [], selected = "academy", activity = "", urls = [], loading = true, failed = false, recordsOpen = !opts.compact;
     const scope = opts.scope;
     const backend = opts.backend || {read,save};
-    let localImport = [], importing = false, importMessage = "";
+    let localImport = [], importing = false, importMessage = "", loadGen = 0;
     function clearUrls() { urls.forEach((u) => URL.revokeObjectURL(u)); urls = []; }
     dispose = () => { alive = false; clearUrls(); };
+    function imageMarkup(r) {
+      if (r.image) { const u = URL.createObjectURL(r.image); urls.push(u); return `<a href="${u}" target="_blank" rel="noopener" class="gr-image-link"><img src="${u}" alt="${esc(r.title)} 첨부 이미지" loading="lazy"><span>캡처 크게 보기 ↗</span></a>`; }
+      if (r.attachment && !r.imageError && opts.backend && opts.backend.loadImage) return `<p class="gr-image-pending" data-gr-img="${esc(r.id)}">사진을 불러오고 있어요.</p>`;
+      return "";
+    }
+    // 목록은 사진 없이 먼저 그리고, 사진은 3장씩 받아 그 자리만 바꾼다(열려 있는 입력창을 건드리지 않는다).
+    async function hydrateImages(gen) {
+      if (!opts.backend || !opts.backend.loadImage) return;
+      const queue = list(records, scope, selected, activity).concat(records).filter((r, i, a) => r.attachment && !r.image && !r.imageError && a.indexOf(r) === i);
+      async function worker() {
+        while (queue.length) {
+          const r = queue.shift(); const got = await opts.backend.loadImage(r);
+          if (!alive || gen !== loadGen) return;
+          Object.assign(r, got);
+          const slot = Array.from(host.querySelectorAll("[data-gr-img]")).find((n) => n.dataset.grImg === r.id);
+          if (slot) { const tpl = document.createElement("template"); tpl.innerHTML = r.image ? imageMarkup(r) : '<p class="gr-error">사진을 불러오지 못했어요.</p><button type="button" class="gr-edit" data-gr-retry>사진 다시 불러오기</button>'; slot.replaceWith(tpl.content); }
+        }
+      }
+      await Promise.all([worker(), worker(), worker()]);
+    }
     function render() {
       if (!alive) return;
       clearUrls();
@@ -70,7 +91,7 @@
       <section class="gr-records"${recordsOpen ? "" : " hidden"}><div class="gr-section-head"><h3>${esc(activity || group.label)}의 기록</h3><span>${current.length}개의 순간</span></div><div class="gr-activities" role="group" aria-label="활동별 기록"><button type="button" data-gr-activity="" aria-pressed="${!activity}">전체</button>${linkedActivities(records, scope, selected, lessons).map((a) => `<button type="button" data-gr-activity="${esc(a)}" aria-pressed="${a === activity}">${esc(a)}</button>`).join("")}</div>
       ${selected === "academy" && lessons.length ? `<div class="gr-linked"><strong>교육트렌드에 등록한 학원 일정</strong>${lessons.filter((l) => !activity || l.title === activity).map((l) => `<p>${esc(l.title)} <small>${l.weekly ? `주 ${l.weekly}회` : "반복 없음"}</small></p>`).join("")}<button type="button" class="gr-edit" data-gr-calendar>캘린더에서 일정 보기 →</button><small>수업 일정이 활동으로 연결돼요. 활동 기록은 직접 남겨 주세요.</small></div>` : ""}
       <div class="gr-timeline" aria-live="polite">${loading ? '<p class="gr-empty">기록을 불러오고 있어요.</p>' : failed ? '<p class="gr-empty">기록을 불러오지 못했어요. 저장 공간을 사용할 수 있는지 확인하고 다시 시도해 주세요.</p><button type="button" class="gr-secondary" data-gr-retry>다시 불러오기</button>' : current.length ? current.map((r) => {
-        let image = ""; if (r.image) { const u = URL.createObjectURL(r.image); urls.push(u); image = `<a href="${u}" target="_blank" rel="noopener" class="gr-image-link"><img src="${u}" alt="${esc(r.title)} 첨부 이미지" loading="lazy"><span>캡처 크게 보기 ↗</span></a>`; }
+        const image = imageMarkup(r);
         return `<article class="gr-record"><time datetime="${r.date}">${r.date.replace(/-/g, ".")}</time><span class="gr-activity-label">${esc(r.activity)}</span><h4>${esc(r.title)}</h4>${r.text ? `<p>${esc(r.text)}</p>` : ""}${image}${r.imageError ? '<p class="gr-error">사진을 불러오지 못했어요.</p><button type="button" class="gr-edit" data-gr-retry>사진 다시 불러오기</button>' : ""}<button type="button" class="gr-edit" data-gr-edit="${esc(r.id)}">기록 수정</button></article>`;
       }).join("") : `<div class="gr-empty"><strong>아직 ${esc(group.label)} 기록이 없어요.</strong><p>선생님이 보내준 메시지나 캡처 한 장으로<br>첫 순간을 남겨보세요.</p></div>`}</div></section>
       ${!opts.compact && all.length ? `<section class="gr-story"><p class="gr-kicker">기록으로 이어지는 이야기</p><h3>${esc(opts.name)}의 ${esc(all[0].date.slice(0, 7).replace("-", "."))}</h3><p>${esc(all.filter((r) => r.date.slice(0, 7) === all[0].date.slice(0, 7)).slice(0, 3).map((r) => `${r.activity}에서 “${r.title}”`).join(" · "))}</p><small>남겨둔 기록 제목을 모았어요.</small></section>` : ""}
@@ -93,7 +114,7 @@
       form.elements.image.addEventListener("change", () => { const f = form.elements.image.files[0]; const box = form.querySelector(".gr-preview"); box.innerHTML = ""; if (f && /^image\//.test(f.type)) { const u = URL.createObjectURL(f); urls.push(u); box.innerHTML = `<img src="${u}" alt="첨부 이미지 미리보기">`; } });
       form.addEventListener("submit", async (e) => {
         e.preventDefault(); const button = form.querySelector('[type="submit"]'); const error = form.querySelector(".gr-error");
-        try { const data = new FormData(form); const item = { ...r, ...prepare({ id: r.id, group: data.get("group"), activity: data.get("activity"), date: data.get("date"), title: data.get("title"), text: data.get("text"), image: form.elements.image.files[0] || r.image }, scope, r.createdAt || Date.now()), imageChanged: !!form.elements.image.files[0] }; button.disabled = true; error.textContent = ""; const saved = await backend.save(item); if (!alive) return; records = records.filter((x) => x.id !== item.id).concat(saved || item); selected = item.group; activity = item.activity; recordsOpen = true; render(); host.querySelector(".gr-records").scrollIntoView({ block: "start" }); }
+        try { const data = new FormData(form); const item = { ...r, ...prepare({ id: r.id, group: data.get("group"), activity: data.get("activity"), date: data.get("date"), title: data.get("title"), text: data.get("text"), image: form.elements.image.files[0] || r.image }, scope, r.createdAt || Date.now()), imageChanged: !!form.elements.image.files[0] }; button.disabled = true; error.textContent = ""; const saved = await backend.save(item); if (!alive) return; records = records.filter((x) => x.id !== item.id).concat(saved || item); if (opts.backend) recordCache.set(scope + "|" + (opts.familyId || ""), records); selected = item.group; activity = item.activity; recordsOpen = true; render(); host.querySelector(".gr-records").scrollIntoView({ block: "start" }); }
         catch (err) { if (alive) { error.textContent = err.name === "QuotaExceededError" ? "기기 저장 공간이 부족해요. 더 작은 이미지를 골라 주세요." : err.message || "기록을 저장하지 못했어요. 다시 시도해 주세요."; button.disabled = false; } }
       });
       slot.scrollIntoView({ block: "start" }); form.elements.activity.focus();
@@ -105,21 +126,44 @@
       else if (b.hasAttribute("data-gr-group")) { recordsOpen = !opts.compact || selected !== b.dataset.grGroup || !recordsOpen; selected = b.dataset.grGroup; activity = ""; render(); }
       else if (b.hasAttribute("data-gr-activity")) { recordsOpen = !opts.compact || !b.dataset.grLeafGroup || activity !== b.dataset.grActivity || !recordsOpen; activity = b.dataset.grActivity; if (b.dataset.grLeafGroup) selected = b.dataset.grLeafGroup; render(); }
       else if (b.hasAttribute("data-gr-add")) editor();
-      else if (b.hasAttribute("data-gr-edit")) editor(records.find((r) => r.id === b.dataset.grEdit));
+      else if (b.hasAttribute("data-gr-edit")) openEditor(records.find((r) => r.id === b.dataset.grEdit));
       else if (b.hasAttribute("data-gr-cancel")) render();
       else if (b.hasAttribute("data-gr-retry")) load();
       else if (b.hasAttribute("data-gr-import")) importRecords();
       else if (b.hasAttribute("data-gr-calendar") && opts.onCalendar) opts.onCalendar();
     };
     host.onkeydown = (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.matches(".gr-svg-leaf")) { e.preventDefault(); e.target.dispatchEvent(new MouseEvent("click", { bubbles: true })); } };
+    // 사진이 아직 안 내려온 기록은 사진을 받은 뒤에 열어야 저장할 때 첨부가 지워지지 않는다.
+    async function openEditor(r) {
+      if (r && r.attachment && !r.image && opts.backend && opts.backend.loadImage) { Object.assign(r, await opts.backend.loadImage(r)); if (!alive) return; }
+      editor(r);
+    }
     async function importRecords() {
       if(importing||!opts.backend)return;
       importing=true;importMessage="";render();
-      try { const result=await backend.importLocal(localImport,scope);if(!alive)return;importMessage=`${result.done}개 이전 완료`+(result.failed.length?` · ${result.failed.length}개 실패: ${result.failed[0].message}`:"");localImport=localImport.filter(r=>result.failed.some(f=>f.id===r.id));records=await backend.read(scope); }
+      try { const result=await backend.importLocal(localImport,scope);if(!alive)return;importMessage=`${result.done}개 이전 완료`+(result.failed.length?` · ${result.failed.length}개 실패: ${result.failed[0].message}`:"");localImport=localImport.filter(r=>result.failed.some(f=>f.id===r.id));records=await backend.read(scope,{attachments:false}); }
       catch(e){if(alive)importMessage=e.message;}
-      finally{if(alive){importing=false;render();}}
+      finally{if(alive){importing=false;render();hydrateImages(loadGen);}}
     }
-    async function load() { loading = true; failed = false; render(); try { const result = await backend.read(scope); if(opts.backend) { try { localImport = await backend.pendingLocal(await read(scope),scope); } catch(e) { localImport=[];importMessage=e.message || "기기 기록을 확인하지 못했어요."; } } if (!alive) return; records = result; loading = false; render(); } catch (e) { if (alive) { loading = false; failed = true; render(); } } }
+    async function load() {
+      const gen = ++loadGen, key = opts.backend ? scope + "|" + (opts.familyId || "") : "", cached = key && recordCache.get(key);
+      // 같은 아이를 다시 열면 지난 결과를 바로 보여 주고, 서버 결과는 뒤에서 받아 바꾼다.
+      if (cached) { records = cached; loading = false; failed = false; } else { loading = true; failed = false; }
+      render();
+      try {
+        const result = await backend.read(scope, { attachments: false });
+        if (!alive || gen !== loadGen) return;
+        if (cached) result.forEach((r) => { const old = cached.find((c) => c.id === r.id); if (old && old.image && r.attachment && old.attachment && old.attachment.storagePath === r.attachment.storagePath) { r.image = old.image; r.imageError = false; r.attachmentStatus = "ok"; } });
+        records = result; loading = false; if (key) recordCache.set(key, result);
+        if (!cached || !host.querySelector(".gr-editor")) render();
+      } catch (e) { if (alive && gen === loadGen && !cached) { loading = false; failed = true; render(); } if (!cached) return; }
+      hydrateImages(gen);
+      if (opts.backend) {
+        try { const pending = await backend.pendingLocal(await read(scope), scope); if (!alive || gen !== loadGen) return; localImport = pending; }
+        catch (e) { if (!alive || gen !== loadGen) return; localImport = []; importMessage = e.message || "기기 기록을 확인하지 못했어요."; }
+        if (!host.querySelector(".gr-editor")) render();
+      }
+    }
     load();
   }
   return { GROUPS, eligible, prepare, list, activities, linkedActivities, treeMarkup, mount, unmount: () => { if(dispose) dispose(); } };

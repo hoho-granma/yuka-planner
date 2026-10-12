@@ -47,15 +47,28 @@
       same(ctx);
       return {...Evidence.fields(d),schemaVersion:d.schemaVersion||1,registeredAt:d.createdAt,deletedAt:d.deletedAt||null,id:d.id,scope,group:d.group,activity:d.activity,activityId:d.activityId,title:d.title,text:d.text,date:d.recordDate,createdAt:d.legacyCreatedAt||d.createdAt,revision:d.revision,image,imageError,attachmentStatus,attachment:d.attachment||null,server:true};
     }
-    async function read(scope,options={}){const ctx=c(),rows=await a().list(recordsPath(ctx),ctx.childKey);same(ctx);return Promise.all(rows.filter(d=>!d.deletedAt).map(d=>hydrate(d,ctx,scope,options.attachments!==false)));}
+    // 마지막으로 받은 서버 목록. pendingLocal이 같은 로딩 안에서 한 번만 재사용하고 비운다(쿼리 중복 방지).
+    let lastRows=null;
+    async function read(scope,options={}){const ctx=c(),rows=await a().list(recordsPath(ctx),ctx.childKey);same(ctx);lastRows={ctx:JSON.stringify([ctx.uid,ctx.familyId,ctx.childKey]),rows};return Promise.all(rows.filter(d=>!d.deletedAt).map(d=>hydrate(d,ctx,scope,options.attachments!==false)));}
+    // 첨부 사진 하나만 따로 받는다. 목록은 사진 없이 먼저 그리고 사진은 이 함수로 채운다.
+    async function loadImage(record){
+      const ctx=c();
+      if(!record||!record.attachment)return {image:null,imageError:false,attachmentStatus:'none'};
+      try{const image=await a().image(record.attachment.storagePath);same(ctx);return {image,imageError:false,attachmentStatus:'ok'};}
+      catch(e){return {image:null,imageError:true,attachmentStatus:/unauthorized|permission-denied/.test(e.code||'')?'permission_denied':'failed'};}
+    }
     async function fingerprintOf(record){
       const imageHash=record.image?await hash(new Uint8Array(await record.image.arrayBuffer())):'';
       const parts=[record.group,record.activity,record.title,record.text,record.date,imageHash];const extension=Evidence.fields(record);if(Object.keys(extension).length)parts.push(extension);return {imageHash,fingerprint:await hash(JSON.stringify(parts))};
     }
     async function pendingLocal(records,scope){
       const ctx=c();if(scope!==JSON.stringify([ctx.uid,ctx.childCode]))throw Error('기기 기록의 대상 아이를 확인해 주세요.');
-      const remote=await a().list(recordsPath(ctx),ctx.childKey),pending=[];
-      for(const r of records){if(r.scope!==scope)throw Error('기기 기록의 계정을 확인해 주세요.');const id='import_'+await hash(r.scope+'\u0000'+r.id);const existing=remote.find(d=>d.id===id);if(!existing||existing.importFingerprint!==(await fingerprintOf(r)).fingerprint)pending.push(r);}
+      if(!records.length){lastRows=null;return [];}
+      const key=JSON.stringify([ctx.uid,ctx.familyId,ctx.childKey]);
+      const remote=lastRows&&lastRows.ctx===key?lastRows.rows:await a().list(recordsPath(ctx),ctx.childKey);lastRows=null;
+      for(const r of records)if(r.scope!==scope)throw Error('기기 기록의 계정을 확인해 주세요.');
+      const checked=await Promise.all(records.map(async r=>{const id='import_'+await hash(r.scope+'\u0000'+r.id);const existing=remote.find(d=>d.id===id);return !existing||existing.importFingerprint!==(await fingerprintOf(r)).fingerprint?r:null;}));
+      const pending=checked.filter(Boolean);
       same(ctx);return pending;
     }
     async function save(record,options={}){
@@ -102,7 +115,9 @@
       let ctx;try{ctx=c();}catch(e){return {status:'permission_denied',message:e.message};}if(scope!==JSON.stringify([ctx.uid,ctx.childCode]))return {status:'context_changed'};if(ref.familyId!==ctx.familyId||ref.childKey!==ctx.childKey)return {status:'context_changed'};
       try{const records=await read(scope);same(ctx);return Evidence.resolve(records.find(r=>r.id===ref.recordId),ref,ctx);}catch(e){return {status:status(e),message:e.message};}
     }
-    return {read,save,importLocal,pendingLocal,related,resolveReference};
+    return {read,loadImage,save,importLocal,pendingLocal,related,resolveReference};
   }
-  return {create,validate,context};
+  // 성장기록 탭을 열기 전에 사진 저장소 SDK를 미리 받아 둔다(첫 사진 요청이 스크립트 다운로드를 기다리지 않게).
+  function warm(){return typeof firebase!=='undefined'?storageSdk().catch(()=>{}):Promise.resolve();}
+  return {create,validate,context,warm};
 });

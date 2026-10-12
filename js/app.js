@@ -1639,7 +1639,8 @@
     applyTabLayout();
     if (growthActive() && currentTab === "places") switchTab("growth");
     else if (!growthActive() && currentTab === "growth") switchTab("home");
-    else if (growthActive() && currentTab === "growth") renderGrowthTab();
+    else if (growthActive() && currentTab === "growth" && growthNeedsRender()) renderGrowthTab();
+    if (growthActive() && !growthWarmed && acct.user && typeof GrowthSync !== "undefined" && GrowthSync.warm) { growthWarmed = true; setTimeout(() => GrowthSync.warm(), 1500); }
     tabChildBarSync();
     return r;
   };
@@ -3535,10 +3536,16 @@
     const link=usActive()?usLinks().find(l=>l.familyCode===child&&!l.removedAt):null;
     return DBPaths.deployment.growthServer&&acct.user&&link?GrowthSync.create({getContext:()=>({uid:acct.user&&acct.user.uid,familyId:hh.hid,childKey:(usLinks().find(l=>l.familyCode===familyCode&&!l.removedAt)||{}).childKey,childCode:familyCode})}):null;
   }
-  let growthRequestedView = "history", growthRenderScope = "", growthRenderLessons = "";
+  let growthWarmed = false, growthRequestedView = "history", growthRenderScope = "", growthRenderLessons = "";
   function growthLessonRows() {
     const docs = typeof usDocs === "function" && usActive() ? usDocs() : [];
     return typeof EduTrend !== "undefined" ? EduTrend.myLessons(docs, [acct36LinkKey(), familyCode].filter(Boolean)).lessons : [];
+  }
+  // 같은 아이·가족·학원 일정이고 이미 그려져 있으면 다시 mount하지 않는다(서버 재조회 방지). 입력창이 열려 있어도 건너뛴다.
+  function growthNeedsRender() {
+    const body = el("growth-body");
+    if (body.querySelector(".gr-editor")) return false;
+    return !body.querySelector(".gr-page") || growthRenderLessons !== JSON.stringify(growthLessonRows()) || growthRenderScope !== JSON.stringify([acct.user && acct.user.uid || "local", familyCode || usActiveChildKey()]) + "|" + (hh.hid || "");
   }
   function renderGrowthTab() {
     if (!growthActive()) return;
@@ -8093,8 +8100,9 @@
   updateBrandText=function(){charBrandBase();const b=el('brand-text');if(b&&profile)b.innerHTML=`한눈육아<span class="hn-family-name"><span class="hn-brand-dot">·</span>${esc(childDisplayName())}네집</span>`;};
   function charHeader(){const head=document.querySelector('.app-header');if(!head||!acctEnabled())return;let b=el('hn-profile');if(!b){b=document.createElement('button');b.id='hn-profile';b.className='hn-profile';b.setAttribute('aria-label','내 프로필');b.onclick=()=>acctProfileSheet();head.appendChild(b);}const m=charPeople(true).find(p=>p.key===localStorage.getItem('hn_selected_profile'))||charPeople(true).find(p=>p.key==='MEMBER:'+usMeId())||{role:'MOM',name:'내 프로필'};b.innerHTML=charImage(m);}
   let hnHomeDay=0; // 홈 우리 가족 일정 탭: 0 오늘 · 1 내일 · 2 모레(이 기기에서만 기억, 저장 안 함)
-  usHomeCardHtml=function(){if(!usActive())return '';const base=new Date(),dates=[0,1,2].map(n=>toISODate(new Date(base.getFullYear(),base.getMonth(),base.getDate()+n))),model=usBuildModel(dates[0],dates[2],{scope:'ALL',showAuto:false}),names=['오늘','내일','모레'],sel=Math.min(2,Math.max(0,hnHomeDay)),perDay=dates.map(d=>{const day=model.days.get(d);return day?day.user:[];}),dt=new Date(base.getFullYear(),base.getMonth(),base.getDate()+sel);return `<section class="card hn-schedules"><div class="hn-section-head"><h3><span class="hn-schedule-date">${dt.getMonth()+1}/${dt.getDate()}(${['일','월','화','수','목','금','토'][dt.getDay()]})</span> 우리 가족 일정</h3></div><div class="hn-hday-tabs" role="tablist">${names.map((n,i)=>`<button type="button" role="tab" aria-selected="${i===sel}" data-hn-hday="${i}" class="${i===sel?'on':''}">${n}${perDay[i].length?`<span class="hn-hday-badge">${perDay[i].length}</span>`:''}</button>`).join('')}</div>${perDay[sel].map(charRow).join('')||`<p class="fine-print">${names[sel]} 등록된 일정이 없어요.</p>`}${sel===2?'<button type="button" class="hn-hday-more" data-char-calendar>이후 일정은 가족캘린더 보기 →</button>':''}</section>`;};
+  usHomeCardHtml=function(){if(!usActive())return '';const base=new Date(),dates=[0,1,2].map(n=>toISODate(new Date(base.getFullYear(),base.getMonth(),base.getDate()+n))),model=usBuildModel(dates[0],dates[2],{scope:'ALL',showAuto:false}),names=['오늘','내일','모레'],sel=Math.min(2,Math.max(0,hnHomeDay)),perDay=dates.map(d=>{const day=model.days.get(d);return day?day.user:[];}),dt=new Date(base.getFullYear(),base.getMonth(),base.getDate()+sel);return `<section class="card hn-schedules"><div class="hn-section-head"><h3><span class="hn-schedule-date">${dt.getMonth()+1}/${dt.getDate()}(${['일','월','화','수','목','금','토'][dt.getDay()]})</span> 우리 가족 일정</h3><button type="button" class="hn-add-round" data-hn-hadd aria-label="일정 등록">+</button></div><div class="hn-hday-tabs" role="tablist">${names.map((n,i)=>`<button type="button" role="tab" aria-selected="${i===sel}" data-hn-hday="${i}" class="${i===sel?'on':''}">${n}</button>`).join('')}</div>${perDay[sel].map(charRow).join('')||`<p class="fine-print">${names[sel]} 등록된 일정이 없어요.</p>`}${sel===2?'<button type="button" class="hn-hday-more" data-char-calendar>이후 일정은 가족캘린더 보기 →</button>':''}</section>`;};
   document.addEventListener('click',e=>{const b=e.target.closest('[data-hn-hday]');if(!b)return;hnHomeDay=Number(b.dataset.hnHday)||0;renderHome();});
+  document.addEventListener('click',e=>{if(!e.target.closest('[data-hn-hadd]'))return;const d=new Date();usOpenForm(null,toISODate(new Date(d.getFullYear(),d.getMonth(),d.getDate()+Math.min(2,Math.max(0,hnHomeDay)))));}); // 선택한 탭의 날짜로 일정 등록
   const charChecklistBase=renderChecklistTab;
   renderChecklistTab=function(){charChecklistBase();if(!acctEnabled()||!usActive())return;const tab=el('tab-checklist');tab.querySelectorAll('#a36-todo-box,#hn-family-tasks-tab').forEach(n=>n.remove());tab.insertAdjacentHTML('afterbegin',charTodoSection(false));};
   acct36OpenAdd=function(){charOpenTodo();};
