@@ -43,3 +43,11 @@ test("가입 폼의 '이미 계정이 있어요 · 로그인'도 같은 보조 �
   const html = AV.renderSignup({ form: base, errors: {}, regions, unified: true });
   assert.match(html, /class="acct-link acct-sub-link" data-acct-action="open-login"/);
 });
+test("내 프로필 수정: 일반구가 있는 시면 구 칸이 나오고, 값이 없으면 빈 채로 둔다", () => {
+  const HV = require("../js/household-view.js");
+  const st = { enabled: true, hasHousehold: true, acctMode: true, bare: true, members: [{ memberId: "m1", role: "MOM", label: "주연", order: 1 }], meId: "m1", view: "form", regions };
+  const html = HV.renderMembers({ ...st, form: { memberId: "m1", role: "MOM", label: "주연", self: true, email: "a@b.com", province: "경기도", district: "성남시", subdistrict: "" } });
+  assert.ok(html.includes('data-mem-region="subdistrict"') && html.includes('<option value="분당구">') && html.includes('<option value="">구</option>') && !html.includes('selected>분당구'));
+  const none = HV.renderMembers({ ...st, form: { memberId: "m1", role: "MOM", label: "주연", self: true, province: "경기도", district: "과천시" } });
+  assert.ok(!none.includes('data-mem-region="subdistrict"'));
+});

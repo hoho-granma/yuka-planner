@@ -4672,8 +4672,8 @@
         const formSubs = form.self && form.province && form.district ? AccountView.subdistrictsOf((regionsData && regionsData.provinces || []).find((p) => p.code === form.province), form.district) : [];
         if (v.ok && form.self && !!form.province !== !!form.district) {
           form.error = AccountView.MSG.errRegion; // 시·도만 고르고 시·군·구를 비워 두면 저장하지 않는다
-        } else if (v.ok && formSubs.length && !formSubs.includes(form.subdistrict)) {
-          form.error = AccountView.MSG.errSubdistrict; // 일반구가 있는 시는 구까지 고른다
+        } else if (v.ok && form.subdistrict && !formSubs.includes(form.subdistrict)) {
+          form.error = AccountView.MSG.errSubdistrict; // 구는 비워 둘 수 있지만, 고른 값은 그 시의 구여야 한다
         } else if (v.ok && emailChanged && !AuthService.validateCredentials(newEmail, "x".repeat(AuthService.PASSWORD_MIN)).ok) {
           form.error = AuthService.MSG.invalidEmail;
         } else if (v.ok && emailChanged && !form.emailPassword) {
@@ -4693,7 +4693,7 @@
             if (!r || !r.ok) throw new Error((r && r.reason) || "member-save-failed");
             // H2: 내 구성원의 이름·역할을 바꾸면 계정 문서도 같이 갱신한다(role 은 규칙 허용 4종으로 변환)
             if (acctEnabled() && form.memberId && form.memberId === usMeId() && acct.sync && acct.user) {
-              const u = await acct.sync.updateProfile(acct.user.uid, { displayName: v.label, role: v.role, ...(form.self && form.province && form.district ? { province: form.province, district: form.district, subdistrict: formSubs.length ? form.subdistrict : "" } : {}) });
+              const u = await acct.sync.updateProfile(acct.user.uid, { displayName: v.label, role: v.role, ...(form.self && form.province && form.district ? { province: form.province, district: form.district, subdistrict: formSubs.includes(form.subdistrict) ? form.subdistrict : "" } : {}) });
               if (u && u.ok && acct.account) Object.assign(acct.account, { displayName: u.patch.displayName || acct.account.displayName, role: u.patch.role || acct.account.role, ...(u.patch.province ? { province: u.patch.province, district: u.patch.district, subdistrict: u.patch.subdistrict || "" } : {}) });
             }
             if (emailChanged) { // 이름·역할·지역 저장 뒤 이메일 변경 요청 — 인증 메일의 링크를 눌러야 실제로 바뀐다
