@@ -2,7 +2,7 @@
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.CharacterUI=factory();})(typeof window==='object'?window:globalThis,function(){
 'use strict';
 const base='icons/family/';
-const categories={DAD:['회사','모임','운동','병원','취미','자기계발'],MOM:['회사','모임','운동','병원','취미','자기계발'],CHILD:['학교','학원','방과후','운동','친구','체험'],FAMILY:['여행','나들이','외식','행사','친척','모임'],OTHER:['돌봄','회사','병원','운동','모임','취미']};
+const categories={DAD:['회사','모임','운동','병원','자기계발','기타'],MOM:['회사','모임','운동','병원','자기계발','기타'],CHILD:['학교','학원','방과후','운동','친구','체험'],FAMILY:['여행','나들이','외식','행사','친척','모임'],OTHER:['돌봄','회사','병원','운동','모임','취미']};
 const colors=['#b14d21','#3876a0','#7e5bb0','#427e56','#77716b','#77717f'];
 
 function categoriesFor(person,today=new Date()){

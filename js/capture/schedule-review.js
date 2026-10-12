@@ -13,7 +13,10 @@
  function beginEdit(c){c.editDraft=Object.fromEntries(editKeys.map(k=>[k,k==='isImportant'?metadata(c).isImportant:c[k]]));c.editing=true;}
  function cancelEdit(c){delete c.editDraft;c.editing=false;}
  function applyEdit(c){if(c.editDraft)Object.assign(c,c.editDraft);cancelEdit(c);}
- function candidateForm(c,base={}){return {...base,mode:'create',title:c.title,eventDate:c.date||'',dateKind:'FIXED',startTime:c.startTime||'',endTime:c.endTime||'',allDay:!c.startTime,endAuto:false,repeat:'NONE',byDay:[],multiDay:!!c.endDate,endDate:c.endDate||'',autoRef:null,memo:(c.memo||c.evidence||'').slice(0,500),location:c.location||'',category:categoryKey(c.category,base.category),categoryLabel:c.category||base.categoryLabel,charCategory:c.category||base.charCategory,tags:tagsFor(c,base.tags||[])};}
+ function candidateForm(c,base={}){
+  // 사진·메시지에서 읽은 값은 틀릴 수 있다: 저장을 막는 값(너무 긴 글, 앞선 종료 시각·날짜)은 버리거나 줄여서 일정만큼은 저장되게 한다. 날짜 형식이 틀리면 검증이 알려 준다.
+  const hhmm=/^([01]\d|2[0-3]):[0-5]\d$/,start=hhmm.test(c.startTime||'')?c.startTime:'',end=start&&hhmm.test(c.endTime||'')&&c.endTime>start?c.endTime:'',endDate=c.date&&c.endDate&&c.endDate>c.date?c.endDate:'';
+  return {...base,mode:'create',title:String(c.title||'').slice(0,100),eventDate:c.date||'',dateKind:'FIXED',startTime:start,endTime:end,allDay:!start,endAuto:false,repeat:'NONE',byDay:[],multiDay:!!endDate,endDate,autoRef:null,memo:(c.memo||c.evidence||'').slice(0,500),location:String(c.location||'').slice(0,100),category:categoryKey(c.category,base.category),categoryLabel:c.category||base.categoryLabel,charCategory:c.category||base.charCategory,tags:tagsFor(c,base.tags||[])};}
  function html(candidates){
   if(!candidates.length)return '사진이나 메시지에서 일정을 찾지 못했어요. 더 선명한 사진으로 다시 시도해 주세요.';
   return `<div class="hn-review-heading"><strong>등록할 일정</strong><span data-review-count>${candidates.length}개 · ${selectedCandidates(candidates).length}개 선택</span></div>`+candidates.map((entry,i)=>{

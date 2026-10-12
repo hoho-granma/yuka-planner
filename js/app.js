@@ -8223,7 +8223,12 @@ fields.sourceScheduleId=f.sourceScheduleId;
         // 쓰기는 서버 실패 시 이 기기 대기열에 쌓이고 성공처럼 돌아온다. 대기열이 남았으면(연결·권한 문제) 창을 닫지 않고 알린다.
         const sync=typeof HouseholdSync.getStatus==='function'?HouseholdSync.getStatus(batch.family):null;
         if(sync&&sync.pending>0){status.textContent='일정은 이 기기에 저장됐지만 서버에는 아직 올라가지 않았어요'+(sync.permissionDenied?' (가족 권한을 확인해 주세요)':' (인터넷 연결을 확인해 주세요)')+'. 연결되면 자동으로 올라가요.';}
-        else{batch.done=true;closeDetail();}}
+        else{
+          batch.done=true;closeDetail();
+          // 사진에서 읽은 일정은 오늘이 아닌 날짜에 들어가므로, 저장한 일정 중 가장 이른 날짜로 달력을 옮겨 바로 보이게 한다(안 옮기면 오늘 칸이 비어 저장이 안 된 것처럼 보인다).
+          const first=docs.map(x=>x.doc.eventDate||(x.doc.recurrence&&x.doc.recurrence.startDate)).filter(Boolean).sort()[0];
+          if(first){const d=new Date(first+'T00:00:00');viewMonth=new Date(d.getFullYear(),d.getMonth(),1);selectedCalendarDate=d;switchTab('calendar');renderCalendar();renderSelectedDayPanel();attachListHandlers();}
+        }}
     catch(e){status.textContent=e.message;}
     finally{batch.saving=false;if(messageSource()?.form===source.form){const notice=status.textContent;renderMessageBatch(source.form);el('hn-message-results').querySelector('[data-batch-status]').textContent=notice;}}
   });

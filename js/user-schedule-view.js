@@ -1007,7 +1007,7 @@
   }
   /**
    * 기존 폼(newForm·formFromSchedule 이 만든 것)을 계정 모드 시트용으로 바꾼다(저장 필드는 그대로, 보기 상태만 더한다).
-   * 새 일정: 기본은 본인(구성원을 알 때), 모르면 가족 전체. 수정: 저장된 제목은 카테고리를 바꿔도 덮어쓰지 않는다.
+   * 새 일정: 기본은 본인(구성원을 알 때), 모르면 지금 보는 아이, 그것도 없으면 가족 전체. 수정: 저장된 제목은 카테고리를 바꿔도 덮어쓰지 않는다.
    * ctx: { meId, ageOf(childKey)→개월수|"PREGNANT"|null }
    */
   function upgradeFormG13(f, ctx) {
@@ -1023,7 +1023,7 @@
     }
     f.titleTouched = false;
     f.whoPerson = false;
-    return g13ApplyWho(f, f.scope === "CHILD" && (f.childKeys || [])[0] ? `CHILD:${f.childKeys[0]}` : c.meId ? `MEMBER:${c.meId}` : "FAMILY", c); // D40: 새 일정의 '누구' 기본 = 지금 보는 아이(아이가 없는 가구는 본인, 모르면 가족 전체)
+    return g13ApplyWho(f, c.meId ? `MEMBER:${c.meId}` : f.scope === "CHILD" && (f.childKeys || [])[0] ? `CHILD:${f.childKeys[0]}` : "FAMILY", c); // 새 일정의 '누구' 기본 = 지금 로그인한 사람(프로필 기준 종류 라벨이 따라온다). 구성원을 모르면 지금 보는 아이, 그것도 없으면 가족 전체
   }
   /** D75: 두 폼 공용 반복 칩 줄 — [반복 안 함][매주][2주마다][매월]. */
   function repeatChipsHtml(f, repeating) {
