@@ -4977,8 +4977,12 @@
   };
   // 계정 모드(D3): 구성원 칩(MEMBER:<id>)과 '나' 기본 선택. 계정이 없거나 내 구성원을 모르면 기존(역할 칩·전체) 동작 그대로다.
   const usMeId = () => {
-    if (!acctEnabled() || !acct.user || !acct.account || !acct.account.memberId) return null;
-    return usMembers().some((m) => m.memberId === acct.account.memberId && !m.deletedAt) ? acct.account.memberId : null;
+    if (!acctEnabled() || !acct.user) return null;
+    const list = usMembers();
+    const byAccount = acct.account && acct.account.memberId && list.some((m) => m.memberId === acct.account.memberId && !m.deletedAt) ? acct.account.memberId : null;
+    if (byAccount) return byAccount;
+    const mine = list.find((m) => !m.deletedAt && m.uid && m.uid === acct.user.uid); // 계정 문서에 memberId 가 비어 있어도(이전 가입자) 구성원 문서의 uid 로 '나'를 찾는다 — 못 찾으면 내 일정이 '아직 가입 안 한 구성원' 것으로 숨겨진다
+    return mine ? mine.memberId : null;
   };
   const usSelOpts = () => ({ memberMode: !!usMeId(), meId: usMeId(), meName: (typeof acct !== "undefined" && acct && acct.account && acct.account.displayName) || "", ...(acctEnabled() ? { noFamily: true } : {}) }); // G21: 계정 모드는 '가족' 칩 없음(가족 범위 일정은 그대로 '전체'에서 보인다)
   /** 현재 선택: 기본은 '전체'(E 1-1 — 내 일정만 보려면 '나' 칩 한 번). 칩을 누른 뒤에는 그 선택. 저장하지 않는다. */
@@ -5381,7 +5385,7 @@
     us.plan = null;
     modalMode = "profile";
     const extra = occ.recurring ? { recurrence: doc.recurrence, exceptionCount: UserSchedule.exceptionCount(doc) } : undefined;
-    el("modal-content").innerHTML = UserScheduleView.renderDetail(UserScheduleView.cardData(occ, usLinks(), extra), {...(acctEnabled()?{dots:UserScheduleView.detailDots(occ,usLinks())}:{}),fullDate:occ.endDate?occ.date+' ~ '+occ.endDate:occ.date||'',isPeriod:!!occ.endDate,canViewOriginal:SourcePhoto.reference(doc.tags)?.uid===acct.user?.uid});
+    el("modal-content").innerHTML = UserScheduleView.renderDetail(UserScheduleView.cardData(occ, usLinks(), extra), {...(acctEnabled()?{dots:UserScheduleView.detailDots(occ,usLinks())}:{}),fullDate:occ.endDate?occ.date+' ~ '+occ.endDate:occ.date||'',isPeriod:!!occ.endDate,canViewOriginal:SHOW_SOURCE_PHOTO_BUTTON&&SourcePhoto.reference(doc.tags)?.uid===acct.user?.uid});
     const detail = el("modal-content").querySelector(".us-detail");
     if (detail && acctEnabled()) {
       detail.style.setProperty("--hn-detail-person", charTint(charPerson(charOccOwner(occ))));
@@ -6229,6 +6233,8 @@
     const c = ev.target.closest(".us-card");
     if (c) usOpenDetail(c.getAttribute("data-us-id"), c.getAttribute("data-us-key"));
   }
+  // 사진으로 등록한 일정의 상세에서 [원본 보기]는 숨긴다 — 개인 등록 일정·자료를 따로 보는 메뉴가 생기면 그쪽에서 연다(원본 저장·읽기 코드는 그대로 둔다).
+  const SHOW_SOURCE_PHOTO_BUTTON = false;
   async function usViewOriginal(id){
     const doc=usDocById(id),detail=el('modal-content').querySelector('.us-detail');if(!doc||!detail)return;
     let section=detail.querySelector('.hn-original-view');if(section){section.remove();return;}
