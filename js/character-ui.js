@@ -2,11 +2,11 @@
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.CharacterUI=factory();})(typeof window==='object'?window:globalThis,function(){
 'use strict';
 const base='icons/family/';
-const categories={DAD:['회사','모임','운동','병원','자기계발','기타'],MOM:['회사','모임','운동','병원','자기계발','기타'],CHILD:['학교','학원','방과후','운동','친구','체험','병원','기타'],FAMILY:['여행','나들이','외식','행사','친척','모임'],OTHER:['돌봄','회사','병원','운동','모임','취미']};
+const categories={DAD:['회사','모임','운동','병원','자기계발','취미','기타'],MOM:['회사','모임','운동','병원','자기계발','취미','기타'],CHILD:['학교','학원','방과후','운동','친구','체험','병원','기타'],FAMILY:['여행','나들이','외식','행사','친척','모임','기타'],OTHER:['돌봄','회사','병원','운동','모임','취미']};
 const colors=['#b14d21','#3876a0','#7e5bb0','#427e56','#77716b','#77717f'];
 // 확정 색(칸 번호 순). 입력 폼 칩 = 홈·캘린더·할일 태그. 아이는 파스텔 + 어두운 글씨, 어른(엄마·아빠·그 밖)은 진한 색 + 흰 글씨.
 const childColors=['#f0ccdc','#cadcf0','#c9e4d7','#efddba','#E8C6C8','#D2C9E4','#c8e3e6','#E2E2E5'];
-const parentColors=['#7c5cc4','#2a6fb0','#2b8a5e','#b06a12','#c04a7c','#5d5a68'];
+const parentColors=['#7c5cc4','#2a6fb0','#2b8a5e','#b06a12','#c04a7c','#2f7f86','#5d5a68']; // 6번째(취미)가 새 색, 기타는 예전과 같은 회색을 끝으로 유지
 const inkFor=person=>person&&person.role==='CHILD'?'#40374b':'#ffffff';
 const paletteFor=person=>person&&person.role==='CHILD'?childColors:parentColors;
 
@@ -17,7 +17,7 @@ function categoriesFor(person,today=new Date()){
  const age=today.getFullYear()-birth.getFullYear()+1;
  return months<36?['어린이집','병원','접종','검진','놀이','체험']:age>=8?categories.CHILD:['유치원','학원','운동','병원','놀이','체험'];
 }
-function categoryBadge(category,person){const labels=categoriesFor(person);if(labels.includes(category)){const slot=labels.indexOf(category);return {label:category,color:paletteFor(person)[slot%paletteFor(person).length],ink:inkFor(person),slot};}const names={INSTITUTION:labels[0],LESSON:'학원',MEDICAL:'병원',FAMILY:person&&person.role==='CHILD'?'놀이':'가족',ETC:'기타'};const idx=['INSTITUTION','LESSON','MEDICAL','FAMILY','ETC'].indexOf(category);const slot=idx>=0?[0,1,3,4,5][idx]:5;return {label:names[category]||category||'',color:paletteFor(person)[slot%paletteFor(person).length],ink:inkFor(person),slot};}
+function categoryBadge(category,person){const labels=categoriesFor(person);if(labels.includes(category)){const slot=labels.indexOf(category);return {label:category,color:paletteFor(person)[slot%paletteFor(person).length],ink:inkFor(person),slot};}const names={INSTITUTION:labels[0],LESSON:'학원',MEDICAL:'병원',FAMILY:person&&person.role==='CHILD'?'놀이':'가족',ETC:'기타'};const idx=['INSTITUTION','LESSON','MEDICAL','FAMILY','ETC'].indexOf(category);const slot=category==='ETC'&&(!person||person.role!=='CHILD')&&labels.includes('기타')?labels.indexOf('기타'):idx>=0?[0,1,3,4,5][idx]:5;return {label:names[category]||category||'',color:paletteFor(person)[slot%paletteFor(person).length],ink:inkFor(person),slot};}
 
 function scheduleCategory(label,person){return ['학교','유치원','어린이집','방과후'].includes(label)?'INSTITUTION':label==='학원'?'LESSON':['병원','접종','검진'].includes(label)?'MEDICAL':label==='가족'||person&&person.role==='FAMILY'?'FAMILY':'ETC';}
 function normalizeGender(value){const v=String(value||'').trim().toLowerCase();return ['f','female','girl','여아','여자'].includes(v)?'female':['m','male','boy','남아','남자'].includes(v)?'male':null;}

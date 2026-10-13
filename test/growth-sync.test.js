@@ -30,3 +30,14 @@ test('thumbnail is uploaded beside the photo; list loads the thumb, full loads t
  const f=await api.loadImage(rows[0],{full:true});assert.equal(f.image.size,5);
  thumbFail=true;const s2=await api.save(record({id:'r2',image:new Blob(['img2'],{type:'image/png'})}));assert.equal(s2.attachment.thumbPath,undefined);assert.equal(s2.image.size,4);
  const edited=await api.save({...rows[0],title:'새 제목'});assert.equal(edited.attachment.thumbPath,s.attachment.thumbPath);});
+test('remove soft-deletes with revision+1, hides from reads, rejects stale revisions and other children',async()=>{
+ const f=fixture(),s=await f.api.save(record());
+ await assert.rejects(()=>f.api.remove({...s,revision:s.revision+5}),/수정했어요/);
+ assert.equal((await f.api.read(s.scope)).length,1);
+ await f.api.remove(s);
+ assert.equal((await f.api.read(s.scope)).length,0);
+ const doc=[...f.docs.values()][0];assert.equal(doc.deletedAt,10);assert.equal(doc.revision,s.revision+1);assert.equal(doc.childKey,'c1');
+ await f.api.remove(s); // 이미 지운 기록은 조용히 통과
+ await assert.rejects(()=>f.api.remove({id:'nope',revision:1}),/찾을 수 없어요/);
+ await assert.rejects(()=>f.api.remove({id:'bad id'}),/확인해 주세요/);
+});

@@ -46,3 +46,27 @@
 .gr-activities button{font-size:14px}
 .gr-record h4{font-size:17px}
 .gr-record>p{font-size:15px}
+.gr-primary.gr-busy { opacity: 1; cursor: progress; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.gr-primary.gr-busy::before { content: ""; width: 18px; height: 18px; border: 3px solid currentColor; border-right-color: transparent; border-radius: 50%; opacity: .7; animation: gr-spin .8s linear infinite; }
+@keyframes gr-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .gr-primary.gr-busy::before { animation: none; border-style: dotted; } }
+
+/* 활동 버튼 관리(이름·종류 바꾸기 / 삭제)와 기록 삭제 */
+.gr-manage { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+.gr-manage button, .gr-manage-actions button, .gr-del-row button { min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface, #fff); color: var(--text); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.gr-manage button:disabled, .gr-manage-actions button:disabled, .gr-del-row button:disabled { opacity: .5; cursor: default; }
+.gr-manage .gr-danger, .gr-manage-actions .gr-danger, .gr-del-row .gr-danger { color: var(--c-danger, #c0392b); border-color: currentColor; background: transparent; }
+.gr-manage-form, .gr-manage-confirm { margin: 10px 0 4px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface, #fff); }
+.gr-manage-form label { display: block; font-size: 13px; font-weight: 700; margin: 10px 0 6px; }
+.gr-manage-form label:first-child { margin-top: 0; }
+.gr-manage-form input, .gr-manage-form select { display: block; width: 100%; min-width: 0; box-sizing: border-box; height: 48px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; font: inherit; font-size: 15px; color: var(--text); background: var(--surface, #fff); }
+.gr-manage-confirm p { margin: 0 0 8px; font-size: 14px; line-height: 1.5; }
+.gr-manage-actions { display: flex; gap: 8px; margin-top: 10px; }
+.gr-manage-actions button { flex: 1; }
+.gr-manage-actions .gr-manage-save { background: var(--accent-dark); color: var(--on-accent); border-color: transparent; }
+.gr-del-row { margin-top: 14px; }
+.gr-del-row > .gr-danger { width: 100%; }
+.gr-del-ask { margin: 0; font-size: 14px; color: var(--c-danger, #c0392b); }
+.gr-manage .gr-busy, .gr-manage-actions .gr-busy { display: inline-flex; align-items: center; justify-content: center; gap: 8px; opacity: 1; cursor: progress; }
+.gr-manage-actions .gr-busy::before { content: ""; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: gr-spin .8s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .gr-manage-actions .gr-busy::before { animation: none; border-style: dotted; } }

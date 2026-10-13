@@ -339,3 +339,17 @@ body.acct-design .us-detail>.detail-row,body.acct-design .us-detail>.us-actions,
 .hn-sheet-iframe{height:100%;min-height:0}
 /* 할일 탭: 맨 아래 넓은 '할일 추가하기' 버튼 */
 .hn-todo-add-wide{display:block;width:100%;margin-top:10px;border:1px dashed #cfc7dd;background:#faf8fd;border-radius:12px;padding:13px;font:inherit;font-size:14px;font-weight:800;color:#715697;cursor:pointer}
+
+/* 성장기록 입력창: 날짜·선택·글자칸을 같은 높이·글자 크기로 맞춘다(날짜칸만 넓어 보이던 것) */
+.hn-sheet .gr-editor input:not([type=file]),.hn-sheet .gr-editor select{height:48px;min-height:48px;padding:0 12px;font-size:15px;line-height:48px}
+.hn-sheet .gr-editor input[type=date]{-webkit-appearance:none;appearance:none;text-align:left}
+.hn-sheet .gr-editor input[type=date]::-webkit-date-and-time-value{text-align:left;min-height:46px;display:flex;align-items:center;margin:0}
+.hn-sheet .gr-editor input[type=date]::-webkit-datetime-edit{padding:0;line-height:46px}
+.hn-sheet .gr-editor input[type=file]{padding:10px 12px;font-size:14px}
+
+/* 창이 열려 있는 동안 뒤 화면이 같이 끌려 움직이지 않게: 뒤 화면 스크롤 잠금 + 창 안 스크롤이 끝나도 바깥으로 넘기지 않는다 */
+body:has(#detail-modal:not(.hidden)){overflow:hidden}
+.modal:not(.hidden){overscroll-behavior:contain}
+.hn-sheet>.hn-sheet-body{overscroll-behavior:contain}
+.hn-sheet .gr-editor .gr-del-row{margin-top:12px}
+.hn-sheet .gr-editor .gr-del-row button{border-radius:12px}

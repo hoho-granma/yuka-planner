@@ -113,6 +113,18 @@
       });
       same(ctx);return hydrate({id,...saved},ctx,record.scope);
     }
+    // 삭제는 문서를 지우지 않고 deletedAt을 찍는다(소프트 삭제). 목록 읽기에서 빠지고, 규칙은 revision+1 갱신으로 허용한다.
+    async function remove(record){
+      const ctx=c();if(!record||!ID.test(record.id||''))throw Error('삭제할 기록을 확인해 주세요.');
+      const path=recordsPath(ctx)+'/'+record.id;same(ctx);
+      await a().transaction(path,existing=>{
+        if(!existing||existing.childKey!==ctx.childKey)throw Error('기존 기록을 찾을 수 없어요. 다시 불러와 주세요.');
+        if(existing.deletedAt)return null;
+        if(existing.revision!==record.revision)throw Error('가족이 이 기록을 수정했어요. 다시 불러온 뒤 삭제해 주세요.');
+        return {...existing,deletedAt:now(),updatedByUid:ctx.uid,updatedAt:now(),revision:existing.revision+1};
+      });
+      same(ctx);
+    }
     async function importLocal(records,scope,onProgress=()=>{}){
       // Scope matching must be exact; never import another login's local data.
       const ctx=c(),expected=JSON.stringify([ctx.uid,ctx.childCode]);
@@ -129,7 +141,7 @@
       let ctx;try{ctx=c();}catch(e){return {status:'permission_denied',message:e.message};}if(scope!==JSON.stringify([ctx.uid,ctx.childCode]))return {status:'context_changed'};if(ref.familyId!==ctx.familyId||ref.childKey!==ctx.childKey)return {status:'context_changed'};
       try{const records=await read(scope);same(ctx);return Evidence.resolve(records.find(r=>r.id===ref.recordId),ref,ctx);}catch(e){return {status:status(e),message:e.message};}
     }
-    return {read,loadImage,save,importLocal,pendingLocal,related,resolveReference};
+    return {read,loadImage,save,remove,importLocal,pendingLocal,related,resolveReference};
   }
   // 성장기록 탭을 열기 전에 사진 저장소 SDK를 미리 받아 둔다(첫 사진 요청이 스크립트 다운로드를 기다리지 않게).
   function warm(){return typeof firebase!=='undefined'?storageSdk().catch(()=>{}):Promise.resolve();}

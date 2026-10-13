@@ -1559,7 +1559,7 @@
   };
   const usRefreshHomeBase = usRefreshHome;
   usRefreshHome = function usRefreshHome() {
-    if (currentTab === "growth" && growthActive() && !el("growth-body").querySelector(".gr-editor") && (!el("growth-body").querySelector(".gr-page") || growthRenderLessons!==JSON.stringify(growthLessonRows()) || growthRenderScope!==JSON.stringify([acct.user&&acct.user.uid||"local",familyCode||usActiveChildKey()])+"|"+(hh.hid||""))) renderGrowthTab();
+    if (currentTab === "growth" && growthActive() && !el("growth-body").querySelector(".gr-editor, .gr-manage-form") && (!el("growth-body").querySelector(".gr-page") || growthRenderLessons!==JSON.stringify(growthLessonRows()) || growthRenderScope!==JSON.stringify([acct.user&&acct.user.uid||"local",familyCode||usActiveChildKey()])+"|"+(hh.hid||""))) renderGrowthTab();
     if (!acct36Active() || !hhEnabled()) return usRefreshHomeBase.apply(this, arguments);
     const sig = acct36Sig();
     if (sig !== (us.homeSig36 || "")) {
@@ -3545,7 +3545,7 @@
   // 같은 아이·가족·학원 일정이고 이미 그려져 있으면 다시 mount하지 않는다(서버 재조회 방지). 입력창이 열려 있어도 건너뛴다.
   function growthNeedsRender() {
     const body = el("growth-body");
-    if (body.querySelector(".gr-editor")) return false;
+    if (body.querySelector(".gr-editor, .gr-manage-form")) return false;
     return !body.querySelector(".gr-page") || growthRenderLessons !== JSON.stringify(growthLessonRows()) || growthRenderScope !== JSON.stringify([acct.user && acct.user.uid || "local", familyCode || usActiveChildKey()]) + "|" + (hh.hid || "");
   }
   function renderGrowthTab() {
@@ -3564,7 +3564,7 @@
     mountGrowth(el("growth-body"), { backend, name: childDisplayName(), scope, familyId: hh.hid || null, grade:EduTrend.gradeOf(profile.birthDate,new Date(),{policy:schoolPolicy,enrollmentYearOverride:profile.enrollmentYearOverride}), semester:new Date().getMonth()<7?1:2, months: ChildTimeline.completedMonths(profile.birthDate,new Date()), initialView:growthRequestedView, lessons,
       isCurrent:()=>currentTab==="growth" && currentFamily===hh.hid && scope===JSON.stringify([acct.user&&acct.user.uid||"local",familyCode||usActiveChildKey()]),
       onEducation:(subject)=>{educationRequestedSubject=subject||"";switchTab("trend");},onCalendar: () => switchTab("calendar"),
-      onOpenForm:(record,d)=>hnOpenGrowthForm(record,d),onOpenPaper:(subject,url)=>hnOpenFrameSheet(subject+" 문제지",url),onOpenCurriculum:(url)=>hnOpenFrameSheet("학기별 배우는 내용",url) });
+      onOpenForm:(record,d)=>hnOpenGrowthForm(record,d),onChanged:()=>{if(growthHomeCountCache)growthHomeCountCache.at=0;},onOpenPaper:(subject,url)=>hnOpenFrameSheet(subject+" 문제지",url),onOpenCurriculum:(url)=>hnOpenFrameSheet("학기별 배우는 내용",url) });
     growthRequestedView="history";
   }
   document.addEventListener("click", (e) => { if (e.target.closest("[data-growth-home]")) switchTab("growth"); });
@@ -3611,6 +3611,15 @@
     hnSheetDispose = GrowthRecords.openForm(body, {
       backend: activeGrowthBackend(), scope, familyId: hh.hid || null, lessons: growthLessonRows(), record: record || null, group: defaults && defaults.group, activity: defaults && defaults.activity,
       onClose: () => hnCloseSheet(),
+      onDeleted: () => {
+        hnSheetDispose = null; closeDetail();
+        growthRenderScope = "";
+        const c = growthHomeCountCache;
+        growthHomeCountCache = { scope, n: c && c.scope === scope && c.n != null ? Math.max(0, c.n - 1) : null, at: 0 };
+        const box = el("gr-home-count"); if (box) box.textContent = growthHomeCountText();
+        growthHomeLoadCount();
+        if (currentTab === "growth") renderGrowthTab();
+      },
       onSaved: () => {
         hnSheetDispose = null; closeDetail();
         growthRenderScope = ""; // 성장기록 탭은 다음에 열 때 새로 불러온다
