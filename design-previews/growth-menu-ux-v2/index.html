@@ -1,0 +1,65 @@
+<!doctype html><html lang=ko><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><title>성장기록 메뉴 UX 시안 v2</title><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/style.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/places.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/education-research.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/family-access.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/capture.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/growth-records.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/learning-check.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/character-ui.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/family-theme.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/schedule-review.css">
+<style>
+body{background:#e6e3de!important;padding:22px 16px 60px;margin:0}
+h1{font-size:20px;margin:0 0 4px}.sub{font-size:13px;color:#6f6c74;margin:0 0 18px;line-height:1.6;max-width:900px}
+.row{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}.col{width:372px}.cap{font-size:15px;font-weight:800;margin:0 0 3px}.why{font-size:12px;color:#6f6c74;line-height:1.55;margin:0 0 10px;min-height:56px}
+.ph{width:372px;height:780px;overflow-y:auto;overflow-x:hidden;background:var(--bg,#f4f3f1);border:6px solid #2b2b30;border-radius:30px;position:relative;padding:0 14px 90px}
+.ph::-webkit-scrollbar{display:none}
+.apptop{position:sticky;top:0;z-index:3;background:var(--bg,#f4f3f1);padding:14px 2px 8px;font-size:17px;font-weight:800}
+.mini-tree .gr-line-tree{max-width:210px;margin:0 auto 6px}
+.kid{display:flex;align-items:center;gap:10px;padding:2px 2px 10px}.kid .av{width:42px;height:42px;border-radius:50%;background:var(--nd-soft);display:grid;place-items:center;font-size:21px}.kid b{font-size:15px;display:block}.kid span{font-size:12px;color:var(--text-muted)}
+/* 카테고리 4개 */
+.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 10px}
+.cats button{font:inherit;border:1px solid var(--line);background:var(--surface,#fff);border-radius:14px;padding:9px 2px 8px;color:var(--text);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.cats button b{font-size:13px}.cats button span{font-size:11px;color:var(--text-muted)}
+.cats button.on{background:var(--accent-dark);border-color:var(--accent-dark);color:var(--on-accent)}.cats button.on span{color:var(--on-accent);opacity:.85}
+.seg{display:flex;background:var(--nd-soft);border-radius:14px;padding:4px;margin:0 0 10px}.seg button{flex:1;font:inherit;font-size:13px;font-weight:700;border:0;background:none;border-radius:11px;padding:9px 0;color:var(--text-muted)}.seg button.on{background:var(--surface,#fff);color:var(--accent-dark);box-shadow:0 1px 4px rgba(0,0,0,.1)}.seg small{font-weight:600;margin-left:3px}
+.subs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.subs button{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);border-radius:20px;padding:8px 12px;background:var(--surface,#fff);color:var(--text)}
+.subs button.on{background:var(--accent-dark);color:var(--on-accent);border-color:var(--accent-dark)}.subs button em{font-style:normal;opacity:.75;font-weight:700;margin-left:2px}
+.tlh{display:flex;justify-content:space-between;align-items:baseline;margin:2px 2px 10px}.tlh h3{margin:0;font-size:16px}.tlh span{font-size:11px;color:var(--text-muted)}
+.thumb{height:92px;border-radius:10px;background:linear-gradient(135deg,var(--nd-soft),var(--nd-soft2));display:grid;place-items:center;font-size:11px;color:var(--accent-dark);margin-top:10px}
+.gr-record{margin-bottom:10px;padding:13px 14px}.gr-record h4{margin:6px 0 4px;font-size:15px}.gr-record>p{font-size:13px;line-height:1.6}
+.gr-timeline{margin-left:4px;padding-left:14px}
+.card{background:var(--surface,#fff);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin:0 0 10px}.card h3{margin:0 0 8px;font-size:14px;display:flex;justify-content:space-between;align-items:center}.card h3 span{font-size:11px;font-weight:600;color:var(--text-muted)}
+.subj{display:flex;gap:6px}.subj div{flex:1;background:var(--nd-soft);border-radius:12px;padding:8px 2px;text-align:center;font-size:12px;font-weight:700}.subj div small{display:block;font-weight:600;color:var(--text-muted);font-size:10px;margin-top:2px}.subj div.on{background:var(--accent-dark);color:var(--on-accent)}.subj div.on small{color:var(--on-accent);opacity:.85}
+.stat3{display:flex;gap:8px;margin:0 0 10px}.stat3 div{flex:1;background:var(--surface,#fff);border:1px solid var(--line);border-radius:14px;padding:9px 4px;text-align:center}.stat3 b{display:block;font-size:17px}.stat3 span{font-size:10.5px;color:var(--text-muted)}
+.sc{display:flex;gap:8px;overflow:hidden;margin:0 -14px 10px;padding:0 14px}.sc .c{flex:none;width:118px;background:var(--surface,#fff);border:1px solid var(--line);border-radius:14px;padding:10px}.sc .c b{font-size:13px;display:block}.sc .c span{font-size:11px;color:var(--text-muted);display:block}.sc .c em{font-style:normal;font-size:11px;font-weight:800;color:var(--accent-dark)}
+.pill{display:flex;align-items:center;gap:8px;background:var(--surface,#fff);border:1px solid var(--line);border-radius:999px;padding:9px 13px;font-size:12px;margin:0 0 10px}.pill .go{margin-left:auto;color:var(--accent-dark);font-weight:800}
+.dock{position:sticky;bottom:-90px;margin:0 -14px;padding:24px 14px 16px;background:linear-gradient(transparent,var(--bg,#f4f3f1) 40%);z-index:3}
+.btn{display:block;width:100%;border:0;border-radius:14px;background:var(--accent-dark);color:var(--on-accent);font:inherit;font-size:15px;font-weight:800;padding:14px;text-align:center}
+.btn.ghost{background:var(--surface,#fff);color:var(--accent-dark);border:1px solid var(--accent-dark)}
+.inp{border:1px solid var(--line);border-radius:12px;background:var(--surface,#fff);padding:11px;font-size:13px;color:var(--text-muted)}
+.big4{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 10px}.big4 button{font:inherit;text-align:left;border:1px solid var(--line);border-radius:16px;background:var(--surface,#fff);padding:12px;color:var(--text);display:block}.big4 b{font-size:15px;display:block}.big4 span{font-size:12px;color:var(--text-muted)}.big4 em{font-style:normal;float:right;font-size:20px;font-weight:800;color:var(--accent-dark)}.big4 button.on{border:2px solid var(--accent-dark);background:var(--nd-soft);padding:11px}
+.quick{display:flex;gap:8px;margin:0 0 12px}.quick .inp{flex:1}.quick .btn{width:auto;padding:0 16px;font-size:14px}
+</style><body class="acct-design theme-warm"><h1>성장기록 메뉴 UX 시안 v2 (실제 화면 기준)</h1>
+<p class=sub>공통: 활동기록 상세보기 버튼 없음 · 분류 4개(학원 · 가정활동 · 학교 · 그 외활동), 기본 선택은 학원 · 그 아래 활동명(리드101 (8) 형태), 첫 번째가 기본 선택 · 활동을 누르면 아래에 타임라인(수행 결과물 미리보기) · 교육정보 영역 삭제 · 현재 상태 확인은 접는 버튼이 아니라 화면에 바로 보임. 각 폰 화면은 안에서 스크롤됩니다. 나무 그림과 카드 모양은 현재 앱 CSS를 그대로 썼습니다.</p>
+<div class=row id=row></div>
+<script src="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/js/growth-evidence.js"></script><script src="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/js/growth-records.js"></script>
+<script>
+var G=GrowthRecords,S='s';
+var CATS=[['academy','학원',13,[['리드101',8],['피아노',3],['수영',2]]],['home','가정활동',5,[['독서',5]]],['school','학교',4,[['학교생활',4]]],['activity','그 외활동',1,[['숲 체험',1]]]];
+function recs(g,a){var r=[];CATS.forEach(function(c){c[3].forEach(function(x){for(var i=0;i<x[1];i++)r.push({id:c[0]+x[0]+i,scope:S,group:c[0],activity:x[0],title:'t',text:'x',date:'2026-10-0'+(1+i%9),createdAt:i});});});return r;}
+var base=base=recs();
+function tree(sel,mini){return '<div class="'+(mini?'mini-tree':'')+'">'+G.treeMarkup(base,S,[],'은찬',sel,'')+'</div>';}
+var TL=[['10.09','리드101','Unit 5 단어시험 90점','선생님: 이번 주 단어를 거의 다 외웠어요. 발음도 또렷해졌어요.',1],['10.07','리드101','읽기 숙제 끝까지 완료','선생님 메시지 캡처',1],['10.02','리드101','리딩 레벨 상승','Level 2 → Level 3 으로 올라갔어요.',0]];
+function timeline(name,n){return '<div class=tlh><h3>'+name+'의 기록</h3><span>'+n+'개의 순간</span></div><div class=gr-timeline>'+TL.map(function(t){return '<article class=gr-record><time>2026.'+t[0]+'</time><span class=gr-activity-label>'+t[1]+'</span><h4>'+t[2]+'</h4><p>'+t[3]+'</p>'+(t[4]?'<div class=thumb>🖼 캡처 사진 미리보기</div>':'')+'<button class=gr-edit>기록 수정</button></article>';}).join('')+'<p class=gr-empty style="padding:6px">아래로 더 있어요 · 8개 중 3개 표시</p></div>';}
+function cats(){return '<div class=cats>'+CATS.map(function(c,i){return '<button class="'+(i==0?'on':'')+'"><b>'+c[1]+'</b><span>'+c[2]+'개</span></button>';}).join('')+'</div>';}
+function subs(){return '<div class=subs>'+CATS[0][3].map(function(s,i){return '<button class="'+(i==0?'on':'')+'">'+s[0]+'<em>('+s[1]+')</em></button>';}).join('')+'<button style="border-style:dashed">＋ 활동 추가</button></div>';}
+function kid(){return '<div class=kid><div class=av>🌱</div><div><b>은찬 · 8세</b><span>이번 달 기록 7개 · 마지막 기록 어제</span></div></div>';}
+function status(){return '<div class=card><h3>현재 상태 확인 <span>3학년 2학기</span></h3><div class=subj><div class=on>수학<small>답안 2건</small></div><div>국어<small>기록 없음</small></div><div>영어<small>기록 없음</small></div><div>과학<small>기록 없음</small></div></div><p style="margin:8px 0 0;font-size:12px;color:var(--text-muted)">수학 최근 10.05 · 수준 판정 아님 &nbsp;<b style="color:var(--accent-dark)">문제지 · 결과 등록 ›</b></p></div>';}
+function dock(t){return '<div class=dock><div class=btn>'+(t||'＋ 오늘의 성장 남기기')+'</div></div>';}
+var V=[
+['A. 나무 + 분류 탭','현재 화면의 나무를 작게 위에 두고, 바로 아래에 분류 4칸(개수 포함) → 활동명(개수) → 타임라인. 나무 잎을 눌러도 분류가 바뀜. 상태 확인은 타임라인 위 카드로 상시 표시.',
+ '<div class=apptop>성장기록</div>'+tree('academy',1)+cats()+subs()+timeline('리드101',8)+status()+dock()],
+['B. 나무 없이 요약 + 분류 탭','나무를 빼서 첫 화면에 기록이 더 많이 보임. 아이 요약 → 상태 3칸 → 분류 탭(세그먼트) → 활동 → 타임라인. 가장 정보 밀도가 높음.',
+ '<div class=apptop>성장기록</div>'+kid()+'<div class=stat3><div><b>7</b><span>이번 달 기록</span></div><div><b>수학 2건</b><span>이해 확인</span></div><div><b>어제</b><span>마지막 기록</span></div></div><div class=seg><button class=on>학원<small>13</small></button><button>가정활동<small>5</small></button><button>학교<small>4</small></button><button>그 외<small>1</small></button></div>'+subs()+timeline('리드101',8)+dock()],
+['C. 과목 카드 + 분류 탭','현재 상태를 과목별 가로 카드로 위에 둠(기록 없는 과목은 "결과 등록" 바로 연결). 그 아래 분류 4칸 → 활동 → 타임라인.',
+ '<div class=apptop>성장기록</div>'+kid()+'<div class=sc><div class=c><b>수학</b><span>답안 2건</span><em>최근 10.05</em></div><div class=c><b>국어</b><span>기록 없음</span><em>결과 등록 ›</em></div><div class=c><b>영어</b><span>기록 없음</span><em>결과 등록 ›</em></div><div class=c><b>과학</b><span>기록 없음</span><em>결과 등록 ›</em></div></div>'+cats()+subs()+timeline('리드101',8)+dock()],
+['D. 큰 분류 카드 2×2','분류 4개를 큰 카드(개수 크게)로 보여 줌. 아이가 어디에 기록이 많은지 한눈에. 선택하면 활동명과 타임라인이 아래로 이어짐. 상태는 한 줄 요약 pill.',
+ '<div class=apptop>성장기록</div>'+kid()+'<div class=pill>📈 <span><b>수학</b> 답안 2건 · 최근 10.05</span><span class=go>상태 ›</span></div><div class=big4><button class=on><em>13</em><b>학원</b><span>3개 활동</span></button><button><em>5</em><b>가정활동</b><span>1개 활동</span></button><button><em>4</em><b>학교</b><span>1개 활동</span></button><button><em>1</em><b>그 외활동</b><span>1개 활동</span></button></div>'+subs()+timeline('리드101',8)+dock()],
+['E. 바로 기록 입력 + 분류 탭','가장 위에 한 줄 기록 입력(선택된 활동에 바로 저장, 사진 버튼 옆). 기록하려고 버튼을 따로 누를 필요가 없음. 아래로 분류 → 활동 → 타임라인, 상태 확인은 맨 아래 카드.',
+ '<div class=apptop>성장기록</div>'+kid()+'<div class=quick><div class=inp>리드101에 한 줄 기록…</div><div class="btn ghost" style="width:auto;padding:0 12px;display:grid;place-items:center">📷</div><div class=btn>저장</div></div>'+cats()+subs()+timeline('리드101',8)+status()]
+];
+document.getElementById('row').innerHTML=V.map(function(v){return '<div class=col><p class=cap>'+v[0]+'</p><p class=why>'+v[1]+'</p><div class=ph>'+v[2]+'</div></div>';}).join('');
+</script></html>

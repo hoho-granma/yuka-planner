@@ -1,0 +1,111 @@
+<!doctype html><html lang=ko><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><title>성장기록 메뉴 UX 시안 v6</title><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/style.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/places.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/education-research.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/family-access.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/capture.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/growth-records.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/learning-check.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/character-ui.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/family-theme.css"><link rel=stylesheet href="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/css/schedule-review.css">
+<style>
+body{background:#e6e3de!important;padding:22px 16px 60px;margin:0}
+h1{font-size:20px;margin:0 0 4px}.sub{font-size:13px;color:#6f6c74;margin:0 0 18px;line-height:1.6;max-width:900px}
+.row{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}.col{width:372px}.cap{font-size:15px;font-weight:800;margin:0 0 3px}.why{font-size:12px;color:#6f6c74;line-height:1.55;margin:0 0 10px;min-height:56px}
+.ph{width:372px;height:780px;overflow-y:auto;overflow-x:hidden;background:var(--bg,#f4f3f1);border:6px solid #2b2b30;border-radius:30px;position:relative;padding:0 14px 90px}
+.ph::-webkit-scrollbar{display:none}
+.apptop{position:sticky;top:0;z-index:3;background:var(--bg,#f4f3f1);padding:14px 2px 8px;font-size:17px;font-weight:800}
+.mini-tree .gr-line-tree{max-width:210px;margin:0 auto 6px}
+.kid{display:flex;align-items:center;gap:10px;padding:2px 2px 10px}.kid .av{width:42px;height:42px;border-radius:50%;background:var(--nd-soft);display:grid;place-items:center;font-size:21px}.kid b{font-size:15px;display:block}.kid span{font-size:12px;color:var(--text-muted)}
+/* 카테고리 4개 */
+.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 10px}
+.cats button{font:inherit;border:1px solid var(--line);background:var(--surface,#fff);border-radius:14px;padding:9px 2px 8px;color:var(--text);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.cats button b{font-size:13px}.cats button span{font-size:11px;color:var(--text-muted)}
+.cats button.on{background:var(--accent-dark);border-color:var(--accent-dark);color:var(--on-accent)}.cats button.on span{color:var(--on-accent);opacity:.85}
+.seg{display:flex;background:var(--nd-soft);border-radius:14px;padding:4px;margin:0 0 10px}.seg button{flex:1;font:inherit;font-size:13px;font-weight:700;border:0;background:none;border-radius:11px;padding:9px 0;color:var(--text-muted)}.seg button.on{background:var(--surface,#fff);color:var(--accent-dark);box-shadow:0 1px 4px rgba(0,0,0,.1)}.seg small{font-weight:600;margin-left:3px}
+.subs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.subs button{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);border-radius:20px;padding:8px 12px;background:var(--surface,#fff);color:var(--text)}
+.subs button.on{background:var(--accent-dark);color:var(--on-accent);border-color:var(--accent-dark)}.subs button em{font-style:normal;opacity:.75;font-weight:700;margin-left:2px}
+.tlh{display:flex;justify-content:space-between;align-items:baseline;margin:2px 2px 10px}.tlh h3{margin:0;font-size:16px}.tlh span{font-size:11px;color:var(--text-muted)}
+.thumb{height:92px;border-radius:10px;background:linear-gradient(135deg,var(--nd-soft),var(--nd-soft2));display:grid;place-items:center;font-size:11px;color:var(--accent-dark);margin-top:10px}
+.gr-record{margin-bottom:10px;padding:13px 14px}.gr-record h4{margin:6px 0 4px;font-size:15px}.gr-record>p{font-size:13px;line-height:1.6}
+.gr-timeline{margin-left:4px;padding-left:14px}
+.card{background:var(--surface,#fff);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin:0 0 10px}.card h3{margin:0 0 8px;font-size:14px;display:flex;justify-content:space-between;align-items:center}.card h3 span{font-size:11px;font-weight:600;color:var(--text-muted)}
+.subj{display:flex;gap:6px}.subj div{flex:1;background:var(--nd-soft);border-radius:12px;padding:8px 2px;text-align:center;font-size:12px;font-weight:700}.subj div small{display:block;font-weight:600;color:var(--text-muted);font-size:10px;margin-top:2px}.subj div.on{background:var(--accent-dark);color:var(--on-accent)}.subj div.on small{color:var(--on-accent);opacity:.85}
+.stat3{display:flex;gap:8px;margin:0 0 10px}.stat3 div{flex:1;background:var(--surface,#fff);border:1px solid var(--line);border-radius:14px;padding:9px 4px;text-align:center}.stat3 b{display:block;font-size:17px}.stat3 span{font-size:10.5px;color:var(--text-muted)}
+.sc{display:flex;gap:8px;overflow:hidden;margin:0 -14px 10px;padding:0 14px}.sc .c{flex:none;width:118px;background:var(--surface,#fff);border:1px solid var(--line);border-radius:14px;padding:10px}.sc .c b{font-size:13px;display:block}.sc .c span{font-size:11px;color:var(--text-muted);display:block}.sc .c em{font-style:normal;font-size:11px;font-weight:800;color:var(--accent-dark)}
+.pill{display:flex;align-items:center;gap:8px;background:var(--surface,#fff);border:1px solid var(--line);border-radius:999px;padding:9px 13px;font-size:12px;margin:0 0 10px}.pill .go{margin-left:auto;color:var(--accent-dark);font-weight:800}
+.dock{position:sticky;bottom:-90px;margin:0 -14px;padding:24px 14px 16px;background:linear-gradient(transparent,var(--bg,#f4f3f1) 40%);z-index:3}
+.btn{display:block;width:100%;border:0;border-radius:14px;background:var(--accent-dark);color:var(--on-accent);font:inherit;font-size:15px;font-weight:800;padding:14px;text-align:center}
+.btn.ghost{background:var(--surface,#fff);color:var(--accent-dark);border:1px solid var(--accent-dark)}
+.inp{border:1px solid var(--line);border-radius:12px;background:var(--surface,#fff);padding:11px;font-size:13px;color:var(--text-muted)}
+.big4{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 10px}.big4 button{font:inherit;text-align:left;border:1px solid var(--line);border-radius:16px;background:var(--surface,#fff);padding:12px;color:var(--text);display:block}.big4 b{font-size:15px;display:block}.big4 span{font-size:12px;color:var(--text-muted)}.big4 em{font-style:normal;float:right;font-size:20px;font-weight:800;color:var(--accent-dark)}.big4 button.on{border:2px solid var(--accent-dark);background:var(--nd-soft);padding:11px}
+.quick{display:flex;gap:8px;margin:0 0 12px}.quick .inp{flex:1}.quick .btn{width:auto;padding:0 16px;font-size:14px}
+
+.tabs-u{display:flex;border-bottom:1px solid var(--line);margin:0 0 12px}.tabs-u button{flex:1;font:inherit;font-size:14px;font-weight:700;border:0;background:none;padding:11px 0 10px;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-1px}.tabs-u button small{font-weight:600;margin-left:3px;font-size:11px}.tabs-u button.on{color:var(--accent-dark);border-bottom-color:var(--accent-dark)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}.tags button{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--surface,#fff);color:var(--text)}.tags button.on{background:var(--accent-dark);border-color:var(--accent-dark);color:var(--on-accent)}.tags button em{font-style:normal;opacity:.75;font-weight:700;margin-left:2px}
+.tags button.add{border:1px dashed var(--accent-dark);color:var(--accent-dark);background:transparent;font-weight:800}.tags button.add.solid{background:var(--accent-dark);color:var(--on-accent);border-style:solid}
+.calbtn{display:block;width:100%;min-height:44px;margin:0 0 14px;padding:10px;border-radius:12px;border:1px solid var(--nd-soft);background:var(--nd-soft);color:var(--nd-ink,var(--accent-dark));font:inherit;font-size:13px;font-weight:700;text-align:center}
+.seg2{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:0}.seg2 button{font:inherit;font-size:13px;font-weight:700;border:1px solid var(--line);border-bottom:0;background:var(--nd-soft);color:var(--text-muted);padding:10px 0;border-radius:12px 12px 0 0;margin-right:-1px}.seg2 button.on{background:var(--surface,#fff);color:var(--accent-dark);position:relative;z-index:1;padding-bottom:11px;margin-bottom:-1px}.seg2 small{font-weight:600;margin-left:2px;font-size:11px}
+.panel{background:var(--surface,#fff);border:1px solid var(--line);border-radius:0 0 16px 16px;padding:14px 12px 6px;margin:0 0 10px}.panel .gr-record{background:var(--bg,#f4f3f1)}
+.sticky-tabs{position:sticky;top:46px;z-index:2;background:var(--bg,#f4f3f1);padding-bottom:2px}
+
+.ph{--gb:#e5d6fa;--gi:#6c4696}
+.g-school{--gb:#d8e7f6;--gi:#35587e}.g-academy{--gb:#e5d6fa;--gi:#6c4696}.g-activity{--gb:#e3ecd2;--gi:#526c3c}.g-home{--gb:#fbe5d4;--gi:#986d4f}
+.fold{display:grid;grid-template-columns:repeat(4,1fr);margin:0}.fold button{font:inherit;font-size:13px;font-weight:700;border:1px solid var(--line);border-bottom:0;background:var(--nd-soft);color:var(--text-muted);padding:10px 0;border-radius:12px 12px 0 0;margin-right:-1px;position:relative}
+.fold button i{display:block;width:18px;height:3px;border-radius:2px;margin:0 auto 4px}.fold button small{font-weight:600;margin-left:2px;font-size:11px}
+.fold button.on{background:var(--gb);color:var(--gi);border-color:var(--gi);z-index:1;padding-bottom:11px;margin-bottom:-1px;font-weight:800}
+.cpanel{background:var(--surface,#fff);border:1px solid var(--gi);border-radius:0 0 16px 16px;padding:14px 12px 6px;margin:0 0 10px}
+.ctags{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}.ctags button{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--gb);border-radius:8px;padding:8px 12px;background:#fff;color:var(--text)}.ctags button.on{background:var(--gi);border-color:var(--gi);color:#fff}.ctags em{font-style:normal;opacity:.75;font-weight:700;margin-left:2px}
+.addfull{display:block;width:100%;border:0;border-radius:12px;background:var(--gi);color:#fff;font:inherit;font-size:15px;font-weight:800;padding:13px;margin:0 0 14px;text-align:center}
+.cpanel .tlh h3{color:var(--gi)}.cpanel .gr-timeline{border-left-color:var(--gb)}.cpanel .gr-record::before{background:var(--gb)}.cpanel .gr-record{background:var(--bg,#f4f3f1);border-color:var(--gb)}.cpanel .gr-activity-label{background:var(--gb);color:var(--gi)}.cpanel .thumb{background:var(--gb);color:var(--gi)}.cpanel .gr-edit{color:var(--gi)}
+.sheetph{padding:0;overflow:hidden}.sheetph .bgdim{position:absolute;inset:0;background:rgba(30,25,40,.45)}
+.sheet2{position:absolute;left:0;right:0;bottom:0;top:96px;background:#fff;border-radius:22px 22px 0 0;overflow:hidden;display:flex;flex-direction:column}
+.sh-head{background:var(--gb);padding:16px 18px;display:flex;align-items:center;justify-content:space-between}.sh-head h3{margin:0;font-size:19px;color:#302c3c}.sh-head .x{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.7);display:grid;place-items:center;font-size:14px}
+.sh-head .gtag{font-size:11px;font-weight:800;color:var(--gi);background:rgba(255,255,255,.75);border-radius:6px;padding:3px 8px;margin-left:8px}
+.sh-body{padding:4px 18px 18px;overflow:hidden}.sh-body label{display:block;font-size:13px;font-weight:700;margin:13px 0 6px;color:#302c3c}
+.fld{border:1px solid var(--gb);border-radius:12px;background:#fff;padding:0 12px;height:46px;display:flex;align-items:center;font-size:14px;color:#302c3c}.fld.focus{border:2px solid var(--gi);padding:0 11px}.fld.ta{height:74px;align-items:flex-start;padding-top:12px;color:var(--text-muted)}
+.fld.sel{justify-content:space-between}.fld.sel:after{content:"⌄";color:var(--gi)}
+.fld.file{border-style:dashed;color:var(--gi);font-weight:700}
+.savebtn{display:block;margin-top:16px;border-radius:12px;background:var(--gi);color:#fff;font-weight:800;font-size:15px;padding:14px;text-align:center}
+.mini-note{font-size:11px;color:var(--text-muted);margin:6px 0 0}
+
+.fold button i{display:none}
+.ctags button.on{background:var(--gb);border-color:var(--gi);color:var(--gi);font-weight:800}
+.addfull{background:var(--gb);color:var(--gi)}
+.savebtn{background:var(--gb);color:var(--gi)}
+.stsum{background:var(--surface,#fff);border:1px solid var(--line);border-radius:16px;padding:11px 14px;margin:0 0 10px}
+.stsum .h{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:800}.stsum .h span{font-size:12px;font-weight:700;color:var(--text-muted)}.stsum .h span b{color:var(--accent-dark)}
+.stsum .bar{height:6px;border-radius:3px;background:var(--nd-soft);margin:9px 0 8px;overflow:hidden}.stsum .bar i{display:block;height:100%;width:50%;background:var(--accent-dark);border-radius:3px}
+.stsum .r{display:flex;gap:6px;font-size:12px;align-items:center;margin-top:3px}.stsum .r em{font-style:normal;font-weight:800;font-size:11px;border-radius:6px;padding:2px 7px}.stsum .ok{background:#e3ecd2;color:#526c3c}.stsum .no{background:#fbe5d4;color:#986d4f}
+.stsum .chev{color:var(--text-muted);font-size:15px;margin-left:6px}
+
+.stsum{padding:9px 14px;border-radius:14px}
+.stsum .h{font-size:13px}.stsum .h span b{color:var(--text)}
+.st2{font-size:12px;color:var(--text-muted);margin-top:3px;display:block}.st2 b{color:var(--text);font-weight:700}
+.addfull{background:color-mix(in srgb,var(--gb) 30%,#fff);border:1px dashed color-mix(in srgb,var(--gi) 38%,#fff);color:var(--gi);font-size:14px;font-weight:800;border-radius:12px;padding:13px;margin:10px 0 14px}
+</style><body class="acct-design theme-warm"><h1>성장기록 메뉴 UX 시안 v6</h1>
+<p class=sub>v5에서 변경: 현재 상태 확인을 두 줄짜리 컴팩트 행으로, 색은 글자 회색/검정만(막대·색 이름표 삭제) · "＋ 성장기록 남기기"를 할일 탭의 "＋ 할일 추가하기"와 같은 모양(점선 테두리, 아주 연한 배경, 14px 굵은 글씨, 둥근 12px)으로, 색만 해당 잎 색 · 윗줄 메인 화면, 아랫줄 입력창.</p>
+<div class=row id=row></div>
+<script src="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/js/growth-evidence.js"></script><script src="file:///Users/hhhhp/Documents/10-workspaces/14-육아지기/04-자체서비스/한눈육아/js/growth-records.js"></script>
+<script>
+var G=GrowthRecords,S='s';
+var CATS=[['academy','학원',13,[['리드101',8],['피아노',3],['수영',2]]],['home','가정활동',5,[['독서',5]]],['school','학교',4,[['학교생활',4]]],['activity','그 외활동',1,[['숲 체험',1]]]];
+function recs(g,a){var r=[];CATS.forEach(function(c){c[3].forEach(function(x){for(var i=0;i<x[1];i++)r.push({id:c[0]+x[0]+i,scope:S,group:c[0],activity:x[0],title:'t',text:'x',date:'2026-10-0'+(1+i%9),createdAt:i});});});return r;}
+var base=base=recs();
+function tree(sel,mini){return '<div class="'+(mini?'mini-tree':'')+'">'+G.treeMarkup(base,S,[],'은찬',sel,'')+'</div>';}
+var TL=[['10.09','리드101','Unit 5 단어시험 90점','선생님: 이번 주 단어를 거의 다 외웠어요. 발음도 또렷해졌어요.',1],['10.07','리드101','읽기 숙제 끝까지 완료','선생님 메시지 캡처',1],['10.02','리드101','리딩 레벨 상승','Level 2 → Level 3 으로 올라갔어요.',0]];
+function timeline(name,n){return '<div class=tlh><h3>'+name+'의 기록</h3><span>'+n+'개의 순간</span></div><div class=gr-timeline>'+TL.map(function(t){return '<article class=gr-record><time>2026.'+t[0]+'</time><span class=gr-activity-label>'+t[1]+'</span><h4>'+t[2]+'</h4><p>'+t[3]+'</p>'+(t[4]?'<div class=thumb>🖼 캡처 사진 미리보기</div>':'')+'<button class=gr-edit>기록 수정</button></article>';}).join('')+'<p class=gr-empty style="padding:6px">아래로 더 있어요 · 8개 중 3개 표시</p></div>';}
+
+
+var G4={
+ academy:{n:'학원',t:[['리드101',8],['피아노',3],['수영',2]],tl:[['10.09','리드101','Unit 5 단어시험 90점','선생님: 이번 주 단어를 거의 다 외웠어요.',1],['10.07','리드101','읽기 숙제 끝까지 완료','선생님 메시지 캡처',0]],ph:'수업 내용·선생님 메시지'},
+ school:{n:'학교',t:[['학교생활',4]],tl:[['10.08','학교생활','발표 시간에 손을 들었어요','알림장: 오늘 처음으로 자기 생각을 발표했어요.',0],['10.01','학교생활','체육대회 달리기 2등','사진과 함께 남겨요.',1]],ph:'알림장·선생님 말씀'},
+ activity:{n:'그 외',t:[['숲 체험',1]],tl:[['10.05','숲 체험','도토리 줍기 체험','가족과 함께 다녀왔어요.',1]],ph:'오늘 있었던 일'},
+ home:{n:'가정활동',t:[['독서',5]],tl:[['10.10','독서','그림책 3권 읽기','스스로 책장에서 골라 왔어요.',0],['10.06','독서','잠자리 독서 15분','소리 내어 읽었어요.',0]],ph:'함께한 순간'}
+};
+var ORDER=['school','academy','home','activity'],CNT={school:4,academy:13,home:5,activity:1};
+function tlG(g,act,n){return '<div class=tlh><h3>'+act+'의 기록</h3><span>'+n+'개의 순간</span></div><div class=gr-timeline>'+G4[g].tl.map(function(t){return '<article class=gr-record><time>2026.'+t[0]+'</time><span class=gr-activity-label>'+t[1]+'</span><h4>'+t[2]+'</h4><p>'+t[3]+'</p>'+(t[4]?'<div class=thumb>🖼 캡처 사진 미리보기</div>':'')+'<button class=gr-edit>기록 수정</button></article>';}).join('')+'</div>';}
+function main(g){var d=G4[g];
+ return '<div class="ph g-'+g+'"><div class=apptop>성장기록</div>'+tree(g,0)+
+ '<div class=stsum><div class=h><div>현재 상태 확인</div><div><span>진단 <b>2/4</b> 완료 · 3학년 2학기</span><span class=chev>›</span></div></div><span class=st2>완료 <b>수학 · 국어</b> &nbsp;·&nbsp; 미완료 <b>영어 · 과학</b></span></div>'+
+  '<div class=fold>'+ORDER.map(function(k){return '<button class="'+(k==g?'on':'')+'" style="'+(k==g?'':'')+'"><i style="background:'+({school:'#35587e',academy:'#6c4696',home:'#986d4f',activity:'#526c3c'})[k]+'"></i>'+G4[k].n+'<small>'+CNT[k]+'</small></button>';}).join('')+'</div>'+
+ '<div class=cpanel><div class=ctags>'+d.t.map(function(x,i){return '<button class="'+(i==0?'on':'')+'">'+x[0]+'<em>('+x[1]+')</em></button>';}).join('')+'</div><button class=addfull>＋ 성장기록 남기기</button>'+tlG(g,d.t[0][0],d.t[0][1])+'</div></div>';}
+function sheet(g){var d=G4[g];
+ return '<div class="ph sheetph g-'+g+'"><div class=bgdim></div><div class=sheet2><div class=sh-head><div style="display:flex;align-items:center"><h3>성장기록 남기기</h3><span class=gtag>'+d.n+'</span></div><span class=x>✕</span></div><div class=sh-body><label>활동 종류</label><div class="fld sel">'+d.n+'</div><label>활동 이름</label><div class="fld focus">'+d.t[0][0]+'</div><label>기록 날짜</label><div class=fld>2026. 10. 13.</div><label>캡처·사진 넣기</label><div class="fld file">＋ 사진 고르기</div><label>선생님 메시지·부모 메모</label><div class="fld ta">'+d.ph+'</div><div class=savebtn>기록 저장</div></div></div></div>';}
+var V=[];
+document.getElementById('row').innerHTML='';
+var cap={school:'학교 (파랑)',academy:'학원 (보라)',home:'가정활동 (주황)',activity:'그 외활동 (초록)'};
+document.getElementById('row').innerHTML=ORDER.map(function(g){return '<div class=col><p class=cap>메인 · '+cap[g]+'</p>'+main(g)+'</div>';}).join('')+'<div style="flex-basis:100%;height:0"></div>'+ORDER.map(function(g){return '<div class=col><p class=cap>입력창 · '+cap[g]+'</p>'+sheet(g)+'</div>';}).join('');
+</script></html>
