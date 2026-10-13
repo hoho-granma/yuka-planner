@@ -1,0 +1,125 @@
+<title>한눈육아 홈 화면 5안</title>
+<style>
+/* 레이아웃: 5개 휴대폰 목업을 나란히. 실제 앱 데이터(수아네집·뮤지컬·스포츠데이·할로윈·성장기록 12건)로 채움 */
+:root{--bg:#ebe8f1;--ink:#302c3c;--mut:#7a7488;--line:#ece8f2;--app:#f4f2f7;--pur:#715697;--pur-t:#ece4f7;
+ --ind:#4c5bb8;--ind-t:#e1e4f6;--ind-d:#2f3a86;--ros:#c04a7c;--ros-t:#f8e0ea;--ros-d:#8c2c58;--grn:#1f6f4a;--grn-t:#dcece3;--card:#fff;--tag-a:#cadcf0;--tag-s:#f0ccdc}
+*{box-sizing:border-box}html{background:var(--bg)}body{background:var(--bg);color:var(--ink);font-family:-apple-system,"Apple SD Gothic Neo",Pretendard,system-ui,sans-serif}
+button{font:inherit;cursor:pointer}
+.wrap{max-width:1240px;margin:0 auto;padding:24px 16px 70px}
+h1{font-size:21px;margin:0 0 6px;text-wrap:balance}.sub{color:var(--mut);font-size:13px;line-height:1.7;margin:0 0 20px;max-width:70ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:26px 20px;justify-items:center}
+.item{width:100%;max-width:340px}
+.cap{font-size:14px;font-weight:800;margin:0 0 3px;text-align:center}.capsub{font-size:11.5px;color:var(--mut);text-align:center;margin:0 0 10px;line-height:1.5;min-height:34px;text-wrap:balance}
+.phone{background:var(--app);border-radius:30px;border:8px solid #1e1b26;height:690px;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.sb{height:26px;flex:none;display:flex;justify-content:space-between;align-items:flex-end;padding:0 18px 2px;font-size:10px;font-weight:700}
+.scr{flex:1;overflow:auto;padding:0 12px 80px}
+.tb{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:6px 0 12px}
+.tb span{display:grid;justify-items:center;gap:2px;font-size:9.5px;color:var(--mut)}.tb span.on{color:var(--pur);font-weight:700}.tb svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.face{width:28px;height:28px;border-radius:50%;background:#f7e8c9;display:grid;place-items:center;font-size:15px;flex:none}
+.av{border-radius:50%;background:#f8d7c0;display:grid;place-items:center;flex:none}
+.tag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:7px;color:#40374b;white-space:nowrap}.tg-a{background:var(--tag-a)}.tg-s{background:var(--tag-s)}
+.ck{width:20px;height:20px;border:2px solid #b8b0c8;border-radius:6px;background:#fff;flex:none}
+.plus{width:26px;height:26px;border-radius:50%;border:0;color:#fff;font-size:20px;line-height:1;padding:0;display:grid;place-items:center;flex:none}
+.ver{font-size:11px;color:var(--mut);font-weight:700}
+.row{display:flex;align-items:center;gap:8px}
+.ev{display:flex;align-items:center;gap:8px;padding:11px 0;font-size:14px}.ev time{font-size:13px;font-weight:700;color:#5d5870;min-width:42px}.ev b{font-weight:700;flex:1;min-width:0}.ev small{font-weight:500;color:var(--mut);font-size:11.5px}
+.td{display:flex;align-items:center;gap:8px;padding:10px 0;font-size:14px}.td+.td,.ev+.ev{border-top:1px solid var(--line)}.td time{font-size:12.5px;font-weight:700;color:var(--pur);min-width:0}.td b{font-weight:700;flex:1;min-width:0}
+.card{background:#fff;border-radius:16px;border:1px solid #e2e2dd;overflow:hidden}
+.gr{display:flex;align-items:center;gap:8px;padding:14px 16px}
+/* 1 */
+.p1 .top{display:flex;align-items:center;justify-content:space-between;padding:14px 4px 4px}.p1 .brand{font-size:21px;font-weight:900;letter-spacing:-.5px}.p1 .brand i{font-style:normal;color:var(--pur)}
+.p1 .sum{font-size:12.5px;color:var(--mut);padding:0 4px 12px}.p1 .sum b{color:var(--ink)}
+.p1 .h{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;font-size:15px;font-weight:800}.p1 .bd{padding:2px 14px 6px}
+.p1 .card{margin-bottom:12px}.p1 .tabs{display:flex;border-bottom:1px solid var(--line);margin:0 14px}.p1 .tabs span{flex:1;text-align:center;font-size:13px;font-weight:700;color:var(--mut);padding:8px 0 9px;position:relative}.p1 .tabs .on{color:var(--ind-d)}.p1 .tabs .on:after{content:"";position:absolute;left:22%;right:22%;bottom:-1px;height:3px;border-radius:3px;background:var(--ind)}
+/* 2 */
+.p2 .hero{background:linear-gradient(160deg,#7a5fa3,#5a4380);color:#fff;margin:0 -12px;padding:12px 18px 60px;border-radius:0 0 28px 28px}
+.p2 .hr{display:flex;justify-content:space-between;align-items:center}.p2 .hero .ver{color:#d9cdee}
+.p2 .nm{font-size:13px;opacity:.85;margin:16px 0 2px}.p2 .big{font-size:23px;font-weight:900;line-height:1.3;letter-spacing:-.4px;text-wrap:balance}
+.p2 .chips{display:flex;gap:8px;margin-top:14px}.p2 .chips span{background:rgba(255,255,255,.18);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:700}
+.p2 .stack{margin-top:-40px;display:grid;gap:12px}.p2 .h{padding:12px 14px 4px;font-size:15px;font-weight:800;display:flex;justify-content:space-between;align-items:center}.p2 .bd{padding:0 14px 8px}
+.p2 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px}
+/* 3 */
+.p3 .top{display:flex;align-items:center;justify-content:space-between;padding:12px 4px 10px}.p3 .brand{font-size:17px;font-weight:900}.p3 .brand i{font-style:normal;color:var(--pur)}
+.p3 .date{font-size:26px;font-weight:900;letter-spacing:-.6px;padding:0 4px}.p3 .date small{font-size:13px;color:var(--mut);font-weight:700;margin-left:6px}
+.p3 .tl{position:relative;margin:14px 4px 0;padding-left:20px}.p3 .tl:before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:#ddd6ea}
+.p3 .it{position:relative;margin-bottom:10px;background:#fff;border-radius:14px;padding:11px 12px;border:1px solid #e2e2dd}
+.p3 .it:before{content:"";position:absolute;left:-20px;top:16px;width:12px;height:12px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--c)}
+.p3 .lab{font-size:10.5px;font-weight:800;color:var(--c);letter-spacing:.3px;margin-bottom:3px}.p3 .t{font-size:14px;font-weight:700;display:flex;gap:8px;align-items:center}.p3 .t b{flex:1}.p3 .m{font-size:11.5px;color:var(--mut);margin-top:2px}
+.p3 .sep{font-size:11px;font-weight:800;color:var(--mut);margin:16px 4px 8px;letter-spacing:.5px}
+/* 4 */
+.p4 .top{display:flex;align-items:center;justify-content:space-between;padding:12px 4px 10px}.p4 .brand{font-size:19px;font-weight:900}.p4 .brand i{font-style:normal;color:var(--pur)}
+.p4 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.p4 .tile{border-radius:18px;padding:13px 14px;min-height:112px;display:flex;flex-direction:column;justify-content:space-between;text-align:left;border:0}
+.p4 .tile .k{font-size:12px;font-weight:800}.p4 .tile .n{font-size:34px;font-weight:900;line-height:1}.p4 .tile .n small{font-size:13px;font-weight:700;margin-left:2px}.p4 .tile .s{font-size:11.5px;font-weight:600;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p4 .t1{background:var(--ind-t);color:var(--ind-d)}.p4 .t2{background:var(--ros-t);color:var(--ros-d)}
+.p4 .sec{margin-bottom:12px}.p4 .h{padding:12px 14px 2px;font-size:15px;font-weight:800;display:flex;justify-content:space-between;align-items:center}.p4 .bd{padding:0 14px 6px}
+.p4 .grc{background:var(--grn-t);border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:12px;color:#14492f}.p4 .grc b{font-size:15px}.p4 .grc small{display:block;font-size:12px;margin-top:2px;opacity:.85}
+/* 5 */
+.p5 .profile{display:flex;flex-direction:column;align-items:center;text-align:center;padding:14px 0 14px}
+.p5 .hrow{display:flex;justify-content:space-between;width:100%;font-size:12px;align-items:center}.p5 .brand{font-weight:900;font-size:14px}.p5 .brand i{font-style:normal;color:var(--pur)}
+.p5 .bub{margin-top:10px;background:#fff;border:1px solid #e2e2dd;border-radius:16px;padding:10px 14px;font-size:13px;line-height:1.5;font-weight:600;position:relative;text-wrap:balance}
+.p5 .bub:before{content:"";position:absolute;top:-6px;left:50%;margin-left:-6px;width:12px;height:12px;background:#fff;border-left:1px solid #e2e2dd;border-top:1px solid #e2e2dd;transform:rotate(45deg)}
+.p5 .nmx{font-size:20px;font-weight:900;margin-top:8px}
+.p5 .dd{display:flex;gap:8px;margin:0 0 12px}.p5 .dd div{flex:1;background:#fff;border:1px solid #e2e2dd;border-radius:14px;padding:9px 10px;font-size:11.5px;color:var(--mut)}.p5 .dd b{display:block;font-size:19px;color:var(--ros);margin-bottom:1px}.p5 .dd .i b{color:var(--ind)}
+.p5 .card{margin-bottom:12px}.p5 .h{padding:11px 14px 3px;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:space-between}.p5 .bd{padding:0 14px 6px}
+.p5 .h .l{display:flex;align-items:center;gap:7px}.p5 .bar{width:5px;height:16px;border-radius:3px}
+.note{margin:34px auto 0;max-width:70ch;font-size:12.5px;color:var(--mut);line-height:1.8}.note b{color:var(--ink)}
+</style>
+<div class="wrap">
+<h1>한눈육아 홈 화면 5안</h1>
+<p class="sub">지금 앱 홈(한눈육아·수아네집 헤더, 가족 캘린더, 챙길 것, 성장 이야기)을 헤더까지 포함해 다섯 가지 방향으로 다시 그렸습니다. 내용은 실제 앱 화면과 같은 데이터입니다. 아이콘의 얼굴과 일부 문구는 예시입니다.</p>
+<div class="grid" id="g"></div>
+<p class="note"><b>고를 때 참고</b><br>
+1안은 지금 구조를 가장 적게 바꾸고 헤더에 오늘 요약 한 줄만 더합니다. 2안은 상단에 큰 색 영역을 두어 "현재 상황 정리" 느낌이 가장 강합니다.<br>
+3안은 일정과 할일을 시간 순서 하나로 합쳐 홈 글씨 양을 줄입니다. 4안은 숫자 타일로 요약을 먼저 보여 주고 목록은 아래로 내립니다.<br>
+5안은 아이를 중심에 두고 한마디 요약과 D-day 칩으로 시작합니다. 마음에 드는 안의 번호를 알려 주세요.</p>
+</div>
+<script>
+const I={home:'<path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/>',cal:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/>',chk:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',edu:'<path d="M5 20V10M12 20V4M19 20v-7M3 20h18"/>',gr:'<path d="M12 21V11M12 11c0-4 3-6 7-6 0 4-3 6-7 6zM12 14c0-3-2-5-6-5 0 3 2 5 6 5z"/>'};
+const tb=`<div class="tb">${[["home","홈",1],["cal","캘린더"],["chk","할 일"],["edu","교육정보"],["gr","성장기록"]].map(([k,n,o])=>`<span class="${o?'on':''}"><svg viewBox="0 0 24 24">${I[k]}</svg>${n}</span>`).join("")}</div>`;
+const sb=`<div class="sb"><span>11:26</span><span>5G ▮</span></div>`;
+const av=(s)=>`<div class="av" style="width:${s}px;height:${s}px;font-size:${s*.55}px">👧</div>`;
+const plus=c=>`<button class="plus" style="background:${c}">+</button>`;
+const ev=`<div class="ev"><time>16:00</time><span class="face">👧</span><b>뮤지컬 <small>(2시간)</small></b><span class="tag tg-a">학원</span></div>`;
+const td=`<div class="td"><span class="ck"></span><span class="face">👧</span><time>~10/21</time><b>스포츠데이 상의 준비</b><span class="tag tg-s">학교</span></div><div class="td"><span class="ck"></span><span class="face">👧</span><time>~10/28</time><b>할로윈 의상준비</b><span class="tag tg-s">학교</span></div>`;
+const gr=`<div class="gr"><span style="font-size:20px">🌱</span><div style="flex:1"><b style="font-size:15px">수아의 성장 이야기</b><div style="font-size:12.5px;color:var(--mut);margin-top:3px">총 12건의 기록이 저장되어 있어요</div></div><b style="color:var(--pur);font-size:13px">+ 기록</b></div>`;
+const P=[
+["1 · 정리형","지금 구조 그대로, 헤더 아래 오늘 요약 한 줄만 추가",
+`<div class="p1"><div class="top"><span class="brand">한눈육아<i>·수아네집</i></span><span class="row"><span class="ver">⟳ v2.0.72</span>${av(34)}</span></div>
+<div class="sum">오늘 일정 <b>1건</b> · 챙길 것 <b>2개</b></div>
+<div class="card"><div class="h" style="background:var(--ind-t);color:var(--ind-d)">10/13(화) 가족 캘린더${plus("var(--ind)")}</div><div class="tabs"><span class="on">오늘</span><span>내일</span><span>모레</span></div><div class="bd">${ev}</div></div>
+<div class="card"><div class="h" style="background:var(--ros-t);color:var(--ros-d)">챙길 것${plus("var(--ros)")}</div><div class="bd">${td}</div></div>
+<div class="card">${gr}</div></div>`],
+["2 · 큰 색 헤더","상단 보라 영역에 인사 한마디와 요약 칩, 카드는 위로 겹침",
+`<div class="p2"><div class="hero"><div class="hr"><b style="font-size:15px">한눈육아 · 수아네집</b><span class="row"><span class="ver">v2.0.72</span>${av(32)}</span></div>
+<div class="nm">10월 13일 화요일</div><div class="big">오늘은 오후 4시<br>뮤지컬 수업이 있어요</div>
+<div class="chips"><span>일정 1</span><span>챙길 것 2</span><span>가장 가까운 기한 10/21</span></div></div>
+<div class="stack"><div class="card"><div class="h"><span><i class="dot" style="background:var(--ind)"></i>가족 캘린더</span>${plus("var(--ind)")}</div><div class="bd">${ev}</div></div>
+<div class="card"><div class="h"><span><i class="dot" style="background:var(--ros)"></i>챙길 것</span>${plus("var(--ros)")}</div><div class="bd">${td}</div></div>
+<div class="card">${gr}</div></div></div>`],
+["3 · 하루 타임라인","일정과 할일을 한 줄기로 합쳐 글씨 양 축소",
+`<div class="p3"><div class="top"><span class="brand">한눈육아<i>·수아네집</i></span>${av(34)}</div>
+<div class="date">10/13<small>화요일 · 오늘</small></div>
+<div class="tl"><div class="it" style="--c:var(--ind)"><div class="lab">일정 · 16:00</div><div class="t"><b>뮤지컬 <small style="font-weight:500;color:var(--mut)">(2시간)</small></b><span class="tag tg-a">학원</span></div></div>
+<div class="sep">곧 챙길 것</div>
+<div class="it" style="--c:var(--ros)"><div class="lab">~10/21 · 8일 남음</div><div class="t"><span class="ck"></span><b>스포츠데이 상의 준비</b><span class="tag tg-s">학교</span></div></div>
+<div class="it" style="--c:var(--ros)"><div class="lab">~10/28 · 15일 남음</div><div class="t"><span class="ck"></span><b>할로윈 의상준비</b><span class="tag tg-s">학교</span></div></div></div>
+<div class="card" style="margin-top:14px">${gr}</div>
+<div style="display:flex;gap:8px;margin-top:12px"><button class="tag" style="flex:1;padding:10px;background:var(--ind-t);border:0;color:var(--ind-d);font-size:12px">+ 일정</button><button class="tag" style="flex:1;padding:10px;background:var(--ros-t);border:0;color:var(--ros-d);font-size:12px">+ 할일</button></div></div>`],
+["4 · 숫자 타일","요약 타일 두 개를 먼저, 목록은 그 아래 간단히",
+`<div class="p4"><div class="top"><span class="brand">한눈육아<i>·수아네집</i></span><span class="row"><span class="ver">v2.0.72</span>${av(34)}</span></div>
+<div class="tiles"><button class="tile t1"><span class="k">오늘 일정</span><span class="n">1<small>건</small></span><span class="s">16:00 뮤지컬</span></button>
+<button class="tile t2"><span class="k">챙길 것</span><span class="n">2<small>개</small></span><span class="s">~10/21 스포츠데이</span></button></div>
+<div class="card sec"><div class="h">오늘 · 가족 캘린더${plus("var(--ind)")}</div><div class="bd">${ev}</div></div>
+<div class="card sec"><div class="h">챙길 것 ${plus("var(--ros)")}</div><div class="bd">${td}</div></div>
+<div class="grc"><span style="font-size:24px">🌱</span><div style="flex:1"><b>수아의 성장 이야기</b><small>12건의 기록</small></div><b>+</b></div></div>`],
+["5 · 아이 중심","아이 얼굴과 한마디, D-day 칩으로 시작",
+`<div class="p5"><div class="profile"><div class="hrow"><span class="brand">한눈육아<i>·수아네집</i></span><span class="ver">v2.0.72</span></div>
+<div style="margin-top:12px">${av(64)}</div><div class="nmx">수아</div>
+<div class="bub">오늘 오후 4시에 뮤지컬이 있어요.<br>스포츠데이 상의는 10/21까지예요.</div></div>
+<div class="dd"><div class="i"><b>1건</b>오늘 일정</div><div><b>D-8</b>스포츠데이 상의</div><div><b>D-15</b>할로윈 의상</div></div>
+<div class="card"><div class="h"><span class="l"><i class="bar" style="background:var(--ind)"></i>가족 캘린더</span>${plus("var(--ind)")}</div><div class="bd">${ev}</div></div>
+<div class="card"><div class="h"><span class="l"><i class="bar" style="background:var(--ros)"></i>챙길 것</span>${plus("var(--ros)")}</div><div class="bd">${td}</div></div>
+<div class="card">${gr}</div></div>`]];
+document.getElementById("g").innerHTML=P.map(([n,s,b])=>`<div class="item"><p class="cap">${n}</p><p class="capsub">${s}</p><div class="phone">${sb}<div class="scr">${b}</div>${tb}</div></div>`).join("");
+</script>

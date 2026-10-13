@@ -371,3 +371,4 @@ body:has(#detail-modal:not(.hidden)){overflow:hidden}
 #home-body .hn-hc-cal .hn-hday-tabs button.on{color:var(--hc-d)}
 #home-body .hn-hc-cal .hn-hday-tabs button.on::after{background:var(--hc-m)}
 #home-body .hn-hc-cal .hn-hday-more{border-color:#bcc3e8;background:#f4f5fc;color:var(--hc-d)}
+#home-body .hn-hc-todo>.hn-section-head+.hn-task{border-top:0}
