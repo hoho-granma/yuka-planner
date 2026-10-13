@@ -4,7 +4,10 @@
 })(typeof window !== "undefined" ? window : global, function () {
   "use strict";
   const Evidence=typeof module!=='undefined'&&module.exports?require('./growth-evidence'):globalThis.GrowthEvidence;
-  const GROUPS = [{ id: "school", label: "학교", hint: "학교에서의 하루" }, { id: "academy", label: "학원", hint: "배우는 즐거움" }, { id: "activity", label: "그 외 활동", hint: "새로운 경험" }, { id: "home", label: "가정 활동", hint: "함께하는 일상" }];
+  const GROUPS = [{ id: "school", label: "학교", hint: "학교에서의 하루" }, { id: "academy", label: "학원", hint: "배우는 즐거움" }, { id: "activity", label: "그 외 활동", short: "그 외", hint: "새로운 경험" }, { id: "home", label: "가정 활동", short: "가정활동", hint: "함께하는 일상" }];
+  const TAB_ORDER = ["school", "academy", "home", "activity"];
+  // 분류별 색 = 나무 잎 색(파스텔 바탕 · 진한 글씨)
+  const COLORS = { school: { bg: "#d8e7f6", ink: "#35587e" }, academy: { bg: "#e5d6fa", ink: "#6c4696" }, activity: { bg: "#e3ecd2", ink: "#526c3c" }, home: { bg: "#fbe5d4", ink: "#986d4f" } };
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   // 올릴 사진은 긴 변 1800px·JPEG로 줄여 보낸다(원본은 보관하지 않는다). 줄이지 못하거나 오히려 커지면 고른 파일 그대로 쓴다.
   // 월 1회 AI 점검 테스트 결과에 따라 이 두 값만 고치면 된다.
@@ -83,6 +86,10 @@
       const choices = document.createElement("datalist"); choices.id = "gr-known-activities"; form.appendChild(choices);
       const updateChoices = () => { choices.innerHTML = linkedActivities(c.getRecords(), c.scope, form.elements.group.value, c.lessons).map((a) => `<option value="${esc(a)}"></option>`).join(""); };
       updateChoices(); form.elements.group.addEventListener("change", updateChoices);
+      // 입력창 색 = 고른 분류의 잎 색(분류를 바꾸면 따라 바뀐다)
+      const tint = (slot.closest && slot.closest(".hn-sheet")) || form;
+      const paint = () => { const col = COLORS[form.elements.group.value]; if (col) { tint.style.setProperty("--hn-person-bg", col.bg); tint.style.setProperty("--gr-bg", col.bg); tint.style.setProperty("--gr-ink", col.ink); } };
+      paint(); form.elements.group.addEventListener("change", paint);
       form.elements.image.addEventListener("change", () => { const f = form.elements.image.files[0]; const box = form.querySelector(".gr-preview"); box.innerHTML = ""; form._grImage = null; if (f && /^image\//.test(f.type)) { const pending = shrinkImage(f); form._grImage = pending; pending.then((blob) => { if (form._grImage !== pending) return; const u = URL.createObjectURL(blob); c.urls.push(u); box.innerHTML = `<img src="${u}" alt="첨부 이미지 미리보기">`; }); } });
       form.addEventListener("submit", async (e) => {
         e.preventDefault(); const button = form.querySelector('[type="submit"]'); const error = form.querySelector(".gr-error");
@@ -150,18 +157,23 @@
     function render() {
       if (!alive) return;
       clearUrls();
-      const all = list(records, scope), current = list(records, scope, selected, activity), group = GROUPS.find((g) => g.id === selected), lessons = shownLessons();
-      host.innerHTML = `<div class="gr-page">${treeMarkup(records, scope, lessons, opts.name, recordsOpen ? selected : "", activity)}
-      ${opts.compact ? `<button type="button" class="gr-disclosure" data-gr-toggle aria-expanded="${recordsOpen}">활동기록 상세보기 <span>${recordsOpen ? "⌄" : "›"}</span></button>` : ""}
-      <section class="gr-records"${recordsOpen ? "" : " hidden"}><div class="gr-section-head"><h3>${esc(activity || group.label)}의 기록</h3><span>${current.length}개의 순간</span></div><div class="gr-activities" role="group" aria-label="활동별 기록"><button type="button" data-gr-activity="" aria-pressed="${!activity}">전체</button>${linkedActivities(records, scope, selected, lessons).map((a) => `<button type="button" data-gr-activity="${esc(a)}" aria-pressed="${a === activity}">${esc(a)}</button>`).join("")}</div>
+      const lessons = shownLessons(), acts = linkedActivities(records, scope, selected, lessons).map((a, i) => [a, i]).sort((x, y) => list(records, scope, selected, y[0]).length - list(records, scope, selected, x[0]).length || x[1] - y[1]).map((x) => x[0]); // 기록이 많은 활동이 앞(기본 선택)
+      if (!loading && (!activity || !acts.includes(activity))) activity = acts[0] || ""; // 분류를 고르면 첫 활동이 기본 선택
+      const all = list(records, scope), current = list(records, scope, selected, activity), group = GROUPS.find((g) => g.id === selected), cnt = (g, a) => list(records, scope, g, a).length;
+      const tabs = TAB_ORDER.map((id) => { const g = GROUPS.find((x) => x.id === id); return `<button type="button" role="tab" data-gr-group="${id}" aria-selected="${id === selected}" class="${id === selected ? "on" : ""}">${esc(g.short || g.label)}<small>${cnt(id)}</small></button>`; }).join("");
+      const tags = acts.map((a) => `<button type="button" data-gr-activity="${esc(a)}" aria-pressed="${a === activity}">${esc(a)}<em>(${cnt(selected, a)})</em></button>`).join("");
+      host.innerHTML = `<div class="gr-page gr-g-${selected}">${treeMarkup(records, scope, lessons, opts.name, selected, activity)}
+      <div class="gr-folder"><div class="gr-fold" role="tablist" aria-label="활동 분류">${tabs}</div>
+      <section class="gr-records gr-panel">${tags ? `<div class="gr-activities" role="group" aria-label="활동별 기록">${tags}</div>` : ""}
+      <button type="button" class="gr-add-wide" data-gr-add${loading || failed ? " disabled" : ""}>＋ 성장기록 남기기</button>
       ${manageMarkup(current.length)}
-      ${selected === "academy" && lessons.length ? `<div class="gr-linked"><strong>교육트렌드에 등록한 학원 일정</strong>${lessons.filter((l) => !activity || l.title === activity).map((l) => `<p>${esc(l.title)} <small>${l.weekly ? `주 ${l.weekly}회` : "반복 없음"}</small></p>`).join("")}<button type="button" class="gr-edit" data-gr-calendar>캘린더에서 일정 보기 →</button><small>수업 일정이 활동으로 연결돼요. 활동 기록은 직접 남겨 주세요.</small></div>` : ""}
+      ${activity ? `<div class="gr-section-head"><h3>${esc(activity)}의 기록</h3><span>${current.length}개의 순간</span></div>` : ""}
       <div class="gr-timeline" aria-live="polite">${loading ? '<p class="gr-empty">기록을 불러오고 있어요.</p>' : failed ? '<p class="gr-empty">기록을 불러오지 못했어요. 저장 공간을 사용할 수 있는지 확인하고 다시 시도해 주세요.</p><button type="button" class="gr-secondary" data-gr-retry>다시 불러오기</button>' : current.length ? current.map((r) => {
         const image = imageMarkup(r);
         return `<article class="gr-record"><time datetime="${r.date}">${r.date.replace(/-/g, ".")}</time><span class="gr-activity-label">${esc(r.activity)}</span><h4>${esc(r.title)}</h4>${r.text ? `<p>${esc(r.text)}</p>` : ""}${image}${r.imageError ? '<p class="gr-error">사진을 불러오지 못했어요.</p><button type="button" class="gr-edit" data-gr-retry>사진 다시 불러오기</button>' : ""}<button type="button" class="gr-edit" data-gr-edit="${esc(r.id)}">기록 수정</button></article>`;
-      }).join("") : `<div class="gr-empty"><strong>아직 ${esc(group.label)} 기록이 없어요.</strong><p>선생님이 보내준 메시지나 캡처 한 장으로<br>첫 순간을 남겨보세요.</p></div>`}</div></section>
+      }).join("") : `<div class="gr-empty"><strong>아직 ${esc(activity || group.label)} 기록이 없어요.</strong><p>선생님이 보내준 메시지나 캡처 한 장으로<br>첫 순간을 남겨보세요.</p></div>`}</div></section></div>
       ${!opts.compact && all.length ? `<section class="gr-story"><p class="gr-kicker">기록으로 이어지는 이야기</p><h3>${esc(opts.name)}의 ${esc(all[0].date.slice(0, 7).replace("-", "."))}</h3><p>${esc(all.filter((r) => r.date.slice(0, 7) === all[0].date.slice(0, 7)).slice(0, 3).map((r) => `${r.activity}에서 “${r.title}”`).join(" · "))}</p><small>남겨둔 기록 제목을 모았어요.</small></section>` : ""}
-      <button type="button" class="gr-primary" data-gr-add${loading || failed ? " disabled" : ""}>＋ 오늘의 성장 남기기</button><p class="gr-storage-note">${opts.backend ? "로그인한 가족과 아이별로 공유돼요. 기기 원본은 유지돼요." : "이 기기에 아이별로 저장돼요. 다른 기기·가족과 자동 공유되지 않아요."}</p>${opts.backend && (localImport.length || importMessage) ? `<div class="gr-import"><p>이 기기의 성장기록 ${localImport.length}개를 가족에게 공유할 수 있어요.</p>${localImport.length?`<button type="button" class="gr-secondary" data-gr-import ${importing?"disabled":""}>${importing?"이전 중…":"기기 기록 서버로 옮기기"}</button>`:""}<p role="status">${esc(importMessage)}</p></div>` : ""}<div class="gr-editor-slot"></div></div>`;
+      <p class="gr-storage-note">${opts.backend ? "로그인한 가족과 아이별로 공유돼요. 기기 원본은 유지돼요." : "이 기기에 아이별로 저장돼요. 다른 기기·가족과 자동 공유되지 않아요."}</p>${opts.backend && (localImport.length || importMessage) ? `<div class="gr-import"><p>이 기기의 성장기록 ${localImport.length}개를 가족에게 공유할 수 있어요.</p>${localImport.length?`<button type="button" class="gr-secondary" data-gr-import ${importing?"disabled":""}>${importing?"이전 중…":"기기 기록 서버로 옮기기"}</button>`:""}<p role="status">${esc(importMessage)}</p></div>` : ""}<div class="gr-editor-slot"></div></div>`;
       opts.onRendered?.(host, {records:all,loading,failed});
     }
     function editor(record) {
@@ -287,5 +299,5 @@
     if (!countInflight.has(key)) countInflight.set(key, backend.read(scope, { attachments: false }).then((rows) => { recordCache.set(key, rows); return rows; }).finally(() => countInflight.delete(key))); // 같은 읽기는 한 번만, 결과는 성장기록 탭도 그대로 쓴다
     return (await countInflight.get(key)).filter((r) => !r.deletedAt).length;
   }
-  return { GROUPS, eligible, prepare, list, activities, linkedActivities, visibleLessons, hideLesson, treeMarkup, mount, openForm, count, unmount: () => { if(dispose) dispose(); } };
+  return { GROUPS, COLORS, eligible, prepare, list, activities, linkedActivities, visibleLessons, hideLesson, treeMarkup, mount, openForm, count, unmount: () => { if(dispose) dispose(); } };
 });

@@ -70,3 +70,34 @@
 .gr-manage .gr-busy, .gr-manage-actions .gr-busy { display: inline-flex; align-items: center; justify-content: center; gap: 8px; opacity: 1; cursor: progress; }
 .gr-manage-actions .gr-busy::before { content: ""; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: gr-spin .8s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .gr-manage-actions .gr-busy::before { animation: none; border-style: dotted; } }
+
+/* ── 새 성장기록 화면: 진단 요약 · 분류 폴더 탭 · 활동 태그 · 꽉 찬 기록 버튼 (분류색 = 나무 잎 색) ── */
+.gr-g-school { --gb: #d8e7f6; --gi: #35587e; }.gr-g-academy { --gb: #e5d6fa; --gi: #6c4696; }.gr-g-activity { --gb: #e3ecd2; --gi: #526c3c; }.gr-g-home { --gb: #fbe5d4; --gi: #986d4f; }
+.gr-page .gr-svg-leaf.selected path, .gr-page .gr-svg-leaf:focus-visible path { stroke: var(--gi); }
+.gr-diag { display: block; width: 100%; box-sizing: border-box; margin: 0 0 12px; padding: 10px 14px 11px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface, #fff); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.gr-diag-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; }
+.gr-diag-head b { font-weight: 800; }.gr-diag-head > span { font-size: 12px; font-weight: 700; color: var(--text-muted); }.gr-diag-head > span b { color: var(--text); }
+.gr-diag-segs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 9px; }
+.gr-diag-segs div { text-align: center; font-size: 11px; font-weight: 700; color: #a5a2a9; }
+.gr-diag-segs i { display: block; height: 6px; border-radius: 3px; background: #e4e1dc; margin-bottom: 5px; }
+.gr-diag-segs div.on { color: var(--text); }.gr-diag-segs div.on i { background: var(--accent-dark); box-shadow: 0 0 6px color-mix(in srgb, var(--accent-dark) 55%, transparent); }
+.gr-connected .gr-check { margin: -4px 0 12px; }
+.gr-fold { display: grid; grid-template-columns: repeat(4, 1fr); }
+.gr-fold button { font: inherit; font-size: 13px; font-weight: 700; border: 1px solid var(--line); border-bottom: 0; background: var(--nd-soft); color: var(--text-muted); padding: 10px 0; border-radius: 12px 12px 0 0; margin-right: -1px; position: relative; cursor: pointer; white-space: nowrap; }
+.gr-fold button small { font-weight: 600; margin-left: 2px; font-size: 11px; }
+.gr-fold button.on { background: var(--gb); color: var(--gi); border-color: var(--gi); z-index: 1; padding-bottom: 11px; margin-bottom: -1px; font-weight: 800; }
+.gr-panel { background: var(--surface, #fff); border: 1px solid var(--gi); border-radius: 0 0 16px 16px; padding: 14px 12px 8px; margin: 0 0 12px; }
+.gr-panel .gr-activities { gap: 6px; margin-bottom: 0; }
+.gr-panel .gr-activities button { font-size: 13px; font-weight: 600; border: 1px solid var(--gb); border-radius: 8px; padding: 8px 12px; }
+.gr-panel .gr-activities button em { font-style: normal; opacity: .75; font-weight: 700; margin-left: 2px; }
+.gr-panel .gr-activities button[aria-pressed="true"] { background: var(--gb); border-color: var(--gi); color: var(--gi); font-weight: 800; }
+.gr-add-wide { display: block; width: 100%; box-sizing: border-box; margin: 10px 0 14px; padding: 13px; border: 1px dashed color-mix(in srgb, var(--gi) 38%, #fff); border-radius: 12px; background: color-mix(in srgb, var(--gb) 30%, #fff); color: var(--gi); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+.gr-add-wide:disabled { opacity: .5; cursor: default; }
+.gr-panel .gr-section-head h3 { color: var(--gi); font-size: 16px; }
+.gr-panel .gr-timeline { border-left-color: var(--gb); margin-left: 4px; padding-left: 14px; }
+.gr-panel .gr-record { background: var(--bg, #f4f3f1); border-color: var(--gb); padding: 13px 14px; margin-bottom: 10px; }
+.gr-panel .gr-record::before { background: var(--gb); }
+.gr-panel .gr-activity-label { background: var(--gb); color: var(--gi); }
+.gr-panel .gr-edit { color: var(--gi); }
+.gr-panel .gr-manage { margin-top: 0; }
+.gr-panel .gr-manage { margin-bottom: 12px; }

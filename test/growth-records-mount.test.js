@@ -28,9 +28,9 @@ test("1회성 일정은 활동 버튼으로 자동 연결하지 않고 반복 �
   const lessons = [{ title: "수영", weekly: null }, { title: "피아노", weekly: 2 }];
   assert.deepEqual(G.visibleLessons(lessons, "s", "f").map((l) => l.title), ["피아노"]);
 });
-test("활동을 고르면 이름·종류 바꾸기/삭제 버튼이 보인다", async () => {
+test("분류를 열면 첫 활동이 기본 선택되고 이름·종류 바꾸기/삭제 버튼이 보인다", async () => {
   const m = mem([rec("a"), rec("b")]); const h = host(); G.mount(h, { scope, backend: m.backend, familyId: "m1", name: "은찬", compact: true }); await tick();
-  assert.doesNotMatch(h.innerHTML, /data-gr-manage="/);
+  assert.match(h.innerHTML, /data-gr-activity="피아노" aria-pressed="true"/); assert.match(h.innerHTML, /피아노의 기록/); assert.match(h.innerHTML, /＋ 성장기록 남기기/); assert.doesNotMatch(h.innerHTML, /활동기록 상세보기/);
   click(h, { "data-gr-activity": 1 }, { grActivity: "피아노" });
   assert.match(h.innerHTML, /data-gr-manage="rename"/); assert.match(h.innerHTML, /이 활동 삭제/);
   G.unmount();
@@ -51,5 +51,13 @@ test("활동 삭제는 그 활동의 기록만 지우고 버튼도 사라진다"
   click(h, { "data-gr-delete-confirm": 1 }); await tick(); await tick();
   assert.deepEqual(m.calls.map((c) => c.join("|")), ["remove|a", "remove|b"]);
   assert.doesNotMatch(h.innerHTML, /data-gr-activity="피아노"/); assert.match(h.innerHTML, /data-gr-activity="수영"/);
+  G.unmount();
+});
+
+test("분류 탭에 개수가 나오고, 탭을 누르면 그 분류의 첫 활동이 선택된다", async () => {
+  const m = mem([rec("a"), rec("b"), rec("c", { group: "home", activity: "독서" }), rec("d", { group: "home", activity: "요리" })]); const h = host(); G.mount(h, { scope, backend: m.backend, familyId: "m4", name: "은찬" }); await tick();
+  assert.match(h.innerHTML, /data-gr-group="academy"[^>]*class="on">학원<small>2<\/small>/); assert.match(h.innerHTML, /가정활동<small>2<\/small>/);
+  click(h, { "data-gr-group": 1 }, { grGroup: "home" });
+  assert.match(h.innerHTML, /data-gr-activity="독서" aria-pressed="true"/); assert.match(h.innerHTML, /gr-g-home/);
   G.unmount();
 });
