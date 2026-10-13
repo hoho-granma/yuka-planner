@@ -357,3 +357,17 @@ body:has(#detail-modal:not(.hidden)){overflow:hidden}
 .hn-sheet .gr-editor input:focus,.hn-sheet .gr-editor select:focus,.hn-sheet .gr-editor textarea:focus{outline:none;border-color:var(--gr-ink,#6c4696);box-shadow:0 0 0 1px var(--gr-ink,#6c4696)}
 .hn-sheet .gr-editor .gr-primary{color:var(--gr-ink,#302c3c)}
 .hn-sheet .gr-editor input[type=file]{border-style:dashed}
+
+/* 홈 카드 헤더 색 분리: 가족 캘린더=인디고, 챙길 것=로즈핑크. 헤더는 연한 틴트 띠 + 동그라미 +, 내용은 흰 영역.
+   글자 크기는 family-theme.css·index.html 의 고정 값을 건드리지 않고 색·여백만 바꾼다. */
+#home-body .hn-hc-cal{--hc-m:#4c5bb8;--hc-t:#e1e4f6;--hc-d:#2f3a86;--hc-o:#fff}
+#home-body .hn-hc-todo{--hc-m:#c04a7c;--hc-t:#f8e0ea;--hc-d:#8c2c58;--hc-o:#fff}
+#home-body .card.hn-hc-cal,#home-body .card.hn-hc-todo{padding:0 17px 14px!important;overflow:hidden}
+#home-body .hn-hc-cal>.hn-section-head,#home-body .hn-hc-todo>.hn-section-head{background:var(--hc-t);margin:0 -17px 4px;padding:10px 17px;min-height:46px}
+#home-body .hn-hc-cal>.hn-section-head h3,#home-body .hn-hc-cal>.hn-section-head .hn-schedule-date,#home-body .hn-hc-todo>.hn-section-head h3{color:var(--hc-d)}
+#home-body .hn-reg-plus{width:26px;height:26px;border-radius:50%;background:var(--hc-m);color:var(--hc-o);font-size:20px;font-weight:500;line-height:1;padding:0;display:inline-grid;place-items:center}
+#home-body .hn-reg-plus::after{inset:-9px}
+#home-body .hn-hc-cal .hn-hday-tabs{margin-top:0}
+#home-body .hn-hc-cal .hn-hday-tabs button.on{color:var(--hc-d)}
+#home-body .hn-hc-cal .hn-hday-tabs button.on::after{background:var(--hc-m)}
+#home-body .hn-hc-cal .hn-hday-more{border-color:#bcc3e8;background:#f4f5fc;color:var(--hc-d)}

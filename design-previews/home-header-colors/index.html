@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>시안 · 홈 영역 헤더 색상 6안</title>
+<style>
+:root{--bg:#f4f2f7;--ink:#302c3c;--muted:#7a7488;--line:#ece8f2;
+ /* 영역별 색 (JS가 바꿈): m=메인, t=연한 배경, o=메인 위 글자색, d=진한 글자 */
+ --a-m:#715697;--a-t:#ece4f7;--a-o:#fff;--a-d:#4f3a73;
+ --b-m:#e8683a;--b-t:#ffe9de;--b-o:#fff;--b-d:#a8441f}
+*{box-sizing:border-box}body{margin:0;background:#ebe8f1;color:var(--ink);font-family:-apple-system,"Apple SD Gothic Neo",Pretendard,system-ui,sans-serif}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 16px 70px}h1{font-size:20px;margin:0 0 4px}.sub{color:var(--muted);font-size:13px;margin:0 0 14px;line-height:1.6}
+.pick{position:sticky;top:0;z-index:5;background:#fff;border-radius:14px;padding:12px 14px;margin:0 0 18px;box-shadow:0 2px 10px rgba(0,0,0,.08);display:grid;gap:9px}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.row>b{font-size:12.5px;min-width:96px}
+.sw{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.5px #d6d2de;padding:0}.sw.on{box-shadow:0 0 0 2.5px var(--ink)}
+.lk{font-size:12px;display:flex;align-items:center;gap:5px;margin-left:auto}
+.vs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}@media(max-width:980px){.vs{grid-template-columns:1fr 1fr}}@media(max-width:620px){.vs{grid-template-columns:1fr}}
+.cap{font-size:13px;font-weight:800;text-align:center;margin:0 0 2px}.capsub{font-size:11px;color:var(--muted);text-align:center;margin:0 0 8px;min-height:32px;line-height:1.4}
+.phone{background:var(--bg);border-radius:24px;border:7px solid #1e1b26;overflow:hidden;height:600px;position:relative;display:flex;flex-direction:column}
+.status{height:20px;font-size:9px;color:var(--muted);display:flex;justify-content:space-between;padding:5px 14px 0}.scroll{flex:1;overflow:auto;padding:8px 10px 70px}
+.tabbar{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:7px 0 9px;font-size:10px;color:var(--muted)}.tabbar b{color:var(--ink)}
+.line{font-size:12px;color:var(--muted);margin:2px 4px 10px}.line b{color:var(--ink);font-size:13px}
+/* 공통 내용 */
+.sr{display:flex;align-items:center;gap:8px;padding:9px 0;font-size:14px;border-top:1px solid var(--line)}.sr:first-child{border-top:0}
+.sr time{font-size:11px;font-weight:700;min-width:38px;color:var(--muted)}.sr strong{flex:1;min-width:0;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.todo{display:flex;align-items:center;gap:9px;padding:9px 0;font-size:14px;border-top:1px solid var(--line)}.todo:first-child{border-top:0}
+.ck{width:22px;height:22px;border:2px solid #c3bccf;border-radius:7px;flex:none}.todo .t{flex:1;font-weight:650}.todo small{font-size:11px;color:var(--muted);font-weight:600}
+.more{font-size:11.5px;color:var(--muted);padding:7px 0 0;text-align:center}
+/* + 동그라미 */
+.plus{width:26px;height:26px;border-radius:50%;border:0;display:grid;place-items:center;font-size:19px;line-height:1;font-weight:500;padding:0;flex:none;position:relative}
+.plus::after{content:"";position:absolute;inset:-9px}
+.A{--m:var(--a-m);--t:var(--a-t);--o:var(--a-o);--d:var(--a-d)}.B{--m:var(--b-m);--t:var(--b-t);--o:var(--b-o);--d:var(--b-d)}
+.sec{margin-bottom:12px}
+.ttl{font-size:15px;font-weight:800;margin:0}.cnt{font-size:11px;font-weight:700}
+/* v1 컬러 바 헤더 */
+.v1 .sec{border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.v1 .h{background:var(--m);color:var(--o);display:flex;align-items:center;justify-content:space-between;padding:10px 12px}
+.v1 .plus{background:var(--o);color:var(--m)}.v1 .body{padding:4px 14px 10px}
+/* v2 연한 틴트 헤더 */
+.v2 .sec{border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.v2 .h{background:var(--t);color:var(--d);display:flex;align-items:center;justify-content:space-between;padding:10px 12px}
+.v2 .plus{background:var(--m);color:var(--o)}.v2 .body{padding:4px 14px 10px}
+/* v3 헤더 따로(떠 있는 알약) + 내용 카드 */
+.v3 .h{display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px}
+.v3 .pill{background:var(--m);color:var(--o);border-radius:999px;padding:6px 14px;display:inline-flex;align-items:center;gap:6px}
+.v3 .pill .ttl{font-size:14px}.v3 .plus{background:#fff;color:var(--m);box-shadow:0 0 0 2px var(--m) inset}
+.v3 .body{background:#fff;border-radius:16px;padding:4px 14px 10px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+/* v4 폴더 탭형 */
+.v4 .sec{position:relative}.v4 .h{display:flex;align-items:flex-end;justify-content:space-between}
+.v4 .tabx{background:var(--m);color:var(--o);padding:7px 16px 8px;border-radius:12px 12px 0 0;margin-left:10px}
+.v4 .tabx .ttl{font-size:14px}.v4 .plus{background:var(--t);color:var(--d);margin:0 8px 5px 0}
+.v4 .body{background:#fff;border-radius:16px;border-top:3px solid var(--m);padding:4px 14px 10px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+/* v5 왼쪽 컬러바 + 아이콘 칩, 내용은 안쪽 박스 */
+.v5 .sec{background:#fff;border-radius:16px;padding:10px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.v5 .h{display:flex;align-items:center;justify-content:space-between;padding:0 2px 9px}
+.v5 .lft{display:flex;align-items:center;gap:8px}.v5 .chip{width:30px;height:30px;border-radius:10px;background:var(--m);color:var(--o);display:grid;place-items:center;font-size:15px}
+.v5 .ttl{color:var(--d)}.v5 .plus{background:var(--t);color:var(--d)}
+.v5 .body{background:#f7f6f9;border-radius:12px;padding:2px 12px;border-left:4px solid var(--m)}
+/* v6 큰 컬러 블록 헤더 + 요약 숫자, 내용 최소화 */
+.v6 .sec{border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.v6 .h{background:var(--m);color:var(--o);padding:12px 14px 14px;display:flex;align-items:flex-end;justify-content:space-between}
+.v6 .big{font-size:26px;font-weight:900;line-height:1}.v6 .big small{font-size:12px;font-weight:700;margin-left:3px;opacity:.9}
+.v6 .ttl{font-size:12px;font-weight:700;opacity:.92;margin-bottom:5px}
+.v6 .plus{width:30px;height:30px;background:rgba(255,255,255,.28);color:var(--o);font-size:21px;box-shadow:0 0 0 1.5px var(--o) inset}
+.v6 .body{padding:2px 14px 8px}
+.note{margin:30px 0 0;font-size:12.5px;color:var(--muted);line-height:1.7}
+</style></head><body><div class="wrap">
+<h1>홈 영역 헤더 색상 — 6안</h1>
+<p class="sub">위에서 색을 고르면 아래 6개 시안이 모두 같이 바뀝니다. 가족 캘린더와 챙길 것 색을 따로 고를 수 있고, <b>같은 색으로 통일</b>도 됩니다. 등록 버튼은 전부 <b>+ 동그라미</b>입니다. 글자 크기는 현재 기준(제목 15px·일정/할일 14px)을 유지했습니다.</p>
+<div class="pick">
+ <div class="row"><b>가족 캘린더 색</b><span id="swA"></span><label class="lk"><input type="checkbox" id="lock"> 챙길 것도 같은 색</label></div>
+ <div class="row" id="rowB"><b>챙길 것 색</b><span id="swB"></span></div>
+ <div class="row"><b>선택</b><span id="nameA" style="font-size:12.5px"></span></div>
+</div>
+<div class="vs" id="vs"></div>
+<p class="note"><b>고를 때 참고</b><br>· 1·6안은 색이 가장 강해 영역이 확실히 갈리고, 2·5안은 차분해서 글씨 많은 홈에 부담이 적습니다.<br>· 3·4안은 헤더를 내용과 물리적으로 떼어 놓아 "제목 / 내용" 구분이 제일 뚜렷합니다.<br>· 6안은 제목 옆에 요약(오늘 N건·남은 할일 N개)을 크게 올려 내용 줄 수를 줄이는 방향입니다.<br>· 노랑·연한 색은 흰 글자가 안 읽혀 헤더 글자를 진한 색으로 자동 전환했습니다.</p>
+</div>
+<script>
+const P=[
+ {n:"오렌지(앱 포인트)",m:"#ff6a1a",t:"#ffe2d0",o:"#fff",d:"#b34406"},
+ {n:"보라(현재 홈)",m:"#715697",t:"#ece4f7",o:"#fff",d:"#4f3a73"},
+ {n:"코랄",m:"#ee6b6e",t:"#fde3e3",o:"#fff",d:"#a83a3d"},
+ {n:"로즈핑크",m:"#c04a7c",t:"#f8e0ea",o:"#fff",d:"#8c2c58"},
+ {n:"세이지 그린",m:"#5e9a7a",t:"#e1f0e8",o:"#fff",d:"#2f6a4d"},
+ {n:"딥포레스트",m:"#1f6f4a",t:"#dcece3",o:"#fff",d:"#14492f"},
+ {n:"스카이블루",m:"#3f8fd6",t:"#dcebf9",o:"#fff",d:"#1f5f9c"},
+ {n:"인디고",m:"#4c5bb8",t:"#e1e4f6",o:"#fff",d:"#2f3a86"},
+ {n:"머스타드",m:"#f2b632",t:"#fdf0cc",o:"#3a2a00",d:"#7a5600"},
+ {n:"차콜",m:"#3a3b42",t:"#e8e8ea",o:"#fff",d:"#24252a"}];
+let ia=1, ib=0, lock=false;
+const root=document.documentElement.style;
+function apply(){const a=P[ia],b=P[lock?ia:ib];
+ for(const [k,c] of [["a",a],["b",b]]) for(const f of ["m","t","o","d"]) root.setProperty(`--${k}-${f}`,c[f]);
+ document.querySelectorAll("#swA .sw").forEach((e,i)=>e.classList.toggle("on",i===ia));
+ document.querySelectorAll("#swB .sw").forEach((e,i)=>e.classList.toggle("on",i===(lock?ia:ib)));
+ document.getElementById("rowB").style.opacity=lock?.4:1;
+ document.getElementById("nameA").textContent=`가족 캘린더: ${a.n}  /  챙길 것: ${b.n}`;}
+for(const [id,set] of [["swA",i=>{ia=i}],["swB",i=>{ib=i;}]]){
+ const box=document.getElementById(id);
+ P.forEach((c,i)=>{const s=document.createElement("button");s.className="sw";s.title=c.n;s.style.background=c.m;s.onclick=()=>{set(i);apply()};box.appendChild(s)});}
+document.getElementById("lock").onchange=e=>{lock=e.target.checked;apply()};
+
+const ev=`<div class="sr"><span class="dot" style="background:#f08fb0"></span><time>오전 9:30</time><strong>은찬 소아과 진료</strong></div>
+<div class="sr"><span class="dot" style="background:#6fa8dc"></span><time>오후 2:00</time><strong>구로구 보건소 방문</strong></div>
+<div class="sr"><span class="dot" style="background:#f2b632"></span><time>10/16</time><strong>예방접종 (DTaP 3차)</strong></div>`;
+const td=`<div class="todo"><span class="ck"></span><span class="t">영유아 검진 예약</span><small>~10/20</small></div>
+<div class="todo"><span class="ck"></span><span class="t">부모급여 신청 확인</span><small>~10/31</small></div>
+<div class="todo"><span class="ck"></span><span class="t">이유식 재료 주문</span><small>오늘</small></div>`;
+const plus=`<button class="plus">+</button>`;
+const V=[
+ ["1 · 컬러 바 헤더","헤더 전체를 진한 색 띠로. 흰 + 동그라미.",
+  (c,t,b,n)=>`<div class="sec ${c}"><div class="h"><h3 class="ttl">${t}</h3>${plus}</div><div class="body">${b}</div></div>`],
+ ["2 · 연한 틴트 헤더","헤더는 연한 배경, 제목은 진한 색, + 는 색 채움.",
+  (c,t,b)=>`<div class="sec ${c}"><div class="h"><h3 class="ttl">${t}</h3>${plus}</div><div class="body">${b}</div></div>`],
+ ["3 · 떠 있는 알약 제목","제목만 알약으로 떼어 내용 카드 위에. 가장 분리가 뚜렷.",
+  (c,t,b)=>`<div class="sec ${c}"><div class="h"><span class="pill"><h3 class="ttl">${t}</h3></span>${plus}</div><div class="body">${b}</div></div>`],
+ ["4 · 폴더 탭형","제목이 폴더 탭처럼 내용 카드에 붙음. 위쪽 색 선.",
+  (c,t,b)=>`<div class="sec ${c}"><div class="h"><span class="tabx"><h3 class="ttl">${t}</h3></span>${plus}</div><div class="body">${b}</div></div>`],
+ ["5 · 아이콘 칩 + 안쪽 박스","제목은 색 글자+아이콘 칩, 내용은 회색 안쪽 박스에 색 선.",
+  (c,t,b,n,i)=>`<div class="sec ${c}"><div class="h"><div class="lft"><span class="chip">${i}</span><h3 class="ttl">${t}</h3></div>${plus}</div><div class="body">${b}</div></div>`],
+ ["6 · 큰 요약 숫자 헤더","헤더에 오늘 건수/남은 개수를 크게. 내용 줄 수 2개로 축소.",
+  (c,t,b,n)=>`<div class="sec ${c}"><div class="h"><div><div class="ttl">${t}</div><div class="big">${n[0]}<small>${n[1]}</small></div></div>${plus}</div><div class="body">${b}</div></div>`]];
+const two=s=>s.split("</div>\n").slice(0,2).join("</div>\n")+"</div>";
+const vs=document.getElementById("vs");
+V.forEach(([name,sub,f],i)=>{
+ const six=i===5, e=six?two(ev):ev, t=six?two(td):td;
+ vs.insertAdjacentHTML("beforeend",`<div><p class="cap">${name}</p><p class="capsub">${sub}</p>
+ <div class="phone v${i+1}"><div class="status"><span>9:41</span><span>●●●</span></div><div class="scroll">
+ <p class="line"><b>은찬</b> 생후 114일 · 지금 챙길 것 3가지예요</p>
+ ${f("A","가족 캘린더",e+(six?"":`<div class="more">전체 일정 보기 ›</div>`),["오늘 2","건"],"📅")}
+ ${f("B","챙길 것",t+(six?"":`<div class="more">할일 전체 보기 ›</div>`),["남은 3","개"],"✓")}
+ </div><div class="tabbar"><b>홈</b><span>캘린더</span><span>할일</span><span>혜택</span><span>더보기</span></div></div></div>`);});
+apply();
+</script></body></html>
