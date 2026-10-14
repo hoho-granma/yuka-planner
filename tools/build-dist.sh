@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 SRC=$(mktemp -d)
 if [ "$1" = "--worktree" ]; then SRC=.; else git archive HEAD | tar -x -C "$SRC"; fi
 rm -rf dist && mkdir dist
-for f in index.html manifest.json sw.js curriculum-map.html learning-check-paper.html; do cp "$SRC/$f" dist/; done
+for f in index.html manifest.json sw.js curriculum-map.html learning-check-paper.html transfer.html; do cp "$SRC/$f" dist/; done
 for d in css js data fonts icons vendor; do rsync -a --exclude '.DS_Store' "$SRC/$d" dist/; done
 [ "$SRC" != "." ] && rm -rf "$SRC"
 echo "dist/ 생성($( [ "$1" = "--worktree" ] && echo 작업트리 || echo "HEAD $(git rev-parse --short HEAD)")): $(find dist -type f | wc -l | tr -d ' ')개 파일, $(du -sh dist | cut -f1)"
