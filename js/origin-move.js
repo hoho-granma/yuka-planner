@@ -62,6 +62,11 @@
     let rows = 0;
     for (const d of Array.isArray(dumps) ? dumps : []) {
       if (!d || !(names || IDB_NAMES).includes(d.name) || !Array.isArray(d.stores)) continue;
+      await new Promise((res) => { // 스토어 없는 빈 DB 가 있으면(버전만 올라간 상태) 지우고 원본 버전으로 다시 만든다
+        const o = idb.open(d.name);
+        o.onsuccess = () => { const empty = o.result.objectStoreNames.length === 0; o.result.close(); if (!empty) return res(); const q = idb.deleteDatabase(d.name); q.onsuccess = q.onerror = q.onblocked = () => res(); };
+        o.onerror = () => res();
+      });
       const db = await new Promise((res, rej) => {
         const r = idb.open(d.name, d.version || 1);
         r.onupgradeneeded = () => d.stores.forEach((s) => {
@@ -87,37 +92,41 @@
     return rows;
   }
 
-  /** 옛 주소 쪽: 숨은 iframe 으로 새 주소의 transfer.html 에 데이터를 보내고 결과를 기다린다. → Promise<{ok, ls, idbRows}> */
+  /**
+   * 옛 주소 쪽. **사용자가 누른 클릭 안에서** 호출해야 한다(팝업 차단 방지).
+   * 새 주소를 팝업(최상위 컨텍스트 = 첫 번째 당사자 저장소)으로 열어 메모리로만 전달한다. iframe 은 브라우저가 저장소를 분리해서 쓸 수 없다.
+   * → Promise<{ok, reason?, ls?, idbRows?}>
+   */
   function send(win, timeoutMs) {
     return new Promise((resolve) => {
-      const doc = win.document, frame = doc.createElement("iframe");
-      let done = false;
+      let done = false, popup = null;
       const finish = (r) => { if (done) return; done = true; win.removeEventListener("message", onMsg); clearTimeout(t); resolve(r); };
-      const t = setTimeout(() => finish({ ok: false, reason: "timeout" }), timeoutMs || 10000);
+      const t = setTimeout(() => finish({ ok: false, reason: "timeout" }), timeoutMs || 15000);
       async function onMsg(e) {
-        if (e.origin !== NEW_ORIGIN || !e.data) return;
+        if (e.origin !== NEW_ORIGIN || !e.data || e.source !== popup) return;
         if (e.data.type === "hn-transfer-ready") {
           try {
             const idb = await exportIdb(win.indexedDB, IDB_NAMES);
-            frame.contentWindow.postMessage({ type: "hn-transfer", ls: collectLocal(win.localStorage), idb }, NEW_ORIGIN);
+            popup.postMessage({ type: "hn-transfer", ls: collectLocal(win.localStorage), idb }, NEW_ORIGIN);
           } catch (err) { finish({ ok: false, reason: "export" }); }
         } else if (e.data.type === "hn-transfer-done") finish({ ok: !!e.data.ok, ls: e.data.ls, idbRows: e.data.idbRows });
       }
       win.addEventListener("message", onMsg);
-      frame.style.display = "none"; frame.src = NEW_ORIGIN + "/transfer.html";
-      doc.body.appendChild(frame);
+      popup = win.open(NEW_ORIGIN + "/transfer.html", "hn-transfer", "width=360,height=480");
+      if (!popup) finish({ ok: false, reason: "blocked" });
     });
   }
-  /** 새 주소 쪽(transfer.html): 옛 주소에서 온 메시지만 받는다. */
+  /** 새 주소 쪽(transfer.html, 팝업으로 열렸을 때): 옛 주소에서 온 메시지만 받고, 끝나면 스스로 닫는다. */
   function receive(win) {
     win.addEventListener("message", async (e) => {
-      if (e.origin !== OLD_ORIGIN || !e.data || e.data.type !== "hn-transfer") return;
+      if (e.origin !== OLD_ORIGIN || !e.data || e.data.type !== "hn-transfer" || e.source !== win.opener) return;
       let ok = true, ls = null, idbRows = 0;
       try { ls = applyLocal(win.localStorage, e.data.ls); } catch (err) { ok = false; }
       try { idbRows = await importIdb(win.indexedDB, e.data.idb, IDB_NAMES); } catch (err) { /* 로컬 기록 일부만 옮겨질 수 있다 */ }
       e.source.postMessage({ type: "hn-transfer-done", ok, ls, idbRows }, OLD_ORIGIN);
+      setTimeout(() => { try { win.close(); } catch (err) {} }, 300);
     });
-    if (win.parent && win.parent !== win) win.parent.postMessage({ type: "hn-transfer-ready" }, OLD_ORIGIN);
+    if (win.opener) win.opener.postMessage({ type: "hn-transfer-ready" }, OLD_ORIGIN);
   }
   return { OLD_ORIGIN, NEW_ORIGIN, KEY_RE, IDB_NAMES, collectLocal, applyLocal, exportIdb, importIdb, send, receive };
 });

@@ -22,19 +22,21 @@
   <h1>주소가 변경되었어요</h1>
   <p>한눈육아가 새 주소로 이사했어요.</p>
   <span class="url">yuka-planner.web.app</span>
-  <p id="status">이 기기에 저장된 내용을 새 주소로 옮기는 중이에요…</p>
-  <button id="go" disabled>새 주소로 이동</button>
+  <p id="status">새 주소로 이동하면 이 기기에 저장된 내용도 함께 옮겨요.</p>
+  <button id="go">새 주소로 이동</button>
   <p>로그인은 새 주소에서 한 번 더 해 주세요. 계정에 저장된 일정·할 일은 그대로예요.<br>홈 화면에 추가해 쓰셨다면 새 주소에서 다시 추가해 주세요.</p>
 </main>
 <script src="js/origin-move.js"></script>
 <script>
 (function () {
   var NEW = OriginMove.NEW_ORIGIN + "/", status = document.getElementById("status"), go = document.getElementById("go");
-  go.onclick = function () { location.href = NEW; };
-  OriginMove.send(window, 10000).then(function (r) {
-    status.textContent = r.ok ? "이 기기에 저장된 내용을 새 주소로 옮겼어요." : "기기에 저장된 내용을 옮기지 못했어요. 로그인하면 계정 데이터는 그대로 보여요.";
-    go.disabled = false;
-  });
+  go.onclick = function () {
+    go.disabled = true; status.textContent = "저장된 내용을 새 주소로 옮기는 중이에요… (열린 작은 창은 자동으로 닫혀요)";
+    OriginMove.send(window, 15000).then(function (r) {
+      status.textContent = r.ok ? "옮겼어요. 새 주소로 이동할게요." : "저장된 내용을 옮기지 못했어요. 로그인하면 계정 데이터는 그대로 보여요.";
+      setTimeout(function () { location.href = NEW; }, r.ok ? 700 : 2500);
+    });
+  };
 })();
 </script>
 </body>
