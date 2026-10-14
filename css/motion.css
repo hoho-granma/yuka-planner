@@ -1,0 +1,37 @@
+/* 모션 레이어 — js/motion.js 가 "나타나는 순간"에 붙이는 클래스(hn-m-*)로만 움직인다. app.js·기존 CSS 는 건드리지 않는다.
+ * 개별 translate 속성을 쓰므로 기존 transform(모달 중앙 정렬 등)과 겹치지 않는다. 글자 크기·색은 바꾸지 않는다.
+ * 감속 곡선(.22,1,.36,1)으로 "미끄러져 들어와 부드럽게 멈추는" 느낌. prefers-reduced-motion 이면 전부 꺼진다. */
+@media (prefers-reduced-motion: no-preference) {
+  :root { --hn-ease: cubic-bezier(.22, 1, .36, 1); }
+
+  /* 손가락 반응: 300ms 더블탭 지연 제거 + 눌림 피드백 */
+  button, [role="button"], a, label, summary { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .bottom-nav .nav-item { transition: transform 140ms var(--hn-ease), color 160ms ease, background-color 160ms ease; }
+  .bottom-nav .nav-item:active { transform: scale(.94); }
+  .bottom-nav .nav-item.active .nav-icon { animation: hn-m-pop 320ms var(--hn-ease); }
+
+  /* 앱 첫 진입(온보딩·로그인 화면 포함) */
+  #app { animation: hn-m-fade 420ms ease both; }
+
+  /* 화면 전환: 랜딩 ↔ 앱 */
+  .hn-m-view { animation: hn-m-rise 420ms var(--hn-ease) both; }
+  /* 하단 탭 전환: 가는 방향(--hn-dx)으로 살짝 미끄러지며 나타남 */
+  .hn-m-tab { animation: hn-m-slide 300ms var(--hn-ease) both; }
+  .hn-m-tab #home-body > *:nth-child(1) { animation: hn-m-rise 380ms var(--hn-ease) both; }
+  .hn-m-tab #home-body > *:nth-child(2) { animation: hn-m-rise 380ms 50ms var(--hn-ease) both; }
+  .hn-m-tab #home-body > *:nth-child(3) { animation: hn-m-rise 380ms 100ms var(--hn-ease) both; }
+  .hn-m-tab #home-body > *:nth-child(n+4) { animation: hn-m-rise 380ms 150ms var(--hn-ease) both; }
+  /* 모달: 배경은 페이드, 패널은 아래에서 올라옴 */
+  .hn-m-modal .modal-backdrop { animation: hn-m-fade 240ms ease both; }
+  .hn-m-modal .modal-panel { animation: hn-m-sheet 360ms var(--hn-ease) both; }
+  /* 하단 시트·팝업 */
+  .hn-m-sheet { animation: hn-m-sheet 340ms var(--hn-ease) both; }
+  /* 숨김이 풀린 일반 요소(펼침 영역·안내·칩 등) */
+  .hn-m-pop { animation: hn-m-rise 260ms var(--hn-ease) both; }
+
+  @keyframes hn-m-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes hn-m-rise { from { opacity: 0; translate: 0 14px; } to { opacity: 1; translate: 0 0; } }
+  @keyframes hn-m-slide { from { opacity: 0; translate: var(--hn-dx, 0px) 6px; } to { opacity: 1; translate: 0 0; } }
+  @keyframes hn-m-sheet { from { opacity: .4; translate: 0 36px; } to { opacity: 1; translate: 0 0; } }
+  @keyframes hn-m-pop { 0% { scale: 1; } 40% { scale: 1.14; } 100% { scale: 1; } }
+}
