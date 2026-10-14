@@ -3635,7 +3635,7 @@
   // ── E(2-1·2-2) 하단 탭 교체: 가구·계정 기능이 켜졌을 때만 '기록' 탭 자리에 '어디갈까'. 기록은 프로필 시트의 '기록 보기'로 연다(기존 기록 패널 그대로). ──
   const tabLayoutOn = () => hhEnabled();
   /** 1-8(D8): 임신 중(아이 프로필이 임신이거나 아이 없이 임신 예정 계정)에는 어디갈까 탭을 숨긴다 — 출생 후부터 보인다. 36개월 미만·이상 아이에는 영향 없음. */
-  const placesHiddenNow = () => isPregnant() || (!profile && acctExpecting()) || growthActive();
+  const placesHiddenNow = () => isPregnant() || (!profile && acctExpecting()) || growthActive() || acct36Active(); // 36개월 이상은 어디갈까를 쓰지 않는다(성장기록이 쓰앵님으로 빠져도 어디갈까가 다시 나타나지 않게)
   function applyTabLayout() {
     const on = tabLayoutOn();
     const pl = document.querySelector('.nav-item[data-nav="places"]');

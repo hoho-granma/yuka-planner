@@ -1,0 +1,43 @@
+const test=require('node:test'),assert=require('node:assert/strict'),{create}=require('../js/growth-sync');
+const {createHash,webcrypto}=require('node:crypto');global.crypto=webcrypto;
+const hash=async s=>createHash('sha256').update(s).digest('hex');
+function fixture(){let ctx={uid:'u1',familyId:'h1',childKey:'c1',childCode:'ABC123'};const docs=new Map(),images=new Map();let uploads=0;
+ const adapter={list:async(p,key)=>[...docs].filter(([path,d])=>path.startsWith(p+'/')&&d.childKey===key).map(([p,d])=>({id:p.split('/').at(-1),...d})),transaction:async(p,f)=>{const d=f(docs.get(p)||null);if(d)docs.set(p,d);return d||docs.get(p);},upload:async(p,b)=>{uploads++;images.set(p,b);},image:async p=>{if(!images.has(p))throw Error('image missing');return images.get(p);}};
+ return {api:create({getContext:()=>ctx,adapter,hash,now:()=>10}),docs,images,context:x=>ctx=x,uploads:()=>uploads};}
+const record=(extra={})=>({id:'r1',scope:JSON.stringify(['u1','ABC123']),group:'academy',activity:'피아노',title:'끝까지 연주했어요',text:'선생님 메시지',date:'2026-10-08',createdAt:1,...extra});
+test('family read selects one child and updates use revisions; stale edits fail',async()=>{const f=fixture(),saved=await f.api.save(record());assert.equal(saved.revision,1);const edit=await f.api.save({...saved,title:'새 제목'});assert.equal(edit.revision,2);await assert.rejects(f.api.save({...saved,title:'옛 수정'}),/가족이/);f.docs.set('households/h1/growthRecords/other',{...f.docs.values().next().value,childKey:'c2'});assert.equal((await f.api.read(record().scope)).length,1);});
+test('import retries are idempotent and never replace newer family edits',async()=>{const f=fixture(),r=record();let res=await f.api.importLocal([r],r.scope);assert.equal(res.done,1);const s=(await f.api.read(r.scope))[0];await f.api.save({...s,title:'가족 수정'});res=await f.api.importLocal([r],r.scope);assert.equal(res.done,1);assert.equal(f.docs.size,1);assert.equal((await f.api.read(r.scope))[0].title,'가족 수정');await assert.rejects(f.api.importLocal([record({scope:'local'})],'local'),/계정·아이/);});
+test('attachment upload is read back and preserved on text-only edits; replacement works',async()=>{const f=fixture(),r=record({image:new Blob(['image'],{type:'image/png'})});const s=await f.api.save(r);assert.equal(s.image.size,5);assert.equal(f.uploads(),1);const e=await f.api.save({...s,title:'수정'});assert.equal(f.uploads(),1);const replaced=await f.api.save({...e,image:new Blob(['new'],{type:'image/png'}),imageChanged:true});assert.equal(replaced.image.size,3);assert.equal(f.uploads(),2);});
+test('failed attachments stay visible as errors without reporting upload success',async()=>{const f=fixture(),s=await f.api.save(record({image:new Blob(['image'],{type:'image/png'})}));f.images.clear();const rows=await f.api.read(s.scope);assert.equal(rows[0].imageError,true);const edit=await f.api.save({...rows[0],title:'텍스트만 수정'});assert.equal(edit.attachment.storagePath,s.attachment.storagePath);});
+test('upload verification failure never commits a record',async()=>{const docs=new Map();let commits=0;const api=create({getContext:()=>({uid:'u1',familyId:'h1',childKey:'c1'}),hash,adapter:{upload:async()=>{},image:async()=>new Blob(['wrong'],{type:'image/png'}),transaction:async()=>{commits++;}}});await assert.rejects(api.save(record({image:new Blob(['right-image'],{type:'image/png'})})),/アップ|사진 업로드/);assert.equal(commits,0);});
+test('switching family during image upload stops the document write',async()=>{let ctx={uid:'u1',familyId:'h1',childKey:'c1'},commits=0;const blob=new Blob(['image'],{type:'image/png'});const api=create({getContext:()=>ctx,hash,adapter:{upload:async()=>{ctx={...ctx,familyId:'h2'};},image:async()=>blob,transaction:async()=>{commits++;}}});await assert.rejects(api.save(record({image:blob})),/변경/);assert.equal(commits,0);});
+test('completed imports stay out of the import prompt, but changed local originals are reported',async()=>{const f=fixture(),r=record();assert.equal((await f.api.pendingLocal([r],r.scope)).length,1);await f.api.importLocal([r],r.scope);assert.equal((await f.api.pendingLocal([r],r.scope)).length,0);assert.equal((await f.api.pendingLocal([{...r,title:'기기에서 변경'}],r.scope)).length,1);});
+test('list read skips photo download; loadImage fetches one photo on demand',async()=>{const f=fixture(),s=await f.api.save(record({image:new Blob(['image'],{type:'image/png'})}));
+ const rows=await f.api.read(s.scope,{attachments:false});assert.equal(rows[0].image,null);assert.equal(rows[0].attachmentStatus,'not_requested');assert.ok(rows[0].attachment);
+ const got=await f.api.loadImage(rows[0]);assert.equal(got.image.size,5);assert.equal(got.attachmentStatus,'ok');
+ f.images.clear();const bad=await f.api.loadImage(rows[0]);assert.equal(bad.imageError,true);assert.equal((await f.api.loadImage({id:'x'})).attachmentStatus,'none');});
+test('pendingLocal reuses the list from the preceding read, then re-queries',async()=>{let lists=0;const f=fixture(),r=record();await f.api.importLocal([r],r.scope);
+ const api=create({getContext:()=>({uid:'u1',familyId:'h1',childKey:'c1',childCode:'ABC123'}),hash,adapter:{list:async(p,k)=>{lists++;return[]}}});
+ await api.read(r.scope,{attachments:false});await api.pendingLocal([r],r.scope);assert.equal(lists,1);await api.pendingLocal([r],r.scope);assert.equal(lists,2);assert.deepEqual(await api.pendingLocal([],r.scope),[]);});
+test('thumbnail is uploaded beside the photo; list loads the thumb, full loads the original; thumb failure never blocks save',async()=>{
+ const store=new Map(),docs=new Map();let ctx={uid:'u1',familyId:'h1',childKey:'c1'},thumbFail=false;
+ const adapter={list:async(p,k)=>[...docs].filter(([x,d])=>x.startsWith(p+'/')&&d.childKey===k).map(([x,d])=>({id:x.split('/').at(-1),...d})),transaction:async(p,f)=>{const d=f(docs.get(p)||null);if(d)docs.set(p,d);return d||docs.get(p);},
+  upload:async(p,b)=>{if(thumbFail&&/thumb_/.test(p))throw Error('rules');store.set(p,b);},image:async p=>store.get(p),thumbnail:async()=>new Blob(['t'],{type:'image/jpeg'})};
+ const api=create({getContext:()=>ctx,adapter,hash,now:()=>10});
+ const s=await api.save(record({image:new Blob(['image'],{type:'image/png'})}));
+ assert.match(s.attachment.thumbPath,/\/thumb_[a-f0-9]{64}$/);assert.equal(store.size,2);
+ const rows=await api.read(s.scope,{attachments:false});const t=await api.loadImage(rows[0]);assert.equal(t.thumb.size,1);assert.equal(t.image,null);
+ const f=await api.loadImage(rows[0],{full:true});assert.equal(f.image.size,5);
+ thumbFail=true;const s2=await api.save(record({id:'r2',image:new Blob(['img2'],{type:'image/png'})}));assert.equal(s2.attachment.thumbPath,undefined);assert.equal(s2.image.size,4);
+ const edited=await api.save({...rows[0],title:'새 제목'});assert.equal(edited.attachment.thumbPath,s.attachment.thumbPath);});
+test('remove soft-deletes with revision+1, hides from reads, rejects stale revisions and other children',async()=>{
+ const f=fixture(),s=await f.api.save(record());
+ await assert.rejects(()=>f.api.remove({...s,revision:s.revision+5}),/수정했어요/);
+ assert.equal((await f.api.read(s.scope)).length,1);
+ await f.api.remove(s);
+ assert.equal((await f.api.read(s.scope)).length,0);
+ const doc=[...f.docs.values()][0];assert.equal(doc.deletedAt,10);assert.equal(doc.revision,s.revision+1);assert.equal(doc.childKey,'c1');
+ await f.api.remove(s); // 이미 지운 기록은 조용히 통과
+ await assert.rejects(()=>f.api.remove({id:'nope',revision:1}),/찾을 수 없어요/);
+ await assert.rejects(()=>f.api.remove({id:'bad id'}),/확인해 주세요/);
+});

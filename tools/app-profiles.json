@@ -1,0 +1,15 @@
+{
+  "_doc": "서비스 분리용 파일 분류(docs/서비스분리-마이그레이션계획.md). ssaeng = 쓰앵님으로 갈 성장기록·교육 묶음. 한눈육아(hannun) 빌드는 이 파일들을 index.html·sw.js·dist 에서 모두 뺀다. 소스 경로는 옮기지 않는다(빌드 시점에만 거른다). 나머지 파일은 공통(core)이며 쓰앵님 리포가 태그로 받아 간다.",
+  "ssaeng": {
+    "js": [
+      "js/edu-3to5-view.js", "js/edu-trend.js", "js/growth-evidence.js", "js/growth-sync.js", "js/growth-records.js",
+      "js/learning-check-bank.js", "js/learning-check.js", "js/education-reference.js", "js/education-research.js",
+      "js/education-reference-view.js", "js/education-interests.js", "js/education-public-programs.js",
+      "js/education-directory.js", "js/education-info.js", "js/growth-learning-view.js", "js/curriculum-map-data.js"
+    ],
+    "css": ["css/education-research.css", "css/growth-records.css", "css/learning-check.css"],
+    "html": ["learning-check-paper.html", "curriculum-map.html"],
+    "data": ["data/education"]
+  },
+  "ssaeng_allowed_core_deps": ["js/child-timeline.js", "js/over36-view.js", "js/capture/photo-compress.js"]
+}
