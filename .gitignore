@@ -2,3 +2,6 @@
 
 # Private Firestore backups (never commit user data).
 .local-backups/
+
+# Firebase Hosting 산출물 (tools/build-dist.sh)
+dist/
