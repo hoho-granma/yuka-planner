@@ -1,0 +1,40 @@
+# main 에 push 하면 한눈육아(성장기록·교육 제외 빌드)를 Firebase Hosting(https://yuka-planner.web.app)에 배포한다.
+# 필요한 시크릿: FIREBASE_SERVICE_ACCOUNT (Firebase Hosting Admin 권한의 서비스 계정 키 JSON).
+# 앱 파일이 바뀐 push 만 배포한다(docs·테스트·시안만 바뀐 push 는 건너뜀). 수동 실행: Actions 탭 → Deploy Hosting → Run workflow.
+name: Deploy Hosting
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "sw.js"
+      - "manifest.json"
+      - "transfer.html"
+      - "js/**"
+      - "css/**"
+      - "data/**"
+      - "fonts/**"
+      - "icons/**"
+      - "vendor/**"
+      - "firebase.json"
+      - "tools/build-dist.*"
+      - "tools/app-profiles.json"
+      - ".github/workflows/deploy-hosting.yml"
+  workflow_dispatch:
+concurrency:
+  group: deploy-hosting
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build (hannun)
+        run: python3 tools/build-dist.py --app hannun
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: yuka-planner
+          channelId: live
