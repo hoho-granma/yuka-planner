@@ -41,3 +41,11 @@ exports.schedulePhotos=onCall({region:'asia-northeast3',enforceAppCheck:appCheck
  try{return await createSchedulePhotoService({db:getFirestore(),bucket:getStorage().bucket('yuka-planner.firebasestorage.app')})(request.auth.uid,request.data);}
  catch(e){const codes=['invalid-argument','permission-denied','not-found','resource-exhausted','unavailable'];throw new HttpsError(codes.includes(e.code)?e.code:'internal',codes.includes(e.code)?e.message:'사진을 처리하지 못했어요.');}
 });
+
+// 일정 사진 원본은 30일만 보관한다(매일 새벽 4시 KST). 사진 파일과 Firestore 메타를 함께 지운다.
+const {onSchedule}=require('firebase-functions/v2/scheduler');
+const {createRetention}=require('./schedule-photo-retention');
+exports.expireSchedulePhotos=onSchedule({region:'asia-northeast3',schedule:'every day 04:00',timeZone:'Asia/Seoul',memory:'256MiB',timeoutSeconds:540,retryCount:0},async()=>{
+ const result=await createRetention({db:getFirestore(),bucket:getStorage().bucket('yuka-planner.firebasestorage.app'),days:30})();
+ console.log('schedule-photo-retention',JSON.stringify(result));
+});

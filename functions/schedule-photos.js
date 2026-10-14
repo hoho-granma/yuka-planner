@@ -36,7 +36,7 @@ function createSchedulePhotoService({db,bucket,now=Date.now}){
    if(!PHOTO.test(data.photoId||''))fail('invalid-argument','원본 사진을 확인해 주세요.');
    // The requester cannot choose an owner or arbitrary Storage path. No public URL or download token is created.
    const meta=(await db.doc(`accounts/${uid}/privateSchedulePhotos/${data.photoId}`).get()).data();
-   if(!meta||meta.storagePath!==privatePath(uid,data.photoId))fail('not-found','이 계정에서 볼 수 있는 원본 사진이 없어요.');
+   if(!meta||meta.storagePath!==privatePath(uid,data.photoId))fail('not-found','원본 사진은 30일 동안만 보관돼요. 보관 기간이 지났거나 삭제된 사진이에요.');
    if(!['image/jpeg','image/png','image/webp'].includes(meta.contentType)||!Number.isInteger(meta.byteSize)||meta.byteSize<=0||meta.byteSize>MAX_BYTES)fail('internal','원본 사진 정보를 확인하지 못했어요.');
    let bytes;try{[bytes]=await bucket.file(meta.storagePath).download();}catch{fail('unavailable','원본 사진을 불러오지 못했어요.');}
    if(bytes.length!==meta.byteSize||createHash('sha256').update(bytes).digest('hex')!==data.photoId)fail('internal','원본 사진을 확인하지 못했어요.');
