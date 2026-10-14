@@ -3721,9 +3721,12 @@
   async function renderPlacesTab() {
     const body = el("places-body");
     if (!body || typeof PlacesView === "undefined") return;
-    await Promise.all([loadPlaces(), loadPlacesOffices(), loadPlacesStats()]);
+    // 장소·시청 좌표(정적 파일)만 기다려 바로 그린다. 인기순 통계(Firestore)는 느릴 수 있어 기다리지 않고, 인기순을 보는 중일 때만 도착 뒤 다시 그린다.
+    if (!placesData) body.innerHTML = '<div class="places-empty"><p>어디갈까를 불러오고 있어요…</p></div>';
+    await Promise.all([loadPlaces(), loadPlacesOffices()]);
     if (currentTab !== "places") return;
     body.innerHTML = placesViewHtml();
+    loadPlacesStats().then(() => { if (currentTab === "places" && placesSort === "popular") body.innerHTML = placesViewHtml(); });
   }
   function placesOnClick(ev) {
     const cat = ev.target.closest("[data-places-cat]");
