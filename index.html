@@ -270,6 +270,9 @@
 
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+<script>/* 콜드스타트 완화: 로그인했던 기기는 앱이 켜지는 동안 가족 접근 서버를 미리 깨워 둔다(응답은 쓰지 않는다) */try{if(localStorage.getItem("hannun_acct_signed_out")!=="1"&&localStorage.getItem("hannun_household_id")){fetch("https://asia-northeast3-yuka-planner.cloudfunctions.net/familyAccess",{method:"POST",mode:"no-cors",keepalive:true,headers:{"Content-Type":"text/plain"},body:"{}"}).catch(function(){})}}catch(e){}</script>
   <script src="js/db-paths.js?v=4"></script>
   <script src="js/sync.js?v=8"></script>
   <script src="js/feature-flags.js?v=7"></script>

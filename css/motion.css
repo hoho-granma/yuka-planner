@@ -10,8 +10,6 @@
   .bottom-nav .nav-item:active { transform: scale(.94); }
   .bottom-nav .nav-item.active .nav-icon { animation: hn-m-pop 320ms var(--hn-ease); }
 
-  /* 앱 첫 진입(온보딩·로그인 화면 포함) */
-  #app { animation: hn-m-fade 420ms ease both; }
 
   /* 화면 전환: 랜딩 ↔ 앱 */
   .hn-m-view { animation: hn-m-rise 420ms var(--hn-ease) both; }
