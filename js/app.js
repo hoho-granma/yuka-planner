@@ -6756,7 +6756,7 @@
           const intent=acctReadIntent();
           if(intent){acct.restoring=false;await acctFinishSignup(intent,false);return;}
           acct.form={displayName:u.displayName||"",email:u.email||"",role:""};acct.joining=false;
-          acctShowSheet("recover");showLandingView();return;
+          acctApplyPendingJoin();acctShowSheet("recover");showLandingView();return;
         }
         acctApprovalGate(state.status);return;
       }
@@ -7490,6 +7490,7 @@
           acct.joining = false;
           acct.errors = {};
           acct.error = null;
+          acctApplyPendingJoin();
           acctShowSheet("recover");
         }
         return;
@@ -7620,10 +7621,36 @@
     try { sessionStorage.removeItem(JOIN_LINK_KEY); } catch (e) {}
     return false;
   }
+  const PENDING_JOIN_KEY = "hannun_join_pending";
+  /** 초대 링크로 들어온 사람의 초대 정보(코드·역할·보낸 사람). 카카오 화면을 다녀와도 남도록 이 기기에 24시간만 둔다. */
+  function acctPendingJoinSave(link) {
+    try { localStorage.setItem(PENDING_JOIN_KEY, JSON.stringify({ code: link.code, role: link.role || "", from: link.from || "", at: Date.now() })); } catch (e) {}
+  }
+  function acctPendingJoin() {
+    try {
+      const j = JSON.parse(localStorage.getItem(PENDING_JOIN_KEY) || "null");
+      if (j && /^[A-Z0-9]{8}$/.test(j.code || "") && Date.now() - (j.at || 0) < 24 * 3600 * 1000) return j;
+      localStorage.removeItem(PENDING_JOIN_KEY);
+    } catch (e) {}
+    return null;
+  }
+  function acctPendingJoinClear() { try { localStorage.removeItem(PENDING_JOIN_KEY); } catch (e) {} }
+  /** 연결 복구 시트를 열기 직전에: 초대 정보가 있으면 합류 화면(가족 코드·역할 미리 채움)으로 바꾼다. */
+  function acctApplyPendingJoin() {
+    const j = acctPendingJoin();
+    if (!j) return;
+    acct.form = { ...acct.form, familyCode: j.code, role: j.role || acct.form.role || "", from: j.from || "" };
+    acct.joining = true;
+  }
   function acctOpenLinkSignup() {
     const link = acct.pendingLink;
     acct.pendingLink = null;
     if (!link) return;
+    if (typeof KakaoLogin !== "undefined" && KakaoLogin.enabled()) { // 카카오만 지원: 초대 정보를 남기고, 카카오로 시작하면 가족 코드가 채워진 합류 화면으로 이어진다
+      acctPendingJoinSave(link);
+      acctNoticeToast("초대를 받았어요. 카카오로 시작하면 가족에 합류할 수 있어요.");
+      return;
+    }
     acct.form = { join: true, fromLink: true, familyCode: link.code, role: link.role || "", from: link.from || "" };
     acct.errors = {};
     acct.error = null;
@@ -7872,6 +7899,7 @@
       const fin = await acctFinishSignup(v.intent, false);
       acct.busy = false;
       if (!fin.ok) return acctShowSheet("recover");
+      acctPendingJoinClear();
       if(fin.pending){closeDetail();acctApprovalGate("PENDING");return;}
       const startChild = !joining && !!(v.intent && v.intent.situation); // 카카오 첫 시작(새 가족): 이어서 아이 정보(2/3)·사는 지역(3/3)
       acct.form = {};
