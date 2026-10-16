@@ -784,9 +784,13 @@
   // 수급기간이 이어지는 항목도 "언제부터 챙겨야 하는지"(e.date 기준 월령)가 범위 이내면 보여주고, 그 이후에 처음
   // 시작되는 항목만 걸러낸다. 단 마일스톤·끝 없는 정의·지원금은 기존 범위(LEGACY_TODO_CAP_MONTHS=36)로 보존한다
   // (ChildTimeline.isEventVisible — A6-3).
+  /** 이미 받을 수 없게 끝난 자동 항목 판정에 쓰는 지금 상태(지원금 상태 판정과 같은 모양). */
+  function bygoneCtx() {
+    return { today: new Date(), ageNow: profile && !isPregnant() ? ChildTimeline.completedMonths(profile.birthDate, new Date()) : 0, pregnant: isPregnant(), birthDate: profile ? profile.birthDate : null };
+  }
   function visibleSchedule(ignoreCategoryFilter) {
     if (!profile) return []; // 아이가 없는 상태(마지막 아이를 지운 직후 등): 이전 아이의 일정 목록이 남아 있어도 프로필 없이 월령을 읽지 않는다
-    return HNLogic.visibleSchedule(schedule, { birthDate: profile.birthDate, activeCats, ignoreCategoryFilter, isShown: ChildTimeline.isEventShown, isNA: isNotApplicable }); // 1-0: 순수 함수로 추출(결과 동일)
+    return HNLogic.visibleSchedule(schedule, { birthDate: profile.birthDate, activeCats, ignoreCategoryFilter, isShown: ChildTimeline.isEventShown, isNA: isNotApplicable, isBygone: (e) => HNLogic.isBygoneAuto(e, completed, bygoneCtx()) }); // 1-0: 순수 함수로 추출(결과 동일)
   }
 
   // "미해당" 표시 — 나에게 해당하지 않는 혜택. completed 맵에 `${id}__na` 키로 저장한다(완료·가족 동기화 경로를

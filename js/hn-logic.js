@@ -105,7 +105,19 @@
   /** 홈·달력이 보는 일정 목록(순수): 카테고리 필터(ignoreCategoryFilter 면 무시) + 보임 판정(isShown) + 미해당 제외. 프로필이 없으면 빈 목록. */
   function visibleSchedule(schedule, o) {
     if (!o || !o.birthDate) return [];
-    return schedule.filter((e) => (o.ignoreCategoryFilter || !o.activeCats || o.activeCats.has(e.category)) && o.isShown(o.birthDate, e) && !(o.isNA && o.isNA(e.id)));
+    return schedule.filter((e) => (o.ignoreCategoryFilter || !o.activeCats || o.activeCats.has(e.category)) && o.isShown(o.birthDate, e) && !(o.isNA && o.isNA(e.id)) && !(o.isBygone && o.isBygone(e)));
+  }
+  /**
+   * 이미 받을 수 없게 끝난 자동 항목인가(홈·캘린더·할 일에서 뺀다). 완료한 항목은 기록이라 남긴다.
+   * 늦게라도 소급 신청·실행이 가능한 항목(OVERDUE_CATCHUP)과 지금 가능한 항목(DUE)은 여기에 걸리지 않는다.
+   *  - 지원금(행정·지원금): subsidyStatus 가 'expired'(기한 지남·소급 불가·나이 상한 초과)
+   *  - 그 밖의 엔진 항목: 상태가 OVERDUE_FINAL(기한이 지났고 소급 불가)
+   * ctx = subsidyStatus 와 같다 { today, ageNow, pregnant, birthDate }
+   */
+  function isBygoneAuto(e, completed, ctx) {
+    if (!e || isDone(completed, e.id)) return false;
+    if (e.category === "행정·지원금") return subsidyStatus(e, completed, ctx) === "expired";
+    return e.isEngineEvent === true && e.engineStatus === "OVERDUE_FINAL";
   }
   function assignDisplayDays(events, opts) {
     const slots = [];
@@ -614,6 +626,7 @@
     subsidyDeadline,
     ageCapExceeded,
     subsidyStatus,
+    isBygoneAuto,
     daysLeft,
     isUrgent,
     subsidyBuckets,
