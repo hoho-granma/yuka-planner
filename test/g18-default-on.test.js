@@ -38,4 +38,10 @@ test("feature-flags.js ?v 가 올라갔고 서비스워커는 index.html 은 net
   assert.ok(/isImmutableAsset\(url\)[\s\S]*caches\.match\(request\)\.then\(\(hit\) => hit \|\| fetch\(request\)/.test(sw) && sw.includes('searchParams.has("v")')); // ?v 파일: 캐시 우선
   assert.ok(sw.includes("isDataRequest(url)") && /isDataRequest\(url\)\) \{\s*event\.respondWith\(fetch\(request\)\)/.test(sw)); // 데이터는 캐시하지 않는다
 });
+test("서비스워커: 저장된 index.html 을 바로 내주고 뒤에서 갱신, 업데이트 확인(?ts)은 항상 네트워크, version.js?v 는 캐시 우선", () => {
+  const sw = read("sw.js");
+  assert.ok(/caches\.match\("\.\/index\.html"\)\.then\(\(hit\) => \{\s*if \(!hit\) return networkFirst/.test(sw) && /return hit;/.test(sw));
+  assert.ok(/searchParams\.has\("ts"\)\) \{\s*event\.respondWith\(fetch\(request\)\)/.test(sw));
+  assert.ok(!/version\.js"\)\) return false/.test(sw) && !sw.includes('endsWith("/version.js")'));
+});
 console.log(`\n${passed}개 통과`);

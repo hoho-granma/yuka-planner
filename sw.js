@@ -2,7 +2,8 @@
 //
 // 목표는 "앱을 열 때 네트워크를 거의 안 쓰는 것"이다. 정책은 파일 종류별로 다르다:
 //   - data/*.json (지원금·Todo 정의·지역 데이터): 절대 캐시하지 않는다. 오래된 정책·의료 정보를 보여 주는 것보다 실패가 낫다.
-//   - index.html·페이지 이동: 네트워크 우선. 단 3초 안에 응답이 없으면(느린 LTE) 캐시한 것을 먼저 보여 주고 뒤에서 갱신한다.
+//   - index.html·페이지 이동: 저장해 둔 것을 바로 보여 주고(네트워크를 기다리지 않는다) 뒤에서 최신으로 갱신한다. 저장된 게 없으면 네트워크.
+//     새 버전이 배포되면 서비스워커가 교체되고, 페이지(index.html)가 그걸 감지해 한 번 새로고침한다.
 //   - css/·js/ 중 주소에 ?v=번호가 붙은 파일: 캐시 우선. 파일이 바뀌면 index.html 이 번호를 올리므로 주소가 달라져 새로 받는다.
 //     (번호를 올리지 않고 파일만 고치면 같은 앱 버전 안에서는 예전 파일이 남는다 — 배포 때 번호·APP_VERSION 을 같이 올린다.)
 //   - 글꼴·아이콘: 캐시 우선. 그 밖(manifest, version.js, 별도 html 등): 네트워크 우선, 실패하면 캐시.
@@ -151,7 +152,7 @@ function isDataRequest(url) {
 // 주소가 바뀌어야만 내용이 바뀌는 파일: ?v=번호가 붙은 css/js, 글꼴, 아이콘.
 function isImmutableAsset(url) {
   if (/^\/(fonts|icons)\//.test(url.pathname)) return true;
-  return /^\/(css|js)\//.test(url.pathname) && url.searchParams.has("v") && !url.pathname.endsWith("/version.js");
+  return /^\/(css|js)\//.test(url.pathname) && url.searchParams.has("v"); // 버전 확인용 version.js?ts=… 는 ?v 가 없어 여기에 걸리지 않는다
 }
 function isNavigation(request, url) {
   return request.mode === "navigate" || url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/oauth";
@@ -187,15 +188,25 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // 업데이트 확인용 요청(?ts=…)은 항상 네트워크로 — 캐시에 쌓지도 않는다.
+  if (url.searchParams.has("ts")) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
   // D37 글자 인식 파일(vendor/ocr/, 수 MB): 캐시 우선 — 처음 한 번만 받고 이후 네트워크를 쓰지 않는다(파일은 바뀌면 vendor/ocr/ 경로째로 새로 둔다).
   if (url.pathname.includes("/vendor/ocr/")) {
     event.respondWith(caches.open(OCR_CACHE).then((c) => c.match(request).then((hit) => hit || fetch(request).then((res) => { if (res && res.ok) c.put(request, res.clone()); return res; }))));
     return;
   }
 
-  // 페이지 이동: 네트워크 우선(최신 index.html 이 최신 ?v 주소를 가리킨다). 느리면 캐시를 먼저 보여 준다.
+  // 페이지 이동: 저장해 둔 index.html 을 바로 내주고 뒤에서 갱신한다(첫 방문·저장 없음이면 네트워크 우선, 느리면 3초 뒤 캐시).
   if (isNavigation(request, url)) {
-    event.respondWith(networkFirst(event, request, "./index.html", NAV_TIMEOUT_MS));
+    event.respondWith(caches.match("./index.html").then((hit) => {
+      if (!hit) return networkFirst(event, request, "./index.html", NAV_TIMEOUT_MS);
+      event.waitUntil(fetch(request, { cache: "no-cache" }).then((res) => putCopy("./index.html", res)).catch(() => {}));
+      return hit;
+    }));
     return;
   }
 
