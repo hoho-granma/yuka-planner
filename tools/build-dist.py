@@ -10,6 +10,7 @@ p = argparse.ArgumentParser()
 p.add_argument("--app", choices=["full", "hannun"], default="full")
 p.add_argument("--worktree", action="store_true")
 p.add_argument("--out", default="dist")
+p.add_argument("--minify", action="store_true", help="js·css 를 esbuild 로 줄이고 data/*.json 의 공백을 없앤다(소스는 그대로, dist 만)")
 a = p.parse_args()
 root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 os.chdir(root)
@@ -50,6 +51,29 @@ if a.app == "hannun":
     s = open(os.path.join(out, "sw.js"), encoding="utf8").read()
     s = "\n".join(l for l in s.split("\n") if not (re.match(r'\s*"\./[^"]+",?\s*$', l) and dropped(re.search(r'"\./([^"]+)"', l).group(1))))
     open(os.path.join(out, "sw.js"), "w", encoding="utf8").write(s)
+
+def minify_dist():
+    """앱 파일을 줄여 내려받는 양·읽는 시간을 줄인다. esbuild 가 없으면 건너뛴다(로컬 빌드는 그대로 동작)."""
+    esb = os.environ.get("ESBUILD") or shutil.which("esbuild")
+    cmd = [esb] if esb else (["npx", "--yes", "esbuild@0.24.0"] if shutil.which("npx") else None)
+    if not cmd:
+        print("esbuild 를 찾지 못해 줄이기를 건너뜀", file=sys.stderr)
+        return
+    def files(sub, ext):
+        return [os.path.join(dp, f) for dp, _, fs in os.walk(os.path.join(out, sub)) for f in fs if f.endswith(ext) and ".min." not in f]
+    for sub, ext, extra in (("js", ".js", ["--target=es2020"]), ("css", ".css", [])):
+        fl = files(sub, ext)
+        if fl:
+            # 소스에 한글이 많아 --charset=utf8 로 \\u 이스케이프(용량 증가)를 막는다. 번들하지 않으므로 전역 이름은 그대로다.
+            subprocess.check_call(cmd + fl + ["--minify", "--charset=utf8", "--legal-comments=none", "--allow-overwrite", f"--outdir={os.path.join(out, sub)}", f"--outbase={os.path.join(out, sub)}", "--log-level=warning"] + extra)
+    for f in files("data", ".json"):
+        with open(f, encoding="utf8") as fh:
+            obj = json.load(fh)
+        with open(f, "w", encoding="utf8") as fh:
+            json.dump(obj, fh, ensure_ascii=False, separators=(",", ":"))
+
+if a.minify:
+    minify_dist()
 
 if src != root:
     shutil.rmtree(src)

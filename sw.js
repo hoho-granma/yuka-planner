@@ -1,13 +1,13 @@
-// 한눈육아 서비스워커 — 테스트 버전.
+// 한눈육아 서비스워커.
 //
-// 캐시 정책은 일부러 보수적으로 잡았다: 의료/정책 데이터가 오래된 캐시로 보여지는 게
-// 오프라인 지원보다 훨씬 위험하기 때문이다.
-//   - data/*.json (73개 Todo 정의, 지원금, 지역 데이터)은 절대 캐시하지 않는다.
-//     항상 네트워크로만 가져오고, 실패하면 그냥 실패시킨다(오래된 정책을 보여주는 것보다 낫다).
-//   - 앱 셸(HTML/CSS/JS/아이콘)만 "네트워크 우선, 실패 시 캐시" 전략으로 캐시한다 —
-//     온라인이면 항상 최신 코드를 받고, 오프라인일 때만 캐시로 대체한다.
-//   - CACHE_NAME을 올릴 때마다 이전 캐시를 전부 지운다(activate 단계) — 배포 후에도
-//     예전 코드가 남아있는 걸 방지한다.
+// 목표는 "앱을 열 때 네트워크를 거의 안 쓰는 것"이다. 정책은 파일 종류별로 다르다:
+//   - data/*.json (지원금·Todo 정의·지역 데이터): 절대 캐시하지 않는다. 오래된 정책·의료 정보를 보여 주는 것보다 실패가 낫다.
+//   - index.html·페이지 이동: 네트워크 우선. 단 3초 안에 응답이 없으면(느린 LTE) 캐시한 것을 먼저 보여 주고 뒤에서 갱신한다.
+//   - css/·js/ 중 주소에 ?v=번호가 붙은 파일: 캐시 우선. 파일이 바뀌면 index.html 이 번호를 올리므로 주소가 달라져 새로 받는다.
+//     (번호를 올리지 않고 파일만 고치면 같은 앱 버전 안에서는 예전 파일이 남는다 — 배포 때 번호·APP_VERSION 을 같이 올린다.)
+//   - 글꼴·아이콘: 캐시 우선. 그 밖(manifest, version.js, 별도 html 등): 네트워크 우선, 실패하면 캐시.
+//   - CACHE_NAME 에 APP_VERSION 이 들어 있어서 버전이 바뀌면 이전 캐시를 전부 지운다(activate).
+//   - 설치할 때 index.html 이 가리키는 파일을 미리 받아 둔다(첫 배포 뒤 두 번째 방문부터 바로 뜬다).
 
 // 버전은 js/version.js 한 곳에서만 올린다 — 캐시 이름도 거기서 만든다(버전이 바뀌면 이전 캐시를 전부 지운다).
 importScripts("js/version.js");
@@ -118,10 +118,22 @@ const SHELL_ASSETS = [
   "./icons/icon-180.png",
 ];
 
+const NAV_TIMEOUT_MS = 3000;
+
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_ASSETS)).then(() => self.skipWaiting())
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    try {
+      const res = await fetch("./index.html", { cache: "no-cache" });
+      const html = await res.clone().text();
+      await cache.put("./index.html", res);
+      // index.html 이 실제로 요청하는 주소(?v=번호 포함)를 그대로 받아 둔다.
+      const urls = [...html.matchAll(/(?:src|href)="((?:css|js|fonts|icons)\/[^"#]+)"/g)].map((m) => "./" + m[1]);
+      const rest = SHELL_ASSETS.filter((u) => !/^\.\/(js|css)\//.test(u) && u !== "./index.html" && u !== "./");
+      await Promise.allSettled([...new Set([...urls, ...rest])].map((u) => cache.add(u)));
+    } catch (e) { /* 오프라인 설치: 다음 방문 때 런타임 캐시로 채운다 */ }
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener("activate", (event) => {
@@ -136,33 +148,63 @@ self.addEventListener("activate", (event) => {
 function isDataRequest(url) {
   return url.pathname.includes("/data/") && url.pathname.endsWith(".json");
 }
+// 주소가 바뀌어야만 내용이 바뀌는 파일: ?v=번호가 붙은 css/js, 글꼴, 아이콘.
+function isImmutableAsset(url) {
+  if (/^\/(fonts|icons)\//.test(url.pathname)) return true;
+  return /^\/(css|js)\//.test(url.pathname) && url.searchParams.has("v") && !url.pathname.endsWith("/version.js");
+}
+function isNavigation(request, url) {
+  return request.mode === "navigate" || url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/oauth";
+}
+
+function putCopy(request, res) {
+  if (!res || !res.ok) return;
+  const copy = res.clone();
+  caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+}
+
+// 네트워크 우선: 실패하면 캐시. timeoutMs 가 있으면 그 시간 안에 응답이 없을 때 캐시를 먼저 내주고 네트워크 응답으로 캐시를 갱신한다.
+function networkFirst(event, request, cacheKey, timeoutMs) {
+  const net = fetch(request, { cache: "no-cache" }).then((res) => { putCopy(cacheKey || request, res); return res; });
+  const fallback = () => caches.match(cacheKey || request).then((hit) => hit || net);
+  if (!timeoutMs) return net.catch(fallback);
+  const slow = new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs));
+  event.waitUntil(net.catch(() => {}));
+  return Promise.race([net, slow]).then((res) => res || fallback()).catch(fallback);
+}
 
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
+  const request = event.request;
+  if (request.method !== "GET") return;
+  const url = new URL(request.url);
 
   // 같은 출처가 아니면(Firebase, 폰트 등) 서비스워커가 관여하지 않는다.
   if (url.origin !== self.location.origin) return;
 
   // 데이터 파일은 절대 캐시하지 않는다 — 항상 네트워크에서만 받는다.
   if (isDataRequest(url)) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(fetch(request));
     return;
   }
 
   // D37 글자 인식 파일(vendor/ocr/, 수 MB): 캐시 우선 — 처음 한 번만 받고 이후 네트워크를 쓰지 않는다(파일은 바뀌면 vendor/ocr/ 경로째로 새로 둔다).
   if (url.pathname.includes("/vendor/ocr/")) {
-    event.respondWith(caches.open(OCR_CACHE).then((c) => c.match(event.request).then((hit) => hit || fetch(event.request).then((res) => { if (res && res.ok) c.put(event.request, res.clone()); return res; }))));
+    event.respondWith(caches.open(OCR_CACHE).then((c) => c.match(request).then((hit) => hit || fetch(request).then((res) => { if (res && res.ok) c.put(request, res.clone()); return res; }))));
     return;
   }
 
-  // 앱 셸: 네트워크 우선, 실패하면(오프라인) 캐시로 대체.
-  event.respondWith(
-    fetch(event.request, { cache: "no-cache" })
-      .then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        return res;
-      })
-      .catch(() => caches.match(event.request))
-  );
+  // 페이지 이동: 네트워크 우선(최신 index.html 이 최신 ?v 주소를 가리킨다). 느리면 캐시를 먼저 보여 준다.
+  if (isNavigation(request, url)) {
+    event.respondWith(networkFirst(event, request, "./index.html", NAV_TIMEOUT_MS));
+    return;
+  }
+
+  // 주소가 곧 버전인 파일: 캐시 우선 — 있으면 네트워크를 쓰지 않는다.
+  if (isImmutableAsset(url)) {
+    event.respondWith(caches.match(request).then((hit) => hit || fetch(request).then((res) => { putCopy(request, res); return res; })));
+    return;
+  }
+
+  // 그 밖: 네트워크 우선, 실패하면(오프라인) 캐시로 대체.
+  event.respondWith(networkFirst(event, request, null, 0));
 });

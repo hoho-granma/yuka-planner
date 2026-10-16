@@ -31,9 +31,11 @@ test("계정 모드에서는 베타 스위치·미리 써 보기·끄기 경로�
   assert.ok(APP.includes('if (action === "beta-off-ask") return;'));
   assert.ok(/slot\.innerHTML = !acctEnabled\(\) && !newChildMode \? AccountView\.renderBetaPreviewCard\(\)/.test(APP), "미리 써 보기 카드는 OFF 에서만");
 });
-test("feature-flags.js ?v 가 올라갔고 서비스워커는 앱 셸을 network-first(no-cache)로 받는다", () => {
+test("feature-flags.js ?v 가 올라갔고 서비스워커는 index.html 은 network-first(3초 뒤 캐시), ?v 파일은 cache-first 로 받는다", () => {
   assert.ok(/feature-flags\.js\?v=([5-9]|\d\d)"/.test(read("index.html")));
   const sw = read("sw.js");
-  assert.ok(/fetch\(event\.request, \{ cache: "no-cache" \}\)[\s\S]*\.catch\(\(\) => caches\.match\(event\.request\)\)/.test(sw));
+  assert.ok(/fetch\(request, \{ cache: "no-cache" \}\)[\s\S]*caches\.match\(cacheKey \|\| request\)/.test(sw)); // 페이지 이동: 네트워크 우선 + 캐시 대체
+  assert.ok(/isImmutableAsset\(url\)[\s\S]*caches\.match\(request\)\.then\(\(hit\) => hit \|\| fetch\(request\)/.test(sw) && sw.includes('searchParams.has("v")')); // ?v 파일: 캐시 우선
+  assert.ok(sw.includes("isDataRequest(url)") && /isDataRequest\(url\)\) \{\s*event\.respondWith\(fetch\(request\)\)/.test(sw)); // 데이터는 캐시하지 않는다
 });
 console.log(`\n${passed}개 통과`);

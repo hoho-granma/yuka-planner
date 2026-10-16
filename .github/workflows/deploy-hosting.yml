@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build (hannun)
-        run: python3 tools/build-dist.py --app hannun
+        run: python3 tools/build-dist.py --app hannun --minify
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_YUKA_PLANNER }}
