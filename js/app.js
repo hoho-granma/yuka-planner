@@ -1201,19 +1201,7 @@
     el("fam-card").addEventListener("change", memOnChange);
     el("fam-orphans").addEventListener("click", memOnClick);
     step("card", famRender);
-    const d = document.createElement("p");
-    d.className = "fine-print";
-    d.id = "hn-prof-diag";
-    el("fam-orphans").insertAdjacentElement("afterend", d);
-    const paint = () => {
-      const x = el("hn-prof-diag");
-      if (!x) return;
-      let info = "";
-      try { info = ` slot=${(el("acct-slot") || {}).innerHTML ? el("acct-slot").innerHTML.length : 0} card=${(el("fam-card") || {}).innerHTML ? el("fam-card").innerHTML.length : 0} hid=${hh.hid ? 1 : 0} members=${usMembers().length} me=${usMeId() ? 1 : 0} sel=${famSel().id ? 1 : 0} user=${acct.user ? 1 : 0}`; } catch (e) { info = " 상태 읽기 실패: " + (e && e.message); }
-      x.textContent = (diag.length ? "표시 오류 — " + diag.join(" / ") : "진단") + info;
-    };
-    paint();
-    setTimeout(paint, 1500);
+    if (diag.length) { const d = document.createElement("p"); d.className = "fine-print"; d.textContent = "표시 오류 — " + diag.join(" / "); el("fam-orphans").insertAdjacentElement("afterend", d); }
   }
   showProfileSheet = function (pendingPhoto) {
     if (acctEnabled() && acct.user && !acctChildView) return acctProfileSheet(!!el("fam-card"));
@@ -6886,12 +6874,13 @@
     acctSplashHold();
     const fail = (message) => {
       acctSplashRelease();
+      if (acct.user) { acctNoticeToast(message); return; } // 이미 로그인한 상태(연결 시도 등)에서는 로그인 창을 띄우지 않는다
       acct.mode = "login"; acct.form = {}; acct.errors = {}; acct.error = message; acct.notice = null;
       acctShowSheet();
     };
     try {
       const r = await KakaoLogin.complete({ search, call: (d) => firebase.app().functions("asia-northeast3").httpsCallable("kakaoLogin")(d).then((x) => x.data), idToken: async () => { const u = firebase.auth().currentUser; return u ? u.getIdToken() : ""; } });
-      if (r.ok && r.linked) { acctSplashRelease(); acctNoticeToast(KakaoLogin.MSG.linked); return; }
+      if (r.ok && r.linked) { acctSplashRelease(); try { localStorage.setItem(acctKakaoLinkedKey(acct.user && acct.user.uid), "1"); } catch (e) {} acctNoticeToast(KakaoLogin.MSG.linked); return; }
       if (!r.ok) return fail(r.message);
       const s = await acct.svc.signInWithToken(r.token);
       if (!s.ok) return fail(s.message || AuthService.MSG.generic);
@@ -6984,7 +6973,12 @@
     );
   }
   /** 이메일(비밀번호) 계정으로 로그인한 사람만 카카오를 연결할 수 있다(카카오 계정에는 필요 없다). */
-  function acctKakaoLinkable() { return typeof KakaoLogin !== "undefined" && KakaoLogin.enabled() && !!(acct.user && acct.user.email && String(acct.user.uid || "").indexOf("hn_kakao_") !== 0); }
+  /** 이 기기에서 연결을 끝낸 계정이면 버튼을 숨기는 편의용 표시의 저장 키. */
+  function acctKakaoLinkedKey(uid) { return "hannun_kakao_linked_" + uid; }
+  function acctKakaoLinkable() {
+    if (typeof KakaoLogin === "undefined" || !KakaoLogin.enabled() || !(acct.user && acct.user.email) || String(acct.user.uid || "").indexOf("hn_kakao_") === 0) return false;
+    try { return localStorage.getItem(acctKakaoLinkedKey(acct.user.uid)) !== "1"; } catch (e) { return true; }
+  }
   function acctSplashHide() {
     if (acct.splashHold) return; // G19: 가입·로그인 직후에는 acctSplashRelease 만 걷는다
     if (acctSplashTimer) clearTimeout(acctSplashTimer);
@@ -7118,7 +7112,7 @@
     const s = el("acct-slot");
     if (s) {
       const family = hh.hid || hh.code ? { members: HouseholdView.visibleMembers(usMembers()).map((m) => ({ memberId: m.memberId, role: m.role, label: m.label, color: UserScheduleView.memberColor(m) })), meId: usMeId(), meName: (acctIdentity() || {}).name || "", children: usLinks().filter((l) => !l.removedAt).map((l) => ({ ...l, color: UserScheduleView.childColor(l) })) } : { members: [], meId: null, meName: "", children: [] };
-      s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, account: acct.account, notice: acct.notice, withCode: !acctApprovalEnabled(), approval: acctApprovalEnabled(), code: acctApprovalEnabled()?null:hh.code, family, kakaoLink: acctKakaoLinkable(), sel: el("fam-card") ? famSel() : undefined });
+      s.innerHTML = AccountView.renderAccountSlot({ user: acct.user, account: acct.account, notice: acct.notice, withCode: !acctApprovalEnabled(), approval: acctApprovalEnabled(), code: acctApprovalEnabled()?null:hh.code, family, sel: el("fam-card") ? famSel() : undefined });
     }
   }
   function acctOpenSlot() {
