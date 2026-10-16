@@ -161,7 +161,7 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     const l = AV.renderLanding({});
     assert.ok(l.includes("한눈육아") && l.includes('data-acct-action="open-signup"') && l.includes('data-acct-action="open-login"') && l.includes(">회원가입<") && !l.includes("open-join") && !l.includes("가입 없이 둘러보기"));
     const li = AV.renderLanding({ user: { email: "a@b.co", displayName: '<b>x</b>' } });
-    assert.ok(li.includes('data-acct-action="logout"') && !li.includes("<b>x</b>") && li.includes("&lt;b&gt;"));
+    assert.ok(!li.includes("로그인했어요") && !li.includes('data-acct-action="logout"') && !li.includes("<b>x</b>"));
     assert.ok(AV.renderAccountSlot({ user: { email: "a@b.co", displayName: "지은" } }).includes('data-acct-action="logout"') && AV.renderAccountSlot({}).includes("회원가입"));
     const sign = [1, 2, 3].map((st) => AV.renderSignup({ form: { situation: "HAS_CHILD", step: st }, regions: REGIONS })).join(""); // G7: 3단계 스텝 — 모든 단계를 합쳐 필드 존재를 확인
     ["email", "password", "displayName", "familyCode", "province", "district"].forEach((k) => assert.ok(sign.includes(`data-acct-input="${k}"`), k));

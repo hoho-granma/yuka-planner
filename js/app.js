@@ -1114,7 +1114,7 @@
       return {
         kind: isMe ? "me" : "member", color: UserScheduleView.memberColor(m), name: isMe ? `${name} (${AM.meShort})` : name, sub: "",
         rows: baseRows(HouseholdView.roleLabelOf(m), isMe ? acct.user && acct.user.email : m.email || ""),
-        actions: isMe ? [edit, { label: AM.logout, attrs: 'data-acct-action="logout"' }] : [edit, { label: HM.memDelete, attrs: `data-mem-action="ask-delete" data-member-id="${esc(m.memberId)}"`, danger: true }],
+        actions: isMe ? [edit, ...(acctKakaoLinkable() ? [{ label: "카카오 연결하기", attrs: 'data-acct-action="kakao-link"' }] : []), { label: AM.logout, attrs: 'data-acct-action="logout"' }] : [edit, { label: HM.memDelete, attrs: `data-mem-action="ask-delete" data-member-id="${esc(m.memberId)}"`, danger: true }],
       };
     }
     const l = usLinks().find((x) => !x.removedAt && String(x.childKey) === String(sel.id));
@@ -6939,7 +6939,8 @@
       acctShowSheet();
     };
     try {
-      const r = await KakaoLogin.complete({ search, call: (d) => firebase.app().functions("asia-northeast3").httpsCallable("kakaoLogin")(d).then((x) => x.data) });
+      const r = await KakaoLogin.complete({ search, call: (d) => firebase.app().functions("asia-northeast3").httpsCallable("kakaoLogin")(d).then((x) => x.data), idToken: async () => { const u = firebase.auth().currentUser; return u ? u.getIdToken() : ""; } });
+      if (r.ok && r.linked) { acctSplashRelease(); acctNoticeToast(KakaoLogin.MSG.linked); return; }
       if (!r.ok) return fail(r.message);
       const s = await acct.svc.signInWithToken(r.token);
       if (!s.ok) return fail(s.message || AuthService.MSG.generic);
@@ -6948,6 +6949,16 @@
     } catch (e) {
       fail(KakaoLogin.MSG.generic);
     }
+  }
+  /** 화면 아래에 잠깐 뜨는 안내(3.5초). 별도 스타일 파일 없이 인라인 스타일만 쓴다. */
+  function acctNoticeToast(text) {
+    if (typeof document === "undefined" || !document.createElement || !document.body) return;
+    const d = document.createElement("div");
+    d.setAttribute("role", "status");
+    d.textContent = text;
+    d.style.cssText = "position:fixed;left:16px;right:16px;bottom:calc(24px + env(safe-area-inset-bottom));z-index:99999;padding:14px 16px;border-radius:14px;background:#24252a;color:#fff;font-size:14px;line-height:1.5;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.2)";
+    document.body.appendChild(d);
+    setTimeout(() => { if (d.remove) d.remove(); }, 3500);
   }
   /**
    * 계정 모드에서 로그인하지 않은 상태는 항상 첫 화면(온보딩). 로그아웃 직후·새로고침·앱 재실행이 같다.
@@ -7042,6 +7053,8 @@
     if (!hero) return;
     let slot = el("acct-landing-slot");
     if (!slot) {
+  /** 이메일(비밀번호) 계정으로 로그인한 사람만 카카오를 연결할 수 있다(카카오 계정에는 필요 없다). */
+  function acctKakaoLinkable() { return typeof KakaoLogin !== "undefined" && KakaoLogin.enabled() && !!(acct.user && acct.user.email && String(acct.user.uid || "").indexOf("hn_kakao_") !== 0); }
       slot = document.createElement("div");
       slot.id = "acct-landing-slot";
       hero.insertAdjacentElement("afterend", slot);
@@ -7741,6 +7754,7 @@
       acct.error = null;
       if (!Object.keys(acct.errors).length) acct.form.step = Math.min(AccountView.signupTotal(acct.form), cur + 1);
       return acctShowSheet();
+    if (action === "kakao-link") { if (typeof KakaoLogin !== "undefined") KakaoLogin.start({ link: true }); return; } // 이메일 계정에 카카오 연결
     }
     if (action === "join-off") {
       acct.form.join = false;

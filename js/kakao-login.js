@@ -12,8 +12,10 @@
 
   const REST_API_KEY = "2a1ff92227b536ebb3c7cbc7da05290b";
   const STATE_KEY = "hannun_kakao_state";
+  const LINK_KEY = "hannun_kakao_link";
   const CALLBACK_PATH = "/oauth";
   const MSG = Object.freeze({
+    linked: "카카오를 이 계정에 연결했어요. 다음부터 카카오로 시작해도 이 계정으로 들어와요.",
     cancelled: "카카오 로그인을 취소하셨거나 허용되지 않았어요.",
     invalid: "로그인 요청을 확인하지 못했어요. 처음부터 다시 시도해 주세요.",
     generic: "카카오 로그인 중 문제가 생겼어요. 잠시 뒤에 다시 시도해 주세요.",
@@ -30,25 +32,33 @@
   }
 
   /** 카카오 로그인 화면으로 이동한다. 돌아왔을 때 우리가 보낸 요청인지 확인하려고 state 를 이 탭에 적어 둔다. */
-  function start({ storage, location, crypto: c } = {}) {
+  function start({ storage, location, crypto: c, link } = {}) {
     const st = storage || sessionStorage, loc = location || window.location;
     const state = rand(c);
-    try { st.setItem(STATE_KEY, state); } catch (e) { /* 저장 불가면 돌아와서 실패 안내 */ }
+    try { st.setItem(STATE_KEY, state); if (link) st.setItem(LINK_KEY, "1"); else st.removeItem(LINK_KEY); } catch (e) { /* 저장 불가면 돌아와서 실패 안내 */ }
     loc.assign(authorizeUrl(state, redirectUri(loc)));
     return state;
   }
 
   /** /oauth 로 돌아왔을 때: state 확인 → 서버 함수에 코드 전달 → { ok, token, isNew } 또는 { ok:false, message }. */
-  async function complete({ search, storage, location, call } = {}) {
+  async function complete({ search, storage, location, call, idToken } = {}) {
     const st = storage || sessionStorage, loc = location || window.location;
     const q = new URLSearchParams(search || "");
     let saved = null;
-    try { saved = st.getItem(STATE_KEY); st.removeItem(STATE_KEY); } catch (e) { /* 아래에서 실패 */ }
+    let link = false;
+    try { saved = st.getItem(STATE_KEY); st.removeItem(STATE_KEY); link = st.getItem(LINK_KEY) === "1"; st.removeItem(LINK_KEY); } catch (e) { /* 아래에서 실패 */ }
     if (q.get("error")) return { ok: false, message: MSG.cancelled };
     const code = q.get("code"), state = q.get("state");
     if (!code || !saved || saved !== state) return { ok: false, message: MSG.invalid };
     try {
-      const data = await call({ code, redirectUri: redirectUri(loc), state });
+      const req = { code, redirectUri: redirectUri(loc), state };
+      if (link) {
+        const t = idToken ? await idToken() : "";
+        if (!t) return { ok: false, message: MSG.invalid };
+        req.idToken = t;
+      }
+      const data = await call(req);
+      if (link) return data && data.linked ? { ok: true, linked: true } : { ok: false, message: MSG.generic };
       if (!data || !data.token) return { ok: false, message: MSG.generic };
       return { ok: true, token: data.token, isNew: data.isNew === true, name: data.name || "" };
     } catch (e) {

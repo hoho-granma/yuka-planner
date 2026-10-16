@@ -381,7 +381,8 @@
         ${s.version ? `<p class="acct-ver">v${esc(s.version)}</p>` : ""}
       </div></div></div>`;
     }
-    if (s.user) return `<div class="card acct-landing" id="acct-landing"><div class="acct-logo">${esc(MSG.logo)}</div><p class="fine-print">${esc(MSG.loggedInAs(s.user.displayName || s.user.email))}</p><div class="acct-actions"><button type="button" class="btn-close" data-acct-action="logout">${esc(MSG.logout)}</button></div></div>`;
+    // 로그인한 상태의 중간 화면("○○님으로 로그인했어요")은 복원이 끝나기 전 잠깐 비치는 옛 화면이라 그리지 않는다(홈·시작 시트로 바로 넘어간다).
+    if (s.user) return `<div id="acct-landing" aria-busy="true"></div>`;
     // 온보딩 첫 화면(D64): 한 장짜리 — 로고(왼쪽 위)·제목·보조(가운데) + 원 2개, 아래 고정 버튼 [로그인]·[회원가입]·가족코드 안내 한 줄. 2번째 화면(메인 기능 5개)·점은 없앴다(문구 상수 ob2*·FEAT_ICO 는 D51 보류로 보존, 미노출).
     return `<div class="card acct-landing acct-ob" id="acct-landing"><div class="acct-main">
         <section class="acct-slide" data-acct-slide="0"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title).replace("한눈에", '<mark class="acct-hl">한눈에</mark>')}</h1><p class="acct-sub">${lines(O.ob1Sub)}</p></div></section>

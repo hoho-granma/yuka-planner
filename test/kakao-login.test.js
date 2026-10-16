@@ -37,3 +37,20 @@ test('키가 아직 없으면 준비 중, 카카오가 코드를 거부하면 �
  await assert.rejects(mk(a,fakeFetch({...KAKAO,'https://kapi.kakao.com/v2/user/me':{name:'x'}}))({code:'C',redirectUri:REDIR}),e=>e.code==='failed-precondition');
  assert.equal(a.created.length,0);
 });
+function fakeDb(init={}){const docs={...init};return {docs,collection:()=>({doc:id=>({get:async()=>({exists:id in docs,data:()=>docs[id]}),set:async v=>{docs[id]=v;}})})};}
+const mkDb=(a,db,f)=>createKakaoLogin({auth:{...a.auth,verifyIdToken:async t=>{if(t!=='ID-mail')throw new Error('bad');return {uid:'mail-uid'};}},db,getCreds:async()=>({id:'k',secret:'s'}),fetchImpl:f});
+test('연결 모드: 이메일 계정 로그인 토큰이 맞으면 카카오 번호를 그 계정에 묶는다',async()=>{
+ const a=fakeAuth(),db=fakeDb();
+ const out=await mkDb(a,db,fakeFetch(KAKAO))({code:'C',redirectUri:REDIR,idToken:'ID-mail'});
+ assert.equal(out.linked,true);assert.equal(db.docs['777'].uid,'mail-uid');assert.equal(a.created.length,0);
+});
+test('연결된 카카오로 로그인하면 새 계정 대신 묶인 이메일 계정의 토큰을 받는다',async()=>{
+ const a=fakeAuth(['mail-uid']),db=fakeDb({'777':{uid:'mail-uid'}});
+ const out=await mkDb(a,db,fakeFetch(KAKAO))({code:'C',redirectUri:REDIR});
+ assert.equal(out.token,'tok-mail-uid');assert.equal(out.isNew,false);assert.equal(a.created.length,0);
+});
+test('연결 모드 거부: 잘못된 토큰, 카카오 계정끼리, 이미 다른 계정에 묶인 카카오',async()=>{
+ const a=fakeAuth(),db=fakeDb({'777':{uid:'other'}});
+ await assert.rejects(mkDb(a,db,fakeFetch(KAKAO))({code:'C',redirectUri:REDIR,idToken:'x'}),e=>e.code==='unauthenticated');
+ await assert.rejects(mkDb(a,db,fakeFetch(KAKAO))({code:'C',redirectUri:REDIR,idToken:'ID-mail'}),e=>e.code==='already-exists');
+});

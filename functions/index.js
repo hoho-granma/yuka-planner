@@ -54,7 +54,7 @@ exports.expireSchedulePhotos=onSchedule({region:'asia-northeast3',schedule:'ever
 const {createKakaoLogin,KakaoError}=require('./kakao-login');
 const kakaoSecret=defineSecret('HANNUN_KAKAO');
 exports.kakaoLogin=onCall({region:'asia-northeast3',enforceAppCheck:appCheckEnforced,secrets:[kakaoSecret],maxInstances:3,timeoutSeconds:30},async request=>{
- const login=createKakaoLogin({auth:getAuth(),getCreds:async()=>{try{return JSON.parse(kakaoSecret.value()||'{}');}catch(e){return {};}}});
+ const login=createKakaoLogin({auth:getAuth(),db:getFirestore(),getCreds:async()=>{try{return JSON.parse(kakaoSecret.value()||'{}');}catch(e){return {};}}});
  try{return await login(request.data||{});}
  catch(e){
   if(e instanceof KakaoError)throw new HttpsError(e.code,e.message);
