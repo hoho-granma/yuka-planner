@@ -37,12 +37,14 @@ console.log('profiles: boundary + hannun build OK');
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 if (!fs.existsSync(CHROME)) { console.log('SKIP boot: Chrome 없음'); process.exit(0); }
 const server = http.createServer((q, r) => { const u = q.url.split('?')[0]; const f = path.join(out, u === '/' ? 'index.html' : u); fs.readFile(f, (e, b) => { if (e) { r.statusCode = 404; return r.end(); } r.setHeader('content-type', ({ '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json' })[path.extname(f)] || 'application/octet-stream'); r.end(b); }); });
+// 서버와 Chrome 을 같은 프로세스에서 돌리므로 Chrome 은 반드시 비동기(execFile)로 띄운다 — 동기 실행은 서버를 멈춰 Chrome 이 페이지를 못 받는다.
 server.listen(0, '127.0.0.1', () => {
-  const r = cp.spawnSync(CHROME, ['--headless=new', '--disable-gpu', '--user-data-dir=' + fs.mkdtempSync(path.join(os.tmpdir(), 'hn-chrome-')), '--virtual-time-budget=8000', '--enable-logging=stderr', '--v=0', '--dump-dom', `http://127.0.0.1:${server.address().port}/index.html`], { encoding: 'utf8', timeout: 90000 });
-  server.close();
-  const uncaught = (r.stderr || '').split('\n').filter(l => /CONSOLE/.test(l) && /Uncaught|ReferenceError|TypeError/.test(l));
-  const landed = (r.stdout || '').includes('육아하며 시기마다');
-  if (uncaught.length || !landed) { console.error(`FAIL boot: 랜딩 ${landed ? '표시' : '없음'}, 예외 ${uncaught.length}건\n` + uncaught.slice(0, 3).join('\n')); process.exit(1); }
-  console.log('boot(hannun 빌드): 랜딩 표시, 잡히지 않은 예외 없음');
-  process.exit(0);
+  cp.execFile(CHROME, ['--headless=new', '--disable-gpu', '--user-data-dir=' + fs.mkdtempSync(path.join(os.tmpdir(), 'hn-chrome-')), '--virtual-time-budget=8000', '--enable-logging=stderr', '--v=0', '--dump-dom', `http://127.0.0.1:${server.address().port}/index.html`], { encoding: 'utf8', timeout: 90000, maxBuffer: 20 * 1024 * 1024 }, (err, stdout, stderr) => {
+    server.close();
+    const uncaught = (stderr || '').split('\n').filter(l => /CONSOLE/.test(l) && /Uncaught|ReferenceError|TypeError/.test(l));
+    const landed = (stdout || '').includes('육아하며 시기마다');
+    if (uncaught.length || !landed) { console.error(`FAIL boot: 랜딩 ${landed ? '표시' : '없음'}, 예외 ${uncaught.length}건\n` + uncaught.slice(0, 3).join('\n')); process.exit(1); }
+    console.log('boot(hannun 빌드): 랜딩 표시, 잡히지 않은 예외 없음');
+    process.exit(0);
+  });
 });

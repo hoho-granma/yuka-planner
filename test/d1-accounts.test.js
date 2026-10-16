@@ -210,9 +210,12 @@ const svc = (flag, ad, loadSdk) => AS.create({ features: () => ({ accounts: flag
     assert.ok(blk.includes("acct.svc.signOut()") && blk.includes("if (linked) acctClearIntent();"));
     assert.ok(!/leaveLocal|HH_ID_KEY|removeItem\([^)]*(PROFILE|COMPLETED|CHILDREN)|clearCode|saveCompleted|saveProfile/.test(blk));
   });
-  await test("계정 SDK는 동적 로드하며 HTML에 계정 입력 폼을 정적으로 만들지 않는다", () => {
+  await test("계정 SDK는 같은 버전을 firebase-app 뒤에 미리 받고(없으면 동적 로드 폴백), HTML에 계정 입력 폼을 정적으로 만들지 않는다", () => {
     const html = read("index.html");
-    assert.ok(!/firebase-auth-compat/.test(html) && !/<(?:input|form)[^>]*data-acct-/.test(html));
+    assert.ok(!/<(?:input|form)[^>]*data-acct-/.test(html));
+    // 로딩 속도: 로그인 SDK 를 앱 스크립트와 병렬로 미리 받는다(없어도 auth-service 가 동적으로 불러온다). 받을 때는 SDK_URL 과 같은 버전이고 firebase-app 뒤여야 한다.
+    const authTag = html.indexOf("firebase-auth-compat");
+    if (authTag >= 0) assert.ok(html.indexOf("firebase-app-compat") >= 0 && html.indexOf("firebase-app-compat") < authTag && html.includes(AS.SDK_URL));
     assert.ok(/<script src="js\/auth-service\.js\?v=\d+"><\/script>/.test(html) && /<script src="js\/account-view\.js\?v=\d+"><\/script>/.test(html));
     const sw = read("sw.js");
     assert.ok(sw.includes('"./js/auth-service.js"') && sw.includes('"./js/account-view.js"') && !sw.includes("firebase-auth-compat"));
