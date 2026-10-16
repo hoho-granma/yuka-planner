@@ -368,6 +368,8 @@
   const ICO_FAMILY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9.5" r="2.4"/><path d="M3.5 19c0-3.2 2.5-5.2 5.5-5.2s5.5 2 5.5 5.2"/><path d="M15.5 14.2c3 0 5 1.6 5 4.3"/></svg>';
   /** 랜딩의 계정 카드(로그아웃 상태): 로고·제목·부제·[회원가입하고 시작하기]·[가족 코드로 함께하기]·로그인. */
   /** 카카오 로그인 버튼(키가 설정된 곳에서만 보인다). 카카오 모듈이 없는 환경(테스트 등)에서는 아무것도 그리지 않는다. */
+  /** 첫 화면의 "이메일로 로그인" 링크. 지금은 카카오만 쓰므로 숨긴다(코드·로그인 시트는 그대로 두었다 — 다시 보이려면 true). */
+  const EMAIL_LOGIN_VISIBLE = false;
   const kakaoOn = () => typeof KakaoLogin !== "undefined" && KakaoLogin.enabled();
   const kakaoBtn = (withOr) => (kakaoOn() ? `<button type="button" class="acct-kakao" data-acct-action="kakao-login">${esc(MSG.kakaoBtn)}</button>${withOr ? `<p class="acct-or">${esc(MSG.kakaoOr)}</p>` : ""}` : "");
   function renderLanding(state) {
@@ -390,7 +392,7 @@
         <section class="acct-slide" data-acct-slide="0"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title).replace("한눈에", '<mark class="acct-hl">한눈에</mark>')}</h1><p class="acct-sub">${lines(O.ob1Sub)}</p></div></section>
       <div class="acct-cta">
         ${kakaoOn()
-          ? `${kakaoBtn(false)}<button type="button" class="acct-btn-text acct-btn-email" data-acct-action="open-login">${esc(MSG.landingEmailLogin)}</button><p class="acct-code-hint">${esc(MSG.landingKakaoHint)}</p>`
+          ? `${kakaoBtn(false)}${EMAIL_LOGIN_VISIBLE ? `<button type="button" class="acct-btn-text acct-btn-email" data-acct-action="open-login">${esc(MSG.landingEmailLogin)}</button>` : ""}<p class="acct-code-hint">${esc(MSG.landingKakaoHint)}</p>`
           : `${kakaoBtn(false)}<button type="button" class="acct-btn-primary" data-acct-action="open-login">${esc(O.loginBtn)}</button><button type="button" class="acct-btn-text" data-acct-action="open-signup">${esc(O.primary)}</button><p class="acct-code-hint">${esc(O.codeHint)}</p>`}
         ${s.version ? `<p class="acct-ver">v${esc(s.version)}</p>` : ""}
       </div></div></div>`;

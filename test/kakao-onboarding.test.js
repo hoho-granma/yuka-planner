@@ -5,11 +5,10 @@ const A = require('../js/account-view.js');
 const withKakao = (on, fn) => { const had = 'KakaoLogin' in globalThis; const prev = globalThis.KakaoLogin; globalThis.KakaoLogin = on ? { enabled: () => true } : undefined; try { fn(); } finally { if (had) globalThis.KakaoLogin = prev; else delete globalThis.KakaoLogin; } };
 let n = 0; const t = (name, fn) => { fn(); n++; console.log('  ok  -', name); };
 
-t('첫 화면: 카카오가 켜지면 카카오 버튼 + 이메일 로그인 링크만, 회원가입 버튼 없음', () => withKakao(true, () => {
+t('첫 화면: 카카오가 켜지면 카카오 버튼만(이메일 로그인 링크는 숨김), 회원가입 버튼 없음', () => withKakao(true, () => {
   const h = A.renderLanding({});
-  assert.ok(h.includes('data-acct-action="kakao-login"') && h.includes(A.MSG.landingEmailLogin) && h.includes('data-acct-action="open-login"'));
+  assert.ok(h.includes('data-acct-action="kakao-login"') && !h.includes(A.MSG.landingEmailLogin) && !h.includes('data-acct-action="open-login"')); // 이메일 로그인 링크는 숨김
   assert.ok(!h.includes('data-acct-action="open-signup"'));
-  assert.ok(h.indexOf('kakao-login') < h.indexOf('open-login'), '카카오 버튼이 먼저(주인공)');
 }));
 t('첫 화면: 카카오가 꺼져 있으면(테스트·키 없음) 기존 로그인·회원가입 화면 그대로', () => withKakao(false, () => {
   const h = A.renderLanding({});

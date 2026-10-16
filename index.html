@@ -284,7 +284,7 @@
   <script src="js/kakao-login.js?v=2"></script>
 <script>/* 카카오 로그인 복귀(/oauth): 앱이 다 켜지기 전에 서버 확인 요청부터 보낸다(연결 모드는 제외). 결과는 앱의 acctKakaoComplete 가 받아 쓴다. 가족 접근 서버도 같이 깨워 둔다. */try{if(location.pathname==="/oauth"&&sessionStorage.getItem("hannun_kakao_link")!=="1"){var q=new URLSearchParams(location.search),c=q.get("code"),s=q.get("state");if(c&&s){var p=firebase.app().functions("asia-northeast3").httpsCallable("kakaoLogin")({code:c,redirectUri:location.origin+"/oauth",state:s}).then(function(x){return x.data});p.catch(function(){});window.__hnKakao={code:c,p:p};fetch("https://asia-northeast3-yuka-planner.cloudfunctions.net/familyAccess",{method:"POST",mode:"no-cors",keepalive:true,headers:{"Content-Type":"text/plain"},body:"{}"}).catch(function(){})}}}catch(e){}</script>
   <script src="js/auth-service.js?v=6"></script>
-  <script src="js/account-view.js?v=45"></script>
+  <script src="js/account-view.js?v=46"></script>
   <script src="js/account-sync.js?v=8"></script>
   <script src="js/app-access.js?v=1"></script>
   <script src="js/version.js?v=10"></script>
