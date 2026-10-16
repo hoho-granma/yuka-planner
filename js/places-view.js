@@ -7,7 +7,7 @@
  *   data-places-add="<id>"          [일정 추가] 버튼 → scheduleDraftFor(place) 로 일정 폼 초기값
  *   data-places-filter 필터 시트 안 칩(app.js 가 상태를 바꾸고 다시 그린다)
  *   data-places-sheet="open|close"  필터 시트 열기·닫기 — 이 파일이 문서 클릭 위임으로 직접 처리(app.js 연결 불필요)
- *   data-places-remove="indoor|free|noReserve|all"  고른 조건 지우기 — 시트 안 해당 칩을 대신 눌러 app.js 경로를 그대로 탄다
+ *   data-places-remove="seoul|gyeonggi|indoor|free|noReserve|all"  고른 조건 지우기 — 시트 안 해당 칩을 대신 눌러 app.js 경로를 그대로 탄다
  */
 (function (root, factory) {
   if (typeof module !== "undefined" && module.exports) module.exports = factory(require("./places.js"));
@@ -20,6 +20,8 @@
     noChild: "아이를 등록하면 해당 나이와 같이 갈 만한 곳을 추천해 드립니다", // D56: 아이 없음 = 장소 목록·필터·기준 줄 없이 안내만
     emptyCategory: "이 분류에는 조건에 맞는 곳이 없어요. 다른 분류를 골라 보세요.",
     emptyFilter: "조건에 맞는 곳이 없어요. 필터를 줄여 보세요.",
+    filterSeoul: "서울",
+    filterGyeonggi: "경기도",
     filterIndoor: "실내",
     filterFree: "무료",
     filterNoReserve: "예약 없이",
@@ -144,7 +146,7 @@
   const chipBtn = (attrs, label, active) => `<button type="button" class="places-chip${active ? " active" : ""}" aria-pressed="${active ? "true" : "false"}" ${attrs}>${esc(label)}</button>`;
   function filterRow(filters, showNoReserve) {
     const f = filters || {};
-    const items = [["indoor", TEXT.filterIndoor], ["free", TEXT.filterFree]].concat(showNoReserve ? [["noReserve", TEXT.filterNoReserve]] : []);
+    const items = [["seoul", TEXT.filterSeoul], ["gyeonggi", TEXT.filterGyeonggi], ["indoor", TEXT.filterIndoor], ["free", TEXT.filterFree]].concat(showNoReserve ? [["noReserve", TEXT.filterNoReserve]] : []);
     return `<div class="places-filters" role="group" aria-label="${esc(TEXT.filterLabel)}">${items.map(([k, label]) => `<button type="button" class="places-chip places-filter${f[k] === true ? " active" : ""}" aria-pressed="${f[k] === true ? "true" : "false"}" data-places-filter="${k}">${esc(label)}</button>`).join("")}</div>`;
   }
   // G14: 필터 시트(분류 한 줄 + [필터 N] 버튼, 고른 조건은 지울 수 있는 칩).
@@ -154,13 +156,15 @@
   function activeConds(o) {
     const f = o.filters || {};
     const out = [];
+    if (f.seoul === true) out.push({ key: "seoul", label: TEXT.filterSeoul });
+    if (f.gyeonggi === true) out.push({ key: "gyeonggi", label: TEXT.filterGyeonggi });
     if (f.indoor === true) out.push({ key: "indoor", label: TEXT.filterIndoor });
     if (f.free === true) out.push({ key: "free", label: TEXT.filterFree });
     if (f.noReserve === true && o.showNoReserve === true) out.push({ key: "noReserve", label: TEXT.filterNoReserve });
     return out;
   }
   /** 지울 수 있는 조건 칩을 누르면 시트 안의 해당 칩을 대신 누른다(app.js 의 기존 data-places-filter 처리를 그대로 쓴다). */
-  const REMOVE_TARGET = Object.freeze({ indoor: '[data-places-filter="indoor"]', free: '[data-places-filter="free"]', noReserve: '[data-places-filter="noReserve"]' });
+  const REMOVE_TARGET = Object.freeze({ seoul: '[data-places-filter="seoul"]', gyeonggi: '[data-places-filter="gyeonggi"]', indoor: '[data-places-filter="indoor"]', free: '[data-places-filter="free"]', noReserve: '[data-places-filter="noReserve"]' });
   const FILTER_ICON = '<svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M1.5 3h9M3 6h6M4.5 9h3"/></svg>';
   function filterBar(o, conds) {
     const n = conds.length;
@@ -263,7 +267,7 @@
     const today = opts.today === undefined ? new Date() : opts.today;
     const catOn = opts.category && opts.category !== "ALL";
     const f = opts.filters || {};
-    const filterOn = f.indoor === true || f.free === true || f.noReserve === true;
+    const filterOn = f.seoul === true || f.gyeonggi === true || f.indoor === true || f.free === true || f.noReserve === true;
     const body = list.length
       ? `<div class="places-list">${list.map((p) => renderCard(p, today)).join("")}</div><p class="places-notice">${esc(TEXT.notice)}</p>`
       : `<div class="places-empty"><p>${esc(filterOn ? TEXT.emptyFilter : catOn ? TEXT.emptyCategory : TEXT.empty)}</p></div>`;

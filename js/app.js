@@ -3657,7 +3657,7 @@
     });
     return placesLoading;
   }
-  let placesFilters = { indoor: false, free: false, noReserve: false }; // 보조 필터(이 실행 동안만)
+  let placesFilters = { seoul: false, gyeonggi: false, indoor: false, free: false, noReserve: false }; // 보조 필터(이 실행 동안만)
   function placesViewHtml() {
     if (!profile) return PlacesView.renderNoChild(); // D56: 아이 등록 전에는 서울 구로구 등 기본 목록 대신 안내만
     const d = placesData || { places: [] };

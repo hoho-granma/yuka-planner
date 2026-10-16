@@ -29,6 +29,16 @@ test("실내(INDOOR·BOTH)·무료(FREE)·예약 없이(값이 있고 REQUIRED �
   assert.deepStrictEqual(ids(P.filterPlaces(L, { indoor: "yes" })), ["a", "b", "c", "d"], "true 만 인정");
   const before = JSON.stringify(L); P.filterPlaces(L, { indoor: true, free: true }); assert.strictEqual(JSON.stringify(L), before, "원본 불변");
 });
+test("지역 칩(서울·경기도): 켜면 그 시·도만, 둘 다 켜면 둘 다, 끄면 전체, 다른 조건과 AND", () => {
+  const L = [mk("a", { province: "서울특별시", indoor: "INDOOR" }), mk("b", { province: "경기도", indoor: "OUTDOOR" }), mk("c", { province: "부산광역시" })];
+  assert.deepStrictEqual(ids(P.filterPlaces(L, { seoul: true })), ["a"]);
+  assert.deepStrictEqual(ids(P.filterPlaces(L, { gyeonggi: true })), ["b"]);
+  assert.deepStrictEqual(ids(P.filterPlaces(L, { seoul: true, gyeonggi: true })), ["a", "b"]);
+  assert.deepStrictEqual(ids(P.filterPlaces(L, { seoul: false, gyeonggi: false })), ["a", "b", "c"]);
+  assert.deepStrictEqual(ids(P.filterPlaces(L, { gyeonggi: true, indoor: true })), []);
+  const h = PV.render({ places: [], filters: { seoul: true } });
+  assert.ok(h.includes('data-places-filter="seoul"') && h.includes('data-places-filter="gyeonggi"') && /data-places-remove="seoul"/.test(h));
+});
 test("regionsOf·hasNoReserve: 데이터의 지역 목록(중복 없음)·NONE 존재 여부", () => {
   assert.deepStrictEqual(P.regionsOf([mk("a", {}), mk("b", {}), mk("c", { district: "용인시" }), mk("d", { province: "서울특별시", district: null })]), [{ province: "경기도", district: "성남시" }, { province: "경기도", district: "용인시" }, { province: "서울특별시", district: null }]);
   assert.deepStrictEqual([P.hasNoReserve([mk("a", { reservation: "PARTLY" })]), P.hasNoReserve([mk("a", { reservation: "NONE" })]), P.hasNoReserve(null)], [false, true, false]);

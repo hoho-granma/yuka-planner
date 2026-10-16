@@ -164,8 +164,9 @@
     const cat = o.category && o.category !== "ALL" ? o.category : null;
     const prov = isStr(o.province) ? o.province : null;
     const dist = prov && isStr(o.district) ? o.district : null;
+    const regions = [o.seoul === true ? "서울특별시" : null, o.gyeonggi === true ? "경기도" : null].filter(Boolean); // 서울·경기도 칩: 하나라도 켜면 그 시·도만(둘 다 켜면 둘 다)
     const age = typeof o.ageMonths === "number" && Number.isFinite(o.ageMonths) ? o.ageMonths : null;
-    const kept = src.filter((p) => (!cat || p.category === cat) && (!prov || p.province === prov) && (age === null || ageFits(p, age))
+    const kept = src.filter((p) => (!cat || p.category === cat) && (!prov || p.province === prov) && (!regions.length || regions.includes(p.province)) && (age === null || ageFits(p, age))
       && (o.indoor !== true || p.indoor === "INDOOR" || p.indoor === "BOTH")
       && (o.free !== true || p.cost === "FREE")
       && (o.noReserve !== true || (p.reservation !== null && p.reservation !== undefined && p.reservation !== "REQUIRED")));
