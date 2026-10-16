@@ -31,7 +31,7 @@
         Object.freeze(["benefit", "지원금·혜택 챙김", "우리 지역 지원금 신청 기한까지 챙겨요"]),
         Object.freeze(["manage", "육아 일정 관리", "아이 일정을 직접 추가하고 완료까지 체크해요"]),
         Object.freeze(["family", "가족 일정 공유", "엄마·아빠·가족이 한 캘린더를 같이 봐요"]),
-        Object.freeze(["places", "집 근처 갈 만한 곳 추천", "차로 가까운 곳부터 아이 나이에 맞춰 골라요"]),
+        Object.freeze(["places", "집 근처 갈 만한 곳 추천", "우리 동 가까운 곳부터 아이 나이에 맞춰 골라요"]),
       ]),
       joinDesc: "가족코드를 받았다면 여기로",
       browseBack: "‹ 회원가입·로그인으로 돌아가기",

@@ -5,9 +5,9 @@
  * 이벤트 위임용 속성(app.js 가 연결):
  *   data-places-cat="ALL|PARK|…"   분류 칩
  *   data-places-add="<id>"          [일정 추가] 버튼 → scheduleDraftFor(place) 로 일정 폼 초기값
- *   data-places-filter / -drive / -sort  필터 시트 안 칩(app.js 가 상태를 바꾸고 다시 그린다)
+ *   data-places-filter / -sort  필터 시트 안 칩(app.js 가 상태를 바꾸고 다시 그린다)
  *   data-places-sheet="open|close"  필터 시트 열기·닫기 — 이 파일이 문서 클릭 위임으로 직접 처리(app.js 연결 불필요)
- *   data-places-remove="drive|indoor|free|noReserve|all"  고른 조건 지우기 — 시트 안 해당 칩을 대신 눌러 app.js 경로를 그대로 탄다
+ *   data-places-remove="indoor|free|noReserve|all"  고른 조건 지우기 — 시트 안 해당 칩을 대신 눌러 app.js 경로를 그대로 탄다
  */
 (function (root, factory) {
   if (typeof module !== "undefined" && module.exports) module.exports = factory(require("./places.js"));
@@ -25,29 +25,18 @@
     filterNoReserve: "예약 없이",
     filterLabel: "보조 필터",
     // P3 거리·정렬
-    driveLabel: "거리",
-    driveAll: "전체",
-    driveChip: { 30: "30분 이내", 60: "1시간 이내", 90: "1시간 30분 이내" },
     sortLabel: "정렬",
-    sortNear: "가까운순",
+    sortNear: "우리 동 먼저",
     sortPopular: "인기순",
-    noOrigin: "프로필에서 지역을 정하면 거리로 볼 수 있어요",
-    driveBasis: (name) => `${name}에서 차로 걸리는 시간(직선거리로 추정)`,
-    driveTime: (min) => `차로 약 ${min}분`,
-    driveNote: (min, name) => `차로 약 ${min}분 · ${name} 기준`,
-    source: "거리: 직선거리로 추정한 차량 이동 시간 · 위치 © OpenStreetMap contributors",
     // G14 필터 시트
     filterBtn: "필터",
     sheetTitle: "필터",
     condLabel: "조건",
     activeLabel: "고른 조건",
     clearAll: "모두 지우기",
-    driveRemove: (label) => `차로 ${label}`,
     removeAria: (label) => `${label} 조건 지우기`,
     count: (n) => `${n}곳`,
-    countBasis: (name) => `${name}에서 차로(직선거리로 추정)`,
     showResults: (n) => `${n}곳 보기`,
-    estimated: "직선거리로 추정",
     notice: "방문 전 공식 링크에서 운영 여부를 확인하세요",
     unknown: "방문 전 확인",
     stale: "확인 오래됨",
@@ -169,28 +158,12 @@
     const items = [["indoor", TEXT.filterIndoor], ["free", TEXT.filterFree]].concat(showNoReserve ? [["noReserve", TEXT.filterNoReserve]] : []);
     return `<div class="places-filters" role="group" aria-label="${esc(TEXT.filterLabel)}">${items.map(([k, label]) => `<button type="button" class="places-chip places-filter${f[k] === true ? " active" : ""}" aria-pressed="${f[k] === true ? "true" : "false"}" data-places-filter="${k}">${esc(label)}</button>`).join("")}</div>`;
   }
-  /** P3 거리 칩 줄(+기준 한 줄·기준점 없음 안내). o: { origin, driveMax(null|30|60|90) }. 기준점이 없으면 30/60/90 은 비활성. */
-  function driveRow(o) {
-    const has = !!o.origin;
-    const dis = has ? "" : " disabled";
-    const cur = typeof o.driveMax === "number" ? o.driveMax : null;
-    const drive = [[null, TEXT.driveAll]].concat(Places.DRIVE_CHOICES.map((m) => [m, TEXT.driveChip[m]]))
-      .map(([m, label]) => `<button type="button" class="places-chip places-drive-chip${(m === cur || (m === null && !has)) ? " active" : ""}" aria-pressed="${m === cur ? "true" : "false"}" data-places-drive="${m === null ? "all" : m}"${m === null ? "" : dis}>${esc(label)}</button>`).join("");
-    const basis = has ? `<p class="fine-print places-drive-basis">${esc(TEXT.driveBasis(o.origin.name))}</p>` : ""; // D1: 거리 칩 위 기준 한 줄(기준점이 없으면 숨기고 아래 비활성 안내만)
-    return `${basis}<div class="places-drive-row" role="group" aria-label="${esc(TEXT.driveLabel)}">${drive}</div>${has ? "" : `<p class="places-origin-hint">${esc(TEXT.noOrigin)}</p>`}`;
-  }
-  /** P3 정렬 칩 줄. 기준점이 없으면 가까운순은 비활성. */
+  /** 정렬 칩 줄(우리 동 먼저 / 인기순). */
   function sortRow(o) {
-    const has = !!o.origin;
-    const dis = has ? "" : " disabled";
     const sort = o.sort === "popular" ? "popular" : "near";
-    const sorts = [["near", TEXT.sortNear, dis], ["popular", TEXT.sortPopular, ""]]
-      .map(([k, label, d]) => `<button type="button" class="places-chip places-sort-chip${(has ? sort === k : k === "popular" && sort === "popular") ? " active" : ""}" aria-pressed="${sort === k ? "true" : "false"}" data-places-sort="${k}"${d}>${esc(label)}</button>`).join("");
+    const sorts = [["near", TEXT.sortNear], ["popular", TEXT.sortPopular]]
+      .map(([k, label]) => `<button type="button" class="places-chip places-sort-chip${sort === k ? " active" : ""}" aria-pressed="${sort === k ? "true" : "false"}" data-places-sort="${k}">${esc(label)}</button>`).join("");
     return `<div class="places-sort-row" role="group" aria-label="${esc(TEXT.sortLabel)}">${sorts}</div>`;
-  }
-  /** 거리·정렬 칩(이전 이름 유지 — 거리 줄 + 정렬 줄). */
-  function driveRows(o) {
-    return driveRow(o) + sortRow(o);
   }
 
   // G14: 필터 시트(분류 한 줄 + [필터 N] 버튼, 고른 조건은 지울 수 있는 칩).
@@ -200,14 +173,13 @@
   function activeConds(o) {
     const f = o.filters || {};
     const out = [];
-    if (o.origin && typeof o.driveMax === "number" && TEXT.driveChip[o.driveMax]) out.push({ key: "drive", label: TEXT.driveRemove(TEXT.driveChip[o.driveMax]) });
     if (f.indoor === true) out.push({ key: "indoor", label: TEXT.filterIndoor });
     if (f.free === true) out.push({ key: "free", label: TEXT.filterFree });
     if (f.noReserve === true && o.showNoReserve === true) out.push({ key: "noReserve", label: TEXT.filterNoReserve });
     return out;
   }
-  /** 지울 수 있는 조건 칩을 누르면 시트 안의 해당 칩을 대신 누른다(app.js 의 기존 data-places-drive/-filter 처리를 그대로 쓴다). */
-  const REMOVE_TARGET = Object.freeze({ drive: '[data-places-drive="all"]', indoor: '[data-places-filter="indoor"]', free: '[data-places-filter="free"]', noReserve: '[data-places-filter="noReserve"]' });
+  /** 지울 수 있는 조건 칩을 누르면 시트 안의 해당 칩을 대신 누른다(app.js 의 기존 data-places-filter 처리를 그대로 쓴다). */
+  const REMOVE_TARGET = Object.freeze({ indoor: '[data-places-filter="indoor"]', free: '[data-places-filter="free"]', noReserve: '[data-places-filter="noReserve"]' });
   const FILTER_ICON = '<svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M1.5 3h9M3 6h6M4.5 9h3"/></svg>';
   function filterBar(o, conds) {
     const n = conds.length;
@@ -220,11 +192,10 @@
   }
   function sortLabelOf(o) {
     if (o.sort === "popular") return TEXT.sortPopular;
-    return o.origin ? TEXT.sortNear : TEXT.sortLabel;
+    return TEXT.sortNear;
   }
   function countRow(o, n) {
-    const basis = o.origin ? `<span class="places-count-basis"> · ${esc(TEXT.countBasis(o.origin.name))}</span>` : "";
-    return `<div class="places-count"><span class="places-count-main"><strong>${esc(TEXT.count(n))}</strong>${basis}</span><button type="button" class="places-sort-btn" data-places-sheet="open" aria-haspopup="dialog">${esc(sortLabelOf(o))}<span aria-hidden="true">▾</span></button></div>`;
+    return `<div class="places-count"><span class="places-count-main"><strong>${esc(TEXT.count(n))}</strong></span><button type="button" class="places-sort-btn" data-places-sheet="open" aria-haspopup="dialog">${esc(sortLabelOf(o))}<span aria-hidden="true">▾</span></button></div>`;
   }
   function filterSheet(o, conds, n) {
     const sec = (title, inner) => `<div class="places-sheet-sec"><h4>${esc(title)}</h4>${inner}</div>`;
@@ -233,7 +204,6 @@
       `<div class="places-sheet-dim" data-places-sheet="close"></div>` +
       `<div class="places-sheet-panel"><div class="places-sheet-grip" aria-hidden="true"></div>` +
       `<div class="places-sheet-head"><strong>${esc(TEXT.sheetTitle)}</strong><button type="button" class="places-sheet-x" data-places-sheet="close" aria-label="${esc(TEXT.close)}">✕</button></div>` +
-      sec(TEXT.driveLabel, driveRow(o)) +
       sec(TEXT.sortLabel, sortRow(o)) +
       sec(TEXT.condLabel, filterRow(o.filters, o.showNoReserve === true)) +
       `<div class="places-sheet-foot">${conds.length ? `<button type="button" class="places-sheet-clear" data-places-remove="all">${esc(TEXT.clearAll)}</button>` : ""}<button type="button" class="places-sheet-go" data-places-sheet="close">${esc(TEXT.showResults(n))}</button></div>` +
@@ -272,7 +242,7 @@
     MUSEUM: '<path d="M3 9l9-5 9 5zM5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/>',
     INDOOR: '<path d="M4 11l8-7 8 7v9H4zM10 20v-5h4v5"/>',
   };
-  function renderCard(p, today, origin) {
+  function renderCard(p, today) {
     const stale = Places.isStale(p, today);
     const badges = [`<span class="places-badge places-badge-cat">${esc(lookup(Places.CATEGORIES, p.category) || "")}</span>`];
     if (typeof p.district === "string" && p.district) badges.push(`<span class="places-badge places-badge-district">${esc(p.district)}</span>`); // G4: 시·군·구 작은 표기
@@ -281,15 +251,13 @@
     const link = Places.isHttpsUrl(p.officialUrl)
       ? `<a class="places-link" href="${esc(p.officialUrl)}" target="_blank" rel="noopener noreferrer">${esc(TEXT.link)}</a>`
       : "";
-    const min = origin ? Places.driveMinFrom(p, origin) : null;
     const where = [p.province, p.district].filter((s) => typeof s === "string" && s).join(" ");
     const cat = Object.prototype.hasOwnProperty.call(PH_ICON, p.category) ? p.category : "PARK";
-    const tm = min === null ? "" : `<span class="places-ph-tm">${esc(TEXT.driveTime(Math.max(1, min)))}</span>`;
     return (
       `<article class="places-card places-card-big" data-places-id="${esc(p.id)}" data-places-open="${esc(p.id)}">` +
       `<div class="places-ph places-ph-${cat.toLowerCase()}" aria-hidden="false">` +
       `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PH_ICON[cat]}</svg>` +
-      `<div class="places-badges places-ph-pin">${badges.join("")}</div>${tm}</div>` +
+      `<div class="places-badges places-ph-pin">${badges.join("")}</div></div>` +
       `<div class="places-card-bd">` +
       `<h3 class="places-name">${esc(p.name)}</h3>` +
       (p.summary ? `<p class="places-summary">${esc(p.summary)}</p>` : "") +
@@ -311,7 +279,7 @@
    * 어디갈까 탭 전체 마크업.
    * @param {{places:Array, child:{name,ageLabel}|null, region:{province,district}|null, category:string|null, status?:string, label?:string, today?:Date|string}} o
    *   places 는 이미 Places.filterPlaces 로 거른 목록(이 함수는 거르지 않는다).
-   *   그 밖에 filters·showNoReserve·origin·driveMax·sort(app.js 가 넘김), sheetOpen(생략하면 이 모듈의 필터 시트 열림 상태 — 테스트·하네스용).
+   *   그 밖에 filters·showNoReserve·sort(app.js 가 넘김), sheetOpen(생략하면 이 모듈의 필터 시트 열림 상태 — 테스트·하네스용).
    */
   function render(o) {
     const opts = o || {};
@@ -319,15 +287,14 @@
     const today = opts.today === undefined ? new Date() : opts.today;
     const catOn = opts.category && opts.category !== "ALL";
     const f = opts.filters || {};
-    const filterOn = f.indoor === true || f.free === true || f.noReserve === true || typeof opts.driveMax === "number";
-    const origin = opts.origin || null;
+    const filterOn = f.indoor === true || f.free === true || f.noReserve === true;
     const body = list.length
-      ? `<div class="places-list">${list.map((p) => renderCard(p, today, origin)).join("")}</div><p class="places-notice">${esc(TEXT.notice)}</p><p class="places-source">${esc(TEXT.source)}</p>`
+      ? `<div class="places-list">${list.map((p) => renderCard(p, today)).join("")}</div><p class="places-notice">${esc(TEXT.notice)}</p>`
       : `<div class="places-empty"><p>${esc(filterOn ? TEXT.emptyFilter : catOn ? TEXT.emptyCategory : TEXT.empty)}</p></div>`;
     const sheetOpen = typeof opts.sheetOpen === "boolean" ? opts.sheetOpen : ui.sheetOpen;
     const bs = opts.basis && opts.basis.name ? opts.basis : null; // 0-B3: 상단 기준 줄 "이름(나이) · 지역 기준 · 정렬"
-    const basisLine = bs ? `<p class="places-basis">${esc([bs.age ? `${bs.name}(${bs.age})` : bs.name, bs.region ? `${bs.region} 기준` : ""].filter(Boolean).join(" · "))}${opts.sort === "popular" || (opts.sort === "near" && origin) ? ` · ${esc(sortLabelOf({ sort: opts.sort, origin }))}` : ""}</p>` : "";
-    const so = { catCounts: opts.catCounts || null, category: opts.category, origin, driveMax: opts.driveMax, sort: opts.sort, filters: f, showNoReserve: opts.showNoReserve === true, sheetOpen };
+    const basisLine = bs ? `<p class="places-basis">${esc([bs.age ? `${bs.name}(${bs.age})` : bs.name, bs.region ? `${bs.region} 기준` : ""].filter(Boolean).join(" · "))}${opts.sort === "popular" || opts.sort === "near" ? ` · ${esc(sortLabelOf({ sort: opts.sort }))}` : ""}</p>` : "";
+    const so = { catCounts: opts.catCounts || null, category: opts.category, sort: opts.sort, filters: f, showNoReserve: opts.showNoReserve === true, sheetOpen };
     const conds = activeConds(so);
     return `<section class="places-view${sheetOpen ? " is-sheet-open" : ""}">${basisLine}${filterBar(so, conds)}${filterSheet(so, conds, list.length)}${activeRow(conds)}${countRow(so, list.length)}${body}</section>`;
   }
@@ -423,18 +390,15 @@
     const addrRow = addr ? `<div class="places-detail-addr"><span>${esc(addr)}</span>${p.address ? `<button type="button" class="btn-close places-copy" data-places-copy="${esc(p.address)}">${esc(TEXT.copy)}</button>` : ""}</div>` : "";
     const hasHome = Places.isHttpsUrl(p.officialUrl);
     const route = routeUrl(p);
-    const dmin = opts.origin ? Places.driveMinFrom(p, opts.origin) : null;
     const map =
       `<div class="places-dmap"><span class="places-dmap-road" aria-hidden="true"></span><span class="places-dmap-pin" aria-hidden="true"></span>` +
-      (dmin === null ? "" : `<span class="places-ph-tm places-dmap-tm">${esc(TEXT.driveTime(Math.max(1, dmin)))}</span>`) +
       `<div class="places-actions places-dmap-btns"><a class="places-link" href="${esc(mapUrl(p))}" target="_blank" rel="noopener noreferrer">${esc(TEXT.map)}</a>${route ? `<a class="places-link places-route" href="${esc(route)}" target="_blank" rel="noopener noreferrer">${esc(TEXT.route)}</a>` : ""}</div></div>`;
-    const driveRow = dmin === null ? "" : `<p class="places-drive places-detail-drive">${esc(TEXT.driveNote(Math.max(1, dmin), opts.origin.name))}<span class="places-detail-est"> · ${esc(TEXT.estimated)}</span></p>`;
     const resv = p.reservation === "REQUIRED" ? `<p class="places-reserve-note">${esc(TEXT.reservationRequired)}</p>` : p.reservation === "PARTLY" ? `<p class="places-reserve-note">${esc(TEXT.reservationPartly)}</p>` : "";
     return (
       `<div class="places-detail places-detail-map" data-places-detail="info">` + map +
       `<div class="places-detail-bd"><div class="places-badges">${badges.join("")}</div>` +
       `<h3 class="places-name">${esc(p.name || "")}</h3>` +
-      addrRow + driveRow +
+      addrRow +
       (p.summary ? `<p class="places-summary">${esc(p.summary)}</p>` : "") +
       `<ul class="places-meta">${ageMeta(p)}${metaItem("실내·실외", lookup(Places.INDOOR, p.indoor))}${metaItem("비용", lookup(Places.COST, p.cost))}${metaItem("예약", lookup(Places.RESERVATION, p.reservation))}</ul>` +
       (typeof p.notice === "string" && p.notice ? `<p class="places-reserve-note places-detail-notice">${esc(p.notice)}</p>` : "") +

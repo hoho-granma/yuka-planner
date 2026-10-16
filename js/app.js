@@ -3646,11 +3646,8 @@
   let placesData = null; // data/places.json — 처음 한 번만 읽는다
   let placesLoading = null;
   let placesCat = "ALL";
-  let placesOffices = null; // data/district-offices.json(기준점 시·군·구청 좌표) — 없으면 거리 기능은 꺼진다
-  let placesOfficesLoading = null;
   let placesStats = {}; // placeUsageStats/{id} {count} — 인기순 정렬용(화면에 숫자는 내지 않는다). 못 읽으면 빈 값
   let placesStatsLoading = null;
-  let placesDriveMax = null; // null=전체 / 30 / 60 / 90 (이 실행 동안만)
   let placesSort = "near"; // "near" | "popular"
   async function loadPlaces() {
     if (placesData) return placesData;
@@ -3659,11 +3656,6 @@
       placesData = d && Array.isArray(d.places) ? d : { places: [] }; return placesData;
     });
     return placesLoading;
-  }
-  async function loadPlacesOffices() {
-    if (placesOffices) return placesOffices;
-    if (!placesOfficesLoading) placesOfficesLoading = loadJsonOrNull("data/district-offices.json").then((d) => { placesOffices = d && typeof d === "object" ? d : {}; return placesOffices; });
-    return placesOfficesLoading;
   }
   /** 인기순 신호: placeUsageStats 컬렉션을 읽는다. 규칙 미배포·오프라인이면 조용히 빈 값. */
   async function loadPlacesStats() {
@@ -3706,24 +3698,21 @@
     const d = placesData || { places: [] };
     const valid = d.places.filter((p) => Places.validatePlace(p).length === 0);
     const age = profile && !isPregnant() ? ChildTimeline.completedMonths(profile.birthDate, new Date()) : null;
-    const origin = profile ? Places.originOf(placesOffices, profile.province, profile.district) : null;
-    const sort = placesSort === "near" && !origin ? "near" : placesSort;
     let list = Places.filterPlaces(valid, { ageMonths: age, category: placesCat, ...placesFilters });
-    list = Places.filterByDrive(list, origin, placesDriveMax);
-    list = Places.sortPlaces(list, sort, origin, placesStats);
+    list = Places.sortPlaces(list, placesSort, profile && profile.dong, placesStats);
     // 0-B3: 분류 칩은 지금 나이·지역 조건으로 장소가 하나라도 있는 분류만 보인다. 상단 기준 줄은 아이 이름(나이)·지역.
-    const base = Places.filterByDrive(Places.filterPlaces(valid, { ageMonths: age, category: "ALL", ...placesFilters }), origin, placesDriveMax);
+    const base = Places.filterPlaces(valid, { ageMonths: age, category: "ALL", ...placesFilters });
     const catCounts = {};
     base.forEach((p) => { catCounts[p.category] = (catCounts[p.category] || 0) + 1; });
     const basis = profile ? { name: childDisplayName(), age: isPregnant() ? "" : age < ChildTimeline.OVER36_FROM_MONTHS ? `${age}개월` : ChildTimeline.ageLabelAt(profile.birthDate, new Date()), region: profile.district || profile.province || "" } : null;
-    return PlacesView.render({ basis, catCounts, places: list, category: placesCat, filters: placesFilters, showNoReserve: Places.hasNoReserve(valid), origin, driveMax: origin ? placesDriveMax : null, sort });
+    return PlacesView.render({ basis, catCounts, places: list, category: placesCat, filters: placesFilters, showNoReserve: Places.hasNoReserve(valid), sort: placesSort });
   }
   async function renderPlacesTab() {
     const body = el("places-body");
     if (!body || typeof PlacesView === "undefined") return;
-    // 장소·시청 좌표(정적 파일)만 기다려 바로 그린다. 인기순 통계(Firestore)는 느릴 수 있어 기다리지 않고, 인기순을 보는 중일 때만 도착 뒤 다시 그린다.
+    // 장소(정적 파일)만 기다려 바로 그린다. 인기순 통계(Firestore)는 느릴 수 있어 기다리지 않고, 인기순을 보는 중일 때만 도착 뒤 다시 그린다.
     if (!placesData) body.innerHTML = '<div class="places-empty"><p>어디갈까를 불러오고 있어요…</p></div>';
-    await Promise.all([loadPlaces(), loadPlacesOffices()]);
+    await loadPlaces();
     if (currentTab !== "places") return;
     body.innerHTML = placesViewHtml();
     loadPlacesStats().then(() => { if (currentTab === "places" && placesSort === "popular") body.innerHTML = placesViewHtml(); });
@@ -3739,13 +3728,6 @@
     if (flt) {
       const k = flt.getAttribute("data-places-filter");
       if (k in placesFilters) placesFilters[k] = !placesFilters[k];
-      el("places-body").innerHTML = placesViewHtml();
-      return;
-    }
-    const dr = ev.target.closest("[data-places-drive]");
-    if (dr) {
-      const v = dr.getAttribute("data-places-drive");
-      placesDriveMax = v === "all" ? null : Number(v) || null;
       el("places-body").innerHTML = placesViewHtml();
       return;
     }
@@ -3780,7 +3762,7 @@
     modalMode = "profile";
     const r = placesReg;
     const kids = usLinks().filter((l) => !l.removedAt).map((l) => ({ childKey: l.childKey, name: l.displayName || "" }));
-    el("modal-content").innerHTML = PlacesView.renderDetail(r.place, { origin: profile ? Places.originOf(placesOffices, profile.province, profile.district) : null, mode: r.mode, canRegister: usActive(), today: new Date(), reg: r, members: usActive() ? HouseholdView.visibleMembers(usMembers()).map((m) => ({ memberId: m.memberId, label: m.label })) : [], kids, doneLabel: r.doneLabel, pickerHtml: r.mode === "register" ? HNDatePicker.markup("plr") : "" });
+    el("modal-content").innerHTML = PlacesView.renderDetail(r.place, { mode: r.mode, canRegister: usActive(), today: new Date(), reg: r, members: usActive() ? HouseholdView.visibleMembers(usMembers()).map((m) => ({ memberId: m.memberId, label: m.label })) : [], kids, doneLabel: r.doneLabel, pickerHtml: r.mode === "register" ? HNDatePicker.markup("plr") : "" });
     el("detail-modal").classList.remove("hidden");
     const root = el("modal-content").querySelector("[data-places-detail]");
     if (root) root.addEventListener("click", placesDetailClick);
@@ -3877,7 +3859,7 @@
       renderChecklistTab();
     }
     if(currentTab === "growth" && name !== "growth" && typeof GrowthLearningView !== "undefined") GrowthLearningView.unmount();
-    if(currentTab === "trend" && name !== "trend" && typeof EducationInfo !== "undefined") EducationInfo.unmount();
+    if(currentTab === "growth" && name !== "growth" && typeof EducationInfo !== "undefined") EducationInfo.unmount();
     currentTab = name;
     if (name !== "checklist" && checklistScope) {
       // 범위 보기는 전체 할 일 화면을 벗어나면 풀리고, 펼침 상태도 기본(현재·다음 월령)으로 돌린다.

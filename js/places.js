@@ -199,53 +199,19 @@
   /** 데이터에 '예약 필요 없음(NONE)' 장소가 하나라도 있는가(없으면 '예약 없이' 칩을 보이지 않는다). */
   const hasNoReserve = (list) => (Array.isArray(list) ? list : []).some((p) => p && p.reservation === "NONE");
 
-  // ── P3 거리(직선거리로 추정한 차량 이동 시간) ─────────────────────────────────────────────────
-  const EARTH_RADIUS_KM = 6371;
-  const ROAD_FACTOR = 1.3; // 직선거리 → 도로 거리 보정
-  const DRIVE_SPEED_KMH = 30; // 시내 평균 속도
-  const DRIVE_CHOICES = Object.freeze([30, 60, 90]); // 거리 칩(분): 30분·1시간·1시간 30분 이내
-  const isCoord = (c) => !!c && typeof c.lat === "number" && typeof c.lng === "number" && Number.isFinite(c.lat) && Number.isFinite(c.lng);
-  /** 두 좌표 {lat,lng} 사이 직선거리(km). 좌표가 잘못되면 null. */
-  function haversineKm(a, b) {
-    if (!isCoord(a) || !isCoord(b)) return null;
-    const rad = (d) => (d * Math.PI) / 180;
-    const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
-    const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
-    return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
-  }
-  /** 직선거리(km) → 추정 차량 이동 시간(분) = round(km × 1.3 ÷ 30 × 60). */
-  const estDriveMin = (km) => (typeof km === "number" && Number.isFinite(km) && km >= 0 ? Math.round(((km * ROAD_FACTOR) / DRIVE_SPEED_KMH) * 60) : null);
-  /** data/district-offices.json 에서 기준점: 키 "시·도|시·군·구" → {name,lat,lng}. 없거나 좌표가 없으면 null. */
-  function originOf(offices, province, district) {
-    if (!offices || typeof offices !== "object" || !isStr(province) || !isStr(district)) return null;
-    const o = offices[province + "|" + district];
-    return o && isCoord(o) ? { name: isStr(o.name) ? o.name : district, lat: o.lat, lng: o.lng } : null;
-  }
-  /** 기준점에서 이 장소까지 직선거리(km). 기준점·장소 좌표가 없으면 null. */
-  const kmFrom = (place, origin) => haversineKm(origin, place);
-  /** 기준점에서 이 장소까지 추정 이동 시간(분). 없으면 null. */
-  function driveMinFrom(place, origin) {
-    const km = kmFrom(place, origin);
-    return km === null ? null : estDriveMin(km);
-  }
-  /** 이동 시간 필터: maxMin 이 숫자면 그 시간 이내만(좌표 없는 장소는 뺀다). maxMin 이 없거나 기준점이 없으면 그대로. */
-  function filterByDrive(places, origin, maxMin) {
-    const src = Array.isArray(places) ? places : [];
-    if (typeof maxMin !== "number" || !Number.isFinite(maxMin) || !isCoord(origin)) return src.slice();
-    return src.filter((p) => { const m = driveMinFrom(p, origin); return m !== null && m <= maxMin; });
-  }
+  // ── 정렬: 내가 사는 동(주소에 동 이름 포함) 장소를 먼저 보여 준다. 거리 계산은 하지 않는다.
+  const inDong = (p, dong) => isStr(dong) && dong.trim() !== "" && isStr(p && p.address) && p.address.includes(dong.trim());
   const countOf = (stats, id) => { const s = stats && stats[id]; const n = typeof s === "number" ? s : s && s.count; return typeof n === "number" && Number.isFinite(n) ? n : 0; };
   /**
-   * 정렬: "near"(가까운순) / "popular"(인기순 = stats[id].count 내림차순, 같으면 가까운순). 좌표 없는 장소는 항상 맨 뒤(원래 순서 유지).
-   * 기준점이 없으면 가까운순은 원래 순서 그대로. 새 배열을 돌려준다.
+   * 정렬: "near"(우리 동 먼저, 나머지는 원래 순서) / "popular"(인기순 = stats[id].count 내림차순, 같으면 우리 동 먼저). 새 배열을 돌려준다.
    */
-  function sortPlaces(list, mode, origin, stats) {
-    const src = (Array.isArray(list) ? list : []).map((p, i) => ({ p, i, km: kmFrom(p, origin) }));
-    const near = (a, b) => (a.km === null ? 1 : 0) - (b.km === null ? 1 : 0) || (a.km !== null && b.km !== null ? a.km - b.km : 0) || a.i - b.i;
+  function sortPlaces(list, mode, dong, stats) {
+    const src = (Array.isArray(list) ? list : []).map((p, i) => ({ p, i, near: inDong(p, dong) ? 0 : 1 }));
+    const near = (a, b) => a.near - b.near || a.i - b.i;
     if (mode === "popular") src.sort((a, b) => countOf(stats, b.p.id) - countOf(stats, a.p.id) || near(a, b));
     else src.sort(near);
     return src.map((x) => x.p);
   }
 
-  return { EARTH_RADIUS_KM, ROAD_FACTOR, DRIVE_SPEED_KMH, DRIVE_CHOICES, haversineKm, estDriveMin, originOf, driveMinFrom, filterByDrive, sortPlaces, OPTIONAL_FIELDS, regionsOf, hasNoReserve, CATEGORIES, CATEGORY_KEYS, INDOOR, COST, RESERVATION, FIELDS, LIMITS, BANNED_WORDS, STALE_MONTHS, hasBannedWord, validatePlace, validateData, filterPlaces, ageFits, isStale, parseDate, isHttpsUrl };
+  return { sortPlaces, OPTIONAL_FIELDS, regionsOf, hasNoReserve, CATEGORIES, CATEGORY_KEYS, INDOOR, COST, RESERVATION, FIELDS, LIMITS, BANNED_WORDS, STALE_MONTHS, hasBannedWord, validatePlace, validateData, filterPlaces, ageFits, isStale, parseDate, isHttpsUrl };
 });
