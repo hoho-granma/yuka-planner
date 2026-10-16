@@ -11,8 +11,9 @@
   .bottom-nav .nav-item.active .nav-icon { animation: hn-m-pop 320ms var(--hn-ease); }
 
 
-  /* 화면 전환: 랜딩 ↔ 앱 */
-  .hn-m-view { animation: hn-m-rise 420ms var(--hn-ease) both; }
+  /* 화면 전환: 랜딩 ↔ 앱. 이동(translate)은 쓰지 않는다 — #view-calendar 안에 position:fixed 하단 메뉴가 있어서,
+   이동이 걸려 있는 동안 메뉴가 화면 바닥이 아니라 이 영역 바닥에 붙었다가 효과가 끝나면 내려오는 문제가 있었다. 서서히 나타나기만 한다. */
+  .hn-m-view { animation: hn-m-fade 360ms var(--hn-ease) both; }
   /* 하단 탭 전환: 가는 방향(--hn-dx)으로 살짝 미끄러지며 나타남 */
   .hn-m-tab { animation: hn-m-slide 300ms var(--hn-ease) both; }
   .hn-m-tab #home-body > *:nth-child(1) { animation: hn-m-rise 380ms var(--hn-ease) both; }
