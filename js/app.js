@@ -1226,11 +1226,11 @@
     if (!acctEnabled()) return enterNewChildEntryBase(opts);
     return acctChildSheetOpen();
   };
-  function acctChildSheetOpen() {
+  function acctChildSheetOpen(opts) {
     rememberChild(); // 지금 아이를 이 기기 아이 목록에 남겨 둔다(저장 시 이전 아이를 비우는 handleSubmit 규칙 그대로)
     newChildMode = true;
     newChildSnapshot = { hid: hhEnabled() ? hh.hid : null, code: hhEnabled() ? hh.code : null };
-    crState = { kind: acctExpecting() ? "pregnant" : "born", name: "", date: "" };
+    crState = { kind: acctExpecting() ? "pregnant" : "born", name: "", date: "", ...(opts && opts.onboard ? { onboard: true, page: 2 } : {}) }; // onboard: 카카오 첫 시작 2·3/3
     crPb = { kind: "DUE", weeks: 12, days: 0, confirmIso: "" };
     acctChildSheetRender();
   }
@@ -7176,7 +7176,7 @@
       : acct.mode === "slot" ? AccountView.renderSlotPick({ slots: acct.slotPick && acct.slotPick.slots, busy: acct.busy, error: acct.error })
       : acct.mode === "invite" ? AccountView.renderInvite({ code: hh.code, role: acct.form && acct.form.inviteRole, preview: acctInvitePreview(), canSchedule: usActive(), notice: acct.notice, busy: acct.busy, error: acct.error })
       : acct.mode === "migrate" ? AccountView.renderMigrate({ kids: acct.migrate && acct.migrate.kids, conflict: !!(acct.migrate && acct.migrate.switchTo), busy: acct.busy, error: acct.error })
-      : acct.mode === "recover" ? AccountView.renderRecover({ ...st, joining: acct.joining })
+      : acct.mode === "recover" ? AccountView.renderRecover({ ...st, joining: acct.joining, kakao: !!(acct.user && acct.user.provider === "kakao") })
       : AccountView.renderLogoutConfirm({ pending: acct.pending || 0 });
     el("detail-modal").classList.remove("hidden");
     if (acct.mode === "invite" && typeof addTilesBind === "function") addTilesBind(); // G7: 가족 추가 시트 위 타일(일정 추가·아이 등록하기로 이동)
@@ -7891,7 +7891,7 @@
     }
     if (action === "recover-new" || action === "recover-join") {
       const joining = action === "recover-join";
-      const v = AccountView.validateRecover({ ...acct.form, email: acct.user && acct.user.email }, joining);
+      const v = AccountView.validateRecover({ ...acct.form, email: acct.user && acct.user.email, needSituation: !!(acct.user && acct.user.provider === "kakao") }, joining);
       acct.errors = v.errors;
       acct.error = null;
       if (!v.ok) return acctShowSheet("recover");
@@ -7914,12 +7914,14 @@
       acct.busy = false;
       if (!fin.ok) return acctShowSheet("recover");
       if(fin.pending){closeDetail();acctApprovalGate("PENDING");return;}
+      const startChild = !joining && !!(v.intent && v.intent.situation); // 카카오 첫 시작(새 가족): 이어서 아이 정보(2/3)·사는 지역(3/3)
       acct.form = {};
       acct.joining = false;
       acct.notice = AccountView.MSG.recoverDone;
       closeDetail();
       acctRenderSlot();
       acctMaybeShowMigrate();
+      if (startChild && el("detail-modal").classList.contains("hidden")) acctChildSheetOpen({ onboard: true });
       return;
     }
     if (action === "submit-signup") {
@@ -8239,7 +8241,35 @@ fields.sourceScheduleId=f.sourceScheduleId;
   );
 
   // A single family registration form; only linked accounts are usable adult owners.
-  acctChildSheetRender=function(){const reg=acctChildRegion()||{},f=crState;modalMode='child-register';const pv=regionsData?regionsData.provinces:[];el('modal-content').innerHTML=`<div class="hn-entry"><div class="hn-section-head"><h3>가족 추가</h3></div><label for="cr-role">구성원</label><select id="cr-role"><option value="CHILD">아이</option><option value="DAD">아빠</option><option value="MOM">엄마</option><option value="OTHER">다른 가족</option></select><label for="cr-name">이름 또는 별칭</label><input id="cr-name" maxlength="12" value="${esc(f.name||'')}"/><div id="cr-child-fields"><label for="cr-date">생년월일 (출산 예정일)</label><input type="date" id="cr-date" value="${esc(f.date||'')}"/><label for="cr-gender">성별</label><select id="cr-gender"><option value="">선택</option><option value="male">남아</option><option value="female">여아</option></select><label for="cr-province">거주 지역</label><select id="cr-province">${pv.map(p=>`<option value="${esc(p.code)}" ${p.code===reg.province?'selected':''}>${esc(p.name)}</option>`).join('')}</select><select id="cr-district"></select><input id="cr-dong" maxlength="30" placeholder="읍·면·동" value="${esc(profile&&profile.dong||'')}"/><p class="fine-print">거주지 기준으로 받을 수 있는 지원금, 혜택, 교육 정보를 같이 챙겨드려요.</p></div><p id="cr-adult-note" class="fine-print" hidden>엄마가 아빠를 등록할 수 있지만, 아빠는 가족코드로 회원가입해야 앱을 이용할 수 있어요. 가입 전에는 프로필에서만 보여요.</p><p id="cr-error" class="acct-err hidden" role="alert"></p><button class="btn-complete" id="cr-save">저장</button></div>`;el('detail-modal').classList.remove('hidden');const fill=()=>{const p=pv.find(p=>p.code===el('cr-province').value);el('cr-district').innerHTML=(p?p.districts:[]).map(d=>`<option ${d===reg.district?'selected':''}>${esc(d)}</option>`).join('');};fill();el('cr-province').onchange=fill;el('cr-role').onchange=e=>{const kid=e.target.value==='CHILD';el('cr-child-fields').hidden=!kid;el('cr-adult-note').hidden=kid;};el('cr-save').onclick=acctChildSheetSave;};
+  /** 카카오 첫 시작 2·3/3(아이 정보 → 사는 지역). 화면은 AccountView.renderOnboardChild, 저장은 아래 acctChildSheetSave(가족 추가 시트와 같은 id)를 그대로 쓴다. */
+  function acctOnboardRender() {
+    const f = crState, reg = acctChildRegion() || {}, pv = regionsData ? regionsData.provinces : [], M = AccountView.MSG.onboardChild;
+    modalMode = "child-register";
+    el("modal-content").innerHTML = AccountView.renderOnboardChild({ expecting: acctExpecting(), name: f.name || "", date: f.date || "", regions: pv, province: reg.province, page: f.page || 2 });
+    el("detail-modal").classList.remove("hidden");
+    const fill = () => { const p = pv.find((x) => x.code === el("cr-province").value); el("cr-district").innerHTML = (p ? p.districts : []).map((d) => `<option ${d === reg.district ? "selected" : ""}>${esc(d)}</option>`).join(""); };
+    fill();
+    el("cr-province").onchange = fill;
+    const go = (page) => {
+      crState.page = page;
+      el("modal-content").querySelectorAll("[data-cr-page]").forEach((n) => { n.hidden = Number(n.getAttribute("data-cr-page")) !== page; });
+      el("cr-next").hidden = page !== 2; el("cr-save").hidden = page !== 3; el("cr-prev").hidden = page !== 3;
+      el("cr-title").textContent = el("cr-title").getAttribute(page === 3 ? "data-t3" : "data-t2");
+      el("cr-step").textContent = M.stepOf(page);
+      el("cr-error").classList.add("hidden");
+    };
+    const defaultName = () => { if (!el("cr-name").value.trim()) el("cr-name").value = acctExpecting() ? M.defaultNameDue : M.defaultName; };
+    el("cr-next").onclick = () => {
+      if (!el("cr-date").value) return acctChildSheetError(M.errDate);
+      if (!el("cr-gender").value) return acctChildSheetError(M.errGender);
+      defaultName();
+      go(3);
+    };
+    el("cr-prev").onclick = () => go(2);
+    el("cr-later").onclick = () => closeDetail();
+    el("cr-save").onclick = () => { defaultName(); return acctChildSheetSave(); };
+  }
+  acctChildSheetRender=function(){if(crState&&crState.onboard)return acctOnboardRender();const reg=acctChildRegion()||{},f=crState;modalMode='child-register';const pv=regionsData?regionsData.provinces:[];el('modal-content').innerHTML=`<div class="hn-entry"><div class="hn-section-head"><h3>가족 추가</h3></div><label for="cr-role">구성원</label><select id="cr-role"><option value="CHILD">아이</option><option value="DAD">아빠</option><option value="MOM">엄마</option><option value="OTHER">다른 가족</option></select><label for="cr-name">이름 또는 별칭</label><input id="cr-name" maxlength="12" value="${esc(f.name||'')}"/><div id="cr-child-fields"><label for="cr-date">생년월일 (출산 예정일)</label><input type="date" id="cr-date" value="${esc(f.date||'')}"/><label for="cr-gender">성별</label><select id="cr-gender"><option value="">선택</option><option value="male">남아</option><option value="female">여아</option></select><label for="cr-province">거주 지역</label><select id="cr-province">${pv.map(p=>`<option value="${esc(p.code)}" ${p.code===reg.province?'selected':''}>${esc(p.name)}</option>`).join('')}</select><select id="cr-district"></select><input id="cr-dong" maxlength="30" placeholder="읍·면·동" value="${esc(profile&&profile.dong||'')}"/><p class="fine-print">거주지 기준으로 받을 수 있는 지원금, 혜택, 교육 정보를 같이 챙겨드려요.</p></div><p id="cr-adult-note" class="fine-print" hidden>엄마가 아빠를 등록할 수 있지만, 아빠는 가족코드로 회원가입해야 앱을 이용할 수 있어요. 가입 전에는 프로필에서만 보여요.</p><p id="cr-error" class="acct-err hidden" role="alert"></p><button class="btn-complete" id="cr-save">저장</button></div>`;el('detail-modal').classList.remove('hidden');const fill=()=>{const p=pv.find(p=>p.code===el('cr-province').value);el('cr-district').innerHTML=(p?p.districts:[]).map(d=>`<option ${d===reg.district?'selected':''}>${esc(d)}</option>`).join('');};fill();el('cr-province').onchange=fill;el('cr-role').onchange=e=>{const kid=e.target.value==='CHILD';el('cr-child-fields').hidden=!kid;el('cr-adult-note').hidden=kid;};el('cr-save').onclick=acctChildSheetSave;};
   const charChildSaveBase=acctChildSheetSave;
   acctChildSheetSave=async function(){const role=el('cr-role').value,name=el('cr-name').value.trim();if(role!=='CHILD'){if(!usActive())return acctChildSheetError('먼저 가족코드를 만들거나 가족에 합류해 주세요.');if(!name)return acctChildSheetError('이름을 입력해 주세요.');const btn=el('cr-save');if(btn.disabled)return;btn.disabled=true;try{const r=await HouseholdSync.upsertMember(hh.hid,{role,label:name,order:HouseholdView.nextMemberOrder(usMembers())});if(!r.ok)throw Error('구성원을 저장하지 못했어요.');newChildMode=false;newChildSnapshot=null;acctProfileSheet();}catch(e){acctChildSheetError(e.message);btn.disabled=false;}return;}const date=el('cr-date').value;if(!date)return acctChildSheetError('생년월일 또는 출산 예정일을 입력해 주세요.');if(!el('cr-gender').value)return acctChildSheetError('성별을 선택해 주세요.');if(!el('cr-dong').value.trim())return acctChildSheetError('읍·면·동을 입력해 주세요.');crState.kind=date>=toISODate(new Date())?'pregnant':'born';crPb={kind:'DUE'};charChildExtra={gender:el('cr-gender').value,dong:el('cr-dong').value.trim()};return charChildSaveBase();};
   const charRegionBase=acctChildRegion;

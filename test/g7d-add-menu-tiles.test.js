@@ -33,7 +33,7 @@ test("가족 추가 시트: 타일(가족 추가 선택) + 아빠/자녀/기타 
 test("미리보기는 실제로 보내는 문구와 같다(acctInvitePreview 한 곳), 역할을 고르기 전엔 빈 문자열", () => {
   const sb = { acct: { form: { inviteRole: "CHILD" } }, hh: { code: "A8RZ7Q9X" }, AccountView: AV, acctIdentity: () => ({ name: "주연", roleName: "엄마" }), usMeId: () => "m1" };
   vm.createContext(sb); vm.runInContext(fn("acctInvitePreview") + ";globalThis.p = acctInvitePreview;", sb);
-  assert.strictEqual(sb.p(), "주연(엄마)님이 한눈육아 가족 캘린더에 초대했어요\nhttps://hoho-granma.github.io/yuka-planner/?join=A8RZ7Q9X&role=CHILD&from=m1\n가족코드: A8RZ7Q9X");
+  assert.strictEqual(sb.p(), "주연(엄마)님이 한눈육아 가족 캘린더에 초대했어요\nhttps://yuka-planner.web.app/?join=A8RZ7Q9X&role=CHILD&from=m1\n가족코드: A8RZ7Q9X");
   sb.acct.form.inviteRole = ""; assert.strictEqual(sb.p(), "");
   assert.ok(APP.includes("const text = acctInvitePreview(); // 미리보기와 같은 문구"));
 });

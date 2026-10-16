@@ -2164,3 +2164,13 @@ html[data-font="fallback"] .acct-ver::after, html[data-font="fallback"] #app-ver
 .acct-kakao { box-sizing: border-box; width: 100%; min-height: 54px; padding: 0 18px; border: 0; border-radius: 16px; background: #fee500; color: #191919; font-family: inherit; font-size: 16px; font-weight: 800; cursor: pointer; }
 .acct-kakao:active { opacity: .9; }
 .acct-or { margin: 6px 0; text-align: center; font-size: 12.5px; color: var(--text-sub, #888); }
+
+/* 카카오 첫 시작(연결 복구 1/3 · 아이 정보 2/3 · 사는 지역 3/3) */
+.acct-start-step { margin: 0 0 4px; font-size: 12px; font-weight: 700; color: var(--accent, #715697); }
+.acct-onboard .hn-section-head { display: flex; align-items: center; justify-content: space-between; }
+.acct-ob-step { font-size: 12px; font-weight: 700; color: var(--text-muted, #797281); }
+.acct-onboard [hidden] { display: none !important; }
+.acct-onboard .btn-text { display: block; margin: 6px auto 0; }
+/* 첫 화면의 "이메일로 로그인"은 큰 버튼이 아니라 작은 글자 링크(카카오가 주인공). 위의 open-login 규칙보다 구체적으로 덮는다. */
+#view-landing.acct-on .acct-cta .acct-btn-email[data-acct-action="open-login"] { min-height: 48px; border: 0; background: transparent; color: #715697; font-size: 14px; font-weight: 700; }
+#view-landing.acct-on .acct-cta .acct-btn-email[data-acct-action="open-login"]:active { background: rgba(36, 37, 42, .06); opacity: 1; }

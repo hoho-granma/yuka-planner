@@ -29,7 +29,7 @@
 <script src="js/origin-move.js"></script>
 <script>
 (function () {
-  var NEW = OriginMove.NEW_ORIGIN + "/", status = document.getElementById("status"), go = document.getElementById("go");
+  var NEW = OriginMove.NEW_ORIGIN + "/" + location.search + location.hash, status = document.getElementById("status"), go = document.getElementById("go");
   go.onclick = function () {
     go.disabled = true; status.textContent = "저장된 내용을 새 주소로 옮기는 중이에요… (열린 작은 창은 자동으로 닫혀요)";
     OriginMove.send(window, 15000).then(function (r) {

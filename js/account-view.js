@@ -213,6 +213,21 @@
     recoverJoin: "합류하기",
     recoverBack: "뒤로",
     recoverLater: "나중에",
+    startTitle: "시작해 볼까요?",
+    startBody: "몇 가지만 알려 주시면 우리 아이에게 맞는 일정을 바로 보여 드려요.",
+    startSituationLabel: "지금 어떤 상황이세요?",
+    startNext: "다음",
+    landingEmailLogin: "이메일로 로그인",
+    landingKakaoHint: "가족 코드를 받았다면 카카오로 시작한 뒤 입력해요",
+    onboardChild: {
+      titleChild: "우리 아이 정보", titleRegion: "사는 지역", stepOf: (n) => `${n}/3`,
+      nameLabel: "이름 또는 별칭 (선택)", namePlaceholder: "예: 하은이, 콩이", defaultName: "우리 아이", defaultNameDue: "우리 아기",
+      dateBorn: "생년월일", dateDue: "출산 예정일", genderLabel: "성별", select: "선택", male: "남아", female: "여아",
+      regionLabel: "사는 지역", dongPlaceholder: "읍·면·동",
+      regionHint: "사는 지역을 알려 주시면 우리 동네 육아 지원금·혜택을 자동으로 찾아 캘린더에 표시해요. 상세 주소는 받지 않아요.",
+      next: "다음", start: "시작하기", back: "뒤로", later: "나중에",
+      errDate: "생년월일 또는 출산 예정일을 입력해 주세요.", errGender: "성별을 선택해 주세요.",
+    },
     recoverDone: "가족 캘린더에 연결했어요.",
     migrateTitle: "이 기기의 아이를 어떻게 할까요?",
     migrateTitleConflict: "가족 캘린더를 바꿀까요?",
@@ -226,6 +241,7 @@
   });
   const ROLES = Object.freeze([["MOM", "엄마"], ["DAD", "아빠"], ["CHILD", "자녀"], ["CAREGIVER", "이모님(기타 돌봄)"]]);
   const SITUATIONS = Object.freeze([["HAS_CHILD", "있어요"], ["EXPECTING", "없어요"]]);
+  const START_SITUATIONS = Object.freeze([["HAS_CHILD", "아이가 태어났어요"], ["EXPECTING", "임신 중이에요"]]); // 카카오 첫 시작(연결 복구 시트 1/3)
   const ROLES_HAS_CHILD = Object.freeze([["MOM", "엄마"], ["DAD", "아빠"], ["CHILD", "자녀"]]);
   const ROLES_EXPECTING = Object.freeze([["MOM", "예비엄마"], ["DAD", "예비아빠"]]);
   const REGION_MAX = 30;
@@ -320,13 +336,17 @@
   function validateRecover(form, joining) {
     const f = form || {};
     const errors = {};
-    if (!ROLES.some(([k]) => k === f.role)) errors.role = MSG.errRole;
+    const sit = f.situation === "HAS_CHILD" || f.situation === "EXPECTING" ? f.situation : "";
+    const needSit = !joining && f.needSituation === true; // 카카오로 처음 시작하는 새 가족: 상황을 받고, 역할은 상황에 맞는 것만 허용
+    if (needSit && !sit) errors.situation = MSG.errSituation;
+    const roleList = needSit && sit ? roleOptions({ situation: sit }) : ROLES;
+    if (!roleList.some(([k]) => k === f.role)) errors.role = MSG.errRole;
     const name = String(f.displayName || "").trim();
     if (!name || name.length > NAME_MAX) errors.displayName = MSG.errName;
     const code = normCode(f.familyCode);
     if (joining && !CODE_RE.test(code)) errors.familyCode = MSG.errCode;
     const ok = Object.keys(errors).length === 0;
-    return { ok, errors, intent: ok ? { email: String(f.email || ""), displayName: name, role: f.role, joiningCode: joining ? code : null } : null };
+    return { ok, errors, intent: ok ? { email: String(f.email || ""), displayName: name, role: f.role, joiningCode: joining ? code : null, ...(needSit ? { situation: sit } : {}) } : null };
   }
   function validateLogin(form) {
     const f = form || {};
@@ -366,10 +386,9 @@
     return `<div class="card acct-landing acct-ob" id="acct-landing"><div class="acct-main">
         <section class="acct-slide" data-acct-slide="0"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title).replace("한눈에", '<mark class="acct-hl">한눈에</mark>')}</h1><p class="acct-sub">${lines(O.ob1Sub)}</p></div></section>
       <div class="acct-cta">
-        ${kakaoBtn(false)}
-        <button type="button" class="acct-btn-primary" data-acct-action="open-login">${esc(O.loginBtn)}</button>
-        <button type="button" class="acct-btn-text" data-acct-action="open-signup">${esc(O.primary)}</button>
-        <p class="acct-code-hint">${esc(O.codeHint)}</p>
+        ${kakaoOn()
+          ? `${kakaoBtn(false)}<button type="button" class="acct-btn-text acct-btn-email" data-acct-action="open-login">${esc(MSG.landingEmailLogin)}</button><p class="acct-code-hint">${esc(MSG.landingKakaoHint)}</p>`
+          : `${kakaoBtn(false)}<button type="button" class="acct-btn-primary" data-acct-action="open-login">${esc(O.loginBtn)}</button><button type="button" class="acct-btn-text" data-acct-action="open-signup">${esc(O.primary)}</button><p class="acct-code-hint">${esc(O.codeHint)}</p>`}
         ${s.version ? `<p class="acct-ver">v${esc(s.version)}</p>` : ""}
       </div></div></div>`;
   }
@@ -586,6 +605,23 @@
       <div class="acct-cs-foot"><button type="button" class="acct-cs-save" id="cr-save">${esc(N.save)}</button></div></div>`;
   }
   /** 아이가 없는 홈(D5) 안내 카드. expecting=true 면 예비 부모 문구. */
+  /**
+   * 카카오 첫 시작 2·3/3: 아이 정보(이름·생년월일 또는 예정일·성별) → 사는 지역(시·도·시·군·구·읍·면·동).
+   * 기존 '가족 추가' 시트와 같은 id(cr-role·cr-name·cr-date·cr-gender·cr-province·cr-district·cr-dong·cr-save)를 써서 저장 로직·검증을 그대로 재사용한다.
+   */
+  function renderOnboardChild(state) {
+    const s = state || {}, M = MSG.onboardChild;
+    const page = s.page === 3 ? 3 : 2, exp = s.expecting === true, regions = s.regions || [];
+    const hid = (p) => (page === p ? "" : " hidden");
+    return `<div class="hn-entry acct-onboard" data-acct-onboard="1"><div class="hn-section-head"><h3 id="cr-title" data-t2="${esc(M.titleChild)}" data-t3="${esc(M.titleRegion)}">${esc(page === 3 ? M.titleRegion : M.titleChild)}</h3><span class="acct-ob-step" id="cr-step">${esc(M.stepOf(page))}</span></div>
+      <input type="hidden" id="cr-role" value="CHILD" />
+      <div data-cr-page="2"${hid(2)}><label for="cr-name">${esc(M.nameLabel)}</label><input id="cr-name" maxlength="12" placeholder="${esc(M.namePlaceholder)}" value="${esc(s.name || "")}" />
+        <label for="cr-date">${esc(exp ? M.dateDue : M.dateBorn)}</label><input type="date" id="cr-date" value="${esc(s.date || "")}" />
+        <label for="cr-gender">${esc(M.genderLabel)}</label><select id="cr-gender"><option value="">${esc(M.select)}</option><option value="male">${esc(M.male)}</option><option value="female">${esc(M.female)}</option></select></div>
+      <div data-cr-page="3"${hid(3)}><label for="cr-province">${esc(M.regionLabel)}</label><select id="cr-province">${regions.map((p) => `<option value="${esc(p.code)}"${p.code === s.province ? " selected" : ""}>${esc(p.name)}</option>`).join("")}</select><select id="cr-district"></select><input id="cr-dong" maxlength="30" placeholder="${esc(M.dongPlaceholder)}" value="${esc(s.dong || "")}" /><p class="fine-print">${esc(M.regionHint)}</p></div>
+      <p id="cr-error" class="acct-err hidden" role="alert"></p>
+      <button type="button" class="btn-complete" id="cr-next"${hid(2)}>${esc(M.next)}</button><button type="button" class="btn-complete" id="cr-save"${hid(3)}>${esc(M.start)}</button><button type="button" class="btn-close" id="cr-prev"${hid(3)}>${esc(M.back)}</button><button type="button" class="btn-text" id="cr-later">${esc(M.later)}</button></div>`;
+  }
   function renderEmptyHome(state) {
     const x = !!(state && state.expecting);
     return `${renderMyCard(state)}<div class="card acct-empty" id="acct-empty-home"><h3>${esc(x ? MSG.emptyTitleExpecting : MSG.emptyTitle)}</h3><p class="fine-print">${esc(x ? MSG.emptyBodyExpecting : MSG.emptyBody)}</p><button type="button" class="btn-complete" data-acct-action="empty-register">${esc(x ? MSG.emptyButtonExpecting : MSG.emptyButton)}</button>${state && state.user ? "" : `<button type="button" class="btn-close" data-acct-action="empty-me">${esc(MSG.myInfo)}</button>`}</div>`;
@@ -603,11 +639,11 @@
       ${input("password", MSG.passwordLabel, "password", f.password || "", 'autocomplete="current-password"')}${err(e, "password")}
       ${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}
       <button type="button" class="btn-complete" data-acct-action="submit-login"${s.busy ? " disabled" : ""}>${esc(s.busy ? MSG.loggingIn : MSG.submitLogin)}</button>
-      <button type="button" class="acct-link acct-sub-link ob-switch" data-acct-action="open-signup"${s.busy ? " disabled" : ""}>${esc(MSG.switchToSignup)}</button>
+      ${kakaoOn() ? "" : `<button type="button" class="acct-link acct-sub-link ob-switch" data-acct-action="open-signup"${s.busy ? " disabled" : ""}>${esc(MSG.switchToSignup)}</button>`}
       <button type="button" class="acct-link acct-sub-link" data-acct-action="reset-password"${s.busy ? " disabled" : ""}>${esc(MSG.forgot)}</button></div>`;
   }
   // ── Q3 초대: 역할 3종·링크·문구(순수) ───────────────────────────────────────────────────────
-  const INVITE_BASE = "https://hoho-granma.github.io/yuka-planner/";
+  const INVITE_BASE = "https://yuka-planner.web.app/";
   const INVITE_ROLES = Object.freeze([["DAD", "아빠"], ["CHILD", "자녀"], ["OTHER", "기타"]]);
   const INVITE_LABEL = Object.freeze({ DAD: "아빠", CHILD: "자녀", OTHER: "가족" }); // 빈 자리 기본 이름
   /** 초대 링크: ?join={가족코드}&role={DAD|CHILD|OTHER}&from={초대한 사람 memberId}. */
@@ -674,6 +710,12 @@
       ? `<div class="acct-field"><label>${esc(MSG.codeLabel.replace(" (선택)", ""))}</label><input type="text" class="acct-input acct-code" data-acct-input="familyCode" maxlength="8" placeholder="${esc(MSG.codePlaceholder)}" value="${esc(f.familyCode || "")}" autocapitalize="characters" autocomplete="off" spellcheck="false" />${err(e, "familyCode")}</div>
         <button type="button" class="btn-complete" data-acct-action="recover-join"${s.busy ? " disabled" : ""}>${esc(MSG.recoverJoin)}</button><button type="button" class="btn-text" data-acct-action="recover-back"${s.busy ? " disabled" : ""}>${esc(MSG.recoverBack)}</button>`
       : `<button type="button" class="btn-complete" data-acct-action="recover-new"${s.busy ? " disabled" : ""}>${esc(MSG.recoverNew)}</button><button type="button" class="btn-close" data-acct-action="recover-join-open"${s.busy ? " disabled" : ""}>${esc(MSG.recoverJoinOpen)}</button>`;
+    if (s.kakao === true && !s.joining) {
+      const roles = f.situation ? roleOptions({ situation: f.situation }) : [];
+      return `<div class="acct-form" data-acct-form="recover"><p class="acct-start-step">${esc(MSG.onboardChild.stepOf(1))}</p><h3>${esc(MSG.startTitle)}</h3><p class="fine-print">${esc(MSG.startBody)}</p>
+      ${radios("situation", MSG.startSituationLabel, START_SITUATIONS, f.situation, e)}${roles.length ? radios("role", MSG.roleLabel, roles, f.role, e) : ""}${input("displayName", MSG.nameLabel, "text", f.displayName || "", 'maxlength="20"')}${err(e, "displayName")}
+      ${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}<button type="button" class="btn-complete" data-acct-action="recover-new"${s.busy ? " disabled" : ""}>${esc(MSG.startNext)}</button><button type="button" class="btn-close" data-acct-action="recover-join-open"${s.busy ? " disabled" : ""}>${esc(MSG.recoverJoinOpen)}</button><button type="button" class="btn-text" data-acct-action="close"${s.busy ? " disabled" : ""}>${esc(MSG.recoverLater)}</button></div>`;
+    }
     return `<div class="acct-form" data-acct-form="recover"><h3>${esc(MSG.recoverTitle)}</h3><p class="fine-print">${esc(MSG.recoverBody)}</p>
       ${radios("role", MSG.roleLabel, ROLES, f.role, e)}${input("displayName", MSG.nameLabel, "text", f.displayName || "", 'maxlength="20"')}${err(e, "displayName")}
       ${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}${body}<button type="button" class="btn-text" data-acct-action="close"${s.busy ? " disabled" : ""}>${esc(MSG.recoverLater)}</button></div>`;
@@ -684,5 +726,5 @@
       <button type="button" class="btn-complete" data-acct-action="confirm-logout">${esc(MSG.logout)}</button><button type="button" class="btn-close" data-acct-action="close">${esc(MSG.cancel)}</button></div>`;
   }
 
-  return { subdistrictsOf, MSG, renderFamCard, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, signupTotal, signupStep, signupStepKeys, firstErrorStep, INVITE_ROLES, INVITE_LABEL, inviteLink, inviteText, parseJoinParams, renderLanding, slideIndex, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderFamilySlot, renderMyCard, renderSlotPick, renderRolePick, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderAddTiles, renderAddMenu, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderNoChildBanner, renderNoChildHome, renderNoChildTab, renderChildSheet, renderMe, roleOptions, syncForm, SITUATIONS, esc };
+  return { subdistrictsOf, MSG, renderFamCard, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, signupTotal, signupStep, signupStepKeys, firstErrorStep, INVITE_ROLES, INVITE_LABEL, inviteLink, inviteText, parseJoinParams, renderLanding, slideIndex, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderFamilySlot, renderMyCard, renderSlotPick, renderRolePick, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderAddTiles, renderAddMenu, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderNoChildBanner, renderNoChildHome, renderNoChildTab, renderChildSheet, renderOnboardChild, renderMe, roleOptions, syncForm, SITUATIONS, START_SITUATIONS, esc };
 });
