@@ -14,3 +14,8 @@ test('kakao-link 클릭 처리는 kakao-login 바로 다음 줄에 있다',()=>{
  const i=L.findIndex(l=>l.includes('if (action === "kakao-login")'));
  assert.ok(i>0&&L[i+1].includes('if (action === "kakao-link")'));
 });
+test('연결 요청은 로그인 상태 복원을 기다린 뒤 토큰을 보낸다(복원 전 빈 토큰으로 실패하던 사고 방지)',()=>{
+ assert.equal(topScope('acctAuthIdToken'),'function');
+ assert.ok(/idToken: acctAuthIdToken/.test(src));
+ const i=src.indexOf('async function acctAuthIdToken');assert.ok(src.slice(i,i+600).includes('onAuthStateChanged'));
+});

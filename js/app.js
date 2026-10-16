@@ -6867,6 +6867,19 @@
    * 카카오 로그인 마무리: /oauth?code=…&state=… 로 열렸을 때만 동작한다. 코드는 주소창에서 바로 지우고, 서버(kakaoLogin)가 카카오에 확인한 뒤 준 토큰으로 로그인한다.
    * 로그인되면 onChange 가 기존 로그인과 같은 경로로 가구를 복원하고, 처음 온 카카오 사용자는 가족 연결이 없어 기존 '연결 복구' 시트(역할·이름 → 새 가족 또는 코드로 합류)가 열린다.
    */
+  /** 카카오에서 돌아온 직후엔 로그인 상태 복원이 끝나기 전이라 currentUser 가 비어 있다 — 복원될 때까지(최대 10초) 기다린 뒤 토큰을 받는다. */
+  async function acctAuthIdToken() {
+    const a = firebase.auth();
+    if (!a.currentUser) {
+      await new Promise((resolve) => {
+        let un = null;
+        const done = () => { if (un) un(); resolve(); };
+        un = a.onAuthStateChanged(() => done());
+        setTimeout(done, 10000);
+      });
+    }
+    return a.currentUser ? a.currentUser.getIdToken() : "";
+  }
   async function acctKakaoComplete() {
     if (typeof KakaoLogin === "undefined" || typeof window === "undefined" || !KakaoLogin.isCallback(window.location)) return;
     const search = window.location.search;
@@ -6879,7 +6892,7 @@
       acctShowSheet();
     };
     try {
-      const r = await KakaoLogin.complete({ search, call: (d) => firebase.app().functions("asia-northeast3").httpsCallable("kakaoLogin")(d).then((x) => x.data), idToken: async () => { const u = firebase.auth().currentUser; return u ? u.getIdToken() : ""; } });
+      const r = await KakaoLogin.complete({ search, call: (d) => firebase.app().functions("asia-northeast3").httpsCallable("kakaoLogin")(d).then((x) => x.data), idToken: acctAuthIdToken });
       if (r.ok && r.linked) { acctSplashRelease(); try { localStorage.setItem(acctKakaoLinkedKey(acct.user && acct.user.uid), "1"); } catch (e) {} acctNoticeToast(KakaoLogin.MSG.linked); return; }
       if (!r.ok) return fail(r.message);
       const s = await acct.svc.signInWithToken(r.token);
