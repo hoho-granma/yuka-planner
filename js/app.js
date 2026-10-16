@@ -4737,7 +4737,11 @@
       } else if (action === "confirm-delete") {
         if (mem.saving) return; // 삭제 진행 중 연속 클릭 무시
         mem.saving = true;
+        memHiding.add(id); // 서버 응답을 기다리지 않고 바로 목록에서 숨기고 안내한다
+        mem.view = "list"; mem.deleteId = null;
         memRender();
+        acctRenderSlot();
+        acctNoticeToast("삭제하는 중이에요…");
         try {
           const r = await HouseholdSync.removeMember(hh.hid, id);
           if (!r || !r.ok) throw new Error((r && r.reason) || "member-delete-failed");
@@ -4750,8 +4754,10 @@
           acctNoticeToast(why); // 서버가 거절한 이유(예: 관리자 권한 이전 필요)를 보여 준다
         } finally {
           mem.saving = false;
+          memHiding.delete(id); // 성공이면 서버 목록에서 이미 빠져 있고, 실패면 여기서 다시 보인다
         }
         mem.view = "list"; mem.deleteId = null;
+        acctRenderSlot();
       }
     } catch (e) {
       console.error("구성원 처리 실패", e);
@@ -4984,7 +4990,8 @@
   const usReady = () => typeof UserScheduleView !== "undefined" && typeof UserSchedule !== "undefined" && typeof CalendarModel !== "undefined";
   const usActive = () => hhEnabled() && usReady() && !!hh.hid && !!hh.code && (!acctApprovalEnabled() || acct.approvalState === "ACTIVE");
   const usMirror = () => (hh.hid ? HouseholdSync.getMirror(hh.hid) : null);
-  const usRawMembers = () => Object.entries((usMirror() || {}).members || {}).map(([memberId, m]) => ({ memberId, ...m }));
+  const memHiding = new Set(); // 삭제를 누른 직후 서버 응답을 기다리는 동안 목록에서 먼저 숨기는 구성원 id(실패하면 다시 보인다)
+  const usRawMembers = () => Object.entries((usMirror() || {}).members || {}).filter(([memberId]) => !memHiding.has(memberId)).map(([memberId, m]) => ({ memberId, ...m }));
   const usLinks = () => UserScheduleView.resolveChildColors(Object.entries((usMirror() || {}).children || {}).map(([childKey, l]) => ({ childKey, ...l })), usRawMembers()); // D46: 아이 색도 역할 슬롯(p3~p5…)으로, 화면용(저장 안 함)
   const usMembers = () => UserScheduleView.resolveMemberColors(usRawMembers(), usLinks()); // 색은 화면용으로만 정리(없거나 겹치면 구성원 순서대로 다른 슬롯, 저장 안 함)
   const usDocs = () => (hh.hid ? HouseholdSync.getSchedules(hh.hid) : []);

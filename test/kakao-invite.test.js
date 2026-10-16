@@ -18,3 +18,8 @@ test('합류·새 가족이 끝나면 초대 정보를 지운다',()=>{
 test('초대 정보는 8자 코드·24시간만 인정한다',()=>{
  const b=fn('acctPendingJoin');assert.ok(b.includes('[A-Z0-9]{8}')&&b.includes('24 * 3600 * 1000'));
 });
+test('구성원 삭제: 누르는 즉시 목록에서 숨기고, 끝나면(성공·실패 모두) 숨김을 푼다',()=>{
+ assert.ok(/memHiding\.add\(id\);[\s\S]{0,200}acctNoticeToast\("삭제하는 중이에요/.test(src));
+ assert.ok(/finally \{\s*mem\.saving = false;\s*memHiding\.delete\(id\);/.test(src));
+ assert.ok(/filter\(\(\[memberId\]\) => !memHiding\.has\(memberId\)\)/.test(src));
+});
