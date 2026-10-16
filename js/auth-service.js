@@ -44,6 +44,8 @@
     "auth/network-request-failed": MSG.network,
     "auth/too-many-requests": MSG.tooMany,
     "auth/operation-not-allowed": MSG.notReady,
+    "auth/invalid-custom-token": MSG.generic,
+    "auth/custom-token-mismatch": MSG.generic,
     "auth/configuration-not-found": MSG.notReady,
   });
   /** 오류(코드 속성 또는 문자열) → 한국어 문구. 모르는 코드는 일반 안내. */
@@ -64,10 +66,11 @@
   /** 실제 Firebase Auth(compat) 어댑터. firebase.auth 가 불러와진 뒤에만 만든다. */
   function firebaseAdapter(fb) {
     const auth = fb.auth();
-    const pick = (u) => (u ? { uid: u.uid, email: u.email || "", displayName: u.displayName || "" } : null);
+    const pick = (u) => (u ? { uid: u.uid, email: u.email || "", displayName: u.displayName || "", ...(String(u.uid).startsWith("hn_kakao_") ? { provider: "kakao" } : {}) } : null);
     return {
       async createUser(email, password) { return pick((await auth.createUserWithEmailAndPassword(email, password)).user); },
       async signIn(email, password) { return pick((await auth.signInWithEmailAndPassword(email, password)).user); },
+      async signInWithToken(token) { return pick((await auth.signInWithCustomToken(token)).user); }, // 카카오 로그인: 서버가 만든 한눈육아 전용 토큰
       async signOut() { await auth.signOut(); },
       async deleteUser() { if (auth.currentUser) await auth.currentUser.delete(); },
       async changeEmail(newEmail, password) { // 현재 비밀번호로 다시 확인한 뒤, 새 이메일로 인증 메일을 보낸다(인증 링크를 눌러야 실제로 바뀐다)
@@ -142,6 +145,15 @@
         return { ok: true, user };
       });
     }
+    /** 서버(kakaoLogin)가 만든 로그인 토큰으로 로그인한다. */
+    function signInWithToken(token) {
+      if (!enabled()) return Promise.resolve(DISABLED);
+      if (!token) return Promise.resolve({ ok: false, code: "auth/invalid-custom-token", message: MSG.generic });
+      return run(async (a) => {
+        user = await a.signInWithToken(token);
+        return { ok: true, user };
+      });
+    }
     function signOut() {
       return run(async (a) => {
         await a.signOut();
@@ -188,7 +200,7 @@
       }).catch(() => cb(null, { unknown: true })); // SDK 로드 실패·확인 불가는 '로그아웃됨'이 아니다(두 번째 인자로 구분)
       return () => { dead = true; if (off) off(); };
     }
-    return { isEnabled: enabled, signUp, signIn, signOut, deleteCurrentUser, sendPasswordReset, changeEmail, onChange, currentUser: () => user };
+    return { isEnabled: enabled, signUp, signIn, signInWithToken, signOut, deleteCurrentUser, sendPasswordReset, changeEmail, onChange, currentUser: () => user };
   }
 
   return { create, errorMessage, validateCredentials, firebaseAdapter, MSG, PASSWORD_MIN, SDK_URL };

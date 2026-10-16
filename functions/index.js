@@ -49,3 +49,17 @@ exports.expireSchedulePhotos=onSchedule({region:'asia-northeast3',schedule:'ever
  const result=await createRetention({db:getFirestore(),bucket:getStorage().bucket('yuka-planner.firebasestorage.app'),days:30})();
  console.log('schedule-photo-retention',JSON.stringify(result));
 });
+
+// 카카오 로그인: 인가 코드 → 한눈육아 전용 계정(hn_kakao_번호)의 로그인 토큰. 카카오 앱 키는 Secret Manager(HANNUN_KAKAO, JSON {id,secret})에 둔다.
+const {createKakaoLogin,KakaoError}=require('./kakao-login');
+const kakaoSecret=defineSecret('HANNUN_KAKAO');
+exports.kakaoLogin=onCall({region:'asia-northeast3',enforceAppCheck:appCheckEnforced,secrets:[kakaoSecret],maxInstances:3,timeoutSeconds:30},async request=>{
+ const login=createKakaoLogin({auth:getAuth(),getCreds:async()=>{try{return JSON.parse(kakaoSecret.value()||'{}');}catch(e){return {};}}});
+ try{return await login(request.data||{});}
+ catch(e){
+  if(e instanceof KakaoError)throw new HttpsError(e.code,e.message);
+  console.warn('kakao-login-failure',e&&e.code?e.code:'error'); // 인가 코드·토큰·사용자 정보는 남기지 않는다
+  throw new HttpsError('internal','로그인 중 문제가 생겼어요. 잠시 뒤에 다시 시도해 주세요.');
+ }
+});
+

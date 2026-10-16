@@ -71,6 +71,8 @@
     close: "닫기",
     signupTitle: "회원가입",
     loginTitle: "로그인",
+    kakaoBtn: "카카오로 1초 만에 시작하기",
+    kakaoOr: "또는 이메일로",
     emailLabel: "이메일",
     passwordLabel: "비밀번호 (8자 이상)",
     forgot: "비밀번호를 잊으셨나요?",
@@ -343,6 +345,9 @@
 
   const ICO_FAMILY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9.5" r="2.4"/><path d="M3.5 19c0-3.2 2.5-5.2 5.5-5.2s5.5 2 5.5 5.2"/><path d="M15.5 14.2c3 0 5 1.6 5 4.3"/></svg>';
   /** 랜딩의 계정 카드(로그아웃 상태): 로고·제목·부제·[회원가입하고 시작하기]·[가족 코드로 함께하기]·로그인. */
+  /** 카카오 로그인 버튼(키가 설정된 곳에서만 보인다). 카카오 모듈이 없는 환경(테스트 등)에서는 아무것도 그리지 않는다. */
+  const kakaoOn = () => typeof KakaoLogin !== "undefined" && KakaoLogin.enabled();
+  const kakaoBtn = (withOr) => (kakaoOn() ? `<button type="button" class="acct-kakao" data-acct-action="kakao-login">${esc(MSG.kakaoBtn)}</button>${withOr ? `<p class="acct-or">${esc(MSG.kakaoOr)}</p>` : ""}` : "");
   function renderLanding(state) {
     const s = state || {};
     const O = MSG.onboard;
@@ -361,6 +366,7 @@
     return `<div class="card acct-landing acct-ob" id="acct-landing"><div class="acct-main">
         <section class="acct-slide" data-acct-slide="0"><div class="acct-ob1-top"><div class="acct-logo acct-logo-w">${esc(MSG.logo)}</div><h1 class="acct-title">${lines(O.ob1Title).replace("한눈에", '<mark class="acct-hl">한눈에</mark>')}</h1><p class="acct-sub">${lines(O.ob1Sub)}</p></div></section>
       <div class="acct-cta">
+        ${kakaoBtn(false)}
         <button type="button" class="acct-btn-primary" data-acct-action="open-login">${esc(O.loginBtn)}</button>
         <button type="button" class="acct-btn-text" data-acct-action="open-signup">${esc(O.primary)}</button>
         <p class="acct-code-hint">${esc(O.codeHint)}</p>
@@ -515,7 +521,7 @@
     if(s.unified===true){return `<div class="acct-form acct-signup-unified" data-acct-form="signup"><h3>${esc(MSG.signupTitle||'회원가입')}</h3>${f.fromLink===true?`<p class="fine-print">${esc(MSG.joinLinkLead)}</p>`:''}${account}${situation}${role}${codeField}${region}${s.error?`<p class="acct-err">${esc(s.error)}</p>`:''}${join?`<button type="button" class="acct-link" data-acct-action="join-off">${esc(MSG.onboard.joinOff)}</button>`:''}<button type="button" class="acct-btn-primary" data-acct-action="submit-signup"${s.busy?' disabled':''}>${esc(s.busy?MSG.signingUp:MSG.submitSignup)}</button><button type="button" class="acct-link acct-sub-link" data-acct-action="open-login">${esc(MSG.switchToLogin)}</button></div>`;}
     const q = step === 1 ? MSG.stepQ1 : step === 2 ? (joining ? MSG.stepQ2Join : MSG.stepQ2) : MSG.stepQ3;
     const lead = step === 1 ? (f.fromLink === true ? MSG.joinLinkLead : joining ? "" : MSG.signupLead) : step === 2 && join && f.fromLink !== true ? MSG.onboard.joinSheetLead : "";
-    const body = step === 1 ? account : step === 2 ? `${situation}${role}${codeField}` : region;
+    const body = step === 1 ? kakaoBtn(true) + account : step === 2 ? `${situation}${role}${codeField}` : region;
     const bars = Array.from({ length: total }, (_, k) => `<span class="acct-prog-seg${k < step ? " on" : ""}"></span>`).join("");
     const dis = s.busy ? " disabled" : "";
     const back = step > 1 ? `<button type="button" class="acct-step-back" data-acct-action="prev-step"${dis}>${esc(MSG.stepPrev)}</button>` : "";
@@ -593,7 +599,7 @@
   function renderLogin(state) {
     const s = state || {}, f = s.form || {}, e = s.errors || {};
     return `<div class="acct-form" data-acct-form="login"><h3>${esc(MSG.loginTitle)}</h3>
-      ${input("email", MSG.emailLabel, "email", f.email || "", 'inputmode="email" autocapitalize="off"')}${err(e, "email")}
+      ${kakaoBtn(true)}${input("email", MSG.emailLabel, "email", f.email || "", 'inputmode="email" autocapitalize="off"')}${err(e, "email")}
       ${input("password", MSG.passwordLabel, "password", f.password || "", 'autocomplete="current-password"')}${err(e, "password")}
       ${s.error ? `<p class="acct-err">${esc(s.error)}</p>` : ""}${s.notice ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}
       <button type="button" class="btn-complete" data-acct-action="submit-login"${s.busy ? " disabled" : ""}>${esc(s.busy ? MSG.loggingIn : MSG.submitLogin)}</button>

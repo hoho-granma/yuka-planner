@@ -71,6 +71,7 @@ const SHELL_ASSETS = [
   "./js/feature-flags.js",
   "./js/household-sync.js",
   "./js/household-view.js",
+  "./js/kakao-login.js",
   "./js/auth-service.js",
   "./js/account-view.js",
   "./js/account-sync.js",

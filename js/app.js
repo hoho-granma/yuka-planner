@@ -6922,6 +6922,32 @@
     if (ep) ep.addEventListener("click", acctOnClick);
     if (ep) ep.addEventListener("click", acctNcOnClick);
     acctRenderLanding();
+    acctKakaoComplete(); // 카카오 로그인 화면에서 /oauth 로 돌아온 경우 로그인을 마무리한다
+  }
+  /**
+   * 카카오 로그인 마무리: /oauth?code=…&state=… 로 열렸을 때만 동작한다. 코드는 주소창에서 바로 지우고, 서버(kakaoLogin)가 카카오에 확인한 뒤 준 토큰으로 로그인한다.
+   * 로그인되면 onChange 가 기존 로그인과 같은 경로로 가구를 복원하고, 처음 온 카카오 사용자는 가족 연결이 없어 기존 '연결 복구' 시트(역할·이름 → 새 가족 또는 코드로 합류)가 열린다.
+   */
+  async function acctKakaoComplete() {
+    if (typeof KakaoLogin === "undefined" || typeof window === "undefined" || !KakaoLogin.isCallback(window.location)) return;
+    const search = window.location.search;
+    try { window.history.replaceState(null, "", "/"); } catch (e) {}
+    acctSplashHold();
+    const fail = (message) => {
+      acctSplashRelease();
+      acct.mode = "login"; acct.form = {}; acct.errors = {}; acct.error = message; acct.notice = null;
+      acctShowSheet();
+    };
+    try {
+      const r = await KakaoLogin.complete({ search, call: (d) => firebase.app().functions("asia-northeast3").httpsCallable("kakaoLogin")(d).then((x) => x.data) });
+      if (!r.ok) return fail(r.message);
+      const s = await acct.svc.signInWithToken(r.token);
+      if (!s.ok) return fail(s.message || AuthService.MSG.generic);
+      acct.user = s.user;
+      acctSplashRelease();
+    } catch (e) {
+      fail(KakaoLogin.MSG.generic);
+    }
   }
   /**
    * 계정 모드에서 로그인하지 않은 상태는 항상 첫 화면(온보딩). 로그아웃 직후·새로고침·앱 재실행이 같다.
@@ -7692,6 +7718,7 @@
     const action = b.getAttribute("data-acct-action");
     if (action === "fam-pick") return famPick(b.getAttribute("data-fam-kind"), b.getAttribute("data-fam-id")); // D72b
     if (action === "fam-add-child") { closeDetail(); beginNewChildEntry(); return; } // D72b: 프로필 '우리 아이' 줄이 없어진 자리
+    if (action === "kakao-login") { if (typeof KakaoLogin !== "undefined") KakaoLogin.start(); return; } // 카카오 로그인 화면으로 이동
     if (action === "open-signup" || action === "open-login" || action === "open-join") {
       acct.mode = action === "open-login" ? "login" : "signup";
       acct.form = action === "open-join" ? { join: true, step: 2 } : {}; // 합류는 가족코드(2단계)부터 // G1: 가족 코드로 함께하기 = 가입 시트의 합류 모드(코드 칸 포커스)
