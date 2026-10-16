@@ -4746,6 +4746,8 @@
           if (saved === id) memSetActive(""); // 지운 구성원이 이 기기 사용자였다면 지정을 푼다
         } catch (e) {
           console.error("구성원 삭제 실패", e);
+          const why = e && e.message && /[가-힣]/.test(e.message) ? e.message : "삭제하지 못했어요. 잠시 뒤에 다시 시도해 주세요.";
+          acctNoticeToast(why); // 서버가 거절한 이유(예: 관리자 권한 이전 필요)를 보여 준다
         } finally {
           mem.saving = false;
         }
