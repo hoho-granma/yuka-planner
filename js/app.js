@@ -1192,9 +1192,11 @@
       <button class="btn-close" id="btn-close-modal">닫기</button>`;
     el("detail-modal").classList.remove("hidden");
     el("btn-close-modal").addEventListener("click", closeDetail);
-    acctOpenSlot();
-    if (hhEnabled()) hhOpenSection();
-    else famRender();
+    // 오류가 나도 시트가 통째로 비지 않게 각 단계를 따로 실행하고, 실패하면 이유를 시트에 보여 준다(원인 확인용).
+    const diag = [];
+    const step = (name, fn) => { try { fn(); } catch (e) { console.error("프로필 시트 " + name + " 실패", e); diag.push(name + ": " + (e && e.message ? e.message : e)); } };
+    step("slot", acctOpenSlot);
+    step("section", () => { if (hhEnabled()) hhOpenSection(); else famRender(); });
     el("fam-card").addEventListener("click", famOnClick);
     el("fam-card").addEventListener("change", memOnChange);
     el("fam-orphans").addEventListener("click", memOnClick);
