@@ -23,3 +23,10 @@ test('구성원 삭제: 누르는 즉시 목록에서 숨기고, 끝나면(성�
  assert.ok(/finally \{\s*mem\.saving = false;\s*memHiding\.delete\(id\);/.test(src));
  assert.ok(/filter\(\(\[memberId\]\) => !memHiding\.has\(memberId\)\)/.test(src));
 });
+test('로그인 속도: /oauth 복귀 때 index.html 이 확인 요청을 먼저 보내고 앱이 그 결과를 쓰며, 카카오로 나가기 전에 서버를 깨운다',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+ assert.ok(html.includes('window.__hnKakao={code:c,p:p}')&&html.includes('sessionStorage.getItem("hannun_kakao_link")!=="1"'),'연결 모드는 미리 보내지 않는다');
+ assert.ok(html.indexOf('window.__hnKakao')>html.indexOf('js/kakao-login.js')&&html.indexOf('window.__hnKakao')<html.indexOf('js/app.js'));
+ assert.ok(src.includes('window.__hnKakao.code === d.code ? window.__hnKakao.p'));
+ assert.ok(/acctWarmServers\(\);\s*KakaoLogin\.start\(\)/.test(src)&&/function acctWarmServers\(\)[\s\S]{0,200}"kakaoLogin", "familyAccess"/.test(src));
+});

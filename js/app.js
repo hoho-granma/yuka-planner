@@ -6889,6 +6889,10 @@
     }
     return a.currentUser ? a.currentUser.getIdToken() : "";
   }
+  /** 카카오 화면으로 나가기 직전에 로그인 뒤에 쓸 서버 함수(카카오 확인·가족 접근)를 깨워 둔다. 카카오 화면에서 머무는 동안 켜져서, 돌아왔을 때 처음 켜지는 시간을 기다리지 않는다. 응답은 쓰지 않는다. */
+  function acctWarmServers() {
+    ["kakaoLogin", "familyAccess"].forEach((n) => { try { fetch("https://asia-northeast3-yuka-planner.cloudfunctions.net/" + n, { method: "POST", mode: "no-cors", keepalive: true, headers: { "Content-Type": "text/plain" }, body: "{}" }).catch(() => {}); } catch (e) {} });
+  }
   async function acctKakaoComplete() {
     if (typeof KakaoLogin === "undefined" || typeof window === "undefined" || !KakaoLogin.isCallback(window.location)) return;
     const search = window.location.search;
@@ -6901,7 +6905,7 @@
       acctShowSheet();
     };
     try {
-      const r = await KakaoLogin.complete({ search, call: (d) => firebase.app().functions("asia-northeast3").httpsCallable("kakaoLogin")(d).then((x) => x.data), idToken: acctAuthIdToken });
+      const r = await KakaoLogin.complete({ search, call: (d) => (window.__hnKakao && window.__hnKakao.code === d.code ? window.__hnKakao.p : firebase.app().functions("asia-northeast3").httpsCallable("kakaoLogin")(d).then((x) => x.data)), idToken: acctAuthIdToken }); // 복귀 직후 index.html 이 미리 보낸 확인 요청이 있으면 그 결과를 쓴다
       if (r.ok && r.linked) { acctSplashRelease(); try { localStorage.setItem(acctKakaoLinkedKey(acct.user && acct.user.uid), "1"); } catch (e) {} acctNoticeToast(KakaoLogin.MSG.linked); return; }
       if (!r.ok) return fail(r.message);
       const s = await acct.svc.signInWithToken(r.token);
@@ -7725,7 +7729,7 @@
     const action = b.getAttribute("data-acct-action");
     if (action === "fam-pick") return famPick(b.getAttribute("data-fam-kind"), b.getAttribute("data-fam-id")); // D72b
     if (action === "fam-add-child") { closeDetail(); beginNewChildEntry(); return; } // D72b: 프로필 '우리 아이' 줄이 없어진 자리
-    if (action === "kakao-login") { if (typeof KakaoLogin !== "undefined") KakaoLogin.start(); return; } // 카카오 로그인 화면으로 이동
+    if (action === "kakao-login") { if (typeof KakaoLogin !== "undefined") { acctWarmServers(); KakaoLogin.start(); } return; } // 카카오 로그인 화면으로 이동(가기 전에 서버를 깨워 둔다)
     if (action === "kakao-link") { if (typeof KakaoLogin !== "undefined") KakaoLogin.start({ link: true }); return; } // 이메일 계정에 카카오 연결
     if (action === "open-signup" || action === "open-login" || action === "open-join") {
       acct.mode = action === "open-login" ? "login" : "signup";
