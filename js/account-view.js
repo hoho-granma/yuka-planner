@@ -72,6 +72,8 @@
     signupTitle: "회원가입",
     loginTitle: "로그인",
     kakaoBtn: "카카오로 1초 만에 시작하기",
+    kakaoLinkBtn: "카카오 연결하기",
+    kakaoLinkHint: "연결하면 다음부터 카카오로 시작해도 이 계정으로 들어와요.",
     kakaoOr: "또는 이메일로",
     emailLabel: "이메일",
     passwordLabel: "비밀번호 (8자 이상)",
@@ -459,6 +461,7 @@
         ? `<div class="acct-code-block"><p class="fine-print">${esc(MSG.codeInviteHint)}</p><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-invite">${esc(MSG.codeInviteBtn)}</button></div></div>`
         : `<div class="acct-code-block"><p class="fine-print">${esc(MSG.codeNoneHint)}</p><div class="acct-actions"><button type="button" class="btn-complete" data-acct-action="open-recover">${esc(MSG.codeCreate)}</button></div></div>`;
     return `<div class="detail-row acct-slot acct-fam"><div class="acct-fam-hero"><h4>${esc(MSG.familyTitle)}</h4><div class="acct-faces">${faces}${add}</div>${pill}</div>
+      ${s.kakaoLink ? `<div class="acct-actions"><button type="button" class="btn-close" data-acct-action="kakao-link">${esc(MSG.kakaoLinkBtn)}</button></div><p class="fine-print">${esc(MSG.kakaoLinkHint)}</p>` : ""}
       ${s.notice && s.notice !== MSG.inviteCopied ? `<p class="fine-print">${esc(s.notice)}</p>` : ""}</div>`;
   }
   /**
