@@ -122,3 +122,7 @@ body:has(#view-landing.acct-on:not(.hidden)){background:#fff!important}
 
 /* (2시간) 같은 소요 시간만 작게: 홈·달력 목록의 나머지 글자는 모두 --hn-family-list-font-size(15px). */
 #home-body .hn-duration, #selected-day-list .hn-duration, :is(#hn-message-results,.hn-saved-review) .hn-duration { font-size:12px !important; font-weight:500 !important; }
+
+/* 시트 안의 선택 버튼(상황·역할·성별 등)은 한 줄로 둔다: 줄바꿈 없이 내용 너비만큼 나눠 쓰고, 좁은 화면에서는 글자만 조금 줄인다. */
+#modal-content .acct-radios { flex-wrap: nowrap; gap: 6px; }
+#modal-content .acct-radio { flex: 1 1 auto; min-width: 0; padding: 8px 6px; white-space: nowrap; text-align: center; font-size: clamp(11.5px, 3.5vw, 13px); }
