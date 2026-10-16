@@ -201,16 +201,14 @@
 
   // ── 정렬: 내가 사는 동(주소에 동 이름 포함) 장소를 먼저 보여 준다. 거리 계산은 하지 않는다.
   const inDong = (p, dong) => isStr(dong) && dong.trim() !== "" && isStr(p && p.address) && p.address.includes(dong.trim());
-  const countOf = (stats, id) => { const s = stats && stats[id]; const n = typeof s === "number" ? s : s && s.count; return typeof n === "number" && Number.isFinite(n) ? n : 0; };
   /**
-   * 정렬: "near"(우리 동 먼저, 나머지는 원래 순서) / "popular"(인기순 = stats[id].count 내림차순, 같으면 우리 동 먼저). 새 배열을 돌려준다.
+   * 정렬: 우리 동 → 우리 시·군·구 → 우리 시·도 → 그 밖의 지역 순. 같은 단계 안에서는 원래 순서. 거르지는 않는다(다른 지역도 아래에 그대로 보인다).
+   * where: { dong, district, province } (없는 값은 건너뛴다). 새 배열을 돌려준다.
    */
-  function sortPlaces(list, mode, dong, stats) {
-    const src = (Array.isArray(list) ? list : []).map((p, i) => ({ p, i, near: inDong(p, dong) ? 0 : 1 }));
-    const near = (a, b) => a.near - b.near || a.i - b.i;
-    if (mode === "popular") src.sort((a, b) => countOf(stats, b.p.id) - countOf(stats, a.p.id) || near(a, b));
-    else src.sort(near);
-    return src.map((x) => x.p);
+  function sortPlaces(list, where) {
+    const w = where || {};
+    const rank = (p) => (inDong(p, w.dong) ? 0 : isStr(w.district) && p && p.district === w.district && p.province === w.province ? 1 : isStr(w.province) && p && p.province === w.province ? 2 : 3);
+    return (Array.isArray(list) ? list : []).map((p, i) => ({ p, i, r: rank(p) })).sort((a, b) => a.r - b.r || a.i - b.i).map((x) => x.p);
   }
 
   return { sortPlaces, OPTIONAL_FIELDS, regionsOf, hasNoReserve, CATEGORIES, CATEGORY_KEYS, INDOOR, COST, RESERVATION, FIELDS, LIMITS, BANNED_WORDS, STALE_MONTHS, hasBannedWord, validatePlace, validateData, filterPlaces, ageFits, isStale, parseDate, isHttpsUrl };

@@ -127,7 +127,7 @@ test("[캘린더에 등록]: 기존 buildCreateDoc 경로로 저장 — 제목=�
   assert.strictEqual(e.log.created.length, 1);
   const [hid, d] = e.log.created[0];
   assert.deepStrictEqual([hid, d.title, d.location, d.category, d.scope, d.eventDate, d.allDay, d.assigneeMemberId, d.memo, d.dateKind, d.status], ["h1", PL.name.slice(0, 100), undefined, "FAMILY", "FAMILY", "2026-10-10", true, "m1", "장소: " + PL.name + " " + PL.address + "\n공식 홈페이지: https://www.guro.go.kr/lib?a=1&b=2", "FIXED", "TODO"]);
-  assert.deepStrictEqual([e.reg.mode, e.reg.doneLabel, e.log.refreshed, e.log.counted.length], ["done", "10/10(토)", 1, 1]); // P4: 등록 성공 → 인기 신호 +1 호출
+  assert.deepStrictEqual([e.reg.mode, e.reg.doneLabel, e.log.refreshed], ["done", "10/10(토)", 1]);
   assert.ok(e.content.innerHTML.includes("10/10(토) 캘린더에 등록했어요") && e.content.innerHTML.includes("data-places-view-cal"));
   await e.click("data-places-view-cal");
   assert.deepStrictEqual([e.log.closed, e.log.switched, e.sb.selectedCalendarDate.getDate(), e.sb.viewMonth.getMonth()], [1, ["calendar"], 10, 9]);

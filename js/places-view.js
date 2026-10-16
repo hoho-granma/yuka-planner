@@ -5,7 +5,7 @@
  * 이벤트 위임용 속성(app.js 가 연결):
  *   data-places-cat="ALL|PARK|…"   분류 칩
  *   data-places-add="<id>"          [일정 추가] 버튼 → scheduleDraftFor(place) 로 일정 폼 초기값
- *   data-places-filter / -sort  필터 시트 안 칩(app.js 가 상태를 바꾸고 다시 그린다)
+ *   data-places-filter 필터 시트 안 칩(app.js 가 상태를 바꾸고 다시 그린다)
  *   data-places-sheet="open|close"  필터 시트 열기·닫기 — 이 파일이 문서 클릭 위임으로 직접 처리(app.js 연결 불필요)
  *   data-places-remove="indoor|free|noReserve|all"  고른 조건 지우기 — 시트 안 해당 칩을 대신 눌러 app.js 경로를 그대로 탄다
  */
@@ -25,9 +25,7 @@
     filterNoReserve: "예약 없이",
     filterLabel: "보조 필터",
     // P3 거리·정렬
-    sortLabel: "정렬",
-    sortNear: "우리 동 먼저",
-    sortPopular: "인기순",
+    sortNear: "가까운 곳부터",
     // G14 필터 시트
     filterBtn: "필터",
     sheetTitle: "필터",
@@ -49,7 +47,6 @@
     copied: "복사했어요",
     homepage: "공식 홈페이지",
     map: "지도에서 보기",
-    route: "길찾기",
     register: "일정 등록하기",
     needHousehold: "가족 캘린더를 만들면 일정으로 등록할 수 있어요",
     reservationRequired: "예약이 필요한 곳이에요. 공식 홈페이지에서 먼저 예약하세요.",
@@ -73,7 +70,6 @@
     memoPrefix: "공식 홈페이지: ",
     memoPlace: "장소: ", // D75: 메모 첫 줄 머리말
     mapBase: "https://map.kakao.com/link/search/",
-    routeBase: "https://map.kakao.com/link/to/",
   });
   const DOW = Object.freeze(["일", "월", "화", "수", "목", "금", "토"]);
   const pad2 = (n) => String(n).padStart(2, "0");
@@ -95,13 +91,6 @@
     const p = place || {};
     const q = p.address || [p.province, p.district, p.name].filter((x) => typeof x === "string" && x).join(" ");
     return TEXT.mapBase + encodeURIComponent(q);
-  }
-  /** 카카오맵 길찾기(웹 링크, 앱 키 없음): https://map.kakao.com/link/to/{장소명},{lat},{lng}. 좌표가 없으면 "". */
-  function routeUrl(place) {
-    const p = place || {};
-    const ok = (v) => typeof v === "number" && Number.isFinite(v);
-    if (!ok(p.lat) || !ok(p.lng) || typeof p.name !== "string" || !p.name.trim()) return "";
-    return `${TEXT.routeBase}${encodeURIComponent(p.name.trim().replace(/,/g, " "))},${p.lat},${p.lng}`;
   }
   /** 일정 메모: 공식 홈페이지 주소(https 만). 없으면 "". */
   function memoFor(place) {
@@ -158,14 +147,6 @@
     const items = [["indoor", TEXT.filterIndoor], ["free", TEXT.filterFree]].concat(showNoReserve ? [["noReserve", TEXT.filterNoReserve]] : []);
     return `<div class="places-filters" role="group" aria-label="${esc(TEXT.filterLabel)}">${items.map(([k, label]) => `<button type="button" class="places-chip places-filter${f[k] === true ? " active" : ""}" aria-pressed="${f[k] === true ? "true" : "false"}" data-places-filter="${k}">${esc(label)}</button>`).join("")}</div>`;
   }
-  /** 정렬 칩 줄(우리 동 먼저 / 인기순). */
-  function sortRow(o) {
-    const sort = o.sort === "popular" ? "popular" : "near";
-    const sorts = [["near", TEXT.sortNear], ["popular", TEXT.sortPopular]]
-      .map(([k, label]) => `<button type="button" class="places-chip places-sort-chip${sort === k ? " active" : ""}" aria-pressed="${sort === k ? "true" : "false"}" data-places-sort="${k}">${esc(label)}</button>`).join("");
-    return `<div class="places-sort-row" role="group" aria-label="${esc(TEXT.sortLabel)}">${sorts}</div>`;
-  }
-
   // G14: 필터 시트(분류 한 줄 + [필터 N] 버튼, 고른 조건은 지울 수 있는 칩).
   // 시트 열림 상태는 이 모듈이 들고 있다 — app.js 가 필터를 누를 때마다 목록을 다시 그려도(render) 시트가 열린 채로 남는다.
   const ui = { sheetOpen: false };
@@ -190,12 +171,8 @@
     if (!conds.length) return "";
     return `<div class="places-active" role="group" aria-label="${esc(TEXT.activeLabel)}">${conds.map((c) => `<button type="button" class="places-active-chip" data-places-remove="${c.key}" aria-label="${esc(TEXT.removeAria(c.label))}">${esc(c.label)}<span aria-hidden="true">×</span></button>`).join("")}<button type="button" class="places-clear" data-places-remove="all">${esc(TEXT.clearAll)}</button></div>`;
   }
-  function sortLabelOf(o) {
-    if (o.sort === "popular") return TEXT.sortPopular;
-    return TEXT.sortNear;
-  }
   function countRow(o, n) {
-    return `<div class="places-count"><span class="places-count-main"><strong>${esc(TEXT.count(n))}</strong></span><button type="button" class="places-sort-btn" data-places-sheet="open" aria-haspopup="dialog">${esc(sortLabelOf(o))}<span aria-hidden="true">▾</span></button></div>`;
+    return `<div class="places-count"><span class="places-count-main"><strong>${esc(TEXT.count(n))}</strong></span><span class="places-sort-btn">${esc(TEXT.sortNear)}</span></div>`;
   }
   function filterSheet(o, conds, n) {
     const sec = (title, inner) => `<div class="places-sheet-sec"><h4>${esc(title)}</h4>${inner}</div>`;
@@ -204,7 +181,6 @@
       `<div class="places-sheet-dim" data-places-sheet="close"></div>` +
       `<div class="places-sheet-panel"><div class="places-sheet-grip" aria-hidden="true"></div>` +
       `<div class="places-sheet-head"><strong>${esc(TEXT.sheetTitle)}</strong><button type="button" class="places-sheet-x" data-places-sheet="close" aria-label="${esc(TEXT.close)}">✕</button></div>` +
-      sec(TEXT.sortLabel, sortRow(o)) +
       sec(TEXT.condLabel, filterRow(o.filters, o.showNoReserve === true)) +
       `<div class="places-sheet-foot">${conds.length ? `<button type="button" class="places-sheet-clear" data-places-remove="all">${esc(TEXT.clearAll)}</button>` : ""}<button type="button" class="places-sheet-go" data-places-sheet="close">${esc(TEXT.showResults(n))}</button></div>` +
       `</div></div>`
@@ -279,7 +255,7 @@
    * 어디갈까 탭 전체 마크업.
    * @param {{places:Array, child:{name,ageLabel}|null, region:{province,district}|null, category:string|null, status?:string, label?:string, today?:Date|string}} o
    *   places 는 이미 Places.filterPlaces 로 거른 목록(이 함수는 거르지 않는다).
-   *   그 밖에 filters·showNoReserve·sort(app.js 가 넘김), sheetOpen(생략하면 이 모듈의 필터 시트 열림 상태 — 테스트·하네스용).
+   *   그 밖에 filters·showNoReserve(app.js 가 넘김), sheetOpen(생략하면 이 모듈의 필터 시트 열림 상태 — 테스트·하네스용).
    */
   function render(o) {
     const opts = o || {};
@@ -293,8 +269,8 @@
       : `<div class="places-empty"><p>${esc(filterOn ? TEXT.emptyFilter : catOn ? TEXT.emptyCategory : TEXT.empty)}</p></div>`;
     const sheetOpen = typeof opts.sheetOpen === "boolean" ? opts.sheetOpen : ui.sheetOpen;
     const bs = opts.basis && opts.basis.name ? opts.basis : null; // 0-B3: 상단 기준 줄 "이름(나이) · 지역 기준 · 정렬"
-    const basisLine = bs ? `<p class="places-basis">${esc([bs.age ? `${bs.name}(${bs.age})` : bs.name, bs.region ? `${bs.region} 기준` : ""].filter(Boolean).join(" · "))}${opts.sort === "popular" || opts.sort === "near" ? ` · ${esc(sortLabelOf({ sort: opts.sort }))}` : ""}</p>` : "";
-    const so = { catCounts: opts.catCounts || null, category: opts.category, sort: opts.sort, filters: f, showNoReserve: opts.showNoReserve === true, sheetOpen };
+    const basisLine = bs ? `<p class="places-basis">${esc([bs.age ? `${bs.name}(${bs.age})` : bs.name, bs.region ? `${bs.region} 기준` : ""].filter(Boolean).join(" · "))} · ${esc(TEXT.sortNear)}</p>` : "";
+    const so = { catCounts: opts.catCounts || null, category: opts.category, filters: f, showNoReserve: opts.showNoReserve === true, sheetOpen };
     const conds = activeConds(so);
     return `<section class="places-view${sheetOpen ? " is-sheet-open" : ""}">${basisLine}${filterBar(so, conds)}${filterSheet(so, conds, list.length)}${activeRow(conds)}${countRow(so, list.length)}${body}</section>`;
   }
@@ -379,7 +355,7 @@
         `<button type="button" class="btn-text" data-places-back${r.saving ? " disabled" : ""}>${esc(TEXT.back)}</button></div>`
       );
     }
-    // G14 상세(지도형): 지도 그림 머리(+지도에서 보기·길찾기) → 분류·이름·주소 → 기준 거리 → 설명 → 정보 2×2 → 이용 안내 → 공식 홈페이지 → 아래 고정 [일정 등록하기]
+    // G14 상세(지도형): 지도 그림 머리(+지도에서 보기) → 분류·이름·주소 → 기준 거리 → 설명 → 정보 2×2 → 이용 안내 → 공식 홈페이지 → 아래 고정 [일정 등록하기]
     const cat = Object.prototype.hasOwnProperty.call(PH_ICON, p.category) ? p.category : "PARK";
     const badges = [`<span class="places-badge places-badge-cat places-cat-${cat.toLowerCase()}">${esc(lookup(Places.CATEGORIES, p.category) || "")}</span>`];
     if (typeof p.district === "string" && p.district) badges.push(`<span class="places-badge places-badge-district">${esc(p.district)}</span>`);
@@ -389,10 +365,9 @@
     const addr = p.address || where;
     const addrRow = addr ? `<div class="places-detail-addr"><span>${esc(addr)}</span>${p.address ? `<button type="button" class="btn-close places-copy" data-places-copy="${esc(p.address)}">${esc(TEXT.copy)}</button>` : ""}</div>` : "";
     const hasHome = Places.isHttpsUrl(p.officialUrl);
-    const route = routeUrl(p);
     const map =
       `<div class="places-dmap"><span class="places-dmap-road" aria-hidden="true"></span><span class="places-dmap-pin" aria-hidden="true"></span>` +
-      `<div class="places-actions places-dmap-btns"><a class="places-link" href="${esc(mapUrl(p))}" target="_blank" rel="noopener noreferrer">${esc(TEXT.map)}</a>${route ? `<a class="places-link places-route" href="${esc(route)}" target="_blank" rel="noopener noreferrer">${esc(TEXT.route)}</a>` : ""}</div></div>`;
+      `<div class="places-actions places-dmap-btns"><a class="places-link" href="${esc(mapUrl(p))}" target="_blank" rel="noopener noreferrer">${esc(TEXT.map)}</a></div></div>`;
     const resv = p.reservation === "REQUIRED" ? `<p class="places-reserve-note">${esc(TEXT.reservationRequired)}</p>` : p.reservation === "PARTLY" ? `<p class="places-reserve-note">${esc(TEXT.reservationPartly)}</p>` : "";
     return (
       `<div class="places-detail places-detail-map" data-places-detail="info">` + map +
@@ -423,5 +398,5 @@
     };
   }
 
-  return { TEXT, SCHEDULE_LIMITS, esc, ageText, setAgeBasis, basisOf, render, renderNoChild, filterRow, activeConds, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, routeUrl, memoFor, scheduleDraftFor };
+  return { TEXT, SCHEDULE_LIMITS, esc, ageText, setAgeBasis, basisOf, render, renderNoChild, filterRow, activeConds, renderCard, renderDetail, defaultVisitDate, dateLabel, mapUrl, memoFor, scheduleDraftFor };
 });

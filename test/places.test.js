@@ -136,7 +136,7 @@ const TODAY = "2026-10-02";
 const child = { name: "은찬", ageLabel: "4개월" };
 const region = { province: "서울특별시", district: "구로구" };
 const noRank = (html) => {
-  assert(!html.replace(/인기순/g, "").includes("인기"), "'인기' 없음(정렬 칩 '인기순' 제외)");
+  assert(!html.includes("인기"), "'인기' 없음");
   assert(!/best/i.test(html), "'BEST' 없음");
 };
 test("빈 상태(P2): '편집 추천'·'준비 중' 표기 없이 조건 안내만, 분류 칩 8개", () => {

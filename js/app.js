@@ -3648,9 +3648,6 @@
   let placesData = null; // data/places.json — 처음 한 번만 읽는다
   let placesLoading = null;
   let placesCat = "ALL";
-  let placesStats = {}; // placeUsageStats/{id} {count} — 인기순 정렬용(화면에 숫자는 내지 않는다). 못 읽으면 빈 값
-  let placesStatsLoading = null;
-  let placesSort = "near"; // "near" | "popular"
   async function loadPlaces() {
     if (placesData) return placesData;
     if (!placesLoading) placesLoading = Promise.all([loadJsonOrNull("data/places.json"), loadJsonOrNull("data/policy/places-age-basis.json")]).then(([d, basis]) => { // 3-1: 시설 유형 기준 나이(못 읽으면 기존 '방문 전 확인')
@@ -3659,41 +3656,6 @@
     });
     return placesLoading;
   }
-  /** 인기순 신호: placeUsageStats 컬렉션을 읽는다. 규칙 미배포·오프라인이면 조용히 빈 값. */
-  async function loadPlacesStats() {
-    if (!placesStatsLoading) {
-      placesStatsLoading = (async () => {
-        try {
-          if (typeof firebase === "undefined" || !firebase.firestore) return;
-          const snap = await firebase.firestore().collection("placeUsageStats").get();
-          const m = {};
-          snap.docs.forEach((d) => { const c = d.data() && d.data().count; if (typeof c === "number") m[d.id] = { count: c }; });
-          placesStats = m;
-        } catch (e) { /* 조용히 무시 */ }
-      })();
-    }
-    return placesStatsLoading;
-  }
-  const PLACES_COUNTED_KEY = "hannun_place_counted"; // { 장소id: "YYYY-MM-DD" } — 같은 기기에서 같은 장소는 하루 1회만 센다
-  /** 일정 등록을 마친 장소의 인기 신호 +1(하루 1회/기기). 쓰기가 실패하면(규칙 미배포) 조용히 무시한다. */
-  async function placesCountOnce(placeId) {
-    if (!placeId) return;
-    const today = toISODate(new Date());
-    let map = {};
-    try { map = JSON.parse(localStorage.getItem(PLACES_COUNTED_KEY) || "{}") || {}; } catch (e) { map = {}; }
-    if (map[placeId] === today) return;
-    try {
-      map[placeId] = today;
-      localStorage.setItem(PLACES_COUNTED_KEY, JSON.stringify(map));
-    } catch (e) { return; }
-    try {
-      if (typeof firebase === "undefined" || !firebase.firestore) return;
-      const FV = firebase.firestore.FieldValue;
-      await firebase.firestore().collection("placeUsageStats").doc(placeId).set({ count: FV.increment(1), updatedAt: FV.serverTimestamp() }, { merge: true });
-      const cur = (placesStats[placeId] && placesStats[placeId].count) || 0;
-      placesStats[placeId] = { count: cur + 1 };
-    } catch (e) { /* 규칙 미배포·오프라인: 조용히 무시 */ }
-  }
   let placesFilters = { indoor: false, free: false, noReserve: false }; // 보조 필터(이 실행 동안만)
   function placesViewHtml() {
     if (!profile) return PlacesView.renderNoChild(); // D56: 아이 등록 전에는 서울 구로구 등 기본 목록 대신 안내만
@@ -3701,13 +3663,13 @@
     const valid = d.places.filter((p) => Places.validatePlace(p).length === 0);
     const age = profile && !isPregnant() ? ChildTimeline.completedMonths(profile.birthDate, new Date()) : null;
     let list = Places.filterPlaces(valid, { ageMonths: age, category: placesCat, ...placesFilters });
-    list = Places.sortPlaces(list, placesSort, profile && profile.dong, placesStats);
+    list = Places.sortPlaces(list, profile ? { dong: profile.dong, district: profile.district, province: profile.province } : null);
     // 0-B3: 분류 칩은 지금 나이·지역 조건으로 장소가 하나라도 있는 분류만 보인다. 상단 기준 줄은 아이 이름(나이)·지역.
     const base = Places.filterPlaces(valid, { ageMonths: age, category: "ALL", ...placesFilters });
     const catCounts = {};
     base.forEach((p) => { catCounts[p.category] = (catCounts[p.category] || 0) + 1; });
     const basis = profile ? { name: childDisplayName(), age: isPregnant() ? "" : age < ChildTimeline.OVER36_FROM_MONTHS ? `${age}개월` : ChildTimeline.ageLabelAt(profile.birthDate, new Date()), region: profile.district || profile.province || "" } : null;
-    return PlacesView.render({ basis, catCounts, places: list, category: placesCat, filters: placesFilters, showNoReserve: Places.hasNoReserve(valid), sort: placesSort });
+    return PlacesView.render({ basis, catCounts, places: list, category: placesCat, filters: placesFilters, showNoReserve: Places.hasNoReserve(valid) });
   }
   async function renderPlacesTab() {
     const body = el("places-body");
@@ -3717,7 +3679,6 @@
     await loadPlaces();
     if (currentTab !== "places") return;
     body.innerHTML = placesViewHtml();
-    loadPlacesStats().then(() => { if (currentTab === "places" && placesSort === "popular") body.innerHTML = placesViewHtml(); });
   }
   function placesOnClick(ev) {
     const cat = ev.target.closest("[data-places-cat]");
@@ -3730,12 +3691,6 @@
     if (flt) {
       const k = flt.getAttribute("data-places-filter");
       if (k in placesFilters) placesFilters[k] = !placesFilters[k];
-      el("places-body").innerHTML = placesViewHtml();
-      return;
-    }
-    const so = ev.target.closest("[data-places-sort]");
-    if (so) {
-      placesSort = so.getAttribute("data-places-sort") === "popular" ? "popular" : "near";
       el("places-body").innerHTML = placesViewHtml();
       return;
     }
@@ -3834,7 +3789,6 @@
       r.mode = "done";
       r.doneDate = r.date;
       r.doneLabel = PlacesView.dateLabel(r.date);
-      placesCountOnce(r.place.id); // 인기순 신호(하루 1회/기기, 실패는 조용히 무시)
       usRefreshCalendar();
       placesDetailRender();
     } catch (e) {
