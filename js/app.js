@@ -6983,6 +6983,8 @@
       () => acctSplashHide()
     );
   }
+  /** 이메일(비밀번호) 계정으로 로그인한 사람만 카카오를 연결할 수 있다(카카오 계정에는 필요 없다). */
+  function acctKakaoLinkable() { return typeof KakaoLogin !== "undefined" && KakaoLogin.enabled() && !!(acct.user && acct.user.email && String(acct.user.uid || "").indexOf("hn_kakao_") !== 0); }
   function acctSplashHide() {
     if (acct.splashHold) return; // G19: 가입·로그인 직후에는 acctSplashRelease 만 걷는다
     if (acctSplashTimer) clearTimeout(acctSplashTimer);
@@ -7004,8 +7006,6 @@
     if (!hero) return;
     let slot = el("acct-landing-slot");
     if (!slot) {
-  /** 이메일(비밀번호) 계정으로 로그인한 사람만 카카오를 연결할 수 있다(카카오 계정에는 필요 없다). */
-  function acctKakaoLinkable() { return typeof KakaoLogin !== "undefined" && KakaoLogin.enabled() && !!(acct.user && acct.user.email && String(acct.user.uid || "").indexOf("hn_kakao_") !== 0); }
       slot = document.createElement("div");
       slot.id = "acct-landing-slot";
       hero.insertAdjacentElement("afterend", slot);
@@ -7683,6 +7683,7 @@
     if (action === "fam-pick") return famPick(b.getAttribute("data-fam-kind"), b.getAttribute("data-fam-id")); // D72b
     if (action === "fam-add-child") { closeDetail(); beginNewChildEntry(); return; } // D72b: 프로필 '우리 아이' 줄이 없어진 자리
     if (action === "kakao-login") { if (typeof KakaoLogin !== "undefined") KakaoLogin.start(); return; } // 카카오 로그인 화면으로 이동
+    if (action === "kakao-link") { if (typeof KakaoLogin !== "undefined") KakaoLogin.start({ link: true }); return; } // 이메일 계정에 카카오 연결
     if (action === "open-signup" || action === "open-login" || action === "open-join") {
       acct.mode = action === "open-login" ? "login" : "signup";
       acct.form = action === "open-join" ? { join: true, step: 2 } : {}; // 합류는 가족코드(2단계)부터 // G1: 가족 코드로 함께하기 = 가입 시트의 합류 모드(코드 칸 포커스)
@@ -7705,7 +7706,6 @@
       acct.error = null;
       if (!Object.keys(acct.errors).length) acct.form.step = Math.min(AccountView.signupTotal(acct.form), cur + 1);
       return acctShowSheet();
-    if (action === "kakao-link") { if (typeof KakaoLogin !== "undefined") KakaoLogin.start({ link: true }); return; } // 이메일 계정에 카카오 연결
     }
     if (action === "join-off") {
       acct.form.join = false;
