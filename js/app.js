@@ -1200,7 +1200,20 @@
     el("fam-card").addEventListener("click", famOnClick);
     el("fam-card").addEventListener("change", memOnChange);
     el("fam-orphans").addEventListener("click", memOnClick);
-    famRender();
+    step("card", famRender);
+    const d = document.createElement("p");
+    d.className = "fine-print";
+    d.id = "hn-prof-diag";
+    el("fam-orphans").insertAdjacentElement("afterend", d);
+    const paint = () => {
+      const x = el("hn-prof-diag");
+      if (!x) return;
+      let info = "";
+      try { info = ` slot=${(el("acct-slot") || {}).innerHTML ? el("acct-slot").innerHTML.length : 0} card=${(el("fam-card") || {}).innerHTML ? el("fam-card").innerHTML.length : 0} hid=${hh.hid ? 1 : 0} members=${usMembers().length} me=${usMeId() ? 1 : 0} sel=${famSel().id ? 1 : 0} user=${acct.user ? 1 : 0}`; } catch (e) { info = " 상태 읽기 실패: " + (e && e.message); }
+      x.textContent = (diag.length ? "표시 오류 — " + diag.join(" / ") : "진단") + info;
+    };
+    paint();
+    setTimeout(paint, 1500);
   }
   showProfileSheet = function (pendingPhoto) {
     if (acctEnabled() && acct.user && !acctChildView) return acctProfileSheet(!!el("fam-card"));
