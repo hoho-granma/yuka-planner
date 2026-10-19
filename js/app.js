@@ -1622,7 +1622,7 @@
   }
   // ═══ D41 테마 자동 전환: 지금 보는 아이가 36개월 이상이면 딥 포레스트(body.theme-forest), 그 밖(36개월 미만·임신 중·아이 없음·온보딩)은 웜 브라운(body.theme-warm). 칩·프로필로 아이를 바꾸면(renderAll) 바로 바뀐다. ═══
   const THEME_KEY = "hannun_theme_last"; // 첫 그림 전에 index.html 이 읽는 '마지막 테마' 캐시 — 기준은 아이 월령이고 이 값은 깜빡임 방지용일 뿐
-  const THEME_BAR = Object.freeze({ warm: "#fff8f0", forest: "#f6f8f5" }); // 브라우저 막대 색 = 테마 --bg
+  const THEME_BAR = Object.freeze({ warm: "#6210cc", forest: "#6210cc" }); // 대표 퍼플 색상은 모든 아이 연령에서 동일하게 유지
   function themeFor() {
     try { if (profile && !isPregnant() && ChildTimeline.completedMonths(profile.birthDate, new Date()) >= ChildTimeline.OVER36_FROM_MONTHS) return "forest"; } catch (e) {}
     return "warm";

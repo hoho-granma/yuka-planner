@@ -10,18 +10,18 @@
 <meta name="apple-mobile-web-app-title" content="한눈육아" />
 <title>한눈육아 | 우리 아이 육아 통합 캘린더</title>
 <link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#ff6a1a" />
-<link rel="apple-touch-icon" href="icons/icon-180.png?v=2" />
+<meta name="theme-color" content="#6210cc" />
+<link rel="apple-touch-icon" href="icons/icon-180.png?v=3" />
 <script>/* G19: 계정 모드(기본 ON)에서는 옛 상황 선택 화면이 첫 그림부터 한 번도 보이지 않게 한다(js/feature-flags.js 와 같은 규칙: accounts="0" 일 때만 OFF) */try{if(localStorage.getItem("hannun_feature_accounts")!=="0")document.documentElement.classList.add("hnacc-default");}catch(e){document.documentElement.classList.add("hnacc-default");}</script>
 <style>/* 인증 UI가 준비되기 전에는 옛 가족코드 시작 화면을 그리지 않는다. */html.hnacc-default #view-landing:not(.acct-on){visibility:hidden}</style>
 <link rel="preload" href="fonts/Pretendard-Regular.subset.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="preload" href="fonts/Pretendard-Bold.subset.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="stylesheet" href="css/style.css?v=142" />
+<link rel="stylesheet" href="css/style.css?v=143" />
   <link rel="stylesheet" href="css/places.css?v=11" />
   <link rel="stylesheet" href="css/education-research.css?v=2">
 </head>
 <body>
-<script>/* D41 theme: 마지막 테마를 첫 그림 전에 붙인다(깜빡임 방지 — 기준은 앱이 아이 월령으로 다시 정한다) */try{var t=localStorage.getItem("hannun_theme_last");t=t==="forest"?"forest":"warm";document.body.classList.add("theme-"+t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="forest"?"#f6f8f5":"#fff8f0")}catch(e){document.body.classList.add("theme-warm")}</script>
+<script>/* D41 theme: 마지막 테마를 첫 그림 전에 붙인다(깜빡임 방지 — 기준은 앱이 아이 월령으로 다시 정한다) */try{var t=localStorage.getItem("hannun_theme_last");t=t==="forest"?"forest":"warm";document.body.classList.add("theme-"+t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#6210cc")}catch(e){document.body.classList.add("theme-warm")}</script>
   <main id="app">
     <!-- 1. 랜딩 -->
     <section id="view-landing" class="view">
@@ -341,7 +341,7 @@
   <script src="js/growth-evidence.js?v=1"></script>
   <script src="js/growth-sync.js?v=6"></script>
   <script src="js/growth-records.js?v=17"></script>
-  <link rel="stylesheet" href="css/learning-check.css?v=9" />
+  <link rel="stylesheet" href="css/learning-check.css?v=10" />
   <script src="js/learning-check-bank.js?v=2"></script>
   <script src="js/learning-check.js?v=1"></script>
   <script src="js/education-reference.js?v=3"></script>
@@ -353,15 +353,15 @@
   <script src="js/education-info.js?v=10"></script>
   <script src="js/growth-learning-view.js?v=6"></script>
   <script src="js/character-ui.js?v=12"></script>
-  <link rel="stylesheet" href="css/character-ui.css?v=46"/>
-  <link rel="stylesheet" href="css/family-theme.css?v=18"/>
+  <link rel="stylesheet" href="css/character-ui.css?v=47"/>
+  <link rel="stylesheet" href="css/family-theme.css?v=19"/>
   <script src="js/family-theme.js?v=11"></script>
   <script src="js/capture/source-photo.js?v=1"></script>
   <script src="js/capture/schedule-review.js?v=14"></script>
-  <link rel="stylesheet" href="css/schedule-review.css?v=14"/>
+  <link rel="stylesheet" href="css/schedule-review.css?v=15"/>
   <link rel="stylesheet" href="css/motion.css?v=3"/>
   <script src="js/motion.js?v=1"></script>
-  <script src="js/app.js?v=255"></script>
+  <script src="js/app.js?v=256"></script>
   <!-- 글자 크기 고정(최종 값). 외부 CSS 여러 개가 같은 글자에 서로 다른 크기를 !important 로 정해 두고 있어서, 기기·캐시 상태에 따라 앞선 파일의 값이 이길 수 있다(특히 iOS 웹킷의 HTTP 캐시·홈 화면 앱). HTML 은 항상 새로 받으므로 마지막 값만 여기에 한 번 더 둔다.
        15px: 카드(섹션) 제목 / 14px: 일정·할일 제목·시간·기한 / 12px: (2시간) 같은 소요 시간 / 10px: 카테고리 태그(홈·캘린더 목록·할일 탭). 바꿀 때는 css/family-theme.css 의 --hn-family-list-font-size 와 함께 고친다(test/font-size-lock.test.js 가 둘을 같이 잰다). -->
   <style id="hn-typography-lock">
