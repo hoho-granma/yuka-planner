@@ -3527,11 +3527,10 @@
   function renderAll() {
     renderProfileHeader();
     renderHome();
-    renderCalendar();
-    renderSelectedDayPanel();
-    renderRemainingList();
-    renderChecklistTab();
-    renderSubsidyTab();
+    // 숨은 탭은 진입 시 현재 데이터로 그린다. 첫 홈에서 월 전체 AUTO를 계산하지 않는다.
+    if (currentTab === "calendar") { renderCalendar(); renderSelectedDayPanel(); renderRemainingList(); }
+    if (currentTab === "checklist") renderChecklistTab();
+    if (currentTab === "subsidy") renderSubsidyTab();
     attachListHandlers();
   }
 
@@ -3831,7 +3830,9 @@
     const navKey = name;
     document.querySelectorAll(".nav-item").forEach((btn) => btn.classList.toggle("active", btn.dataset.nav === navKey));
     window.scrollTo(0, 0);
-    if (name === "calendar") { renderCalendar(); renderSelectedDayPanel(); }
+    if (name === "calendar") { renderCalendar(); renderSelectedDayPanel(); renderRemainingList(); attachListHandlers(); }
+    if (name === "checklist") renderChecklistTab();
+    if (name === "subsidy") renderSubsidyTab();
     if (name === "places") renderPlacesTab();
     if (name === "growth") renderGrowthTab();
     if (name === "checklist") {
@@ -3944,6 +3945,7 @@
 
   async function handleSubmit(ev) {
     ev.preventDefault();
+    if (!await awaitStartupData()) return;
     const name = el("childName").value.trim();
     const birthDateStr = el("birthDate").value;
     const birthOrder = el("birthOrder").value;
@@ -4422,10 +4424,19 @@
     go();
   }
   /** 가구 데이터가 바뀐 뒤(리스너·재전송·참여): 프로필 시트의 상태 줄과 캘린더(추가한 일정)를 다시 그린다. */
+  let hhRenderFrame = null;
   function hhAfterSync() {
-    usReconcileLocalChildren(); // 다른 기기에서 지운·뺀 아이를 이 기기도 따라간다(미러를 한 번 받은 뒤에만)
-    hhRender();
-    usRefreshCalendar();
+    usReconcileLocalChildren(); // 삭제·권한 상태 반영은 지연하지 않는다.
+    if (hhRenderFrame !== null) cancelAnimationFrame(hhRenderFrame);
+    const hid = hh.hid, uid = acct.user && acct.user.uid, epoch = acct.approvalEpoch;
+    // 같은 frame의 초기 snapshot 알림은 마지막 미러로 한 번 그린다.
+    hhRenderFrame = requestAnimationFrame(() => {
+      hhRenderFrame = null;
+      if (hh.hid !== hid || (acct.user && acct.user.uid) !== uid || acct.approvalEpoch !== epoch ||
+          (acctApprovalEnabled() && acct.approvalState !== "ACTIVE")) return;
+      try { hhRender(); usRefreshCalendar(); }
+      catch (e) { console.error("가구 화면 갱신 실패", e); }
+    });
   }
   function hhStart() {
     if (!hh.hid) return;
@@ -5248,12 +5259,12 @@
     const ord = usActive() && typeof HomeOrder !== "undefined" ? HomeOrder.homeSectionOrder({ children: homeKids(), pregnant: isPregnant(), asOf: new Date() }) : null;
     if (usHomeCardHtml(ord ? { family: ord[0] === "family" } : undefined) + usAutoLinkSig() !== (us.homeSig || "")) {
       renderHome();
-      if (autoLinkOn() && typeof renderChecklistTab === "function") renderChecklistTab(); // 체크리스트 카드의 '예약됨' 보조 문구도 함께 갱신
+      if (currentTab === "checklist" && autoLinkOn() && typeof renderChecklistTab === "function") renderChecklistTab(); // 체크리스트 카드의 '예약됨' 보조 문구도 함께 갱신
     }
   }
   function usRefreshCalendar() {
     usRefreshHome();
-    if ((!profile && !acctEnabled()) || !hhEnabled() || el("view-calendar").classList.contains("hidden")) return; // 계정 모드는 아이가 없어도(마지막 아이를 지운 직후) 칩·가족 일정 칸을 다시 그린다
+    if (currentTab !== "calendar" || (!profile && !acctEnabled()) || !hhEnabled() || el("view-calendar").classList.contains("hidden")) return; // 계정 모드는 아이가 없어도(마지막 아이를 지운 직후) 칩·가족 일정 칸을 다시 그린다
     renderCalendar();
     renderSelectedDayPanel();
     attachListHandlers();
@@ -6753,6 +6764,9 @@
     const valid=()=>acct.user?.uid===uid&&acct.approvalEpoch===epoch;
     try {
       const state=await approvalApi().status();
+      if(!valid())return;
+      try { await startupDataReady; }
+      catch (e) { if(valid())startupDataError(); return; }
       if(!valid())return; // A previous login must not restore into the next account.
       acct.approvalState=state.status;
       if(state.status==="REVOKED"||state.status==="NONE") {
@@ -7722,6 +7736,10 @@
   }
   async function acctOnClick(ev) {
     if (!acctEnabled()) return;
+    if (!startupDataLoaded) {
+      acctNoticeToast("화면을 준비하고 있어요. 잠시만 기다려 주세요.");
+      if (!await awaitStartupData()) return;
+    }
     const radio = ev.target.closest("[data-acct-radio]");
     if (radio) {
       acct.form[radio.getAttribute("data-acct-radio")] = radio.getAttribute("data-value");
@@ -8059,9 +8077,27 @@
     }
   }
 
+  // 인증/승인 조회와 정적 JSON을 겹치되, 개인 데이터 복원·입력은 준비 완료 후 진행한다.
+  let startupDataReady = Promise.resolve();
+  let startupDataLoaded = false;
+  async function awaitStartupData() {
+    try { await startupDataReady; return true; }
+    catch (e) { startupDataError(); return false; }
+  }
+  function startupDataError() {
+    // 실패 시 이전 아이의 홈을 표시하지 않고 새로고침 가능한 공개 안내를 남긴다.
+    showLandingView();
+    const host = el("acct-landing-slot") || el("beta-preview-slot");
+    if (host) {
+      host.innerHTML = '<p role="alert">화면을 준비하지 못했어요. 연결을 확인하고 다시 열어 주세요.</p><button type="button" class="btn">다시 열기</button>';
+      host.querySelector("button").addEventListener("click", () => location.reload());
+    }
+    acctSplashRelease();
+  }
   async function init() {
-    await loadAll();
-    populateProvinces();
+    startupDataReady = loadAll().then(() => { populateProvinces(); startupDataLoaded = true; });
+    // 즉시 실패해도 아래 인증 초기화/오류 안내까지 처리할 수 있도록 rejection을 관찰한다.
+    startupDataReady.catch(() => {});
     completed = loadCompleted();
     // 카테고리 필터는 저장·복원하지 않는다 — 앱을 켤 때마다 6개 전체 ON으로 시작한다.
     // (예전에 저장된 값 때문에 지원금만 켜진 채 시작하는 문제가 있었다)
@@ -8139,6 +8175,7 @@
 
     profile = loadProfile();
     familyCode = FamilySync.getSavedCode();
+    if (!acctApprovalEnabled()) await startupDataReady;
 
     if (familyCode && !acctApprovalEnabled()) {
       try {
@@ -8174,6 +8211,7 @@
     acct36Init();
     if (typeof document !== "undefined") document.addEventListener("click", homeMustClick); // 4-1 A안: '지금 꼭 할 것' 카드 클릭(없으면 즉시 반환)
     acct23Init();
+    await startupDataReady;
 
     if (profile && !acctApprovalEnabled()) {
       populateDistricts(profile.province, profile.district);
@@ -8516,5 +8554,5 @@ fields.sourceScheduleId=f.sourceScheduleId;
       messageAnalysis=null;
     }
   });
-  init();
+  init().catch((e) => { console.error("화면 준비 실패", e); startupDataError(); });
 })();

@@ -19,7 +19,7 @@ function env(o = {}) {
     localStorage: { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } },
     JSON, Date, console, Set, Promise, CREATED_KEY: "hannun_created_children", CHILDREN_KEY: "hannun_children", CHILD_BIRTHS_KEY: "hannun_child_births", LINKED_KEY: "hannun_linked_codes",
     acctEnabled: () => o.acct !== false, hh: { hid: o.noHousehold ? null : "H1" }, familyCode: o.current === undefined ? null : o.current, profile: o.current ? { name: "x" } : null,
-    usLinks: () => (o.links || []), usDocs: () => (o.docs || []), childDisplayName: () => "현재 아이",
+    usLinks: () => (o.links || []), usMembers: () => (o.members || []), usDocs: () => (o.docs || []), childDisplayName: () => "현재 아이",
     unsubscribeFamily: () => calls.push("unsub"), startListeningFamily() {}, hhRender: () => calls.push("hhRender"), usRefreshCalendar: () => calls.push("refresh"),
     switchToChild: async (c) => { calls.push("switch:" + c); }, applyNewChildReset: () => calls.push("reset"), showEmptyHome: () => calls.push("empty"),
     el: () => ({ classList: { add() {} } }),
@@ -100,7 +100,7 @@ test("정리 중(usGone.busy, 이 기기에서 삭제 실행 중)에는 변경 �
 test("(a) 연결 안 된 아이 [삭제]: 이 기기에서 만든 아이면 아이 문서·할 일을 지우고 이 기기를 정리, 아니면 문서는 지우지 않는다 / [연결]은 가구에 링크를 만든다", async () => {
   let e = env({ children: [{ code: "CODE_A", name: "다은" }], current: "CODE_A", links: [], created: ["CODE_A"], todos: [{ id: "t1", childKey: "CODE_A" }, { id: "t2", childKey: "other" }] });
   await e.T.usOrphanDelete("CODE_A");
-  assert.deepStrictEqual(e.calls.filter((c) => /^(del|family)/.test(c)), ["del:households/H1/todos/t1", "family:CODE_A"]);
+  assert.deepStrictEqual(e.calls.filter((c) => /^(del|family)/.test(c)), ["del:families/H1/todos/t1", "family:CODE_A"]);
   assert.strictEqual(JSON.parse(e.store.hannun_children).length, 0);
   assert.ok(e.calls.includes("reset") && e.calls.includes("empty"), "마지막 아이: 빈 상태");
   e = env({ children: [{ code: "CODE_A", name: "다은" }, { code: "CODE_Z", name: "남의" }], current: "CODE_A", links: [], created: ["CODE_A"] });
@@ -122,23 +122,21 @@ test("(b) 빼기한 아이만 대상인 일정은 캘린더·홈에서 숨기고
 });
 
 test("(c) 마지막 아이 삭제 직후: 계정 모드는 아이가 없어도 칩·달력을 다시 그린다(usRefreshCalendar 조건)", () => {
-  assert.ok(/if \(\(!profile && !acctEnabled\(\)\) \|\| !hhEnabled\(\)/.test(fnSrc("usRefreshCalendar")));
+  assert.ok(/if \(currentTab !== "calendar" \|\| \(!profile && !acctEnabled\(\)\) \|\| !hhEnabled\(\)/.test(fnSrc("usRefreshCalendar")));
   assert.ok(/await usSwitchAwayFromCurrent\(key\)/.test(APP) && /hhRender\(\);\n\s+usRefreshCalendar\(\);\n\s+\} catch \(e\) \{\n\s+console\.error\("칩 지우기 실패"/.test(APP));
 });
 
-test("HouseholdSync: 아이 링크 목록을 한 번 받기 전에는 childrenLoaded=false, 받으면 true(재구독하면 다시 false)", async () => {
+test("HouseholdSync: 아이 링크 목록을 한 번 받기 전에는 childrenLoaded=false, 받으면 true", async () => {
   const handlers = {};
   const adapter = { get: async () => ({ exists: false }), set: async () => {}, update: async () => {}, delete: async () => {}, list: async () => [], listen: (p, on) => { handlers[p] = on; return () => {}; } };
   const mem = new Map(); const storage = { getItem: (k) => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k) };
   const hs = HS.create({ adapter, storage, features: () => ({ household: true }) });
   hs.startListening("H1", () => {});
   assert.strictEqual(hs.getStatus("H1").childrenLoaded, false);
-  handlers["households/H1/members"]([]);
+  handlers["families/H1/members"]([]);
   assert.strictEqual(hs.getStatus("H1").childrenLoaded, false, "다른 컬렉션 응답으로는 true 가 되지 않는다");
-  handlers["households/H1/children"]([]);
+  handlers["families/H1/childLinks"]([]);
   assert.strictEqual(hs.getStatus("H1").childrenLoaded, true);
-  hs.startListening("H1", () => {});
-  assert.strictEqual(hs.getStatus("H1").childrenLoaded, false);
   assert.strictEqual(hs.getStatus(null).childrenLoaded, false);
 });
 

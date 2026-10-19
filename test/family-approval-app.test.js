@@ -3,7 +3,7 @@ const {test}=require('node:test');const assert=require('node:assert/strict');con
 const source=fs.readFileSync('js/app.js','utf8');
 const restore=source.slice(source.indexOf('  async function acctApprovalRestore(u) {'),source.indexOf('  async function acctApprovalOpenManage()'));
 function env(statusFn) {
- const calls=[];const ctx={acct:{user:{uid:'test'},approvalEpoch:1,sync:{restore:async()=>({ok:true,account:{displayName:'은찬',householdId:'f1'}})}},profile:null,familyCode:null,completed:{},approvalUnsubscribe:null,approvalViewDispose:null,
+ const calls=[];const ctx={startupDataError:()=>calls.push(['data-error']),startupDataReady:Promise.resolve(),acct:{user:{uid:'test'},approvalEpoch:1,sync:{restore:async()=>({ok:true,account:{displayName:'은찬',householdId:'f1'}})}},profile:null,familyCode:null,completed:{},approvalUnsubscribe:null,approvalViewDispose:null,
  approvalApi:()=>({status:statusFn}),acctApprovalGate:(s)=>calls.push(['gate',s]),acctApprovalQuarantine:()=>calls.push(['quarantine']),acctReadIntent:()=>null,acctShowSheet:s=>calls.push(['sheet',s]),showLandingView:()=>{},acctOwnerSync:()=>{},acctClearIntent:()=>{},
  HouseholdSync:{joinHousehold:async id=>{calls.push(['join',id]);return {ok:true,mirror:{children:{}}};}},hhSetJoined:(id,code)=>calls.push(['joined',id,code]),acctAfterHousehold:async()=>{},acctGoHome:async()=>calls.push(['home']),acctSplashRelease:()=>{},
  firebase:{firestore:()=>({doc:()=>({onSnapshot:()=>()=>{}})})}};
@@ -19,3 +19,17 @@ test('stale family read cannot overwrite the current login account',async()=>{
 });
 
 test('account and household reads overlap after ACTIVE approval',async()=>{let finishAccount,finishJoin;const e=env(async()=>({status:'ACTIVE',householdId:'f1'}));e.ctx.acct.sync.restore=()=>new Promise(r=>finishAccount=r);e.ctx.HouseholdSync.joinHousehold=()=>new Promise(r=>finishJoin=r);const run=e.run();await new Promise(r=>setImmediate(r));assert.equal(typeof finishAccount,'function');assert.equal(typeof finishJoin,'function');assert.equal(e.ctx.acct.account,undefined);finishJoin({ok:true,mirror:{children:{}}});finishAccount({ok:true,account:{householdId:'f1'}});await run;assert.ok(e.calls.some(([kind])=>kind==='home'));});
+
+test('approval overlaps slow static data but no private reads occur before data is ready',async()=>{
+ let ready;const e=env(async()=>({status:'ACTIVE',householdId:'f1'}));e.ctx.startupDataReady=new Promise(r=>ready=r);
+ const run=e.run();await new Promise(r=>setImmediate(r));assert.deepEqual(e.calls,[]);
+ ready();await run;assert.ok(e.calls.some(([kind])=>kind==='home'));
+});
+test('logout during static data wait cannot restore the previous family',async()=>{
+ let ready;const e=env(async()=>({status:'ACTIVE',householdId:'f1'}));e.ctx.startupDataReady=new Promise(r=>ready=r);
+ const run=e.run();await new Promise(r=>setImmediate(r));e.ctx.acct.user=null;e.ctx.acct.approvalEpoch++;ready();await run;assert.deepEqual(e.calls,[]);
+});
+test('static data failure does not join a family or expose a home',async()=>{
+ const e=env(async()=>({status:'ACTIVE',householdId:'f1'}));e.ctx.startupDataReady=Promise.reject(new Error('JSON failed'));e.ctx.startupDataReady.catch(()=>{});
+ await e.run();assert.deepEqual(e.calls,[['data-error']]);
+});
