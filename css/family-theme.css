@@ -149,3 +149,6 @@ body.acct-design #hn-age-checklist #filter-chips-checklist .cat-chip{border-colo
 body.acct-design #hn-age-checklist #filter-chips-checklist .cat-chip.active{background:color-mix(in srgb,var(--cat) 10%,#fff);color:var(--cat);font-weight:700}
 body.acct-design #hn-age-checklist #filter-chips-checklist .chip-all.active{background:#e7d6be;color:#24252a;border-color:#d7c3a5;font-weight:700}
 #home-body>.home-child-chips{margin:0 0 10px;padding:0;order:initial}
+/* 아이 전환 요청 즉시 선택 상태 안내. */
+.tab-childbar [data-home-child][aria-busy="true"]{outline:2px solid #6210cc;outline-offset:2px}
+.tab-childbar [data-home-child][aria-busy="true"]::after{content:' · 불러오는 중';font-size:10px;color:#6210cc}

@@ -191,7 +191,9 @@
   async function ensureRegionSubsidyLoaded() {
     const key = `${profile.province}|${profile.district}`;
     if (loadedSubsidyRegionKey === key) return;
-    dataset.subsidy = await loadSubsidyDataForRegion(profile.province, profile.district);
+    const data = await loadSubsidyDataForRegion(profile.province, profile.district);
+    if (!profile || `${profile.province}|${profile.district}` !== key) return;
+    dataset.subsidy = data;
     loadedSubsidyRegionKey = key;
   }
 
@@ -428,8 +430,10 @@
 
   function startListeningFamily() {
     if (unsubscribeFamily) unsubscribeFamily();
-    unsubscribeFamily = FamilySync.listen(familyCode, async (data) => {
-      if (!data || !data.profile) return;
+    const listeningCode=familyCode, listeningUid=acct.user&&acct.user.uid;
+    unsubscribeFamily = FamilySync.listen(listeningCode, async (data) => {
+      if (familyCode!==listeningCode || (acct.user&&acct.user.uid)!==listeningUid || !data || !data.profile) return;
+      if (profile && JSON.stringify(profileToPlain(profile))===JSON.stringify(data.profile) && JSON.stringify(completed)===JSON.stringify(data.completed||{})) return;
       // 사진만 바뀐 경우엔 일정을 다시 계산(=홈으로 이동)하지 않고 화면의 사진만 갱신한다.
       const noPhoto = (p) => ({ ...profileToPlain(p), photoDataUrl: null });
       const profileChanged = !profile || JSON.stringify(noPhoto(profileFromPlain(data.profile))) !== JSON.stringify(noPhoto(profile));
@@ -1641,6 +1645,7 @@
     const tab = currentTab;
     if (tab === "growth") growthPendingSection = growthSection; // 아이를 바꿔도 보던 칸에 머문다
     await switchToChild(chip.dataset.homeChild);
+    if (familyCode !== chip.dataset.homeChild) return;
     const nav = document.querySelector(`.nav-item[data-nav="${tab}"]`);
     if (tab !== "home" && currentTab !== tab && nav && !nav.classList.contains("hidden")) switchTab(tab);
   }
@@ -1726,7 +1731,7 @@
       if (d) acct36Patch(d.id, ChildTodos.patchToggle(!d.done, Date.now()));
       return;
     }
-    if (chip) { if (chip.dataset.homeChild !== familyCode) switchToChild(chip.dataset.homeChild); return; }
+    if (chip) return; // 아이 칩은 tcbChipClick 한 곳에서 처리한다.
     const home = t.closest && t.closest("#home-body");
     if (home && !act) {
       const row = t.closest("[data-home-date]");
@@ -3910,9 +3915,10 @@
     }
   }
 
-  async function buildAndRender() {
+  async function buildAndRender(isCurrent = () => true) {
     hideEmptyHome();
     await ensureRegionSubsidyLoaded();
+    if (!isCurrent()) return;
     schedule = buildSchedule({ ...profile, schoolPolicy, pregnancyConfirmDate: pregConfirmIso() }, dataset, completionsForEngine());
     rememberChild();
     rememberChildBirth();
@@ -4386,11 +4392,24 @@
     if (typeof acctEnabled === "function" && acctEnabled() && typeof usRefreshHome === "function") usRefreshHome(); // G15: 기기 아이 목록이 바뀌면(방금 등록한 둘째) 홈의 아이 칩을 바로 갱신
   }
 
-  async function switchToChild(code) {
+  let childSwitchEpoch=0, childSwitchPending=null;
+  function childSwitchFeedback(code) {
+    document.querySelectorAll('.tab-childbar [data-home-child]').forEach(button=>{
+      button.setAttribute('aria-busy',String(button.dataset.homeChild===code));
+    });
+  }
+  function switchToChild(code) {
+    if (childSwitchPending && childSwitchPending.code===code) return childSwitchPending.promise;
+    if (!childSwitchPending && code===familyCode) return Promise.resolve();
+    const epoch=++childSwitchEpoch, uid=acct.user&&acct.user.uid, hid=hh.hid;
+    const isCurrent=()=>epoch===childSwitchEpoch && (acct.user&&acct.user.uid)===uid && hh.hid===hid;
+    const pending={code,promise:null};childSwitchPending=pending;childSwitchFeedback(code);
+    pending.promise=(async()=>{
     const errEl = el("child-switch-error");
     if (errEl) errEl.classList.add("hidden");
     try {
-      const data = await FamilySync.fetchFamily(code);
+      const data = await FamilySync.fetchFamily(code, { preferCache: true });
+      if (!isCurrent()) return;
       if (!data || !data.profile) throw new Error("가족 정보를 찾을 수 없어요");
       if (unsubscribeFamily) unsubscribeFamily();
       profile = profileFromPlain(data.profile);
@@ -4410,11 +4429,15 @@
       setBirthDatePicker(profile.birthDate);
       closeDetail();
       openMonthGroups = null;
-      await buildAndRender();
+      await buildAndRender(isCurrent);
     } catch (e) {
+      if (!isCurrent()) return;
       console.error("아이 전환 실패", e);
       if (errEl) errEl.classList.remove("hidden");
+      if (typeof acctNoticeToast === "function") acctNoticeToast("아이 정보를 불러오지 못했어요. 다시 선택해 주세요.");
     }
+    })().finally(()=>{if(childSwitchPending===pending){childSwitchPending=null;childSwitchFeedback(null);}});
+    return pending.promise;
   }
 
   // ── 가족 캘린더(가구) — 문구·마크업 js/household-view.js, Firestore I/O 는 js/household-sync.js 만 한다. ──

@@ -277,7 +277,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 <script>/* 콜드스타트 완화: 로그인했던 기기는 가족 접근 서버를, 아닌 기기는 카카오 로그인 서버를 앱이 켜지는 동안 미리 깨워 둔다(응답은 쓰지 않는다) */try{var w=function(n){fetch("https://asia-northeast3-yuka-planner.cloudfunctions.net/"+n,{method:"POST",mode:"no-cors",keepalive:true,headers:{"Content-Type":"text/plain"},body:"{}"}).catch(function(){})};if(localStorage.getItem("hannun_acct_signed_out")!=="1"&&localStorage.getItem("hannun_household_id")){w("familyAccess")}else{w("kakaoLogin")}}catch(e){}</script>
   <script src="js/db-paths.js?v=4"></script>
-  <script src="js/sync.js?v=8"></script>
+  <script src="js/sync.js?v=9"></script>
   <script src="js/feature-flags.js?v=7"></script>
   <script src="js/family-access.js?v=5"></script>
   <script src="js/family-access-view.js?v=3"></script>
@@ -357,7 +357,7 @@
   <script src="js/growth-learning-view.js?v=7"></script>
   <script src="js/character-ui.js?v=13"></script>
   <link rel="stylesheet" href="css/character-ui.css?v=51"/>
-  <link rel="stylesheet" href="css/family-theme.css?v=21"/>
+  <link rel="stylesheet" href="css/family-theme.css?v=22"/>
   <script src="js/family-theme.js?v=11"></script>
   <script src="js/capture/source-photo.js?v=1"></script>
   <script src="js/capture/schedule-review.js?v=14"></script>
@@ -365,7 +365,7 @@
   <link rel="stylesheet" href="css/motion.css?v=3"/>
   <script src="js/motion.js?v=1"></script>
   <script src="js/family-summary.js?v=1"></script>
-  <script src="js/app.js?v=263"></script>
+  <script src="js/app.js?v=264"></script>
   <!-- 글자 크기 고정(최종 값). 외부 CSS 여러 개가 같은 글자에 서로 다른 크기를 !important 로 정해 두고 있어서, 기기·캐시 상태에 따라 앞선 파일의 값이 이길 수 있다(특히 iOS 웹킷의 HTTP 캐시·홈 화면 앱). HTML 은 항상 새로 받으므로 마지막 값만 여기에 한 번 더 둔다.
        15px: 카드(섹션) 제목 / 14px: 일정·할일 제목·시간·기한 / 12px: (2시간) 같은 소요 시간 / 10px: 카테고리 태그(홈·캘린더 목록·할일 탭). 바꿀 때는 css/family-theme.css 의 --hn-family-list-font-size 와 함께 고친다(test/font-size-lock.test.js 가 둘을 같이 잰다). -->
   <style id="hn-typography-lock">

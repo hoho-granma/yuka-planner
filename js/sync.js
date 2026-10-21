@@ -32,8 +32,13 @@
     saveCode(r.code);return r.code;
   }
 
-  async function fetchFamily(code) {
-    const doc = await db.collection("children").doc(code.toUpperCase()).get();
+  async function fetchFamily(code, options = {}) {
+    const ref = db.collection("children").doc(code.toUpperCase());
+    // 아이 전환은 이미 읽은 문서로 먼저 표시하고 listen()으로 최신 상태를 받는다.
+    if (options.preferCache) {
+      try { const cached = await ref.get({ source: "cache" }); if (cached.exists) return cached.data(); } catch (e) {}
+    }
+    const doc = await ref.get();
     if (!doc.exists) return null;
     return doc.data();
   }
