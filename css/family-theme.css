@@ -173,6 +173,8 @@ body.acct-design #subsidy-scope .scope-chip{background:#fff!important;color:#304
 body.acct-design #subsidy-scope .scope-chip.active{background:#e3e9f2!important;color:#304761!important;border-color:#405a79!important}
 #tab-home .hn-home-footer{display:flex;justify-content:center;padding:20px 0 12px}
 #tab-home .hn-home-footer .btn-refresh{min-height:40px;height:auto;gap:6px;border-radius:8px;padding:8px 12px}
-#tab-home .hn-home-footer .btn-refresh:not(.has-update){background:transparent;border:1px solid #d5deea;color:#64748b}
+#tab-home .hn-home-footer .btn-refresh:not(.has-update){background:transparent;border:1px solid transparent;color:#64748b}
 
 #tab-calendar #us-add-slot .hn-calendar-add{display:block;width:100%;margin-top:16px;padding:13px 16px;border:1px solid #bcc3e8;border-radius:12px;background:#f4f5fc;color:#2f3a86;font:inherit;font-size:13px;cursor:pointer}
+
+#tab-home .hn-home-footer .btn-refresh.has-update{background:transparent;border-color:transparent;box-shadow:none;color:#6210cc}
