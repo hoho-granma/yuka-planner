@@ -166,3 +166,13 @@ body.acct-design #subsidy-seg .seg-tab{background:#f2f3f5!important;color:#30476
 body.acct-design #subsidy-seg .seg-tab.active{background:#405a79!important;color:#fff!important;border-color:#405a79!important}
 body.acct-design #subsidy-seg .seg-tab .seg-n{background:#e3e9f2!important;color:#304761!important}
 body.acct-design #subsidy-seg .seg-tab.active .seg-n{background:#ffffff26!important;color:#fff!important}
+
+/* 혜택 필터의 바탕·지역 탭에도 따뜻한 베이지를 남기지 않는다. */
+body.acct-design #subsidy-seg{background:#e3e9f2;border:1px solid #d5deea}
+body.acct-design #subsidy-scope .scope-chip{background:#fff!important;color:#304761!important;border-color:#d5deea!important}
+body.acct-design #subsidy-scope .scope-chip.active{background:#e3e9f2!important;color:#304761!important;border-color:#405a79!important}
+#tab-home .hn-home-footer{display:flex;justify-content:center;padding:20px 0 12px}
+#tab-home .hn-home-footer .btn-refresh{min-height:40px;height:auto;gap:6px;border-radius:8px;padding:8px 12px}
+#tab-home .hn-home-footer .btn-refresh:not(.has-update){background:transparent;border:1px solid #d5deea;color:#64748b}
+
+#tab-calendar #us-add-slot .hn-calendar-add{display:block;width:100%;margin-top:16px;padding:13px 16px;border:1px solid #bcc3e8;border-radius:12px;background:#f4f5fc;color:#2f3a86;font:inherit;font-size:13px;cursor:pointer}
