@@ -415,7 +415,7 @@
       const f = state.form;
       body = `<div class="hh-field"><label>${esc(MSG.memNameLabel)}</label><input type="text" class="hh-input" data-mem-input="label" maxlength="${MEMBER_NAME_MAX}" placeholder="${esc(acctMode ? MSG.memNamePlaceholderAcct : MSG.memNamePlaceholder)}" value="${esc(f.label || "")}" /></div>
           <div class="hh-field"><label>${esc(MSG.memRoleLabel)}</label><div class="hh-chips${acctMode ? " hh-chips-row" : ""}">${(acctMode ? FORM_ROLE_CHIPS : ROLES.map((r) => [r, ROLE_NAMES[r]])).map(([k, n]) => mchip(`data-mem-role="${k}"`, n, f.role === k)).join("")}</div></div>
-          ${selfFields(state, f)}${f.notice ? `<p class="hh-note">${esc(f.notice)}</p>` : ""}${f.error ? `<p class="hh-note hh-warn">${esc(f.error)}</p>` : ""}
+          ${selfFields(state, f)}${f.avatarHtml || ""}${f.notice ? `<p class="hh-note">${esc(f.notice)}</p>` : ""}${f.error ? `<p class="hh-note hh-warn">${esc(f.error)}</p>` : ""}
           <div class="hh-actions"><button type="button" class="hh-btn hh-primary" data-mem-action="save"${state.saving === true ? " disabled" : ""}>${esc(MSG.memSave)}</button><button type="button" class="hh-btn" data-mem-action="cancel">${esc(MSG.memCancel)}</button></div>`;
     } else {
       const device = acctMode ? "" : `<div class="hh-field"><label>${esc(MSG.deviceUserLabel)}</label><div class="hh-chips">${list.map((m) => mchip(`data-mem-action="set-active" data-member-id="${esc(m.memberId)}"`, m.label, m.memberId === activeId)).join("")}${mchip('data-mem-action="clear-active"', MSG.deviceUserNone, !activeId)}</div>${note(MSG.deviceUserNote)}</div>`;

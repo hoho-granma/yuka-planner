@@ -16,7 +16,7 @@
 <style>/* 인증 UI가 준비되기 전에는 옛 가족코드 시작 화면을 그리지 않는다. */html.hnacc-default #view-landing:not(.acct-on){visibility:hidden}</style>
 <link rel="preload" href="fonts/Pretendard-Regular.subset.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="preload" href="fonts/Pretendard-Bold.subset.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="stylesheet" href="css/style.css?v=143" />
+<link rel="stylesheet" href="css/style.css?v=144" />
   <link rel="stylesheet" href="css/places.css?v=11" />
   <link rel="stylesheet" href="css/education-research.css?v=2">
 </head>
@@ -207,19 +207,24 @@
 
       <!-- 전체 할 일(서브 화면 — 홈의 "전체 할 일 보기"로 들어온다) -->
       <div id="tab-checklist" class="tab-panel hidden">
+        <details id="hn-age-checklist" class="hn-age-checklist" hidden>
+          <summary><span>체크리스트</span><small>36개월 미만 아이에게 필요한 것</small><span class="hn-checklist-chevron" aria-hidden="true">⌄</span></summary>
+          <div class="hn-age-checklist-body">
         <div class="sub-header">
           <button type="button" class="btn-back hidden" id="btn-todos-back">‹ 홈</button>
-          <h2>체크리스트</h2>
+
         </div>
         <div class="scope-banner hidden" id="checklist-scope-banner"><span class="scope-label"></span><button type="button" id="btn-scope-clear">전체 할 일 보기</button></div>
         <div class="status-filter" id="status-filter-checklist" role="tablist" aria-label="완료 상태">
-          <button type="button" class="sf-btn" data-status="all">전체</button>
-          <button type="button" class="sf-btn" data-status="todo">미완료</button>
-          <button type="button" class="sf-btn" data-status="done">완료</button>
+          <button type="button" class="sf-btn" role="tab" aria-selected="true" data-status="all">전체</button>
+          <button type="button" class="sf-btn" role="tab" aria-selected="false" data-status="todo">미완료</button>
+          <button type="button" class="sf-btn" role="tab" aria-selected="false" data-status="done">완료</button>
         </div>
         <div class="filter-chips" id="filter-chips-checklist"></div>
         <div id="list-checklist" class="event-list"></div>
         <p id="empty-checklist" class="empty hidden">해당하는 항목이 없어요.</p>
+          </div>
+        </details>
       </div>
 
       <!-- 어디갈까(가족 캘린더·계정 기능이 켜졌을 때만 하단 탭에 나온다) -->
@@ -228,7 +233,6 @@
         <div id="places-body"></div>
       </div>
 
-      <div id="tab-growth" class="tab-panel hidden"><div id="growth-body"></div></div>
 
       <!-- 지원금·제도 -->
       <div id="tab-subsidy" class="tab-panel hidden">
@@ -248,7 +252,7 @@
         </button>
         <button type="button" class="nav-item" data-nav="checklist">
           <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span>
-          <span>체크리스트</span>
+          <span>할일</span>
         </button>
         <button type="button" class="nav-item" data-nav="subsidy">
           <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.5"/><path d="M6.5 9.5v.01M17.5 14.5v.01"/></svg></span>
@@ -258,7 +262,6 @@
           <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s6.5-5.6 6.5-11a6.5 6.5 0 1 0-13 0c0 5.4 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span>
           <span>어디갈까</span>
         </button>
-        <button type="button" class="nav-item hidden" data-nav="growth"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-9M12 15C5 15 3 10 3 5c6 0 9 3 9 10zM12 12c0-6 4-9 9-9 0 6-3 9-9 9z"/></svg></span><span>성장기록</span></button>
       </nav>
     </section>
   </main>
@@ -276,15 +279,15 @@
   <script src="js/db-paths.js?v=4"></script>
   <script src="js/sync.js?v=8"></script>
   <script src="js/feature-flags.js?v=7"></script>
-  <script src="js/family-access.js?v=4"></script>
+  <script src="js/family-access.js?v=5"></script>
   <script src="js/family-access-view.js?v=3"></script>
   <link rel="stylesheet" href="css/family-access.css?v=2">
-  <script src="js/household-sync.js?v=11"></script>
-  <script src="js/household-view.js?v=18"></script>
+  <script src="js/household-sync.js?v=12"></script>
+  <script src="js/household-view.js?v=19"></script>
   <script src="js/kakao-login.js?v=2"></script>
 <script>/* 카카오 로그인 복귀(/oauth): 앱이 다 켜지기 전에 서버 확인 요청부터 보낸다(연결 모드는 제외). 결과는 앱의 acctKakaoComplete 가 받아 쓴다. 가족 접근 서버도 같이 깨워 둔다. */try{if(location.pathname==="/oauth"&&sessionStorage.getItem("hannun_kakao_link")!=="1"){var q=new URLSearchParams(location.search),c=q.get("code"),s=q.get("state");if(c&&s){var p=firebase.app().functions("asia-northeast3").httpsCallable("kakaoLogin")({code:c,redirectUri:location.origin+"/oauth",state:s}).then(function(x){return x.data});p.catch(function(){});window.__hnKakao={code:c,p:p};fetch("https://asia-northeast3-yuka-planner.cloudfunctions.net/familyAccess",{method:"POST",mode:"no-cors",keepalive:true,headers:{"Content-Type":"text/plain"},body:"{}"}).catch(function(){})}}}catch(e){}</script>
   <script src="js/auth-service.js?v=6"></script>
-  <script src="js/account-view.js?v=46"></script>
+  <script src="js/account-view.js?v=48"></script>
   <script src="js/account-sync.js?v=8"></script>
   <script src="js/app-access.js?v=1"></script>
   <script src="js/version.js?v=10"></script>
@@ -328,7 +331,7 @@
   <script src="js/user-schedule-view.js?v=45"></script>
   <script src="js/child-anniversaries.js?v=2"></script>
   <script src="js/korean-holidays.js?v=1"></script>
-  <script src="js/tab-child-bar.js?v=2"></script>
+  <script src="js/tab-child-bar.js?v=3"></script>
   <script src="js/home-must.js?v=2"></script>
   <script src="js/curation.js?v=1"></script>
   <script src="js/month-tiers.js?v=1"></script>
@@ -341,7 +344,7 @@
   <script src="js/growth-evidence.js?v=1"></script>
   <script src="js/growth-sync.js?v=6"></script>
   <script src="js/growth-records.js?v=17"></script>
-  <link rel="stylesheet" href="css/learning-check.css?v=10" />
+  <link rel="stylesheet" href="css/learning-check.css?v=11" />
   <script src="js/learning-check-bank.js?v=2"></script>
   <script src="js/learning-check.js?v=1"></script>
   <script src="js/education-reference.js?v=3"></script>
@@ -350,18 +353,19 @@
   <script src="js/education-interests.js?v=2"></script>
   <script src="js/education-public-programs.js?v=1"></script>
   <script src="js/education-directory.js?v=1"></script>
-  <script src="js/education-info.js?v=10"></script>
-  <script src="js/growth-learning-view.js?v=6"></script>
-  <script src="js/character-ui.js?v=12"></script>
-  <link rel="stylesheet" href="css/character-ui.css?v=47"/>
-  <link rel="stylesheet" href="css/family-theme.css?v=19"/>
+  <script src="js/education-info.js?v=11"></script>
+  <script src="js/growth-learning-view.js?v=7"></script>
+  <script src="js/character-ui.js?v=13"></script>
+  <link rel="stylesheet" href="css/character-ui.css?v=49"/>
+  <link rel="stylesheet" href="css/family-theme.css?v=21"/>
   <script src="js/family-theme.js?v=11"></script>
   <script src="js/capture/source-photo.js?v=1"></script>
   <script src="js/capture/schedule-review.js?v=14"></script>
   <link rel="stylesheet" href="css/schedule-review.css?v=15"/>
   <link rel="stylesheet" href="css/motion.css?v=3"/>
   <script src="js/motion.js?v=1"></script>
-  <script src="js/app.js?v=256"></script>
+  <script src="js/family-summary.js?v=1"></script>
+  <script src="js/app.js?v=261"></script>
   <!-- 글자 크기 고정(최종 값). 외부 CSS 여러 개가 같은 글자에 서로 다른 크기를 !important 로 정해 두고 있어서, 기기·캐시 상태에 따라 앞선 파일의 값이 이길 수 있다(특히 iOS 웹킷의 HTTP 캐시·홈 화면 앱). HTML 은 항상 새로 받으므로 마지막 값만 여기에 한 번 더 둔다.
        15px: 카드(섹션) 제목 / 14px: 일정·할일 제목·시간·기한 / 12px: (2시간) 같은 소요 시간 / 10px: 카테고리 태그(홈·캘린더 목록·할일 탭). 바꿀 때는 css/family-theme.css 의 --hn-family-list-font-size 와 함께 고친다(test/font-size-lock.test.js 가 둘을 같이 잰다). -->
   <style id="hn-typography-lock">

@@ -182,7 +182,7 @@ body.acct-design #subsidy-seg{background:#f5eee3!important;border:1px solid #e1d
 body.acct-design #subsidy-seg .seg-tab{background:#f5eee3!important;border-color:#e1d3bd!important;color:#24252a!important}
 body.acct-design #subsidy-seg .seg-tab.active{background:#e7d6be!important;border-color:#d7c3a5!important;color:#24252a!important}
 /* Approved compact family calendar and header. */
-#brand-text .hn-family-name{color:#7c6ba2!important}
+#brand-text .hn-family-name{color:var(--accent,#6210cc)!important}
 #brand-text .hn-brand-dot{display:inline-block;margin:0 3px}
 .calendar-grid-v2 .day-cell{min-height:48px!important;padding-top:3px!important;padding-bottom:3px!important}
 .calendar-grid-v2{gap:2px!important}.markers.chips{gap:1px!important;margin-top:2px!important}
@@ -372,3 +372,16 @@ body:has(#detail-modal:not(.hidden)){overflow:hidden}
 #home-body .hn-hc-cal .hn-hday-tabs button.on::after{background:var(--hc-m)}
 #home-body .hn-hc-cal .hn-hday-more{border-color:#bcc3e8;background:#f4f5fc;color:var(--hc-d)}
 #home-body .hn-hc-todo>.hn-section-head+.hn-task{border-top:0}
+
+/* Family avatar variants: the supplied circle is the entire visible icon. */
+img.hn-avatar,img.hn-face.hn-avatar,.hn-calendar-people .on img.hn-face.hn-avatar,.hn-entry .hn-people img.hn-face.hn-avatar{border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;border-radius:50%;clip-path:circle(46% at 50% 50%);transform:scale(1.087);object-fit:cover}
+.hn-day-face:has(img.hn-avatar){background:transparent!important}
+.hn-avatar-picker{border:0;padding:0;margin:20px 0 8px;min-width:0}
+.hn-avatar-picker legend{font-size:14px;font-weight:600;margin-bottom:12px}
+.hn-avatar-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.hn-avatar-options button{display:flex;flex-direction:column;align-items:center;gap:8px;min-height:100px;padding:8px 2px;border:0;background:transparent;color:var(--fg,#24252a);cursor:pointer}
+.hn-avatar-options img.hn-avatar{width:64px;height:64px;display:block}
+.hn-avatar-options span{font-size:12px;line-height:1.5;padding:3px 6px;border-radius:6px}
+.hn-avatar-options [aria-pressed="true"] span{background:#E9DAFF;color:#6210CC;font-weight:700}
+.hn-avatar-options button:focus-visible{outline:2px solid #6210CC;outline-offset:2px;border-radius:10px}
+.hn-avatar-options button:disabled{cursor:wait;opacity:.6}

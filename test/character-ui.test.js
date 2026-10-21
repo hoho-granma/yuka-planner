@@ -1,8 +1,8 @@
 const assert=require('node:assert/strict');
 const UI=require('../js/character-ui');
 const Todos=require('../js/child-todos');
-assert.match(UI.avatar('CHILD','male'),/boy.webp$/);
-assert.match(UI.avatar('CHILD','female'),/child.webp$/);
+assert.match(UI.avatar('CHILD','male'),/boy-1.webp$/);
+assert.match(UI.avatar('CHILD','female'),/girl-1.webp$/);
 assert.match(UI.avatar('CHILD',null),/neutral.svg$/);
 assert.match(UI.familyAvatar([{gender:'male'},{gender:'female'}]),/four-lavender.webp$/);
 assert.match(UI.familyAvatar([{gender:'male'},{gender:'male'}]),/neutral.svg$/);
@@ -20,8 +20,8 @@ assert.equal(Todos.validate({...old,ownerKey:'MEMBER:m',dueDate:'2026-10-10',cat
 for(const patch of [{ownerKey:'bad'},{dueDate:'tomorrow'},{description:'x'.repeat(501)},{other:'bad'}])assert.equal(Todos.validate({...old,...patch}).ok,false);
 console.log('PASS: character assets, summary, family sorting, deadlines, legacy/extended task schema');
 
-assert.match(UI.avatar('CHILD','F'),/child.webp$/);
-assert.match(UI.avatar('CHILD','M'),/boy.webp$/);
+assert.match(UI.avatar('CHILD','F'),/girl-1.webp$/);
+assert.match(UI.avatar('CHILD','M'),/boy-1.webp$/);
 assert.match(UI.familyAvatar([{gender:'F'}]),/family-girl-lavender.webp$/);
 assert.match(UI.familyAvatar([{gender:'F'},{gender:'M'}]),/family-four-lavender.webp$/);
 const durationAssert = require('node:assert/strict');
@@ -31,3 +31,13 @@ durationAssert.equal(UI.duration('10:00','10:30',false),'30분');
 durationAssert.equal(UI.duration('10:30','',false),'');
 durationAssert.equal(UI.duration('10:30','12:00',true),'');
 durationAssert.equal(UI.duration('12:00','10:30',false),'');
+
+for(const [role,gender,group] of [['MOM',null,'mom'],['DAD',null,'dad'],['CHILD','female','girl'],['CHILD','male','boy']]){
+ const choices=UI.avatarOptions(role,gender);assert.equal(choices.length,3);
+ assert.equal(UI.avatarChoice({role,gender}).id,group+'-1');
+ for(let i=1;i<=3;i++)assert.equal(UI.avatar(role,gender,group+'-'+i),`icons/family/${group}-${i}.webp`);
+ assert.equal(UI.avatarChoice({role,gender,avatarId:'invalid'}).id,group+'-1');
+}
+assert.notEqual(UI.tint({role:'CHILD',gender:'female',avatarId:'girl-1'}),UI.tint({role:'CHILD',gender:'female',avatarId:'girl-2'}));
+assert.equal(UI.avatar('CHILD','male','girl-2'),'icons/family/boy-1.webp');
+assert.equal(UI.avatar('CHILD',null,'girl-3'),'icons/family/girl-3.webp');

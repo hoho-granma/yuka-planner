@@ -1,5 +1,5 @@
 /*
- * tab-child-bar — D33 A안: 캘린더·체크리스트/할 일·교육 트렌드·어디갈까 탭 맨 위에 '지금 보는 아이' 칩 줄(이름 · 나이).
+ * tab-child-bar — D33 A안: 캘린더·체크리스트/할 일·어디갈까·아이 성장 탭 맨 위에 '지금 보는 아이' 칩 줄(이름 · 나이).
  * 아이가 2명 이상일 때만 만든다(1명·임신 중이면 빈 문자열 = 화면 변화 없음). 모양·동작은 홈 칩(.home-child-chip, data-home-child)을 그대로 쓴다.
  * 순수 마크업 — DOM·저장소를 만지지 않는다. kids = [{ code, name, ageText, current }].
  */
@@ -8,7 +8,7 @@
   else root.TabChildBar = factory();
 })(typeof window !== "undefined" ? window : global, function () {
   "use strict";
-  const TABS = Object.freeze(["calendar", "checklist", "trend", "places", "growth"]);
+  const TABS = Object.freeze(["calendar", "checklist", "places", "growth"]);
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
   function render(kids) {

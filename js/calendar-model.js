@@ -182,18 +182,26 @@
     periodList.sort((a, b) => (a.periodEnd !== b.periodEnd ? (a.periodEnd < b.periodEnd ? -1 : 1) : a.title < b.title ? -1 : a.title > b.title ? 1 : 0));
 
     // ── AUTO (읽기 전용 — 기존 calendarDayItems 공식과 동일) ──
-    if (autoVisible(filter, auto)) {
-      const events = auto.events || [];
-      const displayDates = auto.displayDates || new Map();
-      const hiddenAutoIds = auto.hideLinked === false ? new Set() : hiddenIdsOf(linksByAutoId(user.schedules, auto.childKey, auto.autoIdAliases).keys()); // hideLinked:false 면 숨기지 않는다(앱의 autoLink 플래그 OFF)
+    const sources = Array.isArray(auto.sources) ? auto.sources : [auto];
+    const seenSources = new Set();
+    for (const source of sources) {
+      const identity = source.familyCode || source.childKey;
+      if (seenSources.has(identity) || !autoVisible(filter, source)) continue;
+      seenSources.add(identity);
+      const events = source.events || [];
+      const displayDates = source.displayDates || new Map();
+      const hidden = source.hideLinked === false ? new Set() : hiddenIdsOf(linksByAutoId(user.schedules, source.childKey, source.autoIdAliases).keys());
+      const decorateAuto = e => Array.isArray(auto.sources) ? { ...e, autoChildKey: source.childKey, autoFamilyCode: source.familyCode, autoChildName: source.childName, autoDone: !!(source.completed || {})[e.id] } : e;
       for (const k of dayKeys) {
-        const date = toDate(k);
-        const cell = days.get(k);
-        cell.benefit = events.filter((e) => e.scheduleKind === "fixed" && HN.coversDay(e, date));
-        cell.planned = HN.plannedOnDay(events, displayDates, date);
-        // C2: 연결된(예약이 있는) AUTO 항목의 추천일 표식은 숨긴다. events/displayDates 는 그대로, 이 칸의 표시 목록에서만 뺀다. 아이를 모르면(childKey 없음) 숨기지 않는다.
-        if (hiddenAutoIds.size && cell.planned.length) cell.planned = cell.planned.filter((e) => !hiddenAutoIds.has(e.id));
-        if (hiddenAutoIds.size && cell.benefit.length) cell.benefit = cell.benefit.filter((e) => !hiddenAutoIds.has(e.id)); // 신청 기간(혜택)도 같은 규칙: 일정으로 넣으면 사용자 일정만 보인다
+        const date = toDate(k), cell = days.get(k), seen = new Set();
+        const add = (list, target) => {
+          for (const e of list) {
+            if (hidden.has(e.id) || seen.has(e.id)) continue;
+            seen.add(e.id); target.push(decorateAuto(e));
+          }
+        };
+        add(events.filter(e => e.scheduleKind === "fixed" && HN.coversDay(e, date)), cell.benefit);
+        add(HN.plannedOnDay(events, displayDates, date), cell.planned);
       }
     }
 

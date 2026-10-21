@@ -346,6 +346,16 @@
       if(r.ok)await joinApprovedHousehold(hid,{metadataOnly:true});
       return r;
     }
+    async function setAvatar(hid, {kind,targetId,avatarId}) {
+      if(!enabled())return DISABLED;
+      const r=await accessApi().setAvatar({householdId:hid,kind,targetId,avatarId});
+      if(!r?.ok)return r;
+      const m=loadMirror(hid),collection=kind==='child'?m.children:m.members;
+      if(collection[targetId])collection[targetId]={...collection[targetId],avatarId:r.avatarId};
+      saveMirror(m);
+      if(listeningHid===hid&&listeningCallback)listeningCallback(m);
+      return r;
+    }
     async function upsertMember(hid, { memberId, role, label, order, colorKey, uid, legacyColor }) {
       if (!enabled()) return DISABLED;
       const id = memberId || newId("m");
@@ -550,6 +560,7 @@
       hardDelete,
       pickColorKey,
       upsertMember,
+      setAvatar,
       removeMember,
       createSchedule,
       patchSchedule,

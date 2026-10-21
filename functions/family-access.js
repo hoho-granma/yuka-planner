@@ -152,7 +152,7 @@ function createService(db, {now=Date.now, codeGenerator=newCode, emailOf=async()
         // Relation is chosen by the issuer. Approval never grants administrator rights.
         const old=slot?.data(),memberId=slot?.id||existing?.memberId||target;
         const order=old?.order||Math.max(0,...members.docs.map(d=>d.data().order||0))+1;
-        tx.set(ref(`families/${hid}/members/${memberId}`),{v:1,uid:target,role,label:req.label,order,createdAt:old?.createdAt||t,updatedAt:t,...(targetEmail?{email:targetEmail}:{}),...(old?.colorKey?{colorKey:old.colorKey}:{}),...(childKey?{childKey}:{})});
+        tx.set(ref(`families/${hid}/members/${memberId}`),{v:1,uid:target,role,label:req.label,order,createdAt:old?.createdAt||t,updatedAt:t,...(targetEmail?{email:targetEmail}:{}),...(old?.colorKey?{colorKey:old.colorKey}:{}),...(old?.avatarId?{avatarId:old.avatarId}:{}),...(childKey?{childKey}:{})});
         tx.set(ref(accessPath(hid,target)),{status:'ACTIVE',permission:'MEMBER',role,memberId,approvedByUid:uid,approvedAt:t,...(childKey?{childKey}:{})});
         tx.set(ref('accounts/'+target),{v:1,displayName:req.label,role,householdId:hid,memberId,createdAt:a?.createdAt||t,updatedAt:t},{merge:true});
         tx.update(ref('privateFamilyInvites/'+req.inviteHash),{status:'USED',usedByUid:target,usedAt:t});
@@ -310,6 +310,29 @@ function createService(db, {now=Date.now, codeGenerator=newCode, emailOf=async()
       return {ok:true};
     });
   }
+  // A shared appearance belongs to the person, never to the viewing device or gender as a whole.
+  // Server writes use the existing roster listeners; no Firestore rule expansion is required.
+  async function setAvatar(uid,data) {
+    const hid=id(data.householdId),target=id(data.targetId),kind=data.kind,avatarId=data.avatarId;
+    if(!['child','member'].includes(kind)||typeof avatarId!=='string'||!/^(boy|girl|mom|dad)-[123]$/.test(avatarId))fail('invalid-argument','아이콘을 다시 선택해 주세요.');
+    return db.runTransaction(async tx=>{
+      const caller=await get(tx,accessPath(hid,uid));
+      if(!active(caller)||caller.role==='CHILD'||!['ADMIN','MEMBER'].includes(caller.permission))fail('permission-denied','가족 보호자만 아이콘을 변경할 수 있어요.');
+      const path=`families/${hid}/${kind==='child'?'childLinks':'members'}/${target}`;
+      const person=await get(tx,path);
+      if(!person||person.removedAt||person.deletedAt)fail('not-found','현재 가족에서 찾을 수 없는 프로필이에요.');
+      let groups;
+      if(kind==='child') {
+        const child=await get(tx,'children/'+id(person.familyCode));
+        if(!child?.profile)fail('not-found','아이 정보를 다시 불러와 주세요.');
+        const gender=String(child.profile.gender||'').trim().toLowerCase();
+        groups=['m','male','boy','남아','남자'].includes(gender)?['boy']:['f','female','girl','여아','여자'].includes(gender)?['girl']:['boy','girl'];
+      } else groups=person.role==='MOM'?['mom']:person.role==='DAD'?['dad']:[];
+      if(!groups.includes(avatarId.split('-')[0]))fail('invalid-argument','프로필에 맞는 아이콘을 선택해 주세요.');
+      tx.update(ref(path),{avatarId,updatedAt:now()});
+      return {ok:true,kind,targetId:target,avatarId};
+    });
+  }
   /** 내 로그인 이메일을 내 구성원 문서·계정 문서에 맞춘다(로그인 때 앱이 부른다 — 옛 구성원 채우기, 이메일을 바꾼 뒤 반영). 클라이언트 값은 믿지 않고 Auth 에서 읽는다. */
   async function syncMyEmail(uid) {
     const email=await emailFor(uid);
@@ -326,6 +349,6 @@ function createService(db, {now=Date.now, codeGenerator=newCode, emailOf=async()
       return {ok:true,email,synced:m.email!==email};
     });
   }
-  return {syncMyEmail,createFamily,issueInvite,requestJoin,decideJoin,claimLegacy,status,cancelJoin,revokeInvite,removeMember,transferAdmin,listRequests,createChild,removeChild,resolveChild,updateMember};
+  return {setAvatar,syncMyEmail,createFamily,issueInvite,requestJoin,decideJoin,claimLegacy,status,cancelJoin,revokeInvite,removeMember,transferAdmin,listRequests,createChild,removeChild,resolveChild,updateMember};
 }
 module.exports={createService,newCode,hash};

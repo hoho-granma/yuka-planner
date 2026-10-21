@@ -84,9 +84,9 @@ test('revoked user can request reapproval, but no code confers access while pend
  await s.decideJoin('mom',{householdId:hid,targetUid:'dad',approve:true});assert.equal((await s.status('dad')).status,'ACTIVE');
 });
 test('approval preserves an explicitly invited display slot and its schedule identity',async()=>{
- const {s,hid,db}=await setup();db.store.set(`families/${hid}/members/old-dad`,{v:1,role:'DAD',label:'아빠',order:2,colorKey:'p9',createdAt:5,updatedAt:5});
+ const {s,hid,db}=await setup();db.store.set(`families/${hid}/members/old-dad`,{v:1,role:'DAD',label:'아빠',order:2,colorKey:'p9',avatarId:'dad-3',createdAt:5,updatedAt:5});
  const inv=await s.issueInvite('mom',{householdId:hid,role:'DAD',slotMemberId:'old-dad'});await s.requestJoin('dad',{code:inv.code,displayName:'dad'},'ip');await s.decideJoin('mom',{householdId:hid,targetUid:'dad',approve:true});
- assert.equal(db.store.get('accounts/dad').memberId,'old-dad');assert.equal(db.store.get(`families/${hid}/members/old-dad`).colorKey,'p9');assert.equal(db.store.get(`families/${hid}/members/old-dad`).createdAt,5);
+ assert.equal(db.store.get(`families/${hid}/members/old-dad`).avatarId,'dad-3');assert.equal(db.store.get('accounts/dad').memberId,'old-dad');assert.equal(db.store.get(`families/${hid}/members/old-dad`).colorKey,'p9');assert.equal(db.store.get(`families/${hid}/members/old-dad`).createdAt,5);
 });
 test('same-family child resolution cannot steal a code from another family',async()=>{
  const {s,hid}=await setup();const kid=await s.createChild('mom',{householdId:hid,profile:{name:'은찬'}});assert.equal((await s.resolveChild('mom',{householdId:hid,code:kid.code})).childKey,kid.code);
@@ -136,4 +136,30 @@ test('signup without approval service fails closed instead of granting its own f
 test('new family signup fetches metadata without reading schedules before subscription',async()=>{
  const calls=[];const sync=require('../js/account-sync').create({adapter:{},household:{joinHousehold:async(...args)=>{calls.push(args);return {ok:true};}},access:{createFamily:async()=>({ok:true,householdId:'f1',created:true})}});
  const result=await sync.completeSignup({user:{uid:'mom'},intent:{displayName:'엄마',role:'MOM'}});assert.equal(result.householdCode,'f1');assert.deepEqual(calls,[['f1',{metadataOnly:true}]]);
+});
+
+test('avatars persist separately for three girls and default changes never overwrite profile data',async()=>{
+ const {s,hid,db}=await setup();
+ for(let i=1;i<=3;i++){
+  const c=await s.createChild('mom',{householdId:hid,profile:{name:'아이'+i,gender:'female'}});
+  const r=await s.setAvatar('mom',{householdId:hid,kind:'child',targetId:c.childKey||c.code,avatarId:'girl-'+i});
+  assert.equal(r.avatarId,'girl-'+i);
+  assert.equal(db.store.get(`families/${hid}/childLinks/${c.childKey||c.code}`).avatarId,'girl-'+i);
+  assert.equal(db.store.get('children/'+c.code).profile.name,'아이'+i);
+ }
+ await s.setAvatar('mom',{householdId:hid,kind:'member',targetId:'mom',avatarId:'mom-3'});
+ assert.equal(db.store.get(`families/${hid}/members/mom`).avatarId,'mom-3');
+});
+test('avatar writes reject outsiders, viewers, children, removed profiles and incompatible images',async()=>{
+ const {s,hid,db}=await setup();const c=await s.createChild('mom',{householdId:hid,profile:{name:'은찬',gender:'male'}});
+ const data={householdId:hid,kind:'child',targetId:c.childKey||c.code,avatarId:'boy-2'};
+ await denies(()=>s.setAvatar('outsider',data),'permission-denied');
+ for(const access of [{status:'ACTIVE',role:'DAD',permission:'VIEWER'},{status:'ACTIVE',role:'CHILD',permission:'MEMBER'},{status:'REVOKED',role:'MOM',permission:'ADMIN'}]){
+  db.store.set(`familyAccess/${hid}/members/test`,access);
+  await denies(()=>s.setAvatar('test',data),'permission-denied');
+ }
+ for(const avatarId of ['girl-1','boy-4','https://example.com/a.png','../mom-1'])await denies(()=>s.setAvatar('mom',{...data,avatarId}),'invalid-argument');
+ assert.equal(db.store.get(`families/${hid}/childLinks/${data.targetId}`).avatarId,undefined);
+ await s.removeChild('mom',{householdId:hid,code:c.code});
+ await denies(()=>s.setAvatar('mom',data),'not-found');
 });

@@ -9,7 +9,7 @@ function fixture(selected = ['CHILD:baby']) {
   const context = { familyCode: 'older-code', us: { selection: selected },
     viewMonth: 'October', selectedCalendarDate: 'October 4', usCalendarChildSwitchBusy: false,
     usLinks: () => [{ childKey: 'baby', familyCode: 'baby-code' }, { childKey: 'old', familyCode: 'older-code' }],
-    switchTab: tab => calls.push(tab) };
+    switchTab: tab => { calls.push(tab); context.viewMonth = 'entry-month'; context.selectedCalendarDate = 'entry-today'; } };
   context.switchToChild = async code => { calls.push(code); context.familyCode = code; context.viewMonth = 'current-month'; context.selectedCalendarDate = 'today'; };
   vm.createContext(context); vm.runInContext(helper, context);
   return { context, calls };

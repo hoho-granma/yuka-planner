@@ -469,6 +469,10 @@
    * D72b 선택한 1명의 카드(우리 가족 얼굴 아래). c = { kind:"me"|"member"|"child", color, name, sub, photo, rows:[[라벨,값]], notes:[문장], actions:[{label, attrs, danger}] }
    * 일반 버튼 → 위험 버튼([삭제]·[빼기]) 순서로 한 줄씩 떨어뜨린다. 저장·이동은 하지 않는다(버튼 의도는 attrs 의 data-mem-action·data-acct-action).
    */
+  function renderAvatarEdit(options, selectedId, attr, busy) {
+    if (!options || !options.length) return "";
+    return `<fieldset class="hn-avatar-picker"><legend>프로필 아이콘</legend><div class="hn-avatar-options">${options.map(a=>`<button type="button" ${attr}="${esc(a.id)}" aria-label="${esc(a.label)} 선택" aria-pressed="${a.id===selectedId}" ${busy?'disabled':''}><img class="hn-avatar" src="${esc(a.src)}" alt=""/><span>${esc(a.label)}${a.id===selectedId?' · 선택됨':''}</span></button>`).join('')}</div><p class="fine-print">저장을 누르면 선택한 아이콘이 가족 화면에도 반영돼요.</p></fieldset>`;
+  }
   function renderFamCard(c) {
     if (!c) return "";
     const rows = (c.rows || []).filter((r) => r && (r[1] || r[2])).map(([k, v]) => `<div class="fam-row"><span class="fam-k">${esc(k)}</span><span class="fam-v">${esc(v)}</span></div>`).join("");
@@ -476,8 +480,9 @@
     const btn = (a) => `<button type="button" class="hh-btn hh-small${a.danger ? " hh-danger" : ""}" ${a.attrs}>${esc(a.label)}</button>`;
     const logout=(c.actions||[]).filter(a=>a.attrs.includes('logout')).map(btn).join('');
     const actions=(c.actions||[]).filter(a=>!a.attrs.includes('logout')).map(btn).join('');
-    const photo=c.photo?`<img class="fam-photo hn-face" src="${esc(c.photo)}" alt=""/>`:'';
-    return `<div class="fam-card" data-fam-card="${esc(c.kind)}"><div class="fam-card-head">${photo}<div class="fam-card-title"><strong>${esc(c.name)}</strong>${c.sub?`<span class="fine-print">${esc(c.sub)}</span>`:''}</div><div class="hn-profile-actions">${actions}</div></div>${rows}${notes}${logout?`<div class="hn-profile-actions">${logout}</div>`:''}</div>`;
+    const photo=c.photo?`<img class="fam-photo hn-face hn-avatar" src="${esc(c.photo)}" alt=""/>`:'';
+    const avatars=c.avatarOptions?.length?`<fieldset class="hn-avatar-picker"><legend>프로필 아이콘</legend><div class="hn-avatar-options">${c.avatarOptions.map(a=>`<button type="button" data-avatar-id="${esc(a.id)}" data-avatar-kind="${esc(c.avatarKind)}" data-avatar-person="${esc(c.avatarPerson)}" aria-label="${esc(a.label)} 선택" aria-pressed="${a.id===c.avatarId}" ${c.avatarBusy?'disabled':''}><img class="hn-avatar" src="${esc(a.src)}" alt=""/><span>${esc(a.label)}${a.id===c.avatarId?' · 선택됨':''}</span></button>`).join('')}</div><p class="fine-print" role="status">${c.avatarBusy?'아이콘을 저장하고 있어요.':'선택한 아이콘은 가족 화면에도 함께 반영돼요.'}</p></fieldset>`:'';
+    return `<div class="fam-card" data-fam-card="${esc(c.kind)}"><div class="fam-card-head">${photo}<div class="fam-card-title"><strong>${esc(c.name)}</strong>${c.sub?`<span class="fine-print">${esc(c.sub)}</span>`:''}</div><div class="hn-profile-actions">${actions}</div></div>${avatars}${rows}${notes}${logout?`<div class="hn-profile-actions">${logout}</div>`:''}</div>`;
   }
   /** 가입 직후 아이가 없는 홈의 '내 정보' 카드: 이름 · 나(역할) / 아이를 등록해 주세요 / 이메일. 누르면 내 정보(가족코드). */
   function renderMyCard(state) {
@@ -731,5 +736,5 @@
       <button type="button" class="btn-complete" data-acct-action="confirm-logout">${esc(MSG.logout)}</button><button type="button" class="btn-close" data-acct-action="close">${esc(MSG.cancel)}</button></div>`;
   }
 
-  return { subdistrictsOf, MSG, renderFamCard, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, signupTotal, signupStep, signupStepKeys, firstErrorStep, INVITE_ROLES, INVITE_LABEL, inviteLink, inviteText, parseJoinParams, renderLanding, slideIndex, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderFamilySlot, renderMyCard, renderSlotPick, renderRolePick, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderAddTiles, renderAddMenu, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderNoChildBanner, renderNoChildHome, renderNoChildTab, renderChildSheet, renderOnboardChild, renderMe, roleOptions, syncForm, SITUATIONS, START_SITUATIONS, esc };
+  return { subdistrictsOf, MSG, renderAvatarEdit, renderFamCard, ROLES, INSTITUTIONS, GENDERS, validateSignup, validateLogin, validateRecover, normCode, toISO, signupTotal, signupStep, signupStepKeys, firstErrorStep, INVITE_ROLES, INVITE_LABEL, inviteLink, inviteText, parseJoinParams, renderLanding, slideIndex, renderBetaPreviewCard, renderBetaConfirm, renderAccountSlot, renderFamilySlot, renderMyCard, renderSlotPick, renderRolePick, renderSignup, renderLogin, renderLogoutConfirm, renderInvite, renderAddTiles, renderAddMenu, renderRecover, renderMigrate, renderEmptyHome, renderEmptyTab, renderNoChildBanner, renderNoChildHome, renderNoChildTab, renderChildSheet, renderOnboardChild, renderMe, roleOptions, syncForm, SITUATIONS, START_SITUATIONS, esc };
 });
