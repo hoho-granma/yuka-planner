@@ -152,3 +152,17 @@ body.acct-design #hn-age-checklist #filter-chips-checklist .chip-all.active{back
 /* 아이 전환 요청 즉시 선택 상태 안내. */
 .tab-childbar [data-home-child][aria-busy="true"]{outline:2px solid #6210cc;outline-offset:2px}
 .tab-childbar [data-home-child][aria-busy="true"]::after{content:' · 불러오는 중';font-size:10px;color:#6210cc}
+
+/* 2026-10-21 확정: 체크리스트·혜택 필터에만 네이비 미스트 적용. */
+#hn-age-checklist #status-filter-checklist{background:#e3e9f2;border-color:#d5deea}
+#hn-age-checklist #status-filter-checklist .sf-btn{color:#304761}
+#hn-age-checklist #status-filter-checklist .sf-btn.active,#hn-age-checklist #status-filter-checklist .sf-btn[aria-selected="true"]{background:#405a79;color:#fff;font-weight:700;box-shadow:none}
+body.acct-design #hn-age-checklist #filter-chips-checklist{display:flex;flex-wrap:nowrap;width:100%;gap:6px;padding:2px 0 6px;margin:0 0 12px;overflow-x:auto;box-sizing:border-box;scrollbar-width:thin}
+body.acct-design #hn-age-checklist #filter-chips-checklist .chip{flex:0 0 auto;min-width:0;min-height:30px;padding:5px 10px;border:1px solid #d5deea;border-radius:999px;background:#fff;color:#304761;font-size:11px;line-height:18px;white-space:nowrap;justify-content:center}
+body.acct-design #hn-age-checklist #filter-chips-checklist .chip-all.active{background:#e3e9f2;border-color:#405a79;color:#304761;font-weight:700}
+body.acct-design #hn-age-checklist #filter-chips-checklist .cat-chip{border-color:var(--cat);color:var(--cat)}
+body.acct-design #hn-age-checklist #filter-chips-checklist .cat-chip.active{background:color-mix(in srgb,var(--cat) 10%,#fff);border-color:var(--cat);color:var(--cat);font-weight:700}
+body.acct-design #subsidy-seg .seg-tab{background:#f2f3f5!important;color:#304761!important;border-color:#d5deea!important}
+body.acct-design #subsidy-seg .seg-tab.active{background:#405a79!important;color:#fff!important;border-color:#405a79!important}
+body.acct-design #subsidy-seg .seg-tab .seg-n{background:#e3e9f2!important;color:#304761!important}
+body.acct-design #subsidy-seg .seg-tab.active .seg-n{background:#ffffff26!important;color:#fff!important}

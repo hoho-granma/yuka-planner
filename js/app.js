@@ -757,13 +757,14 @@
   function renderFilterChipsInto(containerId) {
     const wrap = el(containerId);
     if (!wrap) return;
-    const allOn = Object.keys(CATEGORY_META).every((k) => activeCats.has(k));
+    const categories = Object.entries(CATEGORY_META).filter(([key]) => containerId !== "filter-chips-checklist" || key !== "행정·지원금");
+    const allOn = categories.every(([key]) => activeCats.has(key));
     // G15-4: 계정 모드에서만 '전체'를 맨 앞에(OFF 는 기존 맨 끝 그대로)
     const allFirst = containerId === "filter-chips-checklist" && typeof acctEnabled === "function" && acctEnabled();
     const allBtn = `<button class="chip chip-all ${allOn ? "active" : ""}" aria-pressed="${allOn}" data-cat="__all">전체</button>`;
     wrap.innerHTML =
       (allFirst ? allBtn : "") +
-      Object.entries(CATEGORY_META)
+      categories
         .map(([key, meta]) => {
           const active = activeCats.has(key);
           return `<button class="chip cat-chip ${active ? "active" : ""}" aria-pressed="${active}" data-cat="${key}" style="--cat:${meta.color}">${meta.label}</button>`; // D34 C: 흰 면 + 색 테두리·점(꺼진 칩은 흐리게)
@@ -775,7 +776,10 @@
       chip.addEventListener("click", () => {
         const cat = chip.getAttribute("data-cat");
         // "전체" 토글: 전부 켜져 있으면 전부 끄고, 하나라도 꺼져 있으면 전부 켠다.
-        if (cat === "__all") activeCats = Object.keys(CATEGORY_META).every((k) => activeCats.has(k)) ? new Set() : new Set(Object.keys(CATEGORY_META));
+        if (cat === "__all") {
+          const allSelected = categories.every(([key]) => activeCats.has(key));
+          categories.forEach(([key]) => allSelected ? activeCats.delete(key) : activeCats.add(key));
+        }
         else if (activeCats.has(cat)) activeCats.delete(cat);
         else activeCats.add(cat);
         renderFilterChips();
@@ -2724,7 +2728,7 @@
     const pastHidden = beyondRange && !showPastInfant;
     // 학령기(72개월 초과 월령) 항목은 영유아 항목이 아니므로 숨기지 않는다.
     const pastKeep = (e) => monthKeysOf(e).some((k) => k === NEED_CHECK_GROUP || k === SCHOOL_GROUP || (typeof k === "number" && k > ChildTimeline.SERVICE_RANGE.maxMonths));
-    const items = HNLogic.hidePastInfantItems(visibleSchedule().filter(inScope).filter(statusOk), completed, { birthDate: profile.birthDate, today: new Date(), showPast: !pastHidden, isKeep: pastKeep }).sort((a, b) => a.date - b.date);
+    const items = HNLogic.hidePastInfantItems(visibleSchedule().filter(e => e.category !== "행정·지원금").filter(inScope).filter(statusOk), completed, { birthDate: profile.birthDate, today: new Date(), showPast: !pastHidden, isKeep: pastKeep }).sort((a, b) => a.date - b.date);
     const nowAge = Math.max(0, ChildTimeline.completedMonths(profile.birthDate, new Date()));
     const curKey = checklistBucket(nowAge);
     const nextKey = checklistBucket(nowAge + 1);
