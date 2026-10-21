@@ -283,7 +283,7 @@
   <script src="js/family-access-view.js?v=3"></script>
   <link rel="stylesheet" href="css/family-access.css?v=2">
   <script src="js/household-sync.js?v=12"></script>
-  <script src="js/household-view.js?v=19"></script>
+  <script src="js/household-view.js?v=20"></script>
   <script src="js/kakao-login.js?v=2"></script>
 <script>/* 카카오 로그인 복귀(/oauth): 앱이 다 켜지기 전에 서버 확인 요청부터 보낸다(연결 모드는 제외). 결과는 앱의 acctKakaoComplete 가 받아 쓴다. 가족 접근 서버도 같이 깨워 둔다. */try{if(location.pathname==="/oauth"&&sessionStorage.getItem("hannun_kakao_link")!=="1"){var q=new URLSearchParams(location.search),c=q.get("code"),s=q.get("state");if(c&&s){var p=firebase.app().functions("asia-northeast3").httpsCallable("kakaoLogin")({code:c,redirectUri:location.origin+"/oauth",state:s}).then(function(x){return x.data});p.catch(function(){});window.__hnKakao={code:c,p:p};fetch("https://asia-northeast3-yuka-planner.cloudfunctions.net/familyAccess",{method:"POST",mode:"no-cors",keepalive:true,headers:{"Content-Type":"text/plain"},body:"{}"}).catch(function(){})}}}catch(e){}</script>
   <script src="js/auth-service.js?v=6"></script>
@@ -356,7 +356,7 @@
   <script src="js/education-info.js?v=11"></script>
   <script src="js/growth-learning-view.js?v=7"></script>
   <script src="js/character-ui.js?v=13"></script>
-  <link rel="stylesheet" href="css/character-ui.css?v=49"/>
+  <link rel="stylesheet" href="css/character-ui.css?v=50"/>
   <link rel="stylesheet" href="css/family-theme.css?v=21"/>
   <script src="js/family-theme.js?v=11"></script>
   <script src="js/capture/source-photo.js?v=1"></script>
@@ -365,7 +365,7 @@
   <link rel="stylesheet" href="css/motion.css?v=3"/>
   <script src="js/motion.js?v=1"></script>
   <script src="js/family-summary.js?v=1"></script>
-  <script src="js/app.js?v=261"></script>
+  <script src="js/app.js?v=262"></script>
   <!-- 글자 크기 고정(최종 값). 외부 CSS 여러 개가 같은 글자에 서로 다른 크기를 !important 로 정해 두고 있어서, 기기·캐시 상태에 따라 앞선 파일의 값이 이길 수 있다(특히 iOS 웹킷의 HTTP 캐시·홈 화면 앱). HTML 은 항상 새로 받으므로 마지막 값만 여기에 한 번 더 둔다.
        15px: 카드(섹션) 제목 / 14px: 일정·할일 제목·시간·기한 / 12px: (2시간) 같은 소요 시간 / 10px: 카테고리 태그(홈·캘린더 목록·할일 탭). 바꿀 때는 css/family-theme.css 의 --hn-family-list-font-size 와 함께 고친다(test/font-size-lock.test.js 가 둘을 같이 잰다). -->
   <style id="hn-typography-lock">

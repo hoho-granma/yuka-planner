@@ -385,3 +385,8 @@ img.hn-avatar,img.hn-face.hn-avatar,.hn-calendar-people .on img.hn-face.hn-avata
 .hn-avatar-options [aria-pressed="true"] span{background:#E9DAFF;color:#6210CC;font-weight:700}
 .hn-avatar-options button:focus-visible{outline:2px solid #6210CC;outline-offset:2px;border-radius:10px}
 .hn-avatar-options button:disabled{cursor:wait;opacity:.6}
+
+/* 월 달력: 담당자 색 막대 + 일정 건수. 얼굴 이미지는 날짜 칸에 넣지 않는다. */
+.markers.chips .hn-day-owner-bar{display:flex;align-items:center;gap:4px;width:100%;min-width:0;height:12px;line-height:12px}
+.hn-day-owner-bar i{display:block;flex:1;min-width:0;height:6px;border-radius:2px}
+.hn-day-owner-bar small{flex:none;font-size:9px;font-weight:700;line-height:12px;color:var(--fg)}
