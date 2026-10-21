@@ -7,15 +7,18 @@
 - 대표 퍼플과 차콜 혜택 라벨. 역할별 아이콘 3종 및 프로필 수정 폼의 선택·저장·취소.
 - 작업 트리의 네이티브 로그인·위젯 구현 및 개인 조사 자료는 이 릴리스에서 제외.
 
-## Firebase 운영 확인 (2026-10-21)
-- 운영 familyAccess 소스를 읽어 확인: 마지막 갱신 2026-10-12, setAvatar 액션 없음.
-- 운영 Firestore 규칙은 로컬 firestore.rules와 일치. 규칙 파일 수정·배포 없음.
-- 이모지는 Admin SDK를 사용하는 familyAccess.setAvatar에서 가족 권한·역할·성별을 검증해 저장한다. 클라이언트 직접 쓰기 권한 확대 불필요.
+## Firebase 운영 반영 (2026-10-21)
+- 사용자 승인 후 `family-access:familyAccess`만 배포 완료. 운영 상태 ACTIVE, 2026-10-21 07:58 UTC 갱신.
+- 배포 소스의 setAvatar 액션과 비로그인 요청 UNAUTHENTICATED 응답 확인.
+- familyAccess.setAvatar가 가족 권한·역할·성별을 검증해 저장한다. 클라이언트 직접 쓰기 권한 확대 없음.
 - 저장 위치: families/{familyId}/members/{memberId}.avatarId, families/{familyId}/childLinks/{childKey}.avatarId.
-- avatarId가 없으면 역할별 기본 이미지를 표시하므로 기존 문서 일괄 변경·추가 인덱스·Storage 규칙 변경은 필요 없다.
 - 역할은 members.role, 아이 성별은 children/{familyCode}.profile.gender를 기준으로 검증한다.
-- 웹 push는 Hosting만 자동 배포한다. 아이콘 저장을 운영에서 사용하려면 familyAccess 함수의 별도 배포가 필요하다. 이번 작업에서는 함수·규칙 배포나 운영 DB 쓰기를 하지 않는다.
-- 배포 시 승인된 소스에서 familyAccess 함수만 선택한다: firebase deploy --config firebase.approval.json --only functions:familyAccess --project yuka-planner. 규칙이나 다른 함수는 포함하지 않는다.
+- Firestore 및 한눈육아 기본 Storage 버킷 규칙은 운영본·로컬 일치 확인과 백업 후 동일 내용 재배포. 배포 후 일치 재확인.
+- 운영 DB의 누락된 기본 이모지 12개(보호자 7·아이 5)를 문서 updateTime 조건부 원자적 쓰기로 채우고 12개 모두 읽어 검증. 기존 선택값·삭제된 프로필은 변경하지 않음.
+- 성별 미설정 아이 2명은 중립 아이콘 유지. 추가 인덱스·스키마 변경 없음.
+- DB 변경 전 필드 존재 여부·원래 값, 커밋 결과, 배포 전후 함수 소스와 규칙은 git 제외 로컬 백업에 보관. 개인정보·문서 ID는 이 기록에 포함하지 않음.
+- 실제 로그인 계정으로 프로필 저장을 누르는 브라우저 검증은 수행하지 않음. 관련 서버 회귀 검사 28개 통과.
+- 웹 push는 Hosting만 자동 배포한다. 함수의 명시적 배포 필터는 `--only functions:family-access:familyAccess`다.
 
 ## 검증
 - 커밋에 등록된 파일만 별도 폴더로 추출해 JS 구문·관련 Node 회귀 검사.
