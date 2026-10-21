@@ -15,6 +15,18 @@
   function todosForDay(todos, people, links, date) {
     return UI.list(normalizeTodos(todos, links), people, date, true);
   }
+  // 홈은 이번 주(월~일)에 기한이 있는 미완료 할일만, 기한 오름차순으로 보여준다.
+  function todosForWeek(todos, people, links, date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return [];
+    const start = new Date(date + 'T00:00:00Z');
+    if (!Number.isFinite(start.getTime())) return [];
+    start.setUTCDate(start.getUTCDate() - (start.getUTCDay() + 6) % 7);
+    const end = new Date(start); end.setUTCDate(end.getUTCDate() + 6);
+    const first = start.toISOString().slice(0, 10), last = end.toISOString().slice(0, 10);
+    return UI.list(normalizeTodos(todos, links), people, date, false)
+      .filter(t => !t.done && /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate || '') && t.dueDate >= first && t.dueDate <= last)
+      .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  }
   function schedulesForDay(model, date) {
     const day = model.days.get(date);
     if (!day) return [];
@@ -46,5 +58,5 @@
     return {schemaVersion:1, context, state:'ready', generatedAt:now, observedAt,
       timeZone, partial:!!partial, days};
   }
-  return {normalizeTodos, todosForDay, schedulesForDay, personColor, build};
+  return {normalizeTodos, todosForDay, todosForWeek, schedulesForDay, personColor, build};
 });
