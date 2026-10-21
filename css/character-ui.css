@@ -390,3 +390,6 @@ img.hn-avatar,img.hn-face.hn-avatar,.hn-calendar-people .on img.hn-face.hn-avata
 .markers.chips .hn-day-owner-bar{display:flex;align-items:center;justify-content:space-between;gap:4px;width:100%;min-width:0;height:12px;line-height:12px;padding:1px 4px;box-sizing:border-box;border-radius:3px}
 .hn-day-owner-bar img.hn-face.hn-avatar{width:10px;height:10px;flex:none;transform:none;clip-path:circle(46% at 50% 50%)}
 .hn-day-owner-bar small{flex:none;font-size:9px;font-weight:700;line-height:10px;color:#24252a}
+
+/* 홈 주간 할일: 일정 추가 버튼과 같은 형태, 기존 챙길 것의 핑크 팔레트. */
+#home-body .hn-hc-todo .hn-home-todo-add{border-color:#e8b9ce;background:#fdf4f8;color:var(--hc-d)}
