@@ -64,12 +64,12 @@ body.acct-design #subsidy-seg .seg-tab.active,body.acct-design #subsidy-scope .s
 body.acct-design #subsidy-seg .seg-tab.active .seg-n{background:#e3d4be!important;color:#24252a!important}
 #us-add-slot .us-add,.us-btn.us-add{background:#ede2d1!important;border-color:#e1d9cb!important;color:#24252a!important}
 
-/* Approved onboarding: wide sand circle + lavender circle, white surface. */
-body:has(#view-landing.acct-on:not(.hidden)){background:#fff!important}
-#view-landing.acct-on{--nd-ob-bg:#fff;--nd-ob-circle1:#f5eeff;--nd-ob-circle2:#e9daff;--nd-indigo:#6210cc;--c-active:#6210cc;--c-primary:#6210cc;--text:#302c3c;--text-muted:#797281;background:#fff!important}
-#view-landing.acct-on .acct-ob1-top{background:#fff!important}
-#view-landing.acct-on .acct-ob1-top::before{width:300px;height:300px;right:-160px;top:-130px;background:#eee1cf}
-#view-landing.acct-on .acct-ob1-top::after{background:#e8ddf3}
+/* 온보딩: 대표 보라색과 라벤더 면으로 통일. */
+body:has(#view-landing.acct-on:not(.hidden)){background:#f8f3ff!important}
+#view-landing.acct-on{--nd-ob-bg:#f8f3ff;--nd-ob-circle1:#d9befa;--nd-ob-circle2:#c7a6f2;--nd-indigo:#6210cc;--c-active:#6210cc;--c-primary:#6210cc;--text:#302c3c;--text-muted:#756284;background:#f8f3ff!important}
+#view-landing.acct-on .acct-ob1-top{background:#f8f3ff!important}
+#view-landing.acct-on .acct-ob1-top::before{width:300px;height:300px;right:-160px;top:-130px;background:#d9befa}
+#view-landing.acct-on .acct-ob1-top::after{background:#c7a6f2}
 #view-landing.acct-on .acct-logo-w{color:#6210cc}
 #view-landing.acct-on .acct-btn-primary{background:#6210cc!important;color:#fff!important;border-color:#6210cc!important;border-radius:8px}
 #view-landing.acct-on .acct-btn-text{color:#6210cc!important}
@@ -153,28 +153,32 @@ body.acct-design #hn-age-checklist #filter-chips-checklist .chip-all.active{back
 .tab-childbar [data-home-child][aria-busy="true"]{outline:2px solid #6210cc;outline-offset:2px}
 .tab-childbar [data-home-child][aria-busy="true"]::after{content:' · 불러오는 중';font-size:10px;color:#6210cc}
 
-/* 2026-10-21 확정: 체크리스트·혜택 필터에만 네이비 미스트 적용. */
-#hn-age-checklist #status-filter-checklist{background:#e3e9f2;border-color:#d5deea}
-#hn-age-checklist #status-filter-checklist .sf-btn{color:#304761}
-#hn-age-checklist #status-filter-checklist .sf-btn.active,#hn-age-checklist #status-filter-checklist .sf-btn[aria-selected="true"]{background:#405a79;color:#fff;font-weight:700;box-shadow:none}
+/* 2026-10-22 확정: 체크리스트·혜택 필터는 연보라색, 분류별 색상은 유지. */
+#hn-age-checklist #status-filter-checklist{background:#f4effa;border-color:#dfd0f0}
+#hn-age-checklist #status-filter-checklist .sf-btn{color:#6210cc}
+#hn-age-checklist #status-filter-checklist .sf-btn.active,#hn-age-checklist #status-filter-checklist .sf-btn[aria-selected="true"]{background:#e9daff;color:#6210cc;font-weight:700;box-shadow:none}
 body.acct-design #hn-age-checklist #filter-chips-checklist{display:flex;flex-wrap:nowrap;width:100%;gap:6px;padding:2px 0 6px;margin:0 0 12px;overflow-x:auto;box-sizing:border-box;scrollbar-width:thin}
-body.acct-design #hn-age-checklist #filter-chips-checklist .chip{flex:0 0 auto;min-width:0;min-height:30px;padding:5px 10px;border:1px solid #d5deea;border-radius:999px;background:#fff;color:#304761;font-size:11px;line-height:18px;white-space:nowrap;justify-content:center}
-body.acct-design #hn-age-checklist #filter-chips-checklist .chip-all.active{background:#e3e9f2;border-color:#405a79;color:#304761;font-weight:700}
+body.acct-design #hn-age-checklist #filter-chips-checklist .chip{flex:0 0 auto;min-width:0;min-height:30px;padding:5px 10px;border:1px solid #dfd0f0;border-radius:999px;background:#fff;color:#6210cc;font-size:11px;line-height:18px;white-space:nowrap;justify-content:center}
+body.acct-design #hn-age-checklist #filter-chips-checklist .chip-all.active{background:#e9daff;border-color:#bca2de;color:#6210cc;font-weight:700}
 body.acct-design #hn-age-checklist #filter-chips-checklist .cat-chip{border-color:var(--cat);color:var(--cat)}
 body.acct-design #hn-age-checklist #filter-chips-checklist .cat-chip.active{background:color-mix(in srgb,var(--cat) 10%,#fff);border-color:var(--cat);color:var(--cat);font-weight:700}
-body.acct-design #subsidy-seg .seg-tab{background:#f2f3f5!important;color:#304761!important;border-color:#d5deea!important}
-body.acct-design #subsidy-seg .seg-tab.active{background:#405a79!important;color:#fff!important;border-color:#405a79!important}
-body.acct-design #subsidy-seg .seg-tab .seg-n{background:#e3e9f2!important;color:#304761!important}
-body.acct-design #subsidy-seg .seg-tab.active .seg-n{background:#ffffff26!important;color:#fff!important}
+body.acct-design #subsidy-seg .seg-tab{background:#f8f5fc!important;color:#6210cc!important;border-color:#dfd0f0!important}
+body.acct-design #subsidy-seg .seg-tab.active{background:#e9daff!important;color:#6210cc!important;border-color:#bca2de!important}
+body.acct-design #subsidy-seg .seg-tab .seg-n{background:#e9daff!important;color:#6210cc!important}
+body.acct-design #subsidy-seg .seg-tab.active .seg-n{background:#dcc5fa!important;color:#6210cc!important}
 
 /* 혜택 필터의 바탕·지역 탭에도 따뜻한 베이지를 남기지 않는다. */
-body.acct-design #subsidy-seg{background:#e3e9f2;border:1px solid #d5deea}
-body.acct-design #subsidy-scope .scope-chip{background:#fff!important;color:#304761!important;border-color:#d5deea!important}
-body.acct-design #subsidy-scope .scope-chip.active{background:#e3e9f2!important;color:#304761!important;border-color:#405a79!important}
+body.acct-design #subsidy-seg{background:#f4effa;border:1px solid #dfd0f0}
+body.acct-design #subsidy-scope .scope-chip{background:#fff!important;color:#6210cc!important;border-color:#dfd0f0!important}
+body.acct-design #subsidy-scope .scope-chip.active{background:#e9daff!important;color:#6210cc!important;border-color:#bca2de!important}
 #tab-home .hn-home-footer{display:flex;justify-content:center;padding:20px 0 12px}
 #tab-home .hn-home-footer .btn-refresh{min-height:40px;height:auto;gap:6px;border-radius:8px;padding:8px 12px}
 #tab-home .hn-home-footer .btn-refresh:not(.has-update){background:transparent;border:1px solid transparent;color:#64748b}
 
-#tab-calendar #us-add-slot .hn-calendar-add{display:block;width:100%;margin-top:16px;padding:13px 16px;border:1px solid #bcc3e8;border-radius:12px;background:#f4f5fc;color:#2f3a86;font:inherit;font-size:13px;cursor:pointer}
+#tab-calendar #us-add-slot .hn-calendar-add{display:block;width:100%;margin-top:16px;padding:13px 16px;border:1px solid #6210cc;border-radius:12px;background:#6210cc;color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 
 #tab-home .hn-home-footer .btn-refresh.has-update{background:transparent;border-color:transparent;box-shadow:none;color:#6210cc}
+
+#view-landing.acct-on #acct-landing,#view-landing.acct-on .acct-main,#view-landing.acct-on .acct-cta{background:#f8f3ff}
+#view-landing.acct-on .acct-ob1-top .acct-title{color:#43216b}
+#view-landing.acct-on .acct-ob1-top .acct-hl{color:#6210cc;background:linear-gradient(transparent 55%,#e9daff 55%)}

@@ -178,9 +178,6 @@ body.acct-design .hn-detail-actions .as-btn,body.acct-design .hn-detail-actions 
 body.acct-design .hn-detail-sheet .apply-choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;align-items:stretch}
 body.acct-design .hn-detail-sheet .apply-choice #btn-mark-na,body.acct-design .hn-detail-sheet .apply-choice #btn-toggle-complete{display:flex!important;align-items:center;justify-content:center;min-height:48px;height:48px;width:100%;padding:10px!important;margin:0!important;box-sizing:border-box;border-radius:10px;border:1px solid #dedde3!important;background:transparent!important;color:#302c3c!important;font-size:14px;font-weight:600}
 /* Benefit state tabs: sand surface and border in every state. */
-body.acct-design #subsidy-seg{background:#f5eee3!important;border:1px solid #e1d3bd!important;border-radius:8px}
-body.acct-design #subsidy-seg .seg-tab{background:#f5eee3!important;border-color:#e1d3bd!important;color:#24252a!important}
-body.acct-design #subsidy-seg .seg-tab.active{background:#e7d6be!important;border-color:#d7c3a5!important;color:#24252a!important}
 /* Approved compact family calendar and header. */
 #brand-text .hn-family-name{color:var(--accent,#6210cc)!important}
 #brand-text .hn-brand-dot{display:inline-block;margin:0 3px}
@@ -395,5 +392,23 @@ img.hn-avatar,img.hn-face.hn-avatar,.hn-calendar-people .on img.hn-face.hn-avata
 #home-body .hn-hc-todo .hn-home-todo-add{border-color:#e8b9ce;background:#fdf4f8;color:var(--hc-d)}
 
 /* 날짜별 일정에서만 담당자 아이콘 아래 이름을 표시한다. */
-#selected-day-list .hn-schedule-person{display:flex;flex-direction:column;align-items:center;gap:3px;flex:0 0 40px;max-width:40px}
-#selected-day-list .hn-schedule-person-name{display:block;max-width:100%;font-size:11px;line-height:1.3;text-align:center;color:#64748b;overflow-wrap:anywhere;word-break:keep-all}
+#selected-day-list .hn-schedule-person{display:flex;flex-direction:column;align-items:center;gap:2px;flex:0 0 40px;max-width:40px}
+#selected-day-list .hn-schedule-person-name{display:block;max-width:100%;font-size:11px;font-weight:600;line-height:1.3;text-align:center;color:#4b4b4b;overflow-wrap:anywhere;word-break:keep-all}
+
+/* 할일 탭의 챙길 것: 홈 주간 할일과 같은 로즈핑크 팔레트. */
+#hn-family-tasks-tab{--hc-m:#c04a7c;--hc-t:#f8e0ea;--hc-d:#8c2c58;padding:0 17px 14px!important;overflow:hidden}
+#hn-family-tasks-tab>.hn-section-head{background:var(--hc-t);margin:0 -17px 4px;padding:10px 17px;min-height:46px}
+#hn-family-tasks-tab>.hn-section-head h3,#hn-family-tasks-tab .hn-hide-done{color:var(--hc-d)}
+#hn-family-tasks-tab .hn-hide-done i{background:#e8b9ce}
+#hn-family-tasks-tab .hn-hide-done.on i{background:var(--hc-m)}
+#hn-family-tasks-tab .hn-todo-add-wide{background:#fdf4f8;border-color:#e8b9ce;color:var(--hc-d)}
+#hn-family-tasks-tab .hn-task.done .hn-check{background:var(--hc-m);border-color:var(--hc-m);color:#fff}
+
+/* 홈 카드 헤더의 메뉴 바로가기. */
+#home-body .hn-section-link{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;width:26px;height:26px;padding:0;border:0;border-radius:6px;background:transparent;color:var(--hc-d);font:inherit;font-size:22px;line-height:1;cursor:pointer}
+#home-body .hn-section-link::after{content:"";position:absolute;inset:-9px}
+
+/* 날짜별 일정 목록의 구분선 간격만 줄인다. 홈 목록은 유지한다. */
+#selected-day-list.event-list{gap:0}
+#selected-day-list .hn-timeline{padding:6px 0;min-height:0}
+#selected-day-list .event-item.li2,#selected-day-list .us-card{padding-top:6px;padding-bottom:6px}
