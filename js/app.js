@@ -2540,7 +2540,7 @@
   }
   /** D74: 날짜 패널(#selected-day-list)용 자동 일정 = 제목 1줄 + 내용 1줄. 완료한 항목은 제목 줄만. */
   function eventItemListHtml(e) {
-    if (e.autoFamilyCode) return `<div class="event-item li2 ${e.autoDone ? "completed" : ""}" data-auto-family="${esc(e.autoFamilyCode)}" data-id="${esc(e.id)}"><div class="body"><p class="li-l1"><span class="us-src us-src-auto">자동</span><span class="title">${esc(e.autoChildName || "아이")} · ${esc(e.title)}</span></p><p class="li-l2">${e.autoDone ? "완료" : "추천 일정 · 상세에서 예약·완료를 관리해요"}</p></div></div>`;
+    if (e.autoFamilyCode) return `<div class="event-item li2 hn-auto-single-line ${e.autoDone ? "completed" : ""}" data-auto-family="${esc(e.autoFamilyCode)}" data-id="${esc(e.id)}"><div class="body"><p class="li-l1"><span class="us-src us-src-auto">자동</span><span class="title">${esc(e.autoChildName || "아이")} · ${esc(e.title)}</span>${e.autoDone ? '<span class="hn-auto-done">완료</span>' : ""}</p></div></div>`;
     const isDone = !!completed[e.id];
     const dl = autoDateLineOf(e);
     const lead = e.category === "행정·지원금" ? subsidyTagsHtml(e) : "";
@@ -5562,7 +5562,7 @@
     const iso = toISODate(date);
     const day = usBuildModel(iso, iso).days.get(iso);
     const panel = UserScheduleView.dayPanel(day, usLinks(), { docById: usDocById, ...(autoLinkOn() ? { autoTitleOf: usAutoTitleOf } : {}) });
-    const group = (title) => `<h4 class="us-group">${esc(title)}</h4>`;
+    const group = (title) => title === "자동 일정" ? "" : `<h4 class="us-group">${esc(title)}</h4>`;
     // 36개월 이상: 칸에 점은 안 찍지만 그날 시작하는 자동 항목(완료한 줄 포함)도 보인다(예: 12월 1일 취학통지서·예비소집 확인)
     const startsToday = acct36Active() && !charNone ? visibleSchedule(true).filter((e) => toISODate(e.fixedDate || e.date) === iso && !day.benefit.some(a => a.id === e.id && (!a.autoChildKey || a.autoChildKey === usActiveChildKey())) && !day.planned.some(a => a.id === e.id && (!a.autoChildKey || a.autoChildKey === usActiveChildKey())) && !autoLinkedHidden(e)) : [];
     const plannedRows = day.planned.concat(startsToday);

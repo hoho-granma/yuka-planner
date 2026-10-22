@@ -182,3 +182,25 @@ body.acct-design #subsidy-scope .scope-chip.active{background:#e9daff!important;
 #view-landing.acct-on #acct-landing,#view-landing.acct-on .acct-main,#view-landing.acct-on .acct-cta{background:#f8f3ff}
 #view-landing.acct-on .acct-ob1-top .acct-title{color:#43216b}
 #view-landing.acct-on .acct-ob1-top .acct-hl{color:#6210cc;background:linear-gradient(transparent 55%,#e9daff 55%)}
+
+/* 2026-10-22: saved color review selections. */
+:root,body,body.acct-design{--hn-family-name-color:#4f46a5;--hn-todo-due-color:#ad596f;--hn-calendar-add-color:#6422b8;--k-vx:#2866bb;--k-hc:#8a609d;--k-dv:#337b75;--k-lf:#986712;--k-sf:#ce3b30;--k-bn:#475569}
+#brand-text,.nav-item.active{color:#475569!important}
+#brand-text .hn-family-name,#brand-text .hn-house-name{color:var(--hn-family-name-color)!important}
+#home-body .hn-hc-todo .hn-task time,#hn-family-tasks-tab .hn-task time{color:var(--hn-todo-due-color)!important}
+#us-add-slot .hn-calendar-add{background:var(--hn-calendar-add-color)!important;color:#fff!important}
+body.acct-design #status-filter-checklist,body.acct-design #subsidy-seg{background:#faf6f4!important;border-color:#e8dad1!important}
+body.acct-design #status-filter-checklist .sf-btn,body.acct-design #subsidy-seg .seg-tab,body.acct-design #subsidy-scope .scope-chip{background:#fcfbfa!important;color:#686272!important}
+body.acct-design #status-filter-checklist .sf-btn.active,body.acct-design #subsidy-seg .seg-tab.active,body.acct-design #subsidy-scope .scope-chip.active{background:#f0e7e2!important;color:#a46a48!important;border-color:#dbc3b6!important}
+body.acct-design #subsidy-seg .seg-tab.active .seg-n{background:#ede1da!important;color:#a46a48!important}
+#subsidy-body .prov-tag{background:#edf0f3!important;color:#475569!important}
+#selected-day-list .hn-schedule-person-name{font-size:10px}
+#selected-day-list .hn-auto-single-line .li-l1{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;margin:0;min-width:0}
+#selected-day-list .hn-auto-single-line .body{min-width:0}
+#selected-day-list .hn-auto-single-line .title{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#selected-day-list .hn-auto-single-line .us-src,#selected-day-list .hn-auto-done{flex-shrink:0}
+#selected-day-list .hn-auto-done{font-size:10px;color:#747078}
+
+/* Selected-day rows only: keep home geometry unchanged. */
+#selected-day-list .hn-timeline>time{color:#6422b8!important;position:relative;left:3px}
+#selected-day-list .hn-timeline>.hn-schedule-person{transform:translateX(-3px)}
