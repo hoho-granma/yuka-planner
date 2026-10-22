@@ -204,3 +204,15 @@ body.acct-design #subsidy-seg .seg-tab.active .seg-n{background:#ede1da!importan
 /* Selected-day rows only: keep home geometry unchanged. */
 #selected-day-list .hn-timeline>time{color:#6422b8!important;position:relative;left:3px}
 #selected-day-list .hn-timeline>.hn-schedule-person{transform:translateX(-3px)}
+
+/* 2026-10-22: selected onboarding palette. */
+body:has(#view-landing.acct-on:not(.hidden)),body:has(#view-landing.acct-on:not(.hidden)) #app{background:#fff!important}
+#view-landing.acct-on{--nd-ob-bg:#fff;--nd-ob-circle1:#6422b8;--nd-ob-circle2:#dcb592;--text-muted:#8b7264;background:#fff!important}
+#view-landing.acct-on #acct-landing,#view-landing.acct-on .acct-main,#view-landing.acct-on .acct-cta,#view-landing.acct-on .acct-ob1-top{background:#fff!important}
+#view-landing.acct-on .acct-ob1-top::before{background:#6422b8}
+#view-landing.acct-on .acct-ob1-top::after{background:#dcb592}
+#view-landing.acct-on .acct-ob1-top .acct-title{color:#43216b}
+#view-landing.acct-on .acct-sub{color:#8b7264!important}
+#view-landing.acct-on .acct-logo-w{color:#6210cc}
+#view-landing.acct-on .acct-ob1-top .acct-hl{color:#6210cc;background:linear-gradient(transparent 55%,#ffe957 55%)}
+#view-landing.acct-on .acct-btn-primary{background:#6210cc!important;border-color:#6210cc!important;color:#fff!important}
