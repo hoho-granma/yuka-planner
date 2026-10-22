@@ -202,8 +202,9 @@ body.acct-design #subsidy-seg .seg-tab.active .seg-n{background:#ede1da!importan
 #selected-day-list .hn-auto-done{font-size:10px;color:#747078}
 
 /* Selected-day rows only: keep home geometry unchanged. */
-#selected-day-list .hn-timeline>time{color:#6422b8!important;position:relative;left:3px}
-#selected-day-list .hn-timeline>.hn-schedule-person{transform:translateX(-3px)}
+#selected-day-list .hn-timeline{gap:6px}
+#selected-day-list .hn-timeline>time{color:#6422b8!important;position:relative;left:3px;width:48px;flex:0 0 48px}
+#selected-day-list .hn-timeline>.hn-schedule-person{flex:0 0 32px;max-width:32px;transform:none}
 
 /* 2026-10-22: selected onboarding palette. */
 body:has(#view-landing.acct-on:not(.hidden)),body:has(#view-landing.acct-on:not(.hidden)) #app{background:#fff!important}

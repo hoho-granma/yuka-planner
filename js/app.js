@@ -3877,11 +3877,23 @@
     }
   }
 
+  function resetCalendarToToday() {
+    const now = new Date();
+    selectedCalendarDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    viewMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
+  // 앱을 다시 열거나 백그라운드에서 돌아와도 오늘 일정부터 보여 준다.
+  function resumeCalendarToToday() {
+    const view = el("view-calendar");
+    if (document.visibilityState !== "visible" || currentTab !== "calendar" || !view || view.classList.contains("hidden")) return;
+    switchTab("calendar");
+  }
+  document.addEventListener("visibilitychange", resumeCalendarToToday);
+  window.addEventListener("pageshow", resumeCalendarToToday);
+
   function switchTab(name) {
-    if (name === "calendar") {
-      selectedCalendarDate = new Date();
-      viewMonth = new Date(selectedCalendarDate.getFullYear(), selectedCalendarDate.getMonth(), 1);
-    }
+    if (name === "calendar") resetCalendarToToday();
     if (name === "growth") name = "home"; // 旧 메뉴·아이 삭제 후 복원 요청도 홈으로
     if (name === "places" && placesHiddenNow()) name = "home"; // D8: 임신 중에는 어디갈까로 가지 않는다(탭도 숨김)
     applyTabLayout(); // 임신 ↔ 출생 후 전환·아이 교체 뒤에도 탭 노출이 맞게
