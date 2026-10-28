@@ -204,16 +204,26 @@ service cloud.firestore {
         return signedIn() && a.status == 'ACTIVE' && a.permission in ['ADMIN','MEMBER'] && a.role != 'CHILD';
       }
       allow read: if isMemberOf(householdId);
-      allow create: if canUpload()
-        && request.resource.data.keys().hasOnly(['title','message','imagePath','thumbPath','createdAt','createdByUid'])
-        && request.resource.data.keys().hasAll(['title','message','imagePath','thumbPath','createdAt','createdByUid'])
-        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 60
-        && request.resource.data.message is string && request.resource.data.message.size() <= 4000
-        && request.resource.data.createdAt is int && request.resource.data.createdByUid == request.auth.uid
-        && ((request.resource.data.imagePath == null && request.resource.data.thumbPath == null && request.resource.data.message.size() > 0)
-          || (request.resource.data.imagePath == 'families/' + householdId + '/sharedFiles/' + fileId + '/image.jpg'
-            && request.resource.data.thumbPath == 'families/' + householdId + '/sharedFiles/' + fileId + '/thumb.jpg'));
-      allow update, delete: if false;
+      function fileOk(d) {
+        return d.keys().hasOnly(['title','message','imagePath','thumbPath','createdAt','createdByUid','updatedAt','deletedAt'])
+          && d.keys().hasAll(['title','message','imagePath','thumbPath','createdAt','createdByUid'])
+          && d.title is string && d.title.size() > 0 && d.title.size() <= 60
+          && d.message is string && d.message.size() <= 4000
+          && d.createdAt is int && d.createdByUid is string
+          && (!('updatedAt' in d) || d.updatedAt is int)
+          && (!('deletedAt' in d) || d.deletedAt is int)
+          && ((d.imagePath == null && d.thumbPath == null && d.message.size() > 0)
+            || (d.imagePath is string && d.thumbPath is string
+              && d.imagePath.matches('^families/' + householdId + '/sharedFiles/' + fileId + '/image(_[A-Za-z0-9_-]{1,80})?[.]jpg$')
+              && d.thumbPath.matches('^families/' + householdId + '/sharedFiles/' + fileId + '/thumb(_[A-Za-z0-9_-]{1,80})?[.]jpg$')));
+      }
+      allow create: if canUpload() && fileOk(request.resource.data)
+        && request.resource.data.createdByUid == request.auth.uid
+        && !request.resource.data.keys().hasAny(['deletedAt']);
+      allow update: if canUpload() && fileOk(request.resource.data)
+        && resource.data.get('deletedAt',null) == null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title','message','imagePath','thumbPath','updatedAt','deletedAt']);
+      allow delete: if false;
     }
 
     match /families/{householdId}/growthRecords/{recordId} {

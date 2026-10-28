@@ -8484,13 +8484,13 @@
     const wrap=el('home-body');if(!wrap)return;
     wrap.querySelectorAll('#a36-home-todo,#hn-family-tasks,#ns-banner,.home-child-line,.hn-home-date').forEach(n=>n.remove());
     wrap.insertAdjacentHTML('beforeend',charTodoSection(true));
-    SharedFiles.mount({container:wrap,familyId:hh.hid,user:acct.user,openModal:()=>{modalMode='profile';el('detail-modal').classList.remove('hidden');},closeModal:closeDetail});
+    SharedFiles.mount({container:wrap,familyId:hh.hid,user:acct.user,canManage:['ADMIN','MEMBER'].includes(acct.account?.permission)&&(usMembers().find(m=>m.memberId===usMeId())?.role||acct.account?.role)!=='CHILD',openModal:()=>{modalMode='profile';el('detail-modal').classList.remove('hidden');},closeModal:closeDetail});
     const family=wrap.querySelector('.hn-schedules');if(family)wrap.prepend(family);
     syncHomeChildPicker();
     charHeader();
   };
   const charBrandBase=updateBrandText;
-  updateBrandText=function(){charBrandBase();const b=el('brand-text');if(b&&profile)b.innerHTML=`한눈육아<span class="hn-family-name"><span class="hn-brand-dot">·</span>${esc(childDisplayName())}네집</span>`;};
+  updateBrandText=function(){charBrandBase();const b=el('brand-text');if(b)b.textContent='한눈육아';};
   function charHeader(){const head=document.querySelector('.app-header');if(!head||!acctEnabled())return;let b=el('hn-profile');if(!b){b=document.createElement('button');b.id='hn-profile';b.className='hn-profile';b.setAttribute('aria-label','내 프로필');b.onclick=()=>acctProfileSheet();head.appendChild(b);}const m=charPeople(true).find(p=>p.key===localStorage.getItem('hn_selected_profile'))||charPeople(true).find(p=>p.key==='MEMBER:'+usMeId())||{role:'MOM',name:'내 프로필'};b.innerHTML=charImage(m);}
   let hnHomeDay=0; // 홈 우리 가족 일정 탭: 0 오늘 · 1 내일 · 2 모레(이 기기에서만 기억, 저장 안 함)
   usHomeCardHtml=function(){if(!usActive())return '';const base=new Date(),dates=[0,1,2].map(n=>toISODate(new Date(base.getFullYear(),base.getMonth(),base.getDate()+n))),model=usBuildModel(dates[0],dates[2],{scope:'ALL',showAuto:false}),names=['오늘','내일','모레'],sel=Math.min(2,Math.max(0,hnHomeDay)),perDay=dates.map(d=>{const day=model.days.get(d);return day?day.user:[];}),dt=new Date(base.getFullYear(),base.getMonth(),base.getDate()+sel);return `<section class="card hn-schedules hn-hc-cal"><div class="hn-section-head"><h3><span class="hn-schedule-date">${dt.getMonth()+1}/${dt.getDate()}(${['일','월','화','수','목','금','토'][dt.getDay()]})</span> 가족 캘린더</h3><button type="button" class="hn-section-link" data-char-calendar aria-label="가족 캘린더 메뉴로 이동"><span aria-hidden="true">→</span></button></div><div class="hn-hday-tabs" role="tablist">${names.map((n,i)=>`<button type="button" role="tab" aria-selected="${i===sel}" data-hn-hday="${i}" class="${i===sel?'on':''}">${n}</button>`).join('')}</div>${perDay[sel].map(charRow).join('')||`<p class="fine-print">${names[sel]} 등록된 일정이 없어요.</p>`}${sel===2?'<button type="button" class="hn-hday-more" data-char-calendar>이후 일정은 가족캘린더 보기 →</button>':'<button type="button" class="hn-hday-more" data-hn-hadd>일정 추가하기</button>'}</section>`;};

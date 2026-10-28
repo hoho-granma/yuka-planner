@@ -20,9 +20,9 @@ service firebase.storage {
       allow read: if belongs(hid);
       allow create: if resource == null && belongs(hid)
         && member(hid).permission in ['ADMIN','MEMBER'] && member(hid).role != 'CHILD'
-        && fileId in ['image.jpg','thumb.jpg'] && request.resource.contentType == 'image/jpeg'
+        && fileId.matches('^(image|thumb)(_[A-Za-z0-9_-]{1,80})?[.]jpg$') && request.resource.contentType == 'image/jpeg'
         && request.resource.size > 0 && request.resource.size <= 4194304
-        && (fileId != 'thumb.jpg' || request.resource.size <= 1048576);
+        && (!fileId.matches('^thumb.*') || request.resource.size <= 1048576);
       allow update, delete: if false;
     }
     match /{path=**} { allow read, write: if false; }

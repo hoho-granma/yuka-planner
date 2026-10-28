@@ -26,7 +26,9 @@ path='families/f1/sharedFiles/message'
 check('adult message create',path,'mom',message)
 for uid in ['mom','dad','kid','viewer']:check('active family read',path,uid)
 for uid in ['pending','outsider',None]:check('unauthorized read',path,uid,allowed=False)
-check('immutable update',path,'mom',dict(message,title='변경'),False)
+check('adult title update',path,'dad',dict(message,title='변경',updatedAt=2))
+check('immutable creator',path,'dad',dict(message,createdByUid='dad'),False)
+check('immutable registration date',path,'mom',dict(message,createdAt=5),False)
 for uid in ['kid','viewer','pending','outsider']:
  check('non-adult writer','families/f1/sharedFiles/'+uid,uid,dict(message,createdByUid=uid),False)
 check('spoof creator','families/f1/sharedFiles/spoof','dad',message,False)
@@ -35,4 +37,12 @@ check('empty message','families/f1/sharedFiles/empty','mom',dict(message,message
 photo=dict(message,message='',imagePath='families/f1/sharedFiles/photo/image.jpg',thumbPath='families/f1/sharedFiles/photo/thumb.jpg')
 check('photo create','families/f1/sharedFiles/photo','mom',photo)
 check('unsafe photo path','families/f1/sharedFiles/unsafe','mom',dict(photo,imagePath='families/other/sharedFiles/photo/image.jpg'),False)
+replacement=dict(photo,imagePath='families/f1/sharedFiles/photo/image_version-2.jpg',thumbPath='families/f1/sharedFiles/photo/thumb_version-2.jpg',updatedAt=3)
+check('replace photo with unique filenames','families/f1/sharedFiles/photo','dad',replacement)
+for uid in ['kid','viewer','pending','outsider']:
+ check('non-adult cannot edit','families/f1/sharedFiles/photo',uid,dict(replacement,title='edited'),False)
+ check('non-adult cannot soft delete','families/f1/sharedFiles/photo',uid,dict(replacement,deletedAt=4),False)
+check('adult soft delete','families/f1/sharedFiles/photo','dad',dict(replacement,deletedAt=4))
+check('cannot restore deleted file','families/f1/sharedFiles/photo','mom',replacement,False)
+check('cannot edit deleted file','families/f1/sharedFiles/photo','mom',dict(replacement,deletedAt=4,title='changed'),False)
 print('Shared file authorization: PASS',count)
