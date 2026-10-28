@@ -217,3 +217,12 @@ body:has(#view-landing.acct-on:not(.hidden)),body:has(#view-landing.acct-on:not(
 #view-landing.acct-on .acct-logo-w{color:#6210cc}
 #view-landing.acct-on .acct-ob1-top .acct-hl{color:#6210cc;background:linear-gradient(transparent 55%,#ffe957 55%)}
 #view-landing.acct-on .acct-btn-primary{background:#6210cc!important;border-color:#6210cc!important;color:#fff!important}
+
+/* Home: compact spacing and add controls in each card header (2026-10-28). */
+body:has(#tab-home:not(.hidden)) .app-header{padding-top:8px!important;padding-bottom:0!important;margin-bottom:8px}
+#home-body>.hn-schedules{margin-top:0!important}
+#home-body .hn-hc-cal{--hc-m:#6210CC;--hc-t:#E9DAFF;--hc-d:#6210CC;border-color:#DFD0F0!important}
+#home-body .hn-header-add{display:inline-flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;margin:-7px -8px -7px 0;padding:0;border:0;border-radius:10px;background:transparent;color:var(--hc-d,#806326);cursor:pointer}
+#home-body .hn-header-add:hover{background:rgba(255,255,255,.5)}
+#home-body .hn-header-add:focus-visible{outline:2px solid currentColor;outline-offset:1px}
+#home-body .hn-header-add svg{display:block;pointer-events:none}
