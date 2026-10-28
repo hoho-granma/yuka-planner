@@ -6,17 +6,16 @@
 #home-body .hn-shared-files>.hn-section-head h3{color:#806326}
 #home-body .hn-shared-files .hn-hday-more{border-color:#E8D79F;background:#FFFBEE;color:#806326}
 
-/* Shared-document controls use their own theme; schedule entry keeps its colors. */
-.hn-file-entry{--accent:#806326;--accent-soft:#FFF3CC;--accent-dark:#6C511A;--hn-person-bg:#FFF3CC;color:#493D27}
-#modal-content .hn-file-entry>.hn-section-head{background:#FFF3CC;padding:14px 16px;border-radius:12px}
-#modal-content .hn-file-entry>.hn-section-head h3{color:#806326}
-#modal-content .hn-file-entry .hn-methods button{background:#FFFBEE!important;border-color:#E8D79F;color:#806326}
-#modal-content .hn-file-entry .hn-methods button.on{background:#FFF3CC!important;border-color:#B69A4C;color:#806326;font-weight:700}
-#modal-content .hn-file-entry [data-shared-analyze],#modal-content .hn-file-entry [data-shared-save]{background:#FFF3CC!important;border:1px solid #E8D79F!important;color:#806326!important;border-radius:12px;min-height:48px;padding:12px 16px;font:inherit;font-weight:700;box-shadow:none}
-#modal-content .hn-file-entry [data-shared-analyze]{width:100%}
-#modal-content .hn-file-entry input:not([type=checkbox]),#modal-content .hn-file-entry textarea{background:#FFFBEE;border-color:#E8D79F;color:#493D27}
-#modal-content .hn-file-entry input::file-selector-button{background:#FFF3CC;border:1px solid #E8D79F;border-radius:8px;padding:8px 12px;margin-right:10px;color:#806326;font:inherit}
-#modal-content .hn-file-entry :is(button,input,textarea):focus-visible{outline:2px solid #B69A4C;outline-offset:3px}
+/* Match the app's standard todo/schedule entry controls. */
+#modal-content .hn-file-entry [data-shared-analyze],#modal-content .hn-file-entry [data-shared-save]{background:var(--accent,#6210CC);border:1px solid var(--accent,#6210CC);color:#fff;border-radius:13px;min-height:48px;padding:14px;font:inherit;font-weight:700;box-shadow:none}
+.modal-panel:has(.hn-file-entry){padding-top:16px!important}
+#modal-content .hn-file-entry{padding-top:0!important}
+#modal-content .hn-file-entry>.hn-section-head{box-sizing:border-box;min-height:60px;padding:16px;margin:0 0 16px;border-radius:12px;background:#F8F7FB;align-items:center;overflow:visible}
+#modal-content .hn-file-entry>.hn-section-head h3{margin:0;line-height:1.5;white-space:normal;overflow:visible}
+#modal-content .hn-file-entry [data-shared-analyze]{width:100%;background:#F3EDFC;border:1px dashed #CBB7E6;color:#6210CC}
+#modal-content .hn-file-entry input::file-selector-button{background:#fff;border:1px solid var(--border,#ddd8d0);border-radius:8px;padding:8px 12px;margin-right:10px;color:var(--text,#302c3c);font:inherit}
+#modal-content .hn-file-entry :is(button,input,textarea):focus-visible{outline:2px solid var(--accent,#6210CC);outline-offset:3px}
+.hn-file-entry .hn-shared-loading{color:var(--accent,#6210CC)}
 #modal-content .hn-file-entry button:disabled{opacity:.6;cursor:wait}
 .hn-shared-loading{display:flex;align-items:center;justify-content:center;min-height:48px;color:#806326}
 .hn-shared-spinner{display:block;width:24px;height:24px;box-sizing:border-box;border:3px solid #F1E5C0;border-top-color:currentColor;border-radius:50%;animation:hn-shared-spin .8s linear infinite}
@@ -32,3 +31,9 @@
 .hn-shared-view-actions button:disabled{opacity:.6;cursor:wait}
 .hn-shared-view-actions button:focus-visible{outline:2px solid #B69A4C;outline-offset:3px}
 .hn-shared-media:empty,[data-shared-view-status]:empty{display:none}
+
+#modal-content .hn-shared-library{border:0;box-shadow:none;padding:0;margin:0}
+#modal-content .hn-shared-library>.hn-section-head{background:#FFF3CC;color:#806326;padding:12px 16px;border-radius:12px}
+#modal-content .hn-shared-library h3{color:#806326}
+#modal-content .hn-shared-library .hn-header-add{display:inline-flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;padding:0;margin:-7px -8px -7px 0;border:0;border-radius:10px;background:transparent;color:#806326;cursor:pointer}
+#modal-content .hn-shared-library .hn-header-add:focus-visible{outline:2px solid currentColor;outline-offset:2px}
