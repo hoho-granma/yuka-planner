@@ -198,6 +198,24 @@ service cloud.firestore {
       allow delete: if isMemberOf(householdId) && (resource == null || canEditTodo(householdId, resource.data)); // [H4] 아이 삭제 때 그 아이의 할 일을 지운다(가구 구성원만). 평소에는 소프트 삭제(deletedAt)를 쓴다.
     }
 
+    match /families/{householdId}/sharedFiles/{fileId} {
+      function canUpload() {
+        let a = access(householdId);
+        return signedIn() && a.status == 'ACTIVE' && a.permission in ['ADMIN','MEMBER'] && a.role != 'CHILD';
+      }
+      allow read: if isMemberOf(householdId);
+      allow create: if canUpload()
+        && request.resource.data.keys().hasOnly(['title','message','imagePath','thumbPath','createdAt','createdByUid'])
+        && request.resource.data.keys().hasAll(['title','message','imagePath','thumbPath','createdAt','createdByUid'])
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 60
+        && request.resource.data.message is string && request.resource.data.message.size() <= 4000
+        && request.resource.data.createdAt is int && request.resource.data.createdByUid == request.auth.uid
+        && ((request.resource.data.imagePath == null && request.resource.data.thumbPath == null && request.resource.data.message.size() > 0)
+          || (request.resource.data.imagePath == 'families/' + householdId + '/sharedFiles/' + fileId + '/image.jpg'
+            && request.resource.data.thumbPath == 'families/' + householdId + '/sharedFiles/' + fileId + '/thumb.jpg'));
+      allow update, delete: if false;
+    }
+
     match /families/{householdId}/growthRecords/{recordId} {
       function optionalText(d, key, limit) {
         return !(key in d) || d[key] == null || (d[key] is string && d[key].size() <= limit);

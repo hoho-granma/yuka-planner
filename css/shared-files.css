@@ -1,0 +1,7 @@
+.hn-shared-row{display:flex;align-items:center;gap:12px;width:100%;padding:12px 0;border:0;border-bottom:1px solid #eee;background:transparent;text-align:left;color:inherit;font:inherit}.hn-shared-thumb{display:flex;align-items:center;justify-content:center;flex:0 0 52px;height:52px;border-radius:8px;overflow:hidden;background:#E9DAFF;color:#6210CC;font-size:12px}.hn-shared-thumb img{width:100%;height:100%;object-fit:cover}.hn-shared-copy{min-width:0;display:grid;gap:6px}.hn-shared-copy strong{font-size:14px;overflow-wrap:anywhere}.hn-shared-copy>span{font-size:13px;color:#666;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere}.hn-shared-entry label{display:grid;gap:8px;margin:16px 0}.hn-shared-entry input,.hn-shared-entry textarea{width:100%;box-sizing:border-box;font:inherit}.hn-shared-entry [hidden]{display:none}.hn-shared-entry .hn-photo-preview img{max-height:280px;object-fit:contain}.hn-shared-view img{height:auto}.hn-shared-files h3{font-size:15px}
+
+/* Match the calendar/todo header bands on the family home. */
+#home-body .card.hn-shared-files{padding:0 17px 14px!important;overflow:hidden}
+#home-body .hn-shared-files>.hn-section-head{background:#FFF3CC;margin:0 -17px 4px;padding:10px 17px;min-height:46px}
+#home-body .hn-shared-files>.hn-section-head h3{color:#806326}
+#home-body .hn-shared-files .hn-hday-more{border-color:#E8D79F;background:#FFFBEE;color:#806326}

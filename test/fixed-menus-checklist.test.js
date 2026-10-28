@@ -20,6 +20,8 @@ const acct36Active=()=>months>=36,ChildTimeline={completedMonths:()=>months,OVER
 const kids=[{code:'baby',name:'은찬',current:true},{code:'older',name:'수아',current:false}];
 let roster=kids;const acctHomeChildren=()=>roster,childDisplayName=()=>profile.name,tcbAgeText=()=>'',charTodoRows=()=>'';
 const updateBrandText=()=>{},charHeader=()=>{};
+// This menu fixture excludes network-backed modules; shared files have their own browser test.
+const SharedFiles={mount(){},reset(){}},hh={hid:'fixture'},acct={user:{uid:'mom'}},closeDetail=()=>{};
 const charHomeBase=()=>{el('home-body').innerHTML='<section class="card hn-schedules"><h3>가족 캘린더</h3></section><div class="home-child-chips">옛 아이 선택</div>';};
 const charChecklistBase=()=>{el('list-checklist').innerHTML='<div class="month-group-card">월령별 체크리스트</div>';};
 let renderHome,renderChecklistTab;

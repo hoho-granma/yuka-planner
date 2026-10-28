@@ -8479,11 +8479,12 @@
   }
   renderHome=function(){
     charHomeBase();
-    if(!profile||!acctEnabled())return;
+    if(!profile||!acctEnabled()){SharedFiles.reset();return;}
     updateBrandText();
     const wrap=el('home-body');if(!wrap)return;
     wrap.querySelectorAll('#a36-home-todo,#hn-family-tasks,#ns-banner,.home-child-line,.hn-home-date').forEach(n=>n.remove());
     wrap.insertAdjacentHTML('beforeend',charTodoSection(true));
+    SharedFiles.mount({container:wrap,familyId:hh.hid,user:acct.user,openModal:()=>{modalMode='profile';el('detail-modal').classList.remove('hidden');},closeModal:closeDetail});
     const family=wrap.querySelector('.hn-schedules');if(family)wrap.prepend(family);
     syncHomeChildPicker();
     charHeader();

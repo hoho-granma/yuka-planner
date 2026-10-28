@@ -83,3 +83,19 @@ test('일정 배열 응답도 같은 날짜·시간·근거 검증을 통과한 
  assert.equal(f.stats().request.reasoning.enabled,false);
  const invalid=fixture({content:JSON.stringify([candidate({date:'2026-02-30'})])});await assert.rejects(invalid.parse('u',input));
 });
+
+
+test('공유파일 분석은 날짜 없이 문서 제목 하나만 반환한다',async()=>{
+ const f=fixture({content:JSON.stringify({title:'가을 현장학습 안내문'})});
+ const result=await f.parse('u',{...input,purpose:'shared-file-title',text:'가을 현장학습 안내문'});
+ assert.deepEqual(result,{ok:true,title:'가을 현장학습 안내문'});
+ const request=f.stats().request;
+ assert.equal(request.max_tokens,200);
+ assert.deepEqual(request.response_format.json_schema.schema.required,['title']);
+ assert.match(request.messages[0].content,/do not extract events or dates/i);
+ const invalid=fixture({content:JSON.stringify({title:'x'.repeat(61)})});
+ await assert.rejects(invalid.parse('u',{...input,purpose:'shared-file-title'}));
+ const denied=fixture({permission:'VIEWER'});
+ await assert.rejects(denied.parse('u',{...input,purpose:'shared-file-title'}));
+ assert.equal(denied.stats().calls,0);
+});
